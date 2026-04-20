@@ -26,6 +26,7 @@ import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 import 'channels_screen.dart';
 import 'chat_screen.dart';
+import 'chats_screen.dart';
 import 'contacts_screen.dart';
 import '../widgets/repeater_login_dialog.dart';
 import '../widgets/room_login_dialog.dart';
@@ -568,7 +569,7 @@ class _MapScreenState extends State<MapScreen> {
             bottomNavigationBar: SafeArea(
               top: false,
               child: QuickSwitchBar(
-                selectedIndex: 2,
+                selectedIndex: 3,
                 onDestinationSelected: (index) =>
                     _handleQuickSwitch(index, context),
               ),
@@ -1494,15 +1495,21 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _handleQuickSwitch(int index, BuildContext context) {
-    if (index == 2) return;
+    if (index == 3) return;
     switch (index) {
       case 0:
+        Navigator.pushReplacement(
+          context,
+          buildQuickSwitchRoute(const ChatsScreen(hideBackButton: true)),
+        );
+        break;
+      case 1:
         Navigator.pushReplacement(
           context,
           buildQuickSwitchRoute(const ContactsScreen(hideBackButton: true)),
         );
         break;
-      case 1:
+      case 2:
         Navigator.pushReplacement(
           context,
           buildQuickSwitchRoute(const ChannelsScreen(hideBackButton: true)),

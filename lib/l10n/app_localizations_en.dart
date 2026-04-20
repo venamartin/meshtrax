@@ -12,6 +12,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'MeshCore Open';
 
   @override
+  String get nav_chats => 'Chats';
+
+  @override
+  String get chats_title => 'Chats';
+
+  @override
   String get nav_contacts => 'Contacts';
 
   @override

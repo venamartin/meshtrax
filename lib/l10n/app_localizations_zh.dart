@@ -12,6 +12,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'MeshCore Open';
 
   @override
+  String get nav_chats => 'Chats';
+
+  @override
+  String get chats_title => 'Chats';
+
+  @override
   String get nav_contacts => '联系人';
 
   @override

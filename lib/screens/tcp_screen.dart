@@ -9,7 +9,7 @@ import '../services/app_settings_service.dart';
 import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../helpers/snack_bar_builder.dart';
-import 'contacts_screen.dart';
+import 'chats_screen.dart';
 import 'usb_screen.dart';
 
 class TcpScreen extends StatefulWidget {
@@ -55,7 +55,7 @@ class _TcpScreenState extends State<TcpScreen> {
         );
         _navigatedToContacts = true;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const ContactsScreen()),
+          MaterialPageRoute(builder: (_) => const ChatsScreen()),
         );
       }
     };

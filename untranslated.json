@@ -1,1 +1,86 @@
-{}
+{
+  "bg": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "de": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "es": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "fr": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "hu": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "it": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "ja": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "ko": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "nl": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "pl": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "pt": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "ru": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "sk": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "sl": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "sv": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "uk": [
+    "nav_chats",
+    "chats_title"
+  ],
+
+  "zh": [
+    "nav_chats",
+    "chats_title"
+  ]
+}

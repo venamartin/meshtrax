@@ -11,7 +11,7 @@ import '../utils/platform_info.dart';
 import '../utils/usb_port_labels.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../helpers/snack_bar_builder.dart';
-import 'contacts_screen.dart';
+import 'chats_screen.dart';
 import 'scanner_screen.dart';
 import 'tcp_screen.dart';
 
@@ -48,7 +48,7 @@ class _UsbScreenState extends State<UsbScreen> {
           !_navigatedToContacts) {
         _navigatedToContacts = true;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const ContactsScreen()),
+          MaterialPageRoute(builder: (_) => const ChatsScreen()),
         );
       }
     };

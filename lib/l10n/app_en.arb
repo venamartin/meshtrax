@@ -1,6 +1,8 @@
 {
   "@@locale": "en",
   "appTitle": "MeshCore Open",
+  "nav_chats": "Chats",
+  "chats_title": "Chats",
   "nav_contacts": "Contacts",
   "nav_channels": "Channels",
   "nav_map": "Map",

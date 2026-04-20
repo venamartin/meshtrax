@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
 import '../screens/channels_screen.dart';
+import '../screens/chats_screen.dart';
 import '../screens/contacts_screen.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
@@ -429,7 +430,7 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: QuickSwitchBar(
-          selectedIndex: 2,
+          selectedIndex: 3,
           onDestinationSelected: (index) => _handleQuickSwitch(index, context),
         ),
       ),
@@ -955,18 +956,24 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
   }
 
   void _handleQuickSwitch(int index, BuildContext context) {
-    if (index == 2) {
-      Navigator.pop(context);
+    if (index == 3) {
+      Navigator.pop(context); // Map is 3, LOS Map sits on top of Map
       return;
     }
     switch (index) {
       case 0:
         Navigator.pushReplacement(
           context,
-          buildQuickSwitchRoute(const ContactsScreen(hideBackButton: true)),
+          buildQuickSwitchRoute(const ChatsScreen(hideBackButton: true)),
         );
         break;
       case 1:
+        Navigator.pushReplacement(
+          context,
+          buildQuickSwitchRoute(const ContactsScreen(hideBackButton: true)),
+        );
+        break;
+      case 2:
         Navigator.pushReplacement(
           context,
           buildQuickSwitchRoute(const ChannelsScreen(hideBackButton: true)),

@@ -136,6 +136,18 @@ abstract class AppLocalizations {
   /// **'MeshCore Open'**
   String get appTitle;
 
+  /// No description provided for @nav_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get nav_chats;
+
+  /// No description provided for @chats_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get chats_title;
+
   /// No description provided for @nav_contacts.
   ///
   /// In en, this message translates to:

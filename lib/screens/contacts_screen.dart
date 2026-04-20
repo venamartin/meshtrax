@@ -30,6 +30,7 @@ import '../widgets/unread_badge.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'channels_screen.dart';
 import 'chat_screen.dart';
+import 'chats_screen.dart';
 import 'discovery_screen.dart';
 import 'map_screen.dart';
 import 'repeater_hub_screen.dart';
@@ -426,7 +427,7 @@ class _ContactsScreenState extends State<ContactsScreen>
         bottomNavigationBar: SafeArea(
           top: false,
           child: QuickSwitchBar(
-            selectedIndex: 0,
+            selectedIndex: 1,
             onDestinationSelected: (index) =>
                 _handleQuickSwitch(index, context),
           ),
@@ -939,15 +940,21 @@ class _ContactsScreenState extends State<ContactsScreen>
   }
 
   void _handleQuickSwitch(int index, BuildContext context) {
-    if (index == 0) return;
+    if (index == 1) return;
     switch (index) {
-      case 1:
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          buildQuickSwitchRoute(const ChatsScreen(hideBackButton: true)),
+        );
+        break;
+      case 2:
         Navigator.pushReplacement(
           context,
           buildQuickSwitchRoute(const ChannelsScreen(hideBackButton: true)),
         );
         break;
-      case 2:
+      case 3:
         Navigator.pushReplacement(
           context,
           buildQuickSwitchRoute(const MapScreen(hideBackButton: true)),

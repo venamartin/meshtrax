@@ -171,7 +171,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         title: Row(
           children: [
             Icon(
-              widget.channel.isPublicChannel ? Icons.public : Icons.tag,
+              widget.channel.isPublicChannel
+                  ? Icons.public
+                  : (widget.channel.name.startsWith('#') ? Icons.tag : Icons.lock),
               size: 20,
             ),
             const SizedBox(width: 8),

@@ -190,6 +190,8 @@ class MeshCoreApp extends StatelessWidget {
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
               useMaterial3: true,
+              fontFamily: 'DejaVu Sans',
+              fontFamilyFallback: const ['Noto Color Emoji'],
               snackBarTheme: const SnackBarThemeData(
                 behavior: SnackBarBehavior.floating,
               ),
@@ -200,6 +202,8 @@ class MeshCoreApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
+              fontFamily: 'DejaVu Sans',
+              fontFamilyFallback: const ['Noto Color Emoji'],
               snackBarTheme: const SnackBarThemeData(
                 behavior: SnackBarBehavior.floating,
               ),
