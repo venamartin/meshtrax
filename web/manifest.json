@@ -1,6 +1,6 @@
 {
-    "name": "meshcore_open",
-    "short_name": "meshcore_open",
+    "name": "meshtrack",
+    "short_name": "meshtrack",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

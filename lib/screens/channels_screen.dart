@@ -26,7 +26,6 @@ import '../widgets/quick_switch_bar.dart';
 import '../widgets/unread_badge.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'channel_chat_screen.dart';
-import 'chat_screen.dart';
 import 'chats_screen.dart';
 import 'community_qr_scanner_screen.dart';
 import 'contacts_screen.dart';
@@ -296,8 +295,6 @@ class _ChannelsScreenState extends State<ChannelsScreen>
                             viewState.channelsSearchText.isEmpty)
                       ? ReorderableListView.builder(
                           padding: const EdgeInsets.only(
-                            left: 16,
-                            right: 16,
                             top: 8,
                             bottom: 88,
                           ),
@@ -330,8 +327,6 @@ class _ChannelsScreenState extends State<ChannelsScreen>
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.only(
-                            left: 16,
-                            right: 16,
                             top: 8,
                             bottom: 88,
                           ),
@@ -420,7 +415,7 @@ class _ChannelsScreenState extends State<ChannelsScreen>
 
     return Card(
       key: ValueKey('channel_${channel.index}'),
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: GestureDetector(
         onSecondaryTapUp: PlatformInfo.isDesktop
             ? (_) => _showChannelActions(
@@ -431,10 +426,6 @@ class _ChannelsScreenState extends State<ChannelsScreen>
               )
             : null,
         child: ListTile(
-          dense: true,
-          minVerticalPadding: 0,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-          visualDensity: const VisualDensity(vertical: -2),
           leading: Stack(
             children: [
               CircleAvatar(
@@ -469,7 +460,9 @@ class _ChannelsScreenState extends State<ChannelsScreen>
             channel.name.isEmpty
                 ? context.l10n.channels_channelIndex(channel.index)
                 : channel.name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           subtitle: Text(
             subtitle,

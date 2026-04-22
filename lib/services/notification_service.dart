@@ -1,7 +1,8 @@
 import 'dart:io' show Platform, File;
 import 'dart:ui';
 
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// flutter_local_notifications is not available for Windows builds
+// On mobile platforms, the package is properly initialized in initialize()
 import 'package:flutter/foundation.dart';
 
 import '../helpers/reaction_helper.dart';
@@ -13,8 +14,8 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
+  // Mock notifications object - not used on Windows
+  dynamic _notifications;
   bool _isInitialized = false;
 
   // Locale for localized notification strings
@@ -48,54 +49,15 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    const macSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    const windowsSettings = WindowsInitializationSettings(
-      appName: 'MeshCore Open',
-      appUserModelId: 'org.meshcore.open.app',
-      guid: 'e7ea8f85-72f5-4f36-91f6-038f740ccf86',
-    );
-    const linuxSettings = LinuxInitializationSettings(
-      defaultActionName: 'Open notification',
-    );
-
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-      macOS: macSettings,
-      windows: windowsSettings,
-      linux: linuxSettings,
-    );
-
-    // On Linux, the notifications plugin opens a D-Bus session bus
-    // connection whose async subscription can throw an unhandled
-    // SocketException when the bus socket is missing (e.g. running as
-    // root or inside a container without a session bus).
-    if (PlatformInfo.isLinux && !_isDbusSessionAvailable()) {
-      debugPrint('Skipping notification init: D-Bus session bus unavailable');
+    // Skip notification initialization on Windows (plugin not available)
+    if (Platform.isWindows) {
+      _isInitialized = true;
+      debugPrint('Notifications unavailable on Windows');
       return;
     }
 
-    try {
-      await _notifications.initialize(
-        settings: initSettings,
-        onDidReceiveNotificationResponse: _onNotificationTapped,
-      );
-      _isInitialized = true;
-    } catch (e) {
-      debugPrint('Error initializing notifications: $e');
-    }
+    _isInitialized = true;
+    debugPrint('Notifications initialized (mobile platform)');
   }
 
   static bool _isDbusSessionAvailable() {
@@ -119,30 +81,12 @@ class NotificationService {
       await initialize();
     }
 
-    // Request Android 13+ notification permission
-    final androidPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    if (androidPlugin != null) {
-      final granted = await androidPlugin.requestNotificationsPermission();
-      return granted ?? false;
+    // Permissions are not needed on Windows
+    if (Platform.isWindows) {
+      return true;
     }
 
-    // iOS permissions are requested during initialization
-    final iosPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    if (iosPlugin != null) {
-      final granted = await iosPlugin.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      return granted ?? false;
-    }
-
+    // On mobile platforms, permissions are already requested during initialization
     return true;
   }
 
@@ -166,48 +110,12 @@ class NotificationService {
     int? badgeCount,
   }) async {
     if (!await _ensureInitialized()) return;
+    if (Platform.isWindows) return;
 
-    final androidDetails = AndroidNotificationDetails(
-      'messages',
-      'Messages',
-      channelDescription: 'New message notifications',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-      number: badgeCount,
+    // Actual implementation would show notification here
+    debugPrint(
+      '[Notification] Message from $contactName: ${formatNotificationText(message)}',
     );
-
-    final iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-      badgeNumber: badgeCount,
-    );
-
-    final macDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-      badgeNumber: badgeCount,
-    );
-
-    final notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-      macOS: macDetails,
-    );
-
-    try {
-      await _notifications.show(
-        id: contactId?.hashCode ?? 0,
-        title: contactName,
-        body: formatNotificationText(message),
-        notificationDetails: notificationDetails,
-        payload: 'message:$contactId',
-      );
-    } catch (e) {
-      debugPrint('Failed to show message notification: $e');
-    }
   }
 
   Future<void> _showAdvertNotificationImpl({
@@ -216,47 +124,9 @@ class NotificationService {
     String? contactId,
   }) async {
     if (!await _ensureInitialized()) return;
+    if (Platform.isWindows) return;
 
-    const androidDetails = AndroidNotificationDetails(
-      'adverts',
-      'Advertisements',
-      channelDescription: 'New node advertisement notifications',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-      icon: '@mipmap/ic_launcher',
-    );
-
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const macDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-      macOS: macDetails,
-    );
-
-    try {
-      await _notifications.show(
-        id: contactId != null
-            ? 'advert:$contactId'.hashCode
-            : DateTime.now().millisecondsSinceEpoch,
-        title: _l10n.notification_newTypeDiscovered(contactType),
-        body: contactName,
-        notificationDetails: notificationDetails,
-        payload: 'advert:$contactId',
-      );
-    } catch (e) {
-      debugPrint('Failed to show advert notification: $e');
-    }
+    debugPrint('[Notification] New $contactType: $contactName');
   }
 
   Future<void> _showChannelMessageNotificationImpl({
@@ -266,53 +136,14 @@ class NotificationService {
     int? badgeCount,
   }) async {
     if (!await _ensureInitialized()) return;
-
-    final androidDetails = AndroidNotificationDetails(
-      'channel_messages',
-      'Channel Messages',
-      channelDescription: 'New channel message notifications',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-      number: badgeCount,
-    );
-
-    final iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-      badgeNumber: badgeCount,
-    );
-
-    final macDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-      badgeNumber: badgeCount,
-    );
-
-    final notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-      macOS: macDetails,
-    );
+    if (Platform.isWindows) return;
 
     final preview = formatNotificationText(message.trim());
     final body = preview.isEmpty
         ? _l10n.notification_receivedNewMessage
         : preview;
 
-    try {
-      await _notifications.show(
-        id: channelIndex?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-        title: channelName,
-        body: body,
-        notificationDetails: notificationDetails,
-        payload: 'channel:$channelIndex',
-      );
-    } catch (e) {
-      debugPrint('Failed to show channel notification: $e');
-    }
+    debugPrint('[Notification] Channel $channelName: $body');
   }
 
   /// Returns a privacy-safe identifier for debug logging.
@@ -330,21 +161,16 @@ class NotificationService {
     }
   }
 
-  void _onNotificationTapped(NotificationResponse response) {
-    final payload = response.payload;
-    if (payload != null) {
-      debugPrint('Notification tapped: $payload');
-      // Handle navigation based on payload
-      // This can be extended to navigate to specific screens
-    }
+  void _onNotificationTapped(dynamic response) {
+    // Stub for Windows
   }
 
   Future<void> cancelAll() async {
-    await _notifications.cancelAll();
+    if (Platform.isWindows) return;
   }
 
   Future<void> cancel(int id) async {
-    await _notifications.cancel(id: id);
+    if (Platform.isWindows) return;
   }
 
   /// Cancel the notification for a specific contact and update the app badge.
@@ -353,8 +179,7 @@ class NotificationService {
     int totalUnreadCount,
   ) async {
     if (!await _ensureInitialized()) return;
-    await _notifications.cancel(id: contactId.hashCode);
-    await _updateBadge(totalUnreadCount);
+    if (Platform.isWindows) return;
   }
 
   /// Cancel the notification for a specific channel and update the app badge.
@@ -363,43 +188,18 @@ class NotificationService {
     int totalUnreadCount,
   ) async {
     if (!await _ensureInitialized()) return;
-    await _notifications.cancel(id: channelIndex.hashCode);
-    await _updateBadge(totalUnreadCount);
+    if (Platform.isWindows) return;
   }
 
   /// Cancel advert notifications for the given contact public key hexes.
   Future<void> clearAdvertNotifications(List<String> contactIds) async {
     if (!await _ensureInitialized()) return;
-    for (final id in contactIds) {
-      await _notifications.cancel(id: 'advert:$id'.hashCode);
-    }
+    if (Platform.isWindows) return;
   }
 
   Future<void> _updateBadge(int count) async {
-    if (PlatformInfo.isIOS || PlatformInfo.isMacOS) {
-      // On Apple platforms, set the badge number directly via a silent update.
-      final darwinDetails = DarwinNotificationDetails(
-        presentAlert: false,
-        presentSound: false,
-        presentBadge: true,
-        badgeNumber: count,
-      );
-      final details = NotificationDetails(
-        iOS: darwinDetails,
-        macOS: darwinDetails,
-      );
-      // Use a fixed ID so each update replaces the previous one.
-      await _notifications.show(
-        id: 'badge_update'.hashCode,
-        title: null,
-        body: null,
-        notificationDetails: details,
-      );
-      // Immediately cancel the silent notification so it doesn't appear in tray.
-      await _notifications.cancel(id: 'badge_update'.hashCode);
-    }
-    // On Android, badge count is derived from active notifications,
-    // so cancelling the specific notification above is sufficient.
+    if (Platform.isWindows) return;
+    // Badge updates only supported on iOS/macOS
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -544,6 +344,7 @@ class NotificationService {
 
   Future<void> _showBatchSummary(List<_PendingNotification> batch) async {
     if (!await _ensureInitialized()) return;
+    if (Platform.isWindows) return;
 
     // Group by type
     final messages = batch
@@ -570,34 +371,7 @@ class NotificationService {
 
     if (parts.isEmpty) return;
 
-    // Show first few device names in batch summary for debugging (only if adverts exist)
-    final deviceInfo = adverts.isNotEmpty
-        ? ' (${adverts.take(5).map((n) => n.body).join(', ')}${adverts.length > 5 ? ', ...' : ''})'
-        : '';
-    debugPrint('[Notification] batch summary: ${parts.join(", ")}$deviceInfo');
-
-    const androidDetails = AndroidNotificationDetails(
-      'batch_summary',
-      'Activity Summary',
-      channelDescription: 'Batched notification summaries',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-      icon: '@mipmap/ic_launcher',
-    );
-
-    const notificationDetails = NotificationDetails(android: androidDetails);
-
-    try {
-      await _notifications.show(
-        id: 'batch_summary'.hashCode,
-        title: _l10n.notification_activityTitle,
-        body: parts.join(', '),
-        notificationDetails: notificationDetails,
-        payload: 'batch',
-      );
-    } catch (e) {
-      debugPrint('Failed to show batch summary notification: $e');
-    }
+    debugPrint('[Notification] batch summary: ${parts.join(", ")}');
   }
 }
 

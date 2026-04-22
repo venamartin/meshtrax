@@ -175,7 +175,7 @@ class MeshCoreApp extends StatelessWidget {
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {
           return MaterialApp(
-            title: 'MeshCore Open',
+            title: 'MeshTrack',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
               AppLocalizations.delegate,

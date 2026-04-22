@@ -954,9 +954,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
+        color: Theme.of(context).colorScheme.primaryContainer,
         border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+          bottom: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
         ),
       ),
       child: Row(
@@ -964,7 +964,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           Icon(
             Icons.reply,
             size: 18,
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -976,7 +976,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   style: TextStyle(
                     fontSize: 12 * textScale,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
                 Text(
@@ -987,7 +987,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     fontSize: 11 * textScale,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
+                    ).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -996,7 +996,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           IconButton(
             icon: const Icon(Icons.close, size: 18),
             onPressed: _cancelReply,
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),

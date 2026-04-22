@@ -148,6 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: true,
         title: Consumer2<PathHistoryService, MeshCoreConnector>(
           builder: (context, pathService, connector, _) {
             final contact = _resolveContact(connector);
@@ -846,6 +847,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                               subtitle: Text(
                                 '${(path.tripTimeMs / 1000).toStringAsFixed(2)}s • ${_formatRelativeTime(path.timestamp)} • ${path.successCount} ${context.l10n.chat_successes}',
+                                //textAlign: TextAlign.right,
                                 style: const TextStyle(fontSize: 11),
                               ),
                               trailing: Row(
@@ -1663,7 +1665,7 @@ class _MessageBubble extends StatelessWidget {
                             child: Text(
                               senderName,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 12 * textScale,
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.primary,
                               ),
