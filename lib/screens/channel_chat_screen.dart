@@ -745,10 +745,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
           border: Border(
-            left: BorderSide(color: colorScheme.primary, width: 3),
+            left: BorderSide(color: colorScheme.secondary, width: 3),
           ),
         ),
         child: Column(
@@ -760,8 +760,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 fontSize: 11 * textScale,
                 fontWeight: FontWeight.bold,
                 color: isOwnNode
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface,
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.onSecondaryContainer,
               ),
             ),
             const SizedBox(height: 2),

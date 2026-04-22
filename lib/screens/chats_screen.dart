@@ -308,7 +308,11 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                         iconData = Icons.lock;
                       }
                     } else {
-                      iconData = Icons.person;
+                      if (item.contact != null && item.contact!.type == advTypeRoom) {
+                        iconData = Icons.meeting_room;
+                      } else {
+                        iconData = Icons.person;
+                      }
                     }
 
                     return GestureDetector(
