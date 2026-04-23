@@ -59,17 +59,17 @@ class AppSettings {
   final List<TranslationModelRecord> translationDownloadedModels;
 
   AppSettings({
-    this.clearPathOnMaxRetry = false,
+    this.clearPathOnMaxRetry = true,
     this.mapShowRepeaters = true,
     this.mapShowChatNodes = true,
     this.mapShowOtherNodes = true,
     this.mapShowOverlaps = false,
-    this.mapTimeFilterHours = 0, // Default to all time
+    this.mapTimeFilterHours = 48, // Default to all time
     this.mapKeyPrefixEnabled = false,
     this.mapKeyPrefix = '',
     this.mapShowMarkers = true,
     this.mapShowGuessedLocations = true,
-    this.enableMessageTracing = false,
+    this.enableMessageTracing = true,
     this.mapCacheBounds,
     this.mapCacheMinZoom = 10,
     this.mapCacheMaxZoom = 15,
@@ -77,7 +77,7 @@ class AppSettings {
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
     this.notifyOnNewAdvert = true,
-    this.autoRouteRotationEnabled = false,
+    this.autoRouteRotationEnabled = true,
     this.maxRouteWeight = 5.0,
     this.initialRouteWeight = 3.0,
     this.routeWeightSuccessIncrement = 0.5,
@@ -93,7 +93,7 @@ class AppSettings {
     this.mapShowDiscoveryContacts = true,
     this.tcpServerAddress = '',
     this.tcpServerPort = 0,
-    this.jumpToOldestUnread = false,
+    this.jumpToOldestUnread = true,
     this.translationEnabled = false,
     this.translationTargetLanguageCode,
     this.composerTranslationEnabled = false,
