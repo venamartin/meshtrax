@@ -368,24 +368,26 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                           ),
                           onTap: () async {
                             if (item.contact != null) {
+                              final unread = item.unreadCount;
                               connector.markContactRead(item.contact!.publicKeyHex);
                               await Future.delayed(const Duration(milliseconds: 50));
                               if (context.mounted) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ChatScreen(contact: item.contact!),
+                                    builder: (context) => ChatScreen(contact: item.contact!, unreadCount: unread),
                                   ),
                                 );
                               }
                             } else if (item.channel != null) {
+                              final unread = item.unreadCount;
                               connector.markChannelRead(item.channel!.index);
                               await Future.delayed(const Duration(milliseconds: 50));
                               if (context.mounted) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ChannelChatScreen(channel: item.channel!),
+                                    builder: (context) => ChannelChatScreen(channel: item.channel!, unreadCount: unread),
                                   ),
                                 );
                               }

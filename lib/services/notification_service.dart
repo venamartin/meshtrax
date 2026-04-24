@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 
 import '../helpers/reaction_helper.dart';
 import '../l10n/app_localizations.dart';
-import '../utils/platform_info.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();

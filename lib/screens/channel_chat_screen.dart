@@ -6,10 +6,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../utils/platform_info.dart';
-import '../helpers/chat_scroll_controller.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
@@ -26,7 +26,6 @@ import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
-import '../widgets/jump_to_bottom_button.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/message_translation_button.dart';
 import '../widgets/message_status_icon.dart';
@@ -37,8 +36,9 @@ import 'map_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
   final Channel channel;
+  final int? unreadCount;
 
-  const ChannelChatScreen({super.key, required this.channel});
+  const ChannelChatScreen({super.key, required this.channel, this.unreadCount});
 
   @override
   State<ChannelChatScreen> createState() => _ChannelChatScreenState();
@@ -46,43 +46,47 @@ class ChannelChatScreen extends StatefulWidget {
 
 class _ChannelChatScreenState extends State<ChannelChatScreen> {
   final TextEditingController _textController = TextEditingController();
-  final ChatScrollController _scrollController = ChatScrollController();
   final FocusNode _textFieldFocusNode = FocusNode();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+
   ChannelMessage? _replyingToMessage;
-  final Map<String, GlobalKey> _messageKeys = {};
   bool _isLoadingOlder = false;
 
   MeshCoreConnector? _connector;
+  ChannelMessage? _firstUnreadMessage;
+  int _initialScrollIndex = 0;
+  bool _isAtBottom = true;
   DateTime? _lastChannelSendAt;
-  bool _channelSkipNextBottomSnap = false;
 
   @override
   void initState() {
     super.initState();
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
-    _scrollController.onScrollNearTop = _loadOlderMessages;
+    _itemPositionsListener.itemPositions.addListener(_scrollListener);
+
+    final connector = context.read<MeshCoreConnector>();
+    final settings = context.read<AppSettingsService>().settings;
+    final idx = widget.channel.index;
+    final unread = widget.unreadCount ?? connector.getUnreadCountForChannelIndex(idx);
+
+    if (settings.jumpToOldestUnread && unread > 0) {
+      final messages = connector.getChannelMessages(widget.channel);
+      _firstUnreadMessage = _findOldestUnreadChannelAnchor(messages, unread);
+      if (_firstUnreadMessage != null) {
+        final reversedMessages = messages.reversed.toList();
+        final msgIdx = reversedMessages.indexOf(_firstUnreadMessage!);
+        if (msgIdx != -1) {
+          _initialScrollIndex = msgIdx;
+          _isAtBottom = false;
+        }
+      }
+    }
+
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final connector = context.read<MeshCoreConnector>();
-      final settings = context.read<AppSettingsService>().settings;
-      final idx = widget.channel.index;
-      final unread = connector.getUnreadCountForChannelIndex(idx);
-      ChannelMessage? anchor;
-      if (settings.jumpToOldestUnread && unread > 0) {
-        anchor = _findOldestUnreadChannelAnchor(
-          connector.getChannelMessages(widget.channel),
-          unread,
-        );
-      }
       connector.setActiveChannel(idx);
       _connector = connector;
-      if (anchor != null) {
-        _channelSkipNextBottomSnap = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          _scrollToMessage(anchor!.messageId);
-        });
-      }
     });
   }
 
@@ -102,9 +106,44 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     return oldest;
   }
 
+  void _scrollListener() {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    int minIndex = positions.first.index;
+    int maxIndex = positions.first.index;
+    ItemPosition? bottomItem;
+
+    for (final p in positions) {
+      if (p.index < minIndex) minIndex = p.index;
+      if (p.index > maxIndex) maxIndex = p.index;
+      if (p.index == 0) bottomItem = p;
+    }
+
+    final isAtBottom = bottomItem != null && bottomItem.itemLeadingEdge <= 0.05;
+    if (_isAtBottom != isAtBottom) {
+      setState(() => _isAtBottom = isAtBottom);
+    }
+
+    if (_connector != null) {
+      final itemCount = _connector!.getChannelMessages(widget.channel).length;
+      if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
+        _loadOlderMessages();
+      }
+    }
+  }
+
   void _onTextFieldFocusChange() {
-    if (_textFieldFocusNode.hasFocus && mounted) {
-      _scrollController.handleKeyboardOpen();
+    if (_textFieldFocusNode.hasFocus && mounted && _isAtBottom && _itemScrollController.isAttached) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted && _itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: 0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     }
   }
 
@@ -122,11 +161,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   @override
   void dispose() {
+    _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textFieldFocusNode.dispose();
     _textController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -143,25 +182,26 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Future<void> _scrollToMessage(String messageId) async {
-    final key = _messageKeys[messageId];
-    if (key == null) {
+    if (!_itemScrollController.isAttached || _connector == null) return;
+    
+    final messages = _connector!.getChannelMessages(widget.channel);
+    final reversedMessages = messages.reversed.toList();
+    final index = reversedMessages.indexWhere((m) => m.messageId == messageId);
+    
+    if (index != -1) {
+      await _itemScrollController.scrollTo(
+        index: index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: 0.3,
+      );
+    } else {
       showDismissibleSnackBar(
         context,
         content: Text(context.l10n.chat_originalMessageNotFound),
         duration: const Duration(seconds: 2),
       );
-      return;
     }
-
-    final targetContext = key.currentContext;
-    if (targetContext == null) return;
-
-    await Scrollable.ensureVisible(
-      targetContext,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      alignment: 0.3,
-    );
   }
 
   @override
@@ -285,26 +325,24 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   final itemCount =
                       reversedMessages.length + (_isLoadingOlder ? 1 : 0);
 
-                  // Clean up keys for messages that no longer exist
-                  final currentMessageIds = messages.map((m) => m.messageId).toSet();
-                  _messageKeys.removeWhere((key, _) => !currentMessageIds.contains(key));
-
                   // Auto-scroll to bottom if user is already at bottom
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (_channelSkipNextBottomSnap) {
-                      _channelSkipNextBottomSnap = false;
-                      return;
+                    if (!mounted) return;
+                    if (_isAtBottom && _itemScrollController.isAttached) {
+                      _itemScrollController.jumpTo(index: 0);
                     }
-                    _scrollController.scrollToBottomIfAtBottom();
                   });
 
                   return Stack(
                     children: [
                       ChatZoomWrapper(
-                        child: ListView.builder(
+                        child: ScrollablePositionedList.builder(
                           reverse: true, // List grows from bottom up
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(8),
+                          itemScrollController: _itemScrollController,
+                          itemPositionsListener: _itemPositionsListener,
+                          initialScrollIndex: _initialScrollIndex,
+                          initialAlignment: _initialScrollIndex > 0 ? 0.05 : 0.0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
                           itemCount: itemCount,
                           itemBuilder: (context, index) {
                             // Loading indicator now appears at end (bottom) of reversed list
@@ -324,28 +362,70 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             }
                             final messageIndex = index;
                             final message = reversedMessages[messageIndex];
-                            if (!_messageKeys.containsKey(message.messageId)) {
-                              _messageKeys[message.messageId] = GlobalKey();
-                            }
-                            return Container(
-                              key: _messageKeys[message.messageId]!,
-                              child: Builder(
-                                builder: (context) {
-                                  final textScale = context
-                                      .select<ChatTextScaleService, double>(
-                                        (service) => service.scale,
-                                      );
-                                  return _buildMessageBubble(
-                                    message,
-                                    textScale,
-                                  );
-                                },
-                              ),
+                            
+                            final bubble = Builder(
+                              builder: (context) {
+                                final textScale = context
+                                    .select<ChatTextScaleService, double>(
+                                      (service) => service.scale,
+                                    );
+                                return _buildMessageBubble(
+                                  message,
+                                  textScale,
+                                );
+                              },
                             );
+                            if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          child: Text("NEW MESSAGES", style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                                        ),
+                                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                                      ],
+                                    ),
+                                  ),
+                                  bubble,
+                                ],
+                              );
+                            }
+                            return bubble;
                           },
                         ),
                       ),
-                      JumpToBottomButton(scrollController: _scrollController),
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: AnimatedScale(
+                          scale: _isAtBottom ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutBack,
+                          child: FloatingActionButton(
+                            mini: true,
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            onPressed: () {
+                              if (_itemScrollController.isAttached) {
+                                _itemScrollController.scrollTo(
+                                  index: 0,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              }
+                            },
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -378,9 +458,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               ? message.pathVariants.first
               : Uint8List(0));
 
+    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(translatedDisplayText);
+    final displayBubbleColor = isJumboEmoji
+        ? Colors.transparent
+        : (isOutgoing
+            ? Theme.of(context).colorScheme.primaryContainer
+            : Theme.of(context).colorScheme.surfaceContainerHighest);
+    final bodyFontSize = isJumboEmoji ? 48.0 : 14.0;
+
     const maxSwipeOffset = 64.0;
     const replySwipeThreshold = 64.0;
-    const bodyFontSize = 14.0;
     final messageBody = Column(
       crossAxisAlignment: isOutgoing
           ? CrossAxisAlignment.end
@@ -408,14 +495,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 child: Container(
                   padding: gifId != null
                       ? const EdgeInsets.all(4)
-                      : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      : isJumboEmoji
+                          ? EdgeInsets.zero
+                          : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   constraints: BoxConstraints(
                     maxWidth: MediaQuery.of(context).size.width * 0.65,
                   ),
                   decoration: BoxDecoration(
-                    color: isOutgoing
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: displayBubbleColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -423,7 +510,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     children: [
                       if (!isOutgoing) ...[
                         Padding(
-                          padding: gifId != null
+                          padding: gifId != null || isJumboEmoji
                               ? const EdgeInsets.only(
                                   left: 8,
                                   top: 4,
@@ -1354,6 +1441,19 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       context,
       content: Text(context.l10n.chat_messageDeleted),
     );
+  }
+
+  bool _isOnlyEmojis(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+
+    final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
+    if (noSpaces.characters.length > 3) return false;
+
+    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\s]+$', unicode: true);
+    final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
+
+    return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
   }
 
   String _formatPathPrefixes(Uint8List pathBytes) {

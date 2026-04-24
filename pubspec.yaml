@@ -63,6 +63,7 @@ dependencies:
   url_launcher: ^6.3.0    # Launch URLs in system browser
   flutter_linkify: ^6.0.0 # Auto-detect and linkify URLs in text
   gpx: ^2.3.0
+  scrollable_positioned_list: ^0.3.8
   path_provider: ^2.1.5
   share_plus: ^13.0.0
   build_pipe: ^0.3.1

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:meshcore_open/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
 
@@ -15,7 +16,6 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/reaction_helper.dart';
 import '../widgets/message_status_icon.dart';
-import '../helpers/chat_scroll_controller.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
 import '../models/channel_message.dart';
@@ -35,7 +35,6 @@ import 'map_screen.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
-import '../widgets/jump_to_bottom_button.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/message_translation_button.dart';
 import '../widgets/path_selection_dialog.dart';
@@ -48,8 +47,9 @@ import 'telemetry_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final Contact contact;
+  final int? unreadCount;
 
-  const ChatScreen({super.key, required this.contact});
+  const ChatScreen({super.key, required this.contact, this.unreadCount});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -57,49 +57,46 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _textController = TextEditingController();
-  final _scrollController = ChatScrollController();
   final _textFieldFocusNode = FocusNode();
-  final GlobalKey _unreadScrollKey = GlobalKey();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+
   bool _isLoadingOlder = false;
   MeshCoreConnector? _connector;
-  Message? _pendingUnreadScrollTarget;
+  Message? _firstUnreadMessage;
+  int _initialScrollIndex = 0;
+  bool _isAtBottom = true;
   DateTime? _lastTextSendAt;
 
   @override
   void initState() {
     super.initState();
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
-    _scrollController.onScrollNearTop = _loadOlderMessages;
+    _itemPositionsListener.itemPositions.addListener(_scrollListener);
+
+    // Calculate initial scroll synchronously so it snaps instantly on frame 1
+    final connector = context.read<MeshCoreConnector>();
+    final settings = context.read<AppSettingsService>().settings;
+    final keyHex = widget.contact.publicKeyHex;
+    final unread = widget.unreadCount ?? connector.getUnreadCountForContactKey(keyHex);
+
+    if (settings.jumpToOldestUnread && unread > 0) {
+      final messages = connector.getMessages(widget.contact);
+      _firstUnreadMessage = _findOldestUnreadAnchor(messages, unread);
+      if (_firstUnreadMessage != null) {
+        final reversedMessages = messages.reversed.toList();
+        final idx = reversedMessages.indexOf(_firstUnreadMessage!);
+        if (idx != -1) {
+          _initialScrollIndex = idx;
+          _isAtBottom = false;
+        }
+      }
+    }
+
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final connector = context.read<MeshCoreConnector>();
-      final settings = context.read<AppSettingsService>().settings;
-      final keyHex = widget.contact.publicKeyHex;
-      final unread = connector.getUnreadCountForContactKey(keyHex);
-      Message? anchor;
-      if (settings.jumpToOldestUnread && unread > 0) {
-        anchor = _findOldestUnreadAnchor(
-          connector.getMessages(widget.contact),
-          unread,
-        );
-      }
       connector.setActiveContact(keyHex);
       _connector = connector;
-      if (anchor != null) {
-        setState(() => _pendingUnreadScrollTarget = anchor);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          final ctx = _unreadScrollKey.currentContext;
-          if (ctx != null) {
-            Scrollable.ensureVisible(
-              ctx,
-              duration: const Duration(milliseconds: 350),
-              alignment: 0.15,
-            );
-          }
-          setState(() => _pendingUnreadScrollTarget = null);
-        });
-      }
     });
   }
 
@@ -116,9 +113,44 @@ class _ChatScreenState extends State<ChatScreen> {
     return oldest;
   }
 
+  void _scrollListener() {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    int minIndex = positions.first.index;
+    int maxIndex = positions.first.index;
+    ItemPosition? bottomItem;
+
+    for (final p in positions) {
+      if (p.index < minIndex) minIndex = p.index;
+      if (p.index > maxIndex) maxIndex = p.index;
+      if (p.index == 0) bottomItem = p;
+    }
+
+    final isAtBottom = bottomItem != null && bottomItem.itemLeadingEdge <= 0.05;
+    if (_isAtBottom != isAtBottom) {
+      setState(() => _isAtBottom = isAtBottom);
+    }
+
+    if (_connector != null) {
+      final itemCount = _connector!.getMessages(widget.contact).length;
+      if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
+        _loadOlderMessages();
+      }
+    }
+  }
+
   void _onTextFieldFocusChange() {
-    if (_textFieldFocusNode.hasFocus && mounted) {
-      _scrollController.handleKeyboardOpen();
+    if (_textFieldFocusNode.hasFocus && mounted && _isAtBottom && _itemScrollController.isAttached) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted && _itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: 0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     }
   }
 
@@ -136,11 +168,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textFieldFocusNode.dispose();
     _textController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -382,7 +414,32 @@ class _ChatScreenState extends State<ChatScreen> {
                     messages.isEmpty
                         ? _buildEmptyState()
                         : _buildMessageList(messages, connector),
-                    JumpToBottomButton(scrollController: _scrollController),
+                    Positioned(
+                      bottom: 16,
+                      right: 16,
+                      child: AnimatedScale(
+                        scale: _isAtBottom ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutBack,
+                        child: FloatingActionButton(
+                          mini: true,
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          onPressed: () {
+                            if (_itemScrollController.isAttached) {
+                              _itemScrollController.scrollTo(
+                                index: 0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            }
+                          },
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -428,14 +485,18 @@ class _ChatScreenState extends State<ChatScreen> {
     // Auto-scroll to bottom if user is already at bottom
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (_pendingUnreadScrollTarget != null) return;
-      _scrollController.scrollToBottomIfAtBottom();
+      if (_isAtBottom && _itemScrollController.isAttached) {
+        _itemScrollController.jumpTo(index: 0);
+      }
     });
 
     return ChatZoomWrapper(
-      child: ListView.builder(
+      child: ScrollablePositionedList.builder(
         reverse: true, // List grows from bottom up
-        controller: _scrollController,
+        itemScrollController: _itemScrollController,
+        itemPositionsListener: _itemPositionsListener,
+        initialScrollIndex: _initialScrollIndex,
+        initialAlignment: _initialScrollIndex > 0 ? 0.05 : 0.0,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         itemCount: itemCount,
         itemBuilder: (context, index) {
@@ -491,8 +552,35 @@ class _ChatScreenState extends State<ChatScreen> {
                 onRetryReaction: (msg, emoji) =>
                     _sendReaction(msg, contact, emoji),
               );
-              if (identical(message, _pendingUnreadScrollTarget)) {
-                return KeyedSubtree(key: _unreadScrollKey, child: bubble);
+              if (_firstUnreadMessage != null && 
+                  message.timestamp == _firstUnreadMessage!.timestamp && 
+                  message.text == _firstUnreadMessage!.text) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              "NEW MESSAGES",
+                              style: TextStyle(
+                                color: Colors.red[400],
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                        ],
+                      ),
+                    ),
+                    bubble,
+                  ],
+                );
               }
               return bubble;
             },
@@ -1626,8 +1714,6 @@ class _MessageBubble extends StatelessWidget {
     final textColor = isFailed
         ? colorScheme.onErrorContainer
         : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
-    final metaColor = textColor.withValues(alpha: 0.7);
-    const bodyFontSize = 14.0;
     final translatedDisplayText =
         message.translatedText != null &&
             message.translatedText!.trim().isNotEmpty
@@ -1636,6 +1722,13 @@ class _MessageBubble extends StatelessWidget {
     final originalDisplayText = isOutgoing
         ? message.originalText
         : (translatedDisplayText != messageText ? messageText : null);
+
+    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(translatedDisplayText);
+    final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
+    final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
+    final displayMetaColor = displayTextColor.withValues(alpha: 0.7);
+    final bodyFontSize = isJumboEmoji ? 48.0 : 14.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
@@ -1663,15 +1756,17 @@ class _MessageBubble extends StatelessWidget {
                   child: Container(
                     padding: gifId != null
                         ? const EdgeInsets.all(4)
-                        : const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
+                        : isJumboEmoji
+                            ? EdgeInsets.zero
+                            : const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                     constraints: BoxConstraints(
                       maxWidth: MediaQuery.of(context).size.width * 0.65,
                     ),
                     decoration: BoxDecoration(
-                      color: bubbleColor,
+                      color: displayBubbleColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -1679,7 +1774,7 @@ class _MessageBubble extends StatelessWidget {
                       children: [
                         if (!isOutgoing) ...[
                           Padding(
-                            padding: gifId != null
+                            padding: gifId != null || isJumboEmoji
                                 ? const EdgeInsets.only(
                                     left: 8,
                                     top: 4,
@@ -1702,7 +1797,7 @@ class _MessageBubble extends StatelessWidget {
                             context,
                             poi,
                             textColor,
-                            metaColor,
+                            displayMetaColor,
                             textScale,
                             trailing: (!enableTracing && isOutgoing)
                                 ? Padding(
@@ -1769,12 +1864,12 @@ class _MessageBubble extends StatelessWidget {
                                   displayText: translatedDisplayText,
                                   originalText: originalDisplayText,
                                   style: TextStyle(
-                                    color: textColor,
+                                    color: isJumboEmoji ? null : displayTextColor,
                                     fontSize: bodyFontSize * textScale,
                                   ),
                                   originalStyle: TextStyle(
-                                    color: textColor.withValues(alpha: 0.78),
-                                    fontSize: bodyFontSize * textScale,
+                                    color: isJumboEmoji ? null : displayMetaColor,
+                                    fontSize: (isJumboEmoji ? 24.0 : bodyFontSize) * textScale,
                                   ),
                                 ),
                               ),
@@ -1811,7 +1906,7 @@ class _MessageBubble extends StatelessWidget {
                                 ),
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: metaColor,
+                                  color: displayMetaColor,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1834,12 +1929,12 @@ class _MessageBubble extends StatelessWidget {
                                   _formatTime(message.timestamp),
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: metaColor,
+                                    color: displayMetaColor,
                                   ),
                                 ),
                                 if (isOutgoing) ...[
                                   const SizedBox(width: 4),
-                                  _buildStatusIcon(metaColor),
+                                  _buildStatusIcon(displayMetaColor),
                                 ],
                                 if (message.tripTimeMs != null &&
                                     message.status ==
@@ -1849,7 +1944,7 @@ class _MessageBubble extends StatelessWidget {
                                     Icons.speed,
                                     size: 10,
                                     color: isOutgoing
-                                        ? metaColor
+                                        ? displayMetaColor
                                         : Colors.green[700],
                                   ),
                                   Text(
@@ -1857,7 +1952,7 @@ class _MessageBubble extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 9,
                                       color: isOutgoing
-                                          ? metaColor
+                                          ? displayMetaColor
                                           : Colors.green[700],
                                     ),
                                   ),
@@ -2092,6 +2187,19 @@ class _MessageBubble extends StatelessWidget {
     }
 
     return Icon(icon, size: 12, color: color);
+  }
+
+  bool _isOnlyEmojis(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+    
+    final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
+    if (noSpaces.characters.length > 3) return false;
+
+    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\s]+$', unicode: true);
+    final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
+
+    return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
   }
 
   String _formatTime(DateTime time) {

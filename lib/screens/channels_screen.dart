@@ -493,7 +493,7 @@ class _ChannelsScreenState extends State<ChannelsScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ChannelChatScreen(channel: channel),
+                    builder: (context) => ChannelChatScreen(channel: channel, unreadCount: unreadCount),
                 ),
               );
             }
