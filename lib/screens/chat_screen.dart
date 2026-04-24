@@ -463,10 +463,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ? Uint8List.fromList([0, 0, 0, 0])
                   : message.fourByteRoomContactKey,
             );
-            fourByteHex = message.fourByteRoomContactKey
-                .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                .join()
-                .toUpperCase();
+            fourByteHex = message.fourByteRoomContactKey.isNotEmpty
+                ? message.fourByteRoomContactKey
+                    .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                    .join()
+                    .toUpperCase()
+                : "00000000";
           }
 
           return Builder(
@@ -478,7 +480,9 @@ class _ChatScreenState extends State<ChatScreen> {
               final bubble = _MessageBubble(
                 message: message,
                 senderName: resolvedContact.type == advTypeRoom
-                    ? "${contact.name} [$fourByteHex]"
+                    ? (contact.publicKeyHex == resolvedContact.publicKeyHex
+                        ? "Unknown [$fourByteHex]"
+                        : contact.name)
                     : contact.name,
                 isRoomServer: resolvedContact.type == advTypeRoom,
                 textScale: textScale,
@@ -1406,14 +1410,20 @@ class _ChatScreenState extends State<ChatScreen> {
     if (message.isOutgoing) {
       senderName = connector.selfName ?? context.l10n.chat_me;
     } else if (_resolveContact(connector).type == advTypeRoom) {
-      senderName = "${contact.name} [$fourByteHex]";
+      senderName = contact.publicKeyHex == _resolveContact(connector).publicKeyHex
+          ? "Unknown [$fourByteHex]"
+          : contact.name;
     } else {
       senderName = _resolveContact(connector).name;
+    }
+    String cleanText = message.text;
+    if (!message.isOutgoing && _resolveContact(connector).type == advTypeRoom) {
+      cleanText = cleanText.substring(4.clamp(0, cleanText.length));
     }
     final pathMessage = ChannelMessage(
       senderKey: null,
       senderName: senderName,
-      text: message.text,
+      text: cleanText,
       timestamp: message.timestamp,
       isOutgoing: message.isOutgoing,
       status: ChannelMessageStatus.sent,
@@ -1460,7 +1470,12 @@ class _ChatScreenState extends State<ChatScreen> {
               title: Text(context.l10n.common_copy),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _copyMessageText(message.text);
+                String textToCopy = message.text;
+                if (!message.isOutgoing &&
+                    _resolveContact(context.read<MeshCoreConnector>()).type == advTypeRoom) {
+                  textToCopy = textToCopy.substring(4.clamp(0, textToCopy.length));
+                }
+                _copyMessageText(textToCopy);
               },
             ),
             ListTile(
@@ -1480,8 +1495,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   _retryMessage(message);
                 },
               ),
-            if (_resolveContact(context.read<MeshCoreConnector>()).type ==
-                advTypeRoom)
+            if (!message.isOutgoing &&
+                _resolveContact(context.read<MeshCoreConnector>()).type == advTypeRoom &&
+                contact.publicKeyHex != _resolveContact(context.read<MeshCoreConnector>()).publicKeyHex)
               ListTile(
                 leading: const Icon(Icons.chat),
                 title: Text(context.l10n.contacts_openChat),
@@ -1552,10 +1568,16 @@ class _ChatScreenState extends State<ChatScreen> {
     final senderName = liveContact.type == advTypeRoom
         ? senderContact.name
         : null;
+        
+    String textForHash = message.text;
+    if (liveContact.type == advTypeRoom && !message.isOutgoing) {
+      textForHash = textForHash.substring(4.clamp(0, textForHash.length));
+    }
+
     final hash = ReactionHelper.computeReactionHash(
       timestampSecs,
       senderName,
-      message.text,
+      textForHash,
     );
     final reactionText = ReactionHelper.encodeReaction(hash, emojiIndex);
     connector.sendMessage(_resolveContact(connector), reactionText);
@@ -1587,8 +1609,14 @@ class _MessageBubble extends StatelessWidget {
     final enableTracing = settingsService.settings.enableMessageTracing;
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
-    final gifId = GifHelper.parseGif(message.text);
-    final poi = _parsePoiMessage(message.text);
+
+    String messageText = message.text;
+    if (isRoomServer && !isOutgoing) {
+      messageText = message.text.substring(4.clamp(0, message.text.length));
+    }
+
+    final gifId = GifHelper.parseGif(messageText);
+    final poi = _parsePoiMessage(messageText);
     final isFailed = message.status == MessageStatus.failed;
     final bubbleColor = isFailed
         ? colorScheme.errorContainer
@@ -1600,10 +1628,6 @@ class _MessageBubble extends StatelessWidget {
         : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
     final metaColor = textColor.withValues(alpha: 0.7);
     const bodyFontSize = 14.0;
-    String messageText = message.text;
-    if (isRoomServer && !isOutgoing) {
-      messageText = message.text.substring(4.clamp(0, message.text.length));
-    }
     final translatedDisplayText =
         message.translatedText != null &&
             message.translatedText!.trim().isNotEmpty

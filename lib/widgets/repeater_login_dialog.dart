@@ -272,6 +272,8 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
     final connector = context.watch<MeshCoreConnector>();
     final repeater = _resolveRepeater(connector);
     final isFloodMode = repeater.pathOverride == -1;
+    final isDirectMode = repeater.pathOverride == 0;
+    final isAutoMode = repeater.pathOverride != -1 && repeater.pathOverride != 0;
     return AlertDialog(
       title: Row(
         children: [
@@ -399,13 +401,18 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                       ),
                       const Spacer(),
                       PopupMenuButton<String>(
-                        icon: Icon(isFloodMode ? Icons.waves : Icons.route),
+                        icon: Icon(isFloodMode ? Icons.waves : (isDirectMode ? Icons.arrow_forward : Icons.route)),
                         tooltip: l10n.login_routingMode,
                         onSelected: (mode) async {
                           if (mode == 'flood') {
                             await connector.setPathOverride(
                               repeater,
                               pathLen: -1,
+                            );
+                          } else if (mode == 'direct') {
+                            await connector.setPathOverride(
+                              repeater,
+                              pathLen: 0,
                             );
                           } else {
                             await connector.setPathOverride(
@@ -422,7 +429,7 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                                 Icon(
                                   Icons.auto_mode,
                                   size: 20,
-                                  color: !isFloodMode
+                                  color: isAutoMode
                                       ? Theme.of(context).primaryColor
                                       : null,
                                 ),
@@ -430,7 +437,30 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                                 Text(
                                   l10n.login_autoUseSavedPath,
                                   style: TextStyle(
-                                    fontWeight: !isFloodMode
+                                    fontWeight: isAutoMode
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'direct',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.arrow_forward,
+                                  size: 20,
+                                  color: isDirectMode
+                                      ? Theme.of(context).primaryColor
+                                      : null,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Force Direct Mode', // Replace with l10n.login_forceDirectMode if you add it to your ARB file
+                                  style: TextStyle(
+                                    fontWeight: isDirectMode
                                         ? FontWeight.bold
                                         : FontWeight.normal,
                                   ),

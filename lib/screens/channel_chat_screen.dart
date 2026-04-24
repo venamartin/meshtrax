@@ -285,6 +285,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   final itemCount =
                       reversedMessages.length + (_isLoadingOlder ? 1 : 0);
 
+                  // Clean up keys for messages that no longer exist
+                  final currentMessageIds = messages.map((m) => m.messageId).toSet();
+                  _messageKeys.removeWhere((key, _) => !currentMessageIds.contains(key));
+
                   // Auto-scroll to bottom if user is already at bottom
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (_channelSkipNextBottomSnap) {

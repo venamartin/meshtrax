@@ -17,6 +17,7 @@ import 'channels_screen.dart';
 import 'chat_screen.dart';
 import 'contacts_screen.dart';
 import 'map_screen.dart';
+import 'scanner_screen.dart';
 import 'settings_screen.dart';
 
 class _ChatListItem {
@@ -51,7 +52,13 @@ class ChatsScreen extends StatefulWidget {
 class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixin {
   Future<void> _disconnect(BuildContext context) async {
     final connector = context.read<MeshCoreConnector>();
-    await showDisconnectDialog(context, connector);
+    final disconnected = await showDisconnectDialog(context, connector);
+    if (disconnected && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const ScannerScreen()),
+        (route) => false,
+      );
+    }
   }
 
   void _handleQuickSwitch(int index, BuildContext context) {
