@@ -1,6 +1,6 @@
-# MeshTrack
+# MeshTrax
 
-MeshTrack is a fork of MeshCore Open
+MeshTrax is a fork of MeshCore Open
 <https://github.com/zjs81/meshcore-open>
 
 ## Acknowledgments
