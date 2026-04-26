@@ -87,7 +87,7 @@ void main() async {
   await connector.loadUnreadState();
 
   runApp(
-    MeshCoreApp(
+    MeshTraxApp(
       connector: connector,
       retryService: retryService,
       pathHistoryService: pathHistoryService,
@@ -125,7 +125,7 @@ https://creativecommons.org/licenses/by/4.0/
   });
 }
 
-class MeshCoreApp extends StatelessWidget {
+class MeshTraxApp extends StatelessWidget {
   final MeshCoreConnector connector;
   final MessageRetryService retryService;
   final PathHistoryService pathHistoryService;
@@ -139,7 +139,7 @@ class MeshCoreApp extends StatelessWidget {
   final UiViewStateService uiViewStateService;
   final TimeoutPredictionService timeoutPredictionService;
 
-  const MeshCoreApp({
+  const MeshTraxApp({
     super.key,
     required this.connector,
     required this.retryService,
@@ -175,7 +175,7 @@ class MeshCoreApp extends StatelessWidget {
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {
           return MaterialApp(
-            title: 'MeshTrack',
+            title: 'MeshTrax',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
               AppLocalizations.delegate,

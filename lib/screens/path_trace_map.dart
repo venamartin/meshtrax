@@ -5,15 +5,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:meshcore_open/connector/meshcore_connector.dart';
-import 'package:meshcore_open/connector/meshcore_protocol.dart';
-import 'package:meshcore_open/l10n/l10n.dart';
-import 'package:meshcore_open/models/app_settings.dart';
-import 'package:meshcore_open/models/contact.dart';
-import 'package:meshcore_open/services/app_settings_service.dart';
-import 'package:meshcore_open/services/map_tile_cache_service.dart';
-import 'package:meshcore_open/utils/app_logger.dart';
-import 'package:meshcore_open/widgets/snr_indicator.dart';
+import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/l10n/l10n.dart';
+import 'package:meshtrax/models/app_settings.dart';
+import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/map_tile_cache_service.dart';
+import 'package:meshtrax/utils/app_logger.dart';
+import 'package:meshtrax/widgets/snr_indicator.dart';
 import 'package:provider/provider.dart';
 
 double getPathDistanceMeters(List<LatLng> points) {

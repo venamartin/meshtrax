@@ -58,6 +58,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   int _initialScrollIndex = 0;
   bool _isAtBottom = true;
   DateTime? _lastChannelSendAt;
+  int _previousMessageCount = 0;
 
   @override
   void initState() {
@@ -69,6 +70,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final settings = context.read<AppSettingsService>().settings;
     final idx = widget.channel.index;
     final unread = widget.unreadCount ?? connector.getUnreadCountForChannelIndex(idx);
+    _previousMessageCount = connector.getChannelMessages(widget.channel).length;
 
     if (settings.jumpToOldestUnread && unread > 0) {
       final messages = connector.getChannelMessages(widget.channel);
@@ -112,15 +114,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
     int minIndex = positions.first.index;
     int maxIndex = positions.first.index;
-    ItemPosition? bottomItem;
 
     for (final p in positions) {
       if (p.index < minIndex) minIndex = p.index;
       if (p.index > maxIndex) maxIndex = p.index;
-      if (p.index == 0) bottomItem = p;
     }
 
-    final isAtBottom = bottomItem != null && bottomItem.itemLeadingEdge <= 0.05;
+    // With reverse:true, index 0 is the newest message at the visual bottom.
+    // If item 0 is in the visible positions, the user is at the bottom.
+    final isAtBottom = positions.any((p) => p.index == 0);
     if (_isAtBottom != isAtBottom) {
       setState(() => _isAtBottom = isAtBottom);
     }
@@ -326,12 +328,22 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                       reversedMessages.length + (_isLoadingOlder ? 1 : 0);
 
                   // Auto-scroll to bottom if user is already at bottom
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    if (_isAtBottom && _itemScrollController.isAttached) {
-                      _itemScrollController.jumpTo(index: 0);
+                  final currentMessageCount = messages.length;
+                  final newestIsOutgoing = messages.isNotEmpty && messages.last.isOutgoing;
+                  if (currentMessageCount > _previousMessageCount) {
+                    // Auto-scroll if: the user is already at the bottom, OR they
+                    // just sent the newest message.
+                    if ((_isAtBottom || newestIsOutgoing) && _itemScrollController.isAttached) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted || !_itemScrollController.isAttached) return;
+                        _itemScrollController.jumpTo(
+                          index: 0,
+                          alignment: 0.0,
+                        );
+                      });
                     }
-                  });
+                  }
+                  _previousMessageCount = currentMessageCount;
 
                   return Stack(
                     children: [
@@ -1450,7 +1462,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
     if (noSpaces.characters.length > 3) return false;
 
-    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\s]+$', unicode: true);
+    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
     final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
 
     return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);

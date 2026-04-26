@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:meshcore_open/connector/meshcore_protocol.dart';
+import 'package:meshtrax/connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../helpers/snack_bar_builder.dart';

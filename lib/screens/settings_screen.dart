@@ -1,13 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:meshcore_open/utils/gpx_export.dart';
-import 'package:meshcore_open/widgets/elements_ui.dart';
+import 'package:flutter/services.dart';
+import 'package:meshtrax/utils/gpx_export.dart';
+import 'package:meshtrax/utils/contact_backup_service.dart';
+import 'package:meshtrax/utils/platform_info.dart';
+import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
+import '../models/contact.dart';
 import '../models/radio_settings.dart';
 import '../services/app_debug_log_service.dart';
 import '../widgets/app_bar.dart';
@@ -369,6 +374,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(l10n.settings_rebootDeviceSubtitle),
             onTap: () => _confirmReboot(context, connector),
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.delete_sweep, color: Colors.red),
+            title: const Text('Purge Contacts'),
+            subtitle: const Text('Remove non-favorite contacts from device'),
+            onTap: () => _confirmPurgeContacts(context, connector),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: const Text('Export Contacts (Backup)'),
+            subtitle: const Text('Save to file or copy to clipboard'),
+            onTap: () => _showExportOptions(context, connector),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.restore),
+            title: const Text('Import Contacts (Restore)'),
+            subtitle: const Text('Paste JSON data or enter file path'),
+            onTap: () => _showImportOptions(context, connector),
+          ),
         ],
       ),
     );
@@ -729,6 +755,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _confirmPurgeContacts(BuildContext context, MeshCoreConnector connector) {
+    bool includeFavorites = false;
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Purge Contacts'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('This will remove contacts from the device memory. This cannot be undone unless you have a backup.'),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                title: const Text('Include Favorites'),
+                subtitle: const Text('If checked, even starred contacts will be removed.'),
+                value: includeFavorites,
+                onChanged: (val) {
+                  setDialogState(() {
+                    includeFavorites = val ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                connector.purgeContacts(includesFavorites: includeFavorites);
+              },
+              child: const Text(
+                'Purge',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showAbout(BuildContext context) {
     final l10n = context.l10n;
     showAboutDialog(
@@ -853,6 +926,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+
   void _editAutoAddConfig(BuildContext context, MeshCoreConnector connector) {
     final l10n = context.l10n;
     bool autoAddChat = false;
@@ -966,6 +1040,186 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     await connector.sendFrame(frame);
     await connector.sendFrame(buildGetAutoAddFlagsFrame());
+  }
+
+  void _showExportOptions(BuildContext context, MeshCoreConnector connector) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.file_download_outlined),
+              title: const Text('Save to File'),
+              subtitle: Text(
+                PlatformInfo.isDesktop
+                    ? 'Saves to your Documents folder'
+                    : 'Opens system share sheet',
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await ContactBackupService.exportContacts(
+                  connector.contacts,
+                );
+                if (mounted) {
+                  if (result != null) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text(
+                        PlatformInfo.isDesktop
+                            ? 'Saved to: $result'
+                            : 'Backup exported successfully.',
+                      ),
+                    );
+                  } else {
+                    showDismissibleSnackBar(
+                      context,
+                      content: const Text('Failed to export backup.'),
+                    );
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('Copy to Clipboard'),
+              onTap: () async {
+                Navigator.pop(context);
+                final jsonList =
+                    connector.contacts.map((c) => c.toJson()).toList();
+                final jsonString = jsonEncode(jsonList);
+                await Clipboard.setData(ClipboardData(text: jsonString));
+                if (mounted) {
+                  showDismissibleSnackBar(
+                    context,
+                    content: const Text('Backup copied to clipboard.'),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImportOptions(BuildContext context, MeshCoreConnector connector) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.paste_outlined),
+              title: const Text('Paste JSON from Clipboard'),
+              onTap: () async {
+                Navigator.pop(context);
+                final data = await Clipboard.getData(Clipboard.kTextPlain);
+                if (data?.text == null || data!.text!.isEmpty) {
+                  if (mounted) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: const Text('Clipboard is empty.'),
+                    );
+                  }
+                  return;
+                }
+                _processImport(context, connector, data.text!);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_note_outlined),
+              title: const Text('Enter File Path or Paste Text'),
+              onTap: () {
+                Navigator.pop(context);
+                _showManualImportDialog(context, connector);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showManualImportDialog(
+    BuildContext context,
+    MeshCoreConnector connector,
+  ) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Import Contacts'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Paste the backup JSON text or enter the full file path below:',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: '[{"name": "...", ...}] or C:\\path\\to\\file.json',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _processImport(context, connector, controller.text.trim());
+            },
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _processImport(
+    BuildContext context,
+    MeshCoreConnector connector,
+    String input,
+  ) async {
+    List<Contact>? contacts;
+    if (input.startsWith('[') || input.startsWith('{')) {
+      contacts = ContactBackupService.importContactsFromJson(input);
+    } else {
+      contacts = await ContactBackupService.importContactsFromPath(input);
+    }
+
+    if (!mounted) return;
+    if (contacts == null) {
+      showDismissibleSnackBar(
+        context,
+        content: const Text(
+          'Failed to parse backup data. Ensure it is valid JSON or a correct file path.',
+        ),
+      );
+      return;
+    }
+
+    showDismissibleSnackBar(
+      context,
+      content: Text('Restoring ${contacts.length} contacts...'),
+    );
+    await connector.restoreContacts(contacts);
+    if (mounted) {
+      showDismissibleSnackBar(
+        context,
+        content: const Text('Contacts restored successfully.'),
+      );
+    }
   }
 }
 

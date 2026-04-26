@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get appTitle => 'MeshCore Open';
+  String get appTitle => 'MeshTrax';
 
   @override
   String get nav_chats => 'Chats';
@@ -482,7 +482,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String settings_aboutVersion(String version) {
-    return 'MeshCore Open $version版';
+    return 'MeshTrax $version版';
   }
 
   @override

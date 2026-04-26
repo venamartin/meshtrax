@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:meshcore_open/connector/meshcore_connector.dart';
-import 'package:meshcore_open/models/companion_radio_stats.dart';
-import 'package:meshcore_open/l10n/l10n.dart';
-import 'package:meshcore_open/screens/companion_radio_stats_screen.dart';
+import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/models/companion_radio_stats.dart';
+import 'package:meshtrax/l10n/l10n.dart';
+import 'package:meshtrax/screens/companion_radio_stats_screen.dart';
 import 'package:provider/provider.dart';
 
 void pushCompanionRadioStatsScreen(BuildContext context) {

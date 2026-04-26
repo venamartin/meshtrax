@@ -69,7 +69,7 @@ An optional per-contact and per-channel text compression feature using the SMAZ 
 ### How It Works
 - When enabled, compression is applied using a "compress only if smaller" strategy — the message is only transmitted compressed if the encoded result is actually shorter than the original. Otherwise, the original text is sent uncompressed
 - Compressed messages are transmitted with a `s:` prefix followed by base64-encoded data
-- Recipients using MeshCore Open will decompress automatically. **Recipients using other software** that is not SMAZ-aware will see garbled `s:...` text
+- Recipients using MeshTrax will decompress automatically. **Recipients using other software** that is not SMAZ-aware will see garbled `s:...` text
 - The codec operates on ASCII. Non-ASCII / non-English text generally does not benefit from compression and may even expand. Best suited for short English messages
 - Disabled by default
 

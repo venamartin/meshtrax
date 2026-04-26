@@ -1,4 +1,4 @@
-# How to contribute to Meshcore Open
+# How to contribute to MeshTrax
 
 Before submitting any pull requests (PR), please review the following information.
 

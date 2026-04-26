@@ -8,7 +8,7 @@
     }
   },
   "@@locale": "pl",
-  "appTitle": "MeshCore Open",
+  "appTitle": "MeshTrax",
   "nav_contacts": "Kontakty",
   "nav_channels": "Kanały",
   "nav_map": "Mapa",
@@ -52,7 +52,7 @@
       }
     }
   },
-  "scanner_title": "MeshCore Open",
+  "scanner_title": "MeshTrax",
   "scanner_scanning": "Skanowanie urządzeń...",
   "scanner_connecting": "Łączenie...",
   "scanner_disconnecting": "Odłączanie...",
@@ -121,7 +121,7 @@
   "settings_appDebugLog": "Dziennik debugowania aplikacji",
   "settings_appDebugLogSubtitle": "Komunikaty debugowania aplikacji",
   "settings_about": "O aplikacji",
-  "settings_aboutVersion": "MeshCore Open v{version}",
+  "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {
     "placeholders": {
       "version": {
@@ -129,7 +129,7 @@
       }
     }
   },
-  "settings_aboutLegalese": "Projekt MeshCore Open Source 2026",
+  "settings_aboutLegalese": "Projekt MeshTrax Source 2026",
   "settings_aboutDescription": "Otwartoźródłowy klient Flutter dla urządzeń MeshCore LoRa do sieci mesh.",
   "settings_infoName": "Nazwa",
   "settings_infoId": "ID",

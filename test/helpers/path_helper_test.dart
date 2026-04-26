@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore_open/connector/meshcore_protocol.dart';
-import 'package:meshcore_open/helpers/path_helper.dart';
-import 'package:meshcore_open/models/contact.dart';
+import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
+import 'package:meshtrax/models/contact.dart';
 
 Contact _contact({
   required int firstByte,

@@ -8,9 +8,9 @@ class BackgroundService {
     if (!PlatformInfo.isAndroid || _initialized) return;
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'meshcore_background',
-        channelName: 'MeshCore Background',
-        channelDescription: 'Keeps MeshCore running in the background.',
+        channelId: 'meshtrax_background',
+        channelName: 'MeshTrax Background',
+        channelDescription: 'Keeps MeshTrax running in the background.',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
       ),
@@ -35,7 +35,7 @@ class BackgroundService {
     final running = await FlutterForegroundTask.isRunningService;
     if (running) return;
     await FlutterForegroundTask.startService(
-      notificationTitle: 'MeshCore running',
+      notificationTitle: 'MeshTrax running',
       notificationText: 'Keeping BLE connected',
       callback: startCallback,
     );
@@ -51,10 +51,10 @@ class BackgroundService {
 
 @pragma('vm:entry-point')
 void startCallback() {
-  FlutterForegroundTask.setTaskHandler(_MeshCoreTaskHandler());
+  FlutterForegroundTask.setTaskHandler(_MeshTraxTaskHandler());
 }
 
-class _MeshCoreTaskHandler extends TaskHandler {
+class _MeshTraxTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {}
 

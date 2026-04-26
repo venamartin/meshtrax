@@ -1,4 +1,4 @@
-package com.meshcore.meshcore_open
+package com.meshtrax.app
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -23,16 +23,16 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class MeshcoreUsbFunctions(
+class MeshTraxUsbFunctions(
     private val activity: FlutterActivity,
 ) {
     private companion object {
         const val usbRecipientInterface = 0x01
     }
 
-    private val usbMethodChannelName = "meshcore_open/android_usb_serial"
-    private val usbEventChannelName = "meshcore_open/android_usb_serial_events"
-    private val usbPermissionAction = "com.meshcore.meshcore_open.USB_PERMISSION"
+    private val usbMethodChannelName = "meshtrax/android_usb_serial"
+    private val usbEventChannelName = "meshtrax/android_usb_serial_events"
+    private val usbPermissionAction = "com.meshtrax.app.USB_PERMISSION"
 
     private val usbManager by lazy {
         activity.getSystemService(Context.USB_SERVICE) as UsbManager
@@ -465,7 +465,7 @@ class MeshcoreUsbFunctions(
                         scheduleCloseUsbConnection()
                     }
                 }
-            }, "MeshCoreUsbRead").also { thread ->
+            }, "MeshTraxUsbRead").also { thread ->
                 thread.isDaemon = true
                 thread.start()
             }

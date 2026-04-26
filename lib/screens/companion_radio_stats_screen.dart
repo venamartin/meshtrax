@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:meshcore_open/connector/meshcore_connector.dart';
-import 'package:meshcore_open/models/companion_radio_stats.dart';
-import 'package:meshcore_open/l10n/l10n.dart';
+import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/models/companion_radio_stats.dart';
+import 'package:meshtrax/l10n/l10n.dart';
 import 'package:provider/provider.dart';
 
 class CompanionRadioStatsScreen extends StatefulWidget {

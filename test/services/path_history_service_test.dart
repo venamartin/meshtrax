@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore_open/models/contact.dart';
-import 'package:meshcore_open/models/path_history.dart';
-import 'package:meshcore_open/models/path_selection.dart';
-import 'package:meshcore_open/services/path_history_service.dart';
-import 'package:meshcore_open/services/storage_service.dart';
+import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/path_history.dart';
+import 'package:meshtrax/models/path_selection.dart';
+import 'package:meshtrax/services/path_history_service.dart';
+import 'package:meshtrax/services/storage_service.dart';
 
 // ---------------------------------------------------------------------------
 // Fake storage — no SharedPreferences dependency, all in-memory.

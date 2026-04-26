@@ -297,6 +297,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                   ),
                 )
               : ListView.builder(
+                  itemExtent: 80.0,
                   itemCount: chatItems.length,
                   itemBuilder: (context, index) {
                     final item = chatItems[index];

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore_open/services/usb_serial_frame_codec.dart';
+import 'package:meshtrax/services/usb_serial_frame_codec.dart';
 
 void main() {
   test('wrapUsbSerialTxFrame prefixes tx header and payload length', () {

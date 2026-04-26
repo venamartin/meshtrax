@@ -2,7 +2,7 @@
 
 ## Overview
 
-MeshCore Open provides both **system notifications** (push-style OS alerts) and **in-app unread badges** to inform users of new activity.
+MeshTrax provides both **system notifications** (push-style OS alerts) and **in-app unread badges** to inform users of new activity.
 
 ## Notification Types
 

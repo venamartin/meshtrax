@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:meshcore_open/models/path_history.dart';
-import 'package:meshcore_open/screens/path_trace_map.dart';
-import 'package:meshcore_open/widgets/elements_ui.dart';
+import 'package:meshtrax/models/path_history.dart';
+import 'package:meshtrax/screens/path_trace_map.dart';
+import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';

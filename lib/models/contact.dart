@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:meshcore_open/utils/app_logger.dart';
+import 'package:meshtrax/utils/app_logger.dart';
 
 import '../connector/meshcore_protocol.dart';
 
@@ -211,6 +211,50 @@ class Contact {
       appLogger.error('Failed to parse contact frame: $e');
       return null;
     }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'publicKey': pubKeyToHex(publicKey),
+      'name': name,
+      'type': type,
+      'flags': flags,
+      'pathLength': pathLength,
+      'path': pubKeyToHex(path), // path bytes as hex
+      'pathOverride': pathOverride,
+      'pathOverrideBytes': pathOverrideBytes != null ? pubKeyToHex(pathOverrideBytes!) : null,
+      'latitude': latitude,
+      'longitude': longitude,
+      'lastSeen': lastSeen.millisecondsSinceEpoch,
+      'lastMessageAt': lastMessageAt.millisecondsSinceEpoch,
+      'isActive': isActive,
+      'wasPulled': wasPulled,
+    };
+  }
+
+  factory Contact.fromJson(Map<String, dynamic> json) {
+    final pathHex = json['path'] as String? ?? '';
+    final pathOverrideBytesHex = json['pathOverrideBytes'] as String?;
+    return Contact(
+      publicKey: hex2Uint8List(json['publicKey'] as String),
+      name: json['name'] as String,
+      type: json['type'] as int,
+      flags: (json['flags'] as num?)?.toInt() ?? 0,
+      pathLength: json['pathLength'] as int,
+      path: pathHex.isEmpty ? Uint8List(0) : hex2Uint8List(pathHex),
+      pathOverride: json['pathOverride'] as int?,
+      pathOverrideBytes: (pathOverrideBytesHex != null && pathOverrideBytesHex.isNotEmpty)
+          ? hex2Uint8List(pathOverrideBytesHex)
+          : null,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      lastSeen: DateTime.fromMillisecondsSinceEpoch(json['lastSeen'] as int),
+      lastMessageAt: json['lastMessageAt'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(json['lastMessageAt'] as int)
+          : null,
+      isActive: json['isActive'] as bool? ?? true,
+      wasPulled: json['wasPulled'] as bool? ?? false,
+    );
   }
 
   @override

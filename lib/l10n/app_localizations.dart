@@ -133,7 +133,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore Open'**
+  /// **'MeshTrax'**
   String get appTitle;
 
   /// No description provided for @nav_chats.
@@ -337,7 +337,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanner_title.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore Open'**
+  /// **'MeshTrax'**
   String get scanner_title;
 
   /// No description provided for @connectionChoiceUsbLabel.
@@ -1033,19 +1033,19 @@ abstract class AppLocalizations {
   /// No description provided for @settings_aboutVersion.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore Open v{version}'**
+  /// **'MeshTrax v{version}'**
   String settings_aboutVersion(String version);
 
   /// No description provided for @settings_aboutLegalese.
   ///
   /// In en, this message translates to:
-  /// **'2026 MeshCore Open Source Project'**
+  /// **'© 2026 MeshTrax Contributors'**
   String get settings_aboutLegalese;
 
   /// No description provided for @settings_aboutDescription.
   ///
   /// In en, this message translates to:
-  /// **'An open-source Flutter client for MeshCore LoRa mesh networking devices.'**
+  /// **'An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.'**
   String get settings_aboutDescription;
 
   /// No description provided for @settings_aboutOpenMeteoAttribution.

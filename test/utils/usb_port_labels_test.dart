@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore_open/utils/usb_port_labels.dart';
+import 'package:meshtrax/utils/usb_port_labels.dart';
 
 void main() {
   test('normalizeUsbPortName strips friendly suffix from composite label', () {

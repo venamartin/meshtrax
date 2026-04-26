@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import '../services/app_debug_log_service.dart';
+
 
 /// Global app logger instance
 /// Usage: appLogger.info('Message', tag: 'MyClass');
@@ -26,6 +28,8 @@ class AppLogger {
   void info(String message, {String tag = 'App', bool noNotify = false}) {
     if (_enabled && _service != null) {
       _service!.info(message, tag: tag, noNotify: noNotify);
+    } else {
+      debugPrint('[$tag] INFO: $message');
     }
   }
 
@@ -33,6 +37,8 @@ class AppLogger {
   void warn(String message, {String tag = 'App', bool noNotify = false}) {
     if (_enabled && _service != null) {
       _service!.warn(message, tag: tag, noNotify: noNotify);
+    } else {
+      debugPrint('[$tag] WARN: $message');
     }
   }
 
@@ -40,6 +46,8 @@ class AppLogger {
   void error(String message, {String tag = 'App', bool noNotify = false}) {
     if (_enabled && _service != null) {
       _service!.error(message, tag: tag, noNotify: noNotify);
+    } else {
+      debugPrint('[$tag] ERROR: $message');
     }
   }
 

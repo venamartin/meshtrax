@@ -1,5 +1,5 @@
-name: meshcore_open
-description: "A new Flutter project."
+name: meshtrax
+description: "A meshcore application based on meshcore-open"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 7.0.0+9
+version: 1.0.0
 
 environment:
   sdk: ^3.9.2
@@ -57,7 +57,7 @@ dependencies:
   flutter_cache_manager: ^3.4.1
   flutter_foreground_task: ^9.2.0
   characters: ^1.4.0
-  package_info_plus: ^10.0.0
+  package_info_plus: any
   mobile_scanner: ^7.1.4  # QR/barcode scanning
   qr_flutter: ^4.1.0      # QR code generation
   url_launcher: ^6.3.0    # Launch URLs in system browser
@@ -65,7 +65,7 @@ dependencies:
   gpx: ^2.3.0
   scrollable_positioned_list: ^0.3.8
   path_provider: ^2.1.5
-  share_plus: ^13.0.0
+  share_plus: any
   build_pipe: ^0.3.1
   material_symbols_icons: ^4.2906.0
   web: ^1.1.1

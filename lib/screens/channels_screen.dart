@@ -3,9 +3,9 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:meshcore_open/storage/channel_message_store.dart';
-import 'package:meshcore_open/utils/platform_info.dart';
-import 'package:meshcore_open/widgets/app_bar.dart';
+import 'package:meshtrax/storage/channel_message_store.dart';
+import 'package:meshtrax/utils/platform_info.dart';
+import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -326,6 +326,7 @@ class _ChannelsScreenState extends State<ChannelsScreen>
                           },
                         )
                       : ListView.builder(
+                          itemExtent: 80.0,
                           padding: const EdgeInsets.only(
                             top: 8,
                             bottom: 88,

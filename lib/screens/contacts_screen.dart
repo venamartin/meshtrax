@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:meshcore_open/screens/path_trace_map.dart';
-import 'package:meshcore_open/services/notification_service.dart';
-import 'package:meshcore_open/utils/app_logger.dart';
-import 'package:meshcore_open/utils/platform_info.dart';
-import 'package:meshcore_open/widgets/app_bar.dart';
+import 'package:meshtrax/screens/path_trace_map.dart';
+import 'package:meshtrax/services/notification_service.dart';
+import 'package:meshtrax/utils/app_logger.dart';
+import 'package:meshtrax/utils/platform_info.dart';
+import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -181,7 +181,7 @@ class _ContactsScreenState extends State<ContactsScreen>
             return;
           }
           final hexString = pubKeyToHex(advertPacket);
-          Clipboard.setData(ClipboardData(text: "meshcore://$hexString"));
+          Clipboard.setData(ClipboardData(text: "meshtrax://$hexString"));
         }
 
         if (code == respCodeOk) {
@@ -277,7 +277,7 @@ class _ContactsScreenState extends State<ContactsScreen>
       return;
     }
     final text = clipboardData.text!.trim();
-    if (!text.startsWith('meshcore://')) {
+    if (!text.startsWith('meshtrax://')) {
       if (mounted) {
         showDismissibleSnackBar(
           context,
@@ -286,7 +286,7 @@ class _ContactsScreenState extends State<ContactsScreen>
       }
       return;
     }
-    final hexString = text.substring('meshcore://'.length);
+    final hexString = text.substring('meshtrax://'.length);
     try {
       final bytes = hex2Uint8List(hexString);
       final importContactFrame = buildImportContactFrame(bytes);
@@ -807,6 +807,7 @@ class _ContactsScreenState extends State<ContactsScreen>
               : RefreshIndicator(
                   onRefresh: () => connector.getContacts(),
                   child: ListView.builder(
+                    itemExtent: 88.0,
                     itemCount: filteredAndSorted.length,
                     itemBuilder: (context, index) {
                       final contact = filteredAndSorted[index];
@@ -1493,12 +1494,16 @@ class _ContactTile extends StatelessWidget {
               MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.3),
             ),
           ),
-          child: SizedBox(
-            width: 120,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: SizedBox(
+              width: 120,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
                 if (unreadCount > 0) ...[
                   UnreadBadge(count: unreadCount),
                   const SizedBox(height: 4),
@@ -1528,6 +1533,7 @@ class _ContactTile extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
         onTap: onTap,
         onLongPress: onLongPress,

@@ -1,4 +1,4 @@
-# MeshCore Open - Flutter Client
+# MeshTrax - Flutter Client
 
 Open-source Flutter client for MeshCore LoRa mesh networking devices.
 

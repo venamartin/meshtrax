@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore_open/services/tcp_transport_service_native.dart';
-import 'package:meshcore_open/services/usb_serial_frame_codec.dart';
+import 'package:meshtrax/services/tcp_transport_service_native.dart';
+import 'package:meshtrax/services/usb_serial_frame_codec.dart';
 
 final class _DelayedConnectOverrides extends IOOverrides {
   _DelayedConnectOverrides(this.delay);

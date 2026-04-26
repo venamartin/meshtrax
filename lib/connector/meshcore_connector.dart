@@ -166,6 +166,10 @@ class MeshCoreConnector extends ChangeNotifier {
   Timer? _reconnectTimer;
   Timer? _batteryPollTimer;
   Timer? _radioStatsPollTimer;
+  final Map<String, Timer> _channelMessageTimers = {};
+  final Map<String, Timer> _channelRepeatTimers = {};
+  final Map<String, int> _channelMessageRetries = {};
+  static const int _maxChannelRetries = 1;
   int _radioStatsPollRefCount = 0;
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
@@ -233,7 +237,7 @@ class MeshCoreConnector extends ChangeNotifier {
   int _telemetryModeLoc = 0;
   int _telemetryModeEnv = 0;
   int _advertLocPolicy = 0;
-  int _multiAcks = 0;
+  int _multiAcks = 1; // Default to enabled (1 ACK)
 
   static const int _defaultMaxContacts = 32;
   static const int _defaultMaxChannels = 8;
@@ -2992,6 +2996,12 @@ class MeshCoreConnector extends ChangeNotifier {
     );
     _addChannelMessage(channel.index, message);
     _pendingChannelSentQueue.add(message.messageId);
+    _channelMessageRetries[message.messageId] = 0;
+    
+    _channelMessageTimers[message.messageId] = Timer(const Duration(seconds: 30), () {
+      _handleChannelMessageTimeout(channel.index, message.messageId);
+    });
+    
     notifyListeners();
 
     final outboundText = prepareChannelOutboundText(channel.index, text);
@@ -2999,6 +3009,35 @@ class MeshCoreConnector extends ChangeNotifier {
     await sendFrame(
       buildSendChannelTextMsgFrame(channel.index, outboundText),
       channelSendQueueId: message.messageId,
+      expectsGenericAck: true,
+    );
+  }
+
+  Future<void> resendChannelMessageById(int channelIndex, String messageId) async {
+    final messages = _channelMessages[channelIndex];
+    if (messages == null) return;
+    
+    ChannelMessage? message;
+    for (final m in messages) {
+      if (m.messageId == messageId) {
+        message = m;
+        break;
+      }
+    }
+    if (message == null) return;
+
+    appLogger.info('Retrying channel message $messageId (attempt ${_channelMessageRetries[messageId]})', tag: 'Connector');
+    
+    _pendingChannelSentQueue.add(messageId);
+    _channelMessageTimers[messageId] = Timer(const Duration(seconds: 30), () {
+      _handleChannelMessageTimeout(channelIndex, messageId);
+    });
+    
+    final outboundText = prepareChannelOutboundText(channelIndex, message.text);
+    await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
+    await sendFrame(
+      buildSendChannelTextMsgFrame(channelIndex, outboundText),
+      channelSendQueueId: messageId,
       expectsGenericAck: true,
     );
   }
@@ -3023,6 +3062,29 @@ class MeshCoreConnector extends ChangeNotifier {
       Map<String, int>.from(_contactUnreadCount),
     );
     _messageStore.clearMessages(contact.publicKeyHex);
+    notifyListeners();
+  }
+
+  /// Removes all contacts that are not favorites (or all contacts if [includesFavorites] is true).
+  Future<void> purgeContacts({bool includesFavorites = false}) async {
+    if (!isConnected) return;
+    final toRemove = _contacts
+        .where((c) => includesFavorites || !c.isFavorite)
+        .toList();
+    for (final contact in toRemove) {
+      await sendFrame(buildRemoveContactFrame(contact.publicKey));
+      await Future.delayed(const Duration(milliseconds: 100));
+      _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+      _knownContactKeys.remove(contact.publicKeyHex);
+      _conversations.remove(contact.publicKeyHex);
+      _loadedConversationKeys.remove(contact.publicKeyHex);
+      _contactUnreadCount.remove(contact.publicKeyHex);
+      _messageStore.clearMessages(contact.publicKeyHex);
+    }
+    _unreadStore.saveContactUnreadCount(
+      Map<String, int>.from(_contactUnreadCount),
+    );
+    unawaited(_persistContacts());
     notifyListeners();
   }
 
@@ -3403,6 +3465,49 @@ class MeshCoreConnector extends ChangeNotifier {
     // Apply ordering and notify UI
     _applyChannelOrder();
     notifyListeners();
+  }
+
+  void _handleChannelMessageTimeout(int channelIndex, String messageId) {
+    _channelMessageTimers.remove(messageId);
+    _pendingChannelSentQueue.remove(messageId);
+    _pendingGenericAckQueue.removeWhere((ack) => ack.channelSendQueueId == messageId);
+
+    final retries = _channelMessageRetries[messageId] ?? 0;
+    if (retries < _maxChannelRetries) {
+      _channelMessageRetries[messageId] = retries + 1;
+      unawaited(resendChannelMessageById(channelIndex, messageId));
+      return;
+    }
+
+    markChannelMessageFailed(channelIndex, messageId);
+  }
+
+  void markChannelMessageFailed(int channelIndex, String messageId) {
+    final messages = _channelMessages[channelIndex];
+    if (messages != null) {
+      for (int i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].messageId == messageId && 
+            messages[i].status == ChannelMessageStatus.pending) {
+          messages[i] = messages[i].copyWith(status: ChannelMessageStatus.failed);
+          unawaited(_channelMessageStore.saveChannelMessages(channelIndex, messages));
+          notifyListeners();
+          break;
+        }
+      }
+    }
+  }
+
+  void _startWaitForRepeatTimer(int channelIndex, String messageId) {
+    _channelRepeatTimers[messageId]?.cancel();
+    _channelRepeatTimers[messageId] = Timer(const Duration(seconds: 30), () {
+      _channelRepeatTimers.remove(messageId);
+      final retries = _channelMessageRetries[messageId] ?? 0;
+      if (retries < _maxChannelRetries) {
+        appLogger.info('No repeat heard for $messageId, retrying (attempt ${retries + 1})', tag: 'Connector');
+        _channelMessageRetries[messageId] = retries + 1;
+        unawaited(resendChannelMessageById(channelIndex, messageId));
+      }
+    });
   }
 
   void _cleanupChannelSync({required bool completed}) {
@@ -4677,6 +4782,9 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   bool _markPendingChannelMessageSentById(String messageId) {
+    _channelMessageTimers[messageId]?.cancel();
+    _channelMessageTimers.remove(messageId);
+
     for (final entry in _channelMessages.entries) {
       final channelMessages = entry.value;
       for (int i = channelMessages.length - 1; i >= 0; i--) {
@@ -4695,6 +4803,7 @@ class MeshCoreConnector extends ChangeNotifier {
         unawaited(
           _channelMessageStore.saveChannelMessages(entry.key, channelMessages),
         );
+        _startWaitForRepeatTimer(entry.key, messageId);
         notifyListeners();
         return true;
       }
@@ -5347,6 +5456,11 @@ class MeshCoreConnector extends ChangeNotifier {
       if (promotedFromPending) {
         _pendingChannelSentQueue.remove(existing.messageId);
       }
+      appLogger.info('Matched repeat for ${existing.messageId}, cancelling timer', tag: 'Connector');
+      _channelRepeatTimers[existing.messageId]?.cancel();
+      _channelRepeatTimers.remove(existing.messageId);
+      _channelMessageTimers[existing.messageId]?.cancel();
+      _channelMessageTimers.remove(existing.messageId);
     } else {
       messages.add(processedMessage);
     }
@@ -5418,13 +5532,21 @@ class MeshCoreConnector extends ChangeNotifier {
         (existing.timestamp.millisecondsSinceEpoch -
                 incoming.timestamp.millisecondsSinceEpoch)
             .abs();
-    if (diffMs > 30000) return false;
+    // Allow up to 5 minutes difference to account for resent messages
+    if (diffMs > 300000) {
+      appLogger.info('Repeat rejected for time diff: $diffMs ms', tag: 'Connector');
+      return false;
+    }
 
-    if (existing.senderName == incoming.senderName) return true;
+    if (existing.senderName == incoming.senderName) {
+      appLogger.info('Repeat matched exactly on sender: ${existing.senderName}', tag: 'Connector');
+      return true;
+    }
 
     if (existing.isOutgoing && !incoming.isOutgoing) {
       final selfName = _selfName ?? 'Me';
       if (incoming.senderName == selfName || existing.senderName == selfName) {
+        appLogger.info('Repeat matched on selfName: $selfName', tag: 'Connector');
         return true;
       }
     }
@@ -5445,7 +5567,13 @@ class MeshCoreConnector extends ChangeNotifier {
     // Name matches - this is from self
     // Drop only if pathBytes is empty (direct broadcast)
     // Keep if pathBytes has data (repeated through another node)
-    return pathBytes.isEmpty;
+    if (pathBytes.isEmpty) {
+      appLogger.info('Dropping self-message (direct broadcast, 0 hops)', tag: 'Connector');
+      return true;
+    }
+    
+    appLogger.info('Keeping self-message (repeated, ${pathBytes.length} hops)', tag: 'Connector');
+    return false;
   }
 
   Uint8List _selectPreferredPathBytes(Uint8List existing, Uint8List incoming) {
@@ -5534,6 +5662,17 @@ class MeshCoreConnector extends ChangeNotifier {
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
+    
+    for (final timer in _channelMessageTimers.values) {
+      timer.cancel();
+    }
+    _channelMessageTimers.clear();
+
+    for (final timer in _channelRepeatTimers.values) {
+      timer.cancel();
+    }
+    _channelRepeatTimers.clear();
+    _channelMessageRetries.clear();
 
     _setState(MeshCoreConnectionState.disconnected);
     _scheduleReconnect();
@@ -5645,6 +5784,10 @@ class MeshCoreConnector extends ChangeNotifier {
     _reconnectTimer?.cancel();
     _batteryPollTimer?.cancel();
     _radioStatsPollTimer?.cancel();
+    for (final timer in _channelMessageTimers.values) {
+      timer.cancel();
+    }
+    _channelMessageTimers.clear();
     radioStatsNotifier.dispose();
     _receivedFramesController.close();
     _usbManager.dispose();
@@ -5693,6 +5836,38 @@ class MeshCoreConnector extends ChangeNotifier {
       appLogger.warn('Malformed RX frame: $e', tag: 'Connector');
       return;
     }
+  }
+
+  /// Syncs a list of restored contacts from a JSON backup to the device.
+  /// Skips the self-node and adds a small delay between frames to prevent
+  /// buffer overflows on the BLE/serial connection.
+  Future<void> restoreContacts(List<Contact> importedContacts) async {
+    int successCount = 0;
+    for (final contact in importedContacts) {
+      if (contact.publicKeyHex == selfPublicKeyHex) continue;
+
+      final frame = buildUpdateContactPathFrame(
+        contact.publicKey,
+        contact.pathOverrideBytes ?? contact.path,
+        contact.pathOverride ?? contact.pathLength,
+        type: contact.type,
+        flags: contact.flags,
+        name: contact.name,
+        lat: contact.latitude,
+        lon: contact.longitude,
+        lastModified: contact.lastSeen,
+      );
+
+      appLogger.info('Restoring contact ${contact.name}: type=${contact.type}, flags=${contact.flags}, isFavorite=${contact.isFavorite}', tag: 'Connector');
+      await sendFrame(frame, expectsGenericAck: true);
+      successCount++;
+      // Small delay to let the device process and write to flash
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    appLogger.info('Successfully restored $successCount contacts to device', tag: 'Connector');
+    
+    // Refresh the local cache after restoring
+    await getContacts();
   }
 
   void importContact(Uint8List frame) {
@@ -5993,7 +6168,7 @@ class MeshCoreConnector extends ChangeNotifier {
             latitude: contact.latitude,
             longitude: contact.longitude,
             lastSeen: contact.lastSeen,
-            flags: 0,
+            flags: contact.flags,
             isActive: addActive,
           );
       notifyListeners();
@@ -6013,7 +6188,7 @@ class MeshCoreConnector extends ChangeNotifier {
       lastSeen: contact.lastSeen,
       lastMessageAt: contact.lastMessageAt,
       isActive: addActive,
-      flags: 0,
+      flags: contact.flags,
     );
     _discoveredContacts.add(disContact);
 

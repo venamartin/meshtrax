@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore_open/connector/meshcore_connector.dart';
+import 'package:meshtrax/connector/meshcore_connector.dart';
 
 void main() {
   group('shouldIgnoreLateTcpConnectError', () {

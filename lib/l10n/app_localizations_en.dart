@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'MeshCore Open';
+  String get appTitle => 'MeshTrax';
 
   @override
   String get nav_chats => 'Chats';
@@ -115,7 +115,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get scanner_title => 'MeshCore Open';
+  String get scanner_title => 'MeshTrax';
 
   @override
   String get connectionChoiceUsbLabel => 'USB';
@@ -497,15 +497,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String settings_aboutVersion(String version) {
-    return 'MeshCore Open v$version';
+    return 'MeshTrax v$version';
   }
 
   @override
-  String get settings_aboutLegalese => '2026 MeshCore Open Source Project';
+  String get settings_aboutLegalese => '© 2026 MeshTrax Contributors';
 
   @override
   String get settings_aboutDescription =>
-      'An open-source Flutter client for MeshCore LoRa mesh networking devices.';
+      'An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.';
 
   @override
   String get settings_aboutOpenMeteoAttribution =>

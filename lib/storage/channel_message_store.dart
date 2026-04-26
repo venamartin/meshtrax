@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:meshcore_open/utils/app_logger.dart';
+import 'package:meshtrax/utils/app_logger.dart';
 
 import '../models/channel_message.dart';
 import '../models/translation_support.dart';

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:meshcore_open/screens/path_trace_map.dart';
+import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/platform_info.dart';
@@ -67,6 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
   int _initialScrollIndex = 0;
   bool _isAtBottom = true;
   DateTime? _lastTextSendAt;
+  int _previousMessageCount = 0;
 
   @override
   void initState() {
@@ -79,6 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final settings = context.read<AppSettingsService>().settings;
     final keyHex = widget.contact.publicKeyHex;
     final unread = widget.unreadCount ?? connector.getUnreadCountForContactKey(keyHex);
+    _previousMessageCount = connector.getMessages(widget.contact).length;
 
     if (settings.jumpToOldestUnread && unread > 0) {
       final messages = connector.getMessages(widget.contact);
@@ -119,15 +121,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
     int minIndex = positions.first.index;
     int maxIndex = positions.first.index;
-    ItemPosition? bottomItem;
 
     for (final p in positions) {
       if (p.index < minIndex) minIndex = p.index;
       if (p.index > maxIndex) maxIndex = p.index;
-      if (p.index == 0) bottomItem = p;
     }
 
-    final isAtBottom = bottomItem != null && bottomItem.itemLeadingEdge <= 0.05;
+    // With reverse:true, index 0 is the newest message at the visual bottom.
+    // If item 0 is in the visible positions, the user is at the bottom.
+    final isAtBottom = positions.any((p) => p.index == 0);
     if (_isAtBottom != isAtBottom) {
       setState(() => _isAtBottom = isAtBottom);
     }
@@ -483,12 +485,22 @@ class _ChatScreenState extends State<ChatScreen> {
     final itemCount = reversedMessages.length + (_isLoadingOlder ? 1 : 0);
 
     // Auto-scroll to bottom if user is already at bottom
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (_isAtBottom && _itemScrollController.isAttached) {
-        _itemScrollController.jumpTo(index: 0);
+    final currentMessageCount = messages.length;
+    final newestIsOutgoing = messages.isNotEmpty && messages.last.isOutgoing;
+    if (currentMessageCount > _previousMessageCount) {
+      // Auto-scroll if: the user is already at the bottom, OR they just sent
+      // the newest message (so their own send always scrolls into view).
+      if ((_isAtBottom || newestIsOutgoing) && _itemScrollController.isAttached) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_itemScrollController.isAttached) return;
+          _itemScrollController.jumpTo(
+            index: 0,
+            alignment: 0.0,
+          );
+        });
       }
-    });
+    }
+    _previousMessageCount = currentMessageCount;
 
     return ChatZoomWrapper(
       child: ScrollablePositionedList.builder(
@@ -1138,8 +1150,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final connector = context.read<MeshCoreConnector>();
     final allContacts = connector.allContacts;
 
-    final formattedPath = PathHelper.formatPathHex(pathBytes);
-    final resolvedNames = PathHelper.resolvePathNames(pathBytes, allContacts);
+    final stride = connector.pathHashByteWidth;
+    final formattedPath = PathHelper.formatPathHex(pathBytes, stride: stride);
+    final resolvedNames = PathHelper.resolvePathNames(pathBytes, allContacts, stride: stride);
 
     showDialog(
       context: context,
@@ -1221,7 +1234,17 @@ class _ChatScreenState extends State<ChatScreen> {
       return context.l10n.chat_hopsForced(contact.pathOverride!);
     }
 
-    // Use device's path
+    // Use device's path — prefer trimmed byte count over raw pathLength
+    // because pathLength may reflect a padded buffer full of trailing zeros.
+    final effectivePath = contact.pathOverrideBytes ?? contact.path;
+    if (effectivePath.isNotEmpty) {
+      final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
+      final trimmedLen = PathHelper.trimPaddingZeros(effectivePath, stride: stride).length;
+      final hopCount = trimmedLen ~/ stride;
+      if (hopCount == 0) return context.l10n.chat_direct;
+      return context.l10n.chat_hopsCount(hopCount);
+    }
+
     if (contact.pathLength < 0) return context.l10n.chat_floodAuto;
     if (contact.pathLength == 0) return context.l10n.chat_direct;
     return context.l10n.chat_hopsCount(contact.pathLength);
@@ -2196,7 +2219,7 @@ class _MessageBubble extends StatelessWidget {
     final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
     if (noSpaces.characters.length > 3) return false;
 
-    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\s]+$', unicode: true);
+    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
     final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
 
     return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
