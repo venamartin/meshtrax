@@ -214,15 +214,22 @@ class Contact {
   }
 
   Map<String, dynamic> toJson() {
+    // Only export the relevant portion of the path buffer
+    final effectivePath = (pathLength > 0 && pathLength <= path.length)
+        ? path.sublist(0, pathLength)
+        : Uint8List(0);
+
     return {
       'publicKey': pubKeyToHex(publicKey),
       'name': name,
       'type': type,
       'flags': flags,
       'pathLength': pathLength,
-      'path': pubKeyToHex(path), // path bytes as hex
+      'path': pubKeyToHex(effectivePath),
       'pathOverride': pathOverride,
-      'pathOverrideBytes': pathOverrideBytes != null ? pubKeyToHex(pathOverrideBytes!) : null,
+      'pathOverrideBytes': (pathOverrideBytes != null && pathOverrideBytes!.isNotEmpty) 
+          ? pubKeyToHex(pathOverrideBytes!) 
+          : null,
       'latitude': latitude,
       'longitude': longitude,
       'lastSeen': lastSeen.millisecondsSinceEpoch,

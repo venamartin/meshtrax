@@ -1,7 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:meshtrax/utils/gpx_export.dart';
 import 'package:meshtrax/utils/contact_backup_service.dart';
 import 'package:meshtrax/utils/platform_info.dart';
@@ -385,15 +386,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.backup_outlined),
             title: const Text('Export Contacts (Backup)'),
-            subtitle: const Text('Save to file or copy to clipboard'),
-            onTap: () => _showExportOptions(context, connector),
+            subtitle: const Text('Save your contacts to a JSON file'),
+            onTap: () async {
+              if (Platform.isAndroid) {
+                final result = await ContactBackupService.exportContacts(connector.contacts);
+                if (mounted && result != null) {
+                  showDismissibleSnackBar(context, content: const Text('Backup ready to save or share.'));
+                }
+              } else {
+                final FileSaveLocation? location = await getSaveLocation(
+                  suggestedName: 'meshtrax_contacts_${DateTime.now().toIso8601String().replaceAll(':', '').split('.')[0]}.json',
+                  acceptedTypeGroups: [const XTypeGroup(label: 'JSON', extensions: ['json'])],
+                );
+                if (location != null) {
+                  final success = await ContactBackupService.saveContactsToPath(connector.contacts, location.path);
+                  if (mounted) {
+                    showDismissibleSnackBar(context, content: Text(success ? 'Backup saved to: ${location.path}' : 'Failed to save backup.'));
+                  }
+                }
+              }
+            },
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.restore),
             title: const Text('Import Contacts (Restore)'),
-            subtitle: const Text('Paste JSON data or enter file path'),
-            onTap: () => _showImportOptions(context, connector),
+            subtitle: const Text('Restore contacts from a backup file'),
+            onTap: () async {
+              final XFile? file = await openFile(
+                acceptedTypeGroups: [const XTypeGroup(label: 'JSON', extensions: ['json'])],
+              );
+              if (file != null) {
+                _processImport(context, connector, file.path);
+              }
+            },
           ),
         ],
       ),
@@ -1042,168 +1068,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await connector.sendFrame(buildGetAutoAddFlagsFrame());
   }
 
-  void _showExportOptions(BuildContext context, MeshCoreConnector connector) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.file_download_outlined),
-              title: const Text('Save to File'),
-              subtitle: Text(
-                PlatformInfo.isDesktop
-                    ? 'Saves to your Documents folder'
-                    : 'Opens system share sheet',
-              ),
-              onTap: () async {
-                Navigator.pop(context);
-                final result = await ContactBackupService.exportContacts(
-                  connector.contacts,
-                );
-                if (mounted) {
-                  if (result != null) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text(
-                        PlatformInfo.isDesktop
-                            ? 'Saved to: $result'
-                            : 'Backup exported successfully.',
-                      ),
-                    );
-                  } else {
-                    showDismissibleSnackBar(
-                      context,
-                      content: const Text('Failed to export backup.'),
-                    );
-                  }
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy_outlined),
-              title: const Text('Copy to Clipboard'),
-              onTap: () async {
-                Navigator.pop(context);
-                final jsonList =
-                    connector.contacts.map((c) => c.toJson()).toList();
-                final jsonString = jsonEncode(jsonList);
-                await Clipboard.setData(ClipboardData(text: jsonString));
-                if (mounted) {
-                  showDismissibleSnackBar(
-                    context,
-                    content: const Text('Backup copied to clipboard.'),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  void _showImportOptions(BuildContext context, MeshCoreConnector connector) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.paste_outlined),
-              title: const Text('Paste JSON from Clipboard'),
-              onTap: () async {
-                Navigator.pop(context);
-                final data = await Clipboard.getData(Clipboard.kTextPlain);
-                if (data?.text == null || data!.text!.isEmpty) {
-                  if (mounted) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: const Text('Clipboard is empty.'),
-                    );
-                  }
-                  return;
-                }
-                _processImport(context, connector, data.text!);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_note_outlined),
-              title: const Text('Enter File Path or Paste Text'),
-              onTap: () {
-                Navigator.pop(context);
-                _showManualImportDialog(context, connector);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  void _showManualImportDialog(
-    BuildContext context,
-    MeshCoreConnector connector,
-  ) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Import Contacts'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Paste the backup JSON text or enter the full file path below:',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '[{"name": "...", ...}] or C:\\path\\to\\file.json',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _processImport(context, connector, controller.text.trim());
-            },
-            child: const Text('Import'),
-          ),
-        ],
-      ),
-    );
-  }
+
+
+
 
   Future<void> _processImport(
     BuildContext context,
     MeshCoreConnector connector,
-    String input,
+    String path,
   ) async {
-    List<Contact>? contacts;
-    if (input.startsWith('[') || input.startsWith('{')) {
-      contacts = ContactBackupService.importContactsFromJson(input);
-    } else {
-      contacts = await ContactBackupService.importContactsFromPath(input);
-    }
+    final contacts = await ContactBackupService.importContactsFromPath(path);
 
     if (!mounted) return;
     if (contacts == null) {
       showDismissibleSnackBar(
         context,
         content: const Text(
-          'Failed to parse backup data. Ensure it is valid JSON or a correct file path.',
+          'Failed to parse backup data. Ensure it is a valid MeshTrax backup file.',
         ),
       );
       return;

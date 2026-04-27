@@ -1,17 +1,29 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:file_saver/file_saver.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../models/contact.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_info.dart';
 
 class ContactBackupService {
+  /// Internal helper to generate a standardized backup filename.
+  static String _generateBackupFileName() {
+    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '').split('.')[0];
+    return 'meshtrax_contacts_$timestamp';
+  }
+
+  /// Internal helper to serialize contacts to a JSON string.
+  static String _serializeContacts(List<Contact> contacts) {
+    final jsonList = contacts.map((c) => c.toJson()).toList();
+    return jsonEncode(jsonList);
+  }
+
   /// Exports contacts to a JSON file.
-  /// On Mobile, it uses the native share sheet. On Desktop, it saves to the Documents directory.
-  /// Returns the path of the saved file on success (or a generic success string), or null on failure.
+  /// Uses file_saver to trigger the native OS save dialog on ALL platforms.
   static Future<String?> exportContacts(List<Contact> contacts) async {
     try {
       if (PlatformInfo.isWeb) {
@@ -19,39 +31,53 @@ class ContactBackupService {
         return null;
       }
 
-      final jsonList = contacts.map((c) => c.toJson()).toList();
-      final jsonString = jsonEncode(jsonList);
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '').split('.')[0];
-      final defaultFileName = 'meshtrax_contacts_$timestamp.json';
+      final jsonString = _serializeContacts(contacts);
+      
+      // FIX APPLIED: Safely encode the JSON string as UTF-8 to preserve all 
+      // emojis and 16-bit surrogate pairs (e.g., node icons like 🍓 or 🤖).
+      final fileData = Uint8List.fromList(utf8.encode(jsonString));
+      
+      final baseFileName = _generateBackupFileName();
 
-      if (PlatformInfo.isDesktop) {
-        // file_picker 3.x does not support saveFile, so we save to Documents
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/$defaultFileName');
-        
-        await file.writeAsString(jsonString);
-        return file.path;
-      } else {
-        // Use share sheet on mobile
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/$defaultFileName');
-        
-        await file.writeAsString(jsonString);
+      // Trigger the native Save dialog
+      // On Android, this opens SAF allowing you to select the Documents folder natively.
+      final resultPath = await FileSaver.instance.saveAs(
+        name: baseFileName,
+        fileExtension: 'json',
+        mimeType: MimeType.json,
+        bytes: fileData,
+      );
 
-        final xFile = XFile(file.path, mimeType: 'application/json');
-        final result = await Share.shareXFiles([xFile], subject: 'meshtrax Contacts Backup');
-        
-        return (result.status == ShareResultStatus.success || result.status == ShareResultStatus.dismissed) 
-            ? 'Shared successfully' 
-            : null;
+      // resultPath will be empty/null if the user cancels
+      if (resultPath == null || resultPath.isEmpty) {
+        appLogger.warn('Save dialog was canceled by the user.');
+        return null;
       }
+
+      return resultPath;
     } catch (e) {
       appLogger.error('Failed to export contacts: $e');
       return null;
     }
   }
 
+  /// Saves contacts to a specific file path.
+  static Future<bool> saveContactsToPath(List<Contact> contacts, String path) async {
+    try {
+      final jsonString = _serializeContacts(contacts);
+      final file = File(path);
+      // Explicitly enforce UTF-8 when writing raw strings to disk
+      await file.writeAsString(jsonString, encoding: utf8);
+      return true;
+    } catch (e) {
+      appLogger.error('Failed to save contacts to path: $e');
+      return false;
+    }
+  }
+
   /// Reads a JSON backup file at [path] and parses it into a list of Contacts.
+  /// Note: When importing via file_selector on Android, prefer using XFile.readAsString()
+  /// directly in your UI code to avoid Scoped Storage path restrictions.
   static Future<List<Contact>?> importContactsFromPath(String path) async {
     try {
       final file = File(path.trim());
@@ -60,7 +86,8 @@ class ContactBackupService {
         return null;
       }
 
-      final jsonString = await file.readAsString();
+      // Explicitly enforce UTF-8 decoding when reading
+      final jsonString = await file.readAsString(encoding: utf8);
       return importContactsFromJson(jsonString);
     } catch (e) {
       appLogger.error('Failed to import contacts from path: $e');
@@ -88,6 +115,49 @@ class ContactBackupService {
     } catch (e) {
       appLogger.error('Failed to parse contacts JSON: $e');
       return null;
+    }
+  }
+
+  /// Lists all JSON backup files in both internal and external storage.
+  static Future<List<File>> listBackups() async {
+    try {
+      final searchDirs = <Directory>[];
+      
+      // Internal storage
+      searchDirs.add(await getApplicationDocumentsDirectory());
+      
+      // External storage (Android visible)
+      if (Platform.isAndroid) {
+        final extDir = await getExternalStorageDirectory();
+        if (extDir != null) searchDirs.add(extDir);
+      }
+
+      final backups = <File>[];
+
+      for (final dir in searchDirs) {
+        if (!await dir.exists()) continue;
+        
+        try {
+          final files = dir.listSync();
+          for (final entity in files) {
+            if (entity is File && 
+                entity.path.endsWith('.json') && 
+                entity.path.split(Platform.pathSeparator).last.startsWith('meshtrax_contacts_')) {
+              backups.add(entity);
+            }
+          }
+        } catch (e) {
+          appLogger.warn('Could not list directory ${dir.path}: $e');
+        }
+      }
+
+      // Sort by modified date (newest first)
+      backups.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      
+      return backups;
+    } catch (e) {
+      appLogger.error('Failed to list backups: $e');
+      return [];
     }
   }
 }

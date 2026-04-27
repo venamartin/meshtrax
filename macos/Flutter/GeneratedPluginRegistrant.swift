@@ -5,6 +5,8 @@
 import FlutterMacOS
 import Foundation
 
+import file_saver
+import file_selector_macos
 import flutter_blue_plus_darwin
 import mobile_scanner
 import package_info_plus
@@ -14,6 +16,8 @@ import sqflite_darwin
 import url_launcher_macos
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  FileSaverPlugin.register(with: registry.registrar(forPlugin: "FileSaverPlugin"))
+  FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FlutterBluePlusPlugin.register(with: registry.registrar(forPlugin: "FlutterBluePlusPlugin"))
   MobileScannerPlugin.register(with: registry.registrar(forPlugin: "MobileScannerPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))
