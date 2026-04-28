@@ -17,6 +17,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
+import '../models/contact.dart'; // FIX: Imported Contact model to fix build errors
 import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
@@ -45,10 +46,14 @@ class ChannelChatScreen extends StatefulWidget {
 }
 
 class _ChannelChatScreenState extends State<ChannelChatScreen> {
-  final TextEditingController _textController = TextEditingController();
+  final MentionTextEditingController _textController = MentionTextEditingController();
   final FocusNode _textFieldFocusNode = FocusNode();
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+
+  String? _mentionSearchText;
+  bool _showMentions = false;
+  List<Contact> _filteredMentionContacts = [];
 
   ChannelMessage? _replyingToMessage;
   bool _isLoadingOlder = false;
@@ -65,6 +70,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     super.initState();
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
+    _textController.addListener(_mentionsListener);
 
     final connector = context.read<MeshCoreConnector>();
     final settings = context.read<AppSettingsService>().settings;
@@ -149,6 +155,208 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
   }
 
+  void _mentionsListener() {
+    if (!mounted) return;
+    final text = _textController.text;
+    final selection = _textController.selection;
+
+    if (!selection.isValid || selection.baseOffset != selection.extentOffset) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final cursorPosition = selection.baseOffset;
+    if (cursorPosition == 0) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    // Look back from cursor to find the start of the current word
+    final textBeforeCursor = text.substring(0, cursorPosition);
+    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSignIndex != -1) {
+      final textAfterAt = textBeforeCursor.substring(lastAtSignIndex + 1);
+      final charBeforeAt = lastAtSignIndex > 0 ? textBeforeCursor[lastAtSignIndex - 1] : ' ';
+      
+      if (!textAfterAt.contains(' ') && (charBeforeAt == ' ' || charBeforeAt == '\n')) {
+        final search = textAfterAt.toLowerCase();
+        final connector = Provider.of<MeshCoreConnector>(context, listen: false);
+        
+        final messages = connector.getChannelMessages(widget.channel);
+        final Set<String> recentSenderKeys = {};
+        
+        // FIX: Safely check for null on senderKeyHex
+        for (var m in messages) {
+          if (!m.isOutgoing && m.senderKeyHex != null && m.senderKeyHex!.isNotEmpty) {
+            recentSenderKeys.add(m.senderKeyHex!);
+          }
+        }
+
+        final Map<String, Contact> mentionMap = {};
+        for (var c in connector.allContactsUnfiltered) {
+          mentionMap[c.publicKeyHex] = c;
+        }
+
+        // 3. EXTRA SAFETY: Scan messages for anyone not in the global contact list
+        // This ensures people who have spoken but haven't been 'discovered' yet show up.
+        for (var m in messages) {
+          if (!m.isOutgoing) {
+            // Check if this person is already in our map by key
+            if (m.senderKeyHex != null && mentionMap.containsKey(m.senderKeyHex!)) {
+              continue;
+            }
+            
+            // If we don't have a key, or the key is new, also check by NAME to prevent duplicates
+            // where the same person is seen as both a contact and a raw sender.
+            final alreadyHasName = mentionMap.values.any((c) => c.name == m.senderName);
+            if (alreadyHasName) continue;
+
+            final key = m.senderKeyHex ?? 'name_${m.senderName}';
+            mentionMap[key] = Contact(
+              publicKey: m.senderKeyHex != null 
+                  ? hexToPubKey(m.senderKeyHex!) 
+                  : Uint8List(pubKeySize), // Placeholder key
+              name: m.senderName,
+              type: advTypeChat,
+              pathLength: -1,
+              path: Uint8List(0),
+              lastSeen: DateTime.now(),
+              isActive: true,
+            );
+          }
+        }
+
+        final filtered = mentionMap.values.where((c) {
+          // Filter out repeaters as they are non-human nodes
+          if (c.type == advTypeRepeater) return false;
+          
+          return c.name.toLowerCase().contains(search) || 
+                 c.publicKeyHex.toLowerCase().startsWith(search);
+        }).toList();
+
+        filtered.sort((a, b) {
+          final aStart = a.name.toLowerCase().startsWith(search);
+          final bStart = b.name.toLowerCase().startsWith(search);
+          if (aStart && !bStart) return -1;
+          if (!aStart && bStart) return 1;
+          
+          final aIsRecent = recentSenderKeys.contains(a.publicKeyHex);
+          final bIsRecent = recentSenderKeys.contains(b.publicKeyHex);
+          if (aIsRecent && !bIsRecent) return -1;
+          if (!aIsRecent && bIsRecent) return 1;
+
+          return a.name.compareTo(b.name);
+        });
+
+        if (_showMentions != filtered.isNotEmpty || _mentionSearchText != search) {
+          setState(() {
+            _mentionSearchText = search;
+            _showMentions = filtered.isNotEmpty;
+            _filteredMentionContacts = filtered.take(15).toList();
+          });
+        }
+        return;
+      }
+    }
+
+    if (_showMentions) {
+      setState(() => _showMentions = false);
+    }
+  }
+
+  void _insertMention(Contact contact) {
+    final text = _textController.text;
+    final selection = _textController.selection;
+    final cursorPosition = selection.baseOffset;
+    final textBeforeCursor = text.substring(0, cursorPosition);
+    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSignIndex != -1) {
+      final newText = text.replaceRange(
+        lastAtSignIndex,
+        cursorPosition,
+        '@[${contact.name}] ',
+      );
+      
+      _textController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: lastAtSignIndex + contact.name.length + 4,
+        ),
+      );
+
+      setState(() => _showMentions = false);
+      _textFieldFocusNode.requestFocus();
+    }
+  }
+
+  Widget _buildMentionsOverlay() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 200),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          itemCount: _filteredMentionContacts.length,
+          separatorBuilder: (context, index) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final contact = _filteredMentionContacts[index];
+            return ListTile(
+              leading: CircleAvatar(
+                radius: 16,
+                backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                child: _buildContactMentionAvatar(contact, colorScheme.primary),
+              ),
+              title: Text(
+                contact.name,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              onTap: () => _insertMention(contact),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactMentionAvatar(Contact contact, Color iconColor) {
+    final emoji = firstEmoji(contact.name);
+    if (emoji != null) {
+      return Text(emoji, style: const TextStyle(fontSize: 16));
+    }
+    return Icon(_getTypeIcon(contact.type), color: iconColor, size: 16);
+  }
+
+  IconData _getTypeIcon(int type) {
+    switch (type) {
+      case advTypeChat:
+        return Icons.chat_bubble;
+      case advTypeRepeater:
+        return Icons.cell_tower;
+      case advTypeRoom:
+        return Icons.group;
+      case advTypeSensor:
+        return Icons.sensors;
+      default:
+        return Icons.device_unknown;
+    }
+  }
+
   Future<void> _loadOlderMessages() async {
     if (_isLoadingOlder) return;
     setState(() => _isLoadingOlder = true);
@@ -166,6 +374,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
+    _textController.removeListener(_mentionsListener);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -443,6 +652,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 },
               ),
             ),
+            if (_showMentions) _buildMentionsOverlay(),
             _buildMessageComposer(),
           ],
         ),
@@ -464,6 +674,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final originalDisplayText = message.isOutgoing
         ? message.originalText
         : (translatedDisplayText != message.text ? message.text : null);
+    final cleanTranslatedDisplayText = translatedDisplayText.replaceAllMapped(RegExp(r'@\[([^\]]+)\]'), (m) => '@[${m.group(1)}]');
+    final cleanOriginalDisplayText = originalDisplayText?.replaceAllMapped(RegExp(r'@\[([^\]]+)\]'), (m) => '@[${m.group(1)}]');
     final displayPath = message.pathBytes.isNotEmpty
         ? message.pathBytes
         : (message.pathVariants.isNotEmpty
@@ -622,8 +834,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                           children: [
                             Flexible(
                               child: TranslatedMessageContent(
-                                displayText: translatedDisplayText,
-                                originalText: originalDisplayText,
+                                displayText: cleanTranslatedDisplayText,
+                                originalText: cleanOriginalDisplayText,
                                 style: TextStyle(
                                   fontSize: bodyFontSize * textScale,
                                 ),
@@ -1390,7 +1602,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               title: Text(context.l10n.common_copy),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _copyMessageText(message.text);
+                // Keep brackets in clipboard for clarity (especially with emoji names)
+                String textToCopy = message.text;
+                _copyMessageText(textToCopy);
               },
             ),
             ListTile(
@@ -1632,4 +1846,41 @@ class _PoiInfo {
   final String label;
 
   const _PoiInfo({required this.lat, required this.lon, required this.label});
+}
+
+// ==========================================
+// Custom Controller for Rich Text Mentions
+// ==========================================
+class MentionTextEditingController extends TextEditingController {
+  final RegExp _mentionRegex = RegExp(r'@\[([^\]]+)\]');
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final List<TextSpan> spans = [];
+    int start = 0;
+
+    for (final Match match in _mentionRegex.allMatches(text)) {
+      if (match.start > start) {
+        spans.add(TextSpan(text: text.substring(start, match.start), style: style));
+      }
+      spans.add(TextSpan(
+        text: '@[${match.group(1)}]', // Keep brackets visible for the user
+        style: style?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ));
+      start = match.end;
+    }
+
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start), style: style));
+    }
+
+    return TextSpan(children: spans, style: style);
+  }
 }

@@ -1462,91 +1462,92 @@ class _ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = _getTypeColor(contact.type);
+    final bgColor = baseColor.withValues(alpha: 0.2);
+
     return GestureDetector(
       onSecondaryTapUp: PlatformInfo.isDesktop ? (_) => onLongPress() : null,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getTypeColor(contact.type),
-          child: _buildContactAvatar(contact),
-        ),
-        title: Text(contact.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              contact.pathLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              contact.shortPubKeyHex,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-        // Clamp text scaling in trailing section to prevent overflow while
-        // maintaining accessibility. Primary content (title/subtitle) scales normally.
-        trailing: MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(
-              MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.3),
-            ),
+      onLongPress: onLongPress,
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: bgColor,
+            child: _buildContactAvatar(contact, baseColor),
           ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: SizedBox(
-              width: 120,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                if (unreadCount > 0) ...[
-                  UnreadBadge(count: unreadCount),
-                  const SizedBox(height: 4),
-                ],
-                Text(
-                  _formatLastSeen(context, lastSeen),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  contact.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _formatLastSeen(context, lastSeen),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+            ],
+          ),
+          subtitle: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      contact.pathLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      contact.shortPubKeyHex,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              if (isFavorite || contact.hasLocation || unreadCount > 0)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isFavorite)
-                      Icon(Icons.star, size: 14, color: Colors.amber[700]),
+                      Icon(Icons.star, size: 16, color: Colors.amber[700]),
                     if (isFavorite && contact.hasLocation)
                       const SizedBox(width: 2),
                     if (contact.hasLocation)
-                      Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Colors.grey[400],
-                      ),
+                      Icon(Icons.location_on, size: 16, color: Colors.grey[400]),
+                    if (unreadCount > 0) ...[
+                      const SizedBox(width: 8),
+                      UnreadBadge(count: unreadCount),
+                    ],
                   ],
                 ),
-              ],
-            ),
+            ],
           ),
+          onTap: onTap,
         ),
-        ),
-        onTap: onTap,
-        onLongPress: onLongPress,
       ),
     );
   }
 
-  Widget _buildContactAvatar(Contact contact) {
+  Widget _buildContactAvatar(Contact contact, Color iconColor) {
     final emoji = firstEmoji(contact.name);
     if (emoji != null) {
       return Text(emoji, style: const TextStyle(fontSize: 18));
     }
-    return Icon(_getTypeIcon(contact.type), color: Colors.white, size: 20);
+    return Icon(_getTypeIcon(contact.type), color: iconColor, size: 20);
   }
 
   IconData _getTypeIcon(int type) {
