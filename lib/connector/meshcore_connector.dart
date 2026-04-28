@@ -63,18 +63,10 @@ class DirectRepeater {
     lastUpdated = DateTime.now();
   }
 
-  int get ranking {
-    if (isStale()) {
-      return -1; // Stale repeaters get lowest rank
-    }
-    // Higher SNR gets higher rank; recency (capped at 500) only breaks ties within 0.5 dB.
-    final ageMs =
-        DateTime.now().millisecondsSinceEpoch -
-        lastUpdated.millisecondsSinceEpoch;
-    final maxAgeMs = maxAgeMinutes * 60 * 1000;
-    final recencyScore =
-        ((maxAgeMs - ageMs).clamp(0, maxAgeMs) / maxAgeMs * 500).round();
-    return ((snr - 31.75) * 1000).round() + recencyScore;
+  static int compare(DirectRepeater a, DirectRepeater b) {
+    final snrCmp = b.snr.compareTo(a.snr);
+    if (snrCmp != 0) return snrCmp;
+    return b.lastUpdated.compareTo(a.lastUpdated);
   }
 
   bool isStale() {
@@ -5933,7 +5925,7 @@ class MeshCoreConnector extends ChangeNotifier {
     );
 
     final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
-      ..sort((a, b) => b.snr.compareTo(a.snr));
+      ..sort(DirectRepeater.compare);
     final weakestRepeater = sortedRepeaters.isNotEmpty
         ? sortedRepeaters.last
         : null;
