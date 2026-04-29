@@ -5117,16 +5117,19 @@ class MeshCoreConnector extends ChangeNotifier {
     Message processedMessage = message;
     if (!message.isOutgoing) {
       DateTime sanitizedTimestamp = message.timestamp;
+      final now = DateTime.now();
 
-      // If timestamp is clearly in the past (before 2024), use arrival time
-      if (sanitizedTimestamp.year < 2024) {
-        sanitizedTimestamp = DateTime.now();
+      // If timestamp is more than 10 minutes in the past, or in the future,
+      // use arrival time to ensure it hits the top of the inbox.
+      if (sanitizedTimestamp.isBefore(now.subtract(const Duration(minutes: 10))) ||
+          sanitizedTimestamp.isAfter(now.add(const Duration(minutes: 1)))) {
+        sanitizedTimestamp = now;
       }
 
       // Ensure monotonic increasing timestamps within the conversation to prevent
       // messages from being buried at the bottom of the inbox.
       if (messages.isNotEmpty &&
-          sanitizedTimestamp.isBefore(messages.last.timestamp)) {
+          !sanitizedTimestamp.isAfter(messages.last.timestamp)) {
         sanitizedTimestamp =
             messages.last.timestamp.add(const Duration(milliseconds: 1));
       }
@@ -5387,16 +5390,19 @@ class MeshCoreConnector extends ChangeNotifier {
     ChannelMessage sanitizedMessage = message;
     if (!message.isOutgoing) {
       DateTime sanitizedTimestamp = message.timestamp;
+      final now = DateTime.now();
 
-      // If timestamp is clearly in the past (before 2024), use arrival time
-      if (sanitizedTimestamp.year < 2024) {
-        sanitizedTimestamp = DateTime.now();
+      // If timestamp is more than 10 minutes in the past, or in the future,
+      // use arrival time to ensure it hits the top of the inbox.
+      if (sanitizedTimestamp.isBefore(now.subtract(const Duration(minutes: 10))) ||
+          sanitizedTimestamp.isAfter(now.add(const Duration(minutes: 1)))) {
+        sanitizedTimestamp = now;
       }
 
       // Ensure monotonic increasing timestamps within the conversation to prevent
       // messages from being buried at the bottom of the inbox.
       if (messages.isNotEmpty &&
-          sanitizedTimestamp.isBefore(messages.last.timestamp)) {
+          !sanitizedTimestamp.isAfter(messages.last.timestamp)) {
         sanitizedTimestamp =
             messages.last.timestamp.add(const Duration(milliseconds: 1));
       }
@@ -5444,24 +5450,24 @@ class MeshCoreConnector extends ChangeNotifier {
       if (originalMessage != null) {
         // Create new message with reply metadata
         processedMessage = ChannelMessage(
-          senderKey: message.senderKey,
-          senderName: message.senderName,
+          senderKey: sanitizedMessage.senderKey,
+          senderName: sanitizedMessage.senderName,
           text: replyInfo.actualMessage,
-          originalText: message.originalText,
-          translatedText: message.translatedText,
-          translatedLanguageCode: message.translatedLanguageCode,
-          translationStatus: message.translationStatus,
-          translationModelId: message.translationModelId,
-          timestamp: message.timestamp,
-          isOutgoing: message.isOutgoing,
-          status: message.status,
-          repeats: message.repeats,
-          repeatCount: message.repeatCount,
-          pathLength: message.pathLength,
-          pathBytes: message.pathBytes,
-          pathVariants: message.pathVariants,
-          channelIndex: message.channelIndex,
-          messageId: message.messageId,
+          originalText: sanitizedMessage.originalText,
+          translatedText: sanitizedMessage.translatedText,
+          translatedLanguageCode: sanitizedMessage.translatedLanguageCode,
+          translationStatus: sanitizedMessage.translationStatus,
+          translationModelId: sanitizedMessage.translationModelId,
+          timestamp: sanitizedMessage.timestamp,
+          isOutgoing: sanitizedMessage.isOutgoing,
+          status: sanitizedMessage.status,
+          repeats: sanitizedMessage.repeats,
+          repeatCount: sanitizedMessage.repeatCount,
+          pathLength: sanitizedMessage.pathLength,
+          pathBytes: sanitizedMessage.pathBytes,
+          pathVariants: sanitizedMessage.pathVariants,
+          channelIndex: sanitizedMessage.channelIndex,
+          messageId: sanitizedMessage.messageId,
           replyToMessageId: originalMessage.messageId,
           replyToSenderName: originalMessage.senderName,
           replyToText: originalMessage.text,
