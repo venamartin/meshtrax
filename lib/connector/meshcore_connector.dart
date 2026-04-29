@@ -5112,8 +5112,32 @@ class MeshCoreConnector extends ChangeNotifier {
     _conversations.putIfAbsent(pubKeyHex, () => []);
     final messages = _conversations[pubKeyHex]!;
 
+    // Sanitize timestamp for incoming messages to ensure correct inbox sorting
+    // if sender clock is desynced.
+    Message processedMessage = message;
+    if (!message.isOutgoing) {
+      DateTime sanitizedTimestamp = message.timestamp;
+
+      // If timestamp is clearly in the past (before 2024), use arrival time
+      if (sanitizedTimestamp.year < 2024) {
+        sanitizedTimestamp = DateTime.now();
+      }
+
+      // Ensure monotonic increasing timestamps within the conversation to prevent
+      // messages from being buried at the bottom of the inbox.
+      if (messages.isNotEmpty &&
+          sanitizedTimestamp.isBefore(messages.last.timestamp)) {
+        sanitizedTimestamp =
+            messages.last.timestamp.add(const Duration(milliseconds: 1));
+      }
+
+      if (sanitizedTimestamp != message.timestamp) {
+        processedMessage = message.copyWith(timestamp: sanitizedTimestamp);
+      }
+    }
+
     // Parse reaction info
-    final reactionInfo = Message.parseReaction(message.text);
+    final reactionInfo = Message.parseReaction(processedMessage.text);
     if (reactionInfo != null) {
       // Check if we've already processed this exact reaction
       _processedContactReactions.putIfAbsent(pubKeyHex, () => {});
@@ -5137,7 +5161,7 @@ class MeshCoreConnector extends ChangeNotifier {
       return; // Don't add reaction as a visible message
     }
 
-    messages.add(message);
+    messages.add(processedMessage);
     _messageStore.saveMessages(pubKeyHex, messages);
     notifyListeners();
   }
@@ -5358,8 +5382,32 @@ class MeshCoreConnector extends ChangeNotifier {
     _channelMessages.putIfAbsent(channelIndex, () => []);
     final messages = _channelMessages[channelIndex]!;
 
+    // Sanitize timestamp for incoming messages to ensure correct inbox sorting
+    // if sender clock is desynced.
+    ChannelMessage sanitizedMessage = message;
+    if (!message.isOutgoing) {
+      DateTime sanitizedTimestamp = message.timestamp;
+
+      // If timestamp is clearly in the past (before 2024), use arrival time
+      if (sanitizedTimestamp.year < 2024) {
+        sanitizedTimestamp = DateTime.now();
+      }
+
+      // Ensure monotonic increasing timestamps within the conversation to prevent
+      // messages from being buried at the bottom of the inbox.
+      if (messages.isNotEmpty &&
+          sanitizedTimestamp.isBefore(messages.last.timestamp)) {
+        sanitizedTimestamp =
+            messages.last.timestamp.add(const Duration(milliseconds: 1));
+      }
+
+      if (sanitizedTimestamp != message.timestamp) {
+        sanitizedMessage = message.copyWith(timestamp: sanitizedTimestamp);
+      }
+    }
+
     // Parse reaction info
-    final reactionInfo = ChannelMessage.parseReaction(message.text);
+    final reactionInfo = ChannelMessage.parseReaction(sanitizedMessage.text);
     if (reactionInfo != null) {
       // Check if we've already processed this exact reaction
       _processedChannelReactions.putIfAbsent(channelIndex, () => {});
@@ -5383,8 +5431,8 @@ class MeshCoreConnector extends ChangeNotifier {
     }
 
     // Parse reply info from message text
-    final replyInfo = ChannelMessage.parseReplyMention(message.text);
-    ChannelMessage processedMessage = message;
+    final replyInfo = ChannelMessage.parseReplyMention(sanitizedMessage.text);
+    ChannelMessage processedMessage = sanitizedMessage;
 
     if (replyInfo != null) {
       // Find original message by sender name (most recent match)

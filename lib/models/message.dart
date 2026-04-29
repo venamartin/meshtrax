@@ -70,6 +70,7 @@ class Message {
 
   Message copyWith({
     MessageStatus? status,
+    DateTime? timestamp,
     int? retryCount,
     int? estimatedTimeoutMs,
     int? expectedAckHash,
@@ -91,7 +92,7 @@ class Message {
     return Message(
       senderKey: senderKey,
       text: text,
-      timestamp: timestamp,
+      timestamp: timestamp ?? this.timestamp,
       isOutgoing: isOutgoing,
       isCli: isCli ?? this.isCli,
       status: status ?? this.status,
@@ -123,6 +124,7 @@ class Message {
           fourByteRoomContactKey ?? this.fourByteRoomContactKey,
     );
   }
+
 
   static Message? fromFrame(Uint8List frame, Uint8List selfPubKey) {
     if (frame.length < msgTextOffset + 1) return null;

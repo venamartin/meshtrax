@@ -1,5 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:linkify/linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/l10n.dart';
 import '../utils/platform_info.dart';
@@ -14,7 +16,7 @@ class LinkHandler {
     return base.copyWith(color: orange, decoration: TextDecoration.underline);
   }
 
-  /// Returns a [SelectableLinkify] on desktop or a [Linkify] on mobile.
+  /// Returns a [SelectableText.rich] on desktop or a [Text.rich] on mobile with custom styling for mentions.
   static Widget buildLinkifyText({
     required BuildContext context,
     required String text,
@@ -23,26 +25,45 @@ class LinkHandler {
   }) {
     final effectiveLinkStyle = linkStyle ?? defaultLinkStyle(context, style);
     const options = LinkifyOptions(humanize: false, defaultToHttps: false);
-    const linkifiers = [UrlLinkifier(), EmailLinkifier()];
-    void onOpen(LinkableElement link) => handleLinkTap(context, link.url);
+    
+    final elements = linkify(
+      text,
+      options: options,
+      linkifiers: [
+        const UrlLinkifier(), 
+        const EmailLinkifier(),
+        const MentionLinkifier(),
+      ],
+    );
+
+    final spans = elements.map((element) {
+      if (element is MentionElement) {
+        return TextSpan(
+          text: element.text,
+          style: style.copyWith(
+            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+            fontWeight: FontWeight.bold,
+            decoration: TextDecoration.none,
+          ),
+        );
+      } else if (element is LinkableElement) {
+        return TextSpan(
+          text: element.text,
+          style: effectiveLinkStyle,
+          recognizer: TapGestureRecognizer()..onTap = () => handleLinkTap(context, element.url),
+        );
+      } else {
+        return TextSpan(text: element.text, style: style);
+      }
+    }).toList();
 
     if (PlatformInfo.isDesktop) {
-      return SelectableLinkify(
-        text: text,
-        style: style,
-        linkStyle: effectiveLinkStyle,
-        options: options,
-        linkifiers: linkifiers,
-        onOpen: onOpen,
+      return SelectableText.rich(
+        TextSpan(children: spans),
       );
     }
-    return Linkify(
-      text: text,
-      style: style,
-      linkStyle: effectiveLinkStyle,
-      options: options,
-      linkifiers: linkifiers,
-      onOpen: onOpen,
+    return Text.rich(
+      TextSpan(children: spans),
     );
   }
 
@@ -111,4 +132,42 @@ class LinkHandler {
       }
     }
   }
+}
+
+class MentionLinkifier extends Linkifier {
+  const MentionLinkifier();
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final list = <LinkifyElement>[];
+    for (var element in elements) {
+      if (element is TextElement) {
+        final matches = RegExp(r'@\[([^\]]+)\]').allMatches(element.text);
+        if (matches.isEmpty) {
+          list.add(element);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (var match in matches) {
+          if (match.start > lastIndex) {
+            list.add(TextElement(element.text.substring(lastIndex, match.start)));
+          }
+          list.add(MentionElement(match.group(0)!));
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < element.text.length) {
+          list.add(TextElement(element.text.substring(lastIndex)));
+        }
+      } else {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+}
+
+class MentionElement extends LinkableElement {
+  MentionElement(String text) : super(text, text);
 }

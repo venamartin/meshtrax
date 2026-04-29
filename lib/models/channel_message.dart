@@ -90,6 +90,7 @@ class ChannelMessage {
 
   ChannelMessage copyWith({
     ChannelMessageStatus? status,
+    DateTime? timestamp,
     List<Repeat>? repeats,
     int? repeatCount,
     int? pathLength,
@@ -123,7 +124,7 @@ class ChannelMessage {
       translationModelId: translationModelId == _unset
           ? this.translationModelId
           : translationModelId as String?,
-      timestamp: timestamp,
+      timestamp: timestamp ?? this.timestamp,
       isOutgoing: isOutgoing,
       status: status ?? this.status,
       repeats: repeats ?? this.repeats,

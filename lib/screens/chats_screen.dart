@@ -6,6 +6,7 @@ import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
+import '../services/app_settings_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/disconnect_navigation_mixin.dart';
 import '../utils/route_transitions.dart';
@@ -139,12 +140,37 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
   }
 
   void _showChatActions(BuildContext context, _ChatListItem item, MeshCoreConnector connector) {
+    final settingsService = context.read<AppSettingsService>();
+    final isChannel = item.channel != null;
+    final isMuted = isChannel ? settingsService.isChannelMuted(item.channel!.name) : false;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isChannel)
+              ListTile(
+                leading: Icon(
+                  isMuted
+                      ? Icons.notifications_outlined
+                      : Icons.notifications_off_outlined,
+                ),
+                title: Text(
+                  isMuted
+                      ? context.l10n.channels_unmuteChannel
+                      : context.l10n.channels_muteChannel,
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  if (isMuted) {
+                    await settingsService.unmuteChannel(item.channel!.name);
+                  } else {
+                    await settingsService.muteChannel(item.channel!.name);
+                  }
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete_outline),
               title: Text(context.l10n.contact_clearChat),

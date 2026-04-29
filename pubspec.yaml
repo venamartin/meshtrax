@@ -48,8 +48,8 @@ dependencies:
   uuid: ^4.3.3
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
-  # Temporarily commented for Windows build - ATL headers missing
-  # flutter_local_notifications: ^21.0.0
+  # Notifications for Android/iOS (Disabled on Windows if ATL headers are missing)
+  flutter_local_notifications: ^21.0.0
   crypto: ^3.0.3
   pointycastle: ^4.0.0
   http: ^1.2.0

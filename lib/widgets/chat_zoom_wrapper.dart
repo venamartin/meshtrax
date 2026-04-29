@@ -18,10 +18,12 @@ class ChatZoomWrapper extends StatefulWidget {
 
 class _ChatZoomWrapperState extends State<ChatZoomWrapper> {
   double? _startScale;
+  bool _isScaling = false;
 
   @override
   Widget build(BuildContext context) {
-    final service = context.read<ChatTextScaleService>();
+    final service = context.watch<ChatTextScaleService>();
+    final currentScale = service.scale;
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -32,18 +34,56 @@ class _ChatZoomWrapperState extends State<ChatZoomWrapper> {
       },
       onScaleStart: (details) {
         if (details.pointerCount != 2) return;
-        _startScale = service.scale;
+        setState(() {
+          _isScaling = true;
+          _startScale = service.scale;
+        });
       },
       onScaleUpdate: (details) {
-        if (details.pointerCount != 2) return;
+        if (!_isScaling) return;
         final baseScale = _startScale ?? service.scale;
         service.setScale(baseScale * details.scale);
       },
       onScaleEnd: (_) {
-        _startScale = null;
+        setState(() {
+          _isScaling = false;
+          _startScale = null;
+        });
         service.persist();
       },
-      child: widget.child,
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned(
+            top: 60,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Center(
+                child: AnimatedOpacity(
+                  opacity: _isScaling ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${currentScale.toStringAsFixed(2)}x',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,9 +1,7 @@
 import 'dart:io' show Platform, File;
 import 'dart:ui';
-
-// flutter_local_notifications is not available for Windows builds
-// On mobile platforms, the package is properly initialized in initialize()
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../helpers/reaction_helper.dart';
 import '../l10n/app_localizations.dart';
@@ -13,8 +11,7 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  // Mock notifications object - not used on Windows
-  dynamic _notifications;
+  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
 
   // Locale for localized notification strings
@@ -54,6 +51,23 @@ class NotificationService {
       debugPrint('Notifications unavailable on Windows');
       return;
     }
+
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _notifications.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: _onNotificationTapped,
+    );
 
     _isInitialized = true;
     debugPrint('Notifications initialized (mobile platform)');
@@ -111,10 +125,29 @@ class NotificationService {
     if (!await _ensureInitialized()) return;
     if (Platform.isWindows) return;
 
-    // Actual implementation would show notification here
-    debugPrint(
-      '[Notification] Message from $contactName: ${formatNotificationText(message)}',
+    final androidDetails = AndroidNotificationDetails(
+      'meshtrax_messages',
+      _l10n.appSettings_messageNotifications,
+      importance: Importance.max,
+      priority: Priority.high,
     );
+    const iosDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    // Use a hash of the contactId as notification ID to group messages from same person
+    final id = (contactId ?? contactName).hashCode;
+
+    await _notifications.show(
+      id: id,
+      title: contactName,
+      body: formatNotificationText(message),
+      notificationDetails: details,
+      payload: contactId,
+    );
+
+    if (badgeCount != null) {
+      _updateBadge(badgeCount);
+    }
   }
 
   Future<void> _showAdvertNotificationImpl({
@@ -125,7 +158,23 @@ class NotificationService {
     if (!await _ensureInitialized()) return;
     if (Platform.isWindows) return;
 
-    debugPrint('[Notification] New $contactType: $contactName');
+    final androidDetails = AndroidNotificationDetails(
+      'meshtrax_adverts',
+      _l10n.appSettings_advertisementNotifications,
+      importance: Importance.low,
+      priority: Priority.low,
+    );
+    const iosDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    final id = (contactId ?? contactName).hashCode ^ 0x0A;
+
+    await _notifications.show(
+      id: id,
+      title: contactType,
+      body: contactName,
+      notificationDetails: details,
+    );
   }
 
   Future<void> _showChannelMessageNotificationImpl({
@@ -137,12 +186,32 @@ class NotificationService {
     if (!await _ensureInitialized()) return;
     if (Platform.isWindows) return;
 
+    final androidDetails = AndroidNotificationDetails(
+      'meshtrax_channels',
+      _l10n.appSettings_channelMessageNotifications,
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    const iosDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    final id = (channelIndex ?? channelName.hashCode) ^ 0x0C;
     final preview = formatNotificationText(message.trim());
     final body = preview.isEmpty
         ? _l10n.notification_receivedNewMessage
         : preview;
 
-    debugPrint('[Notification] Channel $channelName: $body');
+    await _notifications.show(
+      id: id,
+      title: channelName,
+      body: body,
+      notificationDetails: details,
+      payload: 'channel:$channelIndex',
+    );
+
+    if (badgeCount != null) {
+      _updateBadge(badgeCount);
+    }
   }
 
   /// Returns a privacy-safe identifier for debug logging.
@@ -370,7 +439,23 @@ class NotificationService {
 
     if (parts.isEmpty) return;
 
-    debugPrint('[Notification] batch summary: ${parts.join(", ")}');
+    final summaryText = parts.join(", ");
+    
+    final androidDetails = AndroidNotificationDetails(
+      'meshtrax_summary',
+      _l10n.notification_activityTitle,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+    const iosDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    await _notifications.show(
+      id: 0x5411, // Unique ID for summary
+      title: 'MeshTrax',
+      body: summaryText,
+      notificationDetails: details,
+    );
   }
 }
 
