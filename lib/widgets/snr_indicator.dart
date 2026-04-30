@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
+import '../services/map_tile_cache_service.dart';
 import 'signal_ui.dart';
 
 Contact? _getRepeaterPrefixMatchNearLocation(
@@ -198,6 +201,64 @@ class _SNRIndicatorState extends State<SNRIndicator> {
     return "${days}d";
   }
 
+  void _showRepeaterMap(BuildContext context, Contact contact, String? name) {
+    final lat = contact.latitude!;
+    final lon = contact.longitude!;
+    final label = name ?? 'Repeater';
+    final tileCache = context.read<MapTileCacheService>();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              title: Text(label),
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 400,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(lat, lon),
+                  initialZoom: 13.0,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: kMapTileUrlTemplate,
+                    tileProvider: tileCache.tileProvider,
+                    userAgentPackageName:
+                        MapTileCacheService.userAgentPackageName,
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: LatLng(lat, lon),
+                        width: 40,
+                        height: 40,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.red,
+                          size: 34,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showFullPathDialog(
     BuildContext context,
     List<DirectRepeater> directBestRepeaters,
@@ -242,6 +303,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                 );
 
                 final name = contact?.name;
+                final hasLocation = contact?.hasLocation ?? false;
 
                 return Column(
                   children: [
@@ -256,6 +318,16 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                       subtitle: Text(
                         'SNR: ${repeater.snr.toStringAsFixed(1)} dB\n${l10n.snrIndicator_lastSeen}: ${_formatLastUpdated(repeater.lastUpdated)}',
                       ),
+                      trailing: hasLocation
+                          ? const Icon(Icons.location_on)
+                          : null,
+                      onTap: hasLocation
+                          ? () => _showRepeaterMap(
+                              context,
+                              contact!,
+                              name,
+                            )
+                          : null,
                     ),
                   ],
                 );
