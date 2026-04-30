@@ -1405,7 +1405,7 @@ class MeshCoreConnector extends ChangeNotifier {
       _startBatteryPolling();
       if (_radioStatsPollRefCount > 0) _startRadioStatsPolling();
       var gotSelfInfo = await _waitForSelfInfo(
-        timeout: const Duration(seconds: 3),
+        timeout: const Duration(seconds: 8),
       );
       if (!gotSelfInfo) {
         _appDebugLogService?.warn(
@@ -1414,7 +1414,7 @@ class MeshCoreConnector extends ChangeNotifier {
         );
         await refreshDeviceInfo();
         gotSelfInfo = await _waitForSelfInfo(
-          timeout: const Duration(seconds: 3),
+          timeout: const Duration(seconds: 8),
         );
       }
       if (!gotSelfInfo) {
@@ -1512,12 +1512,12 @@ class MeshCoreConnector extends ChangeNotifier {
       if (_radioStatsPollRefCount > 0) _startRadioStatsPolling();
 
       var gotSelfInfo = await _waitForSelfInfo(
-        timeout: const Duration(seconds: 3),
+        timeout: const Duration(seconds: 8),
       );
       if (!gotSelfInfo) {
         await refreshDeviceInfo();
         gotSelfInfo = await _waitForSelfInfo(
-          timeout: const Duration(seconds: 3),
+          timeout: const Duration(seconds: 8),
         );
       }
       if (!gotSelfInfo) {
@@ -2147,11 +2147,11 @@ class MeshCoreConnector extends ChangeNotifier {
     if (_radioStatsPollRefCount > 0) _startRadioStatsPolling();
 
     final gotSelfInfo = await _waitForSelfInfo(
-      timeout: const Duration(seconds: 3),
+      timeout: const Duration(seconds: 8),
     );
     if (!gotSelfInfo) {
       await refreshDeviceInfo();
-      await _waitForSelfInfo(timeout: const Duration(seconds: 3));
+      await _waitForSelfInfo(timeout: const Duration(seconds: 8));
     }
 
     await syncTime();
