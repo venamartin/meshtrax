@@ -10,14 +10,14 @@ class GifHelper {
   ///
   /// Returns null if text is not a valid GIF format
   static String? parseGif(String text) {
-    final trimmed = text.trim();
-    final match = RegExp(r'^g:([A-Za-z0-9_-]+)$').firstMatch(trimmed);
+    // Match g:GIFID anywhere in the text
+    final match = RegExp(r'g:([A-Za-z0-9_-]{12,})').firstMatch(text);
     if (match != null) {
       return match.group(1);
     }
     final directUrlMatch = RegExp(
       r'^(?:https?:\/\/)?media\.giphy\.com\/media\/([A-Za-z0-9_-]+)\/giphy\.gif$',
-    ).firstMatch(trimmed);
+    ).firstMatch(text.trim());
     if (directUrlMatch != null) {
       return directUrlMatch.group(1);
     }
@@ -27,7 +27,7 @@ class GifHelper {
     // contain dashes.
     final pageMatch = RegExp(
       r'^(?:https?:\/\/)?giphy\.com\/gifs\/(?:[^/?]*-)?([A-Za-z0-9_]+)\/?$',
-    ).firstMatch(trimmed);
+    ).firstMatch(text.trim());
     return pageMatch?.group(1);
   }
 

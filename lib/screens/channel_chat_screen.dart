@@ -674,8 +674,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final originalDisplayText = message.isOutgoing
         ? message.originalText
         : (translatedDisplayText != message.text ? message.text : null);
-    final cleanTranslatedDisplayText = translatedDisplayText.replaceAllMapped(RegExp(r'@\[([^\]]+)\]'), (m) => '@[${m.group(1)}]');
-    final cleanOriginalDisplayText = originalDisplayText?.replaceAllMapped(RegExp(r'@\[([^\]]+)\]'), (m) => '@[${m.group(1)}]');
+    final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
+    final cleanTranslatedDisplayText = translatedDisplayText.replaceAll(gifPattern, '').trim();
+    final cleanOriginalDisplayText = originalDisplayText?.replaceAll(gifPattern, '').trim();
     final displayPath = message.pathBytes.isNotEmpty
         ? message.pathBytes
         : (message.pathVariants.isNotEmpty
@@ -777,61 +778,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                 )
                               : null,
                         )
-                      else if (gifId != null)
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: GifMessage(
-                                url:
-                                    'https://media.giphy.com/media/$gifId/giphy.gif',
-                                backgroundColor: Colors.transparent,
-                                fallbackTextColor: isOutgoing
-                                    ? Theme.of(context)
-                                          .colorScheme
-                                          .onPrimaryContainer
-                                          .withValues(alpha: 0.7)
-                                    : Theme.of(context).colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                              ),
-                            ),
-                            if (!enableTracing && isOutgoing)
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(3),
-                                  decoration: BoxDecoration(
-                                    color: isOutgoing
-                                        ? Theme.of(
-                                            context,
-                                          ).colorScheme.primaryContainer
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                    borderRadius: const BorderRadius.only(
-                                      bottomLeft: Radius.circular(10),
-                                      topRight: Radius.circular(8),
-                                    ),
-                                  ),
-                                  child: MessageStatusIcon(
-                                    isAcked:
-                                        message.status ==
-                                            ChannelMessageStatus.sent &&
-                                        displayPath.isNotEmpty,
-                                    isFailed:
-                                        message.status ==
-                                        ChannelMessageStatus.failed,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        )
-                      else
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
+                      else ...[
+                        if (cleanTranslatedDisplayText.isNotEmpty)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
                             Flexible(
                               child: TranslatedMessageContent(
                                 displayText: cleanTranslatedDisplayText,
@@ -842,7 +794,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                 originalStyle: TextStyle(
                                   fontSize: bodyFontSize * textScale,
                                   fontStyle: FontStyle.italic,
-                                  color: Theme.of(context).colorScheme.onSurface
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
                                       .withValues(alpha: 0.72),
                                 ),
                               ),
@@ -852,18 +806,69 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 2),
                                 child: MessageStatusIcon(
-                                  isAcked:
-                                      message.status ==
+                                  isAcked: message.status ==
                                           ChannelMessageStatus.sent &&
                                       displayPath.isNotEmpty,
-                                  isFailed:
-                                      message.status ==
+                                  isFailed: message.status ==
                                       ChannelMessageStatus.failed,
                                 ),
                               ),
                             ],
                           ],
                         ),
+                        if (gifId != null) ...[
+                          const SizedBox(height: 8),
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: GifMessage(
+                                  url:
+                                      'https://media.giphy.com/media/$gifId/giphy.gif',
+                                  backgroundColor: Colors.transparent,
+                                  fallbackTextColor: isOutgoing
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer
+                                          .withValues(alpha: 0.7)
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6),
+                                ),
+                              ),
+                              if (!enableTracing && isOutgoing)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: BoxDecoration(
+                                      color: isOutgoing
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(10),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: MessageStatusIcon(
+                                      isAcked: message.status ==
+                                              ChannelMessageStatus.sent &&
+                                          displayPath.isNotEmpty,
+                                      isFailed: message.status ==
+                                          ChannelMessageStatus.failed,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
                       if (enableTracing) ...[
                         if (displayPath.isNotEmpty) ...[
                           const SizedBox(height: 4),
