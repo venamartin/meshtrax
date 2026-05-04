@@ -5701,6 +5701,7 @@ class MeshCoreConnector extends ChangeNotifier {
             rawPacket,
             payload,
             pathBytes,
+            pathLenRaw,
             routeType,
             snr,
           );
@@ -5804,6 +5805,7 @@ class MeshCoreConnector extends ChangeNotifier {
     Uint8List rawPacket,
     Uint8List payload,
     Uint8List path,
+    int pathLenRaw,
     int routeType,
     double snr,
   ) {
@@ -5884,7 +5886,7 @@ class MeshCoreConnector extends ChangeNotifier {
       } else {
         _handleDiscovery(newContact, rawPacket);
       }
-      _updateDirectRepeater(newContact, snr, path);
+      _updateDirectRepeater(newContact, snr, path, pathLenRaw);
       return;
     }
 
@@ -5922,7 +5924,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _pathHistoryService!.handlePathUpdated(_contacts[existingIndex]);
       }
 
-      _updateDirectRepeater(_contacts[existingIndex], snr, path);
+      _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
 
       appLogger.info(
         'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
@@ -5931,9 +5933,15 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
-  void _updateDirectRepeater(Contact contact, double snr, Uint8List path) {
+  void _updateDirectRepeater(
+    Contact contact,
+    double snr,
+    Uint8List path,
+    int pathLenRaw,
+  ) {
+    final hashSize = ((pathLenRaw >> 6) & 0x03) + 1;
     final pubkeyFirstByte = path.isNotEmpty
-        ? path.last
+        ? path[path.length - hashSize]
         : contact.publicKey.first;
 
     _directRepeaters.removeWhere((r) => r.isStale());
