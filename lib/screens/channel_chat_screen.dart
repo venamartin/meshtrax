@@ -556,69 +556,71 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
                   return Stack(
                     children: [
-                      ChatZoomWrapper(
-                        child: ScrollablePositionedList.builder(
-                          reverse: true, // List grows from bottom up
-                          itemScrollController: _itemScrollController,
-                          itemPositionsListener: _itemPositionsListener,
-                          initialScrollIndex: _initialScrollIndex,
-                          initialAlignment: _initialScrollIndex > 0 ? 0.05 : 0.0,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                          itemCount: itemCount,
-                          itemBuilder: (context, index) {
-                            // Loading indicator now appears at end (bottom) of reversed list
-                            if (_isLoadingOlder && index == itemCount - 1) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                      ExcludeSemantics(
+                        child: ChatZoomWrapper(
+                          child: ScrollablePositionedList.builder(
+                            reverse: true, // List grows from bottom up
+                            itemScrollController: _itemScrollController,
+                            itemPositionsListener: _itemPositionsListener,
+                            initialScrollIndex: _initialScrollIndex,
+                            initialAlignment: _initialScrollIndex > 0 ? 0.05 : 0.0,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                            itemCount: itemCount,
+                            itemBuilder: (context, index) {
+                              // Loading indicator now appears at end (bottom) of reversed list
+                              if (_isLoadingOlder && index == itemCount - 1) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }
-                            final messageIndex = index;
-                            final message = reversedMessages[messageIndex];
-                            
-                            final bubble = Builder(
-                              builder: (context) {
-                                final textScale = context
-                                    .select<ChatTextScaleService, double>(
-                                      (service) => service.scale,
-                                    );
-                                return _buildMessageBubble(
-                                  message,
-                                  textScale,
                                 );
-                              },
-                            );
-                            if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    child: Row(
-                                      children: [
-                                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                                          child: Text("NEW MESSAGES", style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
-                                        ),
-                                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
-                                      ],
-                                    ),
-                                  ),
-                                  bubble,
-                                ],
+                              }
+                              final messageIndex = index;
+                              final message = reversedMessages[messageIndex];
+                              
+                              final bubble = Builder(
+                                builder: (context) {
+                                  final textScale = context
+                                      .select<ChatTextScaleService, double>(
+                                        (service) => service.scale,
+                                      );
+                                  return _buildMessageBubble(
+                                    message,
+                                    textScale,
+                                  );
+                                },
                               );
-                            }
-                            return bubble;
-                          },
+                              if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      child: Row(
+                                        children: [
+                                          Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                                            child: Text("NEW MESSAGES", style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                                          ),
+                                          Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                                        ],
+                                      ),
+                                    ),
+                                    bubble,
+                                  ],
+                                );
+                              }
+                              return bubble;
+                            },
+                          ),
                         ),
                       ),
                       Positioned(

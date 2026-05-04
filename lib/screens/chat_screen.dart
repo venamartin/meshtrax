@@ -502,7 +502,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _previousMessageCount = currentMessageCount;
 
-    return ChatZoomWrapper(
+    return ExcludeSemantics(
+      child: ChatZoomWrapper(
       child: ScrollablePositionedList.builder(
         reverse: true, // List grows from bottom up
         itemScrollController: _itemScrollController,
@@ -599,6 +600,7 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         },
       ),
+    ),
     );
   }
 
