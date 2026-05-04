@@ -240,6 +240,7 @@ class MeshCoreConnector extends ChangeNotifier {
   bool _queuedMessageSyncInFlight = false;
   bool _didInitialQueueSync = false;
   bool _pendingQueueSync = false;
+  bool _pendingChannelSyncAfterQueueSync = false;
   Timer? _queueSyncTimeout;
   int _queueSyncRetries = 0;
   static const int _maxQueueSyncRetries = 3;
@@ -1378,7 +1379,10 @@ class MeshCoreConnector extends ChangeNotifier {
       if (PlatformInfo.isWeb) {
         await stopScan();
       }
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // Wait before subscribing so any unsolicited boot output from the device
+      // flows through _frameController with no listener and is discarded.
+      // This prevents stale/partial frames from confusing the decoder.
+      await Future<void>.delayed(const Duration(milliseconds: 2000));
       _usbFrameSubscription = _usbManager.frameStream.listen(
         _handleFrame,
         onError: (error, stackTrace) {
@@ -1398,19 +1402,24 @@ class MeshCoreConnector extends ChangeNotifier {
         tag: 'USB',
       );
       await _requestDeviceInfo();
+      // Cancel the periodic APP_START retry timer. On USB (reliable transport)
+      // repeated APP_START commands can interrupt the device's initialization
+      // sequence, preventing it from ever completing a SELF_INFO response.
+      _selfInfoRetryTimer?.cancel();
+      _selfInfoRetryTimer = null;
       _startBatteryPolling();
       if (_radioStatsPollRefCount > 0) _startRadioStatsPolling();
       var gotSelfInfo = await _waitForSelfInfo(
-        timeout: const Duration(seconds: 3),
+        timeout: const Duration(seconds: 15),
       );
       if (!gotSelfInfo) {
         _appDebugLogService?.warn(
           'connectUsb: SELF_INFO timeout, retrying…',
           tag: 'USB',
         );
-        await refreshDeviceInfo();
+        await sendFrame(buildAppStartFrame());
         gotSelfInfo = await _waitForSelfInfo(
-          timeout: const Duration(seconds: 3),
+          timeout: const Duration(seconds: 5),
         );
       }
       if (!gotSelfInfo) {
@@ -2168,6 +2177,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _pendingInitialContactsSync = false;
     _bleInitialSyncStarted = false;
     _pendingDeferredChannelSyncAfterContacts = false;
+    _pendingChannelSyncAfterQueueSync = false;
     _pathHashByteWidth = 1;
   }
 
@@ -2313,6 +2323,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _queuedMessageSyncInFlight = false;
     _didInitialQueueSync = false;
     _pendingQueueSync = false;
+    _pendingChannelSyncAfterQueueSync = false;
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _hasLoadedChannels = false;
@@ -3606,9 +3617,19 @@ class MeshCoreConnector extends ChangeNotifier {
         if (!_didInitialQueueSync || _pendingQueueSync) {
           _didInitialQueueSync = true;
           _pendingQueueSync = false;
+          if (_pendingDeferredChannelSyncAfterContacts &&
+              (_activeTransport == MeshCoreTransportType.bluetooth ||
+                  _activeTransport == MeshCoreTransportType.usb ||
+                  _activeTransport == MeshCoreTransportType.tcp)) {
+            // Defer channel sync until queue sync finishes so the device isn't
+            // handling two sequential-request protocols at once, which causes
+            // channel 0 to reliably time out.
+            _pendingDeferredChannelSyncAfterContacts = false;
+            _pendingInitialChannelSync = false;
+            _pendingChannelSyncAfterQueueSync = true;
+          }
           unawaited(syncQueuedMessages(force: true));
-        }
-        if (_pendingDeferredChannelSyncAfterContacts &&
+        } else if (_pendingDeferredChannelSyncAfterContacts &&
             (_activeTransport == MeshCoreTransportType.bluetooth ||
                 _activeTransport == MeshCoreTransportType.usb ||
                 _activeTransport == MeshCoreTransportType.tcp)) {
@@ -3883,7 +3904,11 @@ class MeshCoreConnector extends ChangeNotifier {
     _queueSyncTimeout?.cancel();
     _isSyncingQueuedMessages = false;
     _queuedMessageSyncInFlight = false;
-    _queueSyncRetries = 0; // Reset retry counter on successful completion
+    _queueSyncRetries = 0;
+    if (_pendingChannelSyncAfterQueueSync) {
+      _pendingChannelSyncAfterQueueSync = false;
+      unawaited(getChannels());
+    }
   }
 
   void _handleQueuedMessageReceived() {
