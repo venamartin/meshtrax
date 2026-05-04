@@ -824,7 +824,7 @@ class _ChatScreenState extends State<ChatScreen> {
             );
 
             final repeatersList = List.of(connector.directRepeaters)
-              ..sort((a, b) => b.ranking.compareTo(a.ranking));
+              ..sort(DirectRepeater.compare);
 
             if (repeatersList.isEmpty) {
               showAllPaths = true;

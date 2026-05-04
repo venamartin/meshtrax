@@ -176,7 +176,7 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
         final paths = pathService.getRecentPaths(currentContact.publicKeyHex);
 
         final repeatersList = List.of(connector.directRepeaters)
-          ..sort((a, b) => b.ranking.compareTo(a.ranking));
+          ..sort(DirectRepeater.compare);
 
         if (repeatersList.isEmpty) {
           _showAllPaths = true;

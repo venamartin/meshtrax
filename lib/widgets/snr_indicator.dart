@@ -133,7 +133,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
   Widget build(BuildContext context) {
     final directRepeaters = widget.connector.directRepeaters;
     final directBestRepeaters = List.of(directRepeaters)
-      ..sort((a, b) => (b.ranking).compareTo(a.ranking));
+      ..sort(DirectRepeater.compare);
     final directRepeater = directBestRepeaters.isEmpty
         ? null
         : directBestRepeaters.first;
