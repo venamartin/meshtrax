@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+
 import 'screens/chrome_required_screen.dart';
 import 'utils/platform_info.dart';
 
@@ -59,6 +60,8 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.initialize();
   await backgroundService.initialize();
+  // Clear any orphaned foreground service from a previously killed instance
+  await backgroundService.stop();
   _registerThirdPartyLicenses();
 
   await chatTextScaleService.initialize();
@@ -125,7 +128,7 @@ https://creativecommons.org/licenses/by/4.0/
   });
 }
 
-class MeshTraxApp extends StatelessWidget {
+class MeshTraxApp extends StatefulWidget {
   final MeshCoreConnector connector;
   final MessageRetryService retryService;
   final PathHistoryService pathHistoryService;
@@ -156,21 +159,43 @@ class MeshTraxApp extends StatelessWidget {
   });
 
   @override
+  State<MeshTraxApp> createState() => _MeshTraxAppState();
+}
+
+class _MeshTraxAppState extends State<MeshTraxApp> {
+  late final AppLifecycleListener _lifecycleListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () => NotificationService().cancelAll(),
+      onDetach: () => widget.connector.disconnect(manual: true),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: connector),
-        ChangeNotifierProvider.value(value: retryService),
-        ChangeNotifierProvider.value(value: pathHistoryService),
-        ChangeNotifierProvider.value(value: appSettingsService),
-        ChangeNotifierProvider.value(value: bleDebugLogService),
-        ChangeNotifierProvider.value(value: appDebugLogService),
-        ChangeNotifierProvider.value(value: chatTextScaleService),
-        ChangeNotifierProvider.value(value: translationService),
-        ChangeNotifierProvider.value(value: uiViewStateService),
-        Provider.value(value: storage),
-        Provider.value(value: mapTileCacheService),
-        ChangeNotifierProvider.value(value: timeoutPredictionService),
+        ChangeNotifierProvider.value(value: widget.connector),
+        ChangeNotifierProvider.value(value: widget.retryService),
+        ChangeNotifierProvider.value(value: widget.pathHistoryService),
+        ChangeNotifierProvider.value(value: widget.appSettingsService),
+        ChangeNotifierProvider.value(value: widget.bleDebugLogService),
+        ChangeNotifierProvider.value(value: widget.appDebugLogService),
+        ChangeNotifierProvider.value(value: widget.chatTextScaleService),
+        ChangeNotifierProvider.value(value: widget.translationService),
+        ChangeNotifierProvider.value(value: widget.uiViewStateService),
+        Provider.value(value: widget.storage),
+        Provider.value(value: widget.mapTileCacheService),
+        ChangeNotifierProvider.value(value: widget.timeoutPredictionService),
       ],
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {

@@ -130,12 +130,12 @@ class NotificationService {
       _l10n.appSettings_messageNotifications,
       importance: Importance.max,
       priority: Priority.high,
+      groupKey: _groupKey,
     );
     const iosDetails = DarwinNotificationDetails();
     final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    // Use a hash of the contactId as notification ID to group messages from same person
-    final id = (contactId ?? contactName).hashCode;
+    final id = (contactId ?? contactName).hashCode.abs();
 
     await _notifications.show(
       id: id,
@@ -144,6 +144,8 @@ class NotificationService {
       notificationDetails: details,
       payload: contactId,
     );
+
+    await _showGroupSummary();
 
     if (badgeCount != null) {
       _updateBadge(badgeCount);
@@ -163,11 +165,12 @@ class NotificationService {
       _l10n.appSettings_advertisementNotifications,
       importance: Importance.low,
       priority: Priority.low,
+      groupKey: _groupKey,
     );
     const iosDetails = DarwinNotificationDetails();
     final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    final id = (contactId ?? contactName).hashCode ^ 0x0A;
+    final id = (contactId ?? contactName).hashCode.abs() ^ 0x0A;
 
     await _notifications.show(
       id: id,
@@ -175,6 +178,8 @@ class NotificationService {
       body: contactName,
       notificationDetails: details,
     );
+
+    await _showGroupSummary();
   }
 
   Future<void> _showChannelMessageNotificationImpl({
@@ -191,15 +196,17 @@ class NotificationService {
       _l10n.appSettings_channelMessageNotifications,
       importance: Importance.max,
       priority: Priority.high,
+      groupKey: _groupKey,
     );
     const iosDetails = DarwinNotificationDetails();
     final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    final id = (channelIndex ?? channelName.hashCode) ^ 0x0C;
     final preview = formatNotificationText(message.trim());
     final body = preview.isEmpty
         ? _l10n.notification_receivedNewMessage
         : preview;
+
+    final id = (channelIndex ?? channelName.hashCode.abs()) ^ 0x0C;
 
     await _notifications.show(
       id: id,
@@ -208,6 +215,8 @@ class NotificationService {
       notificationDetails: details,
       payload: 'channel:$channelIndex',
     );
+
+    await _showGroupSummary();
 
     if (badgeCount != null) {
       _updateBadge(badgeCount);
@@ -233,12 +242,38 @@ class NotificationService {
     // Stub for Windows
   }
 
+  static const _groupKey = 'com.meshtrax.MESSAGES';
+  static const _groupSummaryId = 0x4D54; // 'MT'
+
+  Future<void> _showGroupSummary() async {
+    if (Platform.isWindows) return;
+    final summaryDetails = AndroidNotificationDetails(
+      'meshtrax_messages',
+      _l10n.appSettings_messageNotifications,
+      importance: Importance.max,
+      priority: Priority.high,
+      groupKey: _groupKey,
+      setAsGroupSummary: true,
+    );
+    await _notifications.show(
+      id: _groupSummaryId,
+      title: 'MeshTrax',
+      body: _l10n.notification_receivedNewMessage,
+      notificationDetails: NotificationDetails(android: summaryDetails),
+    );
+  }
   Future<void> cancelAll() async {
     if (Platform.isWindows) return;
+    if (!await _ensureInitialized()) return;
+    _pendingNotifications.clear();
+    await _notifications.cancelAll();
+    _updateBadge(0);
   }
 
   Future<void> cancel(int id) async {
     if (Platform.isWindows) return;
+    if (!await _ensureInitialized()) return;
+    await _notifications.cancel(id: id);
   }
 
   /// Cancel the notification for a specific contact and update the app badge.
@@ -365,12 +400,10 @@ class NotificationService {
     final batch = List<_PendingNotification>.from(_pendingNotifications);
     _pendingNotifications.clear();
 
-    if (batch.length == 1) {
-      // Single notification, show normally
-      _showNotificationImmediately(batch.first);
-    } else {
-      // Multiple notifications, show summary
-      await _showBatchSummary(batch);
+    // With native Android grouping, we just show each notification individually
+    // and they will be stacked together under the groupKey.
+    for (final notification in batch) {
+      await _showNotificationImmediately(notification);
     }
 
     _lastNotificationTime = DateTime.now();
@@ -409,54 +442,6 @@ class NotificationService {
       debugPrint('Failed to show immediate notification: $e');
     }
   }
-
-  Future<void> _showBatchSummary(List<_PendingNotification> batch) async {
-    if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
-
-    // Group by type
-    final messages = batch
-        .where((n) => n.type == _NotificationType.message)
-        .toList();
-    final adverts = batch
-        .where((n) => n.type == _NotificationType.advert)
-        .toList();
-    final channelMsgs = batch
-        .where((n) => n.type == _NotificationType.channelMessage)
-        .toList();
-
-    // Build summary text using localized plurals
-    final parts = <String>[];
-    if (messages.isNotEmpty) {
-      parts.add(_l10n.notification_messagesCount(messages.length));
-    }
-    if (channelMsgs.isNotEmpty) {
-      parts.add(_l10n.notification_channelMessagesCount(channelMsgs.length));
-    }
-    if (adverts.isNotEmpty) {
-      parts.add(_l10n.notification_newNodesCount(adverts.length));
-    }
-
-    if (parts.isEmpty) return;
-
-    final summaryText = parts.join(", ");
-    
-    final androidDetails = AndroidNotificationDetails(
-      'meshtrax_summary',
-      _l10n.notification_activityTitle,
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-    );
-    const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
-
-    await _notifications.show(
-      id: 0x5411, // Unique ID for summary
-      title: 'MeshTrax',
-      body: summaryText,
-      notificationDetails: details,
-    );
-  }
 }
 
 // Helper class for pending notifications
@@ -477,3 +462,4 @@ class _PendingNotification {
     this.badgeCount,
   });
 }
+

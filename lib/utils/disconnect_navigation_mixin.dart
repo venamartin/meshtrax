@@ -10,7 +10,7 @@ mixin DisconnectNavigationMixin<T extends StatefulWidget> on State<T> {
     if (!connector.isConnected) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.popUntil(context, (route) => route.isFirst);
+          Navigator.of(context).popUntil((route) => route.isFirst);
         }
       });
       return false;

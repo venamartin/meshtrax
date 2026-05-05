@@ -263,7 +263,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
         // Sort by most recent
         chatItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-        return Scaffold(
+        return PopScope(
+          canPop: false,
+          child: Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: AppBarTitle(context.l10n.chats_title),
@@ -431,6 +433,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               selectedIndex: 0,
               onDestinationSelected: (index) => _handleQuickSwitch(index, context),
             ),
+          ),
           ),
         );
       },

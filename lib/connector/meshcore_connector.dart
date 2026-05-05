@@ -310,6 +310,10 @@ class MeshCoreConnector extends ChangeNotifier {
       _activeTransport == MeshCoreTransportType.usb;
   bool get isAutoReconnectScheduled =>
       _shouldAutoReconnect && (_reconnectTimer?.isActive ?? false);
+  /// True as soon as a non-manual disconnect occurs, even before the reconnect
+  /// timer fires. Use this in build() checks to avoid the race where the timer
+  /// hasn't been set yet when notifyListeners() triggers the first rebuild.
+  bool get willAutoReconnect => _shouldAutoReconnect;
   String? get activeTcpEndpoint => _tcpConnector.activeEndpoint;
   bool get isTcpTransportConnected =>
       _state == MeshCoreConnectionState.connected &&
@@ -4581,6 +4585,10 @@ class MeshCoreConnector extends ChangeNotifier {
 
   String _channelDisplayName(int channelIndex) {
     for (final channel in _channels) {
+      if (channel.index != channelIndex) continue;
+      return channel.name.isEmpty ? 'Channel $channelIndex' : channel.name;
+    }
+    for (final channel in _cachedChannels) {
       if (channel.index != channelIndex) continue;
       return channel.name.isEmpty ? 'Channel $channelIndex' : channel.name;
     }
