@@ -57,6 +57,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Notification Icon for Foreground Service -->
+        <meta-data
+            android:name="com.meshtrax.notification.icon"
+            android:resource="@drawable/ic_notification" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

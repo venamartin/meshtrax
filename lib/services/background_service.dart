@@ -37,6 +37,7 @@ class BackgroundService {
     await FlutterForegroundTask.startService(
       notificationTitle: 'MeshTrax running',
       notificationText: 'Keeping BLE connected',
+      notificationIcon: const NotificationIcon(metaDataName: 'com.meshtrax.notification.icon'),
       callback: startCallback,
     );
   }
