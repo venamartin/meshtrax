@@ -2951,6 +2951,9 @@ class MeshCoreConnector extends ChangeNotifier {
     String? originalText,
     String? translatedLanguageCode,
     String? translationModelId,
+    String? replyToMessageId,
+    String? replyToSenderName,
+    String? replyToText,
   }) async {
     if (!isConnected || text.isEmpty) return;
 
@@ -3001,6 +3004,9 @@ class MeshCoreConnector extends ChangeNotifier {
       originalText: originalText,
       translatedLanguageCode: translatedLanguageCode,
       translationModelId: translationModelId,
+      replyToMessageId: replyToMessageId,
+      replyToSenderName: replyToSenderName,
+      replyToText: replyToText,
     );
     _addChannelMessage(channel.index, message);
     _pendingChannelSentQueue.add(message.messageId);
@@ -3012,7 +3018,8 @@ class MeshCoreConnector extends ChangeNotifier {
     
     notifyListeners();
 
-    final outboundText = prepareChannelOutboundText(channel.index, text);
+    final wireText = _buildReplyWireText(replyToSenderName, replyToText, text);
+    final outboundText = prepareChannelOutboundText(channel.index, wireText);
     await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
     await sendFrame(
       buildSendChannelTextMsgFrame(channel.index, outboundText),
@@ -3041,13 +3048,37 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    final outboundText = prepareChannelOutboundText(channelIndex, message.text);
+    final baseText = _buildReplyWireText(message.replyToSenderName, message.replyToText, message.text);
+    final outboundText = prepareChannelOutboundText(channelIndex, baseText);
     await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
     await sendFrame(
       buildSendChannelTextMsgFrame(channelIndex, outboundText),
       channelSendQueueId: messageId,
       expectsGenericAck: true,
     );
+  }
+
+  String _buildReplyWireText(String? replyToSenderName, String? replyToText, String text) {
+    if (replyToSenderName == null || replyToText == null) return text;
+    // Strip any existing "Re: X: \"...\" | " prefix to prevent reply chains compounding.
+    final strippedQuote = replyToText.contains('" | ')
+        ? replyToText.substring(replyToText.indexOf('" | ') + 4)
+        : replyToText;
+    final prefix = 'Re: $replyToSenderName: "';
+    const suffix = '" | ';
+    final maxBytes = maxChannelMessageBytes(_selfName);
+    final prefixBytes = utf8.encode(prefix).length;
+    const suffixBytes = 4; // '" | ' is ASCII
+    final textBytes = utf8.encode(text).length;
+    final availableForQuote = maxBytes - prefixBytes - suffixBytes - textBytes;
+    if (availableForQuote <= 0) return text;
+    final quoteBytes = utf8.encode(strippedQuote);
+    if (quoteBytes.length <= availableForQuote) {
+      return '$prefix$strippedQuote$suffix$text';
+    }
+    debugPrint('[Reply] wire text truncated: quote was ${quoteBytes.length} bytes, available $availableForQuote');
+    final truncated = utf8.decode(quoteBytes.sublist(0, availableForQuote - 3), allowMalformed: true);
+    return '$prefix$truncated...$suffix$text';
   }
 
   Future<void> removeContact(Contact contact) async {
@@ -5461,43 +5492,33 @@ class MeshCoreConnector extends ChangeNotifier {
       return false; // Don't add reaction as a visible message
     }
 
-    // Parse reply info from message text
+    // Parse reply info from incoming message text (other clients use @[SenderName] format)
     final replyInfo = ChannelMessage.parseReplyMention(sanitizedMessage.text);
     ChannelMessage processedMessage = sanitizedMessage;
 
-    if (replyInfo != null) {
-      // Find original message by sender name (most recent match)
-      final originalMessage = _findMessageBySender(
-        messages,
-        replyInfo.mentionedNode,
+    if (replyInfo != null && !sanitizedMessage.isOutgoing) {
+      processedMessage = ChannelMessage(
+        senderKey: sanitizedMessage.senderKey,
+        senderName: sanitizedMessage.senderName,
+        text: replyInfo.actualMessage,
+        originalText: sanitizedMessage.originalText,
+        translatedText: sanitizedMessage.translatedText,
+        translatedLanguageCode: sanitizedMessage.translatedLanguageCode,
+        translationStatus: sanitizedMessage.translationStatus,
+        translationModelId: sanitizedMessage.translationModelId,
+        timestamp: sanitizedMessage.timestamp,
+        isOutgoing: false,
+        status: sanitizedMessage.status,
+        repeats: sanitizedMessage.repeats,
+        repeatCount: sanitizedMessage.repeatCount,
+        pathLength: sanitizedMessage.pathLength,
+        pathBytes: sanitizedMessage.pathBytes,
+        pathVariants: sanitizedMessage.pathVariants,
+        channelIndex: sanitizedMessage.channelIndex,
+        messageId: sanitizedMessage.messageId,
+        replyToSenderName: replyInfo.mentionedNode,
+        replyToText: replyInfo.actualMessage,
       );
-
-      if (originalMessage != null) {
-        // Create new message with reply metadata
-        processedMessage = ChannelMessage(
-          senderKey: sanitizedMessage.senderKey,
-          senderName: sanitizedMessage.senderName,
-          text: replyInfo.actualMessage,
-          originalText: sanitizedMessage.originalText,
-          translatedText: sanitizedMessage.translatedText,
-          translatedLanguageCode: sanitizedMessage.translatedLanguageCode,
-          translationStatus: sanitizedMessage.translationStatus,
-          translationModelId: sanitizedMessage.translationModelId,
-          timestamp: sanitizedMessage.timestamp,
-          isOutgoing: sanitizedMessage.isOutgoing,
-          status: sanitizedMessage.status,
-          repeats: sanitizedMessage.repeats,
-          repeatCount: sanitizedMessage.repeatCount,
-          pathLength: sanitizedMessage.pathLength,
-          pathBytes: sanitizedMessage.pathBytes,
-          pathVariants: sanitizedMessage.pathVariants,
-          channelIndex: sanitizedMessage.channelIndex,
-          messageId: sanitizedMessage.messageId,
-          replyToMessageId: originalMessage.messageId,
-          replyToSenderName: originalMessage.senderName,
-          replyToText: originalMessage.text,
-        );
-      }
     }
 
     final existingIndex = _findChannelRepeatIndex(messages, processedMessage);
@@ -5548,19 +5569,6 @@ class MeshCoreConnector extends ChangeNotifier {
     // Save to persistent storage
     _channelMessageStore.saveChannelMessages(channelIndex, messages);
     return isNew;
-  }
-
-  ChannelMessage? _findMessageBySender(
-    List<ChannelMessage> messages,
-    String mentionedNode,
-  ) {
-    // Search backwards for most recent message from this sender
-    for (int i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].senderName == mentionedNode && !messages[i].isOutgoing) {
-        return messages[i];
-      }
-    }
-    return null;
   }
 
   void _processReaction(

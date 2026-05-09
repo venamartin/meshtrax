@@ -227,6 +227,9 @@ class ChannelMessage {
     String? originalText,
     String? translatedLanguageCode,
     String? translationModelId,
+    String? replyToMessageId,
+    String? replyToSenderName,
+    String? replyToText,
   }) {
     return ChannelMessage(
       senderKey: null,
@@ -242,6 +245,9 @@ class ChannelMessage {
       pathBytes: Uint8List(0),
       pathVariants: const [],
       channelIndex: channelIndex,
+      replyToMessageId: replyToMessageId,
+      replyToSenderName: replyToSenderName,
+      replyToText: replyToText,
     );
   }
 

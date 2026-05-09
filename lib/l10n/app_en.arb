@@ -621,7 +621,7 @@
       }
     }
   },
-  "chat_replyTo": "Reply to {name}",
+  "chat_replyTo": "Re: {name}",
   "@chat_replyTo": {
     "placeholders": {
       "name": {

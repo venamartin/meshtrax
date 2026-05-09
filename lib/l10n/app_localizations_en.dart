@@ -1238,7 +1238,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chat_replyTo(String name) {
-    return 'Reply to $name';
+    return 'Re: $name';
   }
 
   @override

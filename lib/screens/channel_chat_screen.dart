@@ -20,6 +20,7 @@ import '../models/channel_message.dart';
 import '../models/contact.dart'; // FIX: Imported Contact model to fix build errors
 import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
+import '../utils/app_logger.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/translation_service.dart';
 import '../utils/emoji_utils.dart';
@@ -584,7 +585,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               }
                               final messageIndex = index;
                               final message = reversedMessages[messageIndex];
-                              
+
                               final bubble = Builder(
                                 builder: (context) {
                                   final textScale = context
@@ -755,7 +756,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ),
                         if (gifId == null) const SizedBox(height: 4),
                       ],
-                      if (message.replyToMessageId != null) ...[
+                      if (message.replyToText != null) ...[
                         _buildReplyPreview(message, textScale),
                         const SizedBox(height: 8),
                       ],
@@ -1063,7 +1064,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
 
     return GestureDetector(
-      onTap: () => _scrollToMessage(message.replyToMessageId!),
+      onTap: message.replyToMessageId != null ? () => _scrollToMessage(message.replyToMessageId!) : null,
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -1520,9 +1521,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         }
       }
     }
-    if (_replyingToMessage != null) {
-      messageText = '@[${_replyingToMessage!.senderName}] $messageText';
-    }
+    final replyingTo = _replyingToMessage;
 
     final maxBytes = maxChannelMessageBytes(connector.selfName);
     final outboundText = connector.prepareChannelOutboundText(
@@ -1546,6 +1545,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       originalText: originalText,
       translatedLanguageCode: translatedLanguageCode,
       translationModelId: translationModelId,
+      replyToMessageId: replyingTo?.messageId,
+      replyToSenderName: replyingTo?.senderName,
+      replyToText: replyingTo?.text,
     );
   }
 

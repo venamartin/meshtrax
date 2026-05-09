@@ -2341,7 +2341,7 @@ abstract class AppLocalizations {
   /// No description provided for @chat_replyTo.
   ///
   /// In en, this message translates to:
-  /// **'Reply to {name}'**
+  /// **'Re: {name}'**
   String chat_replyTo(String name);
 
   /// No description provided for @chat_location.
