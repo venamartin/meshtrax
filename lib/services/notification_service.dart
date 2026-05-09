@@ -58,10 +58,12 @@ class NotificationService {
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
+    const linuxSettings = LinuxInitializationSettings(defaultActionName: 'Open');
 
-    const initSettings = InitializationSettings(
+    final initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
+      linux: Platform.isLinux ? linuxSettings : null,
     );
 
     await _notifications.initialize(
@@ -70,7 +72,7 @@ class NotificationService {
     );
 
     _isInitialized = true;
-    debugPrint('Notifications initialized (mobile platform)');
+    debugPrint(Platform.isLinux ? 'Notifications initialized (Linux)' : 'Notifications initialized (mobile platform)');
   }
 
   static bool _isDbusSessionAvailable() {
