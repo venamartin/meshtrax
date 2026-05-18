@@ -3355,6 +3355,34 @@ class AppLocalizationsFr extends AppLocalizations {
       'La copie de l\'annonce vers le presse-papiers a échoué.';
 
   @override
+  String get contacts_addContact => 'Add Contact';
+
+  @override
+  String get contacts_scanQrCode => 'Scan QR Code';
+
+  @override
+  String get contacts_scanQrCodeDesc =>
+      'Scan a contact QR code from the MeshCore app';
+
+  @override
+  String get contacts_enterIdHash => 'Enter Advert';
+
+  @override
+  String get contacts_enterIdHashDesc =>
+      'Paste a contact advert or meshtrax:// link';
+
+  @override
+  String get contacts_advertHint =>
+      'meshtrax://..., letsmesh.net URL, or public key hex';
+
+  @override
+  String get contacts_import => 'Import';
+
+  @override
+  String get contacts_scanContactInstructions =>
+      'Scan a MeshCore contact QR code';
+
+  @override
   String get notification_activityTitle => 'Activité MeshCore';
 
   @override
