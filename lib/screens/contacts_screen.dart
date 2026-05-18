@@ -30,6 +30,7 @@ import '../widgets/unread_badge.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'channels_screen.dart';
 import 'chat_screen.dart';
+import 'contact_qr_scanner_screen.dart';
 import 'chats_screen.dart';
 import 'discovery_screen.dart';
 import 'map_screen.dart';
@@ -302,6 +303,188 @@ class _ContactsScreenState extends State<ContactsScreen>
     }
   }
 
+  void _showAddContactDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.contacts_addContact),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.qr_code_scanner),
+              ),
+              title: Text(context.l10n.contacts_scanQrCode),
+              subtitle: Text(context.l10n.contacts_scanQrCodeDesc),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(dialogContext);
+                _navigateToQrScanner(context);
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.tag),
+              ),
+              title: Text(context.l10n.contacts_enterIdHash),
+              subtitle: Text(context.l10n.contacts_enterIdHashDesc),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(dialogContext);
+                _showEnterAdvertDialog(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.common_cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _navigateToQrScanner(BuildContext context) async {
+    final scannedData = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ContactQrScannerScreen(),
+      ),
+    );
+    if (scannedData != null && mounted) {
+      _importFromScannedData(scannedData);
+    }
+  }
+
+  void _showEnterAdvertDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.contacts_enterIdHash),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: context.l10n.contacts_advertHint,
+            border: const OutlineInputBorder(),
+          ),
+          maxLines: 4,
+          minLines: 2,
+          keyboardType: TextInputType.multiline,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              Navigator.pop(dialogContext);
+              _importFromScannedData(text);
+            },
+            child: Text(context.l10n.contacts_import),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handles all three contact data formats:
+  /// - `meshtrax://HEX` — full advert frame
+  /// - URI with `?public_key=HEX64` — meshcore://contact/add or letsmesh.net links
+  /// - 64-char hex — bare 32-byte public key
+  void _importFromScannedData(String data) {
+    if (data.startsWith('meshtrax://')) {
+      _importFromHexString(data.substring('meshtrax://'.length));
+      return;
+    }
+    // Extract public_key via regex to avoid Uri.queryParameters emoji decode issues
+    final pubKeyMatch =
+        RegExp(r'[?&]public_key=([0-9a-fA-F]{64})').firstMatch(data);
+    if (pubKeyMatch != null) {
+      final pubKeyHex = pubKeyMatch.group(1)!;
+      String name = '';
+      int type = advTypeChat;
+      try {
+        final nameMatch = RegExp(r'[?&]name=([^&]+)').firstMatch(data);
+        if (nameMatch != null) {
+          name = Uri.decodeComponent(nameMatch.group(1)!);
+        }
+        final typeMatch = RegExp(r'[?&]type=(\d+)').firstMatch(data);
+        if (typeMatch != null) {
+          type = int.tryParse(typeMatch.group(1)!) ?? advTypeChat;
+        }
+      } catch (_) {
+        // Name/type decoding failed — add with empty name
+      }
+      _importFromPublicKeyHex(pubKeyHex, name: name, type: type);
+      return;
+    }
+    // Bare 64-char hex public key
+    if (data.length == 64) {
+      _importFromPublicKeyHex(data);
+      return;
+    }
+    // Assume full advert hex (raw, without meshtrax:// prefix)
+    _importFromHexString(data);
+  }
+
+  void _importFromHexString(String hexString) {
+    final connector = context.read<MeshCoreConnector>();
+    try {
+      final bytes = hex2Uint8List(hexString);
+      if (bytes.length < 98) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_invalidAdvertFormat),
+        );
+        return;
+      }
+      final importContactFrame = buildImportContactFrame(bytes);
+      _pendingOperations.add(ContactOperationType.import);
+      connector.importContact(importContactFrame);
+    } catch (e) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.contacts_invalidAdvertFormat),
+      );
+    }
+  }
+
+  void _importFromPublicKeyHex(String pubKeyHex, {String name = '', int type = advTypeChat}) {
+    final connector = context.read<MeshCoreConnector>();
+    try {
+      final pubKey = hex2Uint8List(pubKeyHex);
+      if (pubKey.length != 32) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_invalidAdvertFormat),
+        );
+        return;
+      }
+      final contact = Contact(
+        publicKey: pubKey,
+        name: name,
+        type: type,
+        pathLength: -1,
+        path: Uint8List(0),
+        lastSeen: DateTime.now(),
+      );
+      _pendingOperations.add(ContactOperationType.import);
+      connector.importDiscoveredContact(contact);
+    } catch (e) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.contacts_invalidAdvertFormat),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final connector = context.watch<MeshCoreConnector>();
@@ -424,6 +607,11 @@ class _ContactsScreenState extends State<ContactsScreen>
           ],
         ),
         body: _buildContactsBody(context, connector),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showAddContactDialog(context),
+          tooltip: context.l10n.contacts_addContact,
+          child: const Icon(Icons.add),
+        ),
         bottomNavigationBar: SafeArea(
           top: false,
           child: QuickSwitchBar(

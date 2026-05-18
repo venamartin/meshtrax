@@ -5813,6 +5813,54 @@ abstract class AppLocalizations {
   /// **'Copying advert to Clipboard failed.'**
   String get contacts_contactAdvertCopyFailed;
 
+  /// No description provided for @contacts_addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Contact'**
+  String get contacts_addContact;
+
+  /// No description provided for @contacts_scanQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get contacts_scanQrCode;
+
+  /// No description provided for @contacts_scanQrCodeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a contact QR code from the MeshCore app'**
+  String get contacts_scanQrCodeDesc;
+
+  /// No description provided for @contacts_enterIdHash.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Advert'**
+  String get contacts_enterIdHash;
+
+  /// No description provided for @contacts_enterIdHashDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a contact advert or meshtrax:// link'**
+  String get contacts_enterIdHashDesc;
+
+  /// No description provided for @contacts_advertHint.
+  ///
+  /// In en, this message translates to:
+  /// **'meshtrax://..., letsmesh.net URL, or public key hex'**
+  String get contacts_advertHint;
+
+  /// No description provided for @contacts_import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get contacts_import;
+
+  /// No description provided for @contacts_scanContactInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a MeshCore contact QR code'**
+  String get contacts_scanContactInstructions;
+
   /// No description provided for @notification_activityTitle.
   ///
   /// In en, this message translates to:

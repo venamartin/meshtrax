@@ -1,86 +1,222 @@
 {
   "bg": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "de": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "es": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "fr": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "hu": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "it": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "ja": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "ko": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "nl": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "pl": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "pt": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "ru": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "sk": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "sl": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "sv": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "uk": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ],
 
   "zh": [
     "nav_chats",
-    "chats_title"
+    "chats_title",
+    "contacts_addContact",
+    "contacts_scanQrCode",
+    "contacts_scanQrCodeDesc",
+    "contacts_enterIdHash",
+    "contacts_enterIdHashDesc",
+    "contacts_advertHint",
+    "contacts_import",
+    "contacts_scanContactInstructions"
   ]
 }
