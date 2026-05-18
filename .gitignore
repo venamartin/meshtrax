@@ -90,3 +90,6 @@ keystore.properties
 
 # Cloudflare Wrangler
 .wrangler
+
+# Scratch files
+scratch/
