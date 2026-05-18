@@ -1,4 +1,4 @@
-import 'dart:io' show Platform, File;
+import 'dart:io' show Platform;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -45,10 +45,10 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Skip notification initialization on Windows (plugin not available)
-    if (Platform.isWindows) {
+    // Skip notification initialization on desktop platforms where it's unsupported
+    if (Platform.isWindows || Platform.isLinux) {
       _isInitialized = true;
-      debugPrint('Notifications unavailable on Windows');
+      debugPrint('Notifications unavailable on ${Platform.operatingSystem}');
       return;
     }
 
@@ -73,16 +73,7 @@ class NotificationService {
     debugPrint('Notifications initialized (mobile platform)');
   }
 
-  static bool _isDbusSessionAvailable() {
-    final addr = Platform.environment['DBUS_SESSION_BUS_ADDRESS'];
-    if (addr != null && addr.isNotEmpty) return true;
-    // Fallback: check the default socket for the current user.
-    final uid = Platform.environment['UID'] ?? Platform.environment['EUID'];
-    final path = '/run/user/${uid ?? '1000'}/bus';
-    return File(path).existsSync();
-  }
-
-  Future<bool> _ensureInitialized() async {
+Future<bool> _ensureInitialized() async {
     if (!_isInitialized) {
       await initialize();
     }
@@ -94,8 +85,7 @@ class NotificationService {
       await initialize();
     }
 
-    // Permissions are not needed on Windows
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isLinux) {
       return true;
     }
 
@@ -123,7 +113,7 @@ class NotificationService {
     int? badgeCount,
   }) async {
     if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
 
     final androidDetails = AndroidNotificationDetails(
       'meshtrax_messages',
@@ -158,7 +148,7 @@ class NotificationService {
     String? contactId,
   }) async {
     if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
 
     final androidDetails = AndroidNotificationDetails(
       'meshtrax_adverts',
@@ -189,7 +179,7 @@ class NotificationService {
     int? badgeCount,
   }) async {
     if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
 
     final androidDetails = AndroidNotificationDetails(
       'meshtrax_channels',
@@ -246,7 +236,7 @@ class NotificationService {
   static const _groupSummaryId = 0x4D54; // 'MT'
 
   Future<void> _showGroupSummary() async {
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
     final summaryDetails = AndroidNotificationDetails(
       'meshtrax_messages',
       _l10n.appSettings_messageNotifications,
@@ -263,7 +253,7 @@ class NotificationService {
     );
   }
   Future<void> cancelAll() async {
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     _pendingNotifications.clear();
     await _notifications.cancelAll();
@@ -271,7 +261,7 @@ class NotificationService {
   }
 
   Future<void> cancel(int id) async {
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     await _notifications.cancel(id: id);
   }
@@ -282,7 +272,7 @@ class NotificationService {
     int totalUnreadCount,
   ) async {
     if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
   }
 
   /// Cancel the notification for a specific channel and update the app badge.
@@ -291,17 +281,17 @@ class NotificationService {
     int totalUnreadCount,
   ) async {
     if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
   }
 
   /// Cancel advert notifications for the given contact public key hexes.
   Future<void> clearAdvertNotifications(List<String> contactIds) async {
     if (!await _ensureInitialized()) return;
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
   }
 
   Future<void> _updateBadge(int count) async {
-    if (Platform.isWindows) return;
+    if (Platform.isWindows || Platform.isLinux) return;
     // Badge updates only supported on iOS/macOS
   }
 
