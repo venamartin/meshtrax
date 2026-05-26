@@ -248,11 +248,15 @@ _LEAFLET_JS = r"""
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
   function edgeCost(e,nA,nB) {
-    var score=Math.max(e.score||0,0.01);
-    var dist=(nA.lat!==null&&nB.lat!==null&&nA.gps==='real'&&nB.gps==='real')
-      ? Math.max(haversine(nA.lat,nA.lon,nB.lat,nB.lon),1.0)
+    var score = Math.max(e.score||0, 0.01);
+    var mode  = document.querySelector('input[name="cost-mode"]:checked').value;
+    if (mode === 'score') return 1/score;
+    var dist = (nA.lat!==null&&nB.lat!==null&&nA.gps==='real'&&nB.gps==='real')
+      ? Math.max(haversine(nA.lat,nA.lon,nB.lat,nB.lon), 1.0)
       : 50.0;
-    return (1/score)*dist;
+    var w = parseFloat(document.getElementById('dist-weight').value);
+    if (mode === 'multiply') return (1/score) * Math.pow(dist, w);
+    /* add */                return (1/score) + w * dist;
   }
 
   function dijkstra(srcId,dstId) {
@@ -284,6 +288,16 @@ _LEAFLET_JS = r"""
     var n=nodeById[id];
     return (n&&n.degree===0) ? (n.name+' has no connections — all its neighbor links have ambiguous pubkeys.') : null;
   }
+
+  document.querySelectorAll('input[name="cost-mode"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      document.getElementById('dist-weight-row').style.display = (this.value==='score') ? 'none' : 'block';
+      lastActive='path';
+    });
+  });
+  document.getElementById('dist-weight').addEventListener('input', function() {
+    document.getElementById('dist-w-val').textContent = parseFloat(this.value).toFixed(1);
+  });
 
   document.getElementById('path-a').addEventListener('focus', function() { lastActive='path'; });
   document.getElementById('path-b').addEventListener('focus', function() { lastActive='path'; });
@@ -607,6 +621,14 @@ def save_interactive(g, path):
         '<div style="color:#777;font-size:11px;margin-bottom:4px;">Click two nodes, or type names.</div>'
         f'<input id="path-a" list="node-dl" placeholder="From…" style="{inp}margin-bottom:4px;">'
         f'<input id="path-b" list="node-dl" placeholder="To…"   style="{inp}">'
+        '<div style="color:#888;margin-top:6px;margin-bottom:2px;">Cost function</div>'
+        '<label><input type="radio" name="cost-mode" value="score"> Score only</label><br>'
+        '<label><input type="radio" name="cost-mode" value="multiply"> (1/score) × dist<sup>w</sup></label><br>'
+        '<label><input type="radio" name="cost-mode" value="add" checked> (1/score) + w × dist</label>'
+        '<div id="dist-weight-row" style="margin-top:4px;">'
+        'w: <b id="dist-w-val">0.7</b><br>'
+        f'<input type="range" id="dist-weight" min="0" max="2" step="0.1" value="0.7" style="width:100%">'
+        '</div>'
         '<div style="margin-top:4px;"><label><input type="checkbox" id="path-repeaters-only" checked>'
         ' Repeaters only (exclude observers, companions, rooms)</label></div>'
         f'<div style="margin-top:6px;"><button id="path-find" style="{btn}margin-right:6px;">Find Path</button>'
