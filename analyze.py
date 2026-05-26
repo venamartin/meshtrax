@@ -2,6 +2,7 @@
 # pip install igraph matplotlib pyvis
 
 import argparse
+from html import escape as _escape
 import json
 import sys
 import urllib.request
@@ -231,129 +232,284 @@ def save_interactive(g, path):
       }
     }""")
 
+    node_names = sorted(v['name'] for v in g.vs)
     net.save_graph(path)
-    _inject_filters(path, node_meta, edge_scores, max_degree)
+    _inject_filters(path, node_meta, edge_scores, max_degree, node_names)
     print(f'Saved {path}')
 
 
-def _inject_filters(path, node_meta, edge_scores, max_degree):
+def _inject_filters(path, node_meta, edge_scores, max_degree, node_names):
+    datalist_opts = '\n'.join(f'<option value="{_escape(n)}">' for n in node_names)
+    inp_style = 'width:100%;background:#1a1a2e;color:#eee;border:1px solid #555;padding:3px 5px;border-radius:3px;box-sizing:border-box;'
+    btn_style = 'background:#2a3a5a;color:#ddd;border:1px solid #555;border-radius:3px;padding:2px 8px;cursor:pointer;'
+
     panel_html = (
-        '<div id="filter-panel" style="'
+        # shared datalists
+        f'<datalist id="node-dl">{datalist_opts}</datalist>'
+
+        '<div id="fp" style="'
         'position:fixed;top:10px;left:10px;z-index:1000;'
-        'background:rgba(15,15,30,0.93);color:#ccc;'
-        'border:1px solid #555;border-radius:8px;'
-        'padding:14px 18px;font-family:monospace;font-size:13px;'
-        'min-width:210px;line-height:1.7;">'
-        '<div style="font-weight:bold;margin-bottom:8px;color:#fff;font-size:14px;">Filters</div>'
-        '<div style="margin-bottom:8px;">'
-        'Min degree: <b id="deg-val">0</b><br>'
-        f'<input type="range" id="min-deg" min="0" max="{max_degree}" value="0" style="width:100%">'
+        'background:rgba(12,12,28,0.95);color:#ccc;'
+        'border:1px solid #556;border-radius:8px;'
+        'padding:12px 16px;font-family:monospace;font-size:12px;'
+        'min-width:240px;max-height:90vh;overflow-y:auto;line-height:1.6;">'
+
+        # ── Filters ──────────────────────────────────────────
+        '<details open><summary style="cursor:pointer;color:#8af;font-weight:bold;margin-bottom:4px;">▸ Filters</summary>'
+        f'Min degree: <b id="deg-val">0</b><br><input type="range" id="min-deg" min="0" max="{max_degree}" value="0" style="width:100%">'
+        '<br>Min edge score: <b id="score-val">0.00</b><br><input type="range" id="min-score" min="0" max="100" value="0" style="width:100%">'
+        '<br><div style="color:#888;margin-top:4px;">Roles</div>'
+        '<label><input type="checkbox" class="role-cb" value="repeater" checked> Repeaters</label><br>'
+        '<label><input type="checkbox" class="role-cb" value="companion" checked> Companions</label><br>'
+        '<label><input type="checkbox" class="role-cb" value="room" checked> Rooms</label><br>'
+        '<label><input type="checkbox" class="role-cb" value="observer" checked> Observers</label><br>'
+        '<hr style="border-color:#334;margin:6px 0">'
+        '<label><input type="checkbox" id="main-only"> Main component only</label>'
+        '</details>'
+
+        # ── Neighborhood ─────────────────────────────────────
+        '<details style="margin-top:8px;"><summary style="cursor:pointer;color:#8af;font-weight:bold;margin-bottom:4px;">▸ Neighborhood</summary>'
+        f'<input id="nb-node" list="node-dl" placeholder="Node name…" style="{inp_style}"><br>'
+        '<div style="margin-top:4px;">'
+        f'Hops: <button id="nb-minus" style="{btn_style}">−</button> '
+        '<b id="nb-hops">1</b> '
+        f'<button id="nb-plus" style="{btn_style}">+</button>'
         '</div>'
-        '<div style="margin-bottom:8px;">'
-        'Min edge score: <b id="score-val">0.00</b><br>'
-        '<input type="range" id="min-score" min="0" max="100" value="0" style="width:100%">'
+        '<div style="margin-top:6px;">'
+        f'<button id="nb-focus" style="{btn_style}margin-right:6px;">Focus</button>'
+        f'<button id="nb-reset" style="{btn_style}">Reset</button>'
         '</div>'
-        '<div style="color:#888;margin-bottom:2px;">Roles</div>'
-        '<label style="display:block"><input type="checkbox" class="role-cb" value="repeater" checked> Repeaters</label>'
-        '<label style="display:block"><input type="checkbox" class="role-cb" value="companion" checked> Companions</label>'
-        '<label style="display:block"><input type="checkbox" class="role-cb" value="room" checked> Rooms</label>'
-        '<label style="display:block"><input type="checkbox" class="role-cb" value="observer" checked> Observers</label>'
-        '<hr style="border-color:#444;margin:8px 0">'
-        '<label style="display:block"><input type="checkbox" id="main-only"> Main component only</label>'
+        '</details>'
+
+        # ── Shortest Path ────────────────────────────────────
+        '<details style="margin-top:8px;"><summary style="cursor:pointer;color:#8af;font-weight:bold;margin-bottom:4px;">▸ Shortest Path</summary>'
+        '<div style="color:#777;font-size:11px;margin-bottom:4px;">Click two nodes, or type names.</div>'
+        f'<input id="path-a" list="node-dl" placeholder="From…" style="{inp_style}margin-bottom:4px;">'
+        f'<input id="path-b" list="node-dl" placeholder="To…"   style="{inp_style}">'
+        '<div style="margin-top:4px;">'
+        '<label><input type="checkbox" id="path-repeaters-only" checked> Repeaters only (exclude observers, companions, rooms)</label>'
+        '</div>'
+        '<div style="margin-top:6px;">'
+        f'<button id="path-find" style="{btn_style}margin-right:6px;">Find Path</button>'
+        f'<button id="path-reset" style="{btn_style}">Reset</button>'
+        '</div>'
+        '<div id="path-result" style="margin-top:8px;font-size:11px;color:#adf;line-height:1.5;"></div>'
+        '</details>'
+
         '</div>'
     )
 
     filter_js = (
         '<script>\n'
-        'var NODE_META = ' + json.dumps(node_meta) + ';\n'
+        'var NODE_META   = ' + json.dumps(node_meta)   + ';\n'
         'var EDGE_SCORES = ' + json.dumps(edge_scores) + ';\n'
         r"""
 (function() {
-  // allNodes/allEdges live here so both the freeze handler and the filter
-  // functions share the same reference.
-  var allNodes = null;
-  var allEdges = null;
-  var pendingPositions = null;  // set if stabilization finishes before ready()
+  var allNodes         = null;
+  var allEdges         = null;
+  var adj              = {};   // adjacency list built once from allEdges
+  var pendingPositions = null;
+  var nameToId         = {};
+  var idToName         = {};
 
-  function patchPositions(positions) {
+  function patchPositions(pos) {
     allNodes = allNodes.map(function(n) {
-      var p = positions[n.id];
-      if (p) { n.x = p.x; n.y = p.y; }
-      return n;
+      var p = pos[n.id]; if (p) { n.x = p.x; n.y = p.y; } return n;
     });
   }
 
-  // Register stabilization listener as soon as vis.js network exists.
-  var _freezePoll = setInterval(function() {
-    if (typeof network !== 'undefined' && network) {
-      clearInterval(_freezePoll);
-      network.on('stabilizationIterationsDone', function() {
-        network.setOptions({physics: {enabled: false}});
-        var positions = network.getPositions();
-        if (allNodes) {
-          patchPositions(positions);
-        } else {
-          pendingPositions = positions;  // ready() will apply it
-        }
-      });
-    }
+  // ── freeze after overlap resolution, wire up click-to-select ──
+  var _poll = setInterval(function() {
+    if (typeof network === 'undefined' || !network) return;
+    clearInterval(_poll);
+
+    network.on('stabilizationIterationsDone', function() {
+      network.setOptions({physics: {enabled: false}});
+      var pos = network.getPositions();
+      if (allNodes) { patchPositions(pos); } else { pendingPositions = pos; }
+    });
+
+    // Click node → fill path-a then path-b and auto-run
+    network.on('click', function(params) {
+      if (!params.nodes.length) return;
+      var name = idToName[params.nodes[0]]; if (!name) return;
+      var a = document.getElementById('path-a');
+      var b = document.getElementById('path-b');
+      if (!a.value)                   { a.value = name; }
+      else if (!b.value && a.value !== name) { b.value = name; document.getElementById('path-find').click(); }
+    });
   }, 10);
 
   function ready(fn) {
-    if (document.readyState !== 'loading') fn();
-    else document.addEventListener('DOMContentLoaded', fn);
+    if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn);
   }
 
   ready(function() {
     allNodes = nodes.get();
     allEdges = edges.get();
-    if (pendingPositions) {
-      patchPositions(pendingPositions);
-      pendingPositions = null;
+    if (pendingPositions) { patchPositions(pendingPositions); pendingPositions = null; }
+
+    // build name lookups and adjacency list once
+    allNodes.forEach(function(n) { nameToId[n.label.toLowerCase()] = n.id; idToName[n.id] = n.label; });
+    allEdges.forEach(function(e) {
+      if (!adj[e.from]) adj[e.from] = []; if (!adj[e.to]) adj[e.to] = [];
+      adj[e.from].push(e.to); adj[e.to].push(e.from);
+    });
+
+    function resolveNode(q) {
+      q = q.trim().toLowerCase();
+      if (nameToId[q] !== undefined) return nameToId[q];
+      for (var k in nameToId) { if (k.indexOf(q) !== -1) return nameToId[k]; }
     }
 
+    // ── FILTERS ───────────────────────────────────────────────────────
     function applyFilters() {
       var minDeg   = parseInt(document.getElementById('min-deg').value);
       var minScore = parseInt(document.getElementById('min-score').value) / 100;
       var mainOnly = document.getElementById('main-only').checked;
-      var activeRoles = new Set(
-        Array.from(document.querySelectorAll('.role-cb:checked')).map(function(cb) { return cb.value; })
-      );
-
-      var visibleIds = new Set();
-      var filteredNodes = allNodes.filter(function(n) {
-        var m = NODE_META[n.id];
-        if (!m) return true;
-        if (m.degree < minDeg) return false;
-        if (!activeRoles.has(m.role)) return false;
-        if (mainOnly && !m.main) return false;
-        visibleIds.add(n.id);
-        return true;
+      var roles    = new Set(Array.from(document.querySelectorAll('.role-cb:checked')).map(function(c) { return c.value; }));
+      var vis = new Set();
+      var fn = allNodes.filter(function(n) {
+        var m = NODE_META[n.id]; if (!m) return true;
+        if (m.degree < minDeg || !roles.has(m.role) || (mainOnly && !m.main)) return false;
+        vis.add(n.id); return true;
       });
-
-      var filteredEdges = allEdges.filter(function(e) {
-        if (!visibleIds.has(e.from) || !visibleIds.has(e.to)) return false;
-        var key = Math.min(e.from, e.to) + '_' + Math.max(e.from, e.to);
-        if ((EDGE_SCORES[key] || 0) < minScore) return false;
-        return true;
+      var fe = allEdges.filter(function(e) {
+        if (!vis.has(e.from) || !vis.has(e.to)) return false;
+        return (EDGE_SCORES[Math.min(e.from,e.to)+'_'+Math.max(e.from,e.to)] || 0) >= minScore;
       });
-
-      nodes.clear(); nodes.add(filteredNodes);
-      edges.clear(); edges.add(filteredEdges);
+      nodes.clear(); nodes.add(fn); edges.clear(); edges.add(fe);
     }
-
     document.getElementById('min-deg').addEventListener('input', function() {
-      document.getElementById('deg-val').textContent = this.value;
-      applyFilters();
+      document.getElementById('deg-val').textContent = this.value; applyFilters();
     });
     document.getElementById('min-score').addEventListener('input', function() {
-      document.getElementById('score-val').textContent = (this.value / 100).toFixed(2);
+      document.getElementById('score-val').textContent = (this.value/100).toFixed(2); applyFilters();
+    });
+    document.querySelectorAll('.role-cb').forEach(function(cb) { cb.addEventListener('change', applyFilters); });
+    document.getElementById('main-only').addEventListener('change', applyFilters);
+
+    // ── NEIGHBORHOOD ─────────────────────────────────────────────────
+    var nbHops = 1;
+    var nbFocal = null;
+
+    function applyNeighborhood() {
+      if (nbFocal === null) return;
+      var visited = new Set([nbFocal]);
+      var frontier = [nbFocal];
+      for (var h = 0; h < nbHops; h++) {
+        var next = [];
+        frontier.forEach(function(id) {
+          (adj[id] || []).forEach(function(nb) { if (!visited.has(nb)) { visited.add(nb); next.push(nb); } });
+        });
+        frontier = next;
+      }
+      var fn = allNodes.filter(function(n) { return visited.has(n.id); }).map(function(n) {
+        return n.id === nbFocal ? Object.assign({}, n, {color: '#ffffff', borderWidth: 3}) : n;
+      });
+      var fe = allEdges.filter(function(e) { return visited.has(e.from) && visited.has(e.to); });
+      nodes.clear(); nodes.add(fn); edges.clear(); edges.add(fe);
+    }
+
+    document.getElementById('nb-focus').addEventListener('click', function() {
+      var id = resolveNode(document.getElementById('nb-node').value);
+      if (id === undefined) { alert('Node not found'); return; }
+      nbFocal = id; applyNeighborhood();
+    });
+    document.getElementById('nb-minus').addEventListener('click', function() {
+      if (nbHops > 1) { nbHops--; document.getElementById('nb-hops').textContent = nbHops; applyNeighborhood(); }
+    });
+    document.getElementById('nb-plus').addEventListener('click', function() {
+      nbHops++; document.getElementById('nb-hops').textContent = nbHops; applyNeighborhood();
+    });
+    document.getElementById('nb-reset').addEventListener('click', function() {
+      nbFocal = null; nbHops = 1;
+      document.getElementById('nb-hops').textContent = '1';
+      document.getElementById('nb-node').value = '';
       applyFilters();
     });
-    document.querySelectorAll('.role-cb').forEach(function(cb) {
-      cb.addEventListener('change', applyFilters);
+
+    // ── SHORTEST PATH (score-weighted Dijkstra) ───────────────────────
+    function dijkstra(src, dst) {
+      var repeatersOnly = document.getElementById('path-repeaters-only').checked;
+      var dist = {}; dist[src] = 0;
+      var prev = {};
+      var visited = new Set();
+      var queue = [{node: src, cost: 0}];
+      while (queue.length) {
+        queue.sort(function(a,b) { return a.cost - b.cost; });
+        var u = queue.shift();
+        if (visited.has(u.node)) continue;
+        visited.add(u.node);
+        if (u.node === dst) break;
+        allEdges.forEach(function(e) {
+          var nb = (e.from === u.node) ? e.to : (e.to === u.node) ? e.from : null;
+          if (nb === null || visited.has(nb)) return;
+          // When repeaters-only, skip non-repeater intermediate nodes (but allow the destination)
+          if (repeatersOnly && nb !== dst) {
+            var m = NODE_META[nb];
+            if (m && m.role !== 'repeater') return;
+          }
+          var score = EDGE_SCORES[Math.min(u.node,nb)+'_'+Math.max(u.node,nb)] || 0.01;
+          var d = dist[u.node] + (1 / score);
+          if (dist[nb] === undefined || d < dist[nb]) { dist[nb] = d; prev[nb] = u.node; queue.push({node: nb, cost: d}); }
+        });
+      }
+      if (dist[dst] === undefined) return null;
+      var path = []; var cur = dst;
+      while (cur !== undefined) { path.unshift(cur); cur = prev[cur]; }
+      return path[0] === src ? {nodes: path, cost: dist[dst]} : null;
+    }
+
+    function isolatedMsg(id) {
+      var m = NODE_META[id];
+      if (m && m.degree === 0)
+        return (idToName[id] || id) + ' has no connections in this snapshot — all its neighbor links are ambiguous (pubkeys not in node list).';
+    }
+
+    document.getElementById('path-find').addEventListener('click', function() {
+      var out = document.getElementById('path-result');
+      var aId = resolveNode(document.getElementById('path-a').value);
+      var bId = resolveNode(document.getElementById('path-b').value);
+      if (aId === undefined || bId === undefined) { out.textContent = 'Node not found'; return; }
+      if (aId === bId) { out.textContent = 'Same node'; return; }
+      var msg = isolatedMsg(aId) || isolatedMsg(bId);
+      if (msg) { out.textContent = msg; return; }
+      var res = dijkstra(aId, bId);
+      if (!res) { out.textContent = 'No path found — nodes may be in disconnected components'; return; }
+
+      var pathSet = new Set(res.nodes);
+      var fn = allNodes.filter(function(n) { return pathSet.has(n.id); }).map(function(n) {
+        var bg = (n.id === aId || n.id === bId) ? '#ff5555' : '#f0c040';
+        return Object.assign({}, n, {color: {background: bg, border: '#fff', highlight: {background: bg, border: '#fff'}}, borderWidth: 3});
+      });
+      var fe = [];
+      for (var i = 0; i < res.nodes.length - 1; i++) {
+        var u = res.nodes[i], v = res.nodes[i+1];
+        allEdges.forEach(function(e) {
+          if ((e.from===u&&e.to===v)||(e.from===v&&e.to===u)) {
+            var score = EDGE_SCORES[Math.min(u,v)+'_'+Math.max(u,v)] || 0;
+            fe.push(Object.assign({}, e, {color:{color:'#f0c040',opacity:1}, width:4, title:'Score: '+score.toFixed(3)}));
+          }
+        });
+      }
+      nodes.clear(); nodes.add(fn); edges.clear(); edges.add(fe);
+
+      var hops = res.nodes.length - 1;
+      var avgScore = hops > 0 ? (hops / res.cost).toFixed(3) : '—';
+      var names = res.nodes.map(function(id) { return idToName[id] || id; });
+      out.innerHTML = '<b>' + hops + ' hop' + (hops!==1?'s':'') + '</b> · avg score: ' + avgScore + '<br><br>' +
+        names.map(function(n,i) {
+          return '<span style="color:' + (i===0||i===names.length-1?'#ff9090':'#f0c040') + '">' + n + '</span>';
+        }).join('<br><span style="color:#666">↓</span><br>');
     });
-    document.getElementById('main-only').addEventListener('change', applyFilters);
+
+    document.getElementById('path-reset').addEventListener('click', function() {
+      document.getElementById('path-a').value = '';
+      document.getElementById('path-b').value = '';
+      document.getElementById('path-result').textContent = '';
+      applyFilters();
+    });
   });
 })();
 </script>
@@ -361,10 +517,10 @@ def _inject_filters(path, node_meta, edge_scores, max_degree):
     )
 
     with open(path) as f:
-        html = f.read()
-    html = html.replace('</body>', panel_html + filter_js + '\n</body>')
+        content = f.read()
+    content = content.replace('</body>', panel_html + filter_js + '\n</body>')
     with open(path, 'w') as f:
-        f.write(html)
+        f.write(content)
 
 
 def parse_args():
