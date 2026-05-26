@@ -366,13 +366,12 @@ def load_graph(path=None, data=None):
 
     g = ig.Graph()
     g.add_vertices(len(nodes))
-    g.vs['pubkey']         = [n['pubkey']        for n in nodes]
-    g.vs['name']           = [n['name']           for n in nodes]
-    g.vs['role']           = [n['role']           for n in nodes]
-    g.vs['neighbor_count'] = [n['neighbor_count'] for n in nodes]
+    g.vs['pubkey'] = [n['pubkey'] for n in nodes]
+    g.vs['name']   = [n['name']   for n in nodes]
+    g.vs['role']   = [n['role']   for n in nodes]
 
     valid, skipped = [], 0
-    edge_keys = ('weight', 'score', 'avg_snr', 'bidirectional', 'ambiguous')
+    edge_keys = ('weight', 'score', 'avg_snr')
     attrs = {k: [] for k in edge_keys}
     for e in edges:
         src = pubkey_to_idx.get(e['source'])
