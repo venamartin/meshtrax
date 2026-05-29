@@ -4,6 +4,7 @@
 import argparse
 from html import escape as _escape
 import json
+import math
 import os
 import sys
 import urllib.request
@@ -384,14 +385,14 @@ def load_graph(path=None, data=None):
     g.vs['name']   = [n['name']   for n in nodes]
     g.vs['role']   = [n['role']   for n in nodes]
 
-    valid, skipped = [], 0
+    valid, ambiguous = [], []
     edge_keys = ('weight', 'score', 'avg_snr')
     attrs = {k: [] for k in edge_keys}
     for e in edges:
         src = pubkey_to_idx.get(e['source'])
         tgt = pubkey_to_idx.get(e['target'])
         if src is None or tgt is None:
-            skipped += 1
+            ambiguous.append(e)
             continue
         valid.append((src, tgt))
         for k in edge_keys:
@@ -401,7 +402,88 @@ def load_graph(path=None, data=None):
     for k, vals in attrs.items():
         g.es[k] = vals
 
-    return g, skipped
+    return g, ambiguous
+
+
+def resolve_ambiguous_edges(g, ambiguous, loc_by_pubkey):
+    """Try to resolve edges whose source/target is a pubkey prefix (format: 'prefix:XX').
+
+    Single-candidate prefixes are resolved directly.  Multi-candidate prefixes
+    are resolved by picking the geographically closest candidate to the known
+    endpoint, when location data is available.
+
+    Returns (fixed, unfixed) counts and prints a summary.
+    """
+    pubkeys = g.vs['pubkey']
+    pubkey_to_idx = {pk: i for i, pk in enumerate(pubkeys)}
+
+    def _haversine(la1, lo1, la2, lo2):
+        R, p = 6371.0, math.pi / 180
+        dlat, dlon = (la2 - la1) * p, (lo2 - lo1) * p
+        a = math.sin(dlat / 2) ** 2 + math.cos(la1 * p) * math.cos(la2 * p) * math.sin(dlon / 2) ** 2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    def _candidates(prefix):
+        p = prefix.replace('prefix:', '').lower()
+        return [i for i, pk in enumerate(pubkeys) if pk.lower().startswith(p)]
+
+    def _pick_closest(cands, anchor_pubkey):
+        if not anchor_pubkey:
+            return None
+        anchor_loc = loc_by_pubkey.get(anchor_pubkey)
+        if anchor_loc is None:
+            return None
+        best, best_d = None, float('inf')
+        for idx in cands:
+            loc = loc_by_pubkey.get(pubkeys[idx])
+            if loc is None:
+                continue
+            d = _haversine(anchor_loc[0], anchor_loc[1], loc[0], loc[1])
+            if d < best_d:
+                best_d, best = d, idx
+        return best
+
+    def _resolve(val, anchor_pubkey):
+        idx = pubkey_to_idx.get(val)
+        if idx is not None:
+            return idx
+        cands = _candidates(val)
+        if len(cands) == 1:
+            return cands[0]
+        if len(cands) > 1:
+            return _pick_closest(cands, anchor_pubkey)
+        return None
+
+    new_edges, new_attrs = [], {'weight': [], 'score': [], 'avg_snr': []}
+    fixed = unfixed = 0
+
+    for e in ambiguous:
+        sp, tp = e['source'], e['target']
+        src = pubkey_to_idx.get(sp)
+        tgt = pubkey_to_idx.get(tp)
+
+        if src is None:
+            src = _resolve(sp, pubkeys[tgt] if tgt is not None else None)
+        if tgt is None:
+            tgt = _resolve(tp, pubkeys[src] if src is not None else None)
+
+        if src is not None and tgt is not None:
+            new_edges.append((src, tgt))
+            for k in new_attrs:
+                new_attrs[k].append(e.get(k))
+            fixed += 1
+        else:
+            unfixed += 1
+
+    if new_edges:
+        old_ecount = g.ecount()
+        g.add_edges(new_edges)
+        new_es = g.es[old_ecount:]
+        for k, vals in new_attrs.items():
+            new_es[k] = vals
+
+    print(f'Ambiguous edge resolution: {fixed} fixed, {unfixed} unresolvable', file=sys.stderr)
+    return fixed, unfixed
 
 
 def compute_metrics(g):
@@ -412,11 +494,11 @@ def compute_metrics(g):
     return communities
 
 
-def print_summary(g, communities, skipped):
+def print_summary(g, communities, ambiguous_total):
     comps = g.connected_components()
     print('=== MeshCore Neighbor Graph ===')
     print(f'Nodes:               {g.vcount()}')
-    print(f'Edges:               {g.ecount()}  (skipped {skipped} ambiguous)')
+    print(f'Edges:               {g.ecount()}  ({ambiguous_total} originally had ambiguous pubkey)')
     print(f'Connected components: {len(comps)}  (largest: {max(len(c) for c in comps)} nodes)')
     print(f'Communities (Louvain): {len(communities)}')
     weak = sum(1 for s in g.es['score'] if s < 0.25)
@@ -678,6 +760,8 @@ def parse_args():
                       help=f'Fetch node locations from {NODES_API_URL}')
     p.add_argument('--save-nodes',  metavar='FILE', default=None,
                    help='Save fetched node data to FILE')
+    p.add_argument('--resolve-ambiguous', '-r', action='store_true',
+                   help='Resolve ambiguous edges using geographic proximity (requires location data)')
     p.add_argument('--pdf',        metavar='FILE', default='neighbor-graph-static.pdf',
                    help='Static PDF output (default: neighbor-graph-static.pdf)')
     p.add_argument('--html',       metavar='FILE', default='neighbor-graph-interactive.html',
@@ -690,9 +774,9 @@ if __name__ == '__main__':
 
     if args.fetch:
         data = fetch_data(save_path=args.save)
-        g, skipped = load_graph(data=data)
+        g, ambiguous = load_graph(data=data)
     else:
-        g, skipped = load_graph(path=args.input)
+        g, ambiguous = load_graph(path=args.input)
 
     if args.fetch_nodes:
         nodes_raw = fetch_nodes(save_path=args.save_nodes)
@@ -703,8 +787,14 @@ if __name__ == '__main__':
         print(f'No node location file at {args.nodes!r} — use --nodes or --fetch-nodes', file=sys.stderr)
         loc_by_pubkey = {}
 
+    if args.resolve_ambiguous:
+        if ambiguous and not loc_by_pubkey:
+            print('Warning: --resolve-ambiguous requires location data (--nodes or --fetch-nodes)', file=sys.stderr)
+        elif ambiguous:
+            resolve_ambiguous_edges(g, ambiguous, loc_by_pubkey)
+
     communities = compute_metrics(g)
     attach_locations(g, loc_by_pubkey)
-    print_summary(g, communities, skipped)
+    print_summary(g, communities, len(ambiguous))
     save_static(g, args.pdf)
     save_interactive(g, args.html)
