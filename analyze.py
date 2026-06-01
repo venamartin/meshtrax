@@ -8,6 +8,9 @@ import math
 import os
 import sys
 import urllib.request
+
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 import igraph as ig
 import matplotlib
 matplotlib.use('Agg')
@@ -285,6 +288,38 @@ _LEAFLET_JS = r"""
     return path[0]===srcId?{nodes:path,cost:dist[dstId]}:null;
   }
 
+  function astar(srcId,dstId) {
+    var repeatersOnly=document.getElementById('path-repeaters-only').checked;
+    var hWeight=parseFloat(document.getElementById('astar-weight').value);
+    var dst=nodeById[dstId];
+    function h(nodeId) {
+      var n=nodeById[nodeId];
+      if (!dst||dst.lat===null||n.lat===null) return 0;
+      return hWeight*haversine(n.lat,n.lon,dst.lat,dst.lon);
+    }
+    var gCost={},prev={},visited=new Set();
+    gCost[srcId]=0;
+    var queue=[{node:srcId,f:h(srcId)}];
+    while (queue.length) {
+      queue.sort(function(a,b){return a.f-b.f;});
+      var u=queue.shift();
+      if (visited.has(u.node)) continue;
+      visited.add(u.node);
+      if (u.node===dstId) break;
+      (adj[u.node]||[]).forEach(function(e) {
+        var nb=e.from===u.node?e.to:e.from;
+        if (visited.has(nb)) return;
+        if (repeatersOnly&&nb!==dstId&&nodeById[nb].role!=='repeater') return;
+        var ng=gCost[u.node]+edgeCost(e,nodeById[u.node],nodeById[nb]);
+        if (gCost[nb]===undefined||ng<gCost[nb]){gCost[nb]=ng;prev[nb]=u.node;queue.push({node:nb,f:ng+h(nb)});}
+      });
+    }
+    if (gCost[dstId]===undefined) return null;
+    var path=[],cur=dstId;
+    while (cur!==undefined){path.unshift(cur);cur=prev[cur];}
+    return path[0]===srcId?{nodes:path,cost:gCost[dstId]}:null;
+  }
+
   function isolatedMsg(id) {
     var n=nodeById[id];
     return (n&&n.degree===0) ? (n.name+' has no connections — all its neighbor links have ambiguous pubkeys.') : null;
@@ -299,6 +334,15 @@ _LEAFLET_JS = r"""
   document.getElementById('dist-weight').addEventListener('input', function() {
     document.getElementById('dist-w-val').textContent = parseFloat(this.value).toFixed(1);
   });
+  document.querySelectorAll('input[name="path-algo"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      document.getElementById('astar-weight-row').style.display = (this.value==='astar') ? 'block' : 'none';
+      lastActive='path';
+    });
+  });
+  document.getElementById('astar-weight').addEventListener('input', function() {
+    document.getElementById('astar-w-val').textContent = parseFloat(this.value).toFixed(1);
+  });
 
   document.getElementById('path-a').addEventListener('focus', function() { lastActive='path'; });
   document.getElementById('path-b').addEventListener('focus', function() { lastActive='path'; });
@@ -311,7 +355,8 @@ _LEAFLET_JS = r"""
     if (aId===bId){out.textContent='Same node';return;}
     var msg=isolatedMsg(aId)||isolatedMsg(bId);
     if (msg){out.textContent=msg;return;}
-    var res=dijkstra(aId,bId);
+    var algo=document.querySelector('input[name="path-algo"]:checked').value;
+    var res=(algo==='astar')?astar(aId,bId):dijkstra(aId,bId);
     if (!res){out.textContent='No path found — nodes may be in disconnected components';return;}
 
     var pathSet=new Set(res.nodes);
@@ -372,7 +417,7 @@ def fetch_data(save_path=None):
 
 def load_graph(path=None, data=None):
     if data is None:
-        with open(path) as f:
+        with open(path, encoding='utf-8') as f:
             data = json.load(f)
 
     nodes = data['nodes']
@@ -579,7 +624,7 @@ def fetch_nodes(save_path=None):
 
 def load_node_locations(path=None, data=None):
     if data is None:
-        with open(path) as f:
+        with open(path, encoding='utf-8') as f:
             data = json.load(f)
     result = {}
     for n in data.get('nodes', []):
@@ -710,6 +755,14 @@ def save_interactive(g, path):
         '<div id="dist-weight-row" style="margin-top:4px;">'
         'w: <b id="dist-w-val">0.7</b><br>'
         f'<input type="range" id="dist-weight" min="0" max="2" step="0.1" value="0.7" style="width:100%">'
+        '</div>'
+        '<div style="color:#888;margin-top:6px;margin-bottom:2px;">Algorithm</div>'
+        '<label><input type="radio" name="path-algo" value="dijkstra" checked> Dijkstra</label><br>'
+        '<label><input type="radio" name="path-algo" value="astar"> A* weighted</label>'
+        '<div id="astar-weight-row" style="margin-top:4px;display:none;">'
+        'h-weight: <b id="astar-w-val">0.5</b><br>'
+        f'<input type="range" id="astar-weight" min="0" max="3" step="0.1" value="0.5" style="width:100%">'
+        '<div style="color:#666;font-size:10px;">Higher = faster, less optimal · 0 = Dijkstra</div>'
         '</div>'
         '<div style="margin-top:4px;"><label><input type="checkbox" id="path-repeaters-only" checked>'
         ' Repeaters only (exclude observers, companions, rooms)</label></div>'
