@@ -739,7 +739,7 @@ def save_interactive(g, path):
         '</body>\n</html>\n'
     )
 
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f'Saved {path}')
 
