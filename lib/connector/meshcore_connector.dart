@@ -1413,17 +1413,32 @@ class MeshCoreConnector extends ChangeNotifier {
       _selfInfoRetryTimer = null;
       _startBatteryPolling();
       if (_radioStatsPollRefCount > 0) _startRadioStatsPolling();
+      // Wait for SELF_INFO in up to three windows (7s + 7s + 6s = 20s total).
+      // Shorter windows with spaced retries are more reliable than one 15s wait:
+      // if the device is still booting when the initial APP_START is sent it may
+      // miss it, and 15s without a retry means we depend on a single lucky send.
+      // Retries are spaced ≥7s apart so we don't spam the device mid-boot.
       var gotSelfInfo = await _waitForSelfInfo(
-        timeout: const Duration(seconds: 15),
+        timeout: const Duration(seconds: 7),
       );
-      if (!gotSelfInfo) {
+      if (!gotSelfInfo && isConnected) {
         _appDebugLogService?.warn(
-          'connectUsb: SELF_INFO timeout, retrying…',
+          'connectUsb: no SELF_INFO after 7s, retrying…',
           tag: 'USB',
         );
         await sendFrame(buildAppStartFrame());
         gotSelfInfo = await _waitForSelfInfo(
-          timeout: const Duration(seconds: 5),
+          timeout: const Duration(seconds: 7),
+        );
+      }
+      if (!gotSelfInfo && isConnected) {
+        _appDebugLogService?.warn(
+          'connectUsb: no SELF_INFO after 14s, retrying…',
+          tag: 'USB',
+        );
+        await sendFrame(buildAppStartFrame());
+        gotSelfInfo = await _waitForSelfInfo(
+          timeout: const Duration(seconds: 6),
         );
       }
       if (!gotSelfInfo) {
