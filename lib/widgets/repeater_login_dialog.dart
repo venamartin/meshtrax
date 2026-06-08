@@ -4,9 +4,12 @@ import '../utils/platform_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/storage_service.dart';
+import '../services/map_tile_cache_service.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../utils/app_logger.dart';
@@ -98,6 +101,22 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
     try {
       final password = _passwordController.text;
       final repeater = _resolveRepeater(_connector);
+      
+      final isSavedContact = _resolveRepeaterIndex != -1;
+      if (!isSavedContact) {
+        await _connector.importDiscoveredContact(repeater);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${repeater.name} automatically added to contacts.'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        // Give the firmware a moment to process the new contact
+        await Future.delayed(const Duration(seconds: 2));
+      }
+
       appLogger.info(
         'Login started for ${repeater.name} (${repeater.publicKeyHex})',
         tag: 'RepeaterLogin',
@@ -274,6 +293,7 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
     final isFloodMode = repeater.pathOverride == -1;
     final isDirectMode = repeater.pathOverride == 0;
     final isAutoMode = repeater.pathOverride != -1 && repeater.pathOverride != 0;
+    final isSavedContact = _resolveRepeaterIndex != -1;
     return AlertDialog(
       title: Row(
         children: [
@@ -295,6 +315,15 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
               ],
             ),
           ),
+          if (!isSavedContact)
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              tooltip: l10n.contacts_addContact,
+              onPressed: () {
+                connector.importDiscoveredContact(widget.repeater);
+                if (mounted) setState(() {});
+              },
+            ),
         ],
       ),
       content: _isLoading
@@ -304,11 +333,51 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                 child: CircularProgressIndicator(),
               ),
             )
-          : SingleChildScrollView(
-              child: Column(
+          : SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (repeater.hasLocation) ...[
+                    SizedBox(
+                      height: 180,
+                      child: ExcludeSemantics(
+                        child: FlutterMap(
+                          options: MapOptions(
+                          initialCenter: LatLng(repeater.latitude!, repeater.longitude!),
+                          initialZoom: 14.0,
+                          interactionOptions: const InteractionOptions(
+                            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: kMapTileUrlTemplate,
+                            userAgentPackageName: MapTileCacheService.userAgentPackageName,
+                            tileProvider: context.read<MapTileCacheService>().tileProvider,
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(repeater.latitude!, repeater.longitude!),
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.cell_tower,
+                                  color: Colors.red,
+                                  size: 32,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ],
                   Text(
                     l10n.login_repeaterDescription,
                     style: const TextStyle(fontSize: 14),
@@ -382,10 +451,10 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                       l10n.login_savePassword,
                       style: const TextStyle(fontSize: 14),
                     ),
-                    subtitle: Text(
-                      l10n.login_savePasswordSubtitle,
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    // subtitle: Text(
+                    //   l10n.login_savePasswordSubtitle,
+                    //   style: const TextStyle(fontSize: 12),
+                    // ),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -513,6 +582,7 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                 ],
               ),
             ),
+          ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

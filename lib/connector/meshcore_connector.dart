@@ -49,11 +49,15 @@ import 'meshcore_protocol.dart';
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
   final int pubkeyFirstByte;
+  Uint8List? publicKey;
+  String? name;
   double snr;
   DateTime lastUpdated;
 
   DirectRepeater({
     required this.pubkeyFirstByte,
+    this.publicKey,
+    this.name,
     required this.snr,
     DateTime? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now();
@@ -192,6 +196,9 @@ class MeshCoreConnector extends ChangeNotifier {
   double? _selfLatitude;
   double? _selfLongitude;
   final List<DirectRepeater> _directRepeaters = List.empty(growable: true);
+  int? _pendingDiscoverTag;
+  Timer? _discoverTimer;
+  bool _isDiscovering = false;
   bool _isLoadingContacts = false;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
@@ -369,6 +376,7 @@ class MeshCoreConnector extends ChangeNotifier {
   double? get selfLatitude => _selfLatitude;
   double? get selfLongitude => _selfLongitude;
   List<DirectRepeater> get directRepeaters => _directRepeaters;
+  bool get isDiscovering => _isDiscovering;
   int? get currentTxPower => _currentTxPower;
   int? get maxTxPower => _maxTxPower;
 
@@ -2241,6 +2249,11 @@ class MeshCoreConnector extends ChangeNotifier {
     bool skipBleDeviceDisconnect = false,
   }) async {
     if (_state == MeshCoreConnectionState.disconnecting) return;
+
+    _discoverTimer?.cancel();
+    _isDiscovering = false;
+    _pendingDiscoverTag = null;
+
     final transportAtDisconnect = _activeTransport;
     final transportLabel = switch (transportAtDisconnect) {
       MeshCoreTransportType.bluetooth => 'BLE',
@@ -3155,6 +3168,8 @@ class MeshCoreConnector extends ChangeNotifier {
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
         flags: contact.flags,
+        pathOverride: contact.pathOverride,
+        pathOverrideBytes: contact.pathOverrideBytes,
       ),
     );
     notifyListeners();
@@ -3311,6 +3326,36 @@ class MeshCoreConnector extends ChangeNotifier {
   Future<void> sendSelfAdvert({bool flood = true}) async {
     if (!isConnected) return;
     await sendFrame(buildSendSelfAdvertFrame(flood: flood));
+  }
+
+  Future<void> sendRepeaterDiscovery() async {
+    if (!isConnected) return;
+
+    final rand = math.Random();
+    final tag = rand.nextInt(0xFFFFFFFF);
+    _pendingDiscoverTag = tag;
+    _isDiscovering = true;
+    notifyListeners();
+
+    _discoverTimer?.cancel();
+    _discoverTimer = Timer(const Duration(seconds: 10), () {
+      _isDiscovering = false;
+      _pendingDiscoverTag = null;
+      notifyListeners();
+    });
+
+final frame = buildRepeaterDiscoveryFrame(tag);
+
+    try {
+      await sendFrame(frame);
+      appLogger.info('Sent repeater discovery query with tag 0x${tag.toRadixString(16).padLeft(8, "0")}');
+    } catch (e) {
+      appLogger.error('Failed to send repeater discovery frame: $e');
+      _discoverTimer?.cancel();
+      _isDiscovering = false;
+      _pendingDiscoverTag = null;
+      notifyListeners();
+    }
   }
 
   Future<void> rebootDevice() async {
@@ -3673,6 +3718,9 @@ class MeshCoreConnector extends ChangeNotifier {
         _lastRadioRxTime = DateTime.now();
         _handleRxData(frame);
         _handleLogRxData(frame);
+        break;
+      case pushCodeControlData:
+        _handleControlData(frame);
         break;
       case respCodeChannelInfo:
         _handleChannelInfo(frame);
@@ -4741,6 +4789,114 @@ class MeshCoreConnector extends ChangeNotifier {
       }
     } catch (e) {
       appLogger.warn('Error handling log RX data frame: $e');
+    }
+  }
+
+  void _handleControlData(Uint8List frame) {
+    if (frame.length < 5) return;
+    try {
+      final snrRaw = frame[1];
+      final snr = (snrRaw > 127 ? snrRaw - 256 : snrRaw) / 4.0;
+      final rssiRaw = frame[2];
+      final rssi = rssiRaw > 127 ? rssiRaw - 256 : rssiRaw;
+      final pathLen = frame[3];
+
+      final ctlPayload = frame.sublist(4);
+      if (ctlPayload.isEmpty) return;
+
+      final ctlType = ctlPayload[0] & 0xF0;
+      if (ctlType == ctlTypeNodeDiscoverResp) {
+        final nodeType = ctlPayload[0] & 0x0F;
+        if (nodeType != advTypeRepeater) return;
+
+        if (ctlPayload.length < 6) return;
+        final tag = ByteData.sublistView(ctlPayload, 2, 6).getUint32(0, Endian.little);
+
+        if (_pendingDiscoverTag == null || tag != _pendingDiscoverTag) {
+          return;
+        }
+
+        final hasFullPubKey = ctlPayload.length >= 6 + 32;
+        final Uint8List? pubKey = hasFullPubKey ? ctlPayload.sublist(6, 38) : null;
+        final hex = pubKey != null ? pubKeyToHex(pubKey) : null;
+        final pubkeyFirstByte = pubKey != null ? pubKey.first : (ctlPayload.length >= 7 ? ctlPayload[6] : 0);
+
+        String? parsedName;
+        if (hasFullPubKey && ctlPayload.length > 38) {
+          parsedName = utf8.decode(ctlPayload.sublist(38), allowMalformed: true).trim();
+          if (parsedName.isNotEmpty && parsedName.codeUnitAt(parsedName.length - 1) == 0) {
+            parsedName = parsedName.substring(0, parsedName.length - 1);
+          }
+        }
+
+        appLogger.info('Discovered repeater with first pubkey byte: 0x${pubkeyFirstByte.toRadixString(16).padLeft(2, '0')} at SNR $snr dB');
+
+        _directRepeaters.removeWhere((r) => r.isStale());
+        final existing = _directRepeaters.where((r) {
+          if (r.publicKey != null && hex != null) {
+            return pubKeyToHex(r.publicKey!) == hex;
+          }
+          return r.pubkeyFirstByte == pubkeyFirstByte;
+        });
+
+        if (existing.isNotEmpty) {
+          existing.first.update(snr);
+          if (parsedName != null && parsedName.isNotEmpty) {
+            existing.first.name = parsedName;
+          }
+        } else {
+          if (_directRepeaters.length >= 5) {
+            final sorted = List<DirectRepeater>.from(_directRepeaters)..sort(DirectRepeater.compare);
+            if (sorted.isNotEmpty) {
+              _directRepeaters.remove(sorted.last);
+            }
+          }
+          if (_directRepeaters.length < 5) {
+            _directRepeaters.add(DirectRepeater(
+              pubkeyFirstByte: pubkeyFirstByte,
+              publicKey: pubKey,
+              name: parsedName,
+              snr: snr,
+            ));
+          }
+        }
+
+        if (pubKey != null && hex != null) {
+          final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex);
+          if (!alreadyKnown) {
+            appLogger.info('Discovered repeater is unknown to app contacts. Querying companion database for $hex...');
+            unawaited(sendFrame(buildGetContactByKeyFrame(pubKey)));
+          }
+        }
+
+        if (hasFullPubKey && (_autoAddRepeaters == true)) {
+          final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex!);
+          if (!alreadyKnown && !_discoveredContacts.any((c) => c.publicKeyHex == hex!)) {
+            final resolvedName = (parsedName != null && parsedName.isNotEmpty)
+                ? parsedName
+                : 'Repeater ${hex!.substring(0, 4).toUpperCase()}';
+            final newContact = Contact(
+              publicKey: pubKey!,
+              name: resolvedName,
+              type: advTypeRepeater,
+              pathLength: 0,
+              path: Uint8List(0),
+              lastSeen: DateTime.now(),
+              isActive: true, // Set to true since we are adding it as an active contact
+            );
+            
+            // Route through standard contact handling so it appears in the UI and routing tables
+            _handleContactAdvert(newContact);
+            _handleDiscovery(newContact, Uint8List(0), noNotify: true, addActive: true);
+            
+            appLogger.info('Automatically added newly discovered repeater: ${newContact.name} (${newContact.publicKeyHex})');
+          }
+        }
+
+        notifyListeners();
+      }
+    } catch (e) {
+      appLogger.warn('Error handling control data frame: $e');
     }
   }
 
@@ -6190,9 +6346,58 @@ class MeshCoreConnector extends ChangeNotifier {
       return;
     }
 
-    final isTracked = _directRepeaters.where(
-      (r) => r.pubkeyFirstByte == pubkeyFirstByte,
-    );
+    Uint8List? lastHopPublicKey;
+    if (path.isEmpty) {
+      lastHopPublicKey = contact.publicKey;
+    } else {
+      final int take = math.min(hashSize, path.length);
+      final lastHopBytes = path.sublist(path.length - take);
+      Contact? match;
+      for (final c in _contacts) {
+        if (c.type != advTypeRepeater && c.type != advTypeRoom) continue;
+        if (c.publicKey.length >= take) {
+          bool isMatch = true;
+          for (int i = 0; i < take; i++) {
+            if (c.publicKey[i] != lastHopBytes[i]) {
+              isMatch = false;
+              break;
+            }
+          }
+          if (isMatch) {
+            match = c;
+            break;
+          }
+        }
+      }
+      if (match == null) {
+        for (final c in _discoveredContacts) {
+          if (c.type != advTypeRepeater && c.type != advTypeRoom) continue;
+          if (c.publicKey.length >= take) {
+            bool isMatch = true;
+            for (int i = 0; i < take; i++) {
+              if (c.publicKey[i] != lastHopBytes[i]) {
+                isMatch = false;
+                break;
+              }
+            }
+            if (isMatch) {
+              match = c;
+              break;
+            }
+          }
+        }
+      }
+      if (match != null) {
+        lastHopPublicKey = match.publicKey;
+      }
+    }
+
+    final isTracked = _directRepeaters.where((r) {
+      if (r.publicKey != null && lastHopPublicKey != null) {
+        return pubKeyToHex(r.publicKey!) == pubKeyToHex(lastHopPublicKey);
+      }
+      return r.pubkeyFirstByte == pubkeyFirstByte;
+    });
 
     final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
       ..sort(DirectRepeater.compare);
@@ -6209,9 +6414,16 @@ class MeshCoreConnector extends ChangeNotifier {
     if (isTracked.isNotEmpty) {
       final repeater = isTracked.first;
       repeater.update(snr);
+      if (repeater.publicKey == null && lastHopPublicKey != null) {
+        repeater.publicKey = lastHopPublicKey;
+      }
     } else if (_directRepeaters.length < 5) {
       _directRepeaters.add(
-        DirectRepeater(pubkeyFirstByte: pubkeyFirstByte, snr: snr),
+        DirectRepeater(
+          pubkeyFirstByte: pubkeyFirstByte,
+          publicKey: lastHopPublicKey,
+          snr: snr,
+        ),
       );
     }
     notifyListeners();

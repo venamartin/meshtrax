@@ -306,10 +306,10 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
                       l10n.login_savePassword,
                       style: const TextStyle(fontSize: 14),
                     ),
-                    subtitle: Text(
-                      l10n.login_savePasswordSubtitle,
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    // subtitle: Text(
+                    //   l10n.login_savePasswordSubtitle,
+                    //   style: const TextStyle(fontSize: 12),
+                    // ),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),

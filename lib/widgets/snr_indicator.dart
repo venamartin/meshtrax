@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -7,7 +9,10 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
+import '../services/ui_view_state_service.dart';
 import '../services/map_tile_cache_service.dart';
+import '../screens/repeater_hub_screen.dart';
+import 'repeater_login_dialog.dart';
 import 'signal_ui.dart';
 
 Contact? _getRepeaterPrefixMatchNearLocation(
@@ -21,7 +26,7 @@ Contact? _getRepeaterPrefixMatchNearLocation(
         (c) =>
             c.publicKey.isNotEmpty &&
             c.publicKey.first == pubkeyFirstByte &&
-            (c.type == advTypeRepeater || c.type == advTypeRoom),
+            c.type == advTypeRepeater,
       )
       .toList();
 
@@ -123,6 +128,54 @@ class SNRIndicator extends StatefulWidget {
 }
 
 class _SNRIndicatorState extends State<SNRIndicator> {
+  bool _wasDiscovering = false;
+  DateTime? _lastScanTime;
+  int _updatedCountDuringScan = 0;
+  Map<String, DateTime> _preScanLastUpdated = {};
+
+  @override
+  void initState() {
+    super.initState();
+    widget.connector.addListener(_onConnectorChanged);
+    _wasDiscovering = widget.connector.isDiscovering;
+  }
+
+  @override
+  void dispose() {
+    widget.connector.removeListener(_onConnectorChanged);
+    super.dispose();
+  }
+
+  String _getRepeaterId(DirectRepeater r) {
+    return r.publicKey != null ? pubKeyToHex(r.publicKey!) : r.pubkeyFirstByte.toString();
+  }
+
+  void _onConnectorChanged() {
+    final isDiscovering = widget.connector.isDiscovering;
+    if (!_wasDiscovering && isDiscovering) {
+      // Scan started
+      _lastScanTime = null;
+      _updatedCountDuringScan = 0;
+      _preScanLastUpdated = {
+        for (var r in widget.connector.directRepeaters)
+          _getRepeaterId(r): r.lastUpdated
+      };
+    } else if (_wasDiscovering && !isDiscovering) {
+      // Scan ended
+      int updatedCount = 0;
+      for (var r in widget.connector.directRepeaters) {
+        final id = _getRepeaterId(r);
+        final prevTime = _preScanLastUpdated[id];
+        if (prevTime == null || r.lastUpdated.isAfter(prevTime)) {
+          updatedCount++;
+        }
+      }
+      _updatedCountDuringScan = updatedCount;
+      _lastScanTime = DateTime.now();
+    }
+    _wasDiscovering = isDiscovering;
+  }
+
   bool _isValidSelfLocation(double lat, double lon) {
     const double epsilon = 1e-6;
     return (lat.abs() > epsilon || lon.abs() > epsilon) &&
@@ -146,27 +199,47 @@ class _SNRIndicatorState extends State<SNRIndicator> {
       widget.connector.currentSf,
     );
 
+    final selfLat = widget.connector.selfLatitude;
+    final selfLon = widget.connector.selfLongitude;
+    final hasValidLocation = selfLat != null && selfLon != null && _isValidSelfLocation(selfLat, selfLon);
+
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+
       child: InkWell(
-        onTap: directRepeater != null
-            ? () => _showFullPathDialog(context, directBestRepeaters)
-            : null,
+        onTap: () => _showFullPathDialog(context),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(snrUi.icon, size: 18, color: snrUi.color),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  widget.connector.isDiscovering
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(snrUi.icon, size: 18, color: snrUi.color),
+                  const SizedBox(width: 4),
+                  Icon(
+                    hasValidLocation ? Icons.location_on : Icons.location_off,
+                    size: 14,
+                    color: hasValidLocation ? Colors.green : Colors.red,
+                  ),
+                ],
+              ),
               Text(
-                snrUi.text,
+                widget.connector.isDiscovering ? 'Wait' : snrUi.text,
                 style: TextStyle(fontSize: 12, color: snrUi.color),
               ),
               if (directRepeater != null)
                 Text(
                   '${directRepeaters.length}: ${directRepeater.pubkeyFirstByte.toRadixString(16).padLeft(2, '0')}: ${_formatLastUpdated(directRepeater.lastUpdated)}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey,
@@ -259,10 +332,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
     );
   }
 
-  void _showFullPathDialog(
-    BuildContext context,
-    List<DirectRepeater> directBestRepeaters,
-  ) {
+  void _showFullPathDialog(BuildContext context) {
     final l10n = context.l10n;
 
     showDialog(
@@ -271,71 +341,214 @@ class _SNRIndicatorState extends State<SNRIndicator> {
         title: Text(l10n.snrIndicator_nearByRepeaters),
         content: SizedBox(
           width: double.maxFinite,
-          child: Scrollbar(
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: directBestRepeaters.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final repeater = directBestRepeaters[index];
-                final snrUi = snrUiFromSNR(
-                  repeater.snr,
-                  widget.connector.currentSf,
+          child: StreamBuilder<void>(
+            stream: Stream.periodic(const Duration(seconds: 1)),
+            builder: (context, _) {
+              return ListenableBuilder(
+                listenable: widget.connector,
+                builder: (context, _) {
+              final liveRepeaters = List.of(widget.connector.directRepeaters)
+                ..sort(DirectRepeater.compare);
+
+              if (liveRepeaters.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    widget.connector.isDiscovering
+                        ? 'Searching for repeaters...'
+                        : 'No repeaters found. Tap the radar icon to discover.',
+                    textAlign: TextAlign.center,
+                  ),
                 );
-                final allContacts = widget.connector.allContacts;
+              }
 
-                final selfLat = widget.connector.selfLatitude;
-                final selfLon = widget.connector.selfLongitude;
+              final timeSinceScanEnd = _lastScanTime != null ? DateTime.now().difference(_lastScanTime!) : null;
+              final showSummary = !widget.connector.isDiscovering && timeSinceScanEnd != null && timeSinceScanEnd.inSeconds < 10;
 
-                LatLng? selfPoint;
-                if (selfLat != null &&
-                    selfLon != null &&
-                    _isValidSelfLocation(selfLat, selfLon)) {
-                  selfPoint = LatLng(selfLat, selfLon);
-                }
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Flexible(
+                    child: Scrollbar(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: liveRepeaters.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final repeater = liveRepeaters[index];
+                    final snrUi = snrUiFromSNR(
+                      repeater.snr,
+                      widget.connector.currentSf,
+                    );
+                    final allContacts = widget.connector.allContacts;
 
-                final contact = _getRepeaterPrefixMatchNearLocation(
-                  allContacts,
-                  repeater.pubkeyFirstByte,
-                  searchPoint: selfPoint,
-                  preferFavorites: true,
-                );
+                    Contact? contact;
 
-                final name = contact?.name;
-                final hasLocation = contact?.hasLocation ?? false;
+                    final selfLat = widget.connector.selfLatitude;
+                    final selfLon = widget.connector.selfLongitude;
 
-                return Column(
-                  children: [
-                    ListTile(
+                    LatLng? selfPoint;
+                    if (selfLat != null &&
+                        selfLon != null &&
+                        _isValidSelfLocation(selfLat, selfLon)) {
+                      selfPoint = LatLng(selfLat, selfLon);
+                    }
+
+                    // First try repeater/room type match
+                    if (repeater.publicKey != null) {
+                      final hex = pubKeyToHex(repeater.publicKey!);
+                      final idx = allContacts.indexWhere((c) => c.publicKeyHex == hex);
+                      if (idx >= 0) contact = allContacts[idx];
+                    }
+
+                    if (contact == null) {
+                      contact = _getRepeaterPrefixMatchNearLocation(
+                        allContacts,
+                        repeater.pubkeyFirstByte,
+                        searchPoint: selfPoint,
+                        preferFavorites: true,
+                      );
+                    }
+
+                    // If not found, try any contact with matching prefix for display name only
+                    if (contact == null) {
+                      final candidates = allContacts
+                          .where(
+                            (c) =>
+                                c.publicKey.isNotEmpty &&
+                                c.publicKey.first == repeater.pubkeyFirstByte,
+                          )
+                          .toList();
+
+                      if (candidates.isNotEmpty) {
+                        candidates.sort((a, b) {
+                          final seenCompare = b.lastSeen.compareTo(a.lastSeen);
+                          if (seenCompare != 0) return seenCompare;
+                          return a.publicKeyHex.compareTo(b.publicKeyHex);
+                        });
+                        contact = candidates.first;
+                      }
+                    }
+
+                    final name = contact?.name ?? repeater.name;
+                    final displayName = (name != null && name.isNotEmpty)
+                        ? name
+                        : repeater.pubkeyFirstByte
+                              .toRadixString(16)
+                              .padLeft(2, '0')
+                              .toUpperCase();
+
+                    final hasLocation = contact?.hasLocation ?? false;
+                    final fullPubKey = contact?.publicKey ?? repeater.publicKey;
+                    final pubKeyHex = fullPubKey != null ? pubKeyToHex(fullPubKey) : null;
+                    final durationSinceUpdate = DateTime.now().difference(repeater.lastUpdated);
+                    final isRecent = durationSinceUpdate.inSeconds < 12;
+                    final tileColor = isRecent ? Colors.green.withOpacity(0.15) : null;
+
+                    return ListTile(
+                      tileColor: tileColor,
                       leading: Icon(snrUi.icon, color: snrUi.color),
-                      title: Text(
-                        name ??
-                            repeater.pubkeyFirstByte
-                                .toRadixString(16)
-                                .padLeft(2, '0'),
-                      ),
+                      title: Text(displayName),
                       subtitle: Text(
-                        'SNR: ${repeater.snr.toStringAsFixed(1)} dB\n${l10n.snrIndicator_lastSeen}: ${_formatLastUpdated(repeater.lastUpdated)}',
+                        'SNR: ${repeater.snr.toStringAsFixed(1)} dB\n'
+                        '${pubKeyHex != null ? '<${pubKeyHex.substring(0, 6)}...${pubKeyHex.substring(pubKeyHex.length - 4)}>\n' : 'Full identity required to log in\n'}'
+                        '${l10n.snrIndicator_lastSeen}: ${_formatLastUpdated(repeater.lastUpdated)}',
                       ),
                       trailing: hasLocation
                           ? const Icon(Icons.location_on)
                           : null,
-                      onTap: hasLocation
-                          ? () => _showRepeaterMap(
-                              context,
-                              contact!,
-                              name,
-                            )
+                      onTap: fullPubKey != null
+                          ? () async {
+                              Contact? loginContact = contact;
+                              if (loginContact != null) {
+                                await widget.connector.setPathOverride(loginContact, pathLen: 0);
+                                final idx = widget.connector.contacts.indexWhere((c) => c.publicKeyHex == loginContact!.publicKeyHex);
+                                if (idx >= 0) loginContact = widget.connector.contacts[idx];
+                              } else {
+                                loginContact = Contact(
+                                  publicKey: fullPubKey,
+                                  name: displayName,
+                                  type: advTypeRepeater,
+                                  pathLength: -1,
+                                  path: Uint8List(0),
+                                  lastSeen: DateTime.now(),
+                                  pathOverride: 0,
+                                );
+                              }
+                              if (!context.mounted) return;
+
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => RepeaterLoginDialog(
+                                  repeater: loginContact!,
+                                  onLogin: (password, isAdmin) {
+                                    Navigator.pop(context); // Close the SNR indicator dialog
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => RepeaterHubScreen(
+                                          repeater: loginContact!,
+                                          password: password,
+                                          isAdmin: isAdmin,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }
                           : null,
+                    );
+                  },
+                        ),
+                      ),
                     ),
-                  ],
-                );
-              },
-            ),
+                  if (showSummary)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                      child: Text(
+                        'Scan complete: $_updatedCountDuringScan repeater${_updatedCountDuringScan == 1 ? '' : 's'} updated',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          );
+            },
           ),
         ),
         actions: [
+          ListenableBuilder(
+            listenable: widget.connector,
+            builder: (context, _) {
+              return ElevatedButton.icon(
+                onPressed: widget.connector.isDiscovering
+                    ? null
+                    : () => widget.connector.sendRepeaterDiscovery(),
+                icon: widget.connector.isDiscovering
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.radar),
+                label: Text(
+                  widget.connector.isDiscovering ? 'Scanning...' : 'Discover',
+                ),
+              );
+            },
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(l10n.common_close),

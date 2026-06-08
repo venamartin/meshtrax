@@ -1581,14 +1581,8 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
     final knownRepeat = widget.connector.clientRepeat != null;
 
     if (knownRepeat) {
-      const validRepeatFreqsKHz = {433000, 869000, 918000};
-      if (_clientRepeat && !validRepeatFreqsKHz.contains(freqHz)) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(l10n.settings_clientRepeatFreqWarning),
-        );
-        return;
-      }
+      // if the user changes the frequency manually, don't force it.
+      // So we removed the strict frequency validation for off-grid repeat.
     }
 
     try {

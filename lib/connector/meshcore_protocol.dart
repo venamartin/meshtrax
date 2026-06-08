@@ -206,6 +206,7 @@ const int cmdSendTelemetryReq = 39;
 const int cmdGetCustomVar = 40;
 const int cmdSetCustomVar = 41;
 const int cmdSendBinaryReq = 50;
+const int cmdSendControlData = 55;
 const int cmdGetStats = 56;
 const int cmdSendAnonReq = 57;
 const int cmdSetAutoAddConfig = 58;
@@ -266,6 +267,11 @@ const int pushCodeTraceData = 0x89;
 const int pushCodeNewAdvert = 0x8A;
 const int pushCodeTelemetryResponse = 0x8B;
 const int pushCodeBinaryResponse = 0x8C;
+const int pushCodeControlData = 0x8E;
+
+// Control payload types
+const int ctlTypeNodeDiscoverReq = 0x80;
+const int ctlTypeNodeDiscoverResp = 0x90;
 
 // Contact/advertisement types
 const int advTypeChat = 1;
@@ -421,22 +427,17 @@ ParsedContactText? parseContactMessageText(Uint8List frame) {
 
 // Helper to read uint32 little-endian
 int readUint32LE(Uint8List data, int offset) {
-  return data[offset] |
-      (data[offset + 1] << 8) |
-      (data[offset + 2] << 16) |
-      (data[offset + 3] << 24);
+  return ByteData.sublistView(data, offset, offset + 4).getUint32(0, Endian.little);
 }
 
 // Helper to read uint16 little-endian
 int readUint16LE(Uint8List data, int offset) {
-  return data[offset] | (data[offset + 1] << 8);
+  return ByteData.sublistView(data, offset, offset + 2).getUint16(0, Endian.little);
 }
 
 // Helper to read int32 little-endian
 int readInt32LE(Uint8List data, int offset) {
-  int val = readUint32LE(data, offset);
-  if (val >= 0x80000000) val -= 0x100000000;
-  return val;
+  return ByteData.sublistView(data, offset, offset + 4).getInt32(0, Endian.little);
 }
 
 // Helper to convert uint32 to hex string
@@ -720,20 +721,14 @@ Uint8List buildUpdateContactPathFrame(
   final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   writer.writeUInt32LE(timestamp);
 
-  if ((lat == null || lon == null) && lastModified != null) {
-    // If lat/lon not provided, write zeros
-    writer.writeInt32LE(0);
-    writer.writeInt32LE(0);
-  } else {
-    // Latitude and Longitude are expected in degrees, convert to int by multiplying by 1e6
-    // Latitude
-    final latitude = lat ?? 0.0;
-    writer.writeInt32LE((latitude * 1e6).round());
+  // Latitude and Longitude are expected in degrees, convert to int by multiplying by 1e6
+  // Latitude
+  final latitude = lat ?? 0.0;
+  writer.writeInt32LE((latitude * 1e6).round());
 
-    // Longitude
-    final longitude = lon ?? 0.0;
-    writer.writeInt32LE((longitude * 1e6).round());
-  }
+  // Longitude
+  final longitude = lon ?? 0.0;
+  writer.writeInt32LE((longitude * 1e6).round());
 
   if (lastModified != null) {
     // Last modified
@@ -762,6 +757,18 @@ Uint8List buildGetAutoAddFlagsFrame() {
   return Uint8List.fromList([cmdGetAutoAddConfig]);
 }
 
+// Build CMD_SEND_CONTROL_DATA frame for repeater discovery query
+// Format: [cmd][ctl_type][node_type_flags][tag x4]
+Uint8List buildRepeaterDiscoveryFrame(int tag) {
+  final frame = Uint8List(11);
+  frame[0] = cmdSendControlData;
+  frame[1] = ctlTypeNodeDiscoverReq; // 0x80
+  frame[2] = 0x04; // 1 << ADV_TYPE_REPEATER
+  final tagBytes = ByteData(4)..setUint32(0, tag, Endian.little);
+  frame.setRange(3, 7, tagBytes.buffer.asUint8List());
+  return frame;
+}
+
 // Calculate LoRa airtime for a packet
 // Based on Semtech SX127x datasheet formula
 // Returns airtime in milliseconds
@@ -788,12 +795,13 @@ int calculateLoRaAirtime({
   final numerator =
       8 * payloadBytes - 4 * spreadingFactor + 28 + 16 * crc - headerBytes;
   final denominator = 4 * (spreadingFactor - 2 * de);
-  var payloadSymbols =
-      8 + ((numerator / denominator).ceil()) * (codingRate + 4);
+  var innerTerm = ((numerator / denominator).ceil()) * (codingRate + 4);
 
-  if (payloadSymbols < 0) {
-    payloadSymbols = 8;
+  if (innerTerm < 0) {
+    innerTerm = 0;
   }
+  
+  final payloadSymbols = 8 + innerTerm;
 
   final payloadTime = payloadSymbols * symbolDuration;
 
