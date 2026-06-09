@@ -202,6 +202,14 @@ class _SNRIndicatorState extends State<SNRIndicator> {
     final selfLat = widget.connector.selfLatitude;
     final selfLon = widget.connector.selfLongitude;
     final hasValidLocation = selfLat != null && selfLon != null && _isValidSelfLocation(selfLat, selfLon);
+    final isLiveGps = widget.connector.advertLocationPolicy == 1;
+
+    IconData locationIcon;
+    if (hasValidLocation) {
+      locationIcon = isLiveGps ? Icons.satellite_alt : Icons.location_on;
+    } else {
+      locationIcon = Icons.location_off;
+    }
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -226,7 +234,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                       : Icon(snrUi.icon, size: 18, color: snrUi.color),
                   const SizedBox(width: 4),
                   Icon(
-                    hasValidLocation ? Icons.location_on : Icons.location_off,
+                    locationIcon,
                     size: 14,
                     color: hasValidLocation ? Colors.green : Colors.red,
                   ),

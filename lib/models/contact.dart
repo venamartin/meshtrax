@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:meshtrax/utils/app_logger.dart';
 
 import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 
 class Contact {
   final Uint8List publicKey;
@@ -10,8 +11,8 @@ class Contact {
   final int flags;
   final int pathLength; // -1 = flood, 0+ = direct hops (from device)
   final Uint8List path; // Path bytes from device
-  final int?
-  pathOverride; // User's path override: -1 = force flood, null = auto
+  final int pathHashSize; // The hash size (1, 2, or 3) used for this path
+  final int? pathOverride; // User's path override: -1 = force flood, null = auto
   final Uint8List? pathOverrideBytes; // User's path override bytes
   final double? latitude;
   final double? longitude;
@@ -28,6 +29,7 @@ class Contact {
     this.flags = 0,
     required this.pathLength,
     required this.path,
+    this.pathHashSize = 1,
     this.pathOverride,
     this.pathOverrideBytes,
     this.latitude,
@@ -40,6 +42,8 @@ class Contact {
   }) : lastMessageAt = lastMessageAt ?? lastSeen;
 
   String get publicKeyHex => pubKeyToHex(publicKey);
+
+  String get displayPathString => PathHelper.formatPathHex(path, stride: pathHashSize);
 
   String get typeLabel {
     switch (type) {
@@ -95,6 +99,7 @@ class Contact {
     DateTime? lastSeen,
     DateTime? lastMessageAt,
     bool? isActive,
+    int? pathHashSize,
     Uint8List? rawPacket,
   }) {
     return Contact(
@@ -104,6 +109,7 @@ class Contact {
       flags: flags ?? this.flags,
       pathLength: pathLength ?? this.pathLength,
       path: path ?? this.path,
+      pathHashSize: pathHashSize ?? this.pathHashSize,
       pathOverride: clearPathOverride
           ? null
           : (pathOverride ?? this.pathOverride),
@@ -119,26 +125,23 @@ class Contact {
     );
   }
 
-  /// Formats path bytes into comma-separated hex groups of [hashByteWidth] bytes.
-  String pathFormattedIdList(int hashByteWidth) {
-    final pathBytes = pathBytesForDisplay;
-    if (pathBytes.isEmpty) return '';
-    final w = hashByteWidth.clamp(1, 8);
-    final parts = <String>[];
-    for (int i = 0; i < pathBytes.length; i += w) {
-      final end = (i + w) <= pathBytes.length ? (i + w) : pathBytes.length;
-      final chunk = pathBytes.sublist(i, end);
-      parts.add(
-        chunk
-            .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
-            .join(),
-      );
-    }
-    return parts.join(',');
+  /// Formats path bytes into comma-separated hex groups of [hashSize] bytes.
+  String pathFormattedIdList(int hashSize) {
+    if (path.isEmpty) return '';
+    return PathHelper.formatPathHex(path, stride: hashSize > 0 ? hashSize : 1);
   }
 
-  /// Default grouping uses legacy single-byte hop hash width.
   String get pathIdList => pathFormattedIdList(pathHashSize);
+
+  /// The repeater's own identity hash prefix (the first hop equivalent) based on its public key
+  /// formatted with the provided [stride] width.
+  String hashPrefixWithStride(int stride) {
+    if (publicKey.isEmpty) return '';
+    return PathHelper.formatPathHex(publicKey, stride: stride > 0 ? stride : 1).split(',').first;
+  }
+
+  /// The repeater's own identity hash prefix using the contact's saved pathHashSize.
+  String get hashPrefix => hashPrefixWithStride(pathHashSize);
 
   String get shortPubKeyHex {
     return "<${publicKeyHex.substring(0, 8)}...${publicKeyHex.substring(publicKeyHex.length - 8)}>";
@@ -169,10 +172,12 @@ class Contact {
 
       final type = reader.readByte();
       final flags = reader.readByte();
-      final pathLen = reader.readByte();
-      final safePathLen = pathLen > 0
-          ? (pathLen > maxPathSize ? maxPathSize : pathLen)
-          : 0;
+      final pathLenByte = reader.readByte();
+      final hopCount = extractPathHopCount(pathLenByte);
+      final hashSize = extractPathHashSize(pathLenByte);
+      
+      final actualPathBytesLen = hopCount > 0 ? hopCount * hashSize : 0;
+      final safePathLen = actualPathBytesLen > maxPathSize ? maxPathSize : actualPathBytesLen;
       final pathBytes = reader.readBytes(maxPathSize).sublist(0, safePathLen);
       final name = reader.readCStringGreedy(maxNameSize);
 
@@ -199,8 +204,9 @@ class Contact {
         name: name.isEmpty ? 'Unknown' : name,
         type: type,
         flags: flags,
-        pathLength: (pathLen == 0xFF || pathLen > maxPathSize) ? -1 : pathLen,
+        pathLength: hopCount,
         path: pathBytes,
+        pathHashSize: hashSize,
         latitude: lat,
         longitude: lon,
         lastSeen: DateTime.fromMillisecondsSinceEpoch(lastMod * 1000),
@@ -215,8 +221,9 @@ class Contact {
 
   Map<String, dynamic> toJson() {
     // Only export the relevant portion of the path buffer
-    final effectivePath = (pathLength > 0 && pathLength <= path.length)
-        ? path.sublist(0, pathLength)
+    final actualBytesLen = pathLength * pathHashSize;
+    final effectivePath = (pathLength > 0 && actualBytesLen <= path.length)
+        ? path.sublist(0, actualBytesLen)
         : Uint8List(0);
 
     return {
@@ -226,6 +233,7 @@ class Contact {
       'flags': flags,
       'pathLength': pathLength,
       'path': pubKeyToHex(effectivePath),
+      'pathHashSize': pathHashSize,
       'pathOverride': pathOverride,
       'pathOverrideBytes': (pathOverrideBytes != null && pathOverrideBytes!.isNotEmpty) 
           ? pubKeyToHex(pathOverrideBytes!) 
@@ -249,6 +257,7 @@ class Contact {
       flags: (json['flags'] as num?)?.toInt() ?? 0,
       pathLength: json['pathLength'] as int,
       path: pathHex.isEmpty ? Uint8List(0) : hex2Uint8List(pathHex),
+      pathHashSize: (json['pathHashSize'] as num?)?.toInt() ?? 1,
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: (pathOverrideBytesHex != null && pathOverrideBytesHex.isNotEmpty)
           ? hex2Uint8List(pathOverrideBytesHex)

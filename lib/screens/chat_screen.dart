@@ -204,7 +204,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: hasPathData
-                      ? () => _showFullPathDialog(context, effectivePath)
+                      ? () => _showFullPathDialog(context, effectivePath, contact.pathHashSize)
                       : null,
                   child: Text(
                     '$pathLabel • $unreadLabel',
@@ -983,7 +983,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ],
                               ),
                               onLongPress: () =>
-                                  _showFullPathDialog(context, path.pathBytes),
+                                  _showFullPathDialog(context, path.pathBytes, widget.contact.pathHashSize),
                               onTap: () async {
                                 if (path.pathBytes.isEmpty) {
                                   showDismissibleSnackBar(
@@ -1139,7 +1139,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return context.l10n.time_daysAgo(diff.inDays);
   }
 
-  void _showFullPathDialog(BuildContext context, List<int> pathBytes) {
+  void _showFullPathDialog(BuildContext context, List<int> pathBytes, int hashSize) {
     if (pathBytes.isEmpty) {
       showDismissibleSnackBar(
         context,
@@ -1152,9 +1152,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final connector = context.read<MeshCoreConnector>();
     final allContacts = connector.allContacts;
 
-    final stride = connector.pathHashByteWidth;
-    final formattedPath = PathHelper.formatPathHex(pathBytes, stride: stride);
-    final resolvedNames = PathHelper.resolvePathNames(pathBytes, allContacts, stride: stride);
+    final formattedPath = PathHelper.formatPathHex(pathBytes, stride: hashSize);
+    final resolvedNames = PathHelper.resolvePathNames(pathBytes, allContacts, stride: hashSize);
 
     showDialog(
       context: context,
@@ -1240,7 +1239,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // because pathLength may reflect a padded buffer full of trailing zeros.
     final effectivePath = contact.pathOverrideBytes ?? contact.path;
     if (effectivePath.isNotEmpty) {
-      final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
+      final stride = contact.pathHashSize;
       final trimmedLen = PathHelper.trimPaddingZeros(effectivePath, stride: stride).length;
       final hopCount = trimmedLen ~/ stride;
       if (hopCount == 0) return context.l10n.chat_direct;

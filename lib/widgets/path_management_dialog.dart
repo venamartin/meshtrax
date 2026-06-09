@@ -149,6 +149,7 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
       initialPath: pathForInput.isEmpty ? null : pathForInput,
       currentPathLabel: currentContact.pathLabel,
       onRefresh: connector.isConnected ? connector.getContacts : null,
+      pathHashByteWidth: connector.pathHashByteWidth,
     );
 
     if (result != null && context.mounted) {

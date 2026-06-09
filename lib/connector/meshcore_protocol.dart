@@ -323,9 +323,28 @@ const int autoAddSensorFlag =
 const int pubKeySize = 32;
 const int signatureSize = 64;
 const int maxPathSize = 64;
-const int pathHashSize = 1;
 const int maxNameSize = 32;
 const int maxFrameSize = 172;
+
+/// Extracts the path hash size from the path_len byte.
+/// The top 2 bits encode the size minus 1 (i.e., 00 = 1 byte, 01 = 2 bytes, 10 = 3 bytes).
+int extractPathHashSize(int pathLenByte) {
+  int sizeBits = (pathLenByte >> 6) & 0x03;
+  return sizeBits + 1;
+}
+
+/// Extracts the actual hop count from the path_len byte by masking off the top 2 bits.
+int extractPathHopCount(int pathLenByte) {
+  if (pathLenByte == 0xFF) return -1; // Special case for force flood
+  return pathLenByte & 0x3F;
+}
+
+/// Encodes the hop count and hash size into a single path_len byte.
+int encodePathLenByte(int hopCount, int hashSize) {
+  if (hopCount < 0 || hopCount >= 0xFF) return 0xFF; // force flood
+  int sizeBits = (hashSize - 1).clamp(0, 3);
+  return (hopCount & 0x3F) | (sizeBits << 6);
+}
 const int appProtocolVersion = 3;
 // Matches firmware MAX_TEXT_LEN (10 * CIPHER_BLOCK_SIZE).
 const int maxTextPayloadBytes = 160;

@@ -11,6 +11,7 @@ class PathSelectionDialog extends StatefulWidget {
   final String? initialPath;
   final String? currentPathLabel;
   final VoidCallback? onRefresh;
+  final int pathHashByteWidth;
 
   const PathSelectionDialog({
     super.key,
@@ -19,6 +20,7 @@ class PathSelectionDialog extends StatefulWidget {
     this.initialPath,
     this.currentPathLabel,
     this.onRefresh,
+    this.pathHashByteWidth = 1,
   });
 
   @override
@@ -31,6 +33,7 @@ class PathSelectionDialog extends StatefulWidget {
     String? initialPath,
     String? currentPathLabel,
     VoidCallback? onRefresh,
+    int pathHashByteWidth = 1,
   }) {
     return showDialog<Uint8List?>(
       context: context,
@@ -40,6 +43,7 @@ class PathSelectionDialog extends StatefulWidget {
         initialPath: initialPath,
         currentPathLabel: currentPathLabel,
         onRefresh: onRefresh,
+        pathHashByteWidth: pathHashByteWidth,
       ),
     );
   }
@@ -72,10 +76,11 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
   }
 
   void _updateTextFromContacts() {
+    final hexChars = widget.pathHashByteWidth * 2;
     final pathParts = _selectedContacts
         .map((contact) {
-          if (contact.publicKeyHex.length >= 2) {
-            return contact.publicKeyHex.substring(0, 2);
+          if (contact.publicKeyHex.length >= hexChars) {
+            return contact.publicKeyHex.substring(0, hexChars);
           }
           return '';
         })
@@ -120,16 +125,20 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
     final pathBytesList = <int>[];
     final invalidPrefixes = <String>[];
 
+    final expectedChars = widget.pathHashByteWidth * 2;
     for (final id in pathIds) {
-      if (id.length < 2) {
+      if (id.length < expectedChars) {
         invalidPrefixes.add(id);
         continue;
       }
 
-      final prefix = id.substring(0, 2);
+      final prefix = id.substring(0, expectedChars);
       try {
-        final byte = int.parse(prefix, radix: 16);
-        pathBytesList.add(byte);
+        for (int i = 0; i < widget.pathHashByteWidth; i++) {
+          final byteStr = prefix.substring(i * 2, i * 2 + 2);
+          final byte = int.parse(byteStr, radix: 16);
+          pathBytesList.add(byte);
+        }
       } catch (e) {
         invalidPrefixes.add(id);
       }

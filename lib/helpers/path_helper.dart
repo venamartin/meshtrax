@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../models/contact.dart';
 import '../connector/meshcore_protocol.dart';
 
@@ -20,6 +21,18 @@ class PathHelper {
     }
     return pathBytes;
   }
+
+  /// Splits a path buffer into a list of individual hops, based on [stride].
+  static List<Uint8List> getHops(List<int> pathBytes, {int stride = 1}) {
+    final trimmed = trimPaddingZeros(pathBytes, stride: stride);
+    final hops = <Uint8List>[];
+    for (int i = 0; i < trimmed.length; i += stride) {
+      final end = (i + stride > trimmed.length) ? trimmed.length : i + stride;
+      hops.add(Uint8List.fromList(trimmed.sublist(i, end)));
+    }
+    return hops;
+  }
+
 
   /// Legacy alias – kept so call-sites that don't have stride available still
   /// compile (they fall back to stride=1 which is correct for current firmware).

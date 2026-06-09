@@ -15,6 +15,7 @@ import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../models/translation_support.dart';
+import '../helpers/path_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../services/app_debug_log_service.dart';
@@ -3014,6 +3015,7 @@ class MeshCoreConnector extends ChangeNotifier {
       originalText: originalText,
       translatedLanguageCode: translatedLanguageCode,
       translationModelId: translationModelId,
+      pathHashSize: pathHashByteWidth,
     );
     _addChannelMessage(channel.index, message);
     _pendingChannelSentQueue.add(message.messageId);
@@ -4680,7 +4682,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         parsed.timestamp.millisecondsSinceEpoch ~/ 1000,
         '${parsed.senderName}: ${parsed.text}',
       );
-      final message = parsed.copyWith(packetHash: contentHash);
+      final message = parsed.copyWith(
+        packetHash: contentHash,
+        pathHashSize: (parsed.pathLength == null || parsed.pathLength == -1 || parsed.pathLength == 0)
+            ? 1
+            : extractPathHashSize(parsed.pathLength!),
+      );
       _updateContactLastMessageAtByName(
         message.senderName,
         message.timestamp,
@@ -4761,6 +4768,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             status: ChannelMessageStatus.sent,
             pathLength: packet.isFlood ? packet.hopCount : 0,
             pathBytes: packet.pathBytes,
+            pathHashSize: packet.hashSize,
             channelIndex: channel.index,
             packetHash: pktHash,
           );
@@ -5646,9 +5654,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           repeatCount: sanitizedMessage.repeatCount,
           pathLength: sanitizedMessage.pathLength,
           pathBytes: sanitizedMessage.pathBytes,
+          pathHashSize: sanitizedMessage.pathHashSize,
           pathVariants: sanitizedMessage.pathVariants,
           channelIndex: sanitizedMessage.channelIndex,
           messageId: sanitizedMessage.messageId,
+          packetHash: sanitizedMessage.packetHash,
+          reactions: sanitizedMessage.reactions,
           replyToMessageId: originalMessage.messageId,
           replyToSenderName: originalMessage.senderName,
           replyToText: originalMessage.text,
@@ -6124,6 +6135,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
+      // final hopCount = extractPathHopCount(pathLenRaw);
+      // final hashSize = extractPathHashSize(pathLenRaw);
       final pathByteLen = _decodePathByteLen(pathLenRaw);
       pathBytes = packet.readBytes(pathByteLen);
     } catch (e) {
@@ -6138,6 +6151,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     int timestamp = 0;
     bool hasLocation = false;
     bool hasName = false;
+    int hopCount = -1;
+    int hashSize = 1;
     if (payloadType != payloadTypeADVERT) {
       appLogger.warn('Unexpected payload type: $payloadType', tag: 'Connector');
       return;
@@ -6172,9 +6187,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: pathBytes.isEmpty ? -1 : pathBytes.length,
+        pathLength: pathBytes.isEmpty ? -1 : hopCount,
+        pathHashSize: hashSize,
         path: Uint8List.fromList(
-          pathBytes.reversed.toList(),
+          PathHelper.getHops(pathBytes, stride: hashSize).reversed.expand((h) => h).toList(),
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
@@ -6251,15 +6267,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contactKeyHex);
 
+    final hopCount = extractPathHopCount(pathLenRaw);
+    final hashSize = extractPathHashSize(pathLenRaw);
+
     if (isNewContact) {
       final newContact = Contact(
         rawPacket: rawPacket,
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: path.length,
+        pathLength: path.isEmpty ? -1 : hopCount,
+        pathHashSize: hashSize,
         path: Uint8List.fromList(
-          path.reversed.toList(),
+          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
@@ -6303,8 +6323,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         latitude: hasLocation ? latitude : existing.latitude,
         longitude: hasLocation ? longitude : existing.longitude,
         name: hasName ? name : existing.name,
-        path: Uint8List.fromList(path.reversed.toList()),
-        pathLength: path.length,
+        pathHashSize: hashSize,
+        path: Uint8List.fromList(
+          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
+        ),
+        pathLength: path.isEmpty ? -1 : hopCount,
         lastMessageAt: mergedLastMessageAt,
         lastSeen: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
         pathOverride: existing.pathOverride, // Preserve user's path choice
@@ -6581,6 +6604,8 @@ class _RawPacket {
       routeType == _routeFlood || routeType == _routeTransportFlood;
 
   int get hopCount => pathLenRaw & 63;
+  
+  int get hashSize => extractPathHashSize(pathLenRaw);
 }
 
 class _ParsedText {

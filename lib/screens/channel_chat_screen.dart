@@ -14,6 +14,7 @@ import '../connector/meshcore_protocol.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../helpers/path_helper.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
@@ -679,11 +680,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
     final cleanTranslatedDisplayText = translatedDisplayText.replaceAll(gifPattern, '').trim();
     final cleanOriginalDisplayText = originalDisplayText?.replaceAll(gifPattern, '').trim();
-    final displayPath = message.pathBytes.isNotEmpty
-        ? message.pathBytes
+    final displayPathString = message.pathBytes.isNotEmpty
+        ? message.displayPathString
         : (message.pathVariants.isNotEmpty
-              ? message.pathVariants.first
-              : Uint8List(0));
+              ? message.displayPathVariants.first
+              : "");
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(translatedDisplayText);
     final displayBubbleColor = isJumboEmoji
@@ -772,7 +773,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                     isAcked:
                                         message.status ==
                                             ChannelMessageStatus.sent &&
-                                        displayPath.isNotEmpty,
+                                        displayPathString.isNotEmpty,
                                     isFailed:
                                         message.status ==
                                         ChannelMessageStatus.failed,
@@ -810,7 +811,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                 child: MessageStatusIcon(
                                   isAcked: message.status ==
                                           ChannelMessageStatus.sent &&
-                                      displayPath.isNotEmpty,
+                                      displayPathString.isNotEmpty,
                                   isFailed: message.status ==
                                       ChannelMessageStatus.failed,
                                 ),
@@ -861,7 +862,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                     child: MessageStatusIcon(
                                       isAcked: message.status ==
                                               ChannelMessageStatus.sent &&
-                                          displayPath.isNotEmpty,
+                                          displayPathString.isNotEmpty,
                                       isFailed: message.status ==
                                           ChannelMessageStatus.failed,
                                     ),
@@ -872,14 +873,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ],
                       ],
                       if (enableTracing) ...[
-                        if (displayPath.isNotEmpty) ...[
+                        if (displayPathString.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
                                 ? const EdgeInsets.symmetric(horizontal: 8)
                                 : EdgeInsets.zero,
                             child: Text(
-                              'via ${_formatPathPrefixes(displayPath)}',
+                              'via $displayPathString',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey[600],
@@ -1687,12 +1688,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
 
     return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
-  }
-
-  String _formatPathPrefixes(Uint8List pathBytes) {
-    return pathBytes
-        .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
-        .join(',');
   }
 }
 

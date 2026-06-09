@@ -321,6 +321,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(height: 1),
           ListTile(
+            leading: const Icon(Icons.share_location_outlined),
+            title: const Text("Path Hash Size"),
+            subtitle: const Text("Configure the path hash size (1-3 bytes)"),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _editPathHashSize(context, connector),
+          ),
+          const Divider(height: 1),
+          ListTile(
             leading: const Icon(Icons.visibility_off_outlined),
             title: Text(l10n.settings_privacy),
             subtitle: Text(l10n.settings_privacySubtitle),
@@ -735,6 +743,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 showDismissibleSnackBar(
                   context,
                   content: Text(l10n.settings_locationUpdated),
+                );
+              },
+              child: Text(l10n.common_save),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editPathHashSize(BuildContext context, MeshCoreConnector connector) {
+    int _currentMode = (connector.pathHashByteWidth - 1).clamp(0, 2);
+    final l10n = context.l10n;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text("Path Hash Size"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Select the number of bytes per hop. Larger hashes reduce collisions but decrease the maximum hop count (1 byte \u2248 64 hops, 2 bytes \u2248 32 hops, 3 bytes \u2248 21 hops)."),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                value: _currentMode,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 0, child: Text('1 Byte')),
+                  DropdownMenuItem(value: 1, child: Text('2 Bytes')),
+                  DropdownMenuItem(value: 2, child: Text('3 Bytes')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => _currentMode = value);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.common_cancel),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await connector.setPathHashMode(_currentMode);
+                await connector.refreshDeviceInfo();
+                if (!context.mounted) return;
+                showDismissibleSnackBar(
+                  context,
+                  content: const Text("Path hash size updated."),
                 );
               },
               child: Text(l10n.common_save),

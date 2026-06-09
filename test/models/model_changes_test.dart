@@ -53,11 +53,11 @@ void main() {
       expect(contact!.pathLength, equals(1));
     });
 
-    test('pathLen == 64 (maxPathSize) → pathLength == 64', () {
-      final frame = _buildContactFrame(pathLen: maxPathSize);
+    test('pathLen == 63 (max hops) → pathLength == 63', () {
+      final frame = _buildContactFrame(pathLen: 63);
       final contact = Contact.fromFrame(frame);
       expect(contact, isNotNull);
-      expect(contact!.pathLength, equals(maxPathSize));
+      expect(contact!.pathLength, equals(63));
     });
 
     test('pathLen == 0xFF → pathLength == -1 (flood)', () {
@@ -67,11 +67,11 @@ void main() {
       expect(contact!.pathLength, equals(-1));
     });
 
-    test('pathLen == 65 (over maxPathSize) → pathLength == -1 (flood)', () {
+    test('pathLen == 65 (hash size 2, hop count 1) → pathLength == 1', () {
       final frame = _buildContactFrame(pathLen: 65);
       final contact = Contact.fromFrame(frame);
       expect(contact, isNotNull);
-      expect(contact!.pathLength, equals(-1));
+      expect(contact!.pathLength, equals(1));
     });
   });
 

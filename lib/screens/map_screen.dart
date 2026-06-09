@@ -18,6 +18,7 @@ import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/path_history_service.dart';
+import '../helpers/path_helper.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_tile_cache_service.dart';
 import '../utils/contact_search.dart';
@@ -192,12 +193,12 @@ class _MapScreenState extends State<MapScreen> {
         // Compute guessed locations with caching
         final maxRangeKm = _estimateLoRaRangeKm(connector);
         final filteredKeys = filteredByKeyPrefix
-            .map((c) => '${c.publicKeyHex}:${c.path.join("-")}')
+            .map((c) => '${c.publicKeyHex}:${c.pathIdList}')
             .join(',');
         final anchorKeys = allContactsWithLocation
             .map(
               (c) =>
-                  '${c.publicKeyHex}:${c.latitude}:${c.longitude}:${c.path.isNotEmpty ? c.path.last : ""}',
+                  '${c.publicKeyHex}:${c.latitude}:${c.longitude}:${c.path.isNotEmpty ? c.pathIdList.split(',').last : ""}',
             )
             .join(',');
         final cacheKey =
@@ -630,10 +631,11 @@ class _MapScreenState extends State<MapScreen> {
       ];
       final lastHopBytes = <int>{};
       for (final pathBytes in pathSets) {
-        if (pathBytes.isEmpty) continue;
-        final lastHop = pathBytes.last;
-        lastHopBytes.add(lastHop);
-        final r = repeaterByHash[lastHop];
+        final hops = PathHelper.getHops(pathBytes, stride: contact.pathHashSize);
+        if (hops.isEmpty) continue;
+        final lastHopFirstByte = hops.last.first;
+        lastHopBytes.add(lastHopFirstByte);
+        final r = repeaterByHash[lastHopFirstByte];
         if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
       }
 
@@ -2155,9 +2157,8 @@ class _MapScreenState extends State<MapScreen> {
 
   void _addToPath(BuildContext context, Contact contact, {LatLng? position}) {
     setState(() {
-      _pathTrace.add(
-        contact.publicKey[0],
-      ); // Add first 16 bytes of public key to path trace
+      final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
+      _pathTrace.addAll(contact.publicKey.take(stride)); // Add stride bytes of public key to path trace
       _pathTraceContacts.add(
         contact.copyWith(
           latitude: position?.latitude ?? contact.latitude,
@@ -2179,10 +2180,15 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  void _removePath() {
+  void _removePath(BuildContext context) {
     setState(() {
+      final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
       _pathTraceContacts.removeLast();
-      _pathTrace.removeLast(); // Remove last node from path trace
+      if (_pathTrace.length >= stride) {
+        _pathTrace.removeRange(_pathTrace.length - stride, _pathTrace.length);
+      } else {
+        _pathTrace.clear();
+      }
       _points.removeLast(); // Remove last point from points list
       _polylines.clear(); // Clear polylines
     });
@@ -2217,9 +2223,7 @@ class _MapScreenState extends State<MapScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
               SelectableText(
-                _pathTrace
-                    .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                    .join(','),
+                PathHelper.formatPathHex(_pathTrace, stride: context.read<MeshCoreConnector>().pathHashByteWidth),
                 style: TextStyle(fontSize: 18),
               ),
               // const SizedBox(height: 6),
@@ -2255,6 +2259,7 @@ class _MapScreenState extends State<MapScreen> {
                   if (_pathTrace.isNotEmpty)
                     IconButton(
                       onPressed: () {
+                        final hashW = Provider.of<MeshCoreConnector>(context, listen: false).pathHashByteWidth;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -2262,6 +2267,8 @@ class _MapScreenState extends State<MapScreen> {
                               title: l10n.contacts_pathTrace,
                               path: Uint8List.fromList(_pathTrace),
                               flipPathAround: true,
+                              pathHashByteWidth: hashW,
+                              pathContacts: _pathTraceContacts,
                             ),
                           ),
                         );
@@ -2274,7 +2281,7 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   if (_pathTrace.isNotEmpty)
                     IconButton(
-                      onPressed: _removePath,
+                      onPressed: () => _removePath(context),
                       tooltip: l10n.map_removeLast,
                       icon: const Icon(Icons.undo),
                     ),

@@ -16,6 +16,7 @@ import '../l10n/l10n.dart';
 import '../models/channel_message.dart';
 import '../models/app_settings.dart';
 import '../models/contact.dart';
+import '../helpers/path_helper.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 
 class ChannelMessagePathScreen extends StatelessWidget {
@@ -37,14 +38,17 @@ class ChannelMessagePathScreen extends StatelessWidget {
           message.pathVariants,
         );
 
+        final pathHashSize = message.pathHashSize;
         final primaryPath = !channelMessage && !message.isOutgoing
-            ? Uint8List.fromList(primaryPathTmp.reversed.toList())
+            ? Uint8List.fromList(PathHelper.getHops(primaryPathTmp, stride: pathHashSize).reversed.expand((h) => h).toList())
             : primaryPathTmp;
-        final hops = _buildPathHops(primaryPath, connector, l10n);
+        final hops = _buildPathHops(primaryPath, connector, l10n, stride: pathHashSize);
         final hasHopDetails = primaryPath.isNotEmpty;
         final observedLabel = _formatObservedHops(
-          primaryPath.length,
-          message.pathLength,
+          primaryPath.length ~/ pathHashSize,
+          message.pathLength != null && message.pathLength! > 0
+              ? extractPathHopCount(message.pathLength!)
+              : message.pathLength,
           l10n,
         );
         final extraPaths = _otherPaths(primaryPath, message.pathVariants);
@@ -64,9 +68,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
                       flipPathAround: true,
                       reversePathAround:
                           !(!channelMessage && !message.isOutgoing),
-                      pathHashByteWidth: context
-                          .read<MeshCoreConnector>()
-                          .pathHashByteWidth,
+                      pathHashByteWidth: message.pathHashSize,
                     ),
                   ),
                 ),
@@ -143,7 +145,12 @@ class ChannelMessagePathScreen extends StatelessWidget {
               ),
             _buildDetailRow(
               l10n.channelPath_pathLabelTitle,
-              _formatPathLabel(message.pathLength, l10n),
+              _formatPathLabel(
+                message.pathLength != null && message.pathLength! > 0
+                    ? extractPathHopCount(message.pathLength!)
+                    : message.pathLength,
+                l10n,
+              ),
             ),
             if (observedLabel != null)
               _buildDetailRow(l10n.channelPath_observedLabel, observedLabel),
@@ -169,7 +176,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
                   _formatHopCount(variants[i].length, l10n),
                 ),
               ),
-              subtitle: Text(_formatPathPrefixes(variants[i])),
+              subtitle: Text(message.displayPathVariants[i]),
               trailing: const Icon(Icons.map_outlined, size: 20),
               onTap: () => _openPathMap(
                 context,
@@ -381,11 +388,11 @@ class _ChannelMessagePathMapScreenState
         final selectedPath =
             ((!widget.message.isOutgoing && !widget.channelMessage) ||
                 (widget.message.isOutgoing && widget.channelMessage))
-            ? Uint8List.fromList(selectedPathTmp.reversed.toList())
+            ? Uint8List.fromList(PathHelper.getHops(selectedPathTmp, stride: widget.message.pathHashSize).reversed.expand((h) => h).toList())
             : selectedPathTmp;
 
         final selectedIndex = _indexForPath(selectedPath, observedPaths);
-        final hops = _buildPathHops(selectedPath, connector, context.l10n);
+        final hops = _buildPathHops(selectedPath, connector, context.l10n, stride: widget.message.pathHashSize);
 
         final points = <LatLng>[];
 
@@ -426,7 +433,7 @@ class _ChannelMessagePathMapScreenState
             ? LatLngBounds.fromPoints(points)
             : null;
         final mapKey = ValueKey(
-          '${_formatPathPrefixes(selectedPath)},${context.l10n.pathTrace_you}',
+          '${PathHelper.formatPathHex(selectedPath, stride: widget.message.pathHashSize)},${context.l10n.pathTrace_you}',
         );
         _pathDistance = _getPathDistance(points);
 
@@ -567,7 +574,7 @@ class _ChannelMessagePathMapScreenState
                 Text(
                   l10n.channelPath_selectedPathLabel(
                     label,
-                    _formatPathPrefixes(selectedPath.pathBytes),
+                    PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize),
                   ),
                   style: TextStyle(color: Colors.grey[700], fontSize: 12),
                 ),
@@ -788,6 +795,7 @@ class _ChannelMessagePathMapScreenState
 class _PathHop {
   final int index;
   final int prefix;
+  final String fullPrefixLabel;
   final Contact? contact;
   final LatLng? position;
   final AppLocalizations l10n;
@@ -795,6 +803,7 @@ class _PathHop {
   const _PathHop({
     required this.index,
     required this.prefix,
+    this.fullPrefixLabel = '',
     required this.contact,
     required this.position,
     required this.l10n,
@@ -803,7 +812,7 @@ class _PathHop {
   bool get hasLocation => position != null;
 
   String get displayLabel {
-    final prefixLabel = _formatPrefix(prefix);
+    final prefixLabel = fullPrefixLabel.isNotEmpty ? fullPrefixLabel : _formatPrefix(prefix);
     return '($prefixLabel) ${_resolveName(contact, l10n)}';
   }
 }
@@ -818,8 +827,9 @@ class _ObservedPath {
 List<_PathHop> _buildPathHops(
   Uint8List pathBytes,
   MeshCoreConnector connector,
-  AppLocalizations l10n,
-) {
+  AppLocalizations l10n, {
+  int stride = 1,
+}) {
   if (pathBytes.isEmpty) return const [];
   final candidatesByPrefix = <int, List<Contact>>{};
   final allContacts = connector.allContacts;
@@ -843,9 +853,17 @@ List<_PathHop> _buildPathHops(
   var lastDistance = 0.0;
   var bestDistance = 0.0;
   final hops = <_PathHop>[];
-  for (var i = 0; i < pathBytes.length; i++) {
-    final searchPoint = i == 0 ? startPoint : previousPosition;
-    final candidates = candidatesByPrefix[pathBytes[i]];
+  var hopIndex = 1;
+  for (var i = 0; i < pathBytes.length; i += stride) {
+    if (pathBytes[i] == 0x00) break; // padding sentinel
+    final firstByte = pathBytes[i];
+    // Build the full multi-byte prefix for this hop slot
+    final slotEnd = (i + stride).clamp(0, pathBytes.length);
+    final slotBytes = pathBytes.sublist(i, slotEnd);
+    final fullPrefix = slotBytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join();
+
+    final searchPoint = hopIndex == 1 ? startPoint : previousPosition;
+    final candidates = candidatesByPrefix[firstByte];
     Contact? contact;
     if (candidates != null && candidates.isNotEmpty) {
       var bestIndex = 0;
@@ -870,7 +888,7 @@ List<_PathHop> _buildPathHops(
       }
       contact = candidates.removeAt(bestIndex);
       if (candidates.isEmpty) {
-        candidatesByPrefix.remove(pathBytes[i]);
+        candidatesByPrefix.remove(firstByte);
       }
     }
 
@@ -882,21 +900,23 @@ List<_PathHop> _buildPathHops(
     if (lastDistance + bestDistance > 50000 &&
         candidates != null &&
         candidates.isNotEmpty) {
-      i--;
+      i -= stride;
       lastDistance = bestDistance;
-      continue;
+      continue; // hopIndex does NOT increment — we haven't added a hop yet
     }
     lastDistance = bestDistance;
 
     hops.add(
       _PathHop(
-        index: i + 1,
-        prefix: pathBytes[i],
+        index: hopIndex,
+        prefix: firstByte,
+        fullPrefixLabel: fullPrefix,
         contact: contact,
         position: resolvedPosition,
         l10n: l10n,
       ),
     );
+    hopIndex++;
   }
   return hops;
 }
@@ -912,12 +932,6 @@ LatLng? _resolvePosition(Contact? contact) {
 
 String _formatPrefix(int prefix) {
   return prefix.toRadixString(16).padLeft(2, '0').toUpperCase();
-}
-
-String _formatPathPrefixes(Uint8List pathBytes) {
-  return pathBytes
-      .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
-      .join(',');
 }
 
 String _formatHopCount(int count, AppLocalizations l10n) {

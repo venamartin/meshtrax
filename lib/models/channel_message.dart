@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/reaction_helper.dart';
+import '../helpers/path_helper.dart';
 import '../helpers/smaz.dart';
 import 'translation_support.dart';
 import '../utils/app_logger.dart';
@@ -42,6 +43,7 @@ class ChannelMessage {
   final int repeatCount;
   final int? pathLength;
   final Uint8List pathBytes;
+  final int pathHashSize;
   final List<Uint8List> pathVariants;
   final int? channelIndex;
   final String messageId;
@@ -67,6 +69,7 @@ class ChannelMessage {
     this.repeatCount = 0,
     this.pathLength,
     Uint8List? pathBytes,
+    this.pathHashSize = 1,
     List<Uint8List>? pathVariants,
     this.channelIndex,
     String? messageId,
@@ -88,6 +91,10 @@ class ChannelMessage {
   String? get senderKeyHex =>
       senderKey != null ? pubKeyToHex(senderKey!) : null;
 
+  String get displayPathString => PathHelper.formatPathHex(pathBytes, stride: pathHashSize);
+
+  List<String> get displayPathVariants => pathVariants.map((p) => PathHelper.formatPathHex(p, stride: pathHashSize)).toList();
+
   ChannelMessage copyWith({
     ChannelMessageStatus? status,
     DateTime? timestamp,
@@ -95,6 +102,7 @@ class ChannelMessage {
     int? repeatCount,
     int? pathLength,
     Uint8List? pathBytes,
+    int? pathHashSize,
     List<Uint8List>? pathVariants,
     String? packetHash,
     String? replyToMessageId,
@@ -131,6 +139,7 @@ class ChannelMessage {
       repeatCount: repeatCount ?? this.repeatCount,
       pathLength: pathLength ?? this.pathLength,
       pathBytes: pathBytes ?? this.pathBytes,
+      pathHashSize: pathHashSize ?? this.pathHashSize,
       pathVariants: pathVariants ?? this.pathVariants,
       channelIndex: channelIndex,
       messageId: messageId,
@@ -227,6 +236,7 @@ class ChannelMessage {
     String? originalText,
     String? translatedLanguageCode,
     String? translationModelId,
+    int pathHashSize = 1,
   }) {
     return ChannelMessage(
       senderKey: null,
@@ -240,6 +250,7 @@ class ChannelMessage {
       status: ChannelMessageStatus.pending,
       pathLength: null,
       pathBytes: Uint8List(0),
+      pathHashSize: pathHashSize,
       pathVariants: const [],
       channelIndex: channelIndex,
     );
