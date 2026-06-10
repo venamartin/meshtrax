@@ -1,4 +1,4 @@
-import 'dart:io' show Platform, File;
+import 'dart:io' show Platform;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -45,10 +45,10 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Skip notification initialization on Windows/Linux (plugin not available)
+    // Skip notification initialization on Windows and Linux (plugin not supported)
     if (Platform.isWindows || Platform.isLinux) {
       _isInitialized = true;
-      debugPrint('Notifications unavailable on Windows/Linux');
+      debugPrint('Notifications unavailable on this platform');
       return;
     }
 
@@ -73,15 +73,6 @@ class NotificationService {
     debugPrint('Notifications initialized (mobile platform)');
   }
 
-  static bool _isDbusSessionAvailable() {
-    final addr = Platform.environment['DBUS_SESSION_BUS_ADDRESS'];
-    if (addr != null && addr.isNotEmpty) return true;
-    // Fallback: check the default socket for the current user.
-    final uid = Platform.environment['UID'] ?? Platform.environment['EUID'];
-    final path = '/run/user/${uid ?? '1000'}/bus';
-    return File(path).existsSync();
-  }
-
   Future<bool> _ensureInitialized() async {
     if (!_isInitialized) {
       await initialize();
@@ -94,7 +85,7 @@ class NotificationService {
       await initialize();
     }
 
-    // Permissions are not needed on Windows/Linux
+    // Permissions are not needed on Windows or Linux
     if (Platform.isWindows || Platform.isLinux) {
       return true;
     }
