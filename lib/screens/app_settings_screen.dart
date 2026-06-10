@@ -9,6 +9,7 @@ import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
 import '../services/notification_service.dart';
 import '../services/translation_service.dart';
+import '../services/ui_view_state_service.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'map_cache_screen.dart';
@@ -291,6 +292,18 @@ class AppSettingsScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
+          Consumer<UiViewStateService>(
+            builder: (context, uiState, _) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.gif_box_outlined),
+                title: const Text("Inline GIFs"),
+                subtitle: const Text("Render Giphy links as animated GIFs in chat"),
+                value: uiState.renderGifs,
+                onChanged: (value) => uiState.setRenderGifs(value),
+              );
+            },
+          ),
+          const Divider(height: 1),
           SwitchListTile(
             secondary: const Icon(Icons.refresh_outlined),
             title: Text(context.l10n.appSettings_clearPathOnMaxRetry),

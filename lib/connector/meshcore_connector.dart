@@ -2680,7 +2680,7 @@ class MeshCoreConnector extends ChangeNotifier {
   Future<void> setContactPath(
     Contact contact,
     Uint8List customPath,
-    int pathLen,
+    int hopCount,
   ) async {
     // Serialize path operations to prevent interleaved async calls from
     // leaving in-memory state inconsistent with the device.
@@ -2695,7 +2695,8 @@ class MeshCoreConnector extends ChangeNotifier {
         buildUpdateContactPathFrame(
           contact.publicKey,
           customPath,
-          pathLen,
+          hopCount,
+          contact.pathHashSize,
           type: contact.type,
           flags: contact.flags,
           name: contact.name,
@@ -2711,7 +2712,7 @@ class MeshCoreConnector extends ChangeNotifier {
       );
       if (idx != -1) {
         _contacts[idx] = _contacts[idx].copyWith(
-          pathLength: customPath.length,
+          pathLength: hopCount,
           path: customPath,
         );
         notifyListeners();
@@ -2757,6 +2758,7 @@ class MeshCoreConnector extends ChangeNotifier {
         latestContact.publicKey,
         latestContact.path,
         latestContact.pathLength,
+        latestContact.pathHashSize,
         type: latestContact.type,
         flags: updatedFlags,
         name: latestContact.name,
@@ -3156,6 +3158,7 @@ class MeshCoreConnector extends ChangeNotifier {
         contact.publicKey,
         contact.path,
         contact.pathLength,
+        contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,
@@ -6113,6 +6116,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contact.publicKey,
         contact.pathOverrideBytes ?? contact.path,
         contact.pathOverride ?? contact.pathLength,
+        contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,

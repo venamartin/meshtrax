@@ -27,6 +27,7 @@ import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/path_history_service.dart';
 import '../services/translation_service.dart';
+import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/elements_ui.dart';
 import '../widgets/byte_count_input.dart';
@@ -632,6 +633,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _textController,
                 builder: (context, value, child) {
+                  final renderGifs = context.read<UiViewStateService>().renderGifs;
                   final gifId = GifHelper.parseGif(value.text);
                   if (gifId != null) {
                     return Focus(
@@ -651,7 +653,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Expanded(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: GifMessage(
+                              child: renderGifs ? GifMessage(
                                 url:
                                     'https://media.giphy.com/media/$gifId/giphy.gif',
                                 backgroundColor:
@@ -659,6 +661,23 @@ class _ChatScreenState extends State<ChatScreen> {
                                 fallbackTextColor: colorScheme.onSurface
                                     .withValues(alpha: 0.6),
                                 maxSize: 160,
+                              ) : Container(
+                                height: 60,
+                                color: colorScheme.surfaceContainerHighest,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.gif_box, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "GIF",
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -1718,6 +1737,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsService = context.watch<AppSettingsService>();
+    final uiState = context.watch<UiViewStateService>();
     final enableTracing = settingsService.settings.enableMessageTracing;
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
@@ -1843,12 +1863,32 @@ class _MessageBubble extends StatelessWidget {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: GifMessage(
+                                child: uiState.renderGifs ? GifMessage(
                                   url:
                                       'https://media.giphy.com/media/$gifId/giphy.gif',
                                   backgroundColor: Colors.transparent,
                                   fallbackTextColor: textColor.withValues(
                                     alpha: 0.7,
+                                  ),
+                                ) : Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: displayBubbleColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.gif_box, color: displayTextColor.withValues(alpha: 0.7)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "GIF",
+                                        style: TextStyle(
+                                          color: displayTextColor.withValues(alpha: 0.7),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),

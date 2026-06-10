@@ -155,7 +155,7 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
     if (result != null && context.mounted) {
       await connector.setPathOverride(
         currentContact,
-        pathLen: result.length,
+        pathLen: result.length ~/ connector.pathHashByteWidth,
         pathBytes: result,
       );
 
@@ -350,11 +350,10 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
                             final pathBytes = Uint8List.fromList(
                               path.pathBytes,
                             );
-                            final pathLength = path.pathBytes.length;
 
                             await connector.setPathOverride(
                               currentContact,
-                              pathLen: pathLength,
+                              pathLen: path.hopCount,
                               pathBytes: pathBytes,
                             );
 

@@ -328,6 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _editPathHashSize(context, connector),
           ),
           const Divider(height: 1),
+
           ListTile(
             leading: const Icon(Icons.visibility_off_outlined),
             title: Text(l10n.settings_privacy),
@@ -754,7 +755,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _editPathHashSize(BuildContext context, MeshCoreConnector connector) {
-    int _currentMode = (connector.pathHashByteWidth - 1).clamp(0, 2);
+    int _currentMode = (connector.pathHashByteWidth - 1).clamp(0, 1);
     final l10n = context.l10n;
     showDialog(
       context: context,
@@ -764,7 +765,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Select the number of bytes per hop. Larger hashes reduce collisions but decrease the maximum hop count (1 byte \u2248 64 hops, 2 bytes \u2248 32 hops, 3 bytes \u2248 21 hops)."),
+              const Text("Select the number of bytes per hop. Larger hashes reduce collisions but decrease the maximum hop count (1 byte \u2248 64 hops, 2 bytes \u2248 32 hops)."),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
                 value: _currentMode,
@@ -774,7 +775,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 items: const [
                   DropdownMenuItem(value: 0, child: Text('1 Byte')),
                   DropdownMenuItem(value: 1, child: Text('2 Bytes')),
-                  DropdownMenuItem(value: 2, child: Text('3 Bytes')),
                 ],
                 onChanged: (value) {
                   if (value != null) {

@@ -16,6 +16,7 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyContactsTypeFilter = 'ui_contacts_type_filter';
   static const _keyChannelsSortOption = 'ui_channels_sort_option';
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
+  static const _keyRenderGifs = 'ui_render_gifs';
 
   String _contactsSelectedGroupName = contactsAllGroupsValue;
   String _contactsSearchText = '';
@@ -26,6 +27,7 @@ class UiViewStateService extends ChangeNotifier {
 
   String _channelsSearchText = '';
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
+  bool _renderGifs = true;
 
   String get contactsSelectedGroupName => _contactsSelectedGroupName;
   String get contactsSearchText => _contactsSearchText;
@@ -35,6 +37,7 @@ class UiViewStateService extends ChangeNotifier {
   ContactTypeFilter get contactsTypeFilter => _contactsTypeFilter;
   String get channelsSearchText => _channelsSearchText;
   ChannelSortOption get channelsSortOption => _channelsSortOption;
+  bool get renderGifs => _renderGifs;
 
   Future<void> initialize() async {
     final prefs = PrefsManager.instance;
@@ -89,6 +92,8 @@ class UiViewStateService extends ChangeNotifier {
       default:
         _channelsSortOption = ChannelSortOption.manual;
     }
+
+    _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
   }
 
   void setContactsSelectedGroupName(String value) {
@@ -150,5 +155,12 @@ class UiViewStateService extends ChangeNotifier {
     unawaited(
       PrefsManager.instance.setString(_keyChannelsSortOption, value.name),
     );
+  }
+
+  void setRenderGifs(bool value) {
+    if (_renderGifs == value) return;
+    _renderGifs = value;
+    notifyListeners();
+    unawaited(PrefsManager.instance.setBool(_keyRenderGifs, value));
   }
 }

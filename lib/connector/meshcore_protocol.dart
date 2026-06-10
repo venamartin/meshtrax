@@ -716,7 +716,8 @@ Uint8List buildResetPathFrame(Uint8List pubKey) {
 Uint8List buildUpdateContactPathFrame(
   Uint8List pubKey,
   Uint8List path,
-  int pathLen, {
+  int hopCount,
+  int hashSize, {
   int type = 1, // ADV_TYPE_CHAT
   int flags = 0,
   String name = '',
@@ -729,7 +730,7 @@ Uint8List buildUpdateContactPathFrame(
   writer.writeBytes(pubKey);
   writer.writeByte(type);
   writer.writeByte(flags);
-  writer.writeByte(pathLen);
+  writer.writeByte(encodePathLenByte(hopCount, hashSize));
 
   writer.writeBytesPadded(path, maxPathSize);
 

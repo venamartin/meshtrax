@@ -23,6 +23,7 @@ import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/translation_service.dart';
+import '../services/ui_view_state_service.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
@@ -665,6 +666,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   Widget _buildMessageBubble(ChannelMessage message, double textScale) {
     final settingsService = context.watch<AppSettingsService>();
+    final uiState = context.watch<UiViewStateService>();
     final enableTracing = settingsService.settings.enableMessageTracing;
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
@@ -825,7 +827,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: GifMessage(
+                                child: uiState.renderGifs ? GifMessage(
                                   url:
                                       'https://media.giphy.com/media/$gifId/giphy.gif',
                                   backgroundColor: Colors.transparent,
@@ -838,6 +840,35 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                           .colorScheme
                                           .onSurface
                                           .withValues(alpha: 0.6),
+                                ) : Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isOutgoing
+                                        ? Theme.of(context).colorScheme.primaryContainer
+                                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.gif_box, 
+                                        color: isOutgoing
+                                            ? Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7)
+                                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "GIF",
+                                        style: TextStyle(
+                                          color: isOutgoing
+                                              ? Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7)
+                                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                               if (!enableTracing && isOutgoing)
@@ -1020,6 +1051,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   Widget _buildReplyPreview(ChannelMessage message, double textScale) {
     final connector = context.read<MeshCoreConnector>();
+    final uiState = context.watch<UiViewStateService>();
     final isOwnNode = message.replyToSenderName == connector.selfName;
     final replyText = message.replyToText ?? '';
     final colorScheme = Theme.of(context).colorScheme;
@@ -1032,11 +1064,28 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     if (gifId != null) {
       contentPreview = ClipRRect(
         borderRadius: BorderRadius.circular(4),
-        child: GifMessage(
+        child: uiState.renderGifs ? GifMessage(
           url: 'https://media.giphy.com/media/$gifId/giphy.gif',
           backgroundColor: colorScheme.surfaceContainerHighest,
           fallbackTextColor: previewTextColor,
           maxSize: 80,
+        ) : Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.gif_box, size: 14, color: previewTextColor),
+              const SizedBox(width: 4),
+              Text(
+                "GIF",
+                style: TextStyle(fontSize: 12 * textScale, color: previewTextColor),
+              ),
+            ],
+          ),
         ),
       );
     } else if (poi != null) {
@@ -1373,6 +1422,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 child: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _textController,
                   builder: (context, value, child) {
+                    final renderGifs = context.read<UiViewStateService>().renderGifs;
                     final gifId = GifHelper.parseGif(value.text);
                     if (gifId != null) {
                       return Focus(
@@ -1392,7 +1442,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: GifMessage(
+                                child: renderGifs ? GifMessage(
                                   url:
                                       'https://media.giphy.com/media/$gifId/giphy.gif',
                                   backgroundColor: Theme.of(
@@ -1403,6 +1453,23 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                       .onSurface
                                       .withValues(alpha: 0.6),
                                   maxSize: 160,
+                                ) : Container(
+                                  height: 60,
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.gif_box, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "GIF",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
