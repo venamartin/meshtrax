@@ -11,9 +11,9 @@ may also be rejected. [See more](#ai-use)
 
 ### **Did you find a bug?**
 
-* **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/zjs81/meshcore-open/issues).
+* **Ensure the bug was not already reported** by searching on GitHub under the repository's Issues tab.
 
-* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/zjs81/meshcore-open/issues/new).
+* If you're unable to find an open issue addressing the problem, open a new one.
 Be sure to include a **title and clear description**, as much relevant
 information as possible, and a **code sample** or an **executable test case**
 demonstrating the expected behavior that is not occurring. You can also include
@@ -40,9 +40,11 @@ project you can start work or open a PR if you have already started.
 
 ## Submitting your patch
 
-* All changes should be based on the `dev` branch. When creating your PR please
-be sure to change the target to merge into dev, and when starting work on a new
-branch be sure to start on latest `dev`.
+* All changes should be based on the `master` branch. When creating your PR please
+be sure to change the target to merge into `master`, and when starting work on a new
+branch be sure to start on the latest `master`.
+
+* All Pull Requests require review and approval from at least one maintainer before they can be merged.
 
 * Ensure the PR description clearly describes the problem and solution. Include
 the relevant issue number if applicable.
