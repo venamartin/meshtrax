@@ -384,8 +384,28 @@ class MessageRetryService extends ChangeNotifier {
     }
 
     if (messageId == null || contact == null) {
-      debugPrint('No pending message found for ACK hash: $ackHashHex');
-      return false;
+      // Hash lookup failed. This can happen when selfPubKey was null during
+      // _attemptSend, so no hash was stored. Fall back to the oldest active
+      // pending message so the timeout timer is always started and the message
+      // never gets stuck at 'pending' forever.
+      if (_activeMessages.isNotEmpty) {
+        final fallbackId = _activeMessages.first;
+        final fallbackMsg = _pendingMessages[fallbackId];
+        final fallbackContact = _pendingContacts[fallbackId];
+        if (fallbackMsg != null && fallbackContact != null &&
+            fallbackMsg.status == MessageStatus.pending) {
+          messageId = fallbackId;
+          contact = fallbackContact;
+          config.debugLogService?.warn(
+            'RESP_CODE_SENT: ACK hash $ackHashHex not matched — using fallback for "${fallbackMsg.text.length > 20 ? "${fallbackMsg.text.substring(0, 20)}..." : fallbackMsg.text}" to ${fallbackContact.name}',
+            tag: 'AckHash',
+          );
+        }
+      }
+      if (messageId == null || contact == null) {
+        debugPrint('No pending message found for ACK hash: $ackHashHex');
+        return false;
+      }
     }
 
     final message = _pendingMessages[messageId]!;
@@ -736,7 +756,7 @@ class MessageRetryService extends ChangeNotifier {
     }
     return PathSelection(
       pathBytes: message.pathBytes,
-      hopCount: message.pathLength ?? message.pathBytes.length,
+      hopCount: message.pathLength ?? PathHelper.getHopCount(message.pathBytes, stride: message.pathHashSize),
       useFlood: false,
     );
   }

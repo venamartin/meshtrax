@@ -500,6 +500,7 @@ class _MapScreenState extends State<MapScreen> {
                         ..._buildMarkers(
                           contactsWithLocation,
                           settings,
+                          connector.pathHashByteWidth,
                           showLabels: _showNodeLabels,
                         ),
                         ...sharedMarkers.map(_buildSharedMarker),
@@ -561,6 +562,7 @@ class _MapScreenState extends State<MapScreen> {
                     contacts,
                     contactsWithLocation,
                     settings,
+                    connector.pathHashByteWidth,
                     sharedMarkers.length,
                     guessedLocations.length,
                   ),
@@ -592,19 +594,27 @@ class _MapScreenState extends State<MapScreen> {
     PathHistoryService pathHistory,
     double? maxRangeKm,
   ) {
-    // Index known-location repeaters by their 1-byte hash.
-    // null value = two repeaters share the same hash byte (ambiguous collision).
-    final repeaterByHash = <int, Contact?>{};
+    // Index known-location repeaters by their hash prefix per stride.
+    // null value = two repeaters share the same hash prefix (ambiguous collision).
+    final repeatersByStride = <int, Map<String, Contact?>>{};
 
-    for (final c in withLocation) {
-      if (c.type == advTypeRepeater) {
-        if (repeaterByHash.containsKey(c.publicKey[0])) {
-          repeaterByHash[c.publicKey[0]] =
-              null; // collision: can't disambiguate
-        } else {
-          repeaterByHash[c.publicKey[0]] = c;
+    Map<String, Contact?> getRepeaterMapForStride(int stride) {
+      if (repeatersByStride.containsKey(stride)) {
+        return repeatersByStride[stride]!;
+      }
+      final map = <String, Contact?>{};
+      for (final c in withLocation) {
+        if (c.type == advTypeRepeater) {
+          final prefix = c.hashPrefixWithStride(stride);
+          if (map.containsKey(prefix)) {
+            map[prefix] = null; // collision: can't disambiguate
+          } else {
+            map[prefix] = c;
+          }
         }
       }
+      repeatersByStride[stride] = map;
+      return map;
     }
 
     final result = <_GuessedLocation>[];
@@ -623,19 +633,22 @@ class _MapScreenState extends State<MapScreen> {
       // path = [device-side hop, ..., contact-side hop]
       // Only path.last is actually within radio range of the contact — using
       // earlier bytes would anchor against our own side of the network.
+      final repeaterByHash = getRepeaterMapForStride(contact.pathHashSize);
+
       final pathSets = <List<int>>[
         contact.path.toList(),
         ...pathHistory
             .getRecentPaths(contact.publicKeyHex)
             .map((r) => r.pathBytes),
       ];
-      final lastHopBytes = <int>{};
+      final lastHopBytes = <String>{};
       for (final pathBytes in pathSets) {
         final hops = PathHelper.getHops(pathBytes, stride: contact.pathHashSize);
         if (hops.isEmpty) continue;
-        final lastHopFirstByte = hops.last.first;
-        lastHopBytes.add(lastHopFirstByte);
-        final r = repeaterByHash[lastHopFirstByte];
+        final lastHop = hops.last;
+        final prefix = lastHop.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join();
+        lastHopBytes.add(prefix);
+        final r = repeaterByHash[prefix];
         if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
       }
 
@@ -854,10 +867,23 @@ class _MapScreenState extends State<MapScreen> {
 
   List<Contact> _filterContactsBySettings(
     List<Contact> contacts,
-    dynamic settings, {
+    dynamic settings,
+    int stride, {
     bool noLocations = false,
   }) {
     List<Contact> filtered = [];
+    
+    // Precompute prefix counts for overlaps if needed to make filtering O(N)
+    final prefixCounts = <String, int>{};
+    if (settings.mapShowOverlaps) {
+      for (final c in contacts) {
+        if (c.type == advTypeRepeater || c.type == advTypeRoom) {
+          final prefix = c.hashPrefixWithStride(stride);
+          prefixCounts[prefix] = (prefixCounts[prefix] ?? 0) + 1;
+        }
+      }
+    }
+
     bool addContact = false;
     for (final contact in contacts) {
       addContact = false;
@@ -889,20 +915,13 @@ class _MapScreenState extends State<MapScreen> {
       }
 
       if (settings.mapShowOverlaps) {
-        final hasOverlap = contacts
-            .where(
-              (c) =>
-                  c.publicKeyHex != contact.publicKeyHex &&
-                  c.publicKey.first == contact.publicKey.first &&
-                  (c.type == advTypeRepeater || c.type == advTypeRoom) &&
-                  (contact.type == advTypeRepeater ||
-                      contact.type == advTypeRoom),
-            )
-            .firstOrNull;
+        bool hasOverlap = false;
+        if (contact.type == advTypeRepeater || contact.type == advTypeRoom) {
+          final prefix = contact.hashPrefixWithStride(stride);
+          hasOverlap = (prefixCounts[prefix] ?? 0) > 1;
+        }
 
-        if (hasOverlap == null &&
-            settings.mapShowOverlaps &&
-            !_isBuildingPathTrace) {
+        if (!hasOverlap && !_isBuildingPathTrace) {
           addContact = false;
         }
       }
@@ -916,11 +935,12 @@ class _MapScreenState extends State<MapScreen> {
 
   List<Marker> _buildMarkers(
     List<Contact> contacts,
-    settings, {
+    settings,
+    int stride, {
     required bool showLabels,
   }) {
     final markers = <Marker>[];
-    final filteredContacts = _filterContactsBySettings(contacts, settings);
+    final filteredContacts = _filterContactsBySettings(contacts, settings, stride);
     for (final contact in filteredContacts) {
       final marker = Marker(
         point: LatLng(contact.latitude!, contact.longitude!),
@@ -967,7 +987,7 @@ class _MapScreenState extends State<MapScreen> {
           _buildNodeLabelMarker(
             point: LatLng(contact.latitude!, contact.longitude!),
             label: settings.mapShowOverlaps && !_isBuildingPathTrace
-                ? "${contact.publicKeyHex.substring(0, 2)}:${contact.name}"
+                ? "${contact.hashPrefixWithStride(stride)}:${contact.name}"
                 : contact.name,
           ),
         );
@@ -1046,17 +1066,20 @@ class _MapScreenState extends State<MapScreen> {
     List<Contact> contacts,
     List<Contact> contactsWithLocation,
     settings,
+    int stride,
     int markerCount,
     int guessedCount,
   ) {
     final filteredContacts = _filterContactsBySettings(
       contacts,
       settings,
+      stride,
       noLocations: false,
     );
     final filteredContactsAll = _filterContactsBySettings(
       contacts,
       settings,
+      stride,
       noLocations: true,
     );
 

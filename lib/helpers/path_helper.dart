@@ -33,6 +33,11 @@ class PathHelper {
     return hops;
   }
 
+  /// Calculates the number of hops in a raw path buffer.
+  static int getHopCount(List<int> pathBytes, {int stride = 1}) {
+    return trimPaddingZeros(pathBytes, stride: stride).length ~/ stride;
+  }
+
 
   /// Legacy alias – kept so call-sites that don't have stride available still
   /// compile (they fall back to stride=1 which is correct for current firmware).
@@ -73,19 +78,19 @@ class PathHelper {
         );
       }
 
-      // Match on the first byte of the slot (the identifying hash prefix)
-      final firstByte = trimmed[i];
+      // Match on the full hex label for this slot
+      final prefixStr = hexLabel.toString();
       final matches = allContacts
           .where(
             (c) =>
                 c.publicKey.isNotEmpty &&
-                c.publicKey.first == firstByte &&
+                c.hashPrefixWithStride(stride) == prefixStr &&
                 (c.type == advTypeRepeater || c.type == advTypeRoom),
           )
           .toList();
 
       if (matches.isEmpty) {
-        hops.add(hexLabel.toString());
+        hops.add(prefixStr);
       } else if (matches.length == 1) {
         hops.add(matches.first.name);
       } else {

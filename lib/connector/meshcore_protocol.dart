@@ -195,8 +195,11 @@ const int cmdImportContact = 18;
 const int cmdReboot = 19;
 const int cmdGetBattAndStorage = 20;
 const int cmdDeviceQuery = 22;
+const int cmdSendRawData = 25;
 const int cmdSendLogin = 26;
 const int cmdSendStatusReq = 27;
+const int cmdHasConnection = 28;
+const int cmdLogout = 29;
 const int cmdGetContactByKey = 30;
 const int cmdGetChannel = 31;
 const int cmdSetChannel = 32;
@@ -206,12 +209,18 @@ const int cmdSendTelemetryReq = 39;
 const int cmdGetCustomVar = 40;
 const int cmdSetCustomVar = 41;
 const int cmdSendBinaryReq = 50;
+const int cmdSetFloodScopeKey = 54;
 const int cmdSendControlData = 55;
 const int cmdGetStats = 56;
 const int cmdSendAnonReq = 57;
 const int cmdSetAutoAddConfig = 58;
 const int cmdGetAutoAddConfig = 59;
+const int cmdGetAllowedRepeatFreq = 60;
 const int cmdSetPathHashMode = 61;
+const int cmdSendChannelData = 62;
+const int cmdSetDefaultFloodScope = 63;
+const int cmdGetDefaultFloodScope = 64;
+const int cmdSendRawPacket = 65;
 
 // Text message types
 const int txtTypePlain = 0;
@@ -247,8 +256,10 @@ const int respCodeContactMsgRecvV3 = 16;
 const int respCodeChannelMsgRecvV3 = 17;
 const int respCodeChannelInfo = 18;
 const int respCodeCustomVars = 21;
-const int respCodeAutoAddConfig = 25;
 const int respCodeStats = 24;
+const int respCodeAutoAddConfig = 25;
+const int respCodeChannelDataRecv = 27;
+const int respCodeDefaultFloodScope = 28;
 
 const int statsTypeCore = 0;
 const int statsTypeRadio = 1;
@@ -259,6 +270,7 @@ const int pushCodeAdvert = 0x80;
 const int pushCodePathUpdated = 0x81;
 const int pushCodeSendConfirmed = 0x82;
 const int pushCodeMsgWaiting = 0x83;
+const int pushCodeRawData = 0x84;
 const int pushCodeLoginSuccess = 0x85;
 const int pushCodeLoginFail = 0x86;
 const int pushCodeStatusResponse = 0x87;
@@ -267,7 +279,10 @@ const int pushCodeTraceData = 0x89;
 const int pushCodeNewAdvert = 0x8A;
 const int pushCodeTelemetryResponse = 0x8B;
 const int pushCodeBinaryResponse = 0x8C;
+const int pushCodePathDiscoveryResponse = 0x8D;
 const int pushCodeControlData = 0x8E;
+const int pushCodeContactDeleted = 0x8F;
+const int pushCodeContactsFull = 0x90;
 
 // Control payload types
 const int ctlTypeNodeDiscoverReq = 0x80;
@@ -418,7 +433,7 @@ ParsedContactText? parseContactMessageText(Uint8List frame) {
     }
 
     // Companion radio layout:
-    // [code][snr?][res?][res?][prefix x6][path_len][txt_type][timestamp x4][extra?][text...]
+    // [code][snr][reserved][reserved][prefix x6][path_len][txt_type][timestamp x4][extra?][text...]
     if (code == respCodeContactMsgRecvV3) {
       // Skip SNR and reserved bytes in v3 layout
       message.skipBytes(3);
@@ -428,8 +443,7 @@ ParsedContactText? parseContactMessageText(Uint8List frame) {
     final textType = message.readByte();
     message.skipBytes(4); // timestamp (4 bytes)
 
-    final shiftedType = textType >> 2;
-    final isSigned = shiftedType == txtTypeSigned || textType == txtTypeSigned;
+    final isSigned = textType == txtTypeSigned;
     if (isSigned) {
       // Signed messages have a 4-byte signature after the timestamp, before the text
       message.skipBytes(4);

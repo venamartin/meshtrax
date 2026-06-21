@@ -121,6 +121,12 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
         'Login started for ${repeater.name} (${repeater.publicKeyHex})',
         tag: 'RepeaterLogin',
       );
+
+      // Push the contact's current path (or flood if unknown) to the companion radio
+      // BEFORE sending the login frame. The companion firmware's sendLogin() will then
+      // automatically use sendDirect() if a path is set, or sendFloodScoped() if not.
+      // This means if the user has a saved direct path (e.g. a 2-byte repeater hash),
+      // the login packet goes direct without flooding the whole network.
       final selection = await _connector.preparePathForContactSend(repeater);
       final loginFrame = buildSendLoginFrame(repeater.publicKey, password);
       final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
@@ -135,7 +141,7 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
       final timeout = Duration(milliseconds: timeoutMs + 2000);
       final selectionLabel = selection.useFlood
           ? 'flood'
-          : '${selection.hopCount} hops';
+          : '${selection.hopCount} hops (direct)';
       appLogger.info('Login routing: $selectionLabel', tag: 'RepeaterLogin');
       bool? loginResult;
       bool isAdmin = false;

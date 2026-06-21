@@ -1492,6 +1492,7 @@ class _ChatScreenState extends State<ChatScreen> {
       title: context.l10n.chat_setCustomPath,
       currentPathLabel: currentPathLabel,
       onRefresh: connector.isConnected ? connector.getContacts : null,
+      pathHashByteWidth: connector.pathHashByteWidth,
     );
 
     appLogger.info(
@@ -1516,8 +1517,8 @@ class _ChatScreenState extends State<ChatScreen> {
       tag: 'ChatScreen',
     );
     await connector.setPathOverride(
-      _resolveContact(connector),
-      pathLen: result.length,
+      currentContact,
+      pathLen: PathHelper.getHopCount(result, stride: connector.pathHashByteWidth),
       pathBytes: result,
     );
     appLogger.info('setPathOverride completed', tag: 'ChatScreen');
@@ -1527,7 +1528,7 @@ class _ChatScreenState extends State<ChatScreen> {
       connector,
       _resolveContact(connector),
       result,
-      result.length,
+      PathHelper.getHopCount(result, stride: connector.pathHashByteWidth),
     );
   }
 
@@ -1561,6 +1562,7 @@ class _ChatScreenState extends State<ChatScreen> {
       repeatCount: 0,
       pathLength: message.pathLength,
       pathBytes: message.pathBytes,
+      pathHashSize: message.pathLength != null ? extractPathHashSize(message.pathLength!) : 1,
     );
     Navigator.push(
       context,

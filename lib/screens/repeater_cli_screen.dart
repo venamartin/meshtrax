@@ -265,11 +265,13 @@ class _RepeaterCliScreenState extends State<RepeaterCliScreen> {
         centerTitle: false,
         actions: [
           PopupMenuButton<String>(
-            icon: Icon(isFloodMode ? Icons.waves : Icons.route),
+            icon: Icon(isFloodMode ? Icons.waves : (repeater.pathOverride == 0 ? Icons.arrow_forward : Icons.route)),
             tooltip: l10n.repeater_routingMode,
             onSelected: (mode) async {
               if (mode == 'flood') {
                 await connector.setPathOverride(repeater, pathLen: -1);
+              } else if (mode == 'direct') {
+                await connector.setPathOverride(repeater, pathLen: 0);
               } else {
                 await connector.setPathOverride(repeater, pathLen: null);
               }
@@ -291,6 +293,29 @@ class _RepeaterCliScreenState extends State<RepeaterCliScreen> {
                       l10n.repeater_autoUseSavedPath,
                       style: TextStyle(
                         fontWeight: !isFloodMode
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'direct',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 20,
+                      color: repeater.pathOverride == 0
+                          ? Theme.of(context).primaryColor
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Force Direct Mode', // Replace with l10n.repeater_forceDirectMode if you add it to your ARB file
+                      style: TextStyle(
+                        fontWeight: repeater.pathOverride == 0
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),

@@ -3,6 +3,7 @@ import '../models/contact.dart';
 import '../models/path_selection.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import 'dart:math' as math;
 
 class RepeaterCommandService {
   final MeshCoreConnector _connector;
@@ -89,10 +90,13 @@ class RepeaterCommandService {
       final responseBytes = frame.length > maxFrameSize
           ? frame.length
           : maxFrameSize;
-      final timeoutMs = _connector.calculateTimeout(
+      final baseTimeoutMs = _connector.calculateTimeout(
         pathLength: pathLengthValue,
         messageBytes: responseBytes,
       );
+      // CLI commands require a full round trip (request + response) plus device processing time.
+      // We multiply the one-way delivery timeout by 3 and enforce a minimum of 15 seconds.
+      final timeoutMs = math.max(15000, baseTimeoutMs * 3);
       final timeoutSeconds = (timeoutMs / 1000).ceil();
       await _connector.sendFrame(frame);
       _commandTimeouts[commandId]?.cancel();

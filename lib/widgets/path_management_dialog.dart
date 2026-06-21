@@ -155,7 +155,7 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
     if (result != null && context.mounted) {
       await connector.setPathOverride(
         currentContact,
-        pathLen: result.length ~/ connector.pathHashByteWidth,
+        pathLen: PathHelper.getHopCount(result, stride: connector.pathHashByteWidth),
         pathBytes: result,
       );
 
@@ -336,7 +336,9 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
                           onLongPress: () =>
                               _showFullPathDialog(context, path.pathBytes),
                           onTap: () async {
-                            if (path.pathBytes.isEmpty) {
+                            // A 0-hop (direct) path has empty pathBytes — that is valid!
+                            // Only reject entries where hopCount > 0 but bytes are missing (corrupt).
+                            if (path.hopCount > 0 && path.pathBytes.isEmpty) {
                               showDismissibleSnackBar(
                                 context,
                                 content: Text(
@@ -362,7 +364,9 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
                             showDismissibleSnackBar(
                               context,
                               content: Text(
-                                l10n.path_usingHopsPath(path.hopCount),
+                                path.hopCount == 0
+                                    ? 'Using direct (0-hop) path'
+                                    : l10n.path_usingHopsPath(path.hopCount),
                               ),
                               duration: const Duration(seconds: 2),
                             );

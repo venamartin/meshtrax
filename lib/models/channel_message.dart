@@ -152,8 +152,7 @@ class ChannelMessage {
   }
 
   static ChannelMessage? fromFrame(Uint8List frame) {
-    // CHANNEL_MSG_RECV format varies by version:
-    // V3: [0]=code [1]=SNR [2]=rsv1 [3]=rsv2 [4]=channel_idx [5]=path_len [path... optional] [txt_type] [timestamp x4] [text...]
+    // V3: [0]=code [1]=SNR [2]=rsv1 [3]=rsv2 [4]=channel_idx [5]=path_len [txt_type] [timestamp x4] [text...]
     // Non-V3: [0]=code [1]=channel_idx [2]=path_len [3]=txt_type [4-7]=timestamp [8+]=text
     if (frame.length < 8) return null;
     try {
@@ -168,17 +167,10 @@ class ChannelMessage {
       Uint8List pathBytes = Uint8List(0);
       int channelIdx;
       if (code == respCodeChannelMsgRecvV3) {
-        reader.skipBytes(1); // Skip SNR
-        final flags = reader.readByte();
-        final hasPath = (flags & 0x01) != 0;
-        reader.skipBytes(1); // Skip reserved byte
+        reader.skipBytes(3); // Skip SNR and two reserved bytes
         channelIdx = reader.readByte();
         pathLen = reader.readInt8();
         txtType = reader.readByte();
-        if (hasPath && pathLen > 0) {
-          reader.rewind(); // Rewind to read path length again for pathBytes
-          pathBytes = reader.readBytes(pathLen);
-        }
       } else {
         channelIdx = reader.readByte();
         pathLen = reader.readInt8();
@@ -220,6 +212,7 @@ class ChannelMessage {
         status: ChannelMessageStatus.sent,
         pathLength: pathLen,
         pathBytes: pathBytes,
+        pathHashSize: extractPathHashSize(pathLen),
         channelIndex: channelIdx,
       );
     } catch (e) {

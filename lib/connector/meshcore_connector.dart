@@ -2700,6 +2700,9 @@ class MeshCoreConnector extends ChangeNotifier {
           type: contact.type,
           flags: contact.flags,
           name: contact.name,
+          lat: contact.latitude,
+          lon: contact.longitude,
+          lastModified: contact.lastSeen,
         ),
       );
       // USB writes return instantly (no BLE flow control), so give the firmware
@@ -2762,6 +2765,9 @@ class MeshCoreConnector extends ChangeNotifier {
         type: latestContact.type,
         flags: updatedFlags,
         name: latestContact.name,
+        lat: latestContact.latitude,
+        lon: latestContact.longitude,
+        lastModified: latestContact.lastSeen,
       ),
     );
 
@@ -2945,7 +2951,7 @@ class MeshCoreConnector extends ChangeNotifier {
   }) async {
     if (!isConnected) return false;
 
-    final expectedLength = expectedPath.length;
+    final expectedHopCount = PathHelper.getHopCount(expectedPath, stride: _pathHashByteWidth);
     final completer = Completer<bool>();
 
     void finish(bool result) {
@@ -2959,7 +2965,7 @@ class MeshCoreConnector extends ChangeNotifier {
       final updated = Contact.fromFrame(frame);
       if (updated == null) return;
       if (updated.publicKeyHex != contact.publicKeyHex) return;
-      final matchesLength = updated.pathLength == expectedLength;
+      final matchesLength = updated.pathLength == expectedHopCount;
       final matchesBytes = _pathsEqual(updated.path, expectedPath);
       if (matchesLength && matchesBytes) {
         finish(true);
@@ -3926,8 +3932,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (frame.length >= 82) {
       final mode = (frame[81] & 0xFF).clamp(0, 2);
       _pathHashByteWidth = mode + 1;
+      debugPrint("MeshCore INFO: Device info parsed, frame.length=${frame.length}, byte 81=${frame[81]}, pathHashByteWidth set to $_pathHashByteWidth");
     } else {
       _pathHashByteWidth = 1;
+      debugPrint("MeshCore INFO: Device info parsed, frame.length=${frame.length} (< 82), pathHashByteWidth forced to 1");
     }
 
     // Firmware reports MAX_CONTACTS / 2 for v3+ device info.
@@ -4094,6 +4102,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
+  /// Maximum timeout cap per retry attempt — prevents long-hop or slow-SF
+  /// paths from making a message appear to be "waiting" for minutes per attempt.
+  static const int _maxTimeoutMs = 60000; // 60 seconds
+
   /// Calculate timeout for a message based on radio settings and path length.
   /// Returns timeout in milliseconds, considering number of hops.
   int calculateTimeout({
@@ -4120,11 +4132,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           return physicsMin;
         }
       }
-      return mlTimeout.clamp(physicsMin, physicsMax);
+      return mlTimeout.clamp(physicsMin, physicsMax).clamp(0, _maxTimeoutMs);
     }
 
-    // No ML data — use firmware formula
-    return physicsMax;
+    // No ML data — use firmware formula, capped
+    return physicsMax.clamp(0, _maxTimeoutMs);
   }
 
   void _handleContact(Uint8List frame, {bool isContact = true}) {
@@ -4522,13 +4534,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
 
       // Companion radio layout:
-      // [code][snr?][res?][res?][prefix x6][path_len][txt_type][timestamp x4][extra?][text...]
+      // [code][snr][reserved][reserved][prefix x6][path_len][txt_type][timestamp x4][extra?][text...]
       // double snr = 0;
       if (code == respCodeContactMsgRecvV3) {
         // Older firmware layout with SNR as a signed byte after the code
         // snr = reader.readInt8().toDouble() * 4; // SNR in dB, scaled by 4
-        reader.skipBytes(1); // Skip SNR byte
-        reader.skipBytes(2); // Skip reserved bytes
+        reader.skipBytes(3); // Skip SNR byte and reserved bytes
       }
 
       final senderPrefix = reader.readBytes(6);
@@ -4545,14 +4556,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       final msgText = reader.readCString();
 
-      final flags = txtType;
-      final shiftedType = flags >> 2;
-      final rawType = flags;
-      final isPlain = shiftedType == txtTypePlain || rawType == txtTypePlain;
-      final isCli = shiftedType == txtTypeCliData || rawType == txtTypeCliData;
-      if (!isPlain && !isCli) {
+      final isPlain = txtType == txtTypePlain;
+      final isCli = txtType == txtTypeCliData;
+      final isSigned = txtType == txtTypeSigned;
+      if (!isPlain && !isCli && !isSigned) {
         appLogger.warn(
-          'Unknown message type received: txtType=$txtType, shifted=$shiftedType, raw=$rawType',
+          'Unknown message type received: txtType=$txtType',
         );
         return null;
       }
@@ -4959,6 +4968,29 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       if (_markNextPendingChannelMessageSent()) {
         return;
+      }
+
+      // Last-resort fallback: if the retry service couldn't match the hash
+      // (e.g. self pubkey was null, no hash was pre-computed) and there's no
+      // pending channel message, promote the oldest pending DM to 'sent' so
+      // the timeout chain begins and the message is never stuck forever.
+      for (var messages in _conversations.values) {
+        for (int i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].isOutgoing &&
+              messages[i].status == MessageStatus.pending) {
+            appLogger.warn(
+              'RESP_CODE_SENT: no retry-service match and no channel msg \u2014 promoting oldest pending DM to sent',
+              tag: 'Connector',
+            );
+            messages[i] = messages[i].copyWith(status: MessageStatus.sent);
+            _messageStore.saveMessages(
+              pubKeyToHex(messages[i].senderKey),
+              messages,
+            );
+            notifyListeners();
+            return;
+          }
+        }
       }
     } catch (e) {
       appLogger.warn('Error handling message sent frame: $e');
