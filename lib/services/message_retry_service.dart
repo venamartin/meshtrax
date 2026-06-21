@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
+import '../helpers/path_helper.dart';
 import 'app_settings_service.dart';
 import 'app_debug_log_service.dart';
 
@@ -413,7 +414,7 @@ class MessageRetryService extends ChangeNotifier {
       messageId: messageId,
       timestamp: DateTime.now(),
       attemptIndex: message.retryCount,
-      pathSelection: _selectionFromMessage(message),
+      pathSelection: _selectionFromMessage(message, contact),
     );
 
     // Add this ACK hash to the list of expected ACKs for this message (for history)
@@ -486,7 +487,7 @@ class MessageRetryService extends ChangeNotifier {
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
     final config = _config;
-    final selection = message != null ? _selectionFromMessage(message) : null;
+    final selection = message != null ? _selectionFromMessage(message, contact) : null;
 
     if (message == null || contact == null) {
       debugPrint(
@@ -649,7 +650,7 @@ class MessageRetryService extends ChangeNotifier {
       }
       final contact = _pendingContacts[matchedMessageId];
       final ackedAttempt = matchedAttemptIndex ?? message.retryCount;
-      final selection = matchedPathSelection ?? _selectionFromMessage(message);
+      final selection = matchedPathSelection ?? _selectionFromMessage(message, contact);
 
       final shortText = message.text.length > 20
           ? '${message.text.substring(0, 20)}...'
@@ -742,12 +743,13 @@ class MessageRetryService extends ChangeNotifier {
   ) {
     final callback = _config?.recordPathResult;
     if (callback == null) return;
-    final recordSelection = selection ?? _selectionFromMessage(message);
+    final contact = _pendingContacts[message.messageId];
+    final recordSelection = selection ?? _selectionFromMessage(message, contact);
     if (recordSelection == null) return;
     callback(contactKey, recordSelection, success, tripTimeMs);
   }
 
-  PathSelection? _selectionFromMessage(Message message) {
+  PathSelection? _selectionFromMessage(Message message, [Contact? contact]) {
     if (message.pathLength != null && message.pathLength! < 0) {
       return const PathSelection(pathBytes: [], hopCount: -1, useFlood: true);
     }
@@ -756,7 +758,7 @@ class MessageRetryService extends ChangeNotifier {
     }
     return PathSelection(
       pathBytes: message.pathBytes,
-      hopCount: message.pathLength ?? PathHelper.getHopCount(message.pathBytes, stride: message.pathHashSize),
+      hopCount: message.pathLength ?? PathHelper.getHopCount(message.pathBytes, stride: contact?.pathHashSize ?? 1),
       useFlood: false,
     );
   }

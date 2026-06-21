@@ -58,9 +58,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
         final hasHopDetails = primaryPath.isNotEmpty;
         final observedLabel = _formatObservedHops(
           PathHelper.getHopCount(primaryPath, stride: pathHashSize),
-          message.pathLength != null && message.pathLength! > 0
-              ? extractPathHopCount(message.pathLength!)
-              : message.pathLength,
+          message.pathLength,
           l10n,
         );
         final extraPaths = PathResolver.otherPaths(primaryPath, message.pathVariants);
@@ -158,9 +156,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
             _buildDetailRow(
               l10n.channelPath_pathLabelTitle,
               _formatPathLabel(
-                message.pathLength != null && message.pathLength! > 0
-                    ? extractPathHopCount(message.pathLength!)
-                    : message.pathLength,
+                message.pathLength,
                 l10n,
               ),
             ),

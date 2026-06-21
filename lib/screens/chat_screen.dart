@@ -1562,7 +1562,7 @@ class _ChatScreenState extends State<ChatScreen> {
       repeatCount: 0,
       pathLength: message.pathLength,
       pathBytes: message.pathBytes,
-      pathHashSize: message.pathLength != null ? extractPathHashSize(message.pathLength!) : 1,
+      pathHashSize: _resolveContact(connector).pathHashSize,
     );
     Navigator.push(
       context,
