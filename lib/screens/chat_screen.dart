@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
@@ -566,10 +567,24 @@ class _ChatScreenState extends State<ChatScreen> {
                 onRetryReaction: (msg, emoji) =>
                     _sendReaction(msg, contact, emoji),
               );
+              bool showDayMarker = false;
+              if (index == reversedMessages.length - 1) {
+                showDayMarker = true;
+              } else {
+                final olderMessage = reversedMessages[index + 1];
+                final currentDate = DateTime(message.timestamp.year, message.timestamp.month, message.timestamp.day);
+                final olderDate = DateTime(olderMessage.timestamp.year, olderMessage.timestamp.month, olderMessage.timestamp.day);
+                if (currentDate != olderDate) {
+                  showDayMarker = true;
+                }
+              }
+
+              Widget currentWidget = bubble;
+
               if (_firstUnreadMessage != null && 
                   message.timestamp == _firstUnreadMessage!.timestamp && 
                   message.text == _firstUnreadMessage!.text) {
-                return Column(
+                currentWidget = Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
@@ -592,11 +607,37 @@ class _ChatScreenState extends State<ChatScreen> {
                         ],
                       ),
                     ),
-                    bubble,
+                    currentWidget,
                   ],
                 );
               }
-              return bubble;
+
+              if (showDayMarker) {
+                currentWidget = Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              DateFormat('E, d MMMM').format(message.timestamp), 
+                              style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
+                        ],
+                      ),
+                    ),
+                    currentWidget,
+                  ],
+                );
+              }
+
+              return currentWidget;
             },
           );
         },
@@ -1023,7 +1064,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                 // Set the path override to persist user's choice
                                 await connector.setPathOverride(
                                   _resolveContact(connector),
-                                  pathLen: pathLength,
                                   pathBytes: pathBytes,
                                 );
 
@@ -1033,7 +1073,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                   connector,
                                   _resolveContact(connector),
                                   pathBytes,
-                                  path.hopCount,
                                 );
                               },
                             ),
@@ -1274,8 +1313,8 @@ class _ChatScreenState extends State<ChatScreen> {
     MeshCoreConnector connector,
     Contact contact,
     Uint8List pathBytes,
-    int hopCount,
   ) async {
+    final hopCount = PathHelper.getHopCount(pathBytes, stride: connector.pathHashByteWidth);
     final verified = connector.isConnected
         ? await connector.verifyContactPathOnDevice(contact, pathBytes)
         : false;
@@ -1518,7 +1557,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     await connector.setPathOverride(
       currentContact,
-      pathLen: PathHelper.getHopCount(result, stride: connector.pathHashByteWidth),
       pathBytes: result,
     );
     appLogger.info('setPathOverride completed', tag: 'ChatScreen');
@@ -1528,7 +1566,6 @@ class _ChatScreenState extends State<ChatScreen> {
       connector,
       _resolveContact(connector),
       result,
-      PathHelper.getHopCount(result, stride: connector.pathHashByteWidth),
     );
   }
 

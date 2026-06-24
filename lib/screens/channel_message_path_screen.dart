@@ -56,11 +56,6 @@ class ChannelMessagePathScreen extends StatelessWidget {
           stride: pathHashSize,
         );
         final hasHopDetails = primaryPath.isNotEmpty;
-        final observedLabel = _formatObservedHops(
-          PathHelper.getHopCount(primaryPath, stride: pathHashSize),
-          message.pathLength,
-          l10n,
-        );
         final extraPaths = PathResolver.otherPaths(primaryPath, message.pathVariants);
         return Scaffold(
           appBar: AppBar(
@@ -99,7 +94,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSummaryCard(context, observedLabel: observedLabel),
+                _buildSummaryCard(context),
                 const SizedBox(height: 16),
                 if (extraPaths.isNotEmpty) ...[
                   Text(
@@ -130,7 +125,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, {String? observedLabel}) {
+  Widget _buildSummaryCard(BuildContext context) {
     final l10n = context.l10n;
     return Card(
       child: Padding(
@@ -160,8 +155,6 @@ class ChannelMessagePathScreen extends StatelessWidget {
                 l10n,
               ),
             ),
-            if (observedLabel != null)
-              _buildDetailRow(l10n.channelPath_observedLabel, observedLabel),
           ],
         ),
       ),
@@ -243,26 +236,6 @@ class ChannelMessagePathScreen extends StatelessWidget {
     if (pathLength < 0) return l10n.channelPath_floodPath;
     if (pathLength == 0) return l10n.channelPath_directPath;
     return l10n.chat_hopsCount(pathLength);
-  }
-
-  String? _formatObservedHops(
-    int observedCount,
-    int? pathLength,
-    AppLocalizations l10n,
-  ) {
-    if (observedCount <= 0 && (pathLength == null || pathLength <= 0)) {
-      return null;
-    }
-    if (pathLength == null || pathLength < 0) {
-      return observedCount > 0 ? l10n.chat_hopsCount(observedCount) : null;
-    }
-    if (observedCount == 0) {
-      return l10n.channelPath_observedZeroOf(pathLength);
-    }
-    if (observedCount == pathLength) {
-      return l10n.chat_hopsCount(observedCount);
-    }
-    return l10n.channelPath_observedSomeOf(observedCount, pathLength);
   }
 
   Widget _buildDetailRow(String label, String value) {

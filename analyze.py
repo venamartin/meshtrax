@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "igraph",
+#     "matplotlib",
+# ]
+# ///
+
 #!/usr/bin/env python3
 # pip install igraph matplotlib
 

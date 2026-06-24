@@ -2825,6 +2825,11 @@ class MeshCoreConnector extends ChangeNotifier {
     int? pathLen,
     Uint8List? pathBytes,
   }) async {
+    // Automatically calculate path length if bytes are provided but length is missing
+    if (pathLen == null && pathBytes != null && pathBytes.isNotEmpty) {
+      pathLen = PathHelper.getHopCount(pathBytes, stride: contact.pathHashSize);
+    }
+
     appLogger.info(
       'setPathOverride called for ${contact.name}: pathLen=$pathLen, bytesLen=${pathBytes?.length ?? 0}',
       tag: 'Connector',
@@ -4592,7 +4597,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         isOutgoing: false,
         isCli: isCli,
         status: MessageStatus.delivered,
-        pathLength: pathLength == 0xFF ? 0 : pathLength,
+        pathLength: extractPathHopCount(pathLength),
         pathBytes: Uint8List(0),
         fourByteRoomContactKey: msgText.length >= 4
             ? Uint8List.fromList(msgText.substring(0, 4).codeUnits)
@@ -4713,7 +4718,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         packetHash: contentHash,
         pathHashSize: (parsed.pathLength == null || parsed.pathLength == -1 || parsed.pathLength == 0)
             ? 1
-            : extractPathHashSize(parsed.pathLength!),
+            : parsed.pathHashSize,
       );
       _updateContactLastMessageAtByName(
         message.senderName,
@@ -5733,7 +5738,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final mergedPathLength = _mergePathLength(
         existing.pathLength,
         processedMessage.pathLength,
-        mergedPathBytes.length,
+        mergedPathBytes,
+        existing.pathHashSize,
       );
       final newRepeatCount = existing.repeatCount + 1;
       final promotedFromPending =
@@ -5880,16 +5886,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return existing;
   }
 
-  int? _mergePathLength(int? existing, int? incoming, int observedLength) {
-    if (existing == null) {
-      if (incoming == null) return observedLength > 0 ? observedLength : null;
-      return incoming >= observedLength ? incoming : observedLength;
+  int? _mergePathLength(int? existing, int? incoming, Uint8List mergedPathBytes, int hashSize) {
+    if (mergedPathBytes.isNotEmpty) {
+      return PathHelper.getHopCount(mergedPathBytes, stride: hashSize);
     }
-    if (incoming == null) {
-      return existing >= observedLength ? existing : observedLength;
-    }
-    final merged = existing >= incoming ? existing : incoming;
-    return merged >= observedLength ? merged : observedLength;
+    // Fall back to max TTL recorded if we lack bytes
+    if (existing == null) return incoming;
+    if (incoming == null) return existing;
+    return existing >= incoming ? existing : incoming;
   }
 
   List<Uint8List> _mergePathVariants(

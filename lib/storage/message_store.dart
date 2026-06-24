@@ -138,7 +138,13 @@ class MessageStore {
           ? DateTime.fromMillisecondsSinceEpoch(json['deliveredAt'] as int)
           : null,
       tripTimeMs: json['tripTimeMs'] as int?,
-      pathLength: json['pathLength'] as int?,
+      pathLength: () {
+        int? pLen = json['pathLength'] as int?;
+        if (pLen != null && pLen > 0) {
+          pLen = (pLen == 0xFF) ? -1 : (pLen & 0x3F);
+        }
+        return pLen;
+      }(),
       pathBytes: json['pathBytes'] != null
           ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
           : Uint8List(0),

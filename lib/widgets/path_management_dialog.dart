@@ -155,7 +155,6 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
     if (result != null && context.mounted) {
       await connector.setPathOverride(
         currentContact,
-        pathLen: PathHelper.getHopCount(result, stride: connector.pathHashByteWidth),
         pathBytes: result,
       );
 

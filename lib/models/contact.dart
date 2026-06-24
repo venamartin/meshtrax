@@ -209,12 +209,14 @@ class Contact {
           ? lastMod
           : lastAdvertTimestamp;
 
+      final actualHopCount = hopCount < 0 ? -1 : PathHelper.getHopCount(pathBytes, stride: hashSize);
+
       return Contact(
         publicKey: pubKey,
         name: name.isEmpty ? 'Unknown' : name,
         type: type,
         flags: flags,
-        pathLength: hopCount,
+        pathLength: actualHopCount,
         path: pathBytes,
         pathHashSize: hashSize,
         latitude: lat,

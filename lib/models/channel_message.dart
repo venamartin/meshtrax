@@ -203,6 +203,12 @@ class ChannelMessage {
 
       final decodedText = Smaz.tryDecodePrefixed(actualText) ?? actualText;
 
+      final explicitHopCount = extractPathHopCount(pathLen);
+      final hashSize = extractPathHashSize(pathLen);
+      final actualHopCount = explicitHopCount < 0 
+          ? -1 
+          : PathHelper.getHopCount(pathBytes, stride: hashSize);
+
       return ChannelMessage(
         senderKey: null,
         senderName: senderName,
@@ -210,9 +216,9 @@ class ChannelMessage {
         timestamp: DateTime.fromMillisecondsSinceEpoch(timestampRaw * 1000),
         isOutgoing: false,
         status: ChannelMessageStatus.sent,
-        pathLength: pathLen,
+        pathLength: actualHopCount,
         pathBytes: pathBytes,
-        pathHashSize: extractPathHashSize(pathLen),
+        pathHashSize: hashSize,
         channelIndex: channelIdx,
       );
     } catch (e) {

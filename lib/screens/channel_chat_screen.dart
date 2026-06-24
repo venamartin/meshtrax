@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -599,8 +600,22 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                   );
                                 },
                               );
+                              bool showDayMarker = false;
+                              if (messageIndex == reversedMessages.length - 1) {
+                                showDayMarker = true;
+                              } else {
+                                final olderMessage = reversedMessages[messageIndex + 1];
+                                final currentDate = DateTime(message.timestamp.year, message.timestamp.month, message.timestamp.day);
+                                final olderDate = DateTime(olderMessage.timestamp.year, olderMessage.timestamp.month, olderMessage.timestamp.day);
+                                if (currentDate != olderDate) {
+                                  showDayMarker = true;
+                                }
+                              }
+
+                              Widget currentWidget = bubble;
+
                               if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
-                                return Column(
+                                currentWidget = Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Padding(
@@ -616,11 +631,37 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                         ],
                                       ),
                                     ),
-                                    bubble,
+                                    currentWidget,
                                   ],
                                 );
                               }
-                              return bubble;
+
+                              if (showDayMarker) {
+                                currentWidget = Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      child: Row(
+                                        children: [
+                                          Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                                            child: Text(
+                                              DateFormat('E, d MMMM').format(message.timestamp), 
+                                              style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
+                                            ),
+                                          ),
+                                          Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
+                                        ],
+                                      ),
+                                    ),
+                                    currentWidget,
+                                  ],
+                                );
+                              }
+
+                              return currentWidget;
                             },
                           ),
                         ),

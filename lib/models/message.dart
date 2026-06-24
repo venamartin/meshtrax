@@ -53,13 +53,12 @@ class Message {
     this.sentAt,
     this.deliveredAt,
     this.tripTimeMs,
-    this.pathLength,
     Uint8List? pathBytes,
     Uint8List? fourByteRoomContactKey,
     Map<String, int>? reactions,
     Map<String, MessageStatus>? reactionStatuses,
-  }) : messageId =
-           messageId ??
+    this.pathLength,
+  }) : messageId = messageId ??
            '${timestamp.millisecondsSinceEpoch}_${pubKeyToHex(senderKey)}_${text.hashCode}',
        pathBytes = pathBytes ?? Uint8List(0),
        fourByteRoomContactKey = fourByteRoomContactKey ?? Uint8List(0),

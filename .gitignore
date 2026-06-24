@@ -83,6 +83,8 @@ keystore.properties
 *.g.dart
 *.freezed.dart
 *.mocks.dart
+neighbor-graph-interactive.html
+neighbor-graph-static.pdf
 
 # IDE
 .vscode/launch.json
