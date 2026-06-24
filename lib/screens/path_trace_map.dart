@@ -8,10 +8,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
-import 'package:meshtrax/l10n/l10n.dart';
 import '../l10n/l10n.dart';
-import '../models/channel.dart';
 import '../models/contact.dart';
+import '../helpers/path_resolver.dart';
 import '../models/app_settings.dart';
 import '../helpers/path_helper.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
@@ -80,8 +79,6 @@ class PathTraceMapScreen extends StatefulWidget {
 
 class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   static const double _labelZoomThreshold = 8.5;
-  //miles to meters conversion for filtering out repeaters that are too far from the last known GPS hop to be a likely match, to avoid false matches that throw off the inferred positions of other hops in the path
-  static const double _maxRepeaterMatchDistanceMeters = 40 * 1609.344;
 
   StreamSubscription<Uint8List>? _frameSubscription;
   Timer? _timeoutTimer;
@@ -141,8 +138,6 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
         widget.targetContact?.type == advTypeRoom) {
       final hops = PathHelper.getHops(pathBytes, stride: widget.pathHashByteWidth);
       final reversedHops = hops.reversed.toList();
-      
-      final len = (pathBytes.length * 2) + 1;
       final writer = BytesBuilder();
       writer.add(pathBytes);
       writer.addByte(widget.targetContact?.publicKey[0] ?? 0);
@@ -279,16 +274,6 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
           .toList();
 
       Map<String, Contact> pathContacts = {};
-      Contact lastContact = Contact(
-        path: Uint8List(0),
-        pathLength: 0,
-        publicKey: connector.selfPublicKey ?? Uint8List(0),
-        name: context.l10n.pathTrace_you,
-        type: advTypeChat,
-        latitude: connector.selfLatitude,
-        longitude: connector.selfLongitude,
-        lastSeen: DateTime.now(),
-      );
       if (widget.pathContacts != null) {
         pathContacts = {
           for (var c in widget.pathContacts!)
@@ -296,29 +281,22 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
         };
       }
       
-      final contacts = connector.allContactsUnfiltered;
-      contacts.where((c) => c.type != advTypeChat).forEach((repeater) {
-        if (lastContact.latitude != null &&
-            lastContact.longitude != null &&
-            repeater.hasLocation &&
-            lastContact.hasLocation &&
-            Distance().distance(
-                  LatLng(lastContact.latitude!, lastContact.longitude!),
-                  LatLng(repeater.latitude!, repeater.longitude!),
-                ) >
-                _maxRepeaterMatchDistanceMeters) {
-          return; //skip reapeaters that are far away from the last one with known GPS, to avoid false matches
+      final startLocation = (connector.selfLatitude != null && connector.selfLongitude != null)
+          ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+          : null;
+
+      final resolvedHops = PathResolver.buildPathHops(
+        rawPathData,
+        connector.allContactsUnfiltered,
+        startLocation: startLocation,
+        stride: widget.pathHashByteWidth,
+      );
+
+      for (final hop in resolvedHops) {
+        if (hop.contact != null && !pathContacts.containsKey(hop.fullPrefixLabel)) {
+          pathContacts[hop.fullPrefixLabel] = hop.contact!;
         }
-        for (var repeaterData in pathData) {
-          if (pathContacts.containsKey(repeaterData)) continue;
-          final expectedPrefix = repeater.hashPrefixWithStride(widget.pathHashByteWidth);
-          if (expectedPrefix == repeaterData) {
-            pathContacts[repeaterData] = repeater;
-            lastContact = repeater;
-            break;
-          }
-        }
-      });
+      }
 
       // For hops with no GPS contact, infer position from other contacts
       // with known GPS that share the same last-hop byte.

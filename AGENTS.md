@@ -32,3 +32,7 @@
 
 ## Commit & Pull Request Guidelines
 - Keep commit subjects short and action-focused; PRs should describe behavior changes, link issues, include screenshots for UI changes, and call out BLE protocol changes explicitly.
+
+## Refrence Meshcore Firmware (if present)
+- The folder /MeshCore is the refrence meshcore firmware. Do not modify the firmware. 
+- **Read `MESHCORE_PROTOCOL.md` first** before opening any MeshCore C++ files. It contains verified protocol constants, frame formats, routing logic, login flow, and path mechanics — avoiding costly re-derivation from source.

@@ -187,7 +187,7 @@ class Contact {
         return null;
       }
 
-      final lastMod = reader.readUInt32LE();
+      final lastAdvertTimestamp = reader.readUInt32LE();
 
       double? lat, lon;
       if (reader.remaining >= 8) {
@@ -199,17 +199,29 @@ class Contact {
         }
       }
 
+      int? lastMod;
+      if (reader.remaining >= 4) {
+        lastMod = reader.readUInt32LE();
+      }
+
+      // If lastMod is missing or 0, fallback to lastAdvertTimestamp
+      final effectiveLastSeen = (lastMod != null && lastMod > 0)
+          ? lastMod
+          : lastAdvertTimestamp;
+
+      final actualHopCount = hopCount < 0 ? -1 : PathHelper.getHopCount(pathBytes, stride: hashSize);
+
       return Contact(
         publicKey: pubKey,
         name: name.isEmpty ? 'Unknown' : name,
         type: type,
         flags: flags,
-        pathLength: hopCount,
+        pathLength: actualHopCount,
         path: pathBytes,
         pathHashSize: hashSize,
         latitude: lat,
         longitude: lon,
-        lastSeen: DateTime.fromMillisecondsSinceEpoch(lastMod * 1000),
+        lastSeen: DateTime.fromMillisecondsSinceEpoch(effectiveLastSeen * 1000),
         isActive: true,
         rawPacket: null,
       );

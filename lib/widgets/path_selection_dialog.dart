@@ -157,7 +157,7 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
       return;
     }
 
-    // Check max path length (64 hops)
+    // Check max path length (64 bytes)
     if (pathBytesList.length > 64) {
       showDismissibleSnackBar(
         context,
@@ -217,12 +217,12 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                 const SizedBox(height: 16),
               ],
               Text(
-                l10n.path_hexPrefixInstructions,
+                'Enter ${widget.pathHashByteWidth * 2}-character hex prefixes for each hop, separated by commas.',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 8),
               Text(
-                l10n.path_hexPrefixExample,
+                'Example: ${widget.pathHashByteWidth == 1 ? 'A1, F2' : 'A1B2, C3D4'} (each node uses first ${widget.pathHashByteWidth} byte(s) of its public key)',
                 style: const TextStyle(fontSize: 11, color: Colors.grey),
               ),
               const SizedBox(height: 16),
@@ -230,9 +230,9 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                 controller: _controller,
                 decoration: InputDecoration(
                   labelText: l10n.path_labelHexPrefixes,
-                  hintText: l10n.path_hexPrefixExample,
+                  hintText: widget.pathHashByteWidth == 1 ? 'e.g. A1, F2' : 'e.g. A1B2, C3D4',
                   border: const OutlineInputBorder(),
-                  helperText: l10n.path_helperMaxHops,
+                  helperText: 'Max ${64 ~/ widget.pathHashByteWidth} hops. Each prefix is ${widget.pathHashByteWidth * 2} hex characters (${widget.pathHashByteWidth} byte(s))',
                 ),
                 textCapitalization: TextCapitalization.characters,
                 maxLength: 191, // 64 hops * 2 chars + 63 commas
@@ -320,7 +320,7 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                           style: const TextStyle(fontSize: 14),
                         ),
                         subtitle: Text(
-                          '${contact.typeLabel} • ${contact.publicKeyHex.substring(0, 2)}',
+                          '${contact.typeLabel} • ${contact.publicKeyHex.substring(0, widget.pathHashByteWidth * 2)}',
                           style: const TextStyle(fontSize: 10),
                         ),
                         trailing: isSelected

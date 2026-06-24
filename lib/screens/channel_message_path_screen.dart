@@ -16,7 +16,9 @@ import '../l10n/l10n.dart';
 import '../models/channel_message.dart';
 import '../models/app_settings.dart';
 import '../models/contact.dart';
+import '../models/resolved_hop.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/path_resolver.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 
 class ChannelMessagePathScreen extends StatelessWidget {
@@ -33,7 +35,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
     return Consumer<MeshCoreConnector>(
       builder: (context, connector, _) {
         final l10n = context.l10n;
-        final primaryPathTmp = _selectPrimaryPath(
+        final primaryPathTmp = PathResolver.selectPrimaryPath(
           message.pathBytes,
           message.pathVariants,
         );
@@ -42,16 +44,19 @@ class ChannelMessagePathScreen extends StatelessWidget {
         final primaryPath = !channelMessage && !message.isOutgoing
             ? Uint8List.fromList(PathHelper.getHops(primaryPathTmp, stride: pathHashSize).reversed.expand((h) => h).toList())
             : primaryPathTmp;
-        final hops = _buildPathHops(primaryPath, connector, l10n, stride: pathHashSize);
-        final hasHopDetails = primaryPath.isNotEmpty;
-        final observedLabel = _formatObservedHops(
-          primaryPath.length ~/ pathHashSize,
-          message.pathLength != null && message.pathLength! > 0
-              ? extractPathHopCount(message.pathLength!)
-              : message.pathLength,
-          l10n,
+        
+        final startLocation = (connector.selfLatitude != null && connector.selfLongitude != null)
+            ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+            : null;
+        
+        final hops = PathResolver.buildPathHops(
+          primaryPath, 
+          connector.allContacts, 
+          startLocation: startLocation, 
+          stride: pathHashSize,
         );
-        final extraPaths = _otherPaths(primaryPath, message.pathVariants);
+        final hasHopDetails = primaryPath.isNotEmpty;
+        final extraPaths = PathResolver.otherPaths(primaryPath, message.pathVariants);
         return Scaffold(
           appBar: AppBar(
             title: AdaptiveAppBarTitle(l10n.channelPath_title),
@@ -89,7 +94,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSummaryCard(context, observedLabel: observedLabel),
+                _buildSummaryCard(context),
                 const SizedBox(height: 16),
                 if (extraPaths.isNotEmpty) ...[
                   Text(
@@ -120,7 +125,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, {String? observedLabel}) {
+  Widget _buildSummaryCard(BuildContext context) {
     final l10n = context.l10n;
     return Card(
       child: Padding(
@@ -146,14 +151,10 @@ class ChannelMessagePathScreen extends StatelessWidget {
             _buildDetailRow(
               l10n.channelPath_pathLabelTitle,
               _formatPathLabel(
-                message.pathLength != null && message.pathLength! > 0
-                    ? extractPathHopCount(message.pathLength!)
-                    : message.pathLength,
+                message.pathLength,
                 l10n,
               ),
             ),
-            if (observedLabel != null)
-              _buildDetailRow(l10n.channelPath_observedLabel, observedLabel),
           ],
         ),
       ),
@@ -173,7 +174,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
               title: Text(
                 l10n.channelPath_observedPathTitle(
                   i + 1,
-                  _formatHopCount(variants[i].length, l10n),
+                  _formatHopCount(PathHelper.getHopCount(variants[i], stride: message.pathHashSize), l10n),
                 ),
               ),
               subtitle: Text(message.displayPathVariants[i]),
@@ -189,7 +190,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildHopTiles(BuildContext context, List<_PathHop> hops) {
+  List<Widget> _buildHopTiles(BuildContext context, List<ResolvedHop> hops) {
     final l10n = context.l10n;
     return [
       for (final hop in hops)
@@ -204,11 +205,11 @@ class ChannelMessagePathScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
             ),
-            title: Text(hop.displayLabel),
+            title: Text('(${hop.fullPrefixLabel}) ${_resolveName(hop.contact, l10n)}'),
             subtitle: Text(
               hop.hasLocation
-                  ? '${hop.position!.latitude.toStringAsFixed(5)}, '
-                        '${hop.position!.longitude.toStringAsFixed(5)}'
+                  ? '${hop.effectivePosition!.latitude.toStringAsFixed(5)}, '
+                        '${hop.effectivePosition!.longitude.toStringAsFixed(5)}'
                   : l10n.channelPath_noLocationData,
             ),
           ),
@@ -235,26 +236,6 @@ class ChannelMessagePathScreen extends StatelessWidget {
     if (pathLength < 0) return l10n.channelPath_floodPath;
     if (pathLength == 0) return l10n.channelPath_directPath;
     return l10n.chat_hopsCount(pathLength);
-  }
-
-  String? _formatObservedHops(
-    int observedCount,
-    int? pathLength,
-    AppLocalizations l10n,
-  ) {
-    if (observedCount <= 0 && (pathLength == null || pathLength <= 0)) {
-      return null;
-    }
-    if (pathLength == null || pathLength < 0) {
-      return observedCount > 0 ? l10n.chat_hopsCount(observedCount) : null;
-    }
-    if (observedCount == 0) {
-      return l10n.channelPath_observedZeroOf(pathLength);
-    }
-    if (observedCount == pathLength) {
-      return l10n.chat_hopsCount(observedCount);
-    }
-    return l10n.channelPath_observedSomeOf(observedCount, pathLength);
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -329,7 +310,7 @@ class _ChannelMessagePathMapScreenState
   void didUpdateWidget(ChannelMessagePathMapScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.message != widget.message ||
-        !_pathsEqual(
+        !PathResolver.pathsEqual(
           oldWidget.initialPath ?? Uint8List(0),
           widget.initialPath ?? Uint8List(0),
         )) {
@@ -348,15 +329,15 @@ class _ChannelMessagePathMapScreenState
     return totalDistance;
   }
 
-  void _focusHop(_PathHop hop) {
+  void _focusHop(ResolvedHop hop) {
     if (!hop.hasLocation) return;
     final targetZoom = _didReceivePositionUpdate
         ? max(_mapController.camera.zoom, 10.0)
         : 12.0;
-    _mapController.move(hop.position!, targetZoom);
+    _mapController.move(hop.effectivePosition!, targetZoom);
   }
 
-  void _onHopTapped(_PathHop hop) {
+  void _onHopTapped(ResolvedHop hop) {
     _focusHop(hop);
     if (!mounted) return;
     setState(() {
@@ -371,15 +352,15 @@ class _ChannelMessagePathMapScreenState
         final settings = context.watch<AppSettingsService>().settings;
         final isImperial = settings.unitSystem == UnitSystem.imperial;
         final tileCache = context.read<MapTileCacheService>();
-        final primaryPath = _selectPrimaryPath(
+        final primaryPath = PathResolver.selectPrimaryPath(
           widget.message.pathBytes,
           widget.message.pathVariants,
         );
-        final observedPaths = _buildObservedPaths(
+        final observedPaths = PathResolver.buildObservedPaths(
           primaryPath,
           widget.message.pathVariants,
         );
-        final selectedPathTmp = _resolveSelectedPath(
+        final selectedPathTmp = PathResolver.resolveSelectedPath(
           _selectedPath,
           observedPaths,
           primaryPath,
@@ -391,8 +372,16 @@ class _ChannelMessagePathMapScreenState
             ? Uint8List.fromList(PathHelper.getHops(selectedPathTmp, stride: widget.message.pathHashSize).reversed.expand((h) => h).toList())
             : selectedPathTmp;
 
-        final selectedIndex = _indexForPath(selectedPath, observedPaths);
-        final hops = _buildPathHops(selectedPath, connector, context.l10n, stride: widget.message.pathHashSize);
+        final selectedIndex = PathResolver.indexForPath(selectedPath, observedPaths);
+        final startLocation = (connector.selfLatitude != null && connector.selfLongitude != null)
+            ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+            : null;
+        final hops = PathResolver.buildPathHops(
+          selectedPath, 
+          connector.allContacts, 
+          startLocation: startLocation, 
+          stride: widget.message.pathHashSize,
+        );
 
         final points = <LatLng>[];
 
@@ -403,7 +392,7 @@ class _ChannelMessagePathMapScreenState
 
         for (final hop in hops) {
           if (hop.hasLocation) {
-            points.add(hop.position!);
+            points.add(hop.effectivePosition!);
           }
         }
 
@@ -525,7 +514,7 @@ class _ChannelMessagePathMapScreenState
 
   Widget _buildPathSelector(
     BuildContext context,
-    List<_ObservedPath> paths,
+    List<ObservedPath> paths,
     int selectedIndex,
     ValueChanged<int> onSelected,
   ) {
@@ -560,7 +549,7 @@ class _ChannelMessagePathMapScreenState
                           value: i,
                           child: Text(
                             '${paths[i].isPrimary ? l10n.channelPath_primaryPath(i + 1) : l10n.channelPath_pathLabel(i + 1)}'
-                            ' • ${_formatHopCount(paths[i].pathBytes.length, l10n)}',
+                            ' • ${_formatHopCount(paths[i].getHopCount(widget.message.pathHashSize), l10n)}',
                           ),
                         ),
                     ],
@@ -587,13 +576,13 @@ class _ChannelMessagePathMapScreenState
   }
 
   List<Marker> _buildHopMarkers(
-    List<_PathHop> hops, {
+    List<ResolvedHop> hops, {
     required bool showLabels,
   }) {
     final markers = <Marker>[];
     for (final hop in hops) {
       if (!hop.hasLocation) continue;
-      final point = hop.position!;
+      final point = hop.effectivePosition!;
       markers.add(
         Marker(
           point: point,
@@ -628,7 +617,7 @@ class _ChannelMessagePathMapScreenState
         markers.add(
           _buildNodeLabelMarker(
             point: point,
-            label: hop.contact?.name ?? _formatPrefix(hop.prefix),
+            label: hop.contact?.name ?? hop.fullPrefixLabel,
           ),
         );
       }
@@ -718,7 +707,7 @@ class _ChannelMessagePathMapScreenState
 
   Widget _buildLegendCard(
     BuildContext context,
-    List<_PathHop> hops,
+    List<ResolvedHop> hops,
     bool isImperial,
   ) {
     final l10n = context.l10n;
@@ -773,11 +762,11 @@ class _ChannelMessagePathMapScreenState
                                 style: const TextStyle(fontSize: 12),
                               ),
                             ),
-                            title: Text(hop.displayLabel),
+                            title: Text('(${hop.fullPrefixLabel}) ${_resolveName(hop.contact, l10n)}'),
                             subtitle: Text(
                               hop.hasLocation
-                                  ? '${hop.position!.latitude.toStringAsFixed(5)}, '
-                                        '${hop.position!.longitude.toStringAsFixed(5)}'
+                                  ? '${hop.effectivePosition!.latitude.toStringAsFixed(5)}, '
+                                        '${hop.effectivePosition!.longitude.toStringAsFixed(5)}'
                                   : l10n.channelPath_noLocationData,
                             ),
                           );
@@ -792,148 +781,6 @@ class _ChannelMessagePathMapScreenState
   }
 }
 
-class _PathHop {
-  final int index;
-  final int prefix;
-  final String fullPrefixLabel;
-  final Contact? contact;
-  final LatLng? position;
-  final AppLocalizations l10n;
-
-  const _PathHop({
-    required this.index,
-    required this.prefix,
-    this.fullPrefixLabel = '',
-    required this.contact,
-    required this.position,
-    required this.l10n,
-  });
-
-  bool get hasLocation => position != null;
-
-  String get displayLabel {
-    final prefixLabel = fullPrefixLabel.isNotEmpty ? fullPrefixLabel : _formatPrefix(prefix);
-    return '($prefixLabel) ${_resolveName(contact, l10n)}';
-  }
-}
-
-class _ObservedPath {
-  final Uint8List pathBytes;
-  final bool isPrimary;
-
-  const _ObservedPath({required this.pathBytes, required this.isPrimary});
-}
-
-List<_PathHop> _buildPathHops(
-  Uint8List pathBytes,
-  MeshCoreConnector connector,
-  AppLocalizations l10n, {
-  int stride = 1,
-}) {
-  if (pathBytes.isEmpty) return const [];
-  final candidatesByPrefix = <int, List<Contact>>{};
-  final allContacts = connector.allContacts;
-  for (final contact in allContacts) {
-    if (contact.publicKey.isEmpty) continue;
-    if (contact.type != advTypeRepeater && contact.type != advTypeRoom) {
-      continue;
-    }
-    final prefix = contact.publicKey.first;
-    candidatesByPrefix.putIfAbsent(prefix, () => <Contact>[]).add(contact);
-  }
-  for (final candidates in candidatesByPrefix.values) {
-    candidates.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
-  }
-  final startPoint =
-      (connector.selfLatitude != null && connector.selfLongitude != null)
-      ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
-      : null;
-  var previousPosition = startPoint;
-  final distance = Distance();
-  var lastDistance = 0.0;
-  var bestDistance = 0.0;
-  final hops = <_PathHop>[];
-  var hopIndex = 1;
-  for (var i = 0; i < pathBytes.length; i += stride) {
-    if (pathBytes[i] == 0x00) break; // padding sentinel
-    final firstByte = pathBytes[i];
-    // Build the full multi-byte prefix for this hop slot
-    final slotEnd = (i + stride).clamp(0, pathBytes.length);
-    final slotBytes = pathBytes.sublist(i, slotEnd);
-    final fullPrefix = slotBytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join();
-
-    final searchPoint = hopIndex == 1 ? startPoint : previousPosition;
-    final candidates = candidatesByPrefix[firstByte];
-    Contact? contact;
-    if (candidates != null && candidates.isNotEmpty) {
-      var bestIndex = 0;
-      if (searchPoint != null) {
-        bestDistance = double.infinity;
-        for (var j = 0; j < candidates.length; j++) {
-          final candidate = candidates[j];
-          if (!candidate.hasLocation ||
-              candidate.latitude == null ||
-              candidate.longitude == null) {
-            continue;
-          }
-          final currentDistance = distance(
-            searchPoint,
-            LatLng(candidate.latitude!, candidate.longitude!),
-          );
-          if (currentDistance < bestDistance) {
-            bestDistance = currentDistance;
-            bestIndex = j;
-          }
-        }
-      }
-      contact = candidates.removeAt(bestIndex);
-      if (candidates.isEmpty) {
-        candidatesByPrefix.remove(firstByte);
-      }
-    }
-
-    final resolvedPosition = _resolvePosition(contact);
-    if (resolvedPosition != null) {
-      previousPosition = resolvedPosition;
-    }
-    // If the best candidate is much farther than the previous hop, it's likely not the correct match.
-    if (lastDistance + bestDistance > 50000 &&
-        candidates != null &&
-        candidates.isNotEmpty) {
-      i -= stride;
-      lastDistance = bestDistance;
-      continue; // hopIndex does NOT increment — we haven't added a hop yet
-    }
-    lastDistance = bestDistance;
-
-    hops.add(
-      _PathHop(
-        index: hopIndex,
-        prefix: firstByte,
-        fullPrefixLabel: fullPrefix,
-        contact: contact,
-        position: resolvedPosition,
-        l10n: l10n,
-      ),
-    );
-    hopIndex++;
-  }
-  return hops;
-}
-
-LatLng? _resolvePosition(Contact? contact) {
-  if (contact == null) return null;
-  if (!contact.hasLocation) return null;
-  final latitude = contact.latitude;
-  final longitude = contact.longitude;
-  if (latitude == null || longitude == null) return null;
-  return LatLng(latitude, longitude);
-}
-
-String _formatPrefix(int prefix) {
-  return prefix.toRadixString(16).padLeft(2, '0').toUpperCase();
-}
-
 String _formatHopCount(int count, AppLocalizations l10n) {
   return l10n.chat_hopsCount(count);
 }
@@ -945,82 +792,4 @@ String _resolveName(Contact? contact, AppLocalizations l10n) {
     return l10n.channelPath_unknownRepeater;
   }
   return name;
-}
-
-Uint8List _selectPrimaryPath(Uint8List pathBytes, List<Uint8List> variants) {
-  Uint8List primary = pathBytes;
-  for (final variant in variants) {
-    if (variant.length > primary.length) {
-      primary = variant;
-    }
-  }
-  return primary;
-}
-
-List<Uint8List> _otherPaths(Uint8List primary, List<Uint8List> variants) {
-  final others = <Uint8List>[];
-  for (final variant in variants) {
-    if (variant.isEmpty) continue;
-    if (!_pathsEqual(primary, variant)) {
-      others.add(variant);
-    }
-  }
-  return others;
-}
-
-List<_ObservedPath> _buildObservedPaths(
-  Uint8List primary,
-  List<Uint8List> variants,
-) {
-  final observed = <_ObservedPath>[];
-
-  void addPath(Uint8List pathBytes, bool isPrimary) {
-    if (pathBytes.isEmpty) return;
-    for (final existing in observed) {
-      if (_pathsEqual(existing.pathBytes, pathBytes)) return;
-    }
-    observed.add(_ObservedPath(pathBytes: pathBytes, isPrimary: isPrimary));
-  }
-
-  addPath(primary, true);
-  for (final variant in variants) {
-    addPath(variant, false);
-  }
-
-  return observed;
-}
-
-Uint8List _resolveSelectedPath(
-  Uint8List? selected,
-  List<_ObservedPath> observedPaths,
-  Uint8List fallback,
-) {
-  if (selected != null) {
-    for (final path in observedPaths) {
-      if (_pathsEqual(path.pathBytes, selected)) {
-        return path.pathBytes;
-      }
-    }
-  }
-  if (observedPaths.isNotEmpty) {
-    return observedPaths.first.pathBytes;
-  }
-  return fallback;
-}
-
-int _indexForPath(Uint8List selected, List<_ObservedPath> paths) {
-  for (int i = 0; i < paths.length; i++) {
-    if (_pathsEqual(paths[i].pathBytes, selected)) {
-      return i;
-    }
-  }
-  return 0;
-}
-
-bool _pathsEqual(Uint8List a, Uint8List b) {
-  if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
-  }
-  return true;
 }

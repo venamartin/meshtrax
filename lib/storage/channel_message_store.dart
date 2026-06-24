@@ -5,6 +5,7 @@ import 'package:meshtrax/utils/app_logger.dart';
 import '../models/channel_message.dart';
 import '../models/translation_support.dart';
 import '../helpers/smaz.dart';
+import '../helpers/path_helper.dart';
 import 'prefs_manager.dart';
 
 class ChannelMessageStore {
@@ -127,9 +128,14 @@ class ChannelMessageStore {
   ChannelMessage _messageFromJson(Map<String, dynamic> json) {
     final rawText = json['text'] as String;
     final decodedText = Smaz.tryDecodePrefixed(rawText) ?? rawText;
+    final pathBytes = json['pathBytes'] != null
+        ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
+        : Uint8List(0);
+    final pathHashSize = (json['pathHashSize'] as int?) ?? 1;
+
     return ChannelMessage(
       senderKey: json['senderKey'] != null
-          ? Uint8List.fromList(base64Decode(json['senderKey']))
+          ? Uint8List.fromList(base64Decode(json['senderKey'] as String))
           : null,
       senderName: json['senderName'] as String,
       text: decodedText,
@@ -144,16 +150,22 @@ class ChannelMessageStore {
       isOutgoing: json['isOutgoing'] as bool,
       status: ChannelMessageStatus.values[json['status'] as int],
       repeatCount: (json['repeatCount'] as int?) ?? 0,
-      pathLength: json['pathLength'] as int?,
-      pathBytes: json['pathBytes'] != null
-          ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
-          : Uint8List(0),
-      pathHashSize: (json['pathHashSize'] as int?) ?? 1,
+      pathLength: () {
+        if (pathBytes.isNotEmpty) {
+          return PathHelper.getHopCount(pathBytes, stride: pathHashSize);
+        }
+        int? pLen = json['pathLength'] as int?;
+        if (pLen != null && pLen > 0) {
+          pLen = (pLen == 0xFF) ? -1 : (pLen & 0x3F);
+        }
+        return pLen;
+      }(),
+      pathBytes: pathBytes,
+      pathHashSize: pathHashSize,
       pathVariants: (json['pathVariants'] as List<dynamic>?)
           ?.map((entry) => Uint8List.fromList(base64Decode(entry as String)))
           .toList(),
-      repeats:
-          (json['repeats'] as List<dynamic>?)
+      repeats: (json['repeats'] as List<dynamic>?)
               ?.map((entry) => _repeatFromJson(entry as Map<String, dynamic>))
               .toList() ??
           const [],
