@@ -622,6 +622,18 @@ abstract class AppLocalizations {
   /// **'Scan'**
   String get scanner_scan;
 
+  /// No description provided for @scanner_scanFromImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan from image'**
+  String get scanner_scanFromImage;
+
+  /// No description provided for @scanner_noQrFoundInImage.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid QR code found in image'**
+  String get scanner_noQrFoundInImage;
+
   /// No description provided for @scanner_bluetoothOff.
   ///
   /// In en, this message translates to:
@@ -1744,6 +1756,18 @@ abstract class AppLocalizations {
   /// **'No contacts yet'**
   String get contacts_noContacts;
 
+  /// No description provided for @contacts_shareMyQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Share My QR Code'**
+  String get contacts_shareMyQrCode;
+
+  /// No description provided for @contacts_shareQrCodeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Let others scan to add you as a contact'**
+  String get contacts_shareQrCodeDesc;
+
   /// No description provided for @contacts_contactsWillAppear.
   ///
   /// In en, this message translates to:
@@ -2008,6 +2032,12 @@ abstract class AppLocalizations {
   /// **'Allow sharing environment sensor data'**
   String get contact_teleEnvSubtitle;
 
+  /// No description provided for @contacts_publicKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Key'**
+  String get contacts_publicKey;
+
   /// No description provided for @channels_title.
   ///
   /// In en, this message translates to:
@@ -2079,6 +2109,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit channel'**
   String get channels_editChannel;
+
+  /// No description provided for @channels_shareChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Channel'**
+  String get channels_shareChannel;
+
+  /// No description provided for @channels_shareChannelInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code'**
+  String get channels_shareChannelInstructions;
+
+  /// No description provided for @channels_secretKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret Key'**
+  String get channels_secretKey;
+
+  /// No description provided for @channels_meshcoreUri.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshCore URI'**
+  String get channels_meshcoreUri;
+
+  /// No description provided for @channels_shareChannelQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Channel QR Code'**
+  String get channels_shareChannelQr;
+
+  /// No description provided for @channels_shareChannelWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: Anyone who scans this QR code will have access to this channel.'**
+  String get channels_shareChannelWarning;
 
   /// No description provided for @channels_muteChannel.
   ///
@@ -2170,6 +2236,24 @@ abstract class AppLocalizations {
   /// **'PSK must be 32 hex characters'**
   String get channels_pskMustBe32Hex;
 
+  /// No description provided for @channels_addChannelConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to add the following channel?'**
+  String get channels_addChannelConfirmation;
+
+  /// No description provided for @channels_channelAddedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel added successfully.'**
+  String get channels_channelAddedSuccess;
+
+  /// No description provided for @channels_noAvailableChannelSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'No available channel slots.'**
+  String get channels_noAvailableChannelSlots;
+
   /// No description provided for @channels_channelAdded.
   ///
   /// In en, this message translates to:
@@ -2245,13 +2329,13 @@ abstract class AppLocalizations {
   /// No description provided for @channels_joinPrivateChannel.
   ///
   /// In en, this message translates to:
-  /// **'Join a Private Channel'**
+  /// **'Manually Add Channel'**
   String get channels_joinPrivateChannel;
 
   /// No description provided for @channels_joinPrivateChannelDesc.
   ///
   /// In en, this message translates to:
-  /// **'Manually enter a secret key.'**
+  /// **'Via private key and name.'**
   String get channels_joinPrivateChannelDesc;
 
   /// No description provided for @channels_joinPublicChannel.
@@ -2269,7 +2353,7 @@ abstract class AppLocalizations {
   /// No description provided for @channels_joinHashtagChannel.
   ///
   /// In en, this message translates to:
-  /// **'Join a Hashtag Channel'**
+  /// **'Create a Hashtag Channel'**
   String get channels_joinHashtagChannel;
 
   /// No description provided for @channels_joinHashtagChannelDesc.
@@ -2349,6 +2433,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Location'**
   String get chat_location;
+
+  /// No description provided for @common_copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get common_copiedToClipboard;
+
+  /// No description provided for @common_copyToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy to clipboard'**
+  String get common_copyToClipboard;
+
+  /// No description provided for @contacts_copyContactToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy My Contact to Clipboard'**
+  String get contacts_copyContactToClipboard;
 
   /// No description provided for @chat_typeMessage.
   ///
@@ -5822,7 +5924,7 @@ abstract class AppLocalizations {
   /// No description provided for @contacts_scanQrCode.
   ///
   /// In en, this message translates to:
-  /// **'Scan QR Code'**
+  /// **'Scan Contact QR'**
   String get contacts_scanQrCode;
 
   /// No description provided for @contacts_scanQrCodeDesc.
@@ -5834,19 +5936,19 @@ abstract class AppLocalizations {
   /// No description provided for @contacts_enterIdHash.
   ///
   /// In en, this message translates to:
-  /// **'Enter Advert'**
+  /// **'Manually Enter Contact'**
   String get contacts_enterIdHash;
 
   /// No description provided for @contacts_enterIdHashDesc.
   ///
   /// In en, this message translates to:
-  /// **'Paste a contact advert or meshtrax:// link'**
+  /// **'Paste a contact advert or meshcore:// link'**
   String get contacts_enterIdHashDesc;
 
   /// No description provided for @contacts_advertHint.
   ///
   /// In en, this message translates to:
-  /// **'meshtrax://..., letsmesh.net URL, or public key hex'**
+  /// **'meshcore://... or public key hex'**
   String get contacts_advertHint;
 
   /// No description provided for @contacts_import.

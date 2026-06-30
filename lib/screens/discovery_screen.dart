@@ -13,6 +13,7 @@ import '../utils/platform_info.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/list_filter_widget.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../helpers/meshcore_qr.dart';
 
 enum DiscoverySortOption { lastSeen, name, type }
 
@@ -231,9 +232,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         connector.importDiscoveredContact(contact);
         break;
       case 'copy_contact':
-        if (contact.rawPacket == null) return;
-        final hexString = pubKeyToHex(contact.rawPacket!);
-        Clipboard.setData(ClipboardData(text: "meshtrax://$hexString"));
+        final qrData = MeshCoreQr.encodeContact(
+          contact.name,
+          contact.publicKeyHex,
+          contact.type,
+        );
+        Clipboard.setData(ClipboardData(text: qrData));
         if (!mounted) return;
         showDismissibleSnackBar(
           context,

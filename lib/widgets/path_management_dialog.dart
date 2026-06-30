@@ -159,9 +159,10 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
       );
 
       if (!context.mounted) return;
+      final updatedContact = _resolveContact(connector);
       showDismissibleSnackBar(
         context,
-        content: Text(l10n.chat_hopsCount(result.length)),
+        content: Text(updatedContact.pathLabel),
         duration: const Duration(seconds: 2),
       );
     }

@@ -8,7 +8,7 @@ import '../helpers/snack_bar_builder.dart';
 /// Scans a contact QR code and returns the raw scanned string to the caller.
 ///
 /// Accepts three formats:
-/// - `meshtrax://HEX` — full advert frame (MeshTrax export)
+/// - URL with `?public_key=HEX64` — meshcore://contact/add or letsmesh.net links
 /// - URL with `?public_key=HEX64` — letsmesh.net share link
 /// - 64-char hex string — bare 32-byte public key
 class ContactQrScannerScreen extends StatefulWidget {
@@ -22,11 +22,7 @@ class _ContactQrScannerScreenState extends State<ContactQrScannerScreen> {
   bool _isProcessing = false;
 
   static bool _isValidContactQr(String data) {
-    // meshtrax:// full advert format
-    if (data.startsWith('meshtrax://')) {
-      final hex = data.substring('meshtrax://'.length);
-      return hex.length >= 196 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(hex);
-    }
+
     // URI with ?public_key=<64-hex> — meshcore://contact/add or letsmesh.net links
     if (RegExp(r'[?&]public_key=[0-9a-fA-F]{64}').hasMatch(data)) {
       return true;

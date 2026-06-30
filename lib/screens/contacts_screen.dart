@@ -27,10 +27,13 @@ import '../widgets/quick_switch_bar.dart';
 import '../widgets/repeater_login_dialog.dart';
 import '../widgets/room_login_dialog.dart';
 import '../widgets/unread_badge.dart';
+import '../helpers/contact_import_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'channels_screen.dart';
 import 'chat_screen.dart';
 import 'contact_qr_scanner_screen.dart';
+import 'contact_share_screen.dart';
+import '../helpers/meshcore_qr.dart';
 import 'chats_screen.dart';
 import 'discovery_screen.dart';
 import 'map_screen.dart';
@@ -39,7 +42,7 @@ import 'settings_screen.dart';
 
 enum RoomLoginDestination { chat, management }
 
-enum ContactOperationType { import, export, zeroHopShare }
+enum ContactOperationType { import, zeroHopShare }
 
 class ContactsScreen extends StatefulWidget {
   final bool hideBackButton;
@@ -168,22 +171,6 @@ class _ContactsScreenState extends State<ContactsScreen>
       try {
         final code = frameBuffer.readUInt8();
 
-        if (code == respCodeExportContact) {
-          final advertPacket = frameBuffer.readRemainingBytes();
-          // Validate packet has expected minimum size (98+ bytes per protocol)
-          if (advertPacket.length < 98) {
-            if (mounted) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(context.l10n.contacts_invalidAdvertFormat),
-              );
-            }
-            _pendingOperations.remove(ContactOperationType.export);
-            return;
-          }
-          final hexString = pubKeyToHex(advertPacket);
-          Clipboard.setData(ClipboardData(text: "meshtrax://$hexString"));
-        }
 
         if (code == respCodeOk) {
           // Show a snackbar indicating success
@@ -203,12 +190,6 @@ class _ContactsScreenState extends State<ContactsScreen>
             );
           }
 
-          if (_pendingOperations.contains(ContactOperationType.export)) {
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.contacts_contactAdvertCopied),
-            );
-          }
 
           _pendingOperations.clear();
         }
@@ -230,12 +211,6 @@ class _ContactsScreenState extends State<ContactsScreen>
               content: Text(context.l10n.contacts_zeroHopContactAdvertFailed),
             );
           }
-          if (_pendingOperations.contains(ContactOperationType.export)) {
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.contacts_contactAdvertCopyFailed),
-            );
-          }
 
           _pendingOperations.clear();
         }
@@ -246,13 +221,6 @@ class _ContactsScreenState extends State<ContactsScreen>
         );
       }
     });
-  }
-
-  Future<void> _contactExport(Uint8List pubKey) async {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final exportContactFrame = buildExportContactFrame(pubKey);
-    _pendingOperations.add(ContactOperationType.export);
-    await connector.sendFrame(exportContactFrame, expectsGenericAck: true);
   }
 
   Future<void> _contactZeroHop(Uint8List pubKey) async {
@@ -266,41 +234,7 @@ class _ContactsScreenState extends State<ContactsScreen>
   }
 
   Future<void> _contactImport() async {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final clipboardData = await Clipboard.getData('text/plain');
-    if (clipboardData == null || clipboardData.text == null) {
-      if (mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_clipboardEmpty),
-        );
-      }
-      return;
-    }
-    final text = clipboardData.text!.trim();
-    if (!text.startsWith('meshtrax://')) {
-      if (mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_invalidAdvertFormat),
-        );
-      }
-      return;
-    }
-    final hexString = text.substring('meshtrax://'.length);
-    try {
-      final bytes = hex2Uint8List(hexString);
-      final importContactFrame = buildImportContactFrame(bytes);
-      _pendingOperations.add(ContactOperationType.import);
-      connector.importContact(importContactFrame);
-    } catch (e) {
-      if (mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_invalidAdvertFormat),
-        );
-      }
-    }
+    await ContactImportHelper.importFromClipboard(context);
   }
 
   void _showAddContactDialog(BuildContext context) {
@@ -355,7 +289,7 @@ class _ContactsScreenState extends State<ContactsScreen>
       ),
     );
     if (scannedData != null && mounted) {
-      _importFromScannedData(scannedData);
+      ContactImportHelper.importFromScannedData(context, scannedData);
     }
   }
 
@@ -385,104 +319,13 @@ class _ContactsScreenState extends State<ContactsScreen>
             onPressed: () {
               final text = controller.text.trim();
               Navigator.pop(dialogContext);
-              _importFromScannedData(text);
+              ContactImportHelper.importFromScannedData(context, text);
             },
             child: Text(context.l10n.contacts_import),
           ),
         ],
       ),
     );
-  }
-
-  /// Handles all three contact data formats:
-  /// - `meshtrax://HEX` — full advert frame
-  /// - URI with `?public_key=HEX64` — meshcore://contact/add or letsmesh.net links
-  /// - 64-char hex — bare 32-byte public key
-  void _importFromScannedData(String data) {
-    if (data.startsWith('meshtrax://')) {
-      _importFromHexString(data.substring('meshtrax://'.length));
-      return;
-    }
-    // Extract public_key via regex to avoid Uri.queryParameters emoji decode issues
-    final pubKeyMatch =
-        RegExp(r'[?&]public_key=([0-9a-fA-F]{64})').firstMatch(data);
-    if (pubKeyMatch != null) {
-      final pubKeyHex = pubKeyMatch.group(1)!;
-      String name = '';
-      int type = advTypeChat;
-      try {
-        final nameMatch = RegExp(r'[?&]name=([^&]+)').firstMatch(data);
-        if (nameMatch != null) {
-          name = Uri.decodeComponent(nameMatch.group(1)!);
-        }
-        final typeMatch = RegExp(r'[?&]type=(\d+)').firstMatch(data);
-        if (typeMatch != null) {
-          type = int.tryParse(typeMatch.group(1)!) ?? advTypeChat;
-        }
-      } catch (_) {
-        // Name/type decoding failed — add with empty name
-      }
-      _importFromPublicKeyHex(pubKeyHex, name: name, type: type);
-      return;
-    }
-    // Bare 64-char hex public key
-    if (data.length == 64) {
-      _importFromPublicKeyHex(data);
-      return;
-    }
-    // Assume full advert hex (raw, without meshtrax:// prefix)
-    _importFromHexString(data);
-  }
-
-  void _importFromHexString(String hexString) {
-    final connector = context.read<MeshCoreConnector>();
-    try {
-      final bytes = hex2Uint8List(hexString);
-      if (bytes.length < 98) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_invalidAdvertFormat),
-        );
-        return;
-      }
-      final importContactFrame = buildImportContactFrame(bytes);
-      _pendingOperations.add(ContactOperationType.import);
-      connector.importContact(importContactFrame);
-    } catch (e) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(context.l10n.contacts_invalidAdvertFormat),
-      );
-    }
-  }
-
-  void _importFromPublicKeyHex(String pubKeyHex, {String name = '', int type = advTypeChat}) {
-    final connector = context.read<MeshCoreConnector>();
-    try {
-      final pubKey = hex2Uint8List(pubKeyHex);
-      if (pubKey.length != 32) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_invalidAdvertFormat),
-        );
-        return;
-      }
-      final contact = Contact(
-        publicKey: pubKey,
-        name: name,
-        type: type,
-        pathLength: -1,
-        path: Uint8List(0),
-        lastSeen: DateTime.now(),
-      );
-      _pendingOperations.add(ContactOperationType.import);
-      connector.importDiscoveredContact(contact);
-    } catch (e) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(context.l10n.contacts_invalidAdvertFormat),
-      );
-    }
   }
 
   @override
@@ -539,12 +382,44 @@ class _ContactsScreenState extends State<ContactsScreen>
                 PopupMenuItem(
                   child: Row(
                     children: [
-                      const Icon(Icons.copy),
+                      const Icon(Icons.qr_code_2),
                       const SizedBox(width: 8),
-                      Text(context.l10n.contacts_copyAdvertToClipboard),
+                      Text(context.l10n.contacts_shareMyQrCode),
                     ],
                   ),
-                  onTap: () => _contactExport(Uint8List.fromList([])),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContactShareScreen(
+                          name: (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!,
+                          pubKeyHex: connector.selfPublicKeyHex,
+                          type: advTypeChat,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                PopupMenuItem(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.copy),
+                      const SizedBox(width: 8),
+                      Text(context.l10n.contacts_copyContactToClipboard),
+                    ],
+                  ),
+                  onTap: () {
+                    final data = MeshCoreQr.encodeContact(
+                      (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!,
+                      connector.selfPublicKeyHex,
+                      advTypeChat,
+                    );
+                    Clipboard.setData(ClipboardData(text: data));
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text(context.l10n.common_copiedToClipboard),
+                    );
+                  },
                 ),
                 PopupMenuItem(
                   child: Row(
@@ -1572,7 +1447,16 @@ class _ContactsScreenState extends State<ContactsScreen>
               title: Text(context.l10n.contacts_ShareContact),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _contactExport(contact.publicKey);
+                final data = MeshCoreQr.encodeContact(
+                  contact.name,
+                  pubKeyToHex(contact.publicKey),
+                  contact.type,
+                );
+                Clipboard.setData(ClipboardData(text: data));
+                showDismissibleSnackBar(
+                  context,
+                  content: Text(context.l10n.common_copiedToClipboard),
+                );
               },
             ),
             ListTile(

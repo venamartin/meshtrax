@@ -350,6 +350,26 @@ class MessageRetryService extends ChangeNotifier {
     }
 
     config.sendMessage(contact, message.text, attempt, timestampSeconds);
+
+    // Safety timer: if RESP_CODE_SENT never arrives (silent BLE failure, device
+    // busy, etc.) the message would stay at 'pending' forever.  Start a fallback
+    // timer here that triggers _handleTimeout if updateMessageFromSent() hasn't
+    // already started a real timer.
+    const preSentTimeoutMs = 15000;
+    _timeoutTimers[messageId]?.cancel();
+    _timeoutTimers[messageId] = Timer(
+      const Duration(milliseconds: preSentTimeoutMs),
+      () {
+        // Only act if the message is still pending (no RESP_CODE_SENT received yet)
+        if (_pendingMessages[messageId]?.status == MessageStatus.pending) {
+          config.debugLogService?.warn(
+            'No RESP_CODE_SENT received within ${preSentTimeoutMs}ms for message $messageId — triggering retry',
+            tag: 'AckHash',
+          );
+          _handleTimeout(messageId);
+        }
+      },
+    );
   }
 
   bool updateMessageFromSent(int ackHash, int timeoutMs) {

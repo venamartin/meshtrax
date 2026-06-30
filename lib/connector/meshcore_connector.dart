@@ -163,6 +163,7 @@ class MeshCoreConnector extends ChangeNotifier {
   Timer? _selfInfoRetryTimer;
   Timer? _reconnectTimer;
   Timer? _batteryPollTimer;
+  Timer? _gpsPollTimer;
   Timer? _radioStatsPollTimer;
   final Map<String, Timer> _channelMessageTimers = {};
   final Map<String, Timer> _channelRepeatTimers = {};
@@ -2440,6 +2441,30 @@ class MeshCoreConnector extends ChangeNotifier {
     _batteryPollTimer = null;
   }
 
+  void _updateGpsPolling() {
+    _gpsPollTimer?.cancel();
+    _gpsPollTimer = null;
+
+    if (!isConnected) return;
+    
+    final customVars = _currentCustomVars ?? {};
+    final bool hasGPS = customVars.containsKey("gps");
+    final bool isGPSEnabled = customVars["gps"] == "1";
+    
+    if (hasGPS && isGPSEnabled) {
+      final interval = int.tryParse(customVars["gps_interval"] ?? "") ?? 900;
+      if (interval > 0) {
+        _gpsPollTimer = Timer.periodic(Duration(seconds: interval), (timer) {
+          if (!isConnected) {
+            timer.cancel();
+            return;
+          }
+          unawaited(sendFrame(buildAppStartFrame()));
+        });
+      }
+    }
+  }
+
   void setPollingInterval(int i) {
     _pollingInterval = i.clamp(1, 60);
     if (isConnected) {
@@ -3195,6 +3220,7 @@ class MeshCoreConnector extends ChangeNotifier {
         type: contact.type,
         pathLength: contact.pathLength,
         path: contact.path,
+        pathHashSize: contact.pathHashSize, // preserve hash size
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
@@ -3203,6 +3229,10 @@ class MeshCoreConnector extends ChangeNotifier {
         pathOverrideBytes: contact.pathOverrideBytes,
       ),
     );
+
+    // Always persist immediately — _handleContactAdvert skips persist
+    // when _isLoadingContacts is true, which would lose this contact on restart.
+    await _persistContacts();
     notifyListeners();
   }
 
@@ -5929,6 +5959,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handleDisconnection() {
     _stopBatteryPolling();
+    _gpsPollTimer?.cancel();
+    _gpsPollTimer = null;
     _stopRadioStatsPolling();
     _latestRadioStats = null;
     radioStatsNotifier.value = null;
@@ -6029,6 +6061,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final buf = BufferReader(frame.sublist(1));
     try {
       _currentCustomVars = _parseKeyValueString(buf.readCString());
+      _updateGpsPolling();
     } catch (e) {
       appLogger.warn('Malformed custom vars frame: $e', tag: 'Connector');
     }
@@ -6084,6 +6117,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _notifyListenersTimer?.cancel();
     _reconnectTimer?.cancel();
     _batteryPollTimer?.cancel();
+    _gpsPollTimer?.cancel();
     _radioStatsPollTimer?.cancel();
     for (final timer in _channelMessageTimers.values) {
       timer.cancel();
@@ -6314,8 +6348,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
-    //We ignore our own adverts
+    // Update our own location if the companion sends its advert, but ignore it as a contact
     if (listEquals(publicKey, _selfPublicKey)) {
+      if (hasLocation && hasValidLocation(latitude, longitude)) {
+        if (_selfLatitude != latitude || _selfLongitude != longitude) {
+          _selfLatitude = latitude;
+          _selfLongitude = longitude;
+          notifyListeners();
+        }
+      }
       return;
     }
 

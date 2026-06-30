@@ -36,6 +36,7 @@ import '../widgets/message_status_icon.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../widgets/translated_message_content.dart';
 import 'channel_message_path_screen.dart';
+import 'channel_share_screen.dart';
 import 'map_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
@@ -464,6 +465,18 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         ),
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            tooltip: context.l10n.channels_shareChannel,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChannelShareScreen(channel: widget.channel),
+                ),
+              );
+            },
+          ),
           const RadioStatsIconButton(),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),

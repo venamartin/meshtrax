@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
+import '../helpers/snack_bar_builder.dart';
+import '../l10n/l10n.dart';
+import '../utils/platform_info.dart';
 
 /// A reusable QR code scanner widget that can be embedded anywhere.
 ///
@@ -27,6 +32,9 @@ class QrScannerWidget extends StatefulWidget {
   /// Whether to show the camera switch button
   final bool showCameraSwitchButton;
 
+  /// Whether to show the image picker button
+  final bool showImagePickerButton;
+
   /// Custom overlay widget (defaults to scan window frame)
   final Widget? overlay;
 
@@ -46,6 +54,7 @@ class QrScannerWidget extends StatefulWidget {
     this.onValidationFailed,
     this.showFlashButton = true,
     this.showCameraSwitchButton = true,
+    this.showImagePickerButton = true,
     this.overlay,
     this.instructions,
     this.continuousScanning = false,
@@ -87,13 +96,13 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _controller.start();
+        _safeStartController();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
-        _controller.stop();
+        _safeStopController();
         break;
     }
   }
@@ -129,7 +138,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
         setState(() {
           _hasScanned = true;
         });
-        _controller.stop();
+        _safeStopController();
       }
 
       // Notify callback
@@ -145,21 +154,105 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
       _lastScannedData = null;
       _lastScanTime = null;
     });
-    _controller.start();
+    _safeStartController();
+  }
+
+  Future<void> _safeStartController() async {
+    try {
+      await _controller.start();
+    } catch (_) {
+      // Ignore errors on platforms where camera is not fully supported
+    }
+  }
+
+  Future<void> _safeStopController() async {
+    try {
+      await _controller.stop();
+    } catch (_) {}
+  }
+
+  Future<void> _pickAndAnalyzeImage(BuildContext context) async {
+    // Pause the camera while picking
+    await _safeStopController();
+
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) {
+        // User cancelled, resume camera
+        if (context.mounted) {
+          await _safeStartController();
+        }
+        return;
+      }
+
+      final capture = await _controller.analyzeImage(image.path);
+      
+      if (capture != null && capture.barcodes.isNotEmpty) {
+        // We found barcodes, process them normally
+        _handleDetection(capture);
+      } else {
+        // No barcode found
+        if (context.mounted) {
+          showDismissibleSnackBar(
+            context,
+            content: Text(context.l10n.scanner_noQrFoundInImage),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          );
+          await _safeStartController();
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.scanner_noQrFoundInImage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        );
+        await _safeStartController();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isCameraSupported = !PlatformInfo.isWindows && !PlatformInfo.isLinux;
+
     return Stack(
       children: [
         // Scanner view
-        MobileScanner(
-          controller: _controller,
-          onDetect: _handleDetection,
-          errorBuilder: (context, error) {
-            return _buildErrorWidget(context, error);
-          },
-        ),
+        if (isCameraSupported)
+          MobileScanner(
+            controller: _controller,
+            onDetect: _handleDetection,
+            errorBuilder: (context, error) {
+              return _buildErrorWidget(context, error);
+            },
+          )
+        else
+          Container(
+            color: Colors.black,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.videocam_off, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Camera not supported.\nUse the gallery button.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
         // Overlay
         widget.overlay ?? _buildDefaultOverlay(context),
@@ -256,6 +349,18 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
           IconButton.filled(
             onPressed: () => _controller.switchCamera(),
             icon: const Icon(Icons.cameraswitch),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.black54,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        if ((widget.showFlashButton || widget.showCameraSwitchButton) && widget.showImagePickerButton)
+          const SizedBox(width: 24),
+        if (widget.showImagePickerButton)
+          IconButton.filled(
+            tooltip: context.l10n.scanner_scanFromImage,
+            onPressed: () => _pickAndAnalyzeImage(context),
+            icon: const Icon(Icons.image),
             style: IconButton.styleFrom(
               backgroundColor: Colors.black54,
               foregroundColor: Colors.white,

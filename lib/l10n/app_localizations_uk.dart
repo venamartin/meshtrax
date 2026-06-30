@@ -282,6 +282,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get scanner_scan => 'Сканувати';
 
   @override
+  String get scanner_scanFromImage => 'Scan from image';
+
+  @override
+  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+
+  @override
   String get scanner_bluetoothOff => 'Bluetooth вимкнено';
 
   @override
@@ -909,6 +915,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get contacts_noContacts => 'Контактів не знайдено.';
 
   @override
+  String get contacts_shareMyQrCode => 'Share My QR Code';
+
+  @override
+  String get contacts_shareQrCodeDesc =>
+      'Let others scan to add you as a contact';
+
+  @override
   String get contacts_contactsWillAppear =>
       'Контакти з\'являться, коли пристрої надішлють оголошення.';
 
@@ -1068,6 +1081,9 @@ class AppLocalizationsUk extends AppLocalizations {
       'Дозволити спільний доступ до даних датчиків середовища';
 
   @override
+  String get contacts_publicKey => 'Public Key';
+
+  @override
   String get channels_title => 'Канали';
 
   @override
@@ -1104,6 +1120,26 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get channels_editChannel => 'Редагувати канал';
+
+  @override
+  String get channels_shareChannel => 'Share Channel';
+
+  @override
+  String get channels_shareChannelInstructions =>
+      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+
+  @override
+  String get channels_secretKey => 'Secret Key';
+
+  @override
+  String get channels_meshcoreUri => 'MeshCore URI';
+
+  @override
+  String get channels_shareChannelQr => 'Scan Channel QR Code';
+
+  @override
+  String get channels_shareChannelWarning =>
+      'Warning: Anyone who scans this QR code will have access to this channel.';
 
   @override
   String get channels_muteChannel => 'Вимкнути сповіщення каналу';
@@ -1156,6 +1192,16 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get channels_pskMustBe32Hex =>
       'PSK має складатися з 32 шістнадцяткових символів.';
+
+  @override
+  String get channels_addChannelConfirmation =>
+      'Do you want to add the following channel?';
+
+  @override
+  String get channels_channelAddedSuccess => 'Channel added successfully.';
+
+  @override
+  String get channels_noAvailableChannelSlots => 'No available channel slots.';
 
   @override
   String channels_channelAdded(String name) {
@@ -1261,6 +1307,15 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get chat_location => 'Розташування';
+
+  @override
+  String get common_copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get common_copyToClipboard => 'Copy to clipboard';
+
+  @override
+  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
 
   @override
   String get chat_typeMessage => 'Введіть повідомлення...';
@@ -3346,22 +3401,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String get contacts_addContact => 'Add Contact';
 
   @override
-  String get contacts_scanQrCode => 'Scan QR Code';
+  String get contacts_scanQrCode => 'Scan Contact QR';
 
   @override
   String get contacts_scanQrCodeDesc =>
       'Scan a contact QR code from the MeshCore app';
 
   @override
-  String get contacts_enterIdHash => 'Enter Advert';
+  String get contacts_enterIdHash => 'Manually Enter Contact';
 
   @override
   String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshtrax:// link';
+      'Paste a contact advert or meshcore:// link';
 
   @override
-  String get contacts_advertHint =>
-      'meshtrax://..., letsmesh.net URL, or public key hex';
+  String get contacts_advertHint => 'meshcore://... or public key hex';
 
   @override
   String get contacts_import => 'Import';
