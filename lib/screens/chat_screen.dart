@@ -1059,7 +1059,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                 final pathBytes = Uint8List.fromList(
                                   path.pathBytes,
                                 );
-                                final pathLength = path.pathBytes.length;
 
                                 // Set the path override to persist user's choice
                                 await connector.setPathOverride(
@@ -1290,6 +1289,14 @@ class _ChatScreenState extends State<ChatScreen> {
     if (contact.pathOverride != null) {
       if (contact.pathOverride! < 0) return context.l10n.chat_floodForced;
       if (contact.pathOverride == 0) return context.l10n.chat_directForced;
+      // Derive hop count from bytes when available — pathOverride int
+      // may be stale if it was stored as a raw byte count by older code.
+      if (contact.pathOverrideBytes != null &&
+          contact.pathOverrideBytes!.isNotEmpty) {
+        final hopCount = PathHelper.getHopCount(contact.pathOverrideBytes!, stride: contact.pathHashSize);
+        if (hopCount == 0) return context.l10n.chat_directForced;
+        return context.l10n.chat_hopsForced(hopCount);
+      }
       return context.l10n.chat_hopsForced(contact.pathOverride!);
     }
 
@@ -1297,9 +1304,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // because pathLength may reflect a padded buffer full of trailing zeros.
     final effectivePath = contact.pathOverrideBytes ?? contact.path;
     if (effectivePath.isNotEmpty) {
-      final stride = contact.pathHashSize;
-      final trimmedLen = PathHelper.trimPaddingZeros(effectivePath, stride: stride).length;
-      final hopCount = trimmedLen ~/ stride;
+      final hopCount = PathHelper.getHopCount(effectivePath, stride: contact.pathHashSize);
       if (hopCount == 0) return context.l10n.chat_direct;
       return context.l10n.chat_hopsCount(hopCount);
     }
@@ -2001,7 +2006,7 @@ class _MessageBubble extends StatelessWidget {
                                   : EdgeInsets.zero,
                               child: Text(
                                 context.l10n.chat_retryCount(
-                                  message.retryCount,
+                                  message.retryCount + 1,
                                   context
                                       .read<AppSettingsService>()
                                       .settings

@@ -20,6 +20,11 @@ import 'contacts_screen.dart';
 import 'map_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_screen.dart';
+import 'contact_share_screen.dart';
+import '../helpers/meshcore_qr.dart';
+import '../helpers/contact_import_helper.dart';
+import '../helpers/snack_bar_builder.dart';
+import 'package:flutter/services.dart';
 
 class _ChatListItem {
   final String id;
@@ -271,6 +276,95 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
             title: AppBarTitle(context.l10n.chats_title),
             centerTitle: true,
             actions: [
+              PopupMenuButton(
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.connect_without_contact),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.contacts_zeroHopAdvert),
+                      ],
+                    ),
+                    onTap: () => {
+                      connector.sendSelfAdvert(flood: false),
+                      showDismissibleSnackBar(
+                        context,
+                        content: Text(context.l10n.settings_advertisementSent),
+                      ),
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cell_tower),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.contacts_floodAdvert),
+                      ],
+                    ),
+                    onTap: () => {
+                      connector.sendSelfAdvert(flood: true),
+                      showDismissibleSnackBar(
+                        context,
+                        content: Text(context.l10n.settings_advertisementSent),
+                      ),
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.qr_code_2),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.contacts_shareMyQrCode),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ContactShareScreen(
+                            name: (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!,
+                            pubKeyHex: connector.selfPublicKeyHex,
+                            type: advTypeChat,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.copy),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.contacts_copyContactToClipboard),
+                      ],
+                    ),
+                    onTap: () {
+                      final data = MeshCoreQr.encodeContact(
+                        (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!,
+                        connector.selfPublicKeyHex,
+                        advTypeChat,
+                      );
+                      Clipboard.setData(ClipboardData(text: data));
+                      showDismissibleSnackBar(
+                        context,
+                        content: Text(context.l10n.common_copiedToClipboard),
+                      );
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.paste),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.contacts_addContactFromClipboard),
+                      ],
+                    ),
+                    onTap: () async => await ContactImportHelper.importFromClipboard(context),
+                  ),
+                ],
+                icon: const Icon(Icons.connect_without_contact),
+              ),
               PopupMenuButton(
                 itemBuilder: (context) => [
                   PopupMenuItem(

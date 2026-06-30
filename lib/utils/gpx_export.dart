@@ -5,6 +5,7 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../utils/platform_info.dart';
+import '../helpers/meshcore_qr.dart';
 
 import 'package:share_plus/share_plus.dart';
 
@@ -65,9 +66,11 @@ class GpxExport {
       if (contact.latitude == null || contact.longitude == null) {
         continue;
       }
-      final url = contact.rawPacket != null
-          ? "meshtrax://${pubKeyToHex(contact.rawPacket!)}"
-          : "";
+      final url = MeshCoreQr.encodeContact(
+        contact.name,
+        contact.publicKeyHex,
+        contact.type,
+      );
       _addContact(
         contact.name,
         contact.latitude!,
@@ -84,9 +87,11 @@ class GpxExport {
       if (contact.latitude == null || contact.longitude == null) {
         continue;
       }
-      final url = contact.rawPacket != null
-          ? "meshtrax://${pubKeyToHex(contact.rawPacket!)}"
-          : "";
+      final url = MeshCoreQr.encodeContact(
+        contact.name,
+        contact.publicKeyHex,
+        contact.type,
+      );
       _addContact(
         contact.name,
         contact.latitude!,
@@ -103,9 +108,11 @@ class GpxExport {
       if (contact.latitude == null || contact.longitude == null) {
         continue;
       }
-      final url = contact.rawPacket != null
-          ? "meshtrax://${pubKeyToHex(contact.rawPacket!)}"
-          : "";
+      final url = MeshCoreQr.encodeContact(
+        contact.name,
+        contact.publicKeyHex,
+        contact.type,
+      );
       _addContact(
         contact.name,
         contact.latitude ?? 0.0,
