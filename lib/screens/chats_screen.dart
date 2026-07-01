@@ -9,22 +9,25 @@ import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/disconnect_navigation_mixin.dart';
+import '../utils/emoji_utils.dart';
 import '../utils/route_transitions.dart';
+import '../utils/telemetry_dialog.dart';
+import '../helpers/contact_import_helper.dart';
+import '../helpers/meshcore_qr.dart';
+import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../widgets/unread_badge.dart';
+import 'package:flutter/services.dart';
 import 'channel_chat_screen.dart';
-import 'channels_screen.dart';
+import 'channel_share_screen.dart';
 import 'chat_screen.dart';
-import 'contacts_screen.dart';
+import 'contact_share_screen.dart';
 import 'map_screen.dart';
+import 'new_chat_screen.dart';
+import 'repeaters_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_screen.dart';
-import 'contact_share_screen.dart';
-import '../helpers/meshcore_qr.dart';
-import '../helpers/contact_import_helper.dart';
-import '../helpers/snack_bar_builder.dart';
-import 'package:flutter/services.dart';
 
 class _ChatListItem {
   final String id;
@@ -69,25 +72,11 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
 
   void _handleQuickSwitch(int index, BuildContext context) {
     if (index == 0) return;
-    switch (index) {
-      case 1:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const ContactsScreen(hideBackButton: true)),
-        );
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const ChannelsScreen(hideBackButton: true)),
-        );
-        break;
-      case 3:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const MapScreen(hideBackButton: true)),
-        );
-        break;
+    if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        buildQuickSwitchRoute(const MapScreen(hideBackButton: true)),
+      );
     }
   }
 
@@ -146,16 +135,32 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
 
   void _showChatActions(BuildContext context, _ChatListItem item, MeshCoreConnector connector) {
     final settingsService = context.read<AppSettingsService>();
-    final isChannel = item.channel != null;
-    final isMuted = isChannel ? settingsService.isChannelMuted(item.channel!.name) : false;
 
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isChannel)
+    if (item.channel != null) {
+      final channel = item.channel!;
+      final isMuted = settingsService.isChannelMuted(channel.name);
+      
+      showModalBottomSheet(
+        context: context,
+        builder: (sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.qr_code_2),
+                title: Text(context.l10n.channels_shareChannel),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChannelShareScreen(channel: channel),
+                      ),
+                    );
+                  }
+                },
+              ),
               ListTile(
                 leading: Icon(
                   isMuted
@@ -170,53 +175,263 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   if (isMuted) {
-                    await settingsService.unmuteChannel(item.channel!.name);
+                    await settingsService.unmuteChannel(channel.name);
                   } else {
-                    await settingsService.muteChannel(item.channel!.name);
+                    await settingsService.muteChannel(channel.name);
                   }
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text(context.l10n.contact_clearChat),
-              onTap: () async {
-                Navigator.pop(sheetContext);
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (dialogContext) => AlertDialog(
-                    title: Text(context.l10n.contact_clearChat),
-                    content: const Text('Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
-                        child: Text(context.l10n.common_cancel),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, true),
-                        child: Text(context.l10n.common_clear, style: const TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  ),
-                ) ?? false;
-                
-                if (confirmed) {
-                  if (item.contact != null) {
-                    connector.clearMessagesForContact(item.contact!);
-                  } else if (item.channel != null) {
-                    connector.clearMessagesForChannel(item.channel!.index);
+              ListTile(
+                leading: const Icon(Icons.cleaning_services, color: Colors.orange),
+                title: Text(
+                  context.l10n.contact_clearChat,
+                  style: const TextStyle(color: Colors.orange),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(context.l10n.contact_clearChat),
+                      content: const Text('Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(context.l10n.common_cancel),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(context.l10n.common_clear, style: const TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  ) ?? false;
+                  
+                  if (confirmed) {
+                    connector.clearMessagesForChannel(channel.index);
                   }
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: Text(context.l10n.common_cancel),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: Text(
+                  context.l10n.channels_deleteChannel,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(context.l10n.channels_deleteChannel),
+                      content: Text(
+                        context.l10n.channels_deleteChannelConfirm(channel.name),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(context.l10n.common_cancel),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(
+                            context.l10n.common_delete,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ) ?? false;
+                  
+                  if (confirmed) {
+                    try {
+                      await connector.deleteChannel(channel.index);
+                      connector.clearMessagesForChannel(channel.index);
+                      if (context.mounted) {
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(
+                            context.l10n.channels_channelDeleted(channel.name),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(
+                            context.l10n.channels_channelDeleteFailed(channel.name),
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: Text(context.l10n.common_cancel),
+                onTap: () => Navigator.pop(sheetContext),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } else if (item.contact != null) {
+      final contact = item.contact!;
+      
+      showModalBottomSheet(
+        context: context,
+        builder: (sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              ListTile(
+                leading: Icon(
+                  contact.isFavorite ? Icons.star : Icons.star_border,
+                  color: Colors.amber[700],
+                ),
+                title: Text(
+                  contact.isFavorite
+                      ? context.l10n.listFilter_removeFromFavorites
+                      : context.l10n.listFilter_addToFavorites,
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await connector.setContactFlags(
+                    contact,
+                    isFavorite: !contact.isFavorite,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.security),
+                title: Text(context.l10n.contact_telemetry),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showTelemetryPermissionsDialog(context, contact);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: Text(context.l10n.contacts_ShareContact),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  final data = MeshCoreQr.encodeContact(
+                    contact.name,
+                    pubKeyToHex(contact.publicKey),
+                    contact.type,
+                  );
+                  Clipboard.setData(ClipboardData(text: data));
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(context.l10n.common_copiedToClipboard),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.connect_without_contact),
+                title: Text(context.l10n.contacts_ShareContactZeroHop),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  connector.shareContactZeroHop(contact.publicKey);
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(context.l10n.settings_advertisementSent),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cleaning_services, color: Colors.orange),
+                title: Text(
+                  context.l10n.contact_clearChat,
+                  style: const TextStyle(color: Colors.orange),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(context.l10n.contact_clearChat),
+                      content: const Text('Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(context.l10n.common_cancel),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(context.l10n.common_clear, style: const TextStyle(color: Colors.orange)),
+                        ),
+                      ],
+                    ),
+                  ) ?? false;
+                  
+                  if (confirmed) {
+                    connector.clearMessagesForContact(contact);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: Text(
+                  context.l10n.contacts_deleteContact,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(context.l10n.contacts_deleteContact),
+                      content: Text(dialogContext.l10n.contacts_deleteContactConfirm(contact.name)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(context.l10n.common_cancel),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(
+                            dialogContext.l10n.common_delete,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ) ?? false;
+                  
+                  if (confirmed) {
+                    try {
+                      await connector.removeContact(contact);
+                      if (context.mounted) {
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(context.l10n.contacts_contactDeleted(contact.name)),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(context.l10n.contacts_contactDeleteFailed(contact.name)),
+                        );
+                      }
+                    }
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: Text(context.l10n.common_cancel),
+                onTap: () => Navigator.pop(sheetContext),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -262,11 +477,70 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 channel: channel,
               ),
             );
+          } else {
+            chatItems.add(
+              _ChatListItem(
+                id: 'channel_${channel.index}',
+                title: channel.name.isEmpty ? 'Channel ${channel.index}' : channel.name,
+                subtitle: 'Tap to chat',
+                timestamp: DateTime.fromMillisecondsSinceEpoch(0),
+                unreadCount: 0,
+                channel: channel,
+              ),
+            );
           }
         }
 
         // Sort by most recent
         chatItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+        Widget? syncBanner;
+        final syncStatus = connector.currentSyncStatus;
+        if (syncStatus != null) {
+          String statusText = '';
+          switch (syncStatus) {
+            case SyncStatus.deviceInfo:
+              statusText = context.l10n.common_syncing_device_info;
+              break;
+            case SyncStatus.contacts:
+              statusText = context.l10n.common_syncing_contacts;
+              break;
+            case SyncStatus.channels:
+              statusText = context.l10n.common_syncing_channels;
+              break;
+            case SyncStatus.messages:
+              statusText = context.l10n.common_syncing_messages;
+              break;
+          }
+
+          syncBanner = Container(
+            width: double.infinity,
+            color: Theme.of(context).colorScheme.primaryContainer,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
         return PopScope(
           canPop: false,
@@ -380,6 +654,21 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                   PopupMenuItem(
                     child: Row(
                       children: [
+                        const Icon(Icons.cell_tower),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.repeaters_title),
+                      ],
+                    ),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RepeatersScreen(),
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
                         const Icon(Icons.settings),
                         const SizedBox(width: 8),
                         Text(context.l10n.settings_title),
@@ -397,38 +686,44 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               ),
             ],
           ),
-          body: chatItems.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No active chats yet.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
+          body: Column(
+            children: [
+              if (syncBanner != null) syncBanner,
+              Expanded(
+                child: chatItems.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No active chats yet.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemExtent: 80.0,
-                  itemCount: chatItems.length,
-                  itemBuilder: (context, index) {
-                    final item = chatItems[index];
+                      )
+                    : ListView.builder(
+                        itemExtent: 80.0,
+                        itemCount: chatItems.length,
+                        itemBuilder: (context, index) {
+                          final item = chatItems[index];
                     final isChannel = item.channel != null;
                     final iconColor = isChannel ? Colors.blue : Colors.green;
                     final bgColor = isChannel
                         ? Colors.blue.withValues(alpha: 0.2)
                         : Colors.green.withValues(alpha: 0.2);
-                    IconData iconData;
+                    IconData iconData = Icons.person;
+                    String? emojiIcon;
+                    
                     if (isChannel) {
                       if (item.channel!.isPublicChannel) {
                         iconData = Icons.public;
@@ -440,7 +735,8 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                     } else {
                       if (item.contact != null && item.contact!.type == advTypeRoom) {
                         iconData = Icons.meeting_room;
-                      } else {
+                      } else if (item.contact != null) {
+                        emojiIcon = firstEmoji(item.contact!.name);
                         iconData = Icons.person;
                       }
                     }
@@ -452,7 +748,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: bgColor,
-                            child: Icon(iconData, color: iconColor),
+                            child: emojiIcon != null 
+                                ? Text(emojiIcon, style: const TextStyle(fontSize: 20))
+                                : Icon(iconData, color: iconColor),
                           ),
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -493,6 +791,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                             if (item.contact != null) {
                               final unread = item.unreadCount;
                               connector.markContactRead(item.contact!.publicKeyHex);
+                              
+                              final settingsService = context.read<AppSettingsService>();
+                              if (settingsService.settings.autoFavoriteOnChat && !item.contact!.isFavorite) {
+                                await connector.setContactFlags(item.contact!, isFavorite: true);
+                              }
+                              
                               await Future.delayed(const Duration(milliseconds: 50));
                               if (context.mounted) {
                                 Navigator.push(
@@ -521,6 +825,20 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                     );
                   },
                 ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NewChatScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.add),
+          ),
           bottomNavigationBar: SafeArea(
             top: false,
             child: QuickSwitchBar(
@@ -533,4 +851,5 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
       },
     );
   }
+
 }

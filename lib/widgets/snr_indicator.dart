@@ -1,16 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
-import '../services/ui_view_state_service.dart';
-import '../services/map_tile_cache_service.dart';
 import '../screens/repeater_hub_screen.dart';
 import 'repeater_login_dialog.dart';
 import 'signal_ui.dart';
@@ -282,64 +278,6 @@ class _SNRIndicatorState extends State<SNRIndicator> {
     return "${days}d";
   }
 
-  void _showRepeaterMap(BuildContext context, Contact contact, String? name) {
-    final lat = contact.latitude!;
-    final lon = contact.longitude!;
-    final label = name ?? 'Repeater';
-    final tileCache = context.read<MapTileCacheService>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBar(
-              title: Text(label),
-              automaticallyImplyLeading: false,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 400,
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: LatLng(lat, lon),
-                  initialZoom: 13.0,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: kMapTileUrlTemplate,
-                    tileProvider: tileCache.tileProvider,
-                    userAgentPackageName:
-                        MapTileCacheService.userAgentPackageName,
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: LatLng(lat, lon),
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 34,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showFullPathDialog(BuildContext context) {
     final l10n = context.l10n;
 
@@ -411,14 +349,12 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                       if (idx >= 0) contact = allContacts[idx];
                     }
 
-                    if (contact == null) {
-                      contact = _getRepeaterPrefixMatchNearLocation(
+                    contact ??= _getRepeaterPrefixMatchNearLocation(
                         allContacts,
                         repeater.pubkeyFirstByte,
                         searchPoint: selfPoint,
                         preferFavorites: true,
                       );
-                    }
 
                     // If not found, try any contact with matching prefix for display name only
                     if (contact == null) {
@@ -453,7 +389,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                     final pubKeyHex = fullPubKey != null ? pubKeyToHex(fullPubKey) : null;
                     final durationSinceUpdate = DateTime.now().difference(repeater.lastUpdated);
                     final isRecent = durationSinceUpdate.inSeconds < 12;
-                    final tileColor = isRecent ? Colors.green.withOpacity(0.15) : null;
+                    final tileColor = isRecent ? Colors.green.withValues(alpha: 0.15) : null;
 
                     return ListTile(
                       tileColor: tileColor,

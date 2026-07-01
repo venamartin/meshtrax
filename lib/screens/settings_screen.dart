@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:meshtrax/utils/gpx_export.dart';
 import 'package:meshtrax/utils/contact_backup_service.dart';
-import 'package:meshtrax/utils/platform_info.dart';
 import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -13,7 +11,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
-import '../models/contact.dart';
 import '../models/radio_settings.dart';
 import '../services/app_debug_log_service.dart';
 import '../widgets/app_bar.dart';
@@ -393,6 +390,86 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(height: 1),
           ListTile(
+            leading: const Icon(Icons.delete_sweep, color: Colors.red),
+            title: const Text('Delete Discovered Contacts'),
+            subtitle: const Text('Remove discovered contacts from this device.'),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  bool includeRepeaters = false;
+                  return StatefulBuilder(
+                    builder: (context, setState) {
+                      return AlertDialog(
+                        title: const Text('Delete Discovered Contacts'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CheckboxListTile(
+                              title: const Text('Include Repeaters'),
+                              value: includeRepeaters,
+                              onChanged: (value) {
+                                setState(() {
+                                  includeRepeaters = value ?? false;
+                                });
+                              },
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            const Divider(),
+                            ListTile(
+                              title: const Text('Older than 1 day'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                connector.removeDiscoveredContactsOlderThan(const Duration(days: 1), includeRepeaters: includeRepeaters);
+                                if (includeRepeaters) connector.removeRepeaters(maxAge: const Duration(days: 1));
+                                showDismissibleSnackBar(context, content: const Text('Deleted discovered contacts older than 1 day.'));
+                              },
+                            ),
+                            ListTile(
+                              title: const Text('Older than 7 days'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                connector.removeDiscoveredContactsOlderThan(const Duration(days: 7), includeRepeaters: includeRepeaters);
+                                if (includeRepeaters) connector.removeRepeaters(maxAge: const Duration(days: 7));
+                                showDismissibleSnackBar(context, content: const Text('Deleted discovered contacts older than 7 days.'));
+                              },
+                            ),
+                            ListTile(
+                              title: const Text('Older than 30 days'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                connector.removeDiscoveredContactsOlderThan(const Duration(days: 30), includeRepeaters: includeRepeaters);
+                                if (includeRepeaters) connector.removeRepeaters(maxAge: const Duration(days: 30));
+                                showDismissibleSnackBar(context, content: const Text('Deleted discovered contacts older than 30 days.'));
+                              },
+                            ),
+                            ListTile(
+                              title: const Text('All Discovered Contacts', style: TextStyle(color: Colors.red)),
+                              onTap: () {
+                                Navigator.pop(context);
+                                connector.removeAllDiscoveredContacts(includeRepeaters: includeRepeaters);
+                                if (includeRepeaters) connector.removeRepeaters();
+                                showDismissibleSnackBar(context, content: const Text('Deleted all discovered contacts.'));
+                              },
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(l10n.common_cancel),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
             leading: const Icon(Icons.backup_outlined),
             title: const Text('Export Contacts (Backup)'),
             subtitle: const Text('Save your contacts to a JSON file'),
@@ -755,7 +832,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _editPathHashSize(BuildContext context, MeshCoreConnector connector) {
-    int _currentMode = (connector.pathHashByteWidth - 1).clamp(0, 1);
+    int currentMode = (connector.pathHashByteWidth - 1).clamp(0, 1);
     final l10n = context.l10n;
     showDialog(
       context: context,
@@ -768,7 +845,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Text("Select the number of bytes per hop. Larger hashes reduce collisions but decrease the maximum hop count (1 byte \u2248 64 hops, 2 bytes \u2248 32 hops)."),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: _currentMode,
+                value: currentMode,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                 ),
@@ -778,7 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
                 onChanged: (value) {
                   if (value != null) {
-                    setDialogState(() => _currentMode = value);
+                    setDialogState(() => currentMode = value);
                   }
                 },
               ),
@@ -792,7 +869,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                await connector.setPathHashMode(_currentMode);
+                await connector.setPathHashMode(currentMode);
                 await Future.delayed(const Duration(milliseconds: 200));
                 await connector.refreshDeviceInfo();
                 if (!context.mounted) return;

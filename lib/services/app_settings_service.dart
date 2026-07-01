@@ -253,4 +253,8 @@ class AppSettingsService extends ChangeNotifier {
       _settings.copyWith(translationDownloadedModels: value),
     );
   }
+
+  Future<void> setAutoFavoriteOnChat(bool value) async {
+    await updateSettings(_settings.copyWith(autoFavoriteOnChat: value));
+  }
 }

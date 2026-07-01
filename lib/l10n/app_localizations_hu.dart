@@ -18,6 +18,29 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chats_title => 'Chats';
 
   @override
+  String get newChat_title => 'Select contact';
+
+  @override
+  String newChat_contactCount(int count) {
+    return '$count contacts';
+  }
+
+  @override
+  String get newChat_newContact => 'New Contact';
+
+  @override
+  String get newChat_newChannel => 'New Channel';
+
+  @override
+  String get newChat_myContacts => 'My Contacts';
+
+  @override
+  String get newChat_discovered => 'Discovered';
+
+  @override
+  String get repeaters_title => 'Manage Repeaters';
+
+  @override
   String get nav_contacts => 'Kapcsolatok';
 
   @override
@@ -28,6 +51,18 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get common_cancel => 'Át kell venni';
+
+  @override
+  String get common_syncing_device_info => 'Reading device info...';
+
+  @override
+  String get common_syncing_contacts => 'Reading contacts...';
+
+  @override
+  String get common_syncing_channels => 'Reading channels...';
+
+  @override
+  String get common_syncing_messages => 'Reading messages...';
 
   @override
   String get common_ok => 'Rendben';
@@ -974,6 +1009,24 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get contacts_deleteContact => 'Kapcsolattól töröl';
+
+  @override
+  String contacts_deleteContactConfirm(String contactName) {
+    return 'Are you sure you want to delete $contactName?';
+  }
+
+  @override
+  String contacts_contactDeleted(String contactName) {
+    return 'Contact $contactName deleted.';
+  }
+
+  @override
+  String contacts_contactDeleteFailed(String contactName) {
+    return 'Failed to delete $contactName.';
+  }
+
+  @override
+  String get contacts_noMatchingContacts => 'No contacts match the filter.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -3591,6 +3644,9 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get discoveredContacts_noMatching => 'Nincs megegyező kapcsolat.';
+
+  @override
+  String get listFilter_searchHint => 'Search...';
 
   @override
   String get discoveredContacts_searchHint => 'Keress új kapcsolatokat';

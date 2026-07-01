@@ -3,10 +3,28 @@
   "appTitle": "MeshTrax",
   "nav_chats": "Chats",
   "chats_title": "Chats",
+  "newChat_title": "Select contact",
+  "newChat_contactCount": "{count} contacts",
+  "@newChat_contactCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newChat_newContact": "New Contact",
+  "newChat_newChannel": "New Channel",
+  "newChat_myContacts": "My Contacts",
+  "newChat_discovered": "Discovered",
+  "repeaters_title": "Manage Repeaters",
   "nav_contacts": "Contacts",
   "nav_channels": "Channels",
   "nav_map": "Map",
   "common_cancel": "Cancel",
+  "common_syncing_device_info": "Reading device info...",
+  "common_syncing_contacts": "Reading contacts...",
+  "common_syncing_channels": "Reading channels...",
+  "common_syncing_messages": "Reading messages...",
   "common_ok": "OK",
   "common_connect": "Connect",
   "common_unknownDevice": "Unknown Device",
@@ -432,6 +450,31 @@
   "contacts_noUnreadContacts": "No unread contacts",
   "contacts_noContactsFound": "No contacts or groups found",
   "contacts_deleteContact": "Delete Contact",
+  "contacts_deleteContactConfirm": "Are you sure you want to delete {contactName}?",
+  "@contacts_deleteContactConfirm": {
+    "placeholders": {
+      "contactName": {
+        "type": "String"
+      }
+    }
+  },
+  "contacts_contactDeleted": "Contact {contactName} deleted.",
+  "@contacts_contactDeleted": {
+    "placeholders": {
+      "contactName": {
+        "type": "String"
+      }
+    }
+  },
+  "contacts_contactDeleteFailed": "Failed to delete {contactName}.",
+  "@contacts_contactDeleteFailed": {
+    "placeholders": {
+      "contactName": {
+        "type": "String"
+      }
+    }
+  },
+  "contacts_noMatchingContacts": "No contacts match the filter.",
   "contacts_removeConfirm": "Remove {contactName} from contacts?",
   "@contacts_removeConfirm": {
     "placeholders": {
@@ -2018,12 +2061,13 @@
   "contactsSettings_overwriteOldestSubtitle": "When the contact list is full, the oldest non-favorited contact will be replaced.",
   "discoveredContacts_Title": "Discovered Contacts",
   "discoveredContacts_noMatching": "No matching contacts",
+  "listFilter_searchHint": "Search...",
   "discoveredContacts_searchHint": "Search discovered contacts",
   "discoveredContacts_contactAdded": "Contact added",
   "discoveredContacts_addContact": "Add Contact",
   "discoveredContacts_copyContact": "Copy Contact to clipboard",
   "discoveredContacts_deleteContact": "Delete Discovered Contact",
-  "discoveredContacts_deleteContactAll": "Delete All Discovered Contacts",
+  "discoveredContacts_deleteContactAll": "Delete Discovered Contacts",
   "discoveredContacts_deleteContactAllContent": "Are you sure you want to delete all discovered contacts?",
   "chat_sendCooldown": "Please wait a moment before sending again.",
   "appSettings_jumpToOldestUnread": "Jump to oldest unread",

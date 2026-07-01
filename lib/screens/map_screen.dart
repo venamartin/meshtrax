@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -25,10 +24,8 @@ import '../utils/contact_search.dart';
 import '../utils/route_transitions.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
-import 'channels_screen.dart';
 import 'chat_screen.dart';
 import 'chats_screen.dart';
-import 'contacts_screen.dart';
 import '../widgets/repeater_login_dialog.dart';
 import '../widgets/room_login_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -572,7 +569,7 @@ class _MapScreenState extends State<MapScreen> {
             bottomNavigationBar: SafeArea(
               top: false,
               child: QuickSwitchBar(
-                selectedIndex: 3,
+                selectedIndex: 1,
                 onDestinationSelected: (index) =>
                     _handleQuickSwitch(index, context),
               ),
@@ -1520,26 +1517,12 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _handleQuickSwitch(int index, BuildContext context) {
-    if (index == 3) return;
-    switch (index) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const ChatsScreen(hideBackButton: true)),
-        );
-        break;
-      case 1:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const ContactsScreen(hideBackButton: true)),
-        );
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const ChannelsScreen(hideBackButton: true)),
-        );
-        break;
+    if (index == 1) return;
+    if (index == 0) {
+      Navigator.pushReplacement(
+        context,
+        buildQuickSwitchRoute(const ChatsScreen(hideBackButton: true)),
+      );
     }
   }
 

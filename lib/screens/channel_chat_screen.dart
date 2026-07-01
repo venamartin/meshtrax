@@ -15,7 +15,6 @@ import '../connector/meshcore_protocol.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/snack_bar_builder.dart';
-import '../helpers/path_helper.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
@@ -433,32 +432,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.channel.name.isEmpty
-                        ? context.l10n.channels_channelIndex(
-                            widget.channel.index,
-                          )
-                        : widget.channel.name,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  Consumer<MeshCoreConnector>(
-                    builder: (context, connector, _) {
-                      final unreadCount = connector
-                          .getUnreadCountForChannelIndex(widget.channel.index);
-                      final privacy = widget.channel.isPublicChannel
-                          ? context.l10n.channels_public
-                          : context.l10n.channels_private;
-                      return Text(
-                        '$privacy • ${context.l10n.chat_unread(unreadCount)}',
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12),
-                      );
-                    },
-                  ),
-                ],
+              child: Text(
+                widget.channel.name.isEmpty
+                    ? context.l10n.channels_channelIndex(
+                        widget.channel.index,
+                      )
+                    : (widget.channel.name.startsWith('#')
+                        ? widget.channel.name.substring(1)
+                        : widget.channel.name),
+                style: const TextStyle(fontSize: 18),
               ),
             ),
           ],
@@ -492,11 +474,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 value: 'clearChat',
                 child: Row(
                   children: [
-                    const Icon(Icons.delete, size: 20, color: Colors.red),
+                    const Icon(Icons.cleaning_services, size: 20, color: Colors.orange),
                     const SizedBox(width: 12),
                     Text(
                       context.l10n.contact_clearChat,
-                      style: const TextStyle(color: Colors.red),
+                      style: const TextStyle(color: Colors.orange),
                     ),
                   ],
                 ),

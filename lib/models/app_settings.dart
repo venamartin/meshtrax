@@ -57,6 +57,7 @@ class AppSettings {
   final String? translationModelSourceUrl;
   final String? translationSelectedModelId;
   final List<TranslationModelRecord> translationDownloadedModels;
+  final bool autoFavoriteOnChat;
 
   AppSettings({
     this.clearPathOnMaxRetry = true,
@@ -100,6 +101,7 @@ class AppSettings {
     this.translationModelSourceUrl,
     this.translationSelectedModelId,
     List<TranslationModelRecord>? translationDownloadedModels,
+    this.autoFavoriteOnChat = true,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
        mutedChannels = mutedChannels ?? {},
@@ -150,6 +152,7 @@ class AppSettings {
       'translation_downloaded_models': translationDownloadedModels
           .map((model) => model.toJson())
           .toList(),
+      'auto_favorite_on_chat': autoFavoriteOnChat,
     };
   }
 
@@ -237,6 +240,7 @@ class AppSettings {
               )
               .toList() ??
           const [],
+      autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
     );
   }
 
@@ -282,6 +286,7 @@ class AppSettings {
     Object? translationModelSourceUrl = _unset,
     Object? translationSelectedModelId = _unset,
     List<TranslationModelRecord>? translationDownloadedModels,
+    bool? autoFavoriteOnChat,
   }) {
     return AppSettings(
       clearPathOnMaxRetry: clearPathOnMaxRetry ?? this.clearPathOnMaxRetry,
@@ -345,6 +350,7 @@ class AppSettings {
           : translationSelectedModelId as String?,
       translationDownloadedModels:
           translationDownloadedModels ?? this.translationDownloadedModels,
+      autoFavoriteOnChat: autoFavoriteOnChat ?? this.autoFavoriteOnChat,
     );
   }
 }

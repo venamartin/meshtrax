@@ -49,6 +49,8 @@ class AppSettingsScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         _buildMessagingCard(context, settingsService),
                         const SizedBox(height: 16),
+                        _buildContactsCard(context, settingsService),
+                        const SizedBox(height: 16),
                         if (!kIsWeb) ...[
                           _buildTranslationCard(
                             context,
@@ -274,6 +276,48 @@ class AppSettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContactsCard(
+    BuildContext context,
+    AppSettingsService settingsService,
+  ) {
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Contacts',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.star_border),
+            title: const Text('Auto set as favorite on chat'),
+            subtitle: const Text(
+              'Automatically mark a contact as a favorite when starting a chat. '
+              'The hardware will possibly overwrite a contact that is not a favorite, '
+              'so it is recommended to keep this enabled.',
+            ),
+            value: settingsService.settings.autoFavoriteOnChat,
+            onChanged: (value) {
+              settingsService.setAutoFavoriteOnChat(value);
+              showDismissibleSnackBar(
+                context,
+                content: Text(
+                  value
+                      ? 'Auto-favorite enabled'
+                      : 'Auto-favorite disabled',
+                ),
+                duration: const Duration(seconds: 2),
+              );
+            },
+          ),
+        ],
+),
     );
   }
 
