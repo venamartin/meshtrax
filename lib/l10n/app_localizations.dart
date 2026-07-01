@@ -148,6 +148,48 @@ abstract class AppLocalizations {
   /// **'Chats'**
   String get chats_title;
 
+  /// No description provided for @newChat_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Select contact'**
+  String get newChat_title;
+
+  /// No description provided for @newChat_contactCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} contacts'**
+  String newChat_contactCount(int count);
+
+  /// No description provided for @newChat_newContact.
+  ///
+  /// In en, this message translates to:
+  /// **'New Contact'**
+  String get newChat_newContact;
+
+  /// No description provided for @newChat_newChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'New Channel'**
+  String get newChat_newChannel;
+
+  /// No description provided for @newChat_myContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'My Contacts'**
+  String get newChat_myContacts;
+
+  /// No description provided for @newChat_discovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered'**
+  String get newChat_discovered;
+
+  /// No description provided for @repeaters_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Repeaters'**
+  String get repeaters_title;
+
   /// No description provided for @nav_contacts.
   ///
   /// In en, this message translates to:
@@ -171,6 +213,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get common_cancel;
+
+  /// No description provided for @common_syncing_device_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading device info...'**
+  String get common_syncing_device_info;
+
+  /// No description provided for @common_syncing_contacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading contacts...'**
+  String get common_syncing_contacts;
+
+  /// No description provided for @common_syncing_channels.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading channels...'**
+  String get common_syncing_channels;
+
+  /// No description provided for @common_syncing_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading messages...'**
+  String get common_syncing_messages;
 
   /// No description provided for @common_ok.
   ///
@@ -1833,6 +1899,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Contact'**
   String get contacts_deleteContact;
+
+  /// No description provided for @contacts_deleteContactConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {contactName}?'**
+  String contacts_deleteContactConfirm(String contactName);
+
+  /// No description provided for @contacts_contactDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact {contactName} deleted.'**
+  String contacts_contactDeleted(String contactName);
+
+  /// No description provided for @contacts_contactDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete {contactName}.'**
+  String contacts_contactDeleteFailed(String contactName);
+
+  /// No description provided for @contacts_noMatchingContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts match the filter.'**
+  String get contacts_noMatchingContacts;
 
   /// No description provided for @contacts_removeConfirm.
   ///
@@ -6190,6 +6280,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching contacts'**
   String get discoveredContacts_noMatching;
+
+  /// No description provided for @listFilter_searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search...'**
+  String get listFilter_searchHint;
 
   /// No description provided for @discoveredContacts_searchHint.
   ///

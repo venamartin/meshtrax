@@ -18,6 +18,29 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chats_title => 'Chats';
 
   @override
+  String get newChat_title => 'Select contact';
+
+  @override
+  String newChat_contactCount(int count) {
+    return '$count contacts';
+  }
+
+  @override
+  String get newChat_newContact => 'New Contact';
+
+  @override
+  String get newChat_newChannel => 'New Channel';
+
+  @override
+  String get newChat_myContacts => 'My Contacts';
+
+  @override
+  String get newChat_discovered => 'Discovered';
+
+  @override
+  String get repeaters_title => 'Manage Repeaters';
+
+  @override
   String get nav_contacts => '連絡先';
 
   @override
@@ -28,6 +51,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get common_cancel => 'キャンセル';
+
+  @override
+  String get common_syncing_device_info => 'Reading device info...';
+
+  @override
+  String get common_syncing_contacts => 'Reading contacts...';
+
+  @override
+  String get common_syncing_channels => 'Reading channels...';
+
+  @override
+  String get common_syncing_messages => 'Reading messages...';
 
   @override
   String get common_ok => '了解';
@@ -920,6 +955,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get contacts_deleteContact => '連絡先を削除';
+
+  @override
+  String contacts_deleteContactConfirm(String contactName) {
+    return 'Are you sure you want to delete $contactName?';
+  }
+
+  @override
+  String contacts_contactDeleted(String contactName) {
+    return 'Contact $contactName deleted.';
+  }
+
+  @override
+  String contacts_contactDeleteFailed(String contactName) {
+    return 'Failed to delete $contactName.';
+  }
+
+  @override
+  String get contacts_noMatchingContacts => 'No contacts match the filter.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -3413,6 +3466,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get discoveredContacts_noMatching => '一致する連絡先が見つかりませんでした';
+
+  @override
+  String get listFilter_searchHint => 'Search...';
 
   @override
   String get discoveredContacts_searchHint => '発見された連絡先を検索する';

@@ -168,11 +168,6 @@ class ContactsFilterMenu extends StatelessWidget {
               checked: typeFilter == ContactTypeFilter.users,
             ),
             SortFilterMenuOption(
-              value: _TypeFilterAction(ContactTypeFilter.repeaters),
-              label: l10n.listFilter_repeaters,
-              checked: typeFilter == ContactTypeFilter.repeaters,
-            ),
-            SortFilterMenuOption(
               value: _TypeFilterAction(ContactTypeFilter.rooms),
               label: l10n.listFilter_roomServers,
               checked: typeFilter == ContactTypeFilter.rooms,
@@ -262,11 +257,6 @@ class DiscoveryContactsFilterMenu extends StatelessWidget {
               checked: typeFilter == ContactTypeFilter.users,
             ),
             SortFilterMenuOption(
-              value: _DiscoveryTypeFilterAction(ContactTypeFilter.repeaters),
-              label: l10n.listFilter_repeaters,
-              checked: typeFilter == ContactTypeFilter.repeaters,
-            ),
-            SortFilterMenuOption(
               value: _DiscoveryTypeFilterAction(ContactTypeFilter.rooms),
               label: l10n.listFilter_roomServers,
               checked: typeFilter == ContactTypeFilter.rooms,
@@ -279,6 +269,83 @@ class DiscoveryContactsFilterMenu extends StatelessWidget {
           case _DiscoverySortAction(:final option):
             onSortChanged(option);
           case _DiscoveryTypeFilterAction(:final filter):
+            onTypeFilterChanged(filter);
+        }
+      },
+    );
+  }
+}
+
+sealed class _RepeaterFilterAction {
+  const _RepeaterFilterAction();
+}
+
+class _RepeaterSortAction extends _RepeaterFilterAction {
+  final ContactSortOption option;
+  const _RepeaterSortAction(this.option);
+}
+
+class _RepeaterTypeFilterAction extends _RepeaterFilterAction {
+  final ContactTypeFilter filter;
+  const _RepeaterTypeFilterAction(this.filter);
+}
+
+class RepeaterContactsFilterMenu extends StatelessWidget {
+  final ContactSortOption sortOption;
+  final ContactTypeFilter typeFilter;
+  final ValueChanged<ContactSortOption> onSortChanged;
+  final ValueChanged<ContactTypeFilter> onTypeFilterChanged;
+
+  const RepeaterContactsFilterMenu({
+    super.key,
+    required this.sortOption,
+    required this.typeFilter,
+    required this.onSortChanged,
+    required this.onTypeFilterChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SortFilterMenu<_RepeaterFilterAction>(
+      tooltip: l10n.listFilter_tooltip,
+      sections: [
+        SortFilterMenuSection(
+          title: l10n.listFilter_sortBy,
+          options: [
+            SortFilterMenuOption(
+              value: _RepeaterSortAction(ContactSortOption.lastSeen),
+              label: l10n.listFilter_heardRecently,
+              checked: sortOption == ContactSortOption.lastSeen,
+            ),
+            SortFilterMenuOption(
+              value: _RepeaterSortAction(ContactSortOption.name),
+              label: l10n.listFilter_az,
+              checked: sortOption == ContactSortOption.name,
+            ),
+          ],
+        ),
+        SortFilterMenuSection(
+          title: l10n.listFilter_filters,
+          options: [
+            SortFilterMenuOption(
+              value: _RepeaterTypeFilterAction(ContactTypeFilter.all),
+              label: l10n.listFilter_all,
+              checked: typeFilter == ContactTypeFilter.all,
+            ),
+            SortFilterMenuOption(
+              value: _RepeaterTypeFilterAction(ContactTypeFilter.favorites),
+              label: l10n.listFilter_favorites,
+              checked: typeFilter == ContactTypeFilter.favorites,
+            ),
+          ],
+        ),
+      ],
+      onSelected: (action) {
+        switch (action) {
+          case _RepeaterSortAction(:final option):
+            onSortChanged(option);
+          case _RepeaterTypeFilterAction(:final filter):
             onTypeFilterChanged(filter);
         }
       },

@@ -259,7 +259,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget>
 
         // Control buttons
         Positioned(
-          bottom: 16,
+          bottom: MediaQuery.paddingOf(context).bottom + 24,
           left: 0,
           right: 0,
           child: _buildControls(context),

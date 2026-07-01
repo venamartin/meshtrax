@@ -218,6 +218,11 @@ class Contact {
 
       final actualHopCount = hopCount < 0 ? -1 : PathHelper.getHopCount(pathBytes, stride: hashSize);
 
+      DateTime parsedLastSeen = DateTime.fromMillisecondsSinceEpoch(effectiveLastSeen * 1000);
+      if (parsedLastSeen.isAfter(DateTime.now())) {
+        parsedLastSeen = DateTime.now();
+      }
+
       return Contact(
         publicKey: pubKey,
         name: name.isEmpty ? 'Unknown' : name,
@@ -228,7 +233,7 @@ class Contact {
         pathHashSize: hashSize,
         latitude: lat,
         longitude: lon,
-        lastSeen: DateTime.fromMillisecondsSinceEpoch(effectiveLastSeen * 1000),
+        lastSeen: parsedLastSeen,
         isActive: true,
         rawPacket: null,
       );

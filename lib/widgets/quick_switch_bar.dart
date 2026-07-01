@@ -66,14 +66,6 @@ class QuickSwitchBar extends StatelessWidget {
                     label: context.l10n.nav_chats,
                   ),
                   NavigationDestination(
-                    icon: const Icon(Icons.people_outline),
-                    label: context.l10n.nav_contacts,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.tag),
-                    label: context.l10n.nav_channels,
-                  ),
-                  NavigationDestination(
                     icon: const Icon(Icons.map_outlined),
                     label: context.l10n.nav_map,
                   ),

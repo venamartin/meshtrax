@@ -25,7 +25,6 @@ import 'channel_chat_screen.dart';
 import 'channel_share_screen.dart';
 import 'channel_qr_scanner_screen.dart';
 import 'chats_screen.dart';
-import 'contacts_screen.dart';
 import 'map_screen.dart';
 import 'settings_screen.dart';
 
@@ -298,7 +297,7 @@ class _ChannelsScreenState extends State<ChannelsScreen>
         bottomNavigationBar: SafeArea(
           top: false,
           child: QuickSwitchBar(
-            selectedIndex: 2,
+            selectedIndex: 0,
             onDestinationSelected: (index) =>
                 _handleQuickSwitch(index, context),
           ),
@@ -498,7 +497,6 @@ class _ChannelsScreenState extends State<ChannelsScreen>
   }
 
   void _handleQuickSwitch(int index, BuildContext context) {
-    if (index == 2) return;
     switch (index) {
       case 0:
         Navigator.pushReplacement(
@@ -507,12 +505,6 @@ class _ChannelsScreenState extends State<ChannelsScreen>
         );
         break;
       case 1:
-        Navigator.pushReplacement(
-          context,
-          buildQuickSwitchRoute(const ContactsScreen(hideBackButton: true)),
-        );
-        break;
-      case 3:
         Navigator.pushReplacement(
           context,
           buildQuickSwitchRoute(const MapScreen(hideBackButton: true)),
@@ -651,6 +643,7 @@ class _ChannelsScreenState extends State<ChannelsScreen>
             required String title,
             required String subtitle,
             bool enabled = true,
+            VoidCallback? onTapOverride,
           }) {
             final isSelected = selectedOption == optionIndex;
             return ListTile(
@@ -680,14 +673,15 @@ class _ChannelsScreenState extends State<ChannelsScreen>
               trailing: enabled ? const Icon(Icons.chevron_right) : null,
               selected: isSelected,
               onTap: enabled
-                  ? () {
-                      setDialogState(() {
-                        selectedOption = optionIndex;
-                        nameController.clear();
-                        pskController.clear();
-                        hashtagController.clear();
-                      });
-                    }
+                  ? (onTapOverride ??
+                      () {
+                        setDialogState(() {
+                          selectedOption = optionIndex;
+                          nameController.clear();
+                          pskController.clear();
+                          hashtagController.clear();
+                        });
+                      })
                   : null,
             );
           }
@@ -1009,7 +1003,7 @@ class _ChannelsScreenState extends State<ChannelsScreen>
                     ],
                     buildOptionTile(
                       optionIndex: 0,
-                      icon: Icons.add,
+                      icon: Icons.lock,
                       title: dialogContext.l10n.channels_createPrivateChannel,
                       subtitle: dialogContext.l10n.channels_createPrivateChannelDesc,
                     ),
@@ -1030,13 +1024,22 @@ class _ChannelsScreenState extends State<ChannelsScreen>
                       icon: Icons.qr_code_scanner,
                       title: dialogContext.l10n.channels_shareChannelQr,
                       subtitle: dialogContext.l10n.channels_scanQrCode,
+                      onTapOverride: () async {
+                        Navigator.pop(dialogContext);
+                        if (context.mounted) {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ChannelQrScannerScreen(),
+                            ),
+                          );
+                        }
+                      },
                     ),
-                    if (selectedOption == 2)
-                      buildExpandedContent(_channelMessageStore)!,
                     const Divider(height: 1),
                     buildOptionTile(
                       optionIndex: 3,
-                      icon: Icons.lock,
+                      icon: Icons.add,
                       title: dialogContext.l10n.channels_joinPrivateChannel,
                       subtitle: dialogContext.l10n.channels_joinPrivateChannelDesc,
                     ),

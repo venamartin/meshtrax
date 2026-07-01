@@ -45,7 +45,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           !_changedNavigation) {
         _changedNavigation = true;
         if (mounted) {
-          Navigator.of(context).push(
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const ChatsScreen()),
           );
         }

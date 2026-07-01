@@ -47,9 +47,11 @@ class _UsbScreenState extends State<UsbScreen> {
           _connector.isUsbTransportConnected &&
           !_navigatedToContacts) {
         _navigatedToContacts = true;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const ChatsScreen()),
-        );
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ChatsScreen()),
+          );
+        }
       }
     };
     _connector.addListener(_connectionListener);

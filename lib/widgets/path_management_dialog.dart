@@ -129,7 +129,6 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
     MeshCoreConnector connector,
     Contact currentContact,
   ) async {
-    final l10n = context.l10n;
     if (currentContact.pathLength > 0 &&
         currentContact.path.isEmpty &&
         connector.isConnected) {

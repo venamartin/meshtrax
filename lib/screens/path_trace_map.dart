@@ -101,6 +101,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   double _pathDistanceMeters = 0.0;
   bool _showNodeLabels = true;
   Contact? _targetContact;
+  final ScrollController _scrollController = ScrollController();
 
   String _formatPathPrefixes(Uint8List pathBytes) {
     return PathHelper.formatPathHex(pathBytes, stride: widget.pathHashByteWidth);
@@ -117,6 +118,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   void dispose() {
     _frameSubscription?.cancel();
     _timeoutTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -825,9 +827,9 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     bool isImperial,
   ) {
     final l10n = context.l10n;
-    final maxHeight = MediaQuery.of(context).size.height * 0.35;
-    final estimatedHeight = 72.0 + (pathTraceData.pathData.length * 56.0);
-    final cardHeight = max(96.0, min(maxHeight, estimatedHeight));
+    final maxHeight = MediaQuery.of(context).size.height * 0.50;
+    final estimatedHeight = 72.0 + ((pathTraceData.pathData.length + 1) * 76.0);
+    final cardHeight = max(120.0, min(maxHeight, estimatedHeight));
 
     return Positioned(
       left: 16,
@@ -853,7 +855,9 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
                         child: Text(l10n.channelPath_noHopDetailsAvailable),
                       )
                     : Scrollbar(
+                        controller: _scrollController,
                         child: ListView.separated(
+                          controller: _scrollController,
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           itemCount: pathTraceData.pathData.length + 1,
                           separatorBuilder: (_, _) => const Divider(height: 1),

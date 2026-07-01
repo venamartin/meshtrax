@@ -392,11 +392,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     value: 'clearChat',
                     child: Row(
                       children: [
-                        const Icon(Icons.delete, size: 20, color: Colors.red),
+                        const Icon(Icons.cleaning_services, size: 20, color: Colors.orange),
                         const SizedBox(width: 12),
                         Text(
                           context.l10n.contact_clearChat,
-                          style: const TextStyle(color: Colors.red),
+                          style: const TextStyle(color: Colors.orange),
                         ),
                       ],
                     ),

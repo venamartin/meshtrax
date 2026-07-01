@@ -118,6 +118,20 @@ class MeshCoreRadioStateSnapshot {
   });
 }
 
+enum PathState {
+  unknown,
+  searching,
+  found,
+  failed,
+}
+
+enum SyncStatus {
+  deviceInfo,
+  contacts,
+  channels,
+  messages,
+}
+
 class MeshCoreConnector extends ChangeNotifier {
   // Message windowing to limit memory usage
   static const int _messageWindowSize = 200;
@@ -155,6 +169,11 @@ class MeshCoreConnector extends ChangeNotifier {
       {}; // channelIndex -> Set of "targetHash_emoji"
   final Map<String, Set<String>> _processedContactReactions =
       {}; // contactPubKeyHex -> Set of "targetHash_emoji"
+  final Map<String, DateTime> _localDiscoveredTimes = {};
+
+  DateTime? getLocalDiscoveredTime(String pubKeyHex) {
+    return _localDiscoveredTimes[pubKeyHex];
+  }
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
@@ -228,6 +247,7 @@ class MeshCoreConnector extends ChangeNotifier {
   bool _bleInitialSyncStarted = false;
   bool _pendingDeferredChannelSyncAfterContacts = false;
   bool _webInitialHandshakeRequestSent = false;
+  bool _initialSyncComplete = false;
   bool _preserveContactsOnRefresh = false;
   bool _autoAddUsers = false;
   bool _autoAddRepeaters = false;
@@ -423,6 +443,15 @@ class MeshCoreConnector extends ChangeNotifier {
   int get maxContacts => _maxContacts;
   int get maxChannels => _maxChannels;
   Set<String> get knownContactKeys => Set.unmodifiable(_knownContactKeys);
+  SyncStatus? get currentSyncStatus {
+    if (_initialSyncComplete) return null;
+    if (_awaitingSelfInfo) return SyncStatus.deviceInfo;
+    if (_isLoadingContacts) return SyncStatus.contacts;
+    if (_isLoadingChannels) return SyncStatus.channels;
+    if (_isSyncingQueuedMessages) return SyncStatus.messages;
+    return null;
+  }
+
   bool get isSyncingQueuedMessages => _isSyncingQueuedMessages;
   bool get isSyncingChannels => _isSyncingChannels;
   int get channelSyncProgress =>
@@ -2207,6 +2236,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _bleInitialSyncStarted = false;
     _pendingDeferredChannelSyncAfterContacts = false;
     _pendingChannelSyncAfterQueueSync = false;
+    _initialSyncComplete = false;
     _pathHashByteWidth = 1;
   }
 
@@ -3443,8 +3473,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _multiAcks = multiAcks.clamp(0, 2).toInt();
     await sendFrame(
       buildSetOtherParamsFrame(
-        (_telemetryModeEnv << 4) |
-            (_telemetryModeLoc << 2) |
+        (_telemetryModeLoc << 4) |
+            (_telemetryModeEnv << 2) |
             _telemetryModeBase,
         _advertLocPolicy,
         _multiAcks,
@@ -3700,7 +3730,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
         break;
       case pushCodeAdvert:
-        // Known contact was seen again - just a pub key, no action needed
+        // Known contact was seen again - just a pub key, update live timestamp
+        final pubKeyHex = pubKeyToHex(frame.sublist(1, 33));
+        _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        notifyListeners();
         break;
       case pushCodeNewAdvert:
         debugPrint('Got New CONTACT');
@@ -4867,9 +4900,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     try {
       final snrRaw = frame[1];
       final snr = (snrRaw > 127 ? snrRaw - 256 : snrRaw) / 4.0;
-      final rssiRaw = frame[2];
-      final rssi = rssiRaw > 127 ? rssiRaw - 256 : rssiRaw;
-      final pathLen = frame[3];
+      final rssiRaw = frame[2]; // ignore: unused_local_variable
+      final pathLen = frame[3]; // ignore: unused_local_variable
 
       final ctlPayload = frame.sublist(4);
       if (ctlPayload.isEmpty) return;
@@ -6105,6 +6137,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   @override
   void notifyListeners() {
+    if (isConnected &&
+        !_initialSyncComplete &&
+        _hasReceivedDeviceInfo &&
+        !_awaitingSelfInfo &&
+        !_isLoadingContacts &&
+        !_isLoadingChannels &&
+        !_isSyncingQueuedMessages &&
+        !_pendingInitialChannelSync &&
+        !_pendingInitialContactsSync &&
+        !_pendingQueueSync &&
+        !_pendingDeferredChannelSyncAfterContacts &&
+        !_pendingChannelSyncAfterQueueSync) {
+      _initialSyncComplete = true;
+    }
     markNotifyDirty();
   }
 
@@ -6283,7 +6329,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
-        lastSeen: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
+        lastSeen: _parseAndCapTimestamp(timestamp),
       ),
     );
   }
@@ -6297,6 +6343,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lat <= 90.0 &&
         lon >= -180.0 &&
         lon <= 180.0;
+  }
+
+  DateTime _parseAndCapTimestamp(int timestampSeconds) {
+    DateTime parsed = DateTime.fromMillisecondsSinceEpoch(timestampSeconds * 1000);
+    final now = DateTime.now();
+    if (parsed.isAfter(now)) {
+      return now;
+    }
+    return parsed;
   }
 
   void _handlePayloadAdvertReceived(
@@ -6366,6 +6421,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final hopCount = extractPathHopCount(pathLenRaw);
     final hashSize = extractPathHashSize(pathLenRaw);
 
+    if (!_isLoadingContacts) {
+      _localDiscoveredTimes[contactKeyHex] = DateTime.now();
+    }
+
     if (isNewContact) {
       final newContact = Contact(
         rawPacket: rawPacket,
@@ -6379,7 +6438,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
-        lastSeen: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
+        lastSeen: _parseAndCapTimestamp(timestamp),
       );
       if ((_autoAddUsers && type == advTypeChat) ||
           (_autoAddRepeaters && type == advTypeRepeater) ||
@@ -6425,7 +6484,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ),
         pathLength: path.isEmpty ? -1 : hopCount,
         lastMessageAt: mergedLastMessageAt,
-        lastSeen: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
+        lastSeen: _parseAndCapTimestamp(timestamp),
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
       );
@@ -6626,10 +6685,68 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
-  void removeAllDiscoveredContacts() {
-    _discoveredContacts.clear();
+  void removeAllDiscoveredContacts({bool includeRepeaters = false}) {
+    if (!includeRepeaters) {
+      _discoveredContacts.removeWhere((c) => c.type != advTypeRepeater);
+    } else {
+      _discoveredContacts.clear();
+    }
     unawaited(_persistDiscoveredContacts());
     notifyListeners();
+  }
+
+  void removeDiscoveredContactsOlderThan(Duration maxAge, {bool includeRepeaters = false}) {
+    final cutoff = DateTime.now().subtract(maxAge);
+    _discoveredContacts.removeWhere((c) {
+      if (!includeRepeaters && c.type == advTypeRepeater) return false;
+      return c.lastSeen.isBefore(cutoff);
+    });
+    unawaited(_persistDiscoveredContacts());
+    notifyListeners();
+  }
+
+  Future<void> removeRepeaters({Duration? maxAge}) async {
+    if (!isConnected) return;
+    final cutoff = maxAge != null ? DateTime.now().subtract(maxAge) : null;
+
+    final toRemove = _contacts
+        .where((c) =>
+            c.type == advTypeRepeater &&
+            !c.isFavorite &&
+            (cutoff == null || c.lastSeen.isBefore(cutoff)))
+        .toList();
+
+    for (final contact in toRemove) {
+      await sendFrame(buildRemoveContactFrame(contact.publicKey));
+      await Future.delayed(const Duration(milliseconds: 50));
+      _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+      _knownContactKeys.remove(contact.publicKeyHex);
+      _conversations.remove(contact.publicKeyHex);
+      _loadedConversationKeys.remove(contact.publicKeyHex);
+      _contactUnreadCount.remove(contact.publicKeyHex);
+      _messageStore.clearMessages(contact.publicKeyHex);
+    }
+
+    _discoveredContacts.removeWhere((c) =>
+        c.type == advTypeRepeater &&
+        !c.isFavorite &&
+        (cutoff == null || c.lastSeen.isBefore(cutoff)));
+
+    unawaited(_persistContacts());
+    _unreadStore.saveContactUnreadCount(
+      Map<String, int>.from(_contactUnreadCount),
+    );
+    unawaited(_persistDiscoveredContacts());
+    notifyListeners();
+  }
+
+
+  Future<void> shareContactZeroHop(Uint8List contactPubKey) async {
+    if (!isConnected) return;
+    final payload = Uint8List(33);
+    payload[0] = cmdShareContact;
+    payload.setRange(1, 33, contactPubKey);
+    await sendFrame(payload);
   }
 
   void clearMessagesForContact(Contact contact) {
