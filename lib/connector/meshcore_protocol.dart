@@ -261,6 +261,8 @@ const int respCodeAutoAddConfig = 25;
 const int respCodeChannelDataRecv = 27;
 const int respCodeDefaultFloodScope = 28;
 
+const int errCodeTableFull = 3;
+
 const int statsTypeCore = 0;
 const int statsTypeRadio = 1;
 const int statsTypePackets = 2;
@@ -344,6 +346,7 @@ const int maxFrameSize = 172;
 /// Extracts the path hash size from the path_len byte.
 /// The top 2 bits encode the size minus 1 (i.e., 00 = 1 byte, 01 = 2 bytes, 10 = 3 bytes).
 int extractPathHashSize(int pathLenByte) {
+  if (pathLenByte == 0xFF) return 1;
   int sizeBits = (pathLenByte >> 6) & 0x03;
   return sizeBits + 1;
 }

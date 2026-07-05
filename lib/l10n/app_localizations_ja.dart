@@ -782,6 +782,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'メッセージを「失敗」とマークするまでの、再試行回数';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2104,6 +2112,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => '強制的に洪水モードを起動';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => '経路管理';

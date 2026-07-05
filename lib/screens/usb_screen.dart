@@ -116,12 +116,12 @@ class _UsbScreenState extends State<UsbScreen> {
 
           return SafeArea(
             top: false,
-            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
+              alignment: Alignment.center,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (showTcp)
                     FloatingActionButton.extended(

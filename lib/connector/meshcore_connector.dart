@@ -187,7 +187,6 @@ class MeshCoreConnector extends ChangeNotifier {
   final Map<String, Timer> _channelMessageTimers = {};
   final Map<String, Timer> _channelRepeatTimers = {};
   final Map<String, int> _channelMessageRetries = {};
-  static const int _maxChannelRetries = 1;
   int _radioStatsPollRefCount = 0;
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
@@ -197,6 +196,8 @@ class MeshCoreConnector extends ChangeNotifier {
 
   final StreamController<Uint8List> _receivedFramesController =
       StreamController<Uint8List>.broadcast();
+  final StreamController<int> _errorStreamController =
+      StreamController<int>.broadcast();
 
   Uint8List? _selfPublicKey;
   String? _selfName;
@@ -209,6 +210,7 @@ class MeshCoreConnector extends ChangeNotifier {
   bool? _clientRepeat;
   MeshCoreRadioStateSnapshot? _rememberedNonRepeatRadioState;
   int? _firmwareVerCode;
+  String? _firmwareVersion;
   int _pathHashByteWidth = 1;
   CompanionRadioStats? _latestRadioStats;
   Stopwatch? _airtimeBumpStopwatch;
@@ -221,6 +223,8 @@ class MeshCoreConnector extends ChangeNotifier {
   Timer? _discoverTimer;
   bool _isDiscovering = false;
   bool _isLoadingContacts = false;
+  int _expectedContactsCount = 0;
+  int _loadedContactsCount = 0;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   TimeoutPredictionService? _timeoutPredictionService;
@@ -266,6 +270,7 @@ class MeshCoreConnector extends ChangeNotifier {
   int _maxContacts = _defaultMaxContacts;
   int _maxChannels = _defaultMaxChannels;
   bool _isSyncingQueuedMessages = false;
+  int _queuedMessagesRead = 0;
   bool _queuedMessageSyncInFlight = false;
   bool _didInitialQueueSync = false;
   bool _pendingQueueSync = false;
@@ -392,6 +397,7 @@ class MeshCoreConnector extends ChangeNotifier {
   bool get isLoadingContacts => _isLoadingContacts;
   bool get isLoadingChannels => _isLoadingChannels;
   Stream<Uint8List> get receivedFrames => _receivedFramesController.stream;
+  Stream<int> get errorStream => _errorStreamController.stream;
   Uint8List? get selfPublicKey => _selfPublicKey;
   String get selfPublicKeyHex => pubKeyToHex(_selfPublicKey ?? Uint8List(0));
   String? get selfName => _selfName;
@@ -436,6 +442,7 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   int? get firmwareVerCode => _firmwareVerCode;
+  String? get firmwareVersion => _firmwareVersion;
   Map<String, String>? get currentCustomVars => _currentCustomVars;
   int? get batteryMillivolts => _batteryMillivolts;
   int? get storageUsedKb => _storageUsedKb;
@@ -453,11 +460,25 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   bool get isSyncingQueuedMessages => _isSyncingQueuedMessages;
+  int get queuedMessagesRead => _queuedMessagesRead;
   bool get isSyncingChannels => _isSyncingChannels;
+  
+  bool isChannelMessageRetrying(String messageId) {
+    return _channelRepeatTimers.containsKey(messageId) || 
+           _channelMessageTimers.containsKey(messageId);
+  }
   int get channelSyncProgress =>
       _isSyncingChannels && _totalChannelsToRequest > 0
       ? ((_nextChannelIndexToRequest / _totalChannelsToRequest) * 100).round()
       : 0;
+  int get loadedChannelsCount => _nextChannelIndexToRequest;
+  int get expectedChannelsCount => _totalChannelsToRequest;
+  int get loadedContactsCount => _loadedContactsCount;
+  int get expectedContactsCount => _expectedContactsCount;
+  int get contactsSyncProgress =>
+      _isLoadingContacts && _expectedContactsCount > 0
+          ? ((_loadedContactsCount / _expectedContactsCount) * 100).round()
+          : 0;
   int? get batteryPercent => _batteryMillivolts == null
       ? null
       : estimateBatteryPercentFromMillivolts(
@@ -1644,6 +1665,13 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeTransport = MeshCoreTransportType.bluetooth;
 
     await stopScan();
+
+    // Give the Bluetooth stack a moment to settle after scanning stops.
+    // This reduces the chance of GATT 133 errors when connecting immediately.
+    if (!PlatformInfo.isWeb) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+
     _setState(MeshCoreConnectionState.connecting);
     _device = device;
     _deviceId = device.remoteId.toString();
@@ -1802,15 +1830,62 @@ class MeshCoreConnector extends ChangeNotifier {
         try {
           await device.connect(
             timeout: connectTimeout,
+            autoConnect: false,
             mtu: null,
             license: License.free,
           );
         } catch (error) {
-          _appDebugLogService?.error(
-            'device.connect() failure: $error',
-            tag: 'BLE Connect',
-          );
-          rethrow;
+          bool shouldRetry = false;
+          if (error is FlutterBluePlusException && error.code == 133) {
+            shouldRetry = true;
+          }
+          
+          if (shouldRetry) {
+            _appDebugLogService?.warn(
+              'device.connect() failed with 133, retrying: $error',
+              tag: 'BLE Connect',
+            );
+            try {
+              await device.disconnect();
+            } catch (_) {}
+            
+            if (PlatformInfo.isAndroid) {
+              try {
+                await device.clearGattCache();
+              } catch (e) {
+                _appDebugLogService?.warn(
+                  'clearGattCache failed: $e',
+                  tag: 'BLE Connect',
+                );
+              }
+            }
+
+            await Future<void>.delayed(const Duration(milliseconds: 1500));
+            try {
+              await device.connect(
+                timeout: connectTimeout,
+                autoConnect: false,
+                mtu: null,
+                license: License.free,
+              );
+              _appDebugLogService?.info(
+                'device.connect() retry succeeded',
+                tag: 'BLE Connect',
+              );
+            } catch (retryError) {
+              _appDebugLogService?.error(
+                'device.connect() retry failure: $retryError',
+                tag: 'BLE Connect',
+              );
+              rethrow;
+            }
+          } else {
+            _appDebugLogService?.error(
+              'device.connect() failure: $error',
+              tag: 'BLE Connect',
+            );
+            rethrow;
+          }
         }
       }
 
@@ -2374,6 +2449,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
+    _firmwareVersion = null;
     _batteryMillivolts = null;
     _repeaterBatterySnapshots.clear();
     _batteryRequested = false;
@@ -2446,6 +2522,31 @@ class MeshCoreConnector extends ChangeNotifier {
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
     );
+  }
+
+  Future<bool> _sendAndWaitForAck(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    if (!isConnected) return false;
+    final completer = Completer<bool>();
+    final subscription = receivedFrames.listen((rxFrame) {
+      if (rxFrame.isEmpty) return;
+      if (rxFrame[0] == respCodeOk) {
+        if (!completer.isCompleted) completer.complete(true);
+      } else if (rxFrame[0] == respCodeErr) {
+        if (!completer.isCompleted) completer.complete(false);
+      }
+    });
+
+    try {
+      await sendFrame(data);
+      return await completer.future.timeout(timeout);
+    } catch (_) {
+      return false;
+    } finally {
+      await subscription.cancel();
+    }
   }
 
   Future<void> requestBatteryStatus({bool force = false}) async {
@@ -2751,7 +2852,7 @@ class MeshCoreConnector extends ChangeNotifier {
           contact.publicKey,
           customPath,
           hopCount,
-          contact.pathHashSize,
+          _pathHashByteWidth,
           type: contact.type,
           flags: contact.flags,
           name: contact.name,
@@ -2882,7 +2983,7 @@ class MeshCoreConnector extends ChangeNotifier {
   }) async {
     // Automatically calculate path length if bytes are provided but length is missing
     if (pathLen == null && pathBytes != null && pathBytes.isNotEmpty) {
-      pathLen = PathHelper.getHopCount(pathBytes, stride: contact.pathHashSize);
+      pathLen = PathHelper.getHopCount(pathBytes, stride: _pathHashByteWidth);
     }
 
     appLogger.info(
@@ -3124,9 +3225,18 @@ class MeshCoreConnector extends ChangeNotifier {
     if (messages == null) return;
     
     ChannelMessage? message;
-    for (final m in messages) {
-      if (m.messageId == messageId) {
-        message = m;
+    for (int i = 0; i < messages.length; i++) {
+      if (messages[i].messageId == messageId) {
+        message = messages[i];
+        
+        // Update retry count and status in the model
+        final retries = _channelMessageRetries[messageId] ?? 0;
+        messages[i] = message.copyWith(
+          sendRetryCount: retries,
+          status: ChannelMessageStatus.pending,
+        );
+        unawaited(_channelMessageStore.saveChannelMessages(channelIndex, messages));
+        notifyListeners();
         break;
       }
     }
@@ -3151,24 +3261,20 @@ class MeshCoreConnector extends ChangeNotifier {
   Future<void> removeContact(Contact contact) async {
     if (!isConnected) return;
 
-    _handleDiscovery(
-      contact,
-      contact.rawPacket ?? Uint8List(0),
-      noNotify: true,
-    );
-
-    await sendFrame(buildRemoveContactFrame(contact.publicKey));
+    await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+    _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+    _localDiscoveredTimes.remove(contact.publicKeyHex);
+    _contactUnreadCount.remove(contact.publicKeyHex);
     _knownContactKeys.remove(contact.publicKeyHex);
-    unawaited(_persistContacts());
     _conversations.remove(contact.publicKeyHex);
     _loadedConversationKeys.remove(contact.publicKeyHex);
-    _contactUnreadCount.remove(contact.publicKeyHex);
     _unreadStore.saveContactUnreadCount(
       Map<String, int>.from(_contactUnreadCount),
     );
     _messageStore.clearMessages(contact.publicKeyHex);
     notifyListeners();
+    unawaited(_persistContacts());
   }
 
   /// Removes all contacts that are not favorites (or all contacts if [includesFavorites] is true).
@@ -3178,20 +3284,24 @@ class MeshCoreConnector extends ChangeNotifier {
         .where((c) => includesFavorites || !c.isFavorite)
         .toList();
     for (final contact in toRemove) {
-      await sendFrame(buildRemoveContactFrame(contact.publicKey));
-      await Future.delayed(const Duration(milliseconds: 100));
-      _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+      await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
+    }
+    _contacts.removeWhere((c) => includesFavorites || !c.isFavorite);
+    _discoveredContacts.removeWhere(
+        (c) => toRemove.any((r) => r.publicKeyHex == c.publicKeyHex));
+    for (final contact in toRemove) {
+      _localDiscoveredTimes.remove(contact.publicKeyHex);
+      _contactUnreadCount.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
       _conversations.remove(contact.publicKeyHex);
       _loadedConversationKeys.remove(contact.publicKeyHex);
-      _contactUnreadCount.remove(contact.publicKeyHex);
       _messageStore.clearMessages(contact.publicKeyHex);
     }
     _unreadStore.saveContactUnreadCount(
       Map<String, int>.from(_contactUnreadCount),
     );
-    unawaited(_persistContacts());
     notifyListeners();
+    unawaited(_persistContacts());
   }
 
   Future<void> updateKnownDiscovered() async {
@@ -3216,10 +3326,10 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> importDiscoveredContact(Contact contact) async {
-    if (!isConnected) return;
+  Future<bool> importDiscoveredContact(Contact contact) async {
+    if (!isConnected) return false;
 
-    await sendFrame(
+    final success = await _sendAndWaitForAck(
       buildUpdateContactPathFrame(
         contact.publicKey,
         contact.path,
@@ -3233,6 +3343,11 @@ class MeshCoreConnector extends ChangeNotifier {
         lastModified: contact.lastSeen,
       ),
     );
+
+    if (!success) {
+      appLogger.error('Failed to import contact ${contact.name}', tag: 'Connector');
+      return false;
+    }
 
     // Update the discovered contact to mark it as active (imported)
     final discoveredIndex = _discoveredContacts.indexWhere(
@@ -3264,6 +3379,7 @@ class MeshCoreConnector extends ChangeNotifier {
     // when _isLoadingContacts is true, which would lose this contact on restart.
     await _persistContacts();
     notifyListeners();
+    return true;
   }
 
   Future<void> clearContactPath(Contact contact) async {
@@ -3331,6 +3447,8 @@ class MeshCoreConnector extends ChangeNotifier {
       return;
     }
     _isSyncingQueuedMessages = true;
+    _queuedMessagesRead = 0;
+    notifyListeners();
     await _requestNextQueuedMessage();
   }
 
@@ -3362,6 +3480,7 @@ class MeshCoreConnector extends ChangeNotifier {
       debugPrint('[QueueSync] Error sending sync request: $e');
       _queuedMessageSyncInFlight = false;
       _isSyncingQueuedMessages = false;
+      notifyListeners();
       _queueSyncTimeout?.cancel();
       _queueSyncRetries = 0;
     }
@@ -3382,6 +3501,7 @@ class MeshCoreConnector extends ChangeNotifier {
       debugPrint('[QueueSync] Max retries reached, stopping sync');
       _queuedMessageSyncInFlight = false;
       _isSyncingQueuedMessages = false;
+      notifyListeners();
       _queueSyncRetries = 0;
     }
   }
@@ -3617,7 +3737,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _pendingGenericAckQueue.removeWhere((ack) => ack.channelSendQueueId == messageId);
 
     final retries = _channelMessageRetries[messageId] ?? 0;
-    if (retries < _maxChannelRetries) {
+    final maxRetries = _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
+    if (retries < maxRetries) {
       _channelMessageRetries[messageId] = retries + 1;
       unawaited(resendChannelMessageById(channelIndex, messageId));
       return;
@@ -3646,10 +3767,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _channelRepeatTimers[messageId] = Timer(const Duration(seconds: 30), () {
       _channelRepeatTimers.remove(messageId);
       final retries = _channelMessageRetries[messageId] ?? 0;
-      if (retries < _maxChannelRetries) {
+      final maxRetries = _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
+      if (retries < maxRetries) {
         appLogger.info('No repeat heard for $messageId, retrying (attempt ${retries + 1})', tag: 'Connector');
         _channelMessageRetries[messageId] = retries + 1;
         unawaited(resendChannelMessageById(channelIndex, messageId));
+      } else {
+        notifyListeners();
       }
     });
   }
@@ -3726,6 +3850,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (!_preserveContactsOnRefresh) {
           _contacts.clear();
         }
+        if (frame.length >= 5) {
+          final reader = BufferReader(frame);
+          reader.skipBytes(1);
+          _expectedContactsCount = reader.readUInt32LE();
+        } else {
+          _expectedContactsCount = 0;
+        }
+        _loadedContactsCount = 0;
         _isLoadingContacts = true;
         notifyListeners();
         break;
@@ -3847,6 +3979,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       'Firmware responded with error code: $errCode',
       tag: 'Protocol',
     );
+    _errorStreamController.add(errCode);
 
     if (_pendingGenericAckQueue.isEmpty) {
       return;
@@ -3992,6 +4125,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _firmwareVerCode = frame[1];
 
+    if (frame.length >= 80) {
+      final chars = <int>[];
+      for (int i = 60; i < 80; i++) {
+        if (frame[i] == 0) break;
+        chars.add(frame[i]);
+      }
+      _firmwareVersion = String.fromCharCodes(chars);
+    }
+
     // Parse client_repeat from firmware v9+ (byte 80)
     if (frame.length >= 81) {
       _clientRepeat = frame[80] != 0;
@@ -4051,6 +4193,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     debugPrint('[QueueSync] No more messages, sync complete');
     _queueSyncTimeout?.cancel();
     _isSyncingQueuedMessages = false;
+    notifyListeners();
     _queuedMessageSyncInFlight = false;
     _queueSyncRetries = 0;
     if (_pendingChannelSyncAfterQueueSync) {
@@ -4065,6 +4208,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _queueSyncTimeout?.cancel(); // Cancel timeout - message arrived
     _queuedMessageSyncInFlight = false;
     _queueSyncRetries = 0; // Reset retry counter on successful message
+    _queuedMessagesRead++;
+    notifyListeners();
     unawaited(_requestNextQueuedMessage());
   }
 
@@ -4210,6 +4355,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleContact(Uint8List frame, {bool isContact = true}) {
     final contactTmp = Contact.fromFrame(frame);
     if (contactTmp != null) {
+      if (isContact) {
+        _loadedContactsCount++;
+      }
       if (listEquals(contactTmp.publicKey, _selfPublicKey)) {
         appLogger.info(
           'Ignoring contact with self public key: ${contactTmp.name}',
@@ -4219,7 +4367,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return;
       }
       final contact = getFromDiscovered(contactTmp);
-      _handleDiscovery(contact, frame, noNotify: true, addActive: true);
+      if (!isContact) {
+        _handleDiscovery(contact, frame, noNotify: true, addActive: true);
+      }
 
       if (contact.type == advTypeRepeater) {
         _contactUnreadCount.remove(contact.publicKeyHex);
@@ -5804,23 +5954,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         existing.pathHashSize,
       );
       final newRepeatCount = existing.repeatCount + 1;
-      final promotedFromPending =
-          newRepeatCount == 1 &&
-          existing.status == ChannelMessageStatus.pending;
       messages[existingIndex] = existing.copyWith(
         repeatCount: newRepeatCount,
         pathLength: mergedPathLength,
         pathBytes: mergedPathBytes,
         pathVariants: mergedPathVariants,
         packetHash: existing.packetHash ?? processedMessage.packetHash,
-        // Mark as sent when first repeat is heard
-        status: promotedFromPending
-            ? ChannelMessageStatus.sent
-            : existing.status,
+        status: existing.isOutgoing ? ChannelMessageStatus.delivered : existing.status,
       );
-      if (promotedFromPending) {
-        _pendingChannelSentQueue.remove(existing.messageId);
-      }
+      _pendingChannelSentQueue.remove(existing.messageId);
       appLogger.info('Matched repeat for ${existing.messageId}, cancelling timer', tag: 'Connector');
       _channelRepeatTimers[existing.messageId]?.cancel();
       _channelRepeatTimers.remove(existing.messageId);
@@ -6232,7 +6374,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contact.publicKey,
         contact.pathOverrideBytes ?? contact.path,
         contact.pathOverride ?? contact.pathLength,
-        contact.pathHashSize,
+        contact.pathOverrideBytes != null ? _pathHashByteWidth : contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,
@@ -6634,6 +6776,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
 
+    final strippedFlags = contact.flags & ~contactFlagFavorite;
+
     // Update existing contact
     if (existingIndex >= 0) {
       _discoveredContacts[existingIndex] = _discoveredContacts[existingIndex]
@@ -6646,7 +6790,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             latitude: contact.latitude,
             longitude: contact.longitude,
             lastSeen: contact.lastSeen,
-            flags: contact.flags,
+            flags: strippedFlags,
             isActive: addActive,
           );
       notifyListeners();
@@ -6666,7 +6810,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       lastSeen: contact.lastSeen,
       lastMessageAt: contact.lastMessageAt,
       isActive: addActive,
-      flags: contact.flags,
+      flags: strippedFlags,
     );
     _discoveredContacts.add(disContact);
 
@@ -6770,6 +6914,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void deleteAllPaths() {
     _pathHistoryService?.clearAllHistories();
+  }
+
+  Future<void> enableOverwriteOldest() async {
+    if (!isConnected) return;
+    _overwriteOldest = true;
+    await sendFrame(
+      buildSetAutoAddConfigFrame(
+        autoAddChat: _autoAddUsers ?? true,
+        autoAddRepeater: _autoAddRepeaters ?? true,
+        autoAddRoomServer: _autoAddRoomServers ?? true,
+        autoAddSensor: _autoAddSensors ?? true,
+        overwriteOldest: true,
+      ),
+    );
+    notifyListeners();
   }
 }
 

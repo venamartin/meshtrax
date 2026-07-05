@@ -36,6 +36,30 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
     super.dispose();
   }
 
+  void _manageRepeater(BuildContext context, MeshCoreConnector connector, Contact contact) {
+    if (!contact.isActive) {
+      connector.importDiscoveredContact(contact);
+    }
+    showDialog(
+      context: context,
+      builder: (context) => RepeaterLoginDialog(
+        repeater: contact,
+        onLogin: (password, isAdmin) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RepeaterHubScreen(
+                repeater: contact,
+                password: password,
+                isAdmin: isAdmin,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showRepeaterOptions(BuildContext context, MeshCoreConnector connector, Contact contact) {
     if (!contact.isActive) {
       connector.importDiscoveredContact(contact);
@@ -264,7 +288,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: !contact.isActive,
-                            onTap: () => _showRepeaterOptions(context, connector, contact),
+                            onTap: () => _manageRepeater(context, connector, contact),
                             onLongPress: () => _showRepeaterOptions(context, connector, contact),
                           );
                         },

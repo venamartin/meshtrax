@@ -780,6 +780,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_maxMessageRetriesSubtitle => '메시지를 실패로 처리하기 전 시도 횟수';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2101,6 +2109,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => '강수 모드 활성화';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => '경로 관리';

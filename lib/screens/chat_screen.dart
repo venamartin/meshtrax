@@ -192,7 +192,7 @@ class _ChatScreenState extends State<ChatScreen> {
               widget.contact.publicKeyHex,
             );
             final unreadLabel = context.l10n.chat_unread(unreadCount);
-            final pathLabel = _currentPathLabel(contact);
+            final pathLabel = _currentPathLabel(contact, connector);
 
             // Show path details if we have non-empty path data (from device or override)
             final effectivePath = contact.pathOverrideBytes ?? contact.path;
@@ -206,7 +206,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: hasPathData
-                      ? () => _showFullPathDialog(context, effectivePath, contact.pathHashSize)
+                      ? () => _showFullPathDialog(
+                            context,
+                            effectivePath,
+                            contact.pathOverrideBytes != null
+                                ? connector.pathHashByteWidth
+                                : contact.pathHashSize,
+                          )
                       : null,
                   child: Text(
                     '$pathLabel • $unreadLabel',
@@ -1043,7 +1049,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ],
                               ),
                               onLongPress: () =>
-                                  _showFullPathDialog(context, path.pathBytes, widget.contact.pathHashSize),
+                                  _showFullPathDialog(
+                                    context,
+                                    path.pathBytes,
+                                    connector.pathHashByteWidth,
+                                  ),
                               onTap: () async {
                                 if (path.pathBytes.isEmpty) {
                                   showDismissibleSnackBar(
@@ -1284,7 +1294,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  String _currentPathLabel(Contact contact) {
+  String _currentPathLabel(Contact contact, MeshCoreConnector connector) {
     // Check if user has set a path override
     if (contact.pathOverride != null) {
       if (contact.pathOverride! < 0) return context.l10n.chat_floodForced;
@@ -1293,7 +1303,10 @@ class _ChatScreenState extends State<ChatScreen> {
       // may be stale if it was stored as a raw byte count by older code.
       if (contact.pathOverrideBytes != null &&
           contact.pathOverrideBytes!.isNotEmpty) {
-        final hopCount = PathHelper.getHopCount(contact.pathOverrideBytes!, stride: contact.pathHashSize);
+        final hopCount = PathHelper.getHopCount(
+          contact.pathOverrideBytes!,
+          stride: connector.pathHashByteWidth,
+        );
         if (hopCount == 0) return context.l10n.chat_directForced;
         return context.l10n.chat_hopsForced(hopCount);
       }
@@ -1522,7 +1535,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final pathForInput = currentContact.pathFormattedIdList(
       connector.pathHashByteWidth,
     );
-    final currentPathLabel = _currentPathLabel(currentContact);
+    final currentPathLabel = _currentPathLabel(currentContact, connector);
 
     // Filter out the current contact from available contacts
     final availableContacts = connector.allContacts

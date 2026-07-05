@@ -36,6 +36,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     _connector = Provider.of<MeshCoreConnector>(context, listen: false);
 
     _connectionListener = () {
+      if (!mounted) return;
       final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
       if (_connector.state == MeshCoreConnectionState.disconnected) {
         _changedNavigation = false;
@@ -132,12 +133,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
           return SafeArea(
             top: false,
-            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
+              alignment: Alignment.center,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (usbSupported)
                     FloatingActionButton.extended(

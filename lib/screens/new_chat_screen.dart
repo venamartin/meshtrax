@@ -944,7 +944,14 @@ class _NewChatScreenState extends State<NewChatScreen> {
                   title: Text(context.l10n.newChat_newChannel, style: const TextStyle(fontWeight: FontWeight.bold)),
                   trailing: IconButton(
                     icon: const Icon(Icons.qr_code_scanner),
-                    onPressed: () => _navigateToQrScanner(context),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChannelQrScannerScreen(),
+                        ),
+                      );
+                    },
                   ),
                   onTap: () => _showAddChannelDialog(context),
                 ),
@@ -1085,9 +1092,13 @@ class _NewChatScreenState extends State<NewChatScreen> {
                             isFavorite: contact.isFavorite,
                             isDiscovered: true,
                             onTap: () async {
-                              await connector.importDiscoveredContact(contact);
-                              if (context.mounted) {
+                              final success = await connector.importDiscoveredContact(contact);
+                              if (success && context.mounted) {
                                 _openChat(contact);
+                              } else if (!success && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(context.l10n.contacts_contactImportFailed)),
+                                );
                               }
                             },
                             onLongPress: () => _showDiscoveredContactOptions(contact, connector),

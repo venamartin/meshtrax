@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -59,6 +60,86 @@ class ChatsScreen extends StatefulWidget {
 }
 
 class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixin {
+  StreamSubscription<int>? _errorSubscription;
+  late final VoidCallback _connectorListener;
+  bool _versionWarningShown = false;
+  late MeshCoreConnector _connector;
+
+  @override
+  void initState() {
+    super.initState();
+    _connector = context.read<MeshCoreConnector>();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _errorSubscription = _connector.errorStream.listen((errCode) {
+        if (errCode == errCodeTableFull && mounted) {
+          _showTableFullDialog(context, _connector);
+        }
+      });
+      
+      _connectorListener = () {
+        if (!_versionWarningShown && _connector.firmwareVersion != null) {
+          _versionWarningShown = true;
+          
+          final match = RegExp(r'v?(\d+\.\d+(?:\.\d+)?)').firstMatch(_connector.firmwareVersion!);
+          final cleanVersion = match?.group(1) ?? 'Unknown';
+          
+          final parts = cleanVersion.split('.');
+          if (parts.length >= 2) {
+            final major = int.tryParse(parts[0]) ?? 0;
+            final minor = int.tryParse(parts[1]) ?? 0;
+            if (major < 1 || (major == 1 && minor < 15)) {
+              if (mounted) {
+                showDismissibleSnackBar(
+                  context,
+                  content: Text('Warning: Your companion firmware is out of date ($cleanVersion). MeshTrax requires 1.15 or newer.'),
+                  duration: const Duration(seconds: 10),
+                );
+              }
+            }
+          }
+        }
+      };
+      _connector.addListener(_connectorListener);
+    });
+  }
+
+  @override
+  void dispose() {
+    _connector.removeListener(_connectorListener);
+    _errorSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _showTableFullDialog(BuildContext context, MeshCoreConnector connector) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(context.l10n.contactsSettings_overwriteOldestTitle),
+          content: Text(
+            'The device contact list is completely full (max capacity reached). '
+            'Would you like to enable "Overwrite Oldest Contacts" in your device settings and try again?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.common_cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                connector.enableOverwriteOldest();
+                Navigator.of(context).pop();
+                showDismissibleSnackBar(context, content: const Text('Overwrite Oldest enabled.'));
+              },
+              child: Text(context.l10n.common_enable),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _disconnect(BuildContext context) async {
     final connector = context.read<MeshCoreConnector>();
     final disconnected = await showDisconnectDialog(context, connector);
@@ -503,13 +584,25 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               statusText = context.l10n.common_syncing_device_info;
               break;
             case SyncStatus.contacts:
-              statusText = context.l10n.common_syncing_contacts;
+              if (connector.expectedContactsCount > 0) {
+                statusText = '${context.l10n.common_syncing_contacts} (${connector.loadedContactsCount}/${connector.expectedContactsCount})';
+              } else {
+                statusText = context.l10n.common_syncing_contacts;
+              }
               break;
             case SyncStatus.channels:
-              statusText = context.l10n.common_syncing_channels;
+              if (connector.expectedChannelsCount > 0) {
+                statusText = '${context.l10n.common_syncing_channels} (${connector.loadedChannelsCount}/${connector.expectedChannelsCount})';
+              } else {
+                statusText = context.l10n.common_syncing_channels;
+              }
               break;
             case SyncStatus.messages:
-              statusText = context.l10n.common_syncing_messages;
+              if (connector.queuedMessagesRead > 0) {
+                statusText = '${context.l10n.common_syncing_messages} (${connector.queuedMessagesRead})';
+              } else {
+                statusText = context.l10n.common_syncing_messages;
+              }
               break;
           }
 
@@ -626,16 +719,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                       );
                     },
                   ),
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.paste),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.contacts_addContactFromClipboard),
-                      ],
-                    ),
-                    onTap: () async => await ContactImportHelper.importFromClipboard(context),
-                  ),
+
                 ],
                 icon: const Icon(Icons.connect_without_contact),
               ),

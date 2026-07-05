@@ -829,6 +829,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Nombre de tentatives de relance avant de marquer un message comme ayant échoué.';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2203,6 +2211,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => 'Mode tout le réseau forcé';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => 'Gestion des chemins';

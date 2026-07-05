@@ -826,6 +826,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Количество попыток повторной отправки сообщения перед тем, как пометить его как неудачное.';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2195,6 +2203,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => 'Принудительный режим рассылки';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => 'Управление маршрутами';

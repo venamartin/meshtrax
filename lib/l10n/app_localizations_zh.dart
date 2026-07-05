@@ -767,6 +767,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_maxMessageRetriesSubtitle => '在将消息标记为失败之前，允许尝试的次数';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2061,6 +2069,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => '强制泛洪模式';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => '路径管理';

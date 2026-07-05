@@ -19,6 +19,7 @@ import 'app_settings_screen.dart';
 import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
 import '../widgets/radio_stats_entry.dart';
+import 'companion_info_screen.dart';
 
 /// Convert device coding-rate value (1-4 on some firmware, 5-8 on others)
 /// to the UI enum range (always 5-8).
@@ -332,6 +333,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(l10n.settings_privacySubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _privacySettings(context, connector),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(l10n.settings_deviceInfo),
+            subtitle: Text(connector.firmwareVersion != null ? 'Firmware ${connector.firmwareVersion}' : (connector.firmwareVerCode != null ? 'Firmware v${connector.firmwareVerCode}' : 'Firmware Unknown')),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CompanionInfoScreen()),
+              );
+            },
           ),
         ],
       ),

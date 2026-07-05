@@ -827,6 +827,14 @@ class AppLocalizationsHu extends AppLocalizations {
       'A próbálkozások száma, mielőtt egy üzenetet hibásnak jelölünk.';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2207,6 +2215,9 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => 'Erőforrás-alapú áramlás mód';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => 'Útvonal-kezelés';

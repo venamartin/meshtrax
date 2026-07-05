@@ -6,7 +6,7 @@ import '../helpers/smaz.dart';
 import 'translation_support.dart';
 import '../utils/app_logger.dart';
 
-enum ChannelMessageStatus { pending, sent, failed }
+enum ChannelMessageStatus { pending, sent, failed, delivered }
 
 class Repeat {
   final Uint8List? repeaterKey;
@@ -41,6 +41,7 @@ class ChannelMessage {
   final ChannelMessageStatus status;
   final List<Repeat> repeats;
   final int repeatCount;
+  final int sendRetryCount;
   final int? pathLength;
   final Uint8List pathBytes;
   final int pathHashSize;
@@ -67,6 +68,7 @@ class ChannelMessage {
     this.status = ChannelMessageStatus.pending,
     this.repeats = const [],
     this.repeatCount = 0,
+    this.sendRetryCount = 0,
     this.pathLength,
     Uint8List? pathBytes,
     this.pathHashSize = 1,
@@ -100,6 +102,7 @@ class ChannelMessage {
     DateTime? timestamp,
     List<Repeat>? repeats,
     int? repeatCount,
+    int? sendRetryCount,
     int? pathLength,
     Uint8List? pathBytes,
     int? pathHashSize,
@@ -137,6 +140,7 @@ class ChannelMessage {
       status: status ?? this.status,
       repeats: repeats ?? this.repeats,
       repeatCount: repeatCount ?? this.repeatCount,
+      sendRetryCount: sendRetryCount ?? this.sendRetryCount,
       pathLength: pathLength ?? this.pathLength,
       pathBytes: pathBytes ?? this.pathBytes,
       pathHashSize: pathHashSize ?? this.pathHashSize,
@@ -247,6 +251,7 @@ class ChannelMessage {
       timestamp: DateTime.now(),
       isOutgoing: true,
       status: ChannelMessageStatus.pending,
+      sendRetryCount: 0,
       pathLength: null,
       pathBytes: Uint8List(0),
       pathHashSize: pathHashSize,
