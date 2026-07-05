@@ -815,6 +815,14 @@ class AppLocalizationsSl extends AppLocalizations {
       'Število poskusov ponovnega poslanja, preden se sporočilo označuje kot neuspešno';
 
   @override
+  String get appSettings_maxChannelMessageRetries =>
+      'Max Channel Message Retries';
+
+  @override
+  String get appSettings_maxChannelMessageRetriesSubtitle =>
+      'It will retry this many times until it hears at least one repeat';
+
+  @override
   String path_routeWeight(String weight, String max) {
     return '$weight/$max';
   }
@@ -2177,6 +2185,9 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get repeater_forceFloodMode => 'Nasilje obvezati v način';
+
+  @override
+  String get repeater_forceDirectMode => 'Force Direct Mode';
 
   @override
   String get repeater_pathManagement => 'Upravljanje poti';

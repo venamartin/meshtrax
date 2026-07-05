@@ -1594,6 +1594,18 @@ abstract class AppLocalizations {
   /// **'Number of retry attempts before marking a message as failed'**
   String get appSettings_maxMessageRetriesSubtitle;
 
+  /// No description provided for @appSettings_maxChannelMessageRetries.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Channel Message Retries'**
+  String get appSettings_maxChannelMessageRetries;
+
+  /// No description provided for @appSettings_maxChannelMessageRetriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'It will retry this many times until it hears at least one repeat'**
+  String get appSettings_maxChannelMessageRetriesSubtitle;
+
   /// No description provided for @path_routeWeight.
   ///
   /// In en, this message translates to:
@@ -3932,6 +3944,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Force Flood Mode'**
   String get repeater_forceFloodMode;
+
+  /// No description provided for @repeater_forceDirectMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Direct Mode'**
+  String get repeater_forceDirectMode;
 
   /// No description provided for @repeater_pathManagement.
   ///
@@ -6320,7 +6338,7 @@ abstract class AppLocalizations {
   /// No description provided for @discoveredContacts_deleteContactAll.
   ///
   /// In en, this message translates to:
-  /// **'Delete All Discovered Contacts'**
+  /// **'Delete Discovered Contacts'**
   String get discoveredContacts_deleteContactAll;
 
   /// No description provided for @discoveredContacts_deleteContactAllContent.

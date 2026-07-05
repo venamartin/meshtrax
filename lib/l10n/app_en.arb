@@ -315,6 +315,8 @@
   "appSettings_routeWeightFailureDecrementSubtitle": "Weight removed from a path after failed delivery",
   "appSettings_maxMessageRetries": "Max Message Retries",
   "appSettings_maxMessageRetriesSubtitle": "Number of retry attempts before marking a message as failed",
+  "appSettings_maxChannelMessageRetries": "Max Channel Message Retries",
+  "appSettings_maxChannelMessageRetriesSubtitle": "It will retry this many times until it hears at least one repeat",
   "path_routeWeight": "{weight}/{max}",
   "@path_routeWeight": {
     "placeholders": {
@@ -1186,6 +1188,7 @@
   "repeater_routingMode": "Routing mode",
   "repeater_autoUseSavedPath": "Auto (use saved path)",
   "repeater_forceFloodMode": "Force Flood Mode",
+  "repeater_forceDirectMode": "Force Direct Mode",
   "repeater_pathManagement": "Path management",
   "repeater_refresh": "Refresh",
   "repeater_statusRequestTimeout": "Status request timed out.",

@@ -419,16 +419,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                     );
                   },
                 ),
-                PopupMenuItem(
-                  child: Row(
-                    children: [
-                      const Icon(Icons.paste),
-                      const SizedBox(width: 8),
-                      Text(context.l10n.contacts_addContactFromClipboard),
-                    ],
-                  ),
-                  onTap: () => _contactImport(),
-                ),
+
               ],
               icon: const Icon(Icons.connect_without_contact),
             ),

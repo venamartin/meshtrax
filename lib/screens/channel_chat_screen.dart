@@ -703,6 +703,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   Widget _buildMessageBubble(ChannelMessage message, double textScale) {
     final settingsService = context.watch<AppSettingsService>();
     final uiState = context.watch<UiViewStateService>();
+    final connector = context.watch<MeshCoreConnector>();
     final enableTracing = settingsService.settings.enableMessageTracing;
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
@@ -808,13 +809,18 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               ? Padding(
                                   padding: const EdgeInsets.only(bottom: 2),
                                   child: MessageStatusIcon(
-                                    isAcked:
-                                        message.status ==
-                                            ChannelMessageStatus.sent &&
-                                        displayPathString.isNotEmpty,
-                                    isFailed:
-                                        message.status ==
-                                        ChannelMessageStatus.failed,
+                                      isAcked:
+                                          (message.status ==
+                                              ChannelMessageStatus.sent ||
+                                          message.status ==
+                                              ChannelMessageStatus.delivered) &&
+                                          displayPathString.isNotEmpty,
+                                      isDelivered: message.status ==
+                                          ChannelMessageStatus.delivered,
+                                      isFailed:
+                                          message.status ==
+                                          ChannelMessageStatus.failed,
+                                      isChannelMessage: true,
                                   ),
                                 )
                               : null,
@@ -847,11 +853,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 2),
                                 child: MessageStatusIcon(
-                                  isAcked: message.status ==
-                                          ChannelMessageStatus.sent &&
+                                  isAcked: (message.status ==
+                                              ChannelMessageStatus.sent ||
+                                          message.status ==
+                                              ChannelMessageStatus.delivered) &&
                                       displayPathString.isNotEmpty,
+                                  isDelivered: message.status ==
+                                      ChannelMessageStatus.delivered,
                                   isFailed: message.status ==
                                       ChannelMessageStatus.failed,
+                                  isChannelMessage: true,
                                 ),
                               ),
                             ],
@@ -927,11 +938,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                       ),
                                     ),
                                     child: MessageStatusIcon(
-                                      isAcked: message.status ==
-                                              ChannelMessageStatus.sent &&
+                                      isAcked: (message.status ==
+                                                  ChannelMessageStatus.sent ||
+                                              message.status ==
+                                                  ChannelMessageStatus.delivered) &&
                                           displayPathString.isNotEmpty,
+                                      isDelivered: message.status ==
+                                          ChannelMessageStatus.delivered,
                                       isFailed: message.status ==
                                           ChannelMessageStatus.failed,
+                                      isChannelMessage: true,
                                     ),
                                   ),
                                 ),
@@ -992,18 +1008,31 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               ],
                               if (isOutgoing) ...[
                                 const SizedBox(width: 4),
+                                if (message.sendRetryCount > 0 &&
+                                    connector.isChannelMessageRetrying(message.messageId) &&
+                                    message.status !=
+                                        ChannelMessageStatus.delivered) ...[
+                                  Text(
+                                    'Retrying (${message.sendRetryCount}/${settingsService.settings.maxChannelMessageRetries})',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
                                 Icon(
-                                  message.status == ChannelMessageStatus.sent
-                                      ? Icons.check
-                                      : message.status ==
-                                            ChannelMessageStatus.pending
-                                      ? Icons.schedule
-                                      : Icons.error_outline,
+                                  message.status == ChannelMessageStatus.delivered
+                                      ? Icons.done_all
+                                      : (message.status == ChannelMessageStatus.sent || 
+                                         message.status == ChannelMessageStatus.failed)
+                                          ? Icons.check
+                                          : message.status == ChannelMessageStatus.pending
+                                              ? Icons.schedule
+                                              : Icons.error_outline,
                                   size: 14,
-                                  color:
-                                      message.status ==
-                                          ChannelMessageStatus.failed
-                                      ? Colors.red
+                                  color: message.status == ChannelMessageStatus.failed
+                                      ? Colors.amber[700]
                                       : Colors.grey[600],
                                 ),
                               ],

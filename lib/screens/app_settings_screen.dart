@@ -506,6 +506,27 @@ class AppSettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+            const Divider(height: 1),
+            ListTile(
+              title: Text(context.l10n.appSettings_maxChannelMessageRetries),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.l10n.appSettings_maxChannelMessageRetriesSubtitle),
+                  Slider(
+                    value: settingsService.settings.maxChannelMessageRetries
+                        .toDouble(),
+                    min: 1,
+                    max: 3,
+                    divisions: 2,
+                    label: settingsService.settings.maxChannelMessageRetries
+                        .toString(),
+                    onChanged: (value) =>
+                        settingsService.setMaxChannelMessageRetries(value.toInt()),
+                  ),
+                ],
+              ),
+            ),
           ],
         ],
       ),
