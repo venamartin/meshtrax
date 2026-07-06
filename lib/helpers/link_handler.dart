@@ -9,6 +9,7 @@ import '../utils/platform_info.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../connector/meshcore_connector.dart';
 import '../models/channel.dart';
+import '../screens/channel_chat_screen.dart';
 
 class LinkHandler {
   static TextStyle defaultLinkStyle(BuildContext context, TextStyle base) {
@@ -78,6 +79,24 @@ class LinkHandler {
   }
 
   static Future<void> handleHashtagTap(BuildContext context, String hashtag) async {
+    final connector = context.read<MeshCoreConnector>();
+
+    // Check if channel already exists
+    final int existingIndex = connector.channels.indexWhere((c) => c.name == hashtag);
+    if (existingIndex != -1) {
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChannelChatScreen(
+              channel: connector.channels[existingIndex],
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     // Show confirmation dialog
     final shouldAdd = await showDialog<bool>(
       context: context,
@@ -120,17 +139,6 @@ class LinkHandler {
 
     if (shouldAdd != true) return;
     if (!context.mounted) return;
-
-    final connector = context.read<MeshCoreConnector>();
-
-    // Check if channel already exists
-    if (connector.channels.any((c) => c.name == hashtag)) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(context.l10n.channels_channelAdded(hashtag)),
-      );
-      return;
-    }
 
     int nextIndex = 1;
     for (int i = 1; i < connector.maxChannels; i++) {
