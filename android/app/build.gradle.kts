@@ -43,10 +43,6 @@ android {
         //         arguments += listOf("-DANDROID_STL=c++_shared")
         //     }
         // }
-        ndk {
-            abiFilters.clear() // Optional: Ensures no other defaults sneak in
-            abiFilters += listOf("arm64-v8a") 
-        }
     }
 
     signingConfigs {
