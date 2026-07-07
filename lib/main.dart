@@ -20,7 +20,6 @@ import 'services/app_debug_log_service.dart';
 import 'services/background_service.dart';
 import 'services/map_tile_cache_service.dart';
 import 'services/chat_text_scale_service.dart';
-import 'services/translation_service.dart';
 import 'services/ui_view_state_service.dart';
 import 'services/timeout_prediction_service.dart';
 import 'storage/prefs_manager.dart';
@@ -43,7 +42,6 @@ void main() async {
   final backgroundService = BackgroundService();
   final mapTileCacheService = MapTileCacheService();
   final chatTextScaleService = ChatTextScaleService();
-  final translationService = TranslationService(appSettingsService);
   final uiViewStateService = UiViewStateService();
   final timeoutPredictionService = TimeoutPredictionService(storage);
 
@@ -65,7 +63,6 @@ void main() async {
   _registerThirdPartyLicenses();
 
   await chatTextScaleService.initialize();
-  await translationService.refreshDownloadedModels();
   await uiViewStateService.initialize();
   await timeoutPredictionService.initialize();
 
@@ -74,7 +71,6 @@ void main() async {
     retryService: retryService,
     pathHistoryService: pathHistoryService,
     appSettingsService: appSettingsService,
-    translationService: translationService,
     bleDebugLogService: bleDebugLogService,
     appDebugLogService: appDebugLogService,
     backgroundService: backgroundService,
@@ -100,7 +96,6 @@ void main() async {
       appDebugLogService: appDebugLogService,
       mapTileCacheService: mapTileCacheService,
       chatTextScaleService: chatTextScaleService,
-      translationService: translationService,
       uiViewStateService: uiViewStateService,
       timeoutPredictionService: timeoutPredictionService,
     ),
@@ -138,7 +133,6 @@ class MeshTraxApp extends StatefulWidget {
   final AppDebugLogService appDebugLogService;
   final MapTileCacheService mapTileCacheService;
   final ChatTextScaleService chatTextScaleService;
-  final TranslationService translationService;
   final UiViewStateService uiViewStateService;
   final TimeoutPredictionService timeoutPredictionService;
 
@@ -153,7 +147,6 @@ class MeshTraxApp extends StatefulWidget {
     required this.appDebugLogService,
     required this.mapTileCacheService,
     required this.chatTextScaleService,
-    required this.translationService,
     required this.uiViewStateService,
     required this.timeoutPredictionService,
   });
@@ -191,7 +184,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.bleDebugLogService),
         ChangeNotifierProvider.value(value: widget.appDebugLogService),
         ChangeNotifierProvider.value(value: widget.chatTextScaleService),
-        ChangeNotifierProvider.value(value: widget.translationService),
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         Provider.value(value: widget.storage),
         Provider.value(value: widget.mapTileCacheService),

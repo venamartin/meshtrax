@@ -15,14 +15,13 @@ import '../connector/meshcore_protocol.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../helpers/link_handler.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
-import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
-import '../services/translation_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
@@ -30,10 +29,8 @@ import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
-import '../widgets/message_translation_button.dart';
 import '../widgets/message_status_icon.dart';
 import '../widgets/radio_stats_entry.dart';
-import '../widgets/translated_message_content.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
 import 'map_screen.dart';
@@ -717,24 +714,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
     final poi = _parsePoiMessage(message.text);
-    final translatedDisplayText =
-        message.translatedText != null &&
-            message.translatedText!.trim().isNotEmpty
-        ? message.translatedText!.trim()
-        : message.text;
-    final originalDisplayText = message.isOutgoing
-        ? message.originalText
-        : (translatedDisplayText != message.text ? message.text : null);
     final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
-    final cleanTranslatedDisplayText = translatedDisplayText.replaceAll(gifPattern, '').trim();
-    final cleanOriginalDisplayText = originalDisplayText?.replaceAll(gifPattern, '').trim();
+    final cleanDisplayText = message.text.replaceAll(gifPattern, '').trim();
     final displayPathString = message.pathBytes.isNotEmpty
         ? message.displayPathString
         : (message.pathVariants.isNotEmpty
               ? message.displayPathVariants.first
               : "");
 
-    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(translatedDisplayText);
+    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(message.text);
     final displayBubbleColor = isJumboEmoji
         ? Colors.transparent
         : (isOutgoing
@@ -835,28 +823,20 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               : null,
                         )
                       else ...[
-                        if (cleanTranslatedDisplayText.isNotEmpty)
+                        if (cleanDisplayText.isNotEmpty)
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                            Flexible(
-                              child: TranslatedMessageContent(
-                                displayText: cleanTranslatedDisplayText,
-                                originalText: cleanOriginalDisplayText,
-                                style: TextStyle(
-                                  fontSize: bodyFontSize * textScale,
-                                ),
-                                originalStyle: TextStyle(
-                                  fontSize: bodyFontSize * textScale,
-                                  fontStyle: FontStyle.italic,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.72),
+                              Flexible(
+                                child: LinkHandler.buildLinkifyText(
+                                  context: context,
+                                  text: cleanDisplayText,
+                                  style: TextStyle(
+                                    fontSize: bodyFontSize * textScale,
+                                  ),
                                 ),
                               ),
-                            ),
                             if (!enableTracing && isOutgoing) ...[
                               const SizedBox(width: 4),
                               Padding(
@@ -1482,7 +1462,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   Widget _buildMessageComposer() {
     final connector = context.watch<MeshCoreConnector>();
     final maxBytes = maxChannelMessageBytes(connector.selfName);
-    final settings = context.watch<AppSettingsService>().settings;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1514,12 +1493,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 onPressed: () => _showGifPicker(context),
                 tooltip: context.l10n.chat_sendGif,
               ),
-              if (settings.translationEnabled)
-                MessageTranslationButton(
-                  enabled: settings.composerTranslationEnabled,
-                  languageCode: settings.translationTargetLanguageCode,
-                  onPressed: _showTranslationOptions,
-                ),
+
               Expanded(
                 child: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _textController,
@@ -1659,17 +1633,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Future<void> _showTranslationOptions() async {
-    final settingsService = context.read<AppSettingsService>();
-    final settings = settingsService.settings;
-    await showMessageTranslationSheet(
-      context: context,
-      enabled: settings.composerTranslationEnabled,
-      selectedLanguageCode: settings.translationTargetLanguageCode,
-      onEnabledChanged: settingsService.setComposerTranslationEnabled,
-      onLanguageSelected: settingsService.setTranslationTargetLanguageCode,
-    );
-  }
+
 
   Future<void> _sendMessage() async {
     final text = _textController.text.trim();
@@ -1687,36 +1651,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _lastChannelSendAt = now;
 
     final connector = context.read<MeshCoreConnector>();
-    final settings = context.read<AppSettingsService>().settings;
-    final translationService = context.read<TranslationService>();
-
     String messageText = text;
-    String? originalText;
-    String? translatedLanguageCode;
-    String? translationModelId;
-    if (settings.translationEnabled) {
-      final targetLanguageCode = translationService.resolvedTargetLanguageCode(
-        Localizations.localeOf(context).languageCode,
-      );
-      if (translationService.shouldTranslateOutgoing(
-        text: text,
-        targetLanguageCode: targetLanguageCode,
-      )) {
-        final result = await translationService.translateOutgoingText(
-          text: text,
-          targetLanguageCode: targetLanguageCode,
-        );
-        if (!mounted) return;
-        if (result != null &&
-            result.status == MessageTranslationStatus.completed &&
-            result.translatedText.isNotEmpty) {
-          messageText = result.translatedText;
-          originalText = text;
-          translatedLanguageCode = result.targetLanguageCode;
-          translationModelId = result.modelId;
-        }
-      }
-    }
     if (_replyingToMessage != null) {
       messageText = '@[${_replyingToMessage!.senderName}] $messageText';
     }
@@ -1740,9 +1675,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     connector.sendChannelMessage(
       widget.channel,
       messageText,
-      originalText: originalText,
-      translatedLanguageCode: translatedLanguageCode,
-      translationModelId: translationModelId,
     );
   }
 

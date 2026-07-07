@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/reaction_helper.dart';
-import 'translation_support.dart';
+
 
 enum MessageStatus { pending, sent, delivered, failed }
 
@@ -14,11 +14,7 @@ class Message {
   final bool isOutgoing;
   final bool isCli;
   final MessageStatus status;
-  final String? originalText;
-  final String? translatedText;
-  final String? translatedLanguageCode;
-  final MessageTranslationStatus translationStatus;
-  final String? translationModelId;
+
 
   // NEW: Retry logic fields
   final String messageId;
@@ -42,11 +38,7 @@ class Message {
     this.isCli = false,
     this.status = MessageStatus.pending,
     String? messageId,
-    this.originalText,
-    this.translatedText,
-    this.translatedLanguageCode,
-    this.translationStatus = MessageTranslationStatus.none,
-    this.translationModelId,
+
     this.retryCount = 0,
     this.estimatedTimeoutMs,
     this.expectedAckHash,
@@ -79,11 +71,7 @@ class Message {
     int? pathLength,
     Uint8List? pathBytes,
     bool? isCli,
-    Object? originalText = _unset,
-    Object? translatedText = _unset,
-    Object? translatedLanguageCode = _unset,
-    MessageTranslationStatus? translationStatus,
-    Object? translationModelId = _unset,
+
     Map<String, int>? reactions,
     Map<String, MessageStatus>? reactionStatuses,
     Uint8List? fourByteRoomContactKey,
@@ -96,19 +84,7 @@ class Message {
       isCli: isCli ?? this.isCli,
       status: status ?? this.status,
       messageId: messageId,
-      originalText: originalText == _unset
-          ? this.originalText
-          : originalText as String?,
-      translatedText: translatedText == _unset
-          ? this.translatedText
-          : translatedText as String?,
-      translatedLanguageCode: translatedLanguageCode == _unset
-          ? this.translatedLanguageCode
-          : translatedLanguageCode as String?,
-      translationStatus: translationStatus ?? this.translationStatus,
-      translationModelId: translationModelId == _unset
-          ? this.translationModelId
-          : translationModelId as String?,
+
       retryCount: retryCount ?? this.retryCount,
       estimatedTimeoutMs: estimatedTimeoutMs ?? this.estimatedTimeoutMs,
       expectedAckHash: expectedAckHash ?? this.expectedAckHash,
@@ -159,18 +135,14 @@ class Message {
   static Message outgoing(
     Uint8List recipientKey,
     String text, {
-    String? originalText,
-    String? translatedLanguageCode,
-    String? translationModelId,
+
     int? pathLength,
     Uint8List? pathBytes,
   }) {
     return Message(
       senderKey: recipientKey,
       text: text,
-      originalText: originalText,
-      translatedLanguageCode: translatedLanguageCode,
-      translationModelId: translationModelId,
+
       timestamp: DateTime.now(),
       isOutgoing: true,
       isCli: false,

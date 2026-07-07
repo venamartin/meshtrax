@@ -19,15 +19,14 @@ import '../helpers/reaction_helper.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/link_handler.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_history.dart';
-import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/path_history_service.dart';
-import '../services/translation_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/elements_ui.dart';
@@ -38,10 +37,8 @@ import '../utils/emoji_utils.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
-import '../widgets/message_translation_button.dart';
 import '../widgets/path_selection_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
-import '../widgets/translated_message_content.dart';
 import '../utils/app_logger.dart';
 import '../l10n/l10n.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -655,7 +652,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildInputBar(MeshCoreConnector connector) {
     final maxBytes = maxContactMessageBytes();
     final colorScheme = Theme.of(context).colorScheme;
-    final settings = context.watch<AppSettingsService>().settings;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -670,12 +666,7 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () => _showGifPicker(context),
               tooltip: context.l10n.chat_sendGif,
             ),
-            if (settings.translationEnabled)
-              MessageTranslationButton(
-                enabled: settings.composerTranslationEnabled,
-                languageCode: settings.translationTargetLanguageCode,
-                onPressed: _showTranslationOptions,
-              ),
+
             Expanded(
               child: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _textController,
@@ -827,17 +818,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Future<void> _showTranslationOptions() async {
-    final settingsService = context.read<AppSettingsService>();
-    final settings = settingsService.settings;
-    await showMessageTranslationSheet(
-      context: context,
-      enabled: settings.composerTranslationEnabled,
-      selectedLanguageCode: settings.translationTargetLanguageCode,
-      onEnabledChanged: settingsService.setComposerTranslationEnabled,
-      onLanguageSelected: settingsService.setTranslationTargetLanguageCode,
-    );
-  }
+
 
   Future<void> _sendMessage(MeshCoreConnector connector) async {
     final text = _textController.text.trim();
@@ -854,39 +835,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _lastTextSendAt = now;
 
-    final settings = context.read<AppSettingsService>().settings;
-    final translationService = context.read<TranslationService>();
-    var outgoingText = text;
-    String? originalText;
-    String? translatedLanguageCode;
-    String? translationModelId;
-    if (settings.translationEnabled) {
-      final targetLanguageCode = translationService.resolvedTargetLanguageCode(
-        Localizations.localeOf(context).languageCode,
-      );
-      if (translationService.shouldTranslateOutgoing(
-        text: text,
-        targetLanguageCode: targetLanguageCode,
-      )) {
-        final result = await translationService.translateOutgoingText(
-          text: text,
-          targetLanguageCode: targetLanguageCode,
-        );
-        if (!mounted) return;
-        if (result != null &&
-            result.status == MessageTranslationStatus.completed &&
-            result.translatedText.isNotEmpty) {
-          outgoingText = result.translatedText;
-          originalText = text;
-          translatedLanguageCode = result.targetLanguageCode;
-          translationModelId = result.modelId;
-        }
-      }
-    }
     final maxBytes = maxContactMessageBytes();
     final outboundText = connector.prepareContactOutboundText(
       _resolveContact(connector),
-      outgoingText,
+      text,
     );
     if (utf8.encode(outboundText).length > maxBytes) {
       showDismissibleSnackBar(
@@ -900,10 +852,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _textFieldFocusNode.requestFocus();
     connector.sendMessage(
       _resolveContact(connector),
-      outgoingText,
-      originalText: originalText,
-      translatedLanguageCode: translatedLanguageCode,
-      translationModelId: translationModelId,
+      text,
     );
   }
 
@@ -1843,16 +1792,10 @@ class _MessageBubble extends StatelessWidget {
     final textColor = isFailed
         ? colorScheme.onErrorContainer
         : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
-    final translatedDisplayText =
-        message.translatedText != null &&
-            message.translatedText!.trim().isNotEmpty
-        ? message.translatedText!.trim()
-        : messageText;
-    final originalDisplayText = isOutgoing
-        ? message.originalText
-        : (translatedDisplayText != messageText ? messageText : null);
+    final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
+    final cleanDisplayText = messageText.replaceAll(gifPattern, '').trim();
 
-    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(translatedDisplayText);
+    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
     final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
     final displayMetaColor = displayTextColor.withValues(alpha: 0.7);
@@ -2009,16 +1952,12 @@ class _MessageBubble extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: TranslatedMessageContent(
-                                  displayText: translatedDisplayText,
-                                  originalText: originalDisplayText,
+                                child: LinkHandler.buildLinkifyText(
+                                  context: context,
+                                  text: cleanDisplayText,
                                   style: TextStyle(
                                     color: isJumboEmoji ? null : displayTextColor,
                                     fontSize: bodyFontSize * textScale,
-                                  ),
-                                  originalStyle: TextStyle(
-                                    color: isJumboEmoji ? null : displayMetaColor,
-                                    fontSize: (isJumboEmoji ? 24.0 : bodyFontSize) * textScale,
                                   ),
                                 ),
                               ),
