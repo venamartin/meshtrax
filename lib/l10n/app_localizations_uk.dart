@@ -1407,6 +1407,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_reply => 'Відповісти';
 
   @override
+  String get chat_newMessages => 'NEW MESSAGES';
+
+  @override
   String get chat_addReaction => 'Додати реакцію';
 
   @override

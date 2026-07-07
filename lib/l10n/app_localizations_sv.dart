@@ -1395,6 +1395,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_reply => 'Svara';
 
   @override
+  String get chat_newMessages => 'NEW MESSAGES';
+
+  @override
   String get chat_addReaction => 'Lägg till reaktion';
 
   @override

@@ -2602,6 +2602,12 @@ abstract class AppLocalizations {
   /// **'Reply'**
   String get chat_reply;
 
+  /// No description provided for @chat_newMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW MESSAGES'**
+  String get chat_newMessages;
+
   /// No description provided for @chat_addReaction.
   ///
   /// In en, this message translates to:
