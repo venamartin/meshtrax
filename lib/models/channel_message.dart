@@ -3,7 +3,7 @@ import '../connector/meshcore_protocol.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/smaz.dart';
-import 'translation_support.dart';
+
 import '../utils/app_logger.dart';
 
 enum ChannelMessageStatus { pending, sent, failed, delivered }
@@ -31,11 +31,7 @@ class ChannelMessage {
   final Uint8List? senderKey;
   final String senderName;
   final String text;
-  final String? originalText;
-  final String? translatedText;
-  final String? translatedLanguageCode;
-  final MessageTranslationStatus translationStatus;
-  final String? translationModelId;
+
   final DateTime timestamp;
   final bool isOutgoing;
   final ChannelMessageStatus status;
@@ -58,11 +54,7 @@ class ChannelMessage {
     this.senderKey,
     required this.senderName,
     required this.text,
-    this.originalText,
-    this.translatedText,
-    this.translatedLanguageCode,
-    this.translationStatus = MessageTranslationStatus.none,
-    this.translationModelId,
+
     required this.timestamp,
     required this.isOutgoing,
     this.status = ChannelMessageStatus.pending,
@@ -111,30 +103,14 @@ class ChannelMessage {
     String? replyToMessageId,
     String? replyToSenderName,
     String? replyToText,
-    Object? originalText = _unset,
-    Object? translatedText = _unset,
-    Object? translatedLanguageCode = _unset,
-    MessageTranslationStatus? translationStatus,
-    Object? translationModelId = _unset,
+
     Map<String, int>? reactions,
   }) {
     return ChannelMessage(
       senderKey: senderKey,
       senderName: senderName,
       text: text,
-      originalText: originalText == _unset
-          ? this.originalText
-          : originalText as String?,
-      translatedText: translatedText == _unset
-          ? this.translatedText
-          : translatedText as String?,
-      translatedLanguageCode: translatedLanguageCode == _unset
-          ? this.translatedLanguageCode
-          : translatedLanguageCode as String?,
-      translationStatus: translationStatus ?? this.translationStatus,
-      translationModelId: translationModelId == _unset
-          ? this.translationModelId
-          : translationModelId as String?,
+
       timestamp: timestamp ?? this.timestamp,
       isOutgoing: isOutgoing,
       status: status ?? this.status,
@@ -236,18 +212,13 @@ class ChannelMessage {
     String text,
     String senderName,
     int channelIndex, {
-    String? originalText,
-    String? translatedLanguageCode,
-    String? translationModelId,
     int pathHashSize = 1,
   }) {
     return ChannelMessage(
       senderKey: null,
       senderName: senderName,
       text: text,
-      originalText: originalText,
-      translatedLanguageCode: translatedLanguageCode,
-      translationModelId: translationModelId,
+
       timestamp: DateTime.now(),
       isOutgoing: true,
       status: ChannelMessageStatus.pending,

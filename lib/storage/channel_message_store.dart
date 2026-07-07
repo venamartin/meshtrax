@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:meshtrax/utils/app_logger.dart';
 
 import '../models/channel_message.dart';
-import '../models/translation_support.dart';
+
 import '../helpers/smaz.dart';
 import '../helpers/path_helper.dart';
 import 'prefs_manager.dart';
@@ -100,11 +100,7 @@ class ChannelMessageStore {
       'senderKey': msg.senderKey != null ? base64Encode(msg.senderKey!) : null,
       'senderName': msg.senderName,
       'text': msg.text,
-      'originalText': msg.originalText,
-      'translatedText': msg.translatedText,
-      'translatedLanguageCode': msg.translatedLanguageCode,
-      'translationStatus': msg.translationStatus.value,
-      'translationModelId': msg.translationModelId,
+
       'timestamp': msg.timestamp.millisecondsSinceEpoch,
       'isOutgoing': msg.isOutgoing,
       'status': msg.status.index,
@@ -140,13 +136,7 @@ class ChannelMessageStore {
           : null,
       senderName: json['senderName'] as String,
       text: decodedText,
-      originalText: json['originalText'] as String?,
-      translatedText: json['translatedText'] as String?,
-      translatedLanguageCode: json['translatedLanguageCode'] as String?,
-      translationStatus: parseMessageTranslationStatus(
-        json['translationStatus'],
-      ),
-      translationModelId: json['translationModelId'] as String?,
+
       timestamp: DateTime.fromMillisecondsSinceEpoch(json['timestamp'] as int),
       isOutgoing: json['isOutgoing'] as bool,
       status: ChannelMessageStatus.values[json['status'] as int],

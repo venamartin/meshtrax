@@ -1,0 +1,19 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.dart]
+indent_size = 2
+
+[*.yaml]
+indent_size = 2
+
+# Shell scripts must always use LF — CRLF breaks bash on Windows
+[*.sh]
+end_of_line = lf
+indent_size = 4
