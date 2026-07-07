@@ -740,33 +740,61 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     );
                   }
-                  return ByteCountedTextField(
-                    maxBytes: maxBytes,
-                    controller: _textController,
-                    focusNode: _textFieldFocusNode,
-                    hintText: context.l10n.chat_typeMessage,
-                    onSubmitted: (_) => _sendMessage(connector),
-                    encoder:
-                        connector.isContactSmazEnabled(
-                          widget.contact.publicKeyHex,
-                        )
-                        ? (text) => connector.prepareContactOutboundText(
-                            widget.contact,
-                            text,
-                          )
-                        : null,
-                    decoration: InputDecoration(
+                  return Focus(
+                    onKeyEvent: (node, event) {
+                      if (PlatformInfo.isDesktop && event is KeyDownEvent) {
+                        if (event.logicalKey == LogicalKeyboardKey.enter ||
+                            event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+                          if (HardwareKeyboard.instance.isControlPressed ||
+                              HardwareKeyboard.instance.isShiftPressed) {
+                            final text = _textController.text;
+                            final selection = _textController.selection;
+                            final start = selection.start;
+                            final end = selection.end;
+                            if (start >= 0 && end >= 0) {
+                              _textController.text = text.replaceRange(start, end, '\n');
+                              _textController.selection = TextSelection.collapsed(offset: start + 1);
+                            } else {
+                              _textController.text += '\n';
+                            }
+                            return KeyEventResult.handled;
+                          } else {
+                            _sendMessage(connector);
+                            return KeyEventResult.handled;
+                          }
+                        }
+                      }
+                      return KeyEventResult.ignored;
+                    },
+                    child: ByteCountedTextField(
+                      maxBytes: maxBytes,
+                      controller: _textController,
+                      focusNode: _textFieldFocusNode,
+                      textInputAction: TextInputAction.newline,
                       hintText: context.l10n.chat_typeMessage,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerLow,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
+                      onSubmitted: (_) => _sendMessage(connector),
+                      encoder:
+                          connector.isContactSmazEnabled(
+                            widget.contact.publicKeyHex,
+                          )
+                          ? (text) => connector.prepareContactOutboundText(
+                              widget.contact,
+                              text,
+                            )
+                          : null,
+                      decoration: InputDecoration(
+                        hintText: context.l10n.chat_typeMessage,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        filled: true,
+                        fillColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerLow,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   );

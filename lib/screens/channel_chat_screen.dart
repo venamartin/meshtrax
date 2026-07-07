@@ -18,7 +18,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
-import '../models/contact.dart'; // FIX: Imported Contact model to fix build errors
+import '../models/contact.dart';
 import '../models/translation_support.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
@@ -57,6 +57,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   String? _mentionSearchText;
   bool _showMentions = false;
   List<Contact> _filteredMentionContacts = [];
+
+  // Memoized mention contact map — rebuilt when message list changes
+  Map<String, Contact>? _cachedMentionMap;
+  int _cachedMentionMessageCount = -1;
 
   ChannelMessage? _replyingToMessage;
   bool _isLoadingOlder = false;
@@ -189,48 +193,50 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         final messages = connector.getChannelMessages(widget.channel);
         final Set<String> recentSenderKeys = {};
         
-        // FIX: Safely check for null on senderKeyHex
         for (var m in messages) {
           if (!m.isOutgoing && m.senderKeyHex != null && m.senderKeyHex!.isNotEmpty) {
             recentSenderKeys.add(m.senderKeyHex!);
           }
         }
 
-        final Map<String, Contact> mentionMap = {};
-        for (var c in connector.allContactsUnfiltered) {
-          mentionMap[c.publicKeyHex] = c;
-        }
-
-        // 3. EXTRA SAFETY: Scan messages for anyone not in the global contact list
-        // This ensures people who have spoken but haven't been 'discovered' yet show up.
-        for (var m in messages) {
-          if (!m.isOutgoing) {
-            // Check if this person is already in our map by key
-            if (m.senderKeyHex != null && mentionMap.containsKey(m.senderKeyHex!)) {
-              continue;
-            }
-            
-            // If we don't have a key, or the key is new, also check by NAME to prevent duplicates
-            // where the same person is seen as both a contact and a raw sender.
-            final alreadyHasName = mentionMap.values.any((c) => c.name == m.senderName);
-            if (alreadyHasName) continue;
-
-            final key = m.senderKeyHex ?? 'name_${m.senderName}';
-            mentionMap[key] = Contact(
-              publicKey: m.senderKeyHex != null 
-                  ? hexToPubKey(m.senderKeyHex!) 
-                  : Uint8List(pubKeySize), // Placeholder key
-              name: m.senderName,
-              type: advTypeChat,
-              pathLength: -1,
-              path: Uint8List(0),
-              lastSeen: DateTime.now(),
-              isActive: true,
-            );
+        // Rebuild the mention map only when the message list has changed
+        if (_cachedMentionMap == null || _cachedMentionMessageCount != messages.length) {
+          final Map<String, Contact> mentionMap = {};
+          for (var c in connector.allContactsUnfiltered) {
+            mentionMap[c.publicKeyHex] = c;
           }
+
+          // Scan messages for anyone not in the global contact list.
+          // This ensures people who have spoken but haven't been 'discovered' yet show up.
+          for (var m in messages) {
+            if (!m.isOutgoing) {
+              if (m.senderKeyHex != null && mentionMap.containsKey(m.senderKeyHex!)) {
+                continue;
+              }
+              // Also check by name to prevent duplicates where the same person
+              // is seen as both a contact and a raw sender.
+              final alreadyHasName = mentionMap.values.any((c) => c.name == m.senderName);
+              if (alreadyHasName) continue;
+
+              final key = m.senderKeyHex ?? 'name_${m.senderName}';
+              mentionMap[key] = Contact(
+                publicKey: m.senderKeyHex != null 
+                    ? hexToPubKey(m.senderKeyHex!) 
+                    : Uint8List(pubKeySize),
+                name: m.senderName,
+                type: advTypeChat,
+                pathLength: -1,
+                path: Uint8List(0),
+                lastSeen: DateTime.now(),
+                isActive: true,
+              );
+            }
+          }
+          _cachedMentionMap = mentionMap;
+          _cachedMentionMessageCount = messages.length;
         }
 
-        final filtered = mentionMap.values.where((c) {
+        final filtered = _cachedMentionMap!.values.where((c) {
           // Filter out repeaters as they are non-human nodes
           if (c.type == advTypeRepeater) return false;
           
@@ -550,7 +556,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                       });
                     }
                   }
-                  _previousMessageCount = currentMessageCount;
+                  // Defer count update to avoid mutating state during build
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _previousMessageCount = currentMessageCount;
+                  });
 
                   return Stack(
                     children: [
@@ -620,7 +629,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                           Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
                                           Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                                            child: Text("NEW MESSAGES", style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                                            child: Text(context.l10n.chat_newMessages, style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
                                           ),
                                           Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
                                         ],
@@ -701,9 +710,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Widget _buildMessageBubble(ChannelMessage message, double textScale) {
-    final settingsService = context.watch<AppSettingsService>();
-    final uiState = context.watch<UiViewStateService>();
-    final connector = context.watch<MeshCoreConnector>();
+    final settingsService = context.read<AppSettingsService>();
+    final uiState = context.read<UiViewStateService>();
+    final connector = context.read<MeshCoreConnector>();
     final enableTracing = settingsService.settings.enableMessageTracing;
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
@@ -1416,17 +1425,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
-                Text(
-                  message.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11 * textScale,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                  ),
-                ),
+                _buildReplyBannerPreviewText(message, textScale),
               ],
             ),
           ),
@@ -1439,6 +1438,44 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Shows a human-readable preview of the reply target text in the composer
+  /// banner, handling GIF tokens and POI messages instead of raw strings.
+  Widget _buildReplyBannerPreviewText(ChannelMessage message, double textScale) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = colorScheme.onPrimaryContainer.withValues(alpha: 0.8);
+
+    final gifId = GifHelper.parseGif(message.text);
+    if (gifId != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.gif_box, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Text('GIF', style: TextStyle(fontSize: 11 * textScale, color: textColor, fontStyle: FontStyle.italic)),
+        ],
+      );
+    }
+
+    final poi = _parsePoiMessage(message.text);
+    if (poi != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.location_on_outlined, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Text(context.l10n.chat_location, style: TextStyle(fontSize: 11 * textScale, color: textColor)),
+        ],
+      );
+    }
+
+    return Text(
+      message.text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 11 * textScale, color: textColor),
     );
   }
 
@@ -1550,31 +1587,58 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ),
                       );
                     }
-                    return ByteCountedTextField(
-                      maxBytes: maxBytes,
-                      controller: _textController,
-                      focusNode: _textFieldFocusNode,
-                      hintText: context.l10n.chat_typeMessage,
-                      onSubmitted: (_) => _sendMessage(),
-                      encoder:
-                          connector.isChannelSmazEnabled(widget.channel.index)
-                          ? (text) => connector.prepareChannelOutboundText(
-                              widget.channel.index,
-                              text,
-                            )
-                          : null,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.chat_typeMessage,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLow,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
+                    return Focus(
+                      onKeyEvent: (node, event) {
+                        if (PlatformInfo.isDesktop && event is KeyDownEvent) {
+                          if (event.logicalKey == LogicalKeyboardKey.enter ||
+                              event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+                            if (HardwareKeyboard.instance.isControlPressed ||
+                                HardwareKeyboard.instance.isShiftPressed) {
+                              final text = _textController.text;
+                              final selection = _textController.selection;
+                              final start = selection.start;
+                              final end = selection.end;
+                              if (start >= 0 && end >= 0) {
+                                _textController.text = text.replaceRange(start, end, '\n');
+                                _textController.selection = TextSelection.collapsed(offset: start + 1);
+                              } else {
+                                _textController.text += '\n';
+                              }
+                              return KeyEventResult.handled;
+                            } else {
+                              _sendMessage();
+                              return KeyEventResult.handled;
+                            }
+                          }
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: ByteCountedTextField(
+                        maxBytes: maxBytes,
+                        controller: _textController,
+                        focusNode: _textFieldFocusNode,
+                        textInputAction: TextInputAction.newline,
+                        onSubmitted: (_) => _sendMessage(),
+                        encoder:
+                            connector.isChannelSmazEnabled(widget.channel.index)
+                            ? (text) => connector.prepareChannelOutboundText(
+                                widget.channel.index,
+                                text,
+                              )
+                            : null,
+                        decoration: InputDecoration(
+                          hintText: context.l10n.chat_typeMessage,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLow,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
                         ),
                       ),
                     );

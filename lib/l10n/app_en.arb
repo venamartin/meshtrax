@@ -725,6 +725,7 @@
   },
   "chat_sendGif": "Send GIF",
   "chat_reply": "Reply",
+  "chat_newMessages": "NEW MESSAGES",
   "chat_addReaction": "Add Reaction",
   "chat_me": "Me",
   "emojiCategorySmileys": "Smileys",

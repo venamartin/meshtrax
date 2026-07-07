@@ -13,11 +13,17 @@ import '../screens/channel_chat_screen.dart';
 
 class LinkHandler {
   static TextStyle defaultLinkStyle(BuildContext context, TextStyle base) {
-    final brightness = Theme.of(context).brightness;
-    final orange = brightness == Brightness.dark
-        ? const Color(0xFFFFB74D)
-        : const Color(0xFFE65100);
-    return base.copyWith(color: orange, decoration: TextDecoration.underline);
+    return base.copyWith(
+      decoration: TextDecoration.underline,
+      decorationColor: base.color,
+      fontWeight: FontWeight.w600,
+    );
+  }
+
+  static String _getMonospaceFontFamily() {
+    if (PlatformInfo.isWindows) return 'Consolas';
+    if (PlatformInfo.isMacOS || PlatformInfo.isIOS) return 'Menlo';
+    return 'monospace';
   }
 
   /// Returns a [SelectableText.rich] on desktop or a [Text.rich] on mobile with custom styling for mentions.
@@ -38,6 +44,11 @@ class LinkHandler {
         const EmailLinkifier(),
         const MentionLinkifier(),
         const HashtagLinkifier(),
+        const BoldLinkifier(),
+        const ItalicLinkifier(),
+        const StrikethroughLinkifier(),
+        const MultilineCodeLinkifier(),
+        const CodeLinkifier(),
       ],
     );
 
@@ -62,6 +73,37 @@ class LinkHandler {
           text: element.text,
           style: effectiveLinkStyle,
           recognizer: TapGestureRecognizer()..onTap = () => handleLinkTap(context, element.url),
+        );
+      } else if (element is BoldElement) {
+        return TextSpan(text: element.innerText, style: style.copyWith(fontWeight: FontWeight.bold));
+      } else if (element is ItalicElement) {
+        return TextSpan(text: element.innerText, style: style.copyWith(fontStyle: FontStyle.italic));
+      } else if (element is StrikethroughElement) {
+        return TextSpan(
+          text: element.innerText,
+          style: style.copyWith(
+            decoration: TextDecoration.lineThrough,
+            decorationColor: style.color,
+            decorationThickness: 2.0,
+          ),
+        );
+      } else if (element is MultilineCodeElement) {
+        return TextSpan(
+          text: element.innerText.trim(),
+          style: style.copyWith(
+            fontFamily: _getMonospaceFontFamily(),
+            fontFamilyFallback: ['Courier New', 'Courier', 'Roboto Mono', 'Monaco'],
+            color: style.color?.withValues(alpha: 0.85),
+          ),
+        );
+      } else if (element is CodeElement) {
+        return TextSpan(
+          text: element.innerText,
+          style: style.copyWith(
+            fontFamily: _getMonospaceFontFamily(),
+            fontFamilyFallback: ['Courier New', 'Courier', 'Roboto Mono', 'Monaco'],
+            color: style.color?.withValues(alpha: 0.85),
+          ),
         );
       } else {
         return TextSpan(text: element.text, style: style);
@@ -299,3 +341,200 @@ class HashtagLinkifier extends Linkifier {
 class HashtagElement extends LinkableElement {
   HashtagElement(String text) : super(text, text);
 }
+
+class BoldLinkifier extends Linkifier {
+  const BoldLinkifier();
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final list = <LinkifyElement>[];
+    for (var element in elements) {
+      if (element is TextElement) {
+        final matches = RegExp(r'\*\*(.+?)\*\*').allMatches(element.text);
+        if (matches.isEmpty) {
+          list.add(element);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (var match in matches) {
+          if (match.start > lastIndex) {
+            list.add(TextElement(element.text.substring(lastIndex, match.start)));
+          }
+          list.add(BoldElement(match.group(0)!, match.group(1)!));
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < element.text.length) {
+          list.add(TextElement(element.text.substring(lastIndex)));
+        }
+      } else {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+}
+
+class BoldElement extends LinkifyElement {
+  final String innerText;
+  BoldElement(String text, this.innerText) : super(text);
+}
+
+class ItalicLinkifier extends Linkifier {
+  const ItalicLinkifier();
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final list = <LinkifyElement>[];
+    for (var element in elements) {
+      if (element is TextElement) {
+        final matches = RegExp(r'\*(.+?)\*').allMatches(element.text);
+        if (matches.isEmpty) {
+          list.add(element);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (var match in matches) {
+          if (match.start > lastIndex) {
+            list.add(TextElement(element.text.substring(lastIndex, match.start)));
+          }
+          list.add(ItalicElement(match.group(0)!, match.group(1)!));
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < element.text.length) {
+          list.add(TextElement(element.text.substring(lastIndex)));
+        }
+      } else {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+}
+
+class ItalicElement extends LinkifyElement {
+  final String innerText;
+  ItalicElement(String text, this.innerText) : super(text);
+}
+
+class StrikethroughLinkifier extends Linkifier {
+  const StrikethroughLinkifier();
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final list = <LinkifyElement>[];
+    for (var element in elements) {
+      if (element is TextElement) {
+        final matches = RegExp(r'~(.+?)~').allMatches(element.text);
+        if (matches.isEmpty) {
+          list.add(element);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (var match in matches) {
+          if (match.start > lastIndex) {
+            list.add(TextElement(element.text.substring(lastIndex, match.start)));
+          }
+          list.add(StrikethroughElement(match.group(0)!, match.group(1)!));
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < element.text.length) {
+          list.add(TextElement(element.text.substring(lastIndex)));
+        }
+      } else {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+}
+
+class StrikethroughElement extends LinkifyElement {
+  final String innerText;
+  StrikethroughElement(String text, this.innerText) : super(text);
+}
+
+class CodeLinkifier extends Linkifier {
+  const CodeLinkifier();
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final list = <LinkifyElement>[];
+    for (var element in elements) {
+      if (element is TextElement) {
+        final matches = RegExp(r'`([^`]+?)`').allMatches(element.text);
+        if (matches.isEmpty) {
+          list.add(element);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (var match in matches) {
+          if (match.start > lastIndex) {
+            list.add(TextElement(element.text.substring(lastIndex, match.start)));
+          }
+          list.add(CodeElement(match.group(0)!, match.group(1)!));
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < element.text.length) {
+          list.add(TextElement(element.text.substring(lastIndex)));
+        }
+      } else {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+}
+
+class CodeElement extends LinkifyElement {
+  final String innerText;
+  CodeElement(String text, this.innerText) : super(text);
+}
+
+class MultilineCodeLinkifier extends Linkifier {
+  const MultilineCodeLinkifier();
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final list = <LinkifyElement>[];
+    for (var element in elements) {
+      if (element is TextElement) {
+        final matches = RegExp(r'```([\s\S]+?)```').allMatches(element.text);
+        if (matches.isEmpty) {
+          list.add(element);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (var match in matches) {
+          if (match.start > lastIndex) {
+            list.add(TextElement(element.text.substring(lastIndex, match.start)));
+          }
+          list.add(MultilineCodeElement(match.group(0)!, match.group(1)!));
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < element.text.length) {
+          list.add(TextElement(element.text.substring(lastIndex)));
+        }
+      } else {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+}
+
+class MultilineCodeElement extends LinkifyElement {
+  final String innerText;
+  MultilineCodeElement(String text, this.innerText) : super(text);
+}
+
+
