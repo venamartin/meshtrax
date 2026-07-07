@@ -3805,7 +3805,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   Future<void> setChannel(int index, String name, Uint8List psk) async {
     if (!isConnected) return;
 
+    final existingChannel = channels.firstWhere(
+      (c) => c.index == index,
+      orElse: () => Channel.empty(index),
+    );
+    final isNewChannel = existingChannel.name != name ||
+        !listEquals(existingChannel.psk, psk);
+
     await sendFrame(buildSetChannelFrame(index, name, psk));
+
+    if (isNewChannel) {
+      await _channelMessageStore.clearChannelMessages(index);
+      _channelMessages.remove(index);
+      notifyListeners();
+    }
+
     // Refresh channels after setting
     await getChannels(force: true);
   }
