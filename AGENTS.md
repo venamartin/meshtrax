@@ -35,4 +35,4 @@
 
 ## Refrence Meshcore Firmware (if present)
 - The folder /MeshCore is the refrence meshcore firmware. Do not modify the firmware. 
-- **Read `MESHCORE_PROTOCOL.md` first** before opening any MeshCore C++ files. It contains verified protocol constants, frame formats, routing logic, login flow, and path mechanics — avoiding costly re-derivation from source.
+- **Read `docs/meshcore-protocol.md` first** before opening any MeshCore C++ files. It contains verified protocol constants, frame formats, routing logic, login flow, and path mechanics — avoiding costly re-derivation from source.
