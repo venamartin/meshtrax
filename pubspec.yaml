@@ -38,11 +38,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_blue_plus: ^2.1.0
-  # TODO: Switch to official flserial repo once changes are upstreamed
-  flserial:
-    git:
-      url: https://github.com/MeshEnvy/flserial.git
-      ref: 48216310061efc8d5d217cc18014fc2cb501646e
+  flserial: ^0.7.2
   provider: ^6.1.5+1
   shared_preferences: ^2.2.2
   uuid: ^4.3.3
@@ -73,7 +69,7 @@ dependencies:
   flutter_blue_plus_platform_interface: ^8.2.1
   ml_algo: ^16.0.0
   ml_dataframe: ^1.0.0
-  llamadart: '>=0.6.8 <0.7.0'
+  llamadart: ^0.8.12
   file_selector: ^1.1.0
   file_saver: ^0.3.1
   image_picker: ^1.2.2

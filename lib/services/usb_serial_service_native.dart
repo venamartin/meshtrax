@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flserial/flserial.dart';
-import 'package:flserial/flserial_exception.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -27,7 +26,7 @@ class UsbSerialService {
       StreamController<Uint8List>.broadcast();
   final UsbSerialFrameDecoder _frameDecoder = UsbSerialFrameDecoder();
   StreamSubscription<dynamic>? _androidDataSubscription;
-  StreamSubscription<FlSerialEventArgs>? _dataSubscription;
+  StreamSubscription<SerialEvent>? _dataSubscription;
   UsbSerialStatus _status = UsbSerialStatus.disconnected;
   String? _connectedPortKey;
   String? _connectedPortLabel;
@@ -72,7 +71,8 @@ class UsbSerialService {
       );
       return ports ?? <String>[];
     }
-    final rawPorts = FlSerial.listPorts();
+    final ports = await FlSerial.availablePorts();
+    final rawPorts = ports.map((e) => e.path).toList();
     // On macOS, flserial's native device-name lookup is broken on macOS
     // 10.15+ because the IOKit class name changed from IOUSBDevice to
     // IOUSBHostDevice. We resolve names ourselves via ioreg and rewrite any
@@ -80,7 +80,7 @@ class UsbSerialService {
     if (Platform.isMacOS && rawPorts.isNotEmpty) {
       return _annotateMacOsPorts(rawPorts);
     }
-    return Future.value(rawPorts);
+    return rawPorts;
   }
 
   /// Rewrites the flserial port list on macOS by substituting real USB device
@@ -142,52 +142,23 @@ class UsbSerialService {
         rethrow;
       }
     } else {
-      // ── Hot-restart guard ─────────────────────────────────────────────────
-      // On hot restart Dart tears down the isolate without calling dispose().
-      // The NativeCallable registered by flserial's setCallback() is
-      // isolate-local and gets freed when the isolate dies, but the native
-      // SerialThread is still alive and will call it → crash.
-      //
-      // flserial uses process-global native state. Calling fl_free() kills ALL
-      // SerialThreads for every open port across all Dart isolates (there is
-      // only one in a Flutter app). Then fl_init() re-initialises the slot
-      // table so subsequent fl_open() calls work normally.
-      //
-      // This must happen before we register any new NativeCallable, so it must
-      // be the very first thing we do in the desktop branch.
-      try {
-        bindings.fl_free();
-        bindings.fl_init(16);
-      } catch (_) {}
-
       // On macOS, flserial lists both cu.* and tty.* device nodes.
-      // When a cu.* open fails with FL_ERROR_PORT_NOT_EXIST, try the tty.*
-      // variant as a fallback (and vice-versa) before giving up.
+      // When a cu.* open fails, try the tty.* variant as a fallback 
+      // (and vice-versa) before giving up.
       final candidates = _buildPortCandidates(normalizedPortName);
-      FlSerialException? lastError;
+      Exception? lastError;
       bool opened = false;
 
       for (final candidate in candidates) {
-        // Always create a fresh FlSerial instance — a cached instance retains
-        // a stale flh handle from prior failed opens, which causes the native
-        // fl_open() to mis-route the request and report port-not-exist even
-        // when the device node is physically present.
         final serial = _freshSerial();
-        serial.init();
         try {
-          final openStatus = serial.openPort(candidate, baudRate);
-          if (openStatus != FlOpenStatus.open) {
-            final msg =
-                'Failed to open USB port $candidate (status: $openStatus)';
+          final openStatus = await serial.open(candidate, SerialConfig(baudRate: baudRate));
+          if (!openStatus) {
+            final msg = 'Failed to open USB port $candidate';
             _debugLogService?.error(msg, tag: 'USB Serial');
-            // Not a FlSerialException — treat as terminal failure
             _status = UsbSerialStatus.disconnected;
             throw StateError(msg);
           }
-          serial.setByteSize8();
-          serial.setBitParityNone();
-          serial.setStopBits1();
-          serial.setFlowControlNone();
           serial.setRTS(false);
           // Toggle DTR low→high so the device sees a fresh connection even
           // if the previous disconnect didn't cleanly signal DTR drop.
@@ -197,28 +168,20 @@ class UsbSerialService {
           _serial = serial;
           // Update the normalized port name to whichever candidate succeeded.
           normalizedPortName = candidate;
+          
+          final modem = serial.getModemStatus();
           _debugLogService?.info(
-            'USB serial opened port=$candidate cts=${serial.getCTS()} dsr=${serial.getDSR()} dtr=true rts=false',
+            'USB serial opened port=$candidate cts=${modem['CTS']} dsr=${modem['DSR']} dtr=true rts=false',
             tag: 'USB Serial',
           );
           opened = true;
           break;
-        } on FlSerialException catch (error) {
-          // The native fl_open() already called fl_close() on failure
-          // internally, so no extra cleanup is needed here for this candidate.
-          _debugLogService?.warn(
-            'Failed to open $candidate: ${error.msg} (code ${error.error})',
-            tag: 'USB Serial',
-          );
-          lastError = error;
-          // Try next candidate
         } catch (error, stackTrace) {
-          _status = UsbSerialStatus.disconnected;
-          _debugLogService?.error(
-            'Unexpected error opening $candidate: $error\n$stackTrace',
+          _debugLogService?.warn(
+            'Failed to open $candidate: $error\n$stackTrace',
             tag: 'USB Serial',
           );
-          rethrow;
+          lastError = error is Exception ? error : Exception(error.toString());
         }
       }
 
@@ -226,7 +189,7 @@ class UsbSerialService {
         _status = UsbSerialStatus.disconnected;
         final primary = candidates.first;
         final msg = lastError != null
-            ? 'Failed to open USB port $primary: ${lastError.msg} (code ${lastError.error})'
+            ? 'Failed to open USB port $primary: $lastError'
             : 'Failed to open USB port $primary';
         _debugLogService?.error(msg, tag: 'USB Serial');
         throw StateError(msg);
@@ -244,8 +207,8 @@ class UsbSerialService {
             onDone: _handleSerialDone,
           );
     } else {
-      _dataSubscription = _serial!.onSerialData.stream.listen(
-        _handleSerialData,
+      _dataSubscription = _serial!.events.listen(
+        _handleSerialEvent,
         onError: _handleSerialError,
         onDone: _handleSerialDone,
       );
@@ -273,7 +236,6 @@ class UsbSerialService {
       throw StateError('USB serial port is not open');
     }
     final packet = wrapUsbSerialTxFrame(data);
-    // _logFrameSummary('USB TX frame', data);
     if (_useAndroidUsbHost) {
       try {
         await _androidMethodChannel.invokeMethod<void>('write', {
@@ -309,28 +271,15 @@ class UsbSerialService {
         // Ignore errors while closing.
       }
     } else {
-      // IMPORTANT: Close and free the native port FIRST, before cancelling the
-      // Dart subscription. The native SerialThread is blocked on a read(); once
-      // closePort() is called it unblocks and the thread exits.  If we cancel
-      // the Dart subscription first (freeing the FFI callback pointer) and the
-      // thread fires one final callback before noticing the port is gone, Dart
-      // crashes with "Callback invoked after it has been deleted".
       final serial = _serial;
       _serial = null;
       try {
-        if (serial?.isOpen() == FlOpenStatus.open) {
-          serial?.setDTR(false);
-          serial?.closePort();
-        }
+        serial?.setDTR(false);
+        await serial?.close();
       } catch (_) {
         // Ignore errors while closing.
       }
-      // Note: we do NOT call free() here; that would globally reset native
-      // state for all ports. The global reset is done in connect() instead,
-      // before the next open, which is the safer place to do it.
 
-      // Now it is safe to cancel the Dart subscription — the native thread has
-      // already seen the port close and will not fire any more callbacks.
       await _dataSubscription?.cancel();
       _dataSubscription = null;
     }
@@ -361,33 +310,30 @@ class UsbSerialService {
   }
 
   void dispose() {
-    // Synchronously close the native port so the SerialThread exits before
-    // the Dart isolate is torn down (e.g. on hot restart). The async
-    // disconnect() path via unawaited() offers no ordering guarantee — the
-    // isolate may die before the Future resolves, leaving the thread alive
-    // with a dangling NativeCallable pointer.
     if (_useDesktopFlSerial) {
       final serial = _serial;
       try {
-        if (serial?.isOpen() == FlOpenStatus.open) {
-          serial?.setDTR(false);
-          serial?.closePort(); // synchronous C call — kills the SerialThread
-        }
+        serial?.setDTR(false);
+        unawaited(serial?.close());
       } catch (_) {}
     }
-    // Kick off the full async teardown for anything else (subscription cancel,
-    // stream controller close). These are best-effort at dispose time.
     unawaited(disconnect().whenComplete(_closeFrameController));
   }
 
-  void _handleSerialData(FlSerialEventArgs event) {
-    try {
-      final bytes = event.serial.readList();
-      if (bytes.isNotEmpty) {
-        _ingestRawBytes(Uint8List.fromList(bytes));
+  void _handleSerialEvent(SerialEvent event) {
+    if (event.type == SerialEventType.data) {
+      try {
+        final bytes = event.data as Uint8List;
+        if (bytes.isNotEmpty) {
+          _ingestRawBytes(bytes);
+        }
+      } catch (error, stack) {
+        _addFrameError(error, stack);
       }
-    } catch (error, stack) {
-      _addFrameError(error, stack);
+    } else if (event.type == SerialEventType.disconnected) {
+      _handleSerialDone();
+    } else if (event.type == SerialEventType.error) {
+      _handleSerialError(StateError(event.data.toString()));
     }
   }
 
@@ -447,24 +393,6 @@ class UsbSerialService {
     await _frameController.close();
   }
 
-  // void _logFrameSummary(String prefix, Uint8List bytes) {
-  //   if (bytes.isEmpty) {
-  //     _debugLogService?.info('$prefix len=0', tag: 'USB Serial');
-  //     return;
-  //   }
-  //   _debugLogService?.info(
-  //     '$prefix code=${bytes[0]} len=${bytes.length}',
-  //     tag: 'USB Serial',
-  //   );
-  // }
-
-  /// Returns an ordered list of port paths to try for [portName].
-  ///
-  /// On macOS, USB serial devices appear as both `/dev/cu.*` (call-out, the
-  /// correct mode for outgoing serial connections) and `/dev/tty.*` (dial-in).
-  /// `flserial` may list one variant while only the other is actually openable
-  /// at a given moment. We prefer `cu.*` but automatically include the `tty.*`
-  /// sibling as a fallback, and vice-versa.
   List<String> _buildPortCandidates(String normalizedPort) {
     if (!Platform.isMacOS) return [normalizedPort];
     const cuPrefix = '/dev/cu.';
