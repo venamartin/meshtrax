@@ -20,8 +20,8 @@ class ObservedPath {
 
 class PathResolver {
   /// Maximum distance in meters a repeater can be from the previous hop
-  /// before we consider it an implausible match (~50 miles).
-  static const double _maxHopDistanceMeters = 80467.0;
+  /// before we consider it an implausible match (~310 miles).
+  static const double _maxHopDistanceMeters = 500000.0;
 
   /// Builds a list of resolved hops given a raw path buffer.
   /// Applies geometric constraints to pick the likeliest repeater when hashes collide.
