@@ -4556,14 +4556,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       if (!message.isOutgoing) {
         final existing = _conversations[message.senderKeyHex];
-        final incomingTimestamp = message.timestamp.millisecondsSinceEpoch;
         if (existing != null && existing.isNotEmpty) {
           final startIndex = existing.length > 10 ? existing.length - 10 : 0;
           for (int i = existing.length - 1; i >= startIndex; i--) {
             final recent = existing[i];
-            if (!recent.isOutgoing &&
-                recent.timestamp.millisecondsSinceEpoch == incomingTimestamp &&
-                recent.text == message.text) {
+            if (!recent.isOutgoing && recent.messageId == message.messageId) {
               return;
             }
           }
