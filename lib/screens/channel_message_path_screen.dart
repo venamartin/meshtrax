@@ -44,7 +44,8 @@ class ChannelMessagePathScreen extends StatelessWidget {
             ? Uint8List.fromList(PathHelper.getHops(primaryPathTmp, stride: pathHashSize).reversed.expand((h) => h).toList())
             : primaryPathTmp;
         
-        final startLocation = (connector.selfLatitude != null && connector.selfLongitude != null)
+        final pathStartsAtSelf = message.isOutgoing || (!channelMessage && !message.isOutgoing);
+        final startLocation = pathStartsAtSelf && (connector.selfLatitude != null && connector.selfLongitude != null)
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
         
@@ -371,8 +372,12 @@ class _ChannelMessagePathMapScreenState
             ? Uint8List.fromList(PathHelper.getHops(selectedPathTmp, stride: widget.message.pathHashSize).reversed.expand((h) => h).toList())
             : selectedPathTmp;
 
+        final isReversed = (!widget.message.isOutgoing && !widget.channelMessage) ||
+                (widget.message.isOutgoing && widget.channelMessage);
+        final pathStartsAtSelf = widget.message.isOutgoing ? !isReversed : isReversed;
+        
         final selectedIndex = PathResolver.indexForPath(selectedPath, observedPaths);
-        final startLocation = (connector.selfLatitude != null && connector.selfLongitude != null)
+        final startLocation = pathStartsAtSelf && (connector.selfLatitude != null && connector.selfLongitude != null)
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
         final hops = PathResolver.buildPathHops(
