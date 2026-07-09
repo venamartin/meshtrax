@@ -231,4 +231,8 @@ class AppSettingsService extends ChangeNotifier {
   Future<void> setAutoFavoriteOnChat(bool value) async {
     await updateSettings(_settings.copyWith(autoFavoriteOnChat: value));
   }
+
+  Future<void> setAutoConnectLastDevice(bool value) async {
+    await updateSettings(_settings.copyWith(autoConnectLastDevice: value));
+  }
 }

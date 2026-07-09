@@ -38,6 +38,8 @@ class AppSettingsScreen extends StatelessWidget {
                     return ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        _buildConnectionCard(context, settingsService),
+                        const SizedBox(height: 16),
                         _buildAppearanceCard(context, settingsService),
                         const SizedBox(height: 16),
                         _buildNotificationsCard(context, settingsService),
@@ -56,6 +58,38 @@ class AppSettingsScreen extends StatelessWidget {
                     );
                   },
             ),
+      ),
+    );
+  }
+
+  Widget _buildConnectionCard(
+    BuildContext context,
+    AppSettingsService settingsService,
+  ) {
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Connection',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.bluetooth_connected),
+            title: const Text('Auto-connect on startup'),
+            subtitle: const Text(
+              'Automatically connect to the last Bluetooth device when the app '
+              'opens. Disconnect from the menu to choose a different device.',
+            ),
+            value: settingsService.settings.autoConnectLastDevice,
+            onChanged: (value) {
+              settingsService.setAutoConnectLastDevice(value);
+            },
+          ),
+        ],
       ),
     );
   }

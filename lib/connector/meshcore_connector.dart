@@ -38,6 +38,7 @@ import '../storage/contact_discovery_store.dart';
 import '../storage/contact_settings_store.dart';
 import '../storage/contact_store.dart';
 import '../storage/message_store.dart';
+import '../storage/prefs_manager.dart';
 import '../storage/unread_store.dart';
 import '../utils/app_logger.dart';
 import '../utils/battery_utils.dart';
@@ -143,6 +144,9 @@ class MeshCoreConnector extends ChangeNotifier {
   BluetoothDevice? _lastDevice;
   String? _lastDeviceId;
   String? _lastDeviceDisplayName;
+  bool _launchAutoConnectAttempted = false;
+  static const String _lastBleDeviceIdKey = 'last_ble_device_id';
+  static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
   final MeshCoreUsbManager _usbManager = MeshCoreUsbManager();
   final LinuxBlePairingService _linuxBlePairingService =
@@ -831,6 +835,7 @@ class MeshCoreConnector extends ChangeNotifier {
     // Initialize notification service
     _notificationService.initialize();
     _loadChannelOrder();
+    _restoreLastBleDevice();
 
     // Initialize retry service callbacks
     _retryService?.initialize(
@@ -1894,6 +1899,7 @@ class MeshCoreConnector extends ChangeNotifier {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      unawaited(_persistLastBleDevice());
       if (_shouldGateInitialChannelSync) {
         _hasReceivedDeviceInfo = false;
         _pendingInitialChannelSync = true;
@@ -2195,6 +2201,66 @@ class MeshCoreConnector extends ChangeNotifier {
       !_manualDisconnect &&
       _lastDeviceId != null &&
       _activeTransport == MeshCoreTransportType.bluetooth;
+
+  /// True when a previously connected Bluetooth device is remembered and can be
+  /// auto-connected on the next launch.
+  bool get hasRememberedBleDevice => _lastDeviceId != null;
+
+  void _restoreLastBleDevice() {
+    try {
+      final prefs = PrefsManager.instance;
+      _lastDeviceId ??= prefs.getString(_lastBleDeviceIdKey);
+      _lastDeviceDisplayName ??= prefs.getString(_lastBleDeviceNameKey);
+    } catch (_) {
+      // Prefs unavailable (e.g. in tests) — nothing to restore.
+    }
+  }
+
+  Future<void> _persistLastBleDevice() async {
+    final id = _lastDeviceId;
+    if (id == null) return;
+    try {
+      final prefs = PrefsManager.instance;
+      await prefs.setString(_lastBleDeviceIdKey, id);
+      final name = _lastDeviceDisplayName;
+      if (name != null && name.isNotEmpty) {
+        await prefs.setString(_lastBleDeviceNameKey, name);
+      } else {
+        await prefs.remove(_lastBleDeviceNameKey);
+      }
+    } catch (_) {
+      // Best effort — a failed persist just means no auto-connect next launch.
+    }
+  }
+
+  /// Attempts a one-shot connection to the last remembered Bluetooth device on
+  /// app launch. No-op if the setting is disabled, on web, when nothing is
+  /// remembered, or once an attempt has already been made this process.
+  /// Callers must ensure the Bluetooth adapter is on before invoking.
+  Future<void> autoConnectToLastDevice() async {
+    if (_launchAutoConnectAttempted) return;
+    if (PlatformInfo.isWeb) return;
+    if (_appSettingsService?.settings.autoConnectLastDevice != true) return;
+    final id = _lastDeviceId;
+    if (id == null) return;
+    if (_state != MeshCoreConnectionState.disconnected) return;
+    _launchAutoConnectAttempted = true;
+    _appDebugLogService?.info(
+      'Auto-connecting to last device $id',
+      tag: 'BLE Connect',
+    );
+    try {
+      await connect(
+        BluetoothDevice.fromId(id),
+        displayName: _lastDeviceDisplayName,
+      );
+    } catch (e) {
+      _appDebugLogService?.info(
+        'Auto-connect to last device failed: $e',
+        tag: 'BLE Connect',
+      );
+    }
+  }
 
   bool get _shouldGateInitialChannelSync =>
       _activeTransport == MeshCoreTransportType.usb ||
