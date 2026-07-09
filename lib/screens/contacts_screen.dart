@@ -231,10 +231,6 @@ class _ContactsScreenState extends State<ContactsScreen>
     );
   }
 
-  Future<void> _contactImport() async {
-    await ContactImportHelper.importFromClipboard(context);
-  }
-
   void _showAddContactDialog(BuildContext context) {
     showDialog(
       context: context,

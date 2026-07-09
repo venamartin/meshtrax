@@ -859,7 +859,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Text("Select the number of bytes per hop. Larger hashes reduce collisions but decrease the maximum hop count (1 byte \u2248 64 hops, 2 bytes \u2248 32 hops)."),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: currentMode,
+                initialValue: currentMode,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                 ),

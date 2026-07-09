@@ -6,8 +6,6 @@ import '../helpers/reaction_helper.dart';
 enum MessageStatus { pending, sent, delivered, failed }
 
 class Message {
-  static const Object _unset = Object();
-
   final Uint8List senderKey;
   final String text;
   final DateTime timestamp;
