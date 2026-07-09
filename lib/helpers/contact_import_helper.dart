@@ -31,7 +31,7 @@ class ContactImportHelper {
       }
       return;
     }
-    importFromScannedData(context, text);
+    if (context.mounted) importFromScannedData(context, text);
   }
 
   static void importFromScannedData(BuildContext context, String data) {

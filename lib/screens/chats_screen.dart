@@ -142,7 +142,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
   Future<void> _disconnect(BuildContext context) async {
     final connector = context.read<MeshCoreConnector>();
     final disconnected = await showDisconnectDialog(context, connector);
-    if (disconnected && mounted) {
+    if (disconnected && context.mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const ScannerScreen()),
         (route) => false,
@@ -771,7 +771,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           ),
           body: Column(
             children: [
-              if (syncBanner != null) syncBanner,
+              ?syncBanner,
               Expanded(
                 child: chatItems.isEmpty
                     ? Center(
