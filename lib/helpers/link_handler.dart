@@ -378,7 +378,7 @@ class BoldLinkifier extends Linkifier {
 
 class BoldElement extends LinkifyElement {
   final String innerText;
-  BoldElement(String text, this.innerText) : super(text);
+  BoldElement(super.text, this.innerText);
 }
 
 class ItalicLinkifier extends Linkifier {
@@ -417,7 +417,7 @@ class ItalicLinkifier extends Linkifier {
 
 class ItalicElement extends LinkifyElement {
   final String innerText;
-  ItalicElement(String text, this.innerText) : super(text);
+  ItalicElement(super.text, this.innerText);
 }
 
 class StrikethroughLinkifier extends Linkifier {
@@ -456,7 +456,7 @@ class StrikethroughLinkifier extends Linkifier {
 
 class StrikethroughElement extends LinkifyElement {
   final String innerText;
-  StrikethroughElement(String text, this.innerText) : super(text);
+  StrikethroughElement(super.text, this.innerText);
 }
 
 class CodeLinkifier extends Linkifier {
@@ -495,7 +495,7 @@ class CodeLinkifier extends Linkifier {
 
 class CodeElement extends LinkifyElement {
   final String innerText;
-  CodeElement(String text, this.innerText) : super(text);
+  CodeElement(super.text, this.innerText);
 }
 
 class MultilineCodeLinkifier extends Linkifier {
@@ -534,7 +534,7 @@ class MultilineCodeLinkifier extends Linkifier {
 
 class MultilineCodeElement extends LinkifyElement {
   final String innerText;
-  MultilineCodeElement(String text, this.innerText) : super(text);
+  MultilineCodeElement(super.text, this.innerText);
 }
 
 

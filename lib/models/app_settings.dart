@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum UnitSystem { metric, imperial }
 
 extension UnitSystemValue on UnitSystem {

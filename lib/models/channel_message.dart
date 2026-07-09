@@ -26,8 +26,6 @@ class Repeat {
 }
 
 class ChannelMessage {
-  static const Object _unset = Object();
-
   final Uint8List? senderKey;
   final String senderName;
   final String text;

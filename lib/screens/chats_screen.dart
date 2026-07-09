@@ -13,7 +13,6 @@ import '../utils/disconnect_navigation_mixin.dart';
 import '../utils/emoji_utils.dart';
 import '../utils/route_transitions.dart';
 import '../utils/telemetry_dialog.dart';
-import '../helpers/contact_import_helper.dart';
 import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
