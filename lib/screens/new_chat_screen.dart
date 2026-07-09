@@ -112,7 +112,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
         builder: (context) => const ContactQrScannerScreen(),
       ),
     );
-    if (scannedData != null && mounted) {
+    if (scannedData != null && context.mounted) {
       ContactImportHelper.importFromScannedData(context, scannedData);
     }
   }

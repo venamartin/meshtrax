@@ -490,7 +490,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () async {
               if (Platform.isAndroid) {
                 final result = await ContactBackupService.exportContacts(connector.contacts);
-                if (mounted && result != null) {
+                if (context.mounted && result != null) {
                   showDismissibleSnackBar(context, content: const Text('Backup ready to save or share.'));
                 }
               } else {
@@ -500,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
                 if (location != null) {
                   final success = await ContactBackupService.saveContactsToPath(connector.contacts, location.path);
-                  if (mounted) {
+                  if (context.mounted) {
                     showDismissibleSnackBar(context, content: Text(success ? 'Backup saved to: ${location.path}' : 'Failed to save backup.'));
                   }
                 }
@@ -516,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final XFile? file = await openFile(
                 acceptedTypeGroups: [const XTypeGroup(label: 'JSON', extensions: ['json'])],
               );
-              if (file != null) {
+              if (file != null && context.mounted) {
                 _processImport(context, connector, file.path);
               }
             },
@@ -1236,7 +1236,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     final contacts = await ContactBackupService.importContactsFromPath(path);
 
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (contacts == null) {
       showDismissibleSnackBar(
         context,
@@ -1252,7 +1252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       content: Text('Restoring ${contacts.length} contacts...'),
     );
     await connector.restoreContacts(contacts);
-    if (mounted) {
+    if (context.mounted) {
       showDismissibleSnackBar(
         context,
         content: const Text('Contacts restored successfully.'),

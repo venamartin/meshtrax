@@ -282,7 +282,7 @@ class _ContactsScreenState extends State<ContactsScreen>
         builder: (context) => const ContactQrScannerScreen(),
       ),
     );
-    if (scannedData != null && mounted) {
+    if (scannedData != null && context.mounted) {
       ContactImportHelper.importFromScannedData(context, scannedData);
     }
   }
