@@ -51,6 +51,7 @@ class AppSettings {
   final int tcpServerPort;
   final bool jumpToOldestUnread;
   final bool autoFavoriteOnChat;
+  final bool autoConnectLastDevice;
 
   AppSettings({
     this.clearPathOnMaxRetry = true,
@@ -90,6 +91,7 @@ class AppSettings {
     this.tcpServerPort = 0,
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
+    this.autoConnectLastDevice = true,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
        mutedChannels = mutedChannels ?? {};
@@ -133,6 +135,7 @@ class AppSettings {
       'tcp_server_port': tcpServerPort,
       'jump_to_oldest_unread': jumpToOldestUnread,
       'auto_favorite_on_chat': autoFavoriteOnChat,
+      'auto_connect_last_device': autoConnectLastDevice,
     };
   }
 
@@ -204,6 +207,7 @@ class AppSettings {
       tcpServerPort: json['tcp_server_port'] as int? ?? 0,
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
+      autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
     );
   }
 
@@ -245,6 +249,7 @@ class AppSettings {
     int? tcpServerPort,
     bool? jumpToOldestUnread,
     bool? autoFavoriteOnChat,
+    bool? autoConnectLastDevice,
   }) {
     return AppSettings(
       clearPathOnMaxRetry: clearPathOnMaxRetry ?? this.clearPathOnMaxRetry,
@@ -296,6 +301,8 @@ class AppSettings {
       tcpServerPort: tcpServerPort ?? this.tcpServerPort,
       jumpToOldestUnread: jumpToOldestUnread ?? this.jumpToOldestUnread,
       autoFavoriteOnChat: autoFavoriteOnChat ?? this.autoFavoriteOnChat,
+      autoConnectLastDevice:
+          autoConnectLastDevice ?? this.autoConnectLastDevice,
     );
   }
 }

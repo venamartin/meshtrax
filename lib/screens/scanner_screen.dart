@@ -64,6 +64,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
           // Cancel scan if Bluetooth turns off while scanning
           if (state != BluetoothAdapterState.on) {
             unawaited(_connector.stopScan());
+          } else {
+            // Adapter is on — try a one-shot auto-connect to the last device.
+            unawaited(_connector.autoConnectToLastDevice());
           }
         }
       },
