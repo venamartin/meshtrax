@@ -106,25 +106,46 @@ class _ScannerScreenState extends State<ScannerScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
-      body: SafeArea(
-        top: false,
-        child: Consumer<MeshCoreConnector>(
-          builder: (context, connector, child) {
-            return Column(
-              children: [
-                // Bluetooth off warning
-                if (_bluetoothState == BluetoothAdapterState.off)
-                  _bluetoothOffWarning(context),
+      body: Stack(
+        children: [
+          // Faded, full-bleed app icon backdrop behind the screen content.
+          // The icon art is a dark square, so it needs a higher opacity on
+          // dark backgrounds (where it nearly vanishes) than on light ones
+          // (where it reads as a grey wash).
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: Theme.of(context).brightness == Brightness.dark
+                    ? 0.18
+                    : 0.10,
+                child: Image.asset(
+                  'assets/images/mesah-icon.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Consumer<MeshCoreConnector>(
+              builder: (context, connector, child) {
+                return Column(
+                  children: [
+                    // Bluetooth off warning
+                    if (_bluetoothState == BluetoothAdapterState.off)
+                      _bluetoothOffWarning(context),
 
-                // Status bar
-                _buildStatusBar(context, connector),
+                    // Status bar
+                    _buildStatusBar(context, connector),
 
-                // Device list
-                Expanded(child: _buildDeviceList(context, connector)),
-              ],
-            );
-          },
-        ),
+                    // Device list
+                    Expanded(child: _buildDeviceList(context, connector)),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Consumer<MeshCoreConnector>(
         builder: (context, connector, child) {
