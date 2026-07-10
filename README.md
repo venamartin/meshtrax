@@ -12,11 +12,11 @@
 
 MeshTrax exists only because of the incredible work of the people who built the MeshCore ecosystem. Please support them:
 
-- **Liam Cottle** — creator of **[MeshCore](https://meshcore.io/)**, the open, lightweight LoRa mesh radio protocol and firmware, and author of the **official MeshCore companion app** ([Google Play](https://play.google.com/store/apps/details?id=com.liamcottle.meshcore.android) · [App Store](https://apps.apple.com/us/app/meshcore/id6742354151)). Liam's work is the entire foundation this whole ecosystem — and this app — is built on. **If you want the official, best-supported experience, use Liam's app.** MeshTrax is just a community alternative that would not exist without him.
+- **[MeshCore](https://meshcore.io/)** — the open, lightweight LoRa mesh radio protocol, firmware, and official apps — is created and maintained by the MeshCore project and its community. It is the entire foundation this ecosystem, and this app, are built on. **If you want the official, best-supported experience, use the official MeshCore app, available from [meshcore.io](https://meshcore.io/).**
 
-- **[MeshCore Open](https://github.com/zjs81/meshcore-open)** by **zjs81** and its 30+ contributors — the fabulous open-source Flutter client that **MeshTrax is forked from.** Enormous thanks to that community; MeshTrax builds directly on their excellent foundation.
+- **[MeshCore Open](https://github.com/zjs81/meshcore-open)** and its contributors — the fabulous open-source Flutter client that **MeshTrax is forked from.** MeshTrax builds directly on their excellent work.
 
-All credit for the protocol, firmware, and ecosystem goes to **Liam and MeshCore**. All credit for the client foundation goes to **MeshCore Open**. MeshTrax is simply one more community client in that world.
+MeshTrax is simply one more community client in the MeshCore world. All credit for the protocol, firmware, and official apps goes to the **MeshCore project and its creators**; all credit for the client foundation goes to **MeshCore Open** and its contributors.
 
 Learn more about MeshCore:
 - Official site: <https://meshcore.io/>
@@ -103,11 +103,11 @@ MeshTrax has no accounts, no analytics, and no MeshTrax servers. Your messages, 
 
 ## License
 
-MeshTrax is released under the **MIT License**. It is a fork of [MeshCore Open](https://github.com/zjs81/meshcore-open) (© 2025 zjs81). See [LICENSE](LICENSE).
+MeshTrax is released under the **MIT License**. It is a fork of [MeshCore Open](https://github.com/zjs81/meshcore-open); see [LICENSE](LICENSE) for copyright details.
 
 ## Acknowledgments
 
-- **Liam Cottle** and the **[MeshCore](https://meshcore.io/)** project — the protocol, firmware, and official app that make all of this possible.
-- **[MeshCore Open](https://github.com/zjs81/meshcore-open)** (zjs81 and contributors) — the upstream client MeshTrax is built from.
+- The **[MeshCore](https://meshcore.io/)** project and its creators — the protocol, firmware, and official apps that make all of this possible.
+- **[MeshCore Open](https://github.com/zjs81/meshcore-open)** and its contributors — the upstream client MeshTrax is built from.
 - Built with [Flutter](https://flutter.dev/).
 - Map tiles from [OpenStreetMap](https://www.openstreetmap.org/); elevation data from [Open-Meteo](https://open-meteo.com/); GIFs from [Giphy](https://giphy.com/).
