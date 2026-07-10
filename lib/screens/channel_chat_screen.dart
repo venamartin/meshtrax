@@ -23,6 +23,7 @@ import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/ui_view_state_service.dart';
+import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
@@ -424,6 +425,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ChatColors.isLight(context) ? ChatColors.background : null,
       appBar: AppBar(
         title: Row(
           children: [
@@ -723,11 +725,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               : "");
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(message.text);
+    final warmLight = ChatColors.isLight(context);
     final displayBubbleColor = isJumboEmoji
         ? Colors.transparent
-        : (isOutgoing
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.surfaceContainerHighest);
+        : warmLight
+            ? (isOutgoing ? ChatColors.outgoingBubble : ChatColors.incomingBubble)
+            : (isOutgoing
+                ? Theme.of(context).colorScheme.primaryContainer
+                : Theme.of(context).colorScheme.surfaceContainerHighest);
     final bodyFontSize = isJumboEmoji ? 48.0 : 14.0;
 
     const maxSwipeOffset = 64.0;
@@ -1171,10 +1176,17 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: colorScheme.secondaryContainer,
+          color: ChatColors.isLight(context)
+              ? ChatColors.quoteBackground
+              : colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
           border: Border(
-            left: BorderSide(color: colorScheme.secondary, width: 3),
+            left: BorderSide(
+              color: ChatColors.isLight(context)
+                  ? ChatColors.quoteBorder
+                  : colorScheme.secondary,
+              width: 3,
+            ),
           ),
         ),
         child: Column(

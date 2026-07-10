@@ -33,6 +33,7 @@ import '../widgets/elements_ui.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'map_screen.dart';
+import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
@@ -180,6 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ChatColors.isLight(context) ? ChatColors.background : null,
       appBar: AppBar(
         automaticallyImplyLeading: true,
         title: Consumer2<PathHistoryService, MeshCoreConnector>(
@@ -1784,14 +1786,19 @@ class _MessageBubble extends StatelessWidget {
     final gifId = GifHelper.parseGif(messageText);
     final poi = _parsePoiMessage(messageText);
     final isFailed = message.status == MessageStatus.failed;
+    final warmLight = ChatColors.isLight(context);
     final bubbleColor = isFailed
         ? colorScheme.errorContainer
-        : (isOutgoing
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest);
+        : warmLight
+            ? (isOutgoing ? ChatColors.outgoingBubble : ChatColors.incomingBubble)
+            : (isOutgoing
+                  ? colorScheme.primary
+                  : colorScheme.surfaceContainerHighest);
     final textColor = isFailed
         ? colorScheme.onErrorContainer
-        : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
+        : warmLight
+            ? ChatColors.bubbleText
+            : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
     final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
     final cleanDisplayText = messageText.replaceAll(gifPattern, '').trim();
 
