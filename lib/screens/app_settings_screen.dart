@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -40,6 +41,8 @@ class AppSettingsScreen extends StatelessWidget {
                       children: [
                         _buildConnectionCard(context, settingsService),
                         const SizedBox(height: 16),
+                        _buildPrivacyCard(context, settingsService, connector),
+                        const SizedBox(height: 16),
                         _buildAppearanceCard(context, settingsService),
                         const SizedBox(height: 16),
                         _buildNotificationsCard(context, settingsService),
@@ -58,6 +61,80 @@ class AppSettingsScreen extends StatelessWidget {
                     );
                   },
             ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyCard(
+    BuildContext context,
+    AppSettingsService settingsService,
+    MeshCoreConnector connector,
+  ) {
+    final blockedKeys = settingsService.settings.blockedContactKeys.toList();
+    final blockedNames = settingsService.settings.blockedSenderNames.toList();
+    final hasBlocked = blockedKeys.isNotEmpty || blockedNames.isNotEmpty;
+
+    String contactName(String keyHex) {
+      for (final c in connector.contacts) {
+        if (c.publicKeyHex == keyHex) return c.name;
+      }
+      return keyHex.length > 12 ? '${keyHex.substring(0, 12)}…' : keyHex;
+    }
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Privacy',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of Use'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => launchUrl(
+              Uri.parse(
+                'https://github.com/venamartin/meshtrax/blob/master/docs/terms.md',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          const Divider(height: 1),
+          if (!hasBlocked)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                'No blocked users. Long-press a message to block or report a '
+                'sender.',
+              ),
+            )
+          else ...[
+            for (final key in blockedKeys)
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: Text(contactName(key)),
+                subtitle: const Text('Blocked contact'),
+                trailing: TextButton(
+                  onPressed: () => settingsService.unblockContact(key),
+                  child: const Text('Unblock'),
+                ),
+              ),
+            for (final name in blockedNames)
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: Text(name),
+                subtitle: const Text('Blocked channel sender'),
+                trailing: TextButton(
+                  onPressed: () => settingsService.unblockSender(name),
+                  child: const Text('Unblock'),
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }

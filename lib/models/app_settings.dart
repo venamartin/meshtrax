@@ -53,6 +53,13 @@ class AppSettings {
   final bool autoFavoriteOnChat;
   final bool autoConnectLastDevice;
 
+  /// Public-key hexes of blocked direct-message contacts.
+  final Set<String> blockedContactKeys;
+
+  /// Sender names of blocked channel participants (channel messages carry
+  /// only a display name, not a verified key).
+  final Set<String> blockedSenderNames;
+
   AppSettings({
     this.clearPathOnMaxRetry = true,
     this.mapShowRepeaters = true,
@@ -71,7 +78,7 @@ class AppSettings {
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
-    this.notifyOnNewAdvert = true,
+    this.notifyOnNewAdvert = false,
     this.autoRouteRotationEnabled = true,
     this.maxRouteWeight = 5.0,
     this.initialRouteWeight = 3.0,
@@ -79,7 +86,7 @@ class AppSettings {
     this.routeWeightFailureDecrement = 0.2,
     this.maxMessageRetries = 5,
     this.maxChannelMessageRetries = 1,
-    this.themeMode = 'system',
+    this.themeMode = 'dark',
     this.languageOverride,
     this.appDebugLogEnabled = false,
     Map<String, String>? batteryChemistryByDeviceId,
@@ -92,9 +99,13 @@ class AppSettings {
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
     this.autoConnectLastDevice = true,
+    Set<String>? blockedContactKeys,
+    Set<String>? blockedSenderNames,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
-       mutedChannels = mutedChannels ?? {};
+       mutedChannels = mutedChannels ?? {},
+       blockedContactKeys = blockedContactKeys ?? {},
+       blockedSenderNames = blockedSenderNames ?? {};
 
   Map<String, dynamic> toJson() {
     return {
@@ -136,6 +147,8 @@ class AppSettings {
       'jump_to_oldest_unread': jumpToOldestUnread,
       'auto_favorite_on_chat': autoFavoriteOnChat,
       'auto_connect_last_device': autoConnectLastDevice,
+      'blocked_contact_keys': blockedContactKeys.toList(),
+      'blocked_sender_names': blockedSenderNames.toList(),
     };
   }
 
@@ -170,7 +183,7 @@ class AppSettings {
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
           json['notify_on_new_channel_message'] as bool? ?? true,
-      notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? true,
+      notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
       autoRouteRotationEnabled:
           json['auto_route_rotation_enabled'] as bool? ?? false,
       maxRouteWeight: (json['max_route_weight'] as num?)?.toDouble() ?? 5.0,
@@ -182,7 +195,7 @@ class AppSettings {
           (json['route_weight_failure_decrement'] as num?)?.toDouble() ?? 0.2,
       maxMessageRetries: json['max_message_retries'] as int? ?? 5,
       maxChannelMessageRetries: json['max_channel_message_retries'] as int? ?? 1,
-      themeMode: json['theme_mode'] as String? ?? 'system',
+      themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
       batteryChemistryByDeviceId:
@@ -208,6 +221,16 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
+      blockedContactKeys:
+          ((json['blocked_contact_keys'] as List?)
+              ?.map((e) => e.toString())
+              .toSet()) ??
+          {},
+      blockedSenderNames:
+          ((json['blocked_sender_names'] as List?)
+              ?.map((e) => e.toString())
+              .toSet()) ??
+          {},
     );
   }
 
@@ -250,6 +273,8 @@ class AppSettings {
     bool? jumpToOldestUnread,
     bool? autoFavoriteOnChat,
     bool? autoConnectLastDevice,
+    Set<String>? blockedContactKeys,
+    Set<String>? blockedSenderNames,
   }) {
     return AppSettings(
       clearPathOnMaxRetry: clearPathOnMaxRetry ?? this.clearPathOnMaxRetry,
@@ -303,6 +328,8 @@ class AppSettings {
       autoFavoriteOnChat: autoFavoriteOnChat ?? this.autoFavoriteOnChat,
       autoConnectLastDevice:
           autoConnectLastDevice ?? this.autoConnectLastDevice,
+      blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
+      blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
     );
   }
 }

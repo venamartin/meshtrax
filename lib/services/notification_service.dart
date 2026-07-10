@@ -85,12 +85,23 @@ class NotificationService {
       await initialize();
     }
 
-    // Permissions are not needed on Windows or Linux
+    // Notifications are unavailable on these desktop platforms.
     if (Platform.isWindows || Platform.isLinux) {
       return true;
     }
 
-    // On mobile platforms, permissions are already requested during initialization
+    // On Android 13+ (API 33+) POST_NOTIFICATIONS is a runtime permission and
+    // must be requested explicitly; without it the foreground-service and
+    // message notifications are hidden. (iOS/macOS request during init.)
+    if (Platform.isAndroid) {
+      final android = _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final granted = await android?.requestNotificationsPermission();
+      return granted ?? false;
+    }
+
     return true;
   }
 
