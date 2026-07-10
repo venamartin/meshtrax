@@ -2,12 +2,13 @@
 
 **MeshTrax** is a free, open-source client for **[MeshCore](https://meshcore.io/)** LoRa mesh-networking radios. Chat across long-range, off-grid mesh networks — no towers, no internet, no accounts.
 
-> ⚠️ **MeshTrax is UNOFFICIAL.**
+
+> **MeshTrax is UNOFFICIAL.**
 > It is an independent, community-built app. It is **not** affiliated with, endorsed by, or supported by MeshCore or its creator. If you want the first-party experience, please use the **official MeshCore app** (see credits below).
 
 ---
 
-## 🙏 Huge credit — this stands on the work of others
+## Credit
 
 MeshTrax exists only because of the incredible work of the people who built the MeshCore ecosystem. Please support them:
 
@@ -35,7 +36,7 @@ Learn more about MeshCore:
 
 ---
 
-## ✨ Features
+## Features
 
 - **Unified chat inbox** — all your direct messages and channels together in one modern, messaging-app-style conversation list (think Signal/WhatsApp), rather than scattered across separate screens.
 - **Direct & channel messaging** — 1:1 messages and encrypted channels secured with pre-shared keys.
@@ -57,7 +58,7 @@ Learn more about MeshCore:
 
 ---
 
-## 📱 Requirements
+## Requirements
 
 MeshTrax is a **client** — it requires a compatible **MeshCore** device (a supported LoRa radio running MeshCore firmware) to do anything useful. It is not a standalone messenger. See <https://meshcore.io/> for supported hardware and firmware.
 
@@ -82,13 +83,16 @@ flutter run
 # Build an Android APK
 flutter build apk
 
-# Build an Android App Bundle (for the Play Store)
-flutter build appbundle
+# Run on Windows
+flutter run Windows
+
+# Run on Linux
+flutter run linux
 ```
 
 ---
 
-## 🔒 Privacy & Terms
+## Privacy & Terms
 
 - [Privacy Policy](docs/privacy.md)
 - [Terms of Use](docs/terms.md)
@@ -97,7 +101,7 @@ MeshTrax has no accounts, no analytics, and no MeshTrax servers. Your messages, 
 
 ---
 
-## 📄 License
+## License
 
 MeshTrax is released under the **MIT License**. It is a fork of [MeshCore Open](https://github.com/zjs81/meshcore-open) (© 2025 zjs81). See [LICENSE](LICENSE).
 
