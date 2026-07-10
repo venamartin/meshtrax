@@ -86,7 +86,7 @@ class AppSettings {
     this.routeWeightFailureDecrement = 0.2,
     this.maxMessageRetries = 5,
     this.maxChannelMessageRetries = 1,
-    this.themeMode = 'system',
+    this.themeMode = 'dark',
     this.languageOverride,
     this.appDebugLogEnabled = false,
     Map<String, String>? batteryChemistryByDeviceId,
@@ -195,7 +195,7 @@ class AppSettings {
           (json['route_weight_failure_decrement'] as num?)?.toDouble() ?? 0.2,
       maxMessageRetries: json['max_message_retries'] as int? ?? 5,
       maxChannelMessageRetries: json['max_channel_message_retries'] as int? ?? 1,
-      themeMode: json['theme_mode'] as String? ?? 'system',
+      themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
       batteryChemistryByDeviceId:
