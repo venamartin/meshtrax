@@ -1,6 +1,5 @@
 import 'dart:io' show Platform;
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../helpers/reaction_helper.dart';
@@ -13,6 +12,24 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+
+  /// Global navigator key so a notification tap can navigate. Wired onto the
+  /// app's [MaterialApp] and used by the tap handler set in the app.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
+  /// Set by the app to handle a tapped notification's payload (navigation).
+  void Function(String payload)? onNotificationTap;
+
+  /// Payload of the notification that cold-started the app, if any.
+  String? _pendingLaunchPayload;
+
+  /// Returns and clears any payload from a notification that launched the app.
+  String? consumePendingLaunchPayload() {
+    final payload = _pendingLaunchPayload;
+    _pendingLaunchPayload = null;
+    return payload;
+  }
 
   // Locale for localized notification strings
   Locale _locale = const Locale('en');
@@ -68,6 +85,13 @@ class NotificationService {
       settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+
+    // Capture a notification that cold-started the app so the payload can be
+    // routed once the UI is ready.
+    final launchDetails = await _notifications.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      _pendingLaunchPayload = launchDetails?.notificationResponse?.payload;
+    }
 
     _isInitialized = true;
     debugPrint('Notifications initialized (mobile platform)');
@@ -240,8 +264,11 @@ class NotificationService {
     }
   }
 
-  void _onNotificationTapped(dynamic response) {
-    // Stub for Windows
+  void _onNotificationTapped(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      onNotificationTap?.call(payload);
+    }
   }
 
   static const _groupKey = 'com.meshtrax.MESSAGES';
