@@ -439,13 +439,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                widget.channel.name.isEmpty
-                    ? context.l10n.channels_channelIndex(
-                        widget.channel.index,
-                      )
-                    : (widget.channel.name.startsWith('#')
-                        ? widget.channel.name.substring(1)
-                        : widget.channel.name),
+                widget.channel.displayName,
                 style: const TextStyle(fontSize: 18),
               ),
             ),

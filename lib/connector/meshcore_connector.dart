@@ -4814,11 +4814,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   String _channelDisplayName(int channelIndex) {
     for (final channel in _channels) {
       if (channel.index != channelIndex) continue;
-      return channel.name.isEmpty ? 'Channel $channelIndex' : channel.name;
+      return channel.displayName;
     }
     for (final channel in _cachedChannels) {
       if (channel.index != channelIndex) continue;
-      return channel.name.isEmpty ? 'Channel $channelIndex' : channel.name;
+      return channel.displayName;
     }
     return 'Channel $channelIndex';
   }
@@ -4957,9 +4957,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _maybeIncrementChannelUnread(message, isNew: isNew);
           notifyListeners();
           if (isNew) {
-            final label = channel.name.isEmpty
-                ? 'Channel ${channel.index}'
-                : channel.name;
+            final label = channel.displayName;
             _maybeNotifyChannelMessage(message, channelName: label);
           }
           return;

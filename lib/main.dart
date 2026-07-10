@@ -9,6 +9,10 @@ import 'screens/chrome_required_screen.dart';
 import 'utils/platform_info.dart';
 
 import 'connector/meshcore_connector.dart';
+import 'models/channel.dart';
+import 'models/contact.dart';
+import 'screens/chat_screen.dart';
+import 'screens/channel_chat_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'services/storage_service.dart';
 import 'services/message_retry_service.dart';
@@ -165,6 +169,48 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       onResume: () => NotificationService().cancelAll(),
       onDetach: () => widget.connector.disconnect(manual: true),
     );
+
+    // Route notification taps to the relevant chat, and handle a notification
+    // that cold-started the app once the first frame is ready.
+    NotificationService().onNotificationTap = _handleNotificationTap;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pending = NotificationService().consumePendingLaunchPayload();
+      if (pending != null) _handleNotificationTap(pending);
+    });
+  }
+
+  void _handleNotificationTap(String payload) {
+    final navigator = NotificationService.navigatorKey.currentState;
+    if (navigator == null) return;
+    final connector = widget.connector;
+
+    if (payload.startsWith('channel:')) {
+      final index = int.tryParse(payload.substring('channel:'.length));
+      if (index == null) return;
+      Channel? channel;
+      for (final c in connector.channels) {
+        if (c.index == index) {
+          channel = c;
+          break;
+        }
+      }
+      if (channel == null) return;
+      navigator.push(
+        MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel!)),
+      );
+    } else {
+      Contact? contact;
+      for (final c in connector.contacts) {
+        if (c.publicKeyHex == payload) {
+          contact = c;
+          break;
+        }
+      }
+      if (contact == null) return;
+      navigator.push(
+        MaterialPageRoute(builder: (_) => ChatScreen(contact: contact!)),
+      );
+    }
   }
 
   @override
@@ -192,6 +238,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {
           return MaterialApp(
+            navigatorKey: NotificationService.navigatorKey,
             title: 'MeshTrax',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [

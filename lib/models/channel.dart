@@ -24,6 +24,15 @@ class Channel {
 
   bool get isPublicChannel => pskHex == publicChannelPsk;
 
+  /// Human-friendly name for display in the UI and notifications.
+  /// The public channel has no stored name, so show "Public" instead of a
+  /// bare index-based label.
+  String get displayName {
+    if (isPublicChannel) return 'Public';
+    if (name.isEmpty) return 'Channel $index';
+    return name.startsWith('#') ? name.substring(1) : name;
+  }
+
   static Channel? fromFrame(Uint8List frame) {
     // CHANNEL_INFO format:
     // [0] = RESP_CODE_CHANNEL_INFO (18)
