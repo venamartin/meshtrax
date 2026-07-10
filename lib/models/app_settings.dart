@@ -78,7 +78,7 @@ class AppSettings {
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
-    this.notifyOnNewAdvert = true,
+    this.notifyOnNewAdvert = false,
     this.autoRouteRotationEnabled = true,
     this.maxRouteWeight = 5.0,
     this.initialRouteWeight = 3.0,
@@ -183,7 +183,7 @@ class AppSettings {
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
           json['notify_on_new_channel_message'] as bool? ?? true,
-      notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? true,
+      notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
       autoRouteRotationEnabled:
           json['auto_route_rotation_enabled'] as bool? ?? false,
       maxRouteWeight: (json['max_route_weight'] as num?)?.toDouble() ?? 5.0,
