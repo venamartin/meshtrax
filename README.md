@@ -1,6 +1,6 @@
 # MeshTrax
 
-**MeshTrax** is a free, open-source client for **[MeshCore](https://meshcore.io/)** LoRa mesh-networking radios. Chat across long-range, off-grid mesh networks — no towers, no internet, no accounts.
+**MeshTrax** is a free, open-source client for **[MeshCore](https://meshcore.io/)** LoRa mesh-networking radios. Chat across long-range, off-grid mesh networks, without needing towers, internet, or accounts.
 
 
 > **MeshTrax is UNOFFICIAL.**
@@ -14,7 +14,7 @@ MeshTrax exists only because of the incredible work of the people who built the 
 
 - **[MeshCore](https://meshcore.io/)** — the open, lightweight LoRa mesh radio protocol, firmware, and official apps — is created and maintained by the MeshCore project and its community. It is the entire foundation this ecosystem, and this app, are built on. **If you want the official, best-supported experience, use the official MeshCore app, available from [meshcore.io](https://meshcore.io/).**
 
-- **[MeshCore Open](https://github.com/zjs81/meshcore-open)** and its contributors — the fabulous open-source Flutter client that **MeshTrax is forked from.** MeshTrax builds directly on their excellent work.
+- **[MeshCore Open](https://github.com/zjs81/meshcore-open)** and its contributors — the open-source Flutter client that **MeshTrax is forked from.** MeshTrax builds directly on their excellent work.
 
 MeshTrax is simply one more community client in the MeshCore world. All credit for the protocol, firmware, and official apps goes to the **MeshCore project and its creators**; all credit for the client foundation goes to **MeshCore Open** and its contributors.
 
