@@ -29,7 +29,7 @@ Learn more about MeshCore:
 
 | Unified chats | Channel | Contacts | Node map |
 |:---:|:---:|:---:|:---:|
-| ![Unified chat inbox](docs/screenshots/Screenshot_20260710_150036.jpg) | ![Channel conversation](docs/screenshots/Screenshot_20260710_150042.jpg) | ![Contacts](docs/screenshots/13633_redacted3.jpg) | ![Node map](docs/screenshots/Screenshot_20260710_150029.jpg) |
+| ![Unified chat inbox](docs/screenshots/chats-inbox.jpg) | ![Channel conversation](docs/screenshots/channel-conversation.jpg) | ![Contacts](docs/screenshots/contacts.jpg) | ![Node map](docs/screenshots/node-map.jpg) |
 
 ---
 
