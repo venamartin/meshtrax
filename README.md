@@ -27,12 +27,9 @@ Learn more about MeshCore:
 
 ## 📷 Screenshots
 
-<!-- TODO: replace these placeholders with real screenshots (phone + tablet). -->
-<!-- Suggested location: docs/store/screenshots/ -->
-
-| Unified chats | Channel | Map |
-|:---:|:---:|:---:|
-| _screenshot coming soon_ | _screenshot coming soon_ | _screenshot coming soon_ |
+| Unified chats | Channel | Contacts | Node map |
+|:---:|:---:|:---:|:---:|
+| ![Unified chat inbox](docs/screenshots/Screenshot_20260710_150036.jpg) | ![Channel conversation](docs/screenshots/Screenshot_20260710_150042.jpg) | ![Contacts](docs/screenshots/13633_redacted3.jpg) | ![Node map](docs/screenshots/Screenshot_20260710_150029.jpg) |
 
 ---
 
