@@ -11,6 +11,7 @@ import '../utils/app_logger.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/device_tile.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../helpers/terms_gate.dart';
 import 'chats_screen.dart';
 import 'tcp_screen.dart';
 import 'usb_screen.dart';
@@ -74,6 +75,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
         appLogger.warn('Adapter state stream error: $e', tag: 'ScannerScreen');
       },
     );
+
+    // First-launch content-policy acceptance (required for UGC compliance).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TermsGate.ensureAccepted(context);
+    });
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -91,6 +92,18 @@ class AppSettingsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of Use'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => launchUrl(
+              Uri.parse(
+                'https://github.com/venamartin/meshtrax/blob/master/docs/terms.md',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          const Divider(height: 1),
           if (!hasBlocked)
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
