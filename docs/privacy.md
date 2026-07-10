@@ -1,7 +1,7 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** July 9, 2026
-**Applies to:** MeshTrax Android application (package `com.meshtrax.app`), version 1.5.6 and later
+**Last updated:** July 10, 2026
+**Applies to:** MeshTrax Android application (package `com.meshtrax.app`), version 1.5.7 and later
 
 ## Introduction
 
@@ -12,14 +12,14 @@ The App is developed by an independent, open-source developer. You can review th
 ## Summary
 
 - The App has **no user accounts** and requires **no sign-up**.
-- There is **no MeshTrax server or cloud backend**. We operate no servers and receive **none** of your data.
+- There is **no MeshTrax server or cloud backend**. We operate no servers and receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
 - The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind.
 - Your messages, contacts, channels, and settings are stored **only on your device** and are exchanged only with your own MeshCore companion device and, through it, the LoRa mesh network.
 - The only data ever sent over the internet is to three third-party services that power optional map, terrain, and GIF features: **OpenStreetMap**, **Open-Meteo**, and **Giphy**. What each receives is described below.
 
 ## Data the App collects and stores on your device
 
-All of the following is stored locally on your device using the operating system's standard app storage (Android `SharedPreferences`). None of it is transmitted to the developer or to any server.
+All of the following is stored locally on your device using the operating system's standard app storage (Android `SharedPreferences`). None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
 
 | Category | What it includes | Purpose |
 |---|---|---|
@@ -27,7 +27,7 @@ All of the following is stored locally on your device using the operating system
 | Contacts | Contact names, public keys, and any node coordinates advertised over the mesh | Address and display messages, show nodes on the map |
 | Channels & communities | Channel names and their pre-shared keys (PSKs); community secret keys | Encrypt/decrypt mesh traffic on those channels |
 | Node identity | Your device's **public** key and display name | Identify your own messages |
-| App settings | Theme, language, notification preferences, map preferences, unit system, auto-connect preference, last connected device identifier, etc. | Remember your preferences |
+| App settings | Theme, language, notification preferences, map preferences, unit system, auto-connect preference, last connected device identifier, blocked-users list, etc. | Remember your preferences |
 | Message routing data | Path history and routing weights | Improve mesh message delivery |
 | Cached map tiles | Map imagery you have viewed or pre-downloaded | Offline map display |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
@@ -49,11 +49,17 @@ The App shares data with exactly three third-party services, and only when you u
 - **Their policy:** https://open-meteo.com/en/terms
 
 ### 3. Giphy (optional inline GIFs)
-- **When:** You search for a GIF in the GIF picker, or when a GIF shared in a chat is displayed.
-- **What is sent:** Your GIF **search text** (when searching) and the GIF identifier needed to fetch the image (when a GIF is shown). Requests are restricted to a "G" content rating.
+- **When:** A GIF shared in a chat is displayed. GIF display can be turned off in Settings ("Inline GIFs").
+- **What is sent:** Only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. The App has no GIF search feature and sends no search terms.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
 
 The App also uses the Android system share sheet (for exporting GPX track files that you explicitly choose to share) and the system browser (to open a web link contained in a received message, after you confirm). In both cases you choose the destination; the App does not upload anything on its own.
+
+## Content reporting
+
+The App provides tools to moderate user-generated content. If you tap **Report** on a message, the App opens **your own email app** with a pre-filled message — containing the reported message's text, the sender's display name, and the timestamp — addressed to the developer (**venahamtrack@gmail.com**). **Nothing is sent unless you choose to send that email.** This is the only circumstance in which the developer may receive your content, and it happens entirely at your initiative. When you send a report, the developer will also see the email address you send it from.
+
+You can also **block** a sender from any message; blocked senders and their messages are then hidden from you. The list of blocked users is stored only on your device (see the table above) and is never transmitted.
 
 ## Data the App does NOT collect or do
 
