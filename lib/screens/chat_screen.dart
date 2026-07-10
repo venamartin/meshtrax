@@ -42,6 +42,7 @@ import '../widgets/path_selection_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../utils/app_logger.dart';
 import '../l10n/l10n.dart';
+import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'telemetry_screen.dart';
 
@@ -414,7 +415,15 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Consumer<MeshCoreConnector>(
         builder: (context, connector, child) {
-          final messages = connector.getMessages(widget.contact);
+          final settingsService = context.watch<AppSettingsService>();
+          final contactBlocked =
+              settingsService.isContactBlocked(widget.contact.publicKeyHex);
+          final messages = contactBlocked
+              ? connector
+                    .getMessages(widget.contact)
+                    .where((m) => m.isOutgoing)
+                    .toList()
+              : connector.getMessages(widget.contact);
           return Column(
             children: [
               Expanded(
@@ -1673,6 +1682,37 @@ class _ChatScreenState extends State<ChatScreen> {
                   _openChat(context, contact);
                 },
               ),
+            if (!message.isOutgoing) ...[
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('Report'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ReportHelper.reportMessage(
+                    context,
+                    sender: contact.name,
+                    text: message.text,
+                    timestamp: message.timestamp,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: Text('Block ${contact.name}'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await context
+                      .read<AppSettingsService>()
+                      .blockContact(contact.publicKeyHex);
+                  if (mounted) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text('Blocked ${contact.name}'),
+                    );
+                  }
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.close),
               title: Text(context.l10n.common_cancel),

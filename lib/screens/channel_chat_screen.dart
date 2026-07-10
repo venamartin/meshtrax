@@ -14,6 +14,7 @@ import '../utils/platform_info.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
+import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/link_handler.dart';
 import '../l10n/l10n.dart';
@@ -499,7 +500,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             Expanded(
               child: Consumer<MeshCoreConnector>(
                 builder: (context, connector, child) {
-                  final messages = connector.getChannelMessages(widget.channel);
+                  final settingsService = context.watch<AppSettingsService>();
+                  final messages = connector
+                      .getChannelMessages(widget.channel)
+                      .where((m) =>
+                          m.isOutgoing ||
+                          !settingsService.isSenderBlocked(m.senderName))
+                      .toList();
 
                   if (messages.isEmpty) {
                     return Center(
@@ -1763,6 +1770,37 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 await _deleteMessage(message);
               },
             ),
+            if (!message.isOutgoing) ...[
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('Report'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ReportHelper.reportMessage(
+                    context,
+                    sender: message.senderName,
+                    text: message.text,
+                    timestamp: message.timestamp,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: Text('Block ${message.senderName}'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await context
+                      .read<AppSettingsService>()
+                      .blockSender(message.senderName);
+                  if (mounted) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text('Blocked ${message.senderName}'),
+                    );
+                  }
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.close),
               title: Text(context.l10n.common_cancel),

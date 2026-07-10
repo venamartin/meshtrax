@@ -235,4 +235,36 @@ class AppSettingsService extends ChangeNotifier {
   Future<void> setAutoConnectLastDevice(bool value) async {
     await updateSettings(_settings.copyWith(autoConnectLastDevice: value));
   }
+
+  // --- Blocking (user-generated content moderation) -------------------------
+
+  bool isContactBlocked(String publicKeyHex) =>
+      _settings.blockedContactKeys.contains(publicKeyHex);
+
+  bool isSenderBlocked(String senderName) =>
+      _settings.blockedSenderNames.contains(senderName);
+
+  Future<void> blockContact(String publicKeyHex) async {
+    final updated = Set<String>.from(_settings.blockedContactKeys)
+      ..add(publicKeyHex);
+    await updateSettings(_settings.copyWith(blockedContactKeys: updated));
+  }
+
+  Future<void> unblockContact(String publicKeyHex) async {
+    final updated = Set<String>.from(_settings.blockedContactKeys)
+      ..remove(publicKeyHex);
+    await updateSettings(_settings.copyWith(blockedContactKeys: updated));
+  }
+
+  Future<void> blockSender(String senderName) async {
+    final updated = Set<String>.from(_settings.blockedSenderNames)
+      ..add(senderName);
+    await updateSettings(_settings.copyWith(blockedSenderNames: updated));
+  }
+
+  Future<void> unblockSender(String senderName) async {
+    final updated = Set<String>.from(_settings.blockedSenderNames)
+      ..remove(senderName);
+    await updateSettings(_settings.copyWith(blockedSenderNames: updated));
+  }
 }
