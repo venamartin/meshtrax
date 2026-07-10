@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../services/linux_ble_error_classifier.dart';
+import '../services/notification_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/device_tile.dart';
@@ -76,9 +77,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
       },
     );
 
-    // First-launch content-policy acceptance (required for UGC compliance).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) TermsGate.ensureAccepted(context);
+    // First-launch content-policy acceptance (required for UGC compliance),
+    // then ask for notification permission so the BLE-connected foreground
+    // notification and message notifications can be shown.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await TermsGate.ensureAccepted(context);
+      await NotificationService().requestPermissions();
     });
   }
 
