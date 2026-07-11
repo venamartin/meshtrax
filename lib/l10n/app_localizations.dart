@@ -316,6 +316,18 @@ abstract class AppLocalizations {
   /// **'Disconnected'**
   String get common_disconnected;
 
+  /// No description provided for @common_connectionLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost. Reconnecting...'**
+  String get common_connectionLost;
+
+  /// No description provided for @common_reconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting...'**
+  String get common_reconnecting;
+
   /// No description provided for @common_create.
   ///
   /// In en, this message translates to:

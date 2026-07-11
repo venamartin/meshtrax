@@ -3077,8 +3077,9 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> sendChannelMessage(
     Channel channel,
-    String text,
-  ) async {
+    String text, {
+    ChannelMessage? replyTarget,
+  }) async {
     if (!isConnected || text.isEmpty) return;
 
     // Check if this is a reaction - if so, process it immediately instead of adding as a message
@@ -3127,7 +3128,7 @@ class MeshCoreConnector extends ChangeNotifier {
       channel.index,
       pathHashSize: pathHashByteWidth,
     );
-    _addChannelMessage(channel.index, message);
+    _addChannelMessage(channel.index, message, replyTarget: replyTarget);
     _pendingChannelSentQueue.add(message.messageId);
     _channelMessageRetries[message.messageId] = 0;
     
@@ -5762,7 +5763,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return _ParsedText(senderName: 'Unknown', text: text);
   }
 
-  bool _addChannelMessage(int channelIndex, ChannelMessage message) {
+  bool _addChannelMessage(
+    int channelIndex,
+    ChannelMessage message, {
+    ChannelMessage? replyTarget,
+  }) {
     _channelMessages.putIfAbsent(channelIndex, () => []);
     final messages = _channelMessages[channelIndex]!;
 
@@ -5817,41 +5822,40 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return false; // Don't add reaction as a visible message
     }
 
-    // Parse reply info from message text
-    final replyInfo = ChannelMessage.parseReplyMention(sanitizedMessage.text);
+    // Resolve reply metadata. On the wire a reply is
+    // "@[Name] re:<snippet>…\n<text>" (see ChannelMessage.parseReply), which
+    // stays human-readable on other MeshCore apps.
+    final replyInfo = ChannelMessage.parseReply(sanitizedMessage.text);
     ChannelMessage processedMessage = sanitizedMessage;
 
-    if (replyInfo != null) {
-      // Find original message by sender name (most recent match)
-      final originalMessage = _findMessageBySender(
+    if (replyTarget != null) {
+      // Our own outgoing reply — we know the exact message being replied to,
+      // so quote it precisely regardless of the snippet.
+      final displayText =
+          replyInfo?.actualMessage ??
+          _stripLeadingMention(sanitizedMessage.text, replyTarget.senderName);
+      processedMessage = _withReplyMetadata(
+        sanitizedMessage,
+        text: displayText,
+        replyToMessageId: replyTarget.messageId,
+        replyToSenderName: replyTarget.senderName,
+        replyToText: replyTarget.text,
+      );
+    } else if (replyInfo != null) {
+      // Incoming reply — locate the quoted message by sender + snippet prefix.
+      // If we don't have it, still show a quote bubble using the snippet text.
+      final originalMessage = _findMessageBySenderAndSnippet(
         messages,
         replyInfo.mentionedNode,
+        replyInfo.snippet,
       );
-
-      if (originalMessage != null) {
-        // Create new message with reply metadata
-        processedMessage = ChannelMessage(
-          senderKey: sanitizedMessage.senderKey,
-          senderName: sanitizedMessage.senderName,
-          text: replyInfo.actualMessage,
-          timestamp: sanitizedMessage.timestamp,
-          isOutgoing: sanitizedMessage.isOutgoing,
-          status: sanitizedMessage.status,
-          repeats: sanitizedMessage.repeats,
-          repeatCount: sanitizedMessage.repeatCount,
-          pathLength: sanitizedMessage.pathLength,
-          pathBytes: sanitizedMessage.pathBytes,
-          pathHashSize: sanitizedMessage.pathHashSize,
-          pathVariants: sanitizedMessage.pathVariants,
-          channelIndex: sanitizedMessage.channelIndex,
-          messageId: sanitizedMessage.messageId,
-          packetHash: sanitizedMessage.packetHash,
-          reactions: sanitizedMessage.reactions,
-          replyToMessageId: originalMessage.messageId,
-          replyToSenderName: originalMessage.senderName,
-          replyToText: originalMessage.text,
-        );
-      }
+      processedMessage = _withReplyMetadata(
+        sanitizedMessage,
+        text: replyInfo.actualMessage,
+        replyToMessageId: originalMessage?.messageId,
+        replyToSenderName: originalMessage?.senderName ?? replyInfo.mentionedNode,
+        replyToText: originalMessage?.text ?? replyInfo.snippet,
+      );
     }
 
     final existingIndex = _findChannelRepeatIndex(messages, processedMessage);
@@ -5897,17 +5901,60 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return isNew;
   }
 
-  ChannelMessage? _findMessageBySender(
+  /// Finds the most recent message from [mentionedNode] whose text starts with
+  /// [snippet] (both flattened/lower-cased). Includes our own messages so a
+  /// reply to something we sent still links.
+  ChannelMessage? _findMessageBySenderAndSnippet(
     List<ChannelMessage> messages,
     String mentionedNode,
+    String snippet,
   ) {
-    // Search backwards for most recent message from this sender
+    final needle = snippet.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
     for (int i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].senderName == mentionedNode && !messages[i].isOutgoing) {
-        return messages[i];
-      }
+      final m = messages[i];
+      if (m.senderName != mentionedNode) continue;
+      if (needle.isEmpty) return m;
+      final hay = m.text.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+      if (hay.startsWith(needle)) return m;
     }
     return null;
+  }
+
+  String _stripLeadingMention(String text, String name) {
+    final prefix = '@[$name] ';
+    return text.startsWith(prefix) ? text.substring(prefix.length) : text;
+  }
+
+  /// Returns a copy of [base] with a new [text] and reply metadata attached.
+  ChannelMessage _withReplyMetadata(
+    ChannelMessage base, {
+    required String text,
+    String? replyToMessageId,
+    required String replyToSenderName,
+    required String replyToText,
+  }) {
+    return ChannelMessage(
+      senderKey: base.senderKey,
+      senderName: base.senderName,
+      text: text,
+      timestamp: base.timestamp,
+      isOutgoing: base.isOutgoing,
+      status: base.status,
+      repeats: base.repeats,
+      repeatCount: base.repeatCount,
+      sendRetryCount: base.sendRetryCount,
+      pathLength: base.pathLength,
+      pathBytes: base.pathBytes,
+      pathHashSize: base.pathHashSize,
+      pathVariants: base.pathVariants,
+      channelIndex: base.channelIndex,
+      messageId: base.messageId,
+      packetHash: base.packetHash,
+      reactions: base.reactions,
+      replyToMessageId: replyToMessageId,
+      replyToSenderName: replyToSenderName,
+      replyToText: replyToText,
+    );
   }
 
   void _processReaction(

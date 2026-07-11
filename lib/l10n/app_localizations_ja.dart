@@ -104,6 +104,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get common_disconnected => '切断';
 
   @override
+  String get common_connectionLost => 'Connection lost. Reconnecting...';
+
+  @override
+  String get common_reconnecting => 'Reconnecting...';
+
+  @override
   String get common_create => '作成する';
 
   @override

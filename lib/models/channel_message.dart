@@ -260,13 +260,31 @@ class ChannelMessage {
     return true;
   }
 
-  static ReplyInfo? parseReplyMention(String text) {
-    final regex = RegExp(r'^@\[([^\]]+)\]\s+(.+)$', dotAll: true);
+  /// Marker appended after the quoted snippet in a reply.
+  static const String replyMarker = '…';
+
+  /// A single-line, trimmed prefix of [targetText], at most [chars] characters.
+  /// Used to quote the message being replied to in a cross-app-compatible way.
+  static String buildReplySnippet(String targetText, int chars) {
+    final flat = targetText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return flat.length <= chars ? flat : flat.substring(0, chars);
+  }
+
+  /// Parses a reply of the form `@[Name] re:<snippet>…<response>`.
+  /// The snippet marker may be "…" or "...", and the response may follow on a
+  /// new line. Returns null for a plain mention or an ordinary message, so
+  /// `@[Name] hello` is treated as a mention, not a reply.
+  static ReplyInfo? parseReply(String text) {
+    final regex = RegExp(
+      r'^@\[([^\]]+)\]\s+re:(.*?)(?:…|\.\.\.)\s*([\s\S]+)$',
+      caseSensitive: false,
+    );
     final match = regex.firstMatch(text);
     if (match == null) return null;
     return ReplyInfo(
       mentionedNode: match.group(1)!,
-      actualMessage: match.group(2)!,
+      snippet: match.group(2)!.trim(),
+      actualMessage: match.group(3)!.trim(),
     );
   }
 
@@ -277,7 +295,12 @@ class ChannelMessage {
 
 class ReplyInfo {
   final String mentionedNode;
+  final String snippet;
   final String actualMessage;
 
-  ReplyInfo({required this.mentionedNode, required this.actualMessage});
+  ReplyInfo({
+    required this.mentionedNode,
+    required this.snippet,
+    required this.actualMessage,
+  });
 }

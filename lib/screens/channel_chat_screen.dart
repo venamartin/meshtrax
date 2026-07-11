@@ -798,7 +798,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ),
                         if (gifId == null) const SizedBox(height: 4),
                       ],
-                      if (message.replyToMessageId != null) ...[
+                      if (message.replyToSenderName != null) ...[
                         _buildReplyPreview(message, textScale),
                         const SizedBox(height: 8),
                       ],
@@ -1160,8 +1160,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         ],
       );
     } else {
+      // When the original message wasn't found locally, replyToText is the
+      // truncated wire snippet with no trailing marker. Append it so the quote
+      // doesn't end abruptly. Resolved messages (replyToMessageId != null) show
+      // the full text and rely on ellipsis overflow instead.
+      final isSnippet = message.replyToMessageId == null;
+      final previewText = isSnippet && replyText.isNotEmpty
+          ? '$replyText${ChannelMessage.replyMarker}'
+          : replyText;
       contentPreview = Text(
-        replyText,
+        previewText,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -1173,7 +1181,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
 
     return GestureDetector(
-      onTap: () => _scrollToMessage(message.replyToMessageId!),
+      onTap: message.replyToMessageId != null
+          ? () => _scrollToMessage(message.replyToMessageId!)
+          : null,
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -1474,7 +1484,20 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   Widget _buildMessageComposer() {
     final connector = context.watch<MeshCoreConnector>();
-    final maxBytes = maxChannelMessageBytes(connector.selfName);
+    // Reserve room for the reply prefix ("@[Name] re:<snippet>…\n") while a
+    // reply is active, so the byte counter and typing limit account for it.
+    final baseMaxBytes = maxChannelMessageBytes(connector.selfName);
+    final reply = _replyingToMessage;
+    final replyOverhead = reply == null
+        ? 0
+        : utf8
+              .encode(
+                '@[${reply.senderName}] re:'
+                '${ChannelMessage.buildReplySnippet(reply.text, 15)}'
+                '${ChannelMessage.replyMarker}\n',
+              )
+              .length;
+    final maxBytes = (baseMaxBytes - replyOverhead).clamp(0, baseMaxBytes);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1664,22 +1687,51 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _lastChannelSendAt = now;
 
     final connector = context.read<MeshCoreConnector>();
-    String messageText = text;
-    if (_replyingToMessage != null) {
-      messageText = '@[${_replyingToMessage!.senderName}] $messageText';
+    final maxBytes = maxChannelMessageBytes(connector.selfName);
+    final replyTarget = _replyingToMessage;
+
+    bool fits(String candidate) {
+      final outbound = connector.prepareChannelOutboundText(
+        widget.channel.index,
+        candidate,
+      );
+      return utf8.encode(outbound).length <= maxBytes;
     }
 
-    final maxBytes = maxChannelMessageBytes(connector.selfName);
-    final outboundText = connector.prepareChannelOutboundText(
-      widget.channel.index,
-      messageText,
-    );
-    if (utf8.encode(outboundText).length > maxBytes) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(context.l10n.chat_messageTooLong(maxBytes)),
-      );
-      return;
+    String messageText;
+    if (replyTarget != null) {
+      // Build a compatible "@[Name] re:<snippet>…\n<text>" reply, shrinking the
+      // snippet to fit the byte budget; fall back to a plain mention if needed.
+      messageText = '';
+      for (int len = 15; len >= 6; len--) {
+        final snippet = ChannelMessage.buildReplySnippet(replyTarget.text, len);
+        final candidate =
+            '@[${replyTarget.senderName}] re:$snippet${ChannelMessage.replyMarker}\n$text';
+        if (fits(candidate)) {
+          messageText = candidate;
+          break;
+        }
+      }
+      if (messageText.isEmpty) {
+        final mention = '@[${replyTarget.senderName}] $text';
+        if (!fits(mention)) {
+          showDismissibleSnackBar(
+            context,
+            content: Text(context.l10n.chat_messageTooLong(maxBytes)),
+          );
+          return;
+        }
+        messageText = mention;
+      }
+    } else {
+      messageText = text;
+      if (!fits(messageText)) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.chat_messageTooLong(maxBytes)),
+        );
+        return;
+      }
     }
 
     _textController.clear();
@@ -1688,6 +1740,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     connector.sendChannelMessage(
       widget.channel,
       messageText,
+      replyTarget: replyTarget,
     );
   }
 
@@ -1716,7 +1769,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
@@ -1801,6 +1855,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               onTap: () => Navigator.pop(sheetContext),
             ),
           ],
+          ),
         ),
       ),
     );

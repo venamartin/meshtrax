@@ -104,6 +104,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get common_disconnected => 'Отключено';
 
   @override
+  String get common_connectionLost => 'Connection lost. Reconnecting...';
+
+  @override
+  String get common_reconnecting => 'Reconnecting...';
+
+  @override
   String get common_create => 'Создать';
 
   @override
