@@ -270,6 +270,39 @@ class ChannelMessage {
     return flat.length <= chars ? flat : flat.substring(0, chars);
   }
 
+  /// Removes a single leading `@[name]` mention (with an optional trailing
+  /// space or newline) from [text]. Used to avoid echoing our own handle back
+  /// inside a reply's quoted snippet.
+  static String stripLeadingMention(String text, String name) {
+    final bare = '@[$name]';
+    if (name.isEmpty || !text.startsWith(bare)) return text;
+    final rest = text.substring(bare.length);
+    return (rest.startsWith(' ') || rest.startsWith('\n'))
+        ? rest.substring(1)
+        : rest;
+  }
+
+  /// Builds the on-wire reply text `@[targetName]\nre:<snippet>…\n<body>`,
+  /// shrinking the quoted snippet until [fits]. A leading self-mention is
+  /// stripped from [quoteText] so we don't re-quote our own handle. Falls back
+  /// to `@[targetName]\n<body>`; returns null if even that doesn't fit.
+  static String? buildReplyWireText({
+    required String targetName,
+    required String quoteText,
+    required String body,
+    required String selfName,
+    required bool Function(String candidate) fits,
+  }) {
+    final quote = stripLeadingMention(quoteText, selfName);
+    for (int len = 15; len >= 6; len--) {
+      final snippet = buildReplySnippet(quote, len);
+      final candidate = '@[$targetName]\nre:$snippet$replyMarker\n$body';
+      if (fits(candidate)) return candidate;
+    }
+    final mention = '@[$targetName]\n$body';
+    return fits(mention) ? mention : null;
+  }
+
   /// Parses a reply of the form `@[Name] re:<snippet>…<response>`.
   /// The snippet marker may be "…" or "...", and the response may follow on a
   /// new line. Returns null for a plain mention or an ordinary message, so
