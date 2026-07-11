@@ -2434,6 +2434,17 @@ class MeshCoreConnector extends ChangeNotifier {
     }
     _bleDebugLogService?.logFrame(data, outgoing: true);
 
+    // Register the pending ack BEFORE writing, with no await in between. On fast
+    // transports (USB serial) the device's RESP_CODE_OK can arrive within ~1ms
+    // and be dispatched on the event loop during the write/delay below — if the
+    // queue entry isn't in place yet, _handleOk sees an empty queue and discards
+    // the ack, leaving the message stuck 'pending' until it falsely times out.
+    _trackPendingGenericAck(
+      data,
+      channelSendQueueId: channelSendQueueId,
+      expectsGenericAck: expectsGenericAck,
+    );
+
     if (_activeTransport == MeshCoreTransportType.usb) {
       await _usbManager.write(data);
       // Brief pause so the device firmware can process each frame before the
@@ -2458,11 +2469,6 @@ class MeshCoreConnector extends ChangeNotifier {
         withoutResponse: canWriteWithoutResponse,
       );
     }
-    _trackPendingGenericAck(
-      data,
-      channelSendQueueId: channelSendQueueId,
-      expectsGenericAck: expectsGenericAck,
-    );
   }
 
   Future<bool> _sendAndWaitForAck(
