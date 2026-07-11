@@ -3182,7 +3182,27 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    final outboundText = prepareChannelOutboundText(channelIndex, message.text);
+    // Rebuild the full "@[Name]\nre:<snippet>…\n<body>" reply on resend, since
+    // message.text only stores the stripped body. Falls back to the body alone.
+    var wireText = message.text;
+    if (message.replyToSenderName != null) {
+      final maxBytes = maxChannelMessageBytes(_selfName);
+      wireText =
+          ChannelMessage.buildReplyWireText(
+            targetName: message.replyToSenderName!,
+            quoteText: message.replyToText ?? '',
+            body: message.text,
+            selfName: _selfName ?? '',
+            fits: (candidate) =>
+                utf8
+                    .encode(prepareChannelOutboundText(channelIndex, candidate))
+                    .length <=
+                maxBytes,
+          ) ??
+          message.text;
+    }
+
+    final outboundText = prepareChannelOutboundText(channelIndex, wireText);
     await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
     await sendFrame(
       buildSendChannelTextMsgFrame(channelIndex, outboundText),
@@ -5927,8 +5947,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   String _stripLeadingMention(String text, String name) {
-    final prefix = '@[$name] ';
-    return text.startsWith(prefix) ? text.substring(prefix.length) : text;
+    // Tolerate either a space or a newline after the mention, since replies
+    // fall back to "@[Name]\n<text>" for cleaner rendering on other apps.
+    for (final sep in const [' ', '\n']) {
+      final prefix = '@[$name]$sep';
+      if (text.startsWith(prefix)) return text.substring(prefix.length);
+    }
+    return text;
   }
 
   /// Returns a copy of [base] with a new [text] and reply metadata attached.

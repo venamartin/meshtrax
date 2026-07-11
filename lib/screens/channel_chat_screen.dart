@@ -1700,29 +1700,23 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
     String messageText;
     if (replyTarget != null) {
-      // Build a compatible "@[Name] re:<snippet>…\n<text>" reply, shrinking the
+      // Build a compatible "@[Name]\nre:<snippet>…\n<text>" reply, shrinking the
       // snippet to fit the byte budget; fall back to a plain mention if needed.
-      messageText = '';
-      for (int len = 15; len >= 6; len--) {
-        final snippet = ChannelMessage.buildReplySnippet(replyTarget.text, len);
-        final candidate =
-            '@[${replyTarget.senderName}] re:$snippet${ChannelMessage.replyMarker}\n$text';
-        if (fits(candidate)) {
-          messageText = candidate;
-          break;
-        }
+      final built = ChannelMessage.buildReplyWireText(
+        targetName: replyTarget.senderName,
+        quoteText: replyTarget.text,
+        body: text,
+        selfName: connector.selfName ?? '',
+        fits: fits,
+      );
+      if (built == null) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.chat_messageTooLong(maxBytes)),
+        );
+        return;
       }
-      if (messageText.isEmpty) {
-        final mention = '@[${replyTarget.senderName}] $text';
-        if (!fits(mention)) {
-          showDismissibleSnackBar(
-            context,
-            content: Text(context.l10n.chat_messageTooLong(maxBytes)),
-          );
-          return;
-        }
-        messageText = mention;
-      }
+      messageText = built;
     } else {
       messageText = text;
       if (!fits(messageText)) {
