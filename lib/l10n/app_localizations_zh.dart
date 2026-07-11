@@ -104,6 +104,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_disconnected => '已断开';
 
   @override
+  String get common_connectionLost => 'Connection lost. Reconnecting...';
+
+  @override
+  String get common_reconnecting => 'Reconnecting...';
+
+  @override
   String get common_create => '创建';
 
   @override

@@ -104,6 +104,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get common_disconnected => 'Desconectado';
 
   @override
+  String get common_connectionLost => 'Connection lost. Reconnecting...';
+
+  @override
+  String get common_reconnecting => 'Reconnecting...';
+
+  @override
   String get common_create => 'Crear';
 
   @override

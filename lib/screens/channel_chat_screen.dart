@@ -1160,8 +1160,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         ],
       );
     } else {
+      // When the original message wasn't found locally, replyToText is the
+      // truncated wire snippet with no trailing marker. Append it so the quote
+      // doesn't end abruptly. Resolved messages (replyToMessageId != null) show
+      // the full text and rely on ellipsis overflow instead.
+      final isSnippet = message.replyToMessageId == null;
+      final previewText = isSnippet && replyText.isNotEmpty
+          ? '$replyText${ChannelMessage.replyMarker}'
+          : replyText;
       contentPreview = Text(
-        replyText,
+        previewText,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -1761,7 +1769,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
@@ -1846,6 +1855,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               onTap: () => Navigator.pop(sheetContext),
             ),
           ],
+          ),
         ),
       ),
     );

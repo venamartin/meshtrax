@@ -38,6 +38,8 @@
   "common_disconnect": "Disconnect",
   "common_connected": "Connected",
   "common_disconnected": "Disconnected",
+  "common_connectionLost": "Connection lost. Reconnecting...",
+  "common_reconnecting": "Reconnecting...",
   "common_create": "Create",
   "common_continue": "Continue",
   "common_share": "Share",

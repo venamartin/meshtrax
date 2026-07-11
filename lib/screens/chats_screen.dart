@@ -139,6 +139,36 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
     );
   }
 
+  Widget _buildStatusBanner(BuildContext context, String statusText) {
+    return Container(
+      width: double.infinity,
+      color: Theme.of(context).colorScheme.primaryContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              statusText,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _disconnect(BuildContext context) async {
     final connector = context.read<MeshCoreConnector>();
     final disconnected = await showDisconnectDialog(context, connector);
@@ -605,33 +635,16 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               break;
           }
 
-          syncBanner = Container(
-            width: double.infinity,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+          syncBanner = _buildStatusBanner(context, statusText);
+        } else if (!connector.isConnected && connector.willAutoReconnect) {
+          // The device dropped (out of range / powered off) after we were
+          // already connected. Reuse the sync banner to show reconnection
+          // progress instead of leaving the UI with no indication.
+          final statusText =
+              connector.state == MeshCoreConnectionState.connecting
+                  ? context.l10n.common_reconnecting
+                  : context.l10n.common_connectionLost;
+          syncBanner = _buildStatusBanner(context, statusText);
         }
 
         return PopScope(
