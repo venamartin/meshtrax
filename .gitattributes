@@ -3,3 +3,4 @@
 *.so filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
 release.sh text eol=lf
+untranslated.json text eol=lf
