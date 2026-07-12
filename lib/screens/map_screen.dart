@@ -643,7 +643,7 @@ class _MapScreenState extends State<MapScreen> {
         final hops = PathHelper.getHops(pathBytes, stride: contact.pathHashSize);
         if (hops.isEmpty) continue;
         final lastHop = hops.last;
-        final prefix = lastHop.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join();
+        final prefix = PathHelper.hopHex(lastHop);
         lastHopBytes.add(prefix);
         final r = repeaterByHash[prefix];
         if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
@@ -2164,7 +2164,7 @@ class _MapScreenState extends State<MapScreen> {
   void _addToPath(BuildContext context, Contact contact, {LatLng? position}) {
     setState(() {
       final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
-      _pathTrace.addAll(contact.publicKey.take(stride)); // Add stride bytes of public key to path trace
+      _pathTrace.addAll(PathHelper.pubKeyPrefix(contact.publicKey, stride: stride));
       _pathTraceContacts.add(
         contact.copyWith(
           latitude: position?.latitude ?? contact.latitude,
@@ -2190,11 +2190,10 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
       _pathTraceContacts.removeLast();
-      if (_pathTrace.length >= stride) {
-        _pathTrace.removeRange(_pathTrace.length - stride, _pathTrace.length);
-      } else {
-        _pathTrace.clear();
-      }
+      final trimmed = PathHelper.dropLastHop(_pathTrace, stride: stride);
+      _pathTrace
+        ..clear()
+        ..addAll(trimmed);
       _points.removeLast(); // Remove last point from points list
       _polylines.clear(); // Clear polylines
     });

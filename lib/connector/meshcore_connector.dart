@@ -48,19 +48,41 @@ import 'meshcore_protocol.dart';
 
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
-  final int pubkeyFirstByte;
+  final Uint8List pubkeyPrefix; // leading bytes of the pub key (on-air hash)
   Uint8List? publicKey;
   String? name;
   double snr;
   DateTime lastUpdated;
 
   DirectRepeater({
-    required this.pubkeyFirstByte,
+    required this.pubkeyPrefix,
     this.publicKey,
     this.name,
     required this.snr,
     DateTime? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now();
+
+  String get prefixHex => pubkeyPrefix
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join()
+      .toUpperCase();
+
+  /// True when [hash] (a hop hash or public key) agrees with this repeater's
+  /// prefix on their common leading bytes.
+  bool matchesHash(List<int> hash) {
+    if (pubkeyPrefix.isEmpty || hash.isEmpty) return false;
+    final n = math.min(pubkeyPrefix.length, hash.length);
+    for (var i = 0; i < n; i++) {
+      if (pubkeyPrefix[i] != hash[i]) return false;
+    }
+    return true;
+  }
+
+  /// True when this repeater is the first hop of [pathBytes].
+  bool matchesFirstHopOf(List<int> pathBytes, {int stride = 1}) {
+    if (pathBytes.isEmpty) return false;
+    return matchesHash(pathBytes.sublist(0, math.min(stride, pathBytes.length)));
+  }
 
   void update(double newSNR) {
     snr = newSNR;
@@ -5023,7 +5045,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         final hasFullPubKey = ctlPayload.length >= 6 + 32;
         final Uint8List? pubKey = hasFullPubKey ? ctlPayload.sublist(6, 38) : null;
         final hex = pubKey != null ? pubKeyToHex(pubKey) : null;
-        final pubkeyFirstByte = pubKey != null ? pubKey.first : (ctlPayload.length >= 7 ? ctlPayload[6] : 0);
+        // Discovery responses carry at least an 8-byte pubkey prefix at [6..];
+        // keep the on-air hash width of it as the repeater's identity.
+        final prefixEnd = math.min(6 + _pathHashByteWidth, ctlPayload.length);
+        final pubkeyPrefix = prefixEnd > 6
+            ? Uint8List.fromList(ctlPayload.sublist(6, prefixEnd))
+            : Uint8List(0);
 
         String? parsedName;
         if (hasFullPubKey && ctlPayload.length > 38) {
@@ -5033,14 +5060,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           }
         }
 
-        appLogger.info('Discovered repeater with first pubkey byte: 0x${pubkeyFirstByte.toRadixString(16).padLeft(2, '0')} at SNR $snr dB');
+        appLogger.info('Discovered repeater with pubkey prefix 0x${PathHelper.hopHex(pubkeyPrefix)} at SNR $snr dB');
 
         _directRepeaters.removeWhere((r) => r.isStale());
         final existing = _directRepeaters.where((r) {
           if (r.publicKey != null && hex != null) {
             return pubKeyToHex(r.publicKey!) == hex;
           }
-          return r.pubkeyFirstByte == pubkeyFirstByte;
+          return r.matchesHash(pubkeyPrefix);
         });
 
         if (existing.isNotEmpty) {
@@ -5057,7 +5084,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           }
           if (_directRepeaters.length < 5) {
             _directRepeaters.add(DirectRepeater(
-              pubkeyFirstByte: pubkeyFirstByte,
+              pubkeyPrefix: pubkeyPrefix,
               publicKey: pubKey,
               name: parsedName,
               snr: snr,
@@ -6650,10 +6677,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List path,
     int pathLenRaw,
   ) {
-    final hashSize = ((pathLenRaw >> 6) & 0x03) + 1;
-    final pubkeyFirstByte = path.isNotEmpty
-        ? path[path.length - hashSize]
-        : contact.publicKey.first;
+    final hashSize = extractPathHashSize(pathLenRaw);
+    // The direct (last) hop's full hash identifies the repeater we heard.
+    final lastHopTake = math.min(hashSize, path.length);
+    final pubkeyPrefix = path.isNotEmpty
+        ? Uint8List.fromList(path.sublist(path.length - lastHopTake))
+        : PathHelper.pubKeyPrefix(contact.publicKey, stride: hashSize);
 
     _directRepeaters.removeWhere((r) => r.isStale());
 
@@ -6714,7 +6743,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (r.publicKey != null && lastHopPublicKey != null) {
         return pubKeyToHex(r.publicKey!) == pubKeyToHex(lastHopPublicKey);
       }
-      return r.pubkeyFirstByte == pubkeyFirstByte;
+      return r.matchesHash(pubkeyPrefix);
     });
 
     final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
@@ -6738,7 +6767,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     } else if (_directRepeaters.length < 5) {
       _directRepeaters.add(
         DirectRepeater(
-          pubkeyFirstByte: pubkeyFirstByte,
+          pubkeyPrefix: pubkeyPrefix,
           publicKey: lastHopPublicKey,
           snr: snr,
         ),

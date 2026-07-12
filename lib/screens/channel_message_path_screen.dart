@@ -41,7 +41,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
 
         final pathHashSize = message.pathHashSize;
         final primaryPath = !channelMessage && !message.isOutgoing
-            ? Uint8List.fromList(PathHelper.getHops(primaryPathTmp, stride: pathHashSize).reversed.expand((h) => h).toList())
+            ? PathHelper.reverseHops(primaryPathTmp, stride: pathHashSize)
             : primaryPathTmp;
         
         final pathStartsAtSelf = message.isOutgoing || (!channelMessage && !message.isOutgoing);
@@ -369,7 +369,7 @@ class _ChannelMessagePathMapScreenState
         final selectedPath =
             ((!widget.message.isOutgoing && !widget.channelMessage) ||
                 (widget.message.isOutgoing && widget.channelMessage))
-            ? Uint8List.fromList(PathHelper.getHops(selectedPathTmp, stride: widget.message.pathHashSize).reversed.expand((h) => h).toList())
+            ? PathHelper.reverseHops(selectedPathTmp, stride: widget.message.pathHashSize)
             : selectedPathTmp;
 
         final isReversed = (!widget.message.isOutgoing && !widget.channelMessage) ||

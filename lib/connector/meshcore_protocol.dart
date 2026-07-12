@@ -363,6 +363,14 @@ int encodePathLenByte(int hopCount, int hashSize) {
   int sizeBits = (hashSize - 1).clamp(0, 3);
   return (hopCount & 0x3F) | (sizeBits << 6);
 }
+
+/// Flags byte for CMD_SEND_TRACE_PATH: low 2 bits encode the path hash
+/// width (firmware: `path_sz = flags & 0x03`, hop count = `path_len >> path_sz`).
+int encodeTraceFlags(int hashWidth) => (hashWidth - 1).clamp(0, 3);
+
+/// CMD_SET_PATH_HASH_MODE mode value for an on-air hash width in bytes
+/// (mode 0..2 → width 1..3).
+int pathHashModeFromWidth(int width) => (width - 1).clamp(0, 2);
 const int appProtocolVersion = 3;
 // Matches firmware MAX_TEXT_LEN (10 * CIPHER_BLOCK_SIZE).
 const int maxTextPayloadBytes = 160;

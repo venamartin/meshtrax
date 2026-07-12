@@ -554,10 +554,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   : message.fourByteRoomContactKey,
             );
             fourByteHex = message.fourByteRoomContactKey.isNotEmpty
-                ? message.fourByteRoomContactKey
-                    .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                    .join()
-                    .toUpperCase()
+                ? pubKeyToHex(message.fourByteRoomContactKey).toUpperCase()
                 : "00000000";
           }
 
@@ -896,20 +893,18 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? null
                 : repeatersList.elementAt(2);
 
+            final hashWidth = connector.pathHashByteWidth;
             List<MapEntry<int, MapEntry<Color, PathRecord>>>
             pathsWithRepeaters = paths.map((path) {
               final isDirectRepeater =
                   directRepeater != null &&
-                  path.pathBytes.isNotEmpty &&
-                  directRepeater.pubkeyFirstByte == path.pathBytes.first;
+                  directRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
               final isSecondDirectRepeater =
                   secondDirectRepeater != null &&
-                  path.pathBytes.isNotEmpty &&
-                  secondDirectRepeater.pubkeyFirstByte == path.pathBytes.first;
+                  secondDirectRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
               final isThirdDirectRepeater =
                   thirdDirectRepeater != null &&
-                  path.pathBytes.isNotEmpty &&
-                  thirdDirectRepeater.pubkeyFirstByte == path.pathBytes.first;
+                  thirdDirectRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
 
               int ranking = -1;
               Color color = Colors.grey;
@@ -1577,10 +1572,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _openMessagePath(Message message, Contact contact) {
     final connector = context.read<MeshCoreConnector>();
-    final fourByteHex = message.fourByteRoomContactKey
-        .map((b) => b.toRadixString(16).padLeft(2, '0'))
-        .join()
-        .toUpperCase();
+    final fourByteHex = pubKeyToHex(message.fourByteRoomContactKey).toUpperCase();
     final String senderName;
     if (message.isOutgoing) {
       senderName = connector.selfName ?? context.l10n.chat_me;

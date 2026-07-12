@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -76,14 +77,8 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
   }
 
   void _updateTextFromContacts() {
-    final hexChars = widget.pathHashByteWidth * 2;
     final pathParts = _selectedContacts
-        .map((contact) {
-          if (contact.publicKeyHex.length >= hexChars) {
-            return contact.publicKeyHex.substring(0, hexChars);
-          }
-          return '';
-        })
+        .map((contact) => contact.hashPrefixWithStride(widget.pathHashByteWidth))
         .where((s) => s.isNotEmpty)
         .toList();
 
@@ -117,32 +112,12 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
     }
 
     // Parse comma-separated hex prefixes
-    final pathIds = path
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final pathBytesList = <int>[];
-    final invalidPrefixes = <String>[];
-
-    final expectedChars = widget.pathHashByteWidth * 2;
-    for (final id in pathIds) {
-      if (id.length < expectedChars) {
-        invalidPrefixes.add(id);
-        continue;
-      }
-
-      final prefix = id.substring(0, expectedChars);
-      try {
-        for (int i = 0; i < widget.pathHashByteWidth; i++) {
-          final byteStr = prefix.substring(i * 2, i * 2 + 2);
-          final byte = int.parse(byteStr, radix: 16);
-          pathBytesList.add(byte);
-        }
-      } catch (e) {
-        invalidPrefixes.add(id);
-      }
-    }
+    final parsed = PathHelper.parsePathHex(
+      path,
+      stride: widget.pathHashByteWidth,
+    );
+    final pathBytesList = parsed.path;
+    final invalidPrefixes = parsed.invalid;
 
     if (!mounted) return;
 

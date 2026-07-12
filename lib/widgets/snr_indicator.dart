@@ -13,7 +13,7 @@ import 'signal_ui.dart';
 
 Contact? _getRepeaterPrefixMatchNearLocation(
   List<Contact> contacts,
-  int pubkeyFirstByte, {
+  DirectRepeater repeater, {
   LatLng? searchPoint,
   bool preferFavorites = false,
 }) {
@@ -21,7 +21,7 @@ Contact? _getRepeaterPrefixMatchNearLocation(
       .where(
         (c) =>
             c.publicKey.isNotEmpty &&
-            c.publicKey.first == pubkeyFirstByte &&
+            repeater.matchesHash(c.publicKey) &&
             c.type == advTypeRepeater,
       )
       .toList();
@@ -143,7 +143,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
   }
 
   String _getRepeaterId(DirectRepeater r) {
-    return r.publicKey != null ? pubKeyToHex(r.publicKey!) : r.pubkeyFirstByte.toString();
+    return r.publicKey != null ? pubKeyToHex(r.publicKey!) : r.prefixHex;
   }
 
   void _onConnectorChanged() {
@@ -242,7 +242,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
               ),
               if (directRepeater != null)
                 Text(
-                  '${directRepeaters.length}: ${directRepeater.pubkeyFirstByte.toRadixString(16).padLeft(2, '0')}: ${_formatLastUpdated(directRepeater.lastUpdated)}',
+                  '${directRepeaters.length}: ${directRepeater.prefixHex}: ${_formatLastUpdated(directRepeater.lastUpdated)}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -351,7 +351,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
 
                     contact ??= _getRepeaterPrefixMatchNearLocation(
                         allContacts,
-                        repeater.pubkeyFirstByte,
+                        repeater,
                         searchPoint: selfPoint,
                         preferFavorites: true,
                       );
@@ -362,7 +362,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                           .where(
                             (c) =>
                                 c.publicKey.isNotEmpty &&
-                                c.publicKey.first == repeater.pubkeyFirstByte,
+                                repeater.matchesHash(c.publicKey),
                           )
                           .toList();
 
@@ -379,10 +379,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                     final name = contact?.name ?? repeater.name;
                     final displayName = (name != null && name.isNotEmpty)
                         ? name
-                        : repeater.pubkeyFirstByte
-                              .toRadixString(16)
-                              .padLeft(2, '0')
-                              .toUpperCase();
+                        : repeater.prefixHex;
 
                     final hasLocation = contact?.hasLocation ?? false;
                     final fullPubKey = contact?.publicKey ?? repeater.publicKey;
