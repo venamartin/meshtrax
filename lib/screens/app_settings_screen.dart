@@ -615,8 +615,8 @@ class AppSettingsScreen extends StatelessWidget {
                   Slider(
                     value: settingsService.settings.maxChannelMessageRetries
                         .toDouble(),
-                    min: 1,
-                    max: 3,
+                    min: 0,
+                    max: 2,
                     divisions: 2,
                     label: settingsService.settings.maxChannelMessageRetries
                         .toString(),
