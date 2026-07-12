@@ -19,7 +19,6 @@ import 'app_settings_screen.dart';
 import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
 import '../widgets/radio_stats_entry.dart';
-import 'companion_info_screen.dart';
 
 /// Convert device coding-rate value (1-4 on some firmware, 5-8 on others)
 /// to the UI enum range (always 5-8).
@@ -158,6 +157,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ? l10n.common_connected
                         : l10n.common_disconnected,
                   ),
+                  _buildInfoRow(
+                    'Firmware Version',
+                    connector.firmwareVersion ??
+                        (connector.firmwareVerCode != null
+                            ? 'v${connector.firmwareVerCode}'
+                            : 'Unknown'),
+                  ),
+                  if (connector.firmwareVerCode != null)
+                    _buildInfoRow(
+                      'Protocol Version',
+                      'v${connector.firmwareVerCode}',
+                    ),
+                  _buildInfoRow(
+                    'Transport Type',
+                    connector.activeTransport.name,
+                  ),
                   _buildBatteryInfoRow(context, connector),
                   if (connector.selfName != null)
                     _buildInfoRow(l10n.settings_nodeName, connector.selfName!),
@@ -166,6 +181,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       l10n.settings_infoPublicKey,
                       '${pubKeyToHex(connector.selfPublicKey!).substring(0, 16)}...',
                     ),
+                  if (connector.currentTxPower != null)
+                    _buildInfoRow(
+                      'Current TX Power',
+                      '${connector.currentTxPower} dBm',
+                    ),
+                  if (connector.maxTxPower != null)
+                    _buildInfoRow('Max TX Power', '${connector.maxTxPower} dBm'),
+                  if (connector.currentFreqHz != null)
+                    _buildInfoRow(
+                      'Frequency',
+                      '${(connector.currentFreqHz! / 1000).toStringAsFixed(2)} MHz',
+                    ),
+                  if (connector.currentBwHz != null)
+                    _buildInfoRow(
+                      'Bandwidth',
+                      '${connector.currentBwHz! / 1000} kHz',
+                    ),
+                  if (connector.currentSf != null)
+                    _buildInfoRow(
+                      'Spreading Factor (SF)',
+                      '${connector.currentSf}',
+                    ),
+                  if (connector.currentCr != null)
+                    _buildInfoRow('Coding Rate (CR)', '4/${connector.currentCr}'),
+                  if (connector.selfLatitude != null &&
+                      connector.selfLongitude != null)
+                    _buildInfoRow(
+                      'Location',
+                      '${connector.selfLatitude!.toStringAsFixed(4)}, ${connector.selfLongitude!.toStringAsFixed(4)}',
+                    ),
+                  if (connector.multiAcks != 0)
+                    _buildInfoRow('Multi-Acks', '${connector.multiAcks}'),
                   _buildInfoRow(
                     l10n.settings_infoContactsCount,
                     '${connector.contacts.length}',
@@ -333,19 +380,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(l10n.settings_privacySubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _privacySettings(context, connector),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: Text(l10n.settings_deviceInfo),
-            subtitle: Text(connector.firmwareVersion != null ? 'Firmware ${connector.firmwareVersion}' : (connector.firmwareVerCode != null ? 'Firmware v${connector.firmwareVerCode}' : 'Firmware Unknown')),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CompanionInfoScreen()),
-              );
-            },
           ),
         ],
       ),
