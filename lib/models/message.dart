@@ -99,37 +99,6 @@ class Message {
   }
 
 
-  static Message? fromFrame(Uint8List frame, Uint8List selfPubKey) {
-    if (frame.length < msgTextOffset + 1) return null;
-    final reader = BufferReader(frame);
-    try {
-      final code = reader.readByte();
-      if (code != respCodeContactMsgRecv && code != respCodeContactMsgRecvV3) {
-        return null;
-      }
-
-      final senderKey = reader.readBytes(pubKeySize);
-      final timestampRaw = reader.readInt32LE();
-      final flags = reader.readByte();
-      if ((flags >> 2) != txtTypePlain) {
-        return null;
-      }
-      final text = reader.readCString();
-
-      return Message(
-        senderKey: senderKey,
-        text: text,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(timestampRaw * 1000),
-        isOutgoing: false,
-        isCli: false,
-        status: MessageStatus.delivered,
-        pathBytes: Uint8List(0),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
   static Message outgoing(
     Uint8List recipientKey,
     String text, {

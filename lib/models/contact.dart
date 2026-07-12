@@ -216,8 +216,6 @@ class Contact {
           ? lastMod
           : lastAdvertTimestamp;
 
-      final actualHopCount = hopCount < 0 ? -1 : PathHelper.getHopCount(pathBytes, stride: hashSize);
-
       DateTime parsedLastSeen = DateTime.fromMillisecondsSinceEpoch(effectiveLastSeen * 1000);
       if (parsedLastSeen.isAfter(DateTime.now())) {
         parsedLastSeen = DateTime.now();
@@ -228,7 +226,8 @@ class Contact {
         name: name.isEmpty ? 'Unknown' : name,
         type: type,
         flags: flags,
-        pathLength: actualHopCount,
+        // path_len byte is authoritative (firmware: low 6 bits = hop count)
+        pathLength: hopCount,
         path: pathBytes,
         pathHashSize: hashSize,
         latitude: lat,
