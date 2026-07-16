@@ -4885,6 +4885,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    // The radio decrypts and queues messages for any slot it has keyed,
+    // including channels this app never configured. Don't notify for a chat
+    // the user can't see; query the slot instead so the channel surfaces in
+    // the channel list where it can be muted or deleted.
+    if (channelName == null && _findChannelByIndex(channelIndex) == null) {
+      appLogger.info(
+        'Suppressed notification for untracked channel $channelIndex; querying device for its info',
+        tag: 'Connector',
+      );
+      _queryUntrackedChannel(channelIndex);
+      return;
+    }
+
     final label = channelName ?? _channelDisplayName(channelIndex);
     if (_appSettingsService!.isChannelMuted(label)) return;
 
@@ -5457,6 +5470,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           (c) => c?.index == index,
           orElse: () => null,
         );
+  }
+
+  final Set<int> _queriedUntrackedChannels = {};
+
+  void _queryUntrackedChannel(int channelIndex) {
+    if (channelIndex < 0 || channelIndex >= _maxChannels) return;
+    if (!_queriedUntrackedChannels.add(channelIndex)) return;
+    unawaited(sendFrame(buildGetChannelFrame(channelIndex)));
   }
 
   void _maybeIncrementChannelUnread(
