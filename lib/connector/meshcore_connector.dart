@@ -5085,6 +5085,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
         if (existing.isNotEmpty) {
           existing.first.update(snr);
+          existing.first.publicKey ??= pubKey;
           if (parsedName != null && parsedName.isNotEmpty) {
             existing.first.name = parsedName;
           }
