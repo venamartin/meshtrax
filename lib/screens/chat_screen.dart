@@ -1583,14 +1583,10 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       senderName = _resolveContact(connector).name;
     }
-    String cleanText = message.text;
-    if (!message.isOutgoing && _resolveContact(connector).type == advTypeRoom) {
-      cleanText = cleanText.substring(4.clamp(0, cleanText.length));
-    }
     final pathMessage = ChannelMessage(
       senderKey: null,
       senderName: senderName,
-      text: cleanText,
+      text: message.text,
       timestamp: message.timestamp,
       isOutgoing: message.isOutgoing,
       status: ChannelMessageStatus.sent,
@@ -1638,12 +1634,7 @@ class _ChatScreenState extends State<ChatScreen> {
               title: Text(context.l10n.common_copy),
               onTap: () {
                 Navigator.pop(sheetContext);
-                String textToCopy = message.text;
-                if (!message.isOutgoing &&
-                    _resolveContact(context.read<MeshCoreConnector>()).type == advTypeRoom) {
-                  textToCopy = textToCopy.substring(4.clamp(0, textToCopy.length));
-                }
-                _copyMessageText(textToCopy);
+                _copyMessageText(message.text);
               },
             ),
             ListTile(
@@ -1768,15 +1759,10 @@ class _ChatScreenState extends State<ChatScreen> {
         ? senderContact.name
         : null;
         
-    String textForHash = message.text;
-    if (liveContact.type == advTypeRoom && !message.isOutgoing) {
-      textForHash = textForHash.substring(4.clamp(0, textForHash.length));
-    }
-
     final hash = ReactionHelper.computeReactionHash(
       timestampSecs,
       senderName,
-      textForHash,
+      message.text,
     );
     final reactionText = ReactionHelper.encodeReaction(hash, emojiIndex);
     connector.sendMessage(_resolveContact(connector), reactionText);
@@ -1810,10 +1796,7 @@ class _MessageBubble extends StatelessWidget {
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
 
-    String messageText = message.text;
-    if (isRoomServer && !isOutgoing) {
-      messageText = message.text.substring(4.clamp(0, message.text.length));
-    }
+    final messageText = message.text;
 
     final gifId = GifHelper.parseGif(messageText);
     final poi = _parsePoiMessage(messageText);

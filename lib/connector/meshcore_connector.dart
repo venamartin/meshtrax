@@ -4705,9 +4705,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           } else if (contact?.type == advTypeRoom) {
             _notificationService.showMessageNotification(
               contactName: contact?.name ?? 'Unknown Room',
-              message: message.text.length > 4
-                  ? message.text.substring(4)
-                  : message.text,
+              message: message.text,
               contactId: message.senderKeyHex,
               badgeCount: getTotalUnreadCount(),
             );
@@ -4720,45 +4718,63 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
+  /// Parses the byte layout of a CONTACT_MSG_RECV / _V3 frame:
+  /// [code][snr][reserved][reserved][prefix x6][path_len][txt_type][timestamp x4][author prefix x4 if signed][text...]
+  /// (the snr/reserved bytes only exist in the V3 frame). Signed messages are
+  /// room server posts; their [authorPrefix] holds the first 4 bytes of the
+  /// original author's pubkey. Returns null for a non-message code.
+  @visibleForTesting
+  static ({
+    Uint8List senderPrefix,
+    int pathLen,
+    int txtType,
+    int timestampRaw,
+    Uint8List? authorPrefix,
+    String text,
+  })?
+  parseContactMsgLayout(Uint8List frame) {
+    final reader = BufferReader(frame);
+    final code = reader.readByte();
+    if (code != respCodeContactMsgRecv && code != respCodeContactMsgRecvV3) {
+      return null;
+    }
+    if (code == respCodeContactMsgRecvV3) {
+      reader.skipBytes(3); // Skip SNR byte and reserved bytes
+    }
+    final senderPrefix = reader.readBytes(6);
+    final pathLen = reader.readByte();
+    final txtType = reader.readByte();
+    final timestampRaw = reader.readUInt32LE();
+    Uint8List? authorPrefix;
+    if (txtType == txtTypeSigned) {
+      authorPrefix = reader.readBytes(4);
+    }
+    return (
+      senderPrefix: senderPrefix,
+      pathLen: pathLen,
+      txtType: txtType,
+      timestampRaw: timestampRaw,
+      authorPrefix: authorPrefix,
+      text: reader.readCString(),
+    );
+  }
+
   Message? _parseContactMessage(Uint8List frame) {
     if (frame.isEmpty) {
       appLogger.warn('Received empty frame, ignoring');
       return null;
     }
-    final reader = BufferReader(frame);
 
     try {
-      final code = reader.readByte();
-      if (code != respCodeContactMsgRecv && code != respCodeContactMsgRecvV3) {
+      final layout = parseContactMsgLayout(frame);
+      if (layout == null) {
         appLogger.warn(
-          'Unexpected message code: $code, expected contact message receive codes',
+          'Unexpected message code: ${frame[0]}, expected contact message receive codes',
         );
         return null;
       }
 
-      // Companion radio layout:
-      // [code][snr][reserved][reserved][prefix x6][path_len][txt_type][timestamp x4][extra?][text...]
-      // double snr = 0;
-      if (code == respCodeContactMsgRecvV3) {
-        // Older firmware layout with SNR as a signed byte after the code
-        // snr = reader.readInt8().toDouble() * 4; // SNR in dB, scaled by 4
-        reader.skipBytes(3); // Skip SNR byte and reserved bytes
-      }
-
-      final senderPrefix = reader.readBytes(6);
-      final pathLength = reader.readByte();
-      final txtType = reader.readByte();
-      final timestampRaw = reader.readUInt32LE();
-      final timestamp = DateTime.fromMillisecondsSinceEpoch(
-        timestampRaw * 1000,
-      );
-
-      if (txtType == 2) {
-        reader.skipBytes(4); // Skip extra 4 bytes for signed/plain variants
-      }
-
-      final msgText = reader.readCString();
-
+      final txtType = layout.txtType;
       final isPlain = txtType == txtTypePlain;
       final isCli = txtType == txtTypeCliData;
       final isSigned = txtType == txtTypeSigned;
@@ -4769,6 +4785,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return null;
       }
 
+      final msgText = layout.text;
       if (msgText.isEmpty) {
         appLogger.warn('Received message with empty text, ignoring');
         return null;
@@ -4777,6 +4794,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ? msgText
           : (Smaz.tryDecodePrefixed(msgText) ?? msgText);
 
+      final senderPrefix = layout.senderPrefix;
       final contact = _contacts.cast<Contact?>().firstWhere(
         (c) => c != null && _matchesPrefix(c.publicKey, senderPrefix),
         orElse: () => null,
@@ -4791,15 +4809,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return Message(
         senderKey: contact.publicKey,
         text: decodedText,
-        timestamp: timestamp,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(
+          layout.timestampRaw * 1000,
+        ),
         isOutgoing: false,
         isCli: isCli,
         status: MessageStatus.delivered,
-        pathLength: extractPathHopCount(pathLength),
+        pathLength: extractPathHopCount(layout.pathLen),
         pathBytes: Uint8List(0),
-        fourByteRoomContactKey: msgText.length >= 4
-            ? Uint8List.fromList(msgText.substring(0, 4).codeUnits)
-            : null,
+        fourByteRoomContactKey: layout.authorPrefix,
       );
     } catch (e) {
       appLogger.warn('Error parsing contact direct message: $e');
