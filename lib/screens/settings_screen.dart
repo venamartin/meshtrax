@@ -880,7 +880,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _editPathHashSize(BuildContext context, MeshCoreConnector connector) {
-    int currentMode = (connector.pathHashByteWidth - 1).clamp(0, 1);
+    int currentMode = pathHashModeFromWidth(connector.pathHashByteWidth)
+        .clamp(0, 1); // dialog only offers 1- and 2-byte widths
     final l10n = context.l10n;
     showDialog(
       context: context,

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -123,45 +122,24 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   }
 
   Uint8List buildPath(Uint8List pathBytes) {
-    Uint8List traceBytes;
-
     if (pathBytes.isEmpty) {
       final pk = widget.targetContact?.publicKey;
-      final n = widget.pathHashByteWidth.clamp(1, pubKeySize);
-      if (pk != null && pk.length >= n) {
-        return Uint8List.fromList(pk.sublist(0, n));
-      }
-      traceBytes = Uint8List(1);
-      traceBytes[0] = pk?[0] ?? 0;
-      return traceBytes;
+      if (pk == null || pk.isEmpty) return Uint8List(1);
+      return PathHelper.pubKeyPrefix(pk, stride: widget.pathHashByteWidth);
     }
 
     if (widget.targetContact?.type == advTypeRepeater ||
         widget.targetContact?.type == advTypeRoom) {
-      final hops = PathHelper.getHops(pathBytes, stride: widget.pathHashByteWidth);
-      final reversedHops = hops.reversed.toList();
-      final writer = BytesBuilder();
-      writer.add(pathBytes);
-      writer.addByte(widget.targetContact?.publicKey[0] ?? 0);
-      for (final hop in reversedHops) {
-        writer.add(hop);
-      }
-      traceBytes = writer.toBytes();
-    } else {
-      if (pathBytes.length < widget.pathHashByteWidth * 2) {
-        return pathBytes.isEmpty ? Uint8List(0) : pathBytes;
-      }
-      final hops = PathHelper.getHops(pathBytes, stride: widget.pathHashByteWidth);
-      final reversedHops = hops.reversed.skip(1).toList();
-      
-      final writer = BytesBuilder();
-      writer.add(pathBytes);
-      for (final hop in reversedHops) {
-        writer.add(hop);
-      }
-      traceBytes = writer.toBytes();
+      return PathHelper.roundTripPath(
+        pathBytes,
+        stride: widget.pathHashByteWidth,
+        viaTargetPubKey: widget.targetContact?.publicKey,
+      );
     }
-    return traceBytes;
+    if (pathBytes.length < widget.pathHashByteWidth * 2) {
+      return pathBytes;
+    }
+    return PathHelper.roundTripPath(pathBytes, stride: widget.pathHashByteWidth);
   }
 
   Future<void> _doPathTrace() async {
@@ -173,7 +151,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     }
 
     final pathTmp = widget.reversePathAround
-        ? Uint8List.fromList(PathHelper.getHops(widget.path, stride: widget.pathHashByteWidth).reversed.expand((h) => h).toList())
+        ? PathHelper.reverseHops(widget.path, stride: widget.pathHashByteWidth)
         : widget.path;
 
     final path = widget.flipPathAround ? buildPath(pathTmp) : pathTmp;
@@ -185,7 +163,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     );
 
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final flags = (widget.pathHashByteWidth - 1) & 0x03;
+    final flags = encodeTraceFlags(widget.pathHashByteWidth);
     final frame = buildTraceReq(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       0, //auth
@@ -308,8 +286,8 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
         if (contact != null && contact.hasLocation) continue;
         final peers = connector.contacts
             .where(
-              (c) => c.hasLocation && c.path.isNotEmpty && 
-                     PathHelper.formatPathHex(c.path, stride: c.pathHashSize).split(',').last == hop,
+              (c) => c.hasLocation && c.path.isNotEmpty &&
+                     PathHelper.lastHopHex(c.path, stride: c.pathHashSize) == hop,
             )
             .toList();
         if (peers.isNotEmpty) {
@@ -345,17 +323,16 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
             // Infer from the last hop: average GPS contacts sharing that hop.
             // For a round-trip path (flipPathAround/reversePathAround), the target-side hop
             // sits in the middle of the symmetric sequence; .last is the local side.
-            final hops = PathHelper.formatPathHex(widget.path, stride: widget.pathHashByteWidth).split(',');
             final lastHop = widget.reversePathAround
-                ? hops.first
-                : hops.last;
+                ? PathHelper.firstHopHex(widget.path, stride: widget.pathHashByteWidth)
+                : PathHelper.lastHopHex(widget.path, stride: widget.pathHashByteWidth);
 
             final peers = connector.allContacts
                 .where(
                   (c) =>
                       c.hasLocation &&
                       c.path.isNotEmpty &&
-                      PathHelper.formatPathHex(c.path, stride: c.pathHashSize).split(',').last == lastHop,
+                      PathHelper.lastHopHex(c.path, stride: c.pathHashSize) == lastHop,
                 )
                 .toList();
             if (peers.isNotEmpty) {

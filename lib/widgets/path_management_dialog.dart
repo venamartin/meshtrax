@@ -192,20 +192,18 @@ class _PathManagementDialogState extends State<_PathManagementDialog> {
             ? null
             : repeatersList.elementAt(2);
 
+        final hashWidth = connector.pathHashByteWidth;
         List<MapEntry<int, MapEntry<Color, PathRecord>>> pathsWithRepeaters =
             paths.map((path) {
               final isDirectRepeater =
                   directRepeater != null &&
-                  path.pathBytes.isNotEmpty &&
-                  directRepeater.pubkeyFirstByte == path.pathBytes.first;
+                  directRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
               final isSecondDirectRepeater =
                   secondDirectRepeater != null &&
-                  path.pathBytes.isNotEmpty &&
-                  secondDirectRepeater.pubkeyFirstByte == path.pathBytes.first;
+                  secondDirectRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
               final isThirdDirectRepeater =
                   thirdDirectRepeater != null &&
-                  path.pathBytes.isNotEmpty &&
-                  thirdDirectRepeater.pubkeyFirstByte == path.pathBytes.first;
+                  thirdDirectRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
 
               int ranking = -1;
               Color color = Colors.grey;

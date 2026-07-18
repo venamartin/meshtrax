@@ -341,7 +341,7 @@ const int pubKeySize = 32;
 const int signatureSize = 64;
 const int maxPathSize = 64;
 const int maxNameSize = 32;
-const int maxFrameSize = 172;
+const int maxFrameSize = 176;
 
 /// Extracts the path hash size from the path_len byte.
 /// The top 2 bits encode the size minus 1 (i.e., 00 = 1 byte, 01 = 2 bytes, 10 = 3 bytes).
@@ -363,13 +363,21 @@ int encodePathLenByte(int hopCount, int hashSize) {
   int sizeBits = (hashSize - 1).clamp(0, 3);
   return (hopCount & 0x3F) | (sizeBits << 6);
 }
+
+/// Flags byte for CMD_SEND_TRACE_PATH: low 2 bits encode the path hash
+/// width (firmware: `path_sz = flags & 0x03`, hop count = `path_len >> path_sz`).
+int encodeTraceFlags(int hashWidth) => (hashWidth - 1).clamp(0, 3);
+
+/// CMD_SET_PATH_HASH_MODE mode value for an on-air hash width in bytes
+/// (mode 0..2 → width 1..3).
+int pathHashModeFromWidth(int width) => (width - 1).clamp(0, 2);
 const int appProtocolVersion = 3;
 // Matches firmware MAX_TEXT_LEN (10 * CIPHER_BLOCK_SIZE).
 const int maxTextPayloadBytes = 160;
 const int _sendTextMsgOverheadBytes =
     1 + 1 + 1 + 4 + 6 + 1 + 2; // +2 safety margin
 const int _sendChannelTextMsgOverheadBytes =
-    1 + 1 + 1 + 4 + 1 + 2; // +2 safety margin
+    1 + 1 + 1 + 4 + 2; // +2 safety margin
 
 int maxContactMessageBytes() {
   final byFrame = maxFrameSize - _sendTextMsgOverheadBytes;
@@ -413,12 +421,6 @@ const int contactLonOffset = 140;
 const int contactLastModOffset = 144;
 const int contactFrameSize = 148;
 
-// Message frame offsets
-const int msgPubKeyOffset = 1;
-const int msgTimestampOffset = 33;
-const int msgFlagsOffset = 37;
-const int msgTextOffset = 38;
-
 class ParsedContactText {
   final Uint8List senderPrefix;
   final String text;
@@ -448,7 +450,7 @@ ParsedContactText? parseContactMessageText(Uint8List frame) {
 
     final isSigned = textType == txtTypeSigned;
     if (isSigned) {
-      // Signed messages have a 4-byte signature after the timestamp, before the text
+      // Signed messages carry a 4-byte sender pubkey prefix between timestamp and text
       message.skipBytes(4);
     }
     final text = message.readCString();
@@ -555,8 +557,9 @@ Uint8List buildSendChannelTextMsgFrame(int channelIndex, String text) {
   writer.writeByte(txtTypePlain);
   writer.writeByte(channelIndex);
   writer.writeUInt32LE(timestamp);
+  // No null terminator: firmware counts every byte after the header as text,
+  // so a terminator would be encrypted and sent over the air.
   writer.writeString(text);
-  writer.writeByte(0);
   return writer.toBytes();
 }
 
@@ -729,7 +732,7 @@ Uint8List buildResetPathFrame(Uint8List pubKey) {
 }
 
 // Build CMD_ADD_UPDATE_CONTACT frame to set custom path
-// Format: [cmd][pub_key x32][type][flags][path_len][path x64][name x32][Lat? x4, Lon? x4][timestamp? x4]
+// Format: [cmd][pub_key x32][type][flags][path_len][path x64][name x32][timestamp x4][lat x4][lon x4][last_mod? x4]
 Uint8List buildUpdateContactPathFrame(
   Uint8List pubKey,
   Uint8List path,
@@ -988,15 +991,14 @@ Uint8List buildSetAutoAddConfigFrame({
 
 //Build CMD_SEND_TELEMETRY_REQ
 // Format: [cmd][reserved x3][pub_key? x32]
+// Without pub_key the frame must be exactly 4 bytes (self telemetry).
 Uint8List buildSendTelemetryReq(Uint8List? pubKey) {
   final writer = BufferWriter();
   writer.writeByte(cmdSendTelemetryReq);
+  writer.writeBytes(Uint8List(3)); // reserved bytes
 
   if (pubKey != null && pubKey.length == pubKeySize) {
-    writer.writeBytes(Uint8List(3)); // reserved bytes
     writer.writeBytes(pubKey);
-  } else {
-    writer.writeBytes(Uint8List(4)); // reserved bytes
   }
   return writer.toBytes();
 }

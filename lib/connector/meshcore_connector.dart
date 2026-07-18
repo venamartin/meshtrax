@@ -48,19 +48,41 @@ import 'meshcore_protocol.dart';
 
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
-  final int pubkeyFirstByte;
+  final Uint8List pubkeyPrefix; // leading bytes of the pub key (on-air hash)
   Uint8List? publicKey;
   String? name;
   double snr;
   DateTime lastUpdated;
 
   DirectRepeater({
-    required this.pubkeyFirstByte,
+    required this.pubkeyPrefix,
     this.publicKey,
     this.name,
     required this.snr,
     DateTime? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now();
+
+  String get prefixHex => pubkeyPrefix
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join()
+      .toUpperCase();
+
+  /// True when [hash] (a hop hash or public key) agrees with this repeater's
+  /// prefix on their common leading bytes.
+  bool matchesHash(List<int> hash) {
+    if (pubkeyPrefix.isEmpty || hash.isEmpty) return false;
+    final n = math.min(pubkeyPrefix.length, hash.length);
+    for (var i = 0; i < n; i++) {
+      if (pubkeyPrefix[i] != hash[i]) return false;
+    }
+    return true;
+  }
+
+  /// True when this repeater is the first hop of [pathBytes].
+  bool matchesFirstHopOf(List<int> pathBytes, {int stride = 1}) {
+    if (pathBytes.isEmpty) return false;
+    return matchesHash(pathBytes.sublist(0, math.min(stride, pathBytes.length)));
+  }
 
   void update(double newSNR) {
     snr = newSNR;
@@ -4370,6 +4392,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           pathOverrideBytes: existing.pathOverrideBytes,
           latitude: contact.latitude ?? existing.latitude,
           longitude: contact.longitude ?? existing.longitude,
+          // Device DB rows can be legitimately old, so skew is only assessed
+          // on live adverts; carry the last assessment through syncs.
+          clockCorrected: existing.clockCorrected,
         );
 
         appLogger.info(
@@ -4863,6 +4888,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    // The radio decrypts and queues messages for any slot it has keyed,
+    // including channels this app never configured. Don't notify for a chat
+    // the user can't see; query the slot instead so the channel surfaces in
+    // the channel list where it can be muted or deleted.
+    if (channelName == null && _findChannelByIndex(channelIndex) == null) {
+      appLogger.info(
+        'Suppressed notification for untracked channel $channelIndex; querying device for its info',
+        tag: 'Connector',
+      );
+      _queryUntrackedChannel(channelIndex);
+      return;
+    }
+
     final label = channelName ?? _channelDisplayName(channelIndex);
     if (_appSettingsService!.isChannelMuted(label)) return;
 
@@ -5023,7 +5061,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         final hasFullPubKey = ctlPayload.length >= 6 + 32;
         final Uint8List? pubKey = hasFullPubKey ? ctlPayload.sublist(6, 38) : null;
         final hex = pubKey != null ? pubKeyToHex(pubKey) : null;
-        final pubkeyFirstByte = pubKey != null ? pubKey.first : (ctlPayload.length >= 7 ? ctlPayload[6] : 0);
+        // Discovery responses carry at least an 8-byte pubkey prefix at [6..];
+        // keep the on-air hash width of it as the repeater's identity.
+        final prefixEnd = math.min(6 + _pathHashByteWidth, ctlPayload.length);
+        final pubkeyPrefix = prefixEnd > 6
+            ? Uint8List.fromList(ctlPayload.sublist(6, prefixEnd))
+            : Uint8List(0);
 
         String? parsedName;
         if (hasFullPubKey && ctlPayload.length > 38) {
@@ -5033,18 +5076,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           }
         }
 
-        appLogger.info('Discovered repeater with first pubkey byte: 0x${pubkeyFirstByte.toRadixString(16).padLeft(2, '0')} at SNR $snr dB');
+        appLogger.info('Discovered repeater with pubkey prefix 0x${PathHelper.hopHex(pubkeyPrefix)} at SNR $snr dB');
 
         _directRepeaters.removeWhere((r) => r.isStale());
         final existing = _directRepeaters.where((r) {
           if (r.publicKey != null && hex != null) {
             return pubKeyToHex(r.publicKey!) == hex;
           }
-          return r.pubkeyFirstByte == pubkeyFirstByte;
+          return r.matchesHash(pubkeyPrefix);
         });
 
         if (existing.isNotEmpty) {
           existing.first.update(snr);
+          existing.first.publicKey ??= pubKey;
           if (parsedName != null && parsedName.isNotEmpty) {
             existing.first.name = parsedName;
           }
@@ -5057,7 +5101,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           }
           if (_directRepeaters.length < 5) {
             _directRepeaters.add(DirectRepeater(
-              pubkeyFirstByte: pubkeyFirstByte,
+              pubkeyPrefix: pubkeyPrefix,
               publicKey: pubKey,
               name: parsedName,
               snr: snr,
@@ -5430,6 +5474,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           (c) => c?.index == index,
           orElse: () => null,
         );
+  }
+
+  final Set<int> _queriedUntrackedChannels = {};
+
+  void _queryUntrackedChannel(int channelIndex) {
+    if (channelIndex < 0 || channelIndex >= _maxChannels) return;
+    if (!_queriedUntrackedChannels.add(channelIndex)) return;
+    unawaited(sendFrame(buildGetChannelFrame(channelIndex)));
   }
 
   void _maybeIncrementChannelUnread(
@@ -6456,6 +6508,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    final advertTime = _parseAdvertTimestamp(timestamp);
     importDiscoveredContact(
       Contact(
         rawPacket: frame,
@@ -6469,7 +6522,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
-        lastSeen: _parseAndCapTimestamp(timestamp),
+        lastSeen: advertTime.time,
+        clockCorrected: advertTime.corrected,
       ),
     );
   }
@@ -6485,13 +6539,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lon <= 180.0;
   }
 
-  DateTime _parseAndCapTimestamp(int timestampSeconds) {
-    DateTime parsed = DateTime.fromMillisecondsSinceEpoch(timestampSeconds * 1000);
+  static const Duration _maxAdvertClockSkew = Duration(minutes: 5);
+
+  /// An advert heard live can't be older (or newer) than mesh transit time,
+  /// so a timestamp outside [_maxAdvertClockSkew] means the sender's clock is
+  /// wrong: use the receive time instead and flag the correction.
+  ({DateTime time, bool corrected}) _parseAdvertTimestamp(int timestampSeconds) {
+    final claimed = DateTime.fromMillisecondsSinceEpoch(timestampSeconds * 1000);
     final now = DateTime.now();
-    if (parsed.isAfter(now)) {
-      return now;
+    if (claimed.difference(now).abs() > _maxAdvertClockSkew) {
+      return (time: now, corrected: true);
     }
-    return parsed;
+    return (time: claimed, corrected: false);
   }
 
   void _handlePayloadAdvertReceived(
@@ -6560,6 +6619,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     final hopCount = extractPathHopCount(pathLenRaw);
     final hashSize = extractPathHashSize(pathLenRaw);
+    final advertTime = _parseAdvertTimestamp(timestamp);
 
     if (!_isLoadingContacts) {
       _localDiscoveredTimes[contactKeyHex] = DateTime.now();
@@ -6578,7 +6638,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
-        lastSeen: _parseAndCapTimestamp(timestamp),
+        lastSeen: advertTime.time,
+        clockCorrected: advertTime.corrected,
       );
       if ((_autoAddUsers && type == advTypeChat) ||
           (_autoAddRepeaters && type == advTypeRepeater) ||
@@ -6624,7 +6685,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ),
         pathLength: path.isEmpty ? -1 : hopCount,
         lastMessageAt: mergedLastMessageAt,
-        lastSeen: _parseAndCapTimestamp(timestamp),
+        lastSeen: advertTime.time,
+        clockCorrected: advertTime.corrected,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
       );
@@ -6650,10 +6712,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List path,
     int pathLenRaw,
   ) {
-    final hashSize = ((pathLenRaw >> 6) & 0x03) + 1;
-    final pubkeyFirstByte = path.isNotEmpty
-        ? path[path.length - hashSize]
-        : contact.publicKey.first;
+    final hashSize = extractPathHashSize(pathLenRaw);
+    // The direct (last) hop's full hash identifies the repeater we heard.
+    final lastHopTake = math.min(hashSize, path.length);
+    final pubkeyPrefix = path.isNotEmpty
+        ? Uint8List.fromList(path.sublist(path.length - lastHopTake))
+        : PathHelper.pubKeyPrefix(contact.publicKey, stride: hashSize);
 
     _directRepeaters.removeWhere((r) => r.isStale());
 
@@ -6714,7 +6778,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (r.publicKey != null && lastHopPublicKey != null) {
         return pubKeyToHex(r.publicKey!) == pubKeyToHex(lastHopPublicKey);
       }
-      return r.pubkeyFirstByte == pubkeyFirstByte;
+      return r.matchesHash(pubkeyPrefix);
     });
 
     final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
@@ -6738,7 +6802,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     } else if (_directRepeaters.length < 5) {
       _directRepeaters.add(
         DirectRepeater(
-          pubkeyFirstByte: pubkeyFirstByte,
+          pubkeyPrefix: pubkeyPrefix,
           publicKey: lastHopPublicKey,
           snr: snr,
         ),

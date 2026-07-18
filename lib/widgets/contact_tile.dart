@@ -75,6 +75,18 @@ class ContactTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              if (contact.clockCorrected) ...[
+                Tooltip(
+                  message: "Sender's clock is wrong — showing time received",
+                  triggerMode: TooltipTriggerMode.tap,
+                  child: Icon(
+                    Icons.history_toggle_off,
+                    size: 14,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(width: 3),
+              ],
               Text(
                 _formatLastSeen(context, lastSeen),
                 style: TextStyle(

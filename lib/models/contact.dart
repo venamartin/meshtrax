@@ -20,6 +20,7 @@ class Contact {
   final DateTime lastMessageAt;
   final bool isActive;
   final bool wasPulled;
+  final bool clockCorrected; // lastSeen is receive time; sender's clock was implausible
   final Uint8List? rawPacket;
 
   Contact({
@@ -38,6 +39,7 @@ class Contact {
     DateTime? lastMessageAt,
     this.isActive = true,
     this.wasPulled = false,
+    this.clockCorrected = false,
     this.rawPacket,
   }) : lastMessageAt = lastMessageAt ?? lastSeen;
 
@@ -107,6 +109,7 @@ class Contact {
     DateTime? lastMessageAt,
     bool? isActive,
     int? pathHashSize,
+    bool? clockCorrected,
     Uint8List? rawPacket,
   }) {
     return Contact(
@@ -128,6 +131,7 @@ class Contact {
       lastSeen: lastSeen ?? this.lastSeen,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       isActive: isActive ?? this.isActive,
+      clockCorrected: clockCorrected ?? this.clockCorrected,
       rawPacket: rawPacket ?? this.rawPacket,
     );
   }
@@ -216,8 +220,6 @@ class Contact {
           ? lastMod
           : lastAdvertTimestamp;
 
-      final actualHopCount = hopCount < 0 ? -1 : PathHelper.getHopCount(pathBytes, stride: hashSize);
-
       DateTime parsedLastSeen = DateTime.fromMillisecondsSinceEpoch(effectiveLastSeen * 1000);
       if (parsedLastSeen.isAfter(DateTime.now())) {
         parsedLastSeen = DateTime.now();
@@ -228,7 +230,8 @@ class Contact {
         name: name.isEmpty ? 'Unknown' : name,
         type: type,
         flags: flags,
-        pathLength: actualHopCount,
+        // path_len byte is authoritative (firmware: low 6 bits = hop count)
+        pathLength: hopCount,
         path: pathBytes,
         pathHashSize: hashSize,
         latitude: lat,
@@ -268,6 +271,7 @@ class Contact {
       'lastMessageAt': lastMessageAt.millisecondsSinceEpoch,
       'isActive': isActive,
       'wasPulled': wasPulled,
+      'clockCorrected': clockCorrected,
     };
   }
 
@@ -294,6 +298,7 @@ class Contact {
           : null,
       isActive: json['isActive'] as bool? ?? true,
       wasPulled: json['wasPulled'] as bool? ?? false,
+      clockCorrected: json['clockCorrected'] as bool? ?? false,
     );
   }
 
