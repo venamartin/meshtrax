@@ -4392,6 +4392,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           pathOverrideBytes: existing.pathOverrideBytes,
           latitude: contact.latitude ?? existing.latitude,
           longitude: contact.longitude ?? existing.longitude,
+          // Device DB rows can be legitimately old, so skew is only assessed
+          // on live adverts; carry the last assessment through syncs.
+          clockCorrected: existing.clockCorrected,
         );
 
         appLogger.info(
@@ -6505,6 +6508,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    final advertTime = _parseAdvertTimestamp(timestamp);
     importDiscoveredContact(
       Contact(
         rawPacket: frame,
@@ -6518,7 +6522,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
-        lastSeen: _parseAndCapTimestamp(timestamp),
+        lastSeen: advertTime.time,
+        clockCorrected: advertTime.corrected,
       ),
     );
   }
@@ -6534,13 +6539,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lon <= 180.0;
   }
 
-  DateTime _parseAndCapTimestamp(int timestampSeconds) {
-    DateTime parsed = DateTime.fromMillisecondsSinceEpoch(timestampSeconds * 1000);
+  static const Duration _maxAdvertClockSkew = Duration(minutes: 5);
+
+  /// An advert heard live can't be older (or newer) than mesh transit time,
+  /// so a timestamp outside [_maxAdvertClockSkew] means the sender's clock is
+  /// wrong: use the receive time instead and flag the correction.
+  ({DateTime time, bool corrected}) _parseAdvertTimestamp(int timestampSeconds) {
+    final claimed = DateTime.fromMillisecondsSinceEpoch(timestampSeconds * 1000);
     final now = DateTime.now();
-    if (parsed.isAfter(now)) {
-      return now;
+    if (claimed.difference(now).abs() > _maxAdvertClockSkew) {
+      return (time: now, corrected: true);
     }
-    return parsed;
+    return (time: claimed, corrected: false);
   }
 
   void _handlePayloadAdvertReceived(
@@ -6609,6 +6619,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     final hopCount = extractPathHopCount(pathLenRaw);
     final hashSize = extractPathHashSize(pathLenRaw);
+    final advertTime = _parseAdvertTimestamp(timestamp);
 
     if (!_isLoadingContacts) {
       _localDiscoveredTimes[contactKeyHex] = DateTime.now();
@@ -6627,7 +6638,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ), // Store path in reverse for easier use in outgoing messages
         latitude: latitude,
         longitude: longitude,
-        lastSeen: _parseAndCapTimestamp(timestamp),
+        lastSeen: advertTime.time,
+        clockCorrected: advertTime.corrected,
       );
       if ((_autoAddUsers && type == advTypeChat) ||
           (_autoAddRepeaters && type == advTypeRepeater) ||
@@ -6673,7 +6685,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ),
         pathLength: path.isEmpty ? -1 : hopCount,
         lastMessageAt: mergedLastMessageAt,
-        lastSeen: _parseAndCapTimestamp(timestamp),
+        lastSeen: advertTime.time,
+        clockCorrected: advertTime.corrected,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
       );
