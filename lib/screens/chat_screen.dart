@@ -33,6 +33,7 @@ import '../widgets/elements_ui.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'map_screen.dart';
+import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/emoji_picker.dart';
@@ -333,6 +334,31 @@ class _ChatScreenState extends State<ChatScreen> {
               );
             },
           ),
+          if (widget.contact.type == advTypeRoom)
+            Consumer<MeshCoreConnector>(
+              builder: (context, connector, _) {
+                final adminPassword = connector.roomAdminPassword(
+                  widget.contact.publicKeyHex,
+                );
+                if (adminPassword == null) return const SizedBox.shrink();
+                return IconButton(
+                  icon: const Icon(Icons.admin_panel_settings),
+                  tooltip: 'Manage room',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RepeaterHubScreen(
+                          repeater: _resolveContact(connector),
+                          password: adminPassword,
+                          isAdmin: true,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.timeline),
             tooltip: context.l10n.chat_pathManagement,

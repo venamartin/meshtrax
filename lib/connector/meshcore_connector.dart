@@ -199,6 +199,22 @@ class MeshCoreConnector extends ChangeNotifier {
     return _localDiscoveredTimes[pubKeyHex];
   }
 
+  // Room server admin sessions for this connection, keyed by room pubkey hex.
+  // Lets the room chat offer the management hub without re-prompting for the
+  // password; cleared on disconnect.
+  final Map<String, String> _roomAdminPasswords = {};
+
+  void recordRoomLogin(String pubKeyHex, String password, bool isAdmin) {
+    if (isAdmin) {
+      _roomAdminPasswords[pubKeyHex] = password;
+    } else {
+      _roomAdminPasswords.remove(pubKeyHex);
+    }
+    notifyListeners();
+  }
+
+  String? roomAdminPassword(String pubKeyHex) => _roomAdminPasswords[pubKeyHex];
+
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<int>>? _notifySubscription;
@@ -2405,6 +2421,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _discoveredContacts.clear();
     _conversations.clear();
     _loadedConversationKeys.clear();
+    _roomAdminPasswords.clear();
     _selfPublicKey = null;
     _selfName = null;
     _selfLatitude = null;

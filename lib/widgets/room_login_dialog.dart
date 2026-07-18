@@ -166,6 +166,8 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
         await _storage.removeRepeaterPassword(widget.room.publicKeyHex);
       }
 
+      _connector.recordRoomLogin(widget.room.publicKeyHex, password, isAdmin);
+
       if (mounted) {
         Navigator.pop(context, password);
         Future.microtask(() => widget.onLogin(password, isAdmin));
