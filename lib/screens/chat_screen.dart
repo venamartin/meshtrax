@@ -444,12 +444,13 @@ class _ChatScreenState extends State<ChatScreen> {
           final settingsService = context.watch<AppSettingsService>();
           final contactBlocked =
               settingsService.isContactBlocked(widget.contact.publicKeyHex);
+          // Hide CLI plumbing that older versions stored as chat messages.
+          final visibleMessages = connector
+              .getMessages(widget.contact)
+              .where((m) => !m.isCli);
           final messages = contactBlocked
-              ? connector
-                    .getMessages(widget.contact)
-                    .where((m) => m.isOutgoing)
-                    .toList()
-              : connector.getMessages(widget.contact);
+              ? visibleMessages.where((m) => m.isOutgoing).toList()
+              : visibleMessages.toList();
           return Column(
             children: [
               Expanded(
@@ -1297,8 +1298,12 @@ class _ChatScreenState extends State<ChatScreen> {
     MeshCoreConnector connector,
     Uint8List key4Bytes,
   ) {
-    return connector.contacts.firstWhere(
-      (c) => listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
+    // Search discovered contacts too — the post author doesn't have to be an
+    // active device contact for us to know their name.
+    return connector.allContactsUnfiltered.firstWhere(
+      (c) =>
+          c.publicKey.length >= 4 &&
+          listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
       orElse: () => widget.contact,
     );
   }

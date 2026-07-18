@@ -4676,6 +4676,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return;
       }
 
+      // CLI responses are consumed by the management screens straight off the
+      // frame stream; storing them would render them as chat bubbles in room
+      // conversations ("00|OK - clock set: ...").
+      if (message.isCli) {
+        _handleQueuedMessageReceived();
+        return;
+      }
+
       final contact = _contacts.cast<Contact?>().firstWhere(
         (c) => c?.publicKeyHex == message!.senderKeyHex,
         orElse: () => null,
@@ -5750,7 +5758,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   ) {
     if (!isRoomServer) return null;
     if (!msg.isOutgoing) {
-      final senderContact = _contacts.cast<Contact?>().firstWhere(
+      // Search discovered contacts too, matching _resolveContactFrom4Bytes.
+      final senderContact = allContactsUnfiltered.cast<Contact?>().firstWhere(
         (c) =>
             c != null &&
             _matchesPrefix(c.publicKey, msg.fourByteRoomContactKey),
