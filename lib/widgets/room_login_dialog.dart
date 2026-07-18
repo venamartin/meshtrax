@@ -161,9 +161,13 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
       // Save password if requested
       if (_savePassword) {
         await _storage.saveRepeaterPassword(widget.room.publicKeyHex, password);
+        // Remember the admin outcome so the manage entry survives restarts
+        // (the room's ACL persists admin clients server-side).
+        await _storage.setRoomAdminFlag(widget.room.publicKeyHex, isAdmin);
       } else {
         // Remove saved password if user unchecked the box
         await _storage.removeRepeaterPassword(widget.room.publicKeyHex);
+        await _storage.setRoomAdminFlag(widget.room.publicKeyHex, false);
       }
 
       _connector.recordRoomLogin(widget.room.publicKeyHex, password, isAdmin);

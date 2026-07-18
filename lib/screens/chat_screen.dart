@@ -26,6 +26,7 @@ import '../models/message.dart';
 import '../models/path_history.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
+import '../services/storage_service.dart';
 import '../services/path_history_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
@@ -102,6 +103,23 @@ class _ChatScreenState extends State<ChatScreen> {
       connector.setActiveContact(keyHex);
       _connector = connector;
     });
+
+    if (widget.contact.type == advTypeRoom) {
+      _restoreRoomAdminSession(connector);
+    }
+  }
+
+  /// The room's ACL keeps admin clients across restarts, but the in-memory
+  /// admin session dies with the app. If the last saved-password login was as
+  /// admin, restore the session so the manage entry reappears.
+  Future<void> _restoreRoomAdminSession(MeshCoreConnector connector) async {
+    final keyHex = widget.contact.publicKeyHex;
+    if (connector.roomAdminPassword(keyHex) != null) return;
+    final storage = StorageService();
+    if (!await storage.isRoomAdmin(keyHex)) return;
+    final password = await storage.getRepeaterPassword(keyHex);
+    if (password == null) return;
+    connector.recordRoomLogin(keyHex, password, true);
   }
 
   Message? _findOldestUnreadAnchor(List<Message> messages, int unreadCount) {
