@@ -40,6 +40,7 @@ import '../utils/emoji_utils.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
+import '../widgets/room_login_dialog.dart';
 import '../widgets/path_selection_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../utils/app_logger.dart';
@@ -358,19 +359,42 @@ class _ChatScreenState extends State<ChatScreen> {
                 final adminPassword = connector.roomAdminPassword(
                   widget.contact.publicKeyHex,
                 );
-                if (adminPassword == null) return const SizedBox.shrink();
                 return IconButton(
                   icon: const Icon(Icons.admin_panel_settings),
                   tooltip: 'Manage room',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RepeaterHubScreen(
-                          repeater: _resolveContact(connector),
-                          password: adminPassword,
-                          isAdmin: true,
+                    final room = _resolveContact(connector);
+                    if (adminPassword != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RepeaterHubScreen(
+                            repeater: room,
+                            password: adminPassword,
+                            isAdmin: true,
+                          ),
                         ),
+                      );
+                      return;
+                    }
+                    // No admin session this connection — verify with the
+                    // server, then open the hub as admin or guest.
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) => RoomLoginDialog(
+                        room: room,
+                        onLogin: (password, isAdmin) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RepeaterHubScreen(
+                                repeater: room,
+                                password: password,
+                                isAdmin: isAdmin,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
