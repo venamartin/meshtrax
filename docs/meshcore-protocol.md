@@ -339,7 +339,9 @@ The app polls SYNC_NEXT_MESSAGE (usually after a `PUSH_CODE_MSG_WAITING` tickle)
 [11]     = txt_type (0 plain, 1 CLI data, 2 signed)
 [12..15] = sender_timestamp (uint32 LE)
 [16+]    = text — NOT null-terminated, runs to end of frame
-           For txt_type 2 (signed): [16..19] = 4-byte sender pubkey prefix, text at [20+]
+           For txt_type 2 (signed, i.e. a room server post): [16..19] = 4-byte
+           pubkey prefix of the ORIGINAL AUTHOR (not the room — the room is the
+           6-byte prefix at [4..9]), text at [20+]
 ```
 
 `RESP_CODE_CHANNEL_MSG_RECV_V3` (17) — group channel message:
@@ -675,6 +677,17 @@ use `parseContactMessageText()` or the connector's sync-message handling.
 **File:** `lib/widgets/repeater_login_dialog.dart`
 Login dialog once forced `pathLen: -1` before every login, so logins always flooded even with a
 stored direct path. Use `preparePathForContactSend(repeater)`, which respects the saved override.
+
+### Bug (fixed 2026-07): room posts clipped 4 chars, author shown as "Unknown [<hex of text>]"
+**Files:** `lib/connector/meshcore_connector.dart` (`_parseContactMessage`), `lib/screens/chat_screen.dart`
+**Symptom:** every incoming room server post lost its first 4 characters and its author showed as
+`Unknown [....]` whose hex was actually the missing text bytes (e.g. `49742069` = "It i").
+**Root cause:** the parser skipped the signed message's 4-byte author prefix (correct, see §5) but
+discarded it, while `fourByteRoomContactKey` and five display sites assumed the prefix was still
+embedded in the text — so the first 4 TEXT chars became the "author key" and were stripped from
+display. The real author identity never survived parsing.
+**Fix:** the parser keeps the 4 bytes read after the timestamp as `fourByteRoomContactKey`; the
+text is stored complete and no display site strips it. Never `substring(4)` room message text.
 
 ### Gotcha: direct login times out on many repeaters
 Direct packets have no region → the repeater's reply becomes an unscoped global flood → blocked

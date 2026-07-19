@@ -26,6 +26,7 @@ import '../models/message.dart';
 import '../models/path_history.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
+import '../services/storage_service.dart';
 import '../services/path_history_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
@@ -33,11 +34,13 @@ import '../widgets/elements_ui.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'map_screen.dart';
+import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/emoji_picker.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
+import '../widgets/room_login_dialog.dart';
 import '../widgets/path_selection_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../utils/app_logger.dart';
@@ -101,6 +104,23 @@ class _ChatScreenState extends State<ChatScreen> {
       connector.setActiveContact(keyHex);
       _connector = connector;
     });
+
+    if (widget.contact.type == advTypeRoom) {
+      _restoreRoomAdminSession(connector);
+    }
+  }
+
+  /// The room's ACL keeps admin clients across restarts, but the in-memory
+  /// admin session dies with the app. If the last saved-password login was as
+  /// admin, restore the session so the manage entry reappears.
+  Future<void> _restoreRoomAdminSession(MeshCoreConnector connector) async {
+    final keyHex = widget.contact.publicKeyHex;
+    if (connector.roomAdminPassword(keyHex) != null) return;
+    final storage = StorageService();
+    if (!await storage.isRoomAdmin(keyHex)) return;
+    final password = await storage.getRepeaterPassword(keyHex);
+    if (password == null) return;
+    connector.recordRoomLogin(keyHex, password, true);
   }
 
   Message? _findOldestUnreadAnchor(List<Message> messages, int unreadCount) {
@@ -338,6 +358,54 @@ class _ChatScreenState extends State<ChatScreen> {
             tooltip: context.l10n.chat_pathManagement,
             onPressed: () => _showPathHistory(context),
           ),
+          if (widget.contact.type == advTypeRoom)
+            Consumer<MeshCoreConnector>(
+              builder: (context, connector, _) {
+                final adminPassword = connector.roomAdminPassword(
+                  widget.contact.publicKeyHex,
+                );
+                return IconButton(
+                  icon: const Icon(Icons.admin_panel_settings),
+                  tooltip: 'Manage room',
+                  onPressed: () {
+                    final room = _resolveContact(connector);
+                    if (adminPassword != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RepeaterHubScreen(
+                            repeater: room,
+                            password: adminPassword,
+                            isAdmin: true,
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    // No admin session this connection — verify with the
+                    // server, then open the hub as admin or guest.
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) => RoomLoginDialog(
+                        room: room,
+                        onLogin: (password, isAdmin) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RepeaterHubScreen(
+                                repeater: room,
+                                password: password,
+                                isAdmin: isAdmin,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           const RadioStatsIconButton(),
           Consumer<MeshCoreConnector>(
             builder: (context, connector, _) {
@@ -418,12 +486,13 @@ class _ChatScreenState extends State<ChatScreen> {
           final settingsService = context.watch<AppSettingsService>();
           final contactBlocked =
               settingsService.isContactBlocked(widget.contact.publicKeyHex);
+          // Hide CLI plumbing that older versions stored as chat messages.
+          final visibleMessages = connector
+              .getMessages(widget.contact)
+              .where((m) => !m.isCli);
           final messages = contactBlocked
-              ? connector
-                    .getMessages(widget.contact)
-                    .where((m) => m.isOutgoing)
-                    .toList()
-              : connector.getMessages(widget.contact);
+              ? visibleMessages.where((m) => m.isOutgoing).toList()
+              : visibleMessages.toList();
           return Column(
             children: [
               Expanded(
@@ -1271,8 +1340,12 @@ class _ChatScreenState extends State<ChatScreen> {
     MeshCoreConnector connector,
     Uint8List key4Bytes,
   ) {
-    return connector.contacts.firstWhere(
-      (c) => listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
+    // Search discovered contacts too — the post author doesn't have to be an
+    // active device contact for us to know their name.
+    return connector.allContactsUnfiltered.firstWhere(
+      (c) =>
+          c.publicKey.length >= 4 &&
+          listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
       orElse: () => widget.contact,
     );
   }
@@ -1583,14 +1656,10 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       senderName = _resolveContact(connector).name;
     }
-    String cleanText = message.text;
-    if (!message.isOutgoing && _resolveContact(connector).type == advTypeRoom) {
-      cleanText = cleanText.substring(4.clamp(0, cleanText.length));
-    }
     final pathMessage = ChannelMessage(
       senderKey: null,
       senderName: senderName,
-      text: cleanText,
+      text: message.text,
       timestamp: message.timestamp,
       isOutgoing: message.isOutgoing,
       status: ChannelMessageStatus.sent,
@@ -1638,12 +1707,7 @@ class _ChatScreenState extends State<ChatScreen> {
               title: Text(context.l10n.common_copy),
               onTap: () {
                 Navigator.pop(sheetContext);
-                String textToCopy = message.text;
-                if (!message.isOutgoing &&
-                    _resolveContact(context.read<MeshCoreConnector>()).type == advTypeRoom) {
-                  textToCopy = textToCopy.substring(4.clamp(0, textToCopy.length));
-                }
-                _copyMessageText(textToCopy);
+                _copyMessageText(message.text);
               },
             ),
             ListTile(
@@ -1768,15 +1832,10 @@ class _ChatScreenState extends State<ChatScreen> {
         ? senderContact.name
         : null;
         
-    String textForHash = message.text;
-    if (liveContact.type == advTypeRoom && !message.isOutgoing) {
-      textForHash = textForHash.substring(4.clamp(0, textForHash.length));
-    }
-
     final hash = ReactionHelper.computeReactionHash(
       timestampSecs,
       senderName,
-      textForHash,
+      message.text,
     );
     final reactionText = ReactionHelper.encodeReaction(hash, emojiIndex);
     connector.sendMessage(_resolveContact(connector), reactionText);
@@ -1810,10 +1869,7 @@ class _MessageBubble extends StatelessWidget {
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
 
-    String messageText = message.text;
-    if (isRoomServer && !isOutgoing) {
-      messageText = message.text.substring(4.clamp(0, message.text.length));
-    }
+    final messageText = message.text;
 
     final gifId = GifHelper.parseGif(messageText);
     final poi = _parsePoiMessage(messageText);

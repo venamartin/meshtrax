@@ -71,9 +71,13 @@ class RepeaterHubScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: Colors.orange,
-                      child: const Icon(
-                        Icons.cell_tower,
+                      backgroundColor: repeater.type == advTypeRepeater
+                          ? Colors.orange
+                          : Colors.purple,
+                      child: Icon(
+                        repeater.type == advTypeRepeater
+                            ? Icons.cell_tower
+                            : Icons.group,
                         size: 40,
                         color: Colors.white,
                       ),

@@ -10,6 +10,7 @@ class StorageService {
   static const String _repeaterAutoClockSyncAfterLoginKey =
       'repeater_auto_clock_sync_after_login';
   static const String _deliveryObservationsKey = 'delivery_observations';
+  static const String _roomAdminFlagsKey = 'room_admin_flags';
 
   Future<Map<String, bool>> _loadRepeaterAutoClockSyncAfterLogin() async {
     final prefs = PrefsManager.instance;
@@ -157,6 +158,33 @@ class StorageService {
   Future<void> clearAllRepeaterPasswords() async {
     final prefs = PrefsManager.instance;
     await prefs.remove(_repeaterPasswordsKey);
+  }
+
+  /// Rooms whose last saved-password login was as admin, by pubKeyHex.
+  Future<Set<String>> _loadRoomAdminFlags() async {
+    final prefs = PrefsManager.instance;
+    final jsonStr = prefs.getString(_roomAdminFlagsKey);
+    if (jsonStr == null) return {};
+    try {
+      return (jsonDecode(jsonStr) as List).cast<String>().toSet();
+    } catch (e) {
+      return {};
+    }
+  }
+
+  Future<void> setRoomAdminFlag(String pubKeyHex, bool isAdmin) async {
+    final prefs = PrefsManager.instance;
+    final flags = await _loadRoomAdminFlags();
+    if (isAdmin) {
+      flags.add(pubKeyHex);
+    } else {
+      flags.remove(pubKeyHex);
+    }
+    await prefs.setString(_roomAdminFlagsKey, jsonEncode(flags.toList()));
+  }
+
+  Future<bool> isRoomAdmin(String pubKeyHex) async {
+    return (await _loadRoomAdminFlags()).contains(pubKeyHex);
   }
 
   Future<void> saveDeliveryObservations(
