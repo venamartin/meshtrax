@@ -4904,10 +4904,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final label = channelName ?? _channelDisplayName(channelIndex);
     if (_appSettingsService!.isChannelMuted(label)) return;
 
+    // message.text is the raw on-wire form; a reply carries
+    // "@[Name]\nre:<snippet>…\n<body>" markup that the chat screen parses away.
+    // Show only the body so the notification doesn't leak the mention, the
+    // "re:" prefix and the quoted snippet's trailing marker dots.
+    final replyInfo = ChannelMessage.parseReply(message.text);
+    final notificationText = replyInfo?.actualMessage ?? message.text;
+
     _notificationService.showChannelMessageNotification(
       channelName: label,
       senderName: message.senderName,
-      message: message.text,
+      message: notificationText,
       channelIndex: channelIndex,
       badgeCount: getTotalUnreadCount(),
     );
