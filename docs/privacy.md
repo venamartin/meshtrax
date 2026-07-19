@@ -1,7 +1,7 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** July 10, 2026
-**Applies to:** MeshTrax Android application (package `com.meshtrax.app`), version 1.5.7 and later
+**Last updated:** July 19, 2026
+**Applies to:** MeshTrax Android application (package `com.vena.meshtrax`), version 1.5.7 and later
 
 ## Introduction
 
