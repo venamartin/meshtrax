@@ -353,6 +353,11 @@ class _ChatScreenState extends State<ChatScreen> {
               );
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.timeline),
+            tooltip: context.l10n.chat_pathManagement,
+            onPressed: () => _showPathHistory(context),
+          ),
           if (widget.contact.type == advTypeRoom)
             Consumer<MeshCoreConnector>(
               builder: (context, connector, _) {
@@ -401,11 +406,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 );
               },
             ),
-          IconButton(
-            icon: const Icon(Icons.timeline),
-            tooltip: context.l10n.chat_pathManagement,
-            onPressed: () => _showPathHistory(context),
-          ),
           const RadioStatsIconButton(),
           Consumer<MeshCoreConnector>(
             builder: (context, connector, _) {
