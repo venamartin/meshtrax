@@ -658,7 +658,14 @@ class MeshCoreConnector extends ChangeNotifier {
     // Resolve by identity in case the caller holds a stale Channel whose
     // slot was reassigned by a resync while its screen was open.
     final live = _liveChannelByIdKey(channel.idKey);
-    return _channelMessages[(live ?? channel).index] ?? [];
+    if (live != null) return _channelMessages[live.index] ?? [];
+    // Mid-sync or offline the caller's index is still the best mapping.
+    // But once the list has settled without this identity, the channel is
+    // gone — showing the index's bucket would display another channel.
+    if (_isSyncingChannels || _channels.isEmpty) {
+      return _channelMessages[channel.index] ?? [];
+    }
+    return const [];
   }
 
   // Messages received for a radio slot whose identity the app doesn't know
@@ -669,6 +676,11 @@ class MeshCoreConnector extends ChangeNotifier {
   // Pubkey of the node whose per-node state is currently loaded; a change
   // means all channel state must be wiped before loading the new node's.
   String? _lastLoadedNodeKey;
+  // False from disconnect until a channel sync completes on the current
+  // connection. While false the slot->identity map may be stale (slots can
+  // be rearranged externally while we're away), so slot-indexed messages
+  // must buffer rather than file through it.
+  bool _channelsVerified = false;
 
   /// Persist a slot's in-memory messages under the channel's identity key.
   /// If the slot's identity is unknown (mid-sync, untracked), skip — the
@@ -2491,6 +2503,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _pendingUntrackedChannelMessages.clear();
     _queriedUntrackedChannels.clear();
     _slotsToRequery.clear();
+    _channelsVerified = false;
     _selfPublicKey = null;
     _selfName = null;
     _selfLatitude = null;
@@ -3275,6 +3288,19 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   Future<void> resendChannelMessageById(int channelIndex, String messageId) async {
+    // Same live-slot rule as sendChannelMessage: retrying with a slot index
+    // whose key changed (mid-sync, or slot reshuffled) would encrypt the
+    // text for the wrong channel. A settled live slot plus the message
+    // still being in its bucket proves index and identity agree —
+    // _adoptSlotIdentity replaces the bucket whenever the identity changes.
+    final live = _channels.cast<Channel?>().firstWhere(
+      (c) => c?.index == channelIndex,
+      orElse: () => null,
+    );
+    if (live == null || _isSyncingChannels) {
+      markChannelMessageFailed(channelIndex, messageId);
+      return;
+    }
     final messages = _channelMessages[channelIndex];
     if (messages == null) return;
     
@@ -3786,6 +3812,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
 
     _cleanupChannelSync(completed: true);
+    _channelsVerified = true;
 
     // Cache channels for offline use
     _cachedChannels = List<Channel>.from(_channels);
@@ -5129,7 +5156,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         (c) => c?.index == channelIndex,
         orElse: () => null,
       );
-      if (liveChannel == null) {
+      // Buffer when the slot is unknown OR the map hasn't been re-verified
+      // on this connection — after a BLE reconnect the radio's slots may
+      // have been rearranged externally while the old map lived on.
+      if (liveChannel == null || !_channelsVerified) {
         _pendingUntrackedChannelMessages
             .putIfAbsent(channelIndex, () => [])
             .add(message);
