@@ -3213,9 +3213,13 @@ class MeshCoreConnector extends ChangeNotifier {
     // Resolve the LIVE slot for this identity — sending by a stale index
     // would encrypt with whatever key now occupies that slot.
     final live = _liveChannelByIdKey(channel.idKey);
-    if (live == null) {
+    if (live == null || !_channelsVerified) {
+      // Same rule as the receive path: after a reconnect the slot map is
+      // untrusted until re-verified — sending would encrypt with whatever
+      // key now owns the slot.
       appLogger.warn(
-        'Refusing channel send: identity ${channel.displayName} has no live slot',
+        'Refusing channel send: ${channel.displayName} '
+        '(live=${live != null}, verified=$_channelsVerified)',
         tag: 'Connector',
       );
       return;
@@ -3297,7 +3301,7 @@ class MeshCoreConnector extends ChangeNotifier {
       (c) => c?.index == channelIndex,
       orElse: () => null,
     );
-    if (live == null || _isSyncingChannels) {
+    if (live == null || _isSyncingChannels || !_channelsVerified) {
       markChannelMessageFailed(channelIndex, messageId);
       return;
     }
@@ -3814,6 +3818,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _cleanupChannelSync(completed: true);
     _channelsVerified = true;
 
+    // Drain messages that buffered for already-confirmed slots while the
+    // rest of the sync was still running — nothing else flushes them.
+    for (final channel in List<Channel>.from(_channels)) {
+      _flushPendingForSlot(channel);
+    }
+    // Buffers for slots with no live channel (their sync attempt timed out)
+    // would otherwise strand until disconnect: solicit their CHANNEL_INFO
+    // directly, bypassing the query-once set.
+    for (final idx in _pendingUntrackedChannelMessages.keys.toList()) {
+      unawaited(sendFrame(buildGetChannelFrame(idx)));
+    }
+
     // Cache channels for offline use
     _cachedChannels = List<Channel>.from(_channels);
     unawaited(_channelStore.saveChannels(_channels));
@@ -3894,6 +3910,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _cleanupChannelSync({required bool completed}) {
+    if (!completed) {
+      // A failed pass leaves _channels partially rebuilt — the map is not
+      // trustworthy for filing or sending until a pass completes.
+      _channelsVerified = false;
+    }
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
@@ -5604,6 +5625,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final isNew = _addChannelMessage(channel.index, message);
       if (isNew) anyNew = true;
       _maybeIncrementChannelUnread(message, isNew: isNew);
+      if (isNew) {
+        // Parity with the live path — buffered messages were silent.
+        _maybeNotifyChannelMessage(message, channelName: channel.displayName);
+      }
     }
     if (anyNew) notifyListeners();
   }
@@ -5629,6 +5654,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (channel.isEmpty) {
       // Radio says the slot is empty; anything buffered for it is orphaned.
       _pendingUntrackedChannelMessages.remove(channel.index);
+      // Allow a fresh query if the slot is configured later this session.
+      _queriedUntrackedChannels.remove(channel.index);
     }
 
     // Preserve unread count from the cached channel with the SAME IDENTITY —
@@ -6514,6 +6541,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _queuedMessageSyncInFlight = false;
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
+    // The slot map is untrusted from ANY disconnect (this is the
+    // unexpected-drop path; disconnect() covers the manual one) until a
+    // channel sync completes on the next connection.
+    _channelsVerified = false;
+    _pendingUntrackedChannelMessages.clear();
+    _queriedUntrackedChannels.clear();
+    _slotsToRequery.clear();
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
