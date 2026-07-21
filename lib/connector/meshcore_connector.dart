@@ -189,8 +189,8 @@ class MeshCoreConnector extends ChangeNotifier {
   static const String _reactionSendQueuePrefix = '__reaction_send__';
   int _reactionSendQueueSequence = 0;
   final Set<String> _loadedConversationKeys = {};
-  final Map<int, Set<String>> _processedChannelReactions =
-      {}; // channelIndex -> Set of "targetHash_emoji"
+  final Map<String, Set<String>> _processedChannelReactions =
+      {}; // channel idKey -> Set of "targetHash_emoji"
   final Map<String, Set<String>> _processedContactReactions =
       {}; // contactPubKeyHex -> Set of "targetHash_emoji"
   final Map<String, DateTime> _localDiscoveredTimes = {};
@@ -647,8 +647,18 @@ class MeshCoreConnector extends ChangeNotifier {
     return olderMessages;
   }
 
+  Channel? _liveChannelByIdKey(String idKey) {
+    for (final c in _channels) {
+      if (c.idKey == idKey) return c;
+    }
+    return null;
+  }
+
   List<ChannelMessage> getChannelMessages(Channel channel) {
-    return _channelMessages[channel.index] ?? [];
+    // Resolve by identity in case the caller holds a stale Channel whose
+    // slot was reassigned by a resync while its screen was open.
+    final live = _liveChannelByIdKey(channel.idKey);
+    return _channelMessages[(live ?? channel).index] ?? [];
   }
 
   // Messages received for a radio slot whose identity the app doesn't know
@@ -656,6 +666,9 @@ class MeshCoreConnector extends ChangeNotifier {
   // identity — never stored under a bare index.
   final Map<int, List<ChannelMessage>> _pendingUntrackedChannelMessages = {};
   final Set<int> _slotsToRequery = {};
+  // Pubkey of the node whose per-node state is currently loaded; a change
+  // means all channel state must be wiped before loading the new node's.
+  String? _lastLoadedNodeKey;
 
   /// Persist a slot's in-memory messages under the channel's identity key.
   /// If the slot's identity is unknown (mid-sync, untracked), skip — the
@@ -2473,6 +2486,11 @@ class MeshCoreConnector extends ChangeNotifier {
     _conversations.clear();
     _loadedConversationKeys.clear();
     _roomAdminPasswords.clear();
+    // Connection-scoped channel state; buffered slot messages from one
+    // radio must never flush into another radio's channels.
+    _pendingUntrackedChannelMessages.clear();
+    _queriedUntrackedChannels.clear();
+    _slotsToRequery.clear();
     _selfPublicKey = null;
     _selfName = null;
     _selfLatitude = null;
@@ -3178,15 +3196,28 @@ class MeshCoreConnector extends ChangeNotifier {
   }) async {
     if (!isConnected || text.isEmpty) return;
 
+    // The caller's Channel may be stale (screen opened before a resync).
+    // Resolve the LIVE slot for this identity — sending by a stale index
+    // would encrypt with whatever key now occupies that slot.
+    final live = _liveChannelByIdKey(channel.idKey);
+    if (live == null) {
+      appLogger.warn(
+        'Refusing channel send: identity ${channel.displayName} has no live slot',
+        tag: 'Connector',
+      );
+      return;
+    }
+    channel = live;
+
     // Check if this is a reaction - if so, process it immediately instead of adding as a message
     final reactionInfo = ReactionHelper.parseReaction(text);
     if (reactionInfo != null) {
       // Check if we've already processed this reaction
-      _processedChannelReactions.putIfAbsent(channel.index, () => {});
+      _processedChannelReactions.putIfAbsent(channel.idKey, () => {});
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}';
 
-      if (_processedChannelReactions[channel.index]!.contains(
+      if (_processedChannelReactions[channel.idKey]!.contains(
         reactionIdentifier,
       )) {
         // Already processed, don't process again
@@ -3202,7 +3233,7 @@ class MeshCoreConnector extends ChangeNotifier {
       await _channelMessageStore.saveChannelMessages(channel.idKey, messages);
 
       // Mark this reaction as processed
-      _processedChannelReactions[channel.index]!.add(reactionIdentifier);
+      _processedChannelReactions[channel.idKey]!.add(reactionIdentifier);
 
       notifyListeners();
 
@@ -3669,6 +3700,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _totalChannelsToRequest = maxChannels ?? _maxChannels;
     _channelSyncRetries = 0;
     _slotsToRequery.clear();
+    _queriedUntrackedChannels.clear();
     notifyListeners();
 
     debugPrint(
@@ -3758,6 +3790,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Cache channels for offline use
     _cachedChannels = List<Channel>.from(_channels);
     unawaited(_channelStore.saveChannels(_channels));
+
+    // Migrate legacy name-keyed mutes to identity keys while the names
+    // still match — a lingering name entry would silently mute any FUTURE
+    // channel that happens to share the name.
+    final settingsService = _appSettingsService;
+    if (settingsService != null) {
+      for (final c in _channels) {
+        if (settingsService.isChannelMuted(c.idKey)) continue;
+        if (settingsService.isChannelMuted(c.name) ||
+            settingsService.isChannelMuted(c.displayName)) {
+          unawaited(settingsService.muteChannel(c.idKey));
+          unawaited(settingsService.unmuteChannel(c.name));
+          unawaited(settingsService.unmuteChannel(c.displayName));
+        }
+      }
+    }
 
     // Retry slots that timed out during the pass; their CHANNEL_INFO replies
     // arrive as unsolicited updates.
@@ -4134,6 +4182,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _channelSettingsStore.setPublicKeyHex = selfPublicKeyHex;
     _contactSettingsStore.setPublicKeyHex = selfPublicKeyHex;
     _contactStore.setPublicKeyHex = selfPublicKeyHex;
+    // Connecting to a DIFFERENT node: none of the previous node's channel
+    // state may survive, or its messages merge into this node's stores
+    // (shared-PSK channels like Public are the everyday trigger).
+    if (_lastLoadedNodeKey != null && _lastLoadedNodeKey != selfPublicKeyHex) {
+      _channels.clear();
+      _cachedChannels = [];
+      _channelMessages.clear();
+      _pendingUntrackedChannelMessages.clear();
+      _queriedUntrackedChannels.clear();
+      _slotsToRequery.clear();
+      _processedChannelReactions.clear();
+      _channelSmazEnabled.clear();
+    }
+    _lastLoadedNodeKey = selfPublicKeyHex;
+
     _channelStore.setPublicKeyHex = selfPublicKeyHex;
     _unreadStore.setPublicKeyHex = selfPublicKeyHex;
 
@@ -4986,6 +5049,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    // Blocked senders previously only had their rows hidden in the open
+    // channel screen — notifications still fired.
+    if (_appSettingsService!.isSenderBlocked(message.senderName)) return;
+
     // The radio decrypts and queues messages for any slot it has keyed,
     // including channels this app never configured. Don't notify for a chat
     // the user can't see; query the slot instead so the channel surfaces in
@@ -5681,6 +5748,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage message, {
     required bool isNew,
   }) {
+    if (_appSettingsService?.isSenderBlocked(message.senderName) ?? false) {
+      return;
+    }
     if (!isNew || message.isOutgoing) {
       _appDebugLogService?.info(
         'Skip unread increment: isNew=$isNew, isOutgoing=${message.isOutgoing}',
@@ -6074,11 +6144,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final reactionInfo = ChannelMessage.parseReaction(sanitizedMessage.text);
     if (reactionInfo != null) {
       // Check if we've already processed this exact reaction
-      _processedChannelReactions.putIfAbsent(channelIndex, () => {});
+      // Dedup reactions per channel IDENTITY so a reused slot can't swallow
+      // a new channel's reactions with hashes its predecessor left behind.
+      final reactionScope =
+          _findChannelByIndex(channelIndex)?.idKey ?? 'idx:$channelIndex';
+      _processedChannelReactions.putIfAbsent(reactionScope, () => {});
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}';
 
-      final isDuplicate = _processedChannelReactions[channelIndex]!.contains(
+      final isDuplicate = _processedChannelReactions[reactionScope]!.contains(
         reactionIdentifier,
       );
 
@@ -6089,7 +6163,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         unawaited(_persistChannelMessages(channelIndex, messages));
 
         // Mark as processed
-        _processedChannelReactions[channelIndex]!.add(reactionIdentifier);
+        _processedChannelReactions[reactionScope]!.add(reactionIdentifier);
       }
       return false; // Don't add reaction as a visible message
     }
