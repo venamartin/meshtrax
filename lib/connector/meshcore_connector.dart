@@ -685,13 +685,34 @@ class MeshCoreConnector extends ChangeNotifier {
   /// Persist a slot's in-memory messages under the channel's identity key.
   /// If the slot's identity is unknown (mid-sync, untracked), skip — the
   /// in-memory copy persists on the next save once identity is known.
+  // Buckets whose persist was skipped because the slot was unresolvable at
+  // the time; re-persisted as soon as the slot's identity is known.
+  final Set<int> _unpersistedBuckets = {};
+
   Future<void> _persistChannelMessages(
     int channelIndex,
-    List<ChannelMessage> messages,
-  ) async {
+    List<ChannelMessage> messages, {
+    bool allowEmpty = false,
+  }) async {
+    // Never clobber stored history with an incidental empty list (e.g. a
+    // bucket created by the reaction path); only explicit user clears may.
+    if (messages.isEmpty && !allowEmpty) return;
     final channel = _findChannelByIndex(channelIndex);
-    if (channel == null) return;
+    if (channel == null) {
+      // Not silently dropped: field report showed a day of messages living
+      // memory-only through a persist gap, then vanishing on reload.
+      _unpersistedBuckets.add(channelIndex);
+      return;
+    }
+    _unpersistedBuckets.remove(channelIndex);
     await _channelMessageStore.saveChannelMessages(channel.idKey, messages);
+  }
+
+  void _repersistIfDirty(Channel channel) {
+    if (!_unpersistedBuckets.contains(channel.index)) return;
+    final messages = _channelMessages[channel.index];
+    if (messages == null || messages.isEmpty) return;
+    unawaited(_persistChannelMessages(channel.index, messages));
   }
 
   Future<void> deleteChannelMessage(ChannelMessage message) async {
@@ -701,7 +722,7 @@ class MeshCoreConnector extends ChangeNotifier {
     if (messages == null) return;
     final removed = messages.remove(message);
     if (!removed) return;
-    await _persistChannelMessages(channelIndex, messages);
+    await _persistChannelMessages(channelIndex, messages, allowEmpty: true);
     notifyListeners();
   }
 
@@ -2498,9 +2519,10 @@ class MeshCoreConnector extends ChangeNotifier {
     _conversations.clear();
     _loadedConversationKeys.clear();
     _roomAdminPasswords.clear();
-    // Connection-scoped channel state; buffered slot messages from one
-    // radio must never flush into another radio's channels.
-    _pendingUntrackedChannelMessages.clear();
+    // Connection-scoped channel state. Pending buffers are KEPT: the radio's
+    // queue never redelivers drained messages, flushing requires a fresh
+    // CHANNEL_INFO on the next connection, and the node-switch wipe clears
+    // them before any different-radio sync.
     _queriedUntrackedChannels.clear();
     _slotsToRequery.clear();
     _channelsVerified = false;
@@ -3830,8 +3852,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       unawaited(sendFrame(buildGetChannelFrame(idx)));
     }
 
-    // Cache channels for offline use
-    _cachedChannels = List<Channel>.from(_channels);
+    // Cache channels for offline use. Retain prior cached entries for slots
+    // that merely TIMED OUT this pass — dropping them stranded the slot from
+    // both lists, silently no-oping every persist for its bucket.
+    final retained = _cachedChannels.where(
+      (c) =>
+          _slotsToRequery.contains(c.index) &&
+          !_channels.any((l) => l.index == c.index),
+    );
+    _cachedChannels = [..._channels, ...retained];
     unawaited(_channelStore.saveChannels(_channels));
 
     // Migrate legacy name-keyed mutes to identity keys while the names
@@ -5616,12 +5645,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (previous != null && previous.pskHex != channel.pskHex) {
       _channelMessages.remove(channel.index);
     }
-    if (!_channelMessages.containsKey(channel.index)) {
+    // isEmpty (not containsKey): a present-but-empty bucket (created by the
+    // reaction path) must still reload its history from the store.
+    final existing = _channelMessages[channel.index];
+    if (existing == null || existing.isEmpty) {
       unawaited(
-        _loadChannelMessages(channel).then((_) => _flushPendingForSlot(channel)),
+        _loadChannelMessages(channel).then((_) {
+          _flushPendingForSlot(channel);
+          _repersistIfDirty(channel);
+        }),
       );
     } else {
       _flushPendingForSlot(channel);
+      _repersistIfDirty(channel);
     }
   }
 
@@ -6553,7 +6589,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection.
     _channelsVerified = false;
-    _pendingUntrackedChannelMessages.clear();
+    // Pending buffers KEPT (see disconnect()): dropping them lost radio-queue
+    // messages that are never redelivered.
     _queriedUntrackedChannels.clear();
     _slotsToRequery.clear();
     _pendingChannelSentQueue.clear();
@@ -7309,7 +7346,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final messages = _channelMessages[channelIndex];
     if (messages == null) return;
     messages.clear();
-    unawaited(_persistChannelMessages(channelIndex, messages));
+    unawaited(
+      _persistChannelMessages(channelIndex, messages, allowEmpty: true),
+    );
     markChannelRead(channelIndex);
     notifyListeners();
   }
