@@ -17,9 +17,9 @@ class ChannelMessageStore {
 
   String get keyFor => '$_keyPrefix$publicKeyHex';
 
-  /// Save messages for a specific channel
+  /// Save messages for a channel identity (Channel.idKey).
   Future<void> saveChannelMessages(
-    int channelIndex,
+    String idKey,
     List<ChannelMessage> messages,
   ) async {
     if (publicKeyHex.isEmpty) {
@@ -29,7 +29,7 @@ class ChannelMessageStore {
       return;
     }
     final prefs = PrefsManager.instance;
-    final key = '$keyFor$channelIndex';
+    final key = '${keyFor}id_$idKey';
 
     // Convert messages to JSON
     final jsonList = messages.map((msg) => _messageToJson(msg)).toList();
@@ -38,8 +38,8 @@ class ChannelMessageStore {
     await prefs.setString(key, jsonString);
   }
 
-  /// Load messages for a specific channel
-  Future<List<ChannelMessage>> loadChannelMessages(int channelIndex) async {
+  /// Load messages for a channel identity (Channel.idKey).
+  Future<List<ChannelMessage>> loadChannelMessages(String idKey) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn(
         'Public key hex is not set. Cannot load channel messages.',
@@ -47,25 +47,7 @@ class ChannelMessageStore {
       return [];
     }
     final prefs = PrefsManager.instance;
-    final key = '$keyFor$channelIndex';
-    final oldKey = '$_keyPrefix$channelIndex';
-
-    String? jsonString = prefs.getString(key);
-    if (jsonString == null || jsonString.isEmpty) {
-      // Attempt migration from legacy unscoped key on first load
-      final legacyJsonString = prefs.getString(oldKey);
-      prefs.remove(oldKey);
-      if (legacyJsonString != null && legacyJsonString.isNotEmpty) {
-        appLogger.info(
-          'Migrating channel messages from legacy key $oldKey to scoped key $key',
-        );
-        await prefs.setString(key, legacyJsonString);
-        jsonString = legacyJsonString;
-      }
-    }
-    if (jsonString == null || jsonString.isEmpty) {
-      jsonString = prefs.getString(keyFor);
-    }
+    final jsonString = prefs.getString('${keyFor}id_$idKey');
     if (jsonString == null || jsonString.isEmpty) {
       return [];
     }
@@ -78,11 +60,29 @@ class ChannelMessageStore {
     }
   }
 
-  /// Clear messages for a specific channel
-  Future<void> clearChannelMessages(int channelIndex) async {
+  /// One-time move of a legacy slot-index bucket into the identity bucket.
+  /// Runs when a channel's identity becomes known; the identity bucket wins
+  /// if both exist (legacy indexes can't be trusted after slot reshuffles).
+  Future<void> migrateLegacyIndexKey(int channelIndex, String idKey) async {
+    if (publicKeyHex.isEmpty) return;
     final prefs = PrefsManager.instance;
-    final key = '$keyFor$channelIndex';
-    await prefs.remove(key);
+    final newKey = '${keyFor}id_$idKey';
+    for (final oldKey in ['$keyFor$channelIndex', '$_keyPrefix$channelIndex']) {
+      final legacy = prefs.getString(oldKey);
+      if (legacy != null && legacy.isNotEmpty && prefs.getString(newKey) == null) {
+        appLogger.info(
+          'Migrating channel messages from legacy key $oldKey to identity key',
+        );
+        await prefs.setString(newKey, legacy);
+      }
+      await prefs.remove(oldKey);
+    }
+  }
+
+  /// Clear messages for a channel identity (Channel.idKey).
+  Future<void> clearChannelMessages(String idKey) async {
+    final prefs = PrefsManager.instance;
+    await prefs.remove('${keyFor}id_$idKey');
   }
 
   /// Clear all channel messages

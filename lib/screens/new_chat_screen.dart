@@ -9,7 +9,6 @@ import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
-import '../storage/channel_message_store.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/list_filter_widget.dart';
 import '../utils/contact_search.dart';
@@ -44,15 +43,6 @@ class _NewChatScreenState extends State<NewChatScreen> {
 
   ContactSortOption discoveredSortOption = ContactSortOption.lastSeen;
   ContactTypeFilter discoveredTypeFilter = ContactTypeFilter.all;
-
-  // Need channel store to clear messages when creating channel
-  late final ChannelMessageStore _channelMessageStore;
-
-  @override
-  void initState() {
-    super.initState();
-    _channelMessageStore = ChannelMessageStore();
-  }
 
   @override
   void dispose() {
@@ -372,7 +362,6 @@ class _NewChatScreenState extends State<NewChatScreen> {
                                 }
                                 Navigator.pop(dialogContext);
                                 await connector.setChannel(nextIndex, name, psk);
-                                await _channelMessageStore.clearChannelMessages(nextIndex);
                                 if (context.mounted) {
                                   showDismissibleSnackBar(
                                     context,

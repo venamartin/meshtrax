@@ -248,7 +248,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
 
     if (item.channel != null) {
       final channel = item.channel!;
-      final isMuted = settingsService.isChannelMuted(channel.name);
+      final isMuted = settingsService.isChannelMuted(channel.idKey) ||
+          settingsService.isChannelMuted(channel.name) ||
+          settingsService.isChannelMuted(channel.displayName);
       
       showModalBottomSheet(
         context: context,
@@ -285,9 +287,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   if (isMuted) {
+                    // Remove every legacy spelling too, or the mute lingers.
+                    await settingsService.unmuteChannel(channel.idKey);
                     await settingsService.unmuteChannel(channel.name);
+                    await settingsService.unmuteChannel(channel.displayName);
                   } else {
-                    await settingsService.muteChannel(channel.name);
+                    await settingsService.muteChannel(channel.idKey);
                   }
                 },
               ),
