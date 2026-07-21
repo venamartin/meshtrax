@@ -5226,7 +5226,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (hash != channelHash) continue;
         try {
           final decryptedBytes = _decryptPayload(channel.psk, encrypted);
-          if (decryptedBytes == null || decryptedBytes.length < 6) return;
+          if (decryptedBytes == null || decryptedBytes.length < 6) {
+            // 1-byte channel hashes collide (1/256 per pair). This channel
+            // matched the hash but failed the MAC — another of our channels
+            // may be the real recipient, so keep trying (the firmware scans
+            // up to 4 hash matches the same way). Returning here made every
+            // channel whose hash collided with a lower slot appear deaf to
+            // repeats.
+            continue;
+          }
           final decrypted = BufferReader(decryptedBytes);
 
           final timestampRaw = decrypted.readUInt32LE();
