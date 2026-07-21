@@ -353,7 +353,7 @@ class MeshCoreConnector extends ChangeNotifier {
   final ChannelStore _channelStore = ChannelStore();
   final UnreadStore _unreadStore = UnreadStore();
   List<Channel> _cachedChannels = [];
-  final Map<int, bool> _channelSmazEnabled = {};
+  final Map<String, bool> _channelSmazEnabled = {}; // keyed by Channel.idKey
   bool _lastSentWasCliCommand =
       false; // Track if last sent message was a CLI command
   final Map<String, bool> _contactSmazEnabled = {};
@@ -715,7 +715,9 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   bool isChannelSmazEnabled(int channelIndex) {
-    return _channelSmazEnabled[channelIndex] ?? false;
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) return false;
+    return _channelSmazEnabled[channel.idKey] ?? false;
   }
 
   bool isContactSmazEnabled(String contactKeyHex) {
@@ -800,8 +802,10 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   Future<void> setChannelSmazEnabled(int channelIndex, bool enabled) async {
-    _channelSmazEnabled[channelIndex] = enabled;
-    await _channelSettingsStore.saveSmazEnabled(channelIndex, enabled);
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) return;
+    _channelSmazEnabled[channel.idKey] = enabled;
+    await _channelSettingsStore.saveSmazEnabled(channel.idKey, enabled);
     notifyListeners();
   }
 
@@ -833,7 +837,25 @@ class MeshCoreConnector extends ChangeNotifier {
           ? allMessages.sublist(allMessages.length - _messageWindowSize)
           : allMessages;
 
-      _channelMessages[channel.index] = windowedMessages;
+      final arrivedWhileLoading = _channelMessages[channel.index];
+      if (arrivedWhileLoading == null || arrivedWhileLoading.isEmpty) {
+        _channelMessages[channel.index] = windowedMessages;
+      } else {
+        // Messages landed while history was loading — and their save pass
+        // may have written only themselves over the store. Merge and
+        // re-persist so neither side is lost.
+        final merged = List<ChannelMessage>.from(windowedMessages);
+        for (final m in arrivedWhileLoading) {
+          final dup = merged.any(
+            (x) =>
+                x.messageId == m.messageId ||
+                (x.packetHash != null && x.packetHash == m.packetHash),
+          );
+          if (!dup) merged.add(m);
+        }
+        _channelMessages[channel.index] = merged;
+        unawaited(_persistChannelMessages(channel.index, merged));
+      }
       notifyListeners();
     }
   }
@@ -967,9 +989,11 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> loadChannelSettings({int? maxChannels}) async {
     _channelSmazEnabled.clear();
-    final channelCount = maxChannels ?? _maxChannels;
-    for (int i = 0; i < channelCount; i++) {
-      _channelSmazEnabled[i] = await _channelSettingsStore.loadSmazEnabled(i);
+    final known = _channels.isNotEmpty ? _channels : _cachedChannels;
+    for (final channel in known) {
+      if (channel.isEmpty) continue;
+      _channelSmazEnabled[channel.idKey] =
+          await _channelSettingsStore.loadSmazEnabled(channel.idKey);
     }
   }
 
@@ -4116,10 +4140,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Now that we have self info, we can load all the persisted data for this node
     _loadChannelOrder();
     loadContactCache();
-    loadChannelSettings();
-    // Messages are loaded per known channel, so the cached channel list
-    // must be in place first.
-    loadCachedChannels().then((_) => loadAllChannelMessages());
+    // Settings and messages are keyed by channel identity, so the cached
+    // channel list must be in place first.
+    loadCachedChannels().then((_) async {
+      await loadChannelSettings();
+      await loadAllChannelMessages();
+    });
     loadUnreadState();
     _loadDiscoveredContactCache();
 
@@ -5027,10 +5053,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
 
       // Never file a message under a slot whose identity is unknown — the
-      // wrong channel could be living there. Hold it until CHANNEL_INFO
-      // reveals the slot's channel.
+      // wrong channel could be living there. LIVE list only: the cached
+      // fallback of _findChannelByIndex carries a previous session's slot
+      // layout, which is exactly what must not decide filing. Hold the
+      // message until CHANNEL_INFO reveals the slot's channel.
       final channelIndex = message.channelIndex!;
-      if (_findChannelByIndex(channelIndex) == null) {
+      final liveChannel = _channels.cast<Channel?>().firstWhere(
+        (c) => c?.index == channelIndex,
+        orElse: () => null,
+      );
+      if (liveChannel == null) {
         _pendingUntrackedChannelMessages
             .putIfAbsent(channelIndex, () => [])
             .add(message);
