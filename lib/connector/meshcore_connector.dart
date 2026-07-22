@@ -3874,6 +3874,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       unawaited(_startQueueSyncNow());
     }
 
+    _runChannelHealthCheck();
+
     // Cache channels for offline use. Retain prior cached entries for slots
     // that merely TIMED OUT this pass — dropping them stranded the slot from
     // both lists, silently no-oping every persist for its bucket.
@@ -6172,6 +6174,57 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   int _computeChannelHash(Uint8List psk) {
     final digest = crypto.sha256.convert(psk).bytes;
     return digest[0];
+  }
+
+  /// Findings from the last post-sync audit of the radio's slot table.
+  List<String> get channelHealthWarnings =>
+      List.unmodifiable(_channelHealthWarnings);
+  final List<String> _channelHealthWarnings = [];
+
+  /// Audit the freshly synced slot table for states known to cause trouble:
+  /// the same PSK keyed in two slots (twin channels sharing one history),
+  /// channels whose 1-byte on-air hash collides (their repeat echoes are
+  /// indistinguishable until the MAC check), and keyed-but-nameless slots.
+  void _runChannelHealthCheck() {
+    _channelHealthWarnings.clear();
+
+    final byPsk = <String, List<int>>{};
+    final byHash = <int, List<Channel>>{};
+    for (final c in _channels) {
+      if (c.isEmpty) continue;
+      byPsk.putIfAbsent(c.pskHex, () => []).add(c.index);
+      byHash.putIfAbsent(_computeChannelHash(c.psk), () => []).add(c);
+      if (c.name.trim().isEmpty && !c.isPublicChannel) {
+        _channelHealthWarnings.add(
+          'Slot ${c.index} is keyed but has no name.',
+        );
+      }
+    }
+
+    byPsk.forEach((psk, slots) {
+      if (slots.length > 1) {
+        _channelHealthWarnings.add(
+          'Duplicate channel: slots ${slots.join(", ")} share the same key '
+          '(${_channels.firstWhere((c) => c.pskHex == psk).displayName}). '
+          'Delete the extra slot.',
+        );
+      }
+    });
+
+    byHash.forEach((hash, group) {
+      final distinct = {for (final c in group) c.pskHex};
+      if (distinct.length > 1) {
+        _channelHealthWarnings.add(
+          'Channels ${group.map((c) => c.displayName).join(" and ")} share '
+          'an on-air hash — delivery still works, but expect slower '
+          'decode and identical-looking traffic to sniffers.',
+        );
+      }
+    });
+
+    for (final warning in _channelHealthWarnings) {
+      appLogger.warn('Channel health: $warning', tag: 'ChannelHealth');
+    }
   }
 
   /// Firmware-compatible packet hash: SHA256(payloadType + payload) -> first 8 bytes as hex.
