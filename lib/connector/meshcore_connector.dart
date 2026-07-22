@@ -432,6 +432,10 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   List<Channel> get channels => List.unmodifiable(_channels);
+
+  /// True once this connection's slot map has been confirmed against the
+  /// radio. Sends and slot-indexed filing stay blocked while false.
+  bool get channelsVerified => _channelsVerified;
   bool get isConnected => _state == MeshCoreConnectionState.connected;
   bool get isLoadingContacts => _isLoadingContacts;
   bool get isLoadingChannels => _isLoadingChannels;
@@ -674,6 +678,11 @@ class MeshCoreConnector extends ChangeNotifier {
   final Map<int, List<ChannelMessage>> _pendingUntrackedChannelMessages = {};
   final Set<int> _slotsToRequery = {};
   bool _pendingQueueSyncAfterChannelSync = false;
+
+  /// Set when a forced channel resync arrives while a pass is in flight
+  /// (rapid setChannel/deleteChannel): the running pass may already be past
+  /// the changed slot, so a follow-up pass runs when it completes.
+  bool _pendingForceChannelResync = false;
   // Pubkey of the node whose per-node state is currently loaded; a change
   // means all channel state must be wiped before loading the new node's.
   String? _lastLoadedNodeKey;
@@ -3748,7 +3757,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   Future<void> getChannels({int? maxChannels, bool force = false}) async {
     if (!isConnected) return;
     if (_isSyncingChannels) {
-      debugPrint('[ChannelSync] Already syncing channels, ignoring request');
+      if (force) {
+        // The in-flight pass may already be past the slot that just
+        // changed — dropping the request would leave the change invisible
+        // until some unrelated later sync.
+        _pendingForceChannelResync = true;
+        debugPrint('[ChannelSync] Sync in flight — queued follow-up resync');
+      } else {
+        debugPrint('[ChannelSync] Already syncing channels, ignoring request');
+      }
       return;
     }
 
@@ -3868,6 +3885,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       unawaited(sendFrame(buildGetChannelFrame(idx)));
     }
 
+    // A slot changed while this pass ran: the map is valid but already
+    // stale. Rerun now — a deferred queue drain stays deferred so it always
+    // drains against the freshest map.
+    if (_pendingForceChannelResync) {
+      _pendingForceChannelResync = false;
+      unawaited(getChannels(force: true));
+      return;
+    }
+
     // Map verified — now the deferred queue drain may run.
     if (_pendingQueueSyncAfterChannelSync) {
       _pendingQueueSyncAfterChannelSync = false;
@@ -3967,6 +3993,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // A failed pass leaves _channels partially rebuilt — the map is not
       // trustworthy for filing or sending until a pass completes.
       _channelsVerified = false;
+      // A queued follow-up resync dies with the failed pass; reconnect
+      // always starts with a fresh full sync anyway.
+      _pendingForceChannelResync = false;
       // Don't strand a deferred queue drain behind the failed pass: run it
       // anyway. Unverified filing is safe — unknown slots buffer.
       if (_pendingQueueSyncAfterChannelSync) {
