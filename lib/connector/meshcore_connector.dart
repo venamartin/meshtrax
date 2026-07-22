@@ -3998,6 +3998,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   Future<void> setChannel(int index, String name, Uint8List psk) async {
     if (!isConnected) return;
 
+    // One identity, one slot: a second slot with the same PSK collapses
+    // into one history bucket and renders as twin channels.
+    final duplicate = _liveChannelByIdKey(Channel.formatPskHex(psk));
+    if (duplicate != null && duplicate.index != index) {
+      appLogger.warn(
+        'Refusing setChannel($index): PSK already lives in slot ${duplicate.index}',
+        tag: 'Connector',
+      );
+      return;
+    }
+
     final existingChannel = channels.firstWhere(
       (c) => c.index == index,
       orElse: () => Channel.empty(index),
@@ -5753,8 +5764,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _channelSyncInFlight = false;
         _channelSyncRetries = 0; // Reset retry counter on success
 
-        // Only add non-empty channels
+        // Only add non-empty channels. removeWhere first: a slot exists once
+        // by definition — a duplicate reply must never yield twin entries
+        // (field report: '#test' listed twice).
         if (!channel.isEmpty) {
+          _channels.removeWhere((c) => c.index == channel.index);
           _channels.add(channel);
           _adoptSlotIdentity(
             channel,
