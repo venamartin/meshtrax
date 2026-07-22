@@ -3706,7 +3706,10 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
 
     _discoverTimer?.cancel();
-    _discoverTimer = Timer(const Duration(seconds: 10), () {
+    // Repeater firmware answers with a randomized anti-collision delay
+    // (sendZeroHop with getRetransmitDelay x4, simple_repeater/MyMesh.cpp) —
+    // a 10s window dropped legitimate late responses on the bench.
+    _discoverTimer = Timer(const Duration(seconds: 30), () {
       _isDiscovering = false;
       _pendingDiscoverTag = null;
       notifyListeners();
