@@ -1,13 +1,19 @@
 import 'dart:convert';
-import 'dart:typed_data';
+
+import 'package:drift/drift.dart';
 import 'package:meshtrax/utils/app_logger.dart';
 
 import '../models/channel_message.dart';
 
 import '../helpers/smaz.dart';
 import '../helpers/path_helper.dart';
+import 'app_database.dart';
 import 'prefs_manager.dart';
 
+/// Channel message persistence: one database row per message, keyed by
+/// (node scope, channel identity, messageId) with a UNIQUE constraint — the
+/// store, not the caller, enforces that a message exists exactly once.
+/// Legacy SharedPreferences JSON blobs are imported on first touch.
 class ChannelMessageStore {
   static const String _keyPrefix = 'channel_messages_';
 
@@ -17,7 +23,19 @@ class ChannelMessageStore {
 
   String get keyFor => '$_keyPrefix$publicKeyHex';
 
-  /// Save messages for a channel identity (Channel.idKey).
+  AppDatabase get _db => AppDatabase.instance;
+
+  ChannelMessageRowsCompanion _toRow(String idKey, ChannelMessage msg) {
+    return ChannelMessageRowsCompanion.insert(
+      nodeScope: publicKeyHex,
+      channelIdKey: idKey,
+      messageId: msg.messageId,
+      timestampMs: msg.timestamp.millisecondsSinceEpoch,
+      payload: jsonEncode(_messageToJson(msg)),
+    );
+  }
+
+  /// Replace a channel's stored messages atomically.
   Future<void> saveChannelMessages(
     String idKey,
     List<ChannelMessage> messages,
@@ -28,17 +46,31 @@ class ChannelMessageStore {
       );
       return;
     }
-    final prefs = PrefsManager.instance;
-    final key = '${keyFor}id_$idKey';
-
-    // Convert messages to JSON
-    final jsonList = messages.map((msg) => _messageToJson(msg)).toList();
-    final jsonString = jsonEncode(jsonList);
-
-    await prefs.setString(key, jsonString);
+    await _db.transaction(() async {
+      await (_db.delete(_db.channelMessageRows)..where(
+            (r) =>
+                r.nodeScope.equals(publicKeyHex) & r.channelIdKey.equals(idKey),
+          ))
+          .go();
+      await _db.batch((b) {
+        b.insertAll(
+          _db.channelMessageRows,
+          [for (final msg in messages) _toRow(idKey, msg)],
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
   }
 
-  /// Load messages for a channel identity (Channel.idKey).
+  /// Insert or update a single message — the preferred write path going
+  /// forward; no read-modify-write of a whole conversation.
+  Future<void> upsertMessage(String idKey, ChannelMessage msg) async {
+    if (publicKeyHex.isEmpty) return;
+    await _db
+        .into(_db.channelMessageRows)
+        .insert(_toRow(idKey, msg), mode: InsertMode.insertOrReplace);
+  }
+
   Future<List<ChannelMessage>> loadChannelMessages(String idKey) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn(
@@ -46,52 +78,110 @@ class ChannelMessageStore {
       );
       return [];
     }
-    final prefs = PrefsManager.instance;
-    final jsonString = prefs.getString('${keyFor}id_$idKey');
-    if (jsonString == null || jsonString.isEmpty) {
-      return [];
+    await _importLegacyIdentityBlob(idKey);
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.timestampMs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    final messages = <ChannelMessage>[];
+    for (final row in rows) {
+      try {
+        messages.add(
+          _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>),
+        );
+      } catch (e) {
+        appLogger.warn('Skipping unreadable channel message row: $e');
+      }
     }
-    try {
-      final jsonList = jsonDecode(jsonString) as List<dynamic>;
-      return jsonList.map((json) => _messageFromJson(json)).toList();
-    } catch (e) {
-      // If parsing fails, return empty list
-      return [];
-    }
+    return messages;
   }
 
-  /// One-time move of a legacy slot-index bucket into the identity bucket.
-  /// Runs when a channel's identity becomes known; the identity bucket wins
-  /// if both exist (legacy indexes can't be trusted after slot reshuffles).
+  /// One-time import of the identity-keyed JSON blob written by the
+  /// previous store generation.
+  Future<void> _importLegacyIdentityBlob(String idKey) async {
+    final prefs = PrefsManager.instance;
+    final key = '${keyFor}id_$idKey';
+    final jsonString = prefs.getString(key);
+    if (jsonString == null || jsonString.isEmpty) {
+      await prefs.remove(key);
+      return;
+    }
+    await _importJsonList(idKey, jsonString, source: key);
+    await prefs.remove(key);
+  }
+
+  /// One-time import of a pre-identity slot-index blob into the identity's
+  /// rows. Existing rows win (insertOrIgnore) — legacy indexes can't be
+  /// trusted after slot reshuffles.
   Future<void> migrateLegacyIndexKey(int channelIndex, String idKey) async {
     if (publicKeyHex.isEmpty) return;
     final prefs = PrefsManager.instance;
-    final newKey = '${keyFor}id_$idKey';
     for (final oldKey in ['$keyFor$channelIndex', '$_keyPrefix$channelIndex']) {
       final legacy = prefs.getString(oldKey);
-      if (legacy != null && legacy.isNotEmpty && prefs.getString(newKey) == null) {
+      if (legacy != null && legacy.isNotEmpty) {
         appLogger.info(
-          'Migrating channel messages from legacy key $oldKey to identity key',
+          'Migrating channel messages from legacy key $oldKey into database',
         );
-        await prefs.setString(newKey, legacy);
+        await _importJsonList(idKey, legacy, source: oldKey);
       }
       await prefs.remove(oldKey);
     }
   }
 
-  /// Clear messages for a channel identity (Channel.idKey).
+  Future<void> _importJsonList(
+    String idKey,
+    String jsonString, {
+    required String source,
+  }) async {
+    try {
+      final jsonList = jsonDecode(jsonString) as List<dynamic>;
+      final messages = [
+        for (final json in jsonList)
+          _messageFromJson(json as Map<String, dynamic>),
+      ];
+      await _db.batch((b) {
+        b.insertAll(
+          _db.channelMessageRows,
+          [for (final msg in messages) _toRow(idKey, msg)],
+          mode: InsertMode.insertOrIgnore,
+        );
+      });
+      appLogger.info('Imported ${messages.length} messages from $source');
+    } catch (e) {
+      appLogger.warn('Failed to import legacy messages from $source: $e');
+    }
+  }
+
+  /// Clear messages for a channel identity.
   Future<void> clearChannelMessages(String idKey) async {
     final prefs = PrefsManager.instance;
     await prefs.remove('${keyFor}id_$idKey');
+    await (_db.delete(_db.channelMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) & r.channelIdKey.equals(idKey),
+        ))
+        .go();
   }
 
-  /// Clear all channel messages
+  /// Clear all channel messages for the current node.
   Future<void> clearAllChannelMessages() async {
     final prefs = PrefsManager.instance;
     final keys = prefs.getKeys().where((k) => k.startsWith(keyFor));
     for (var key in keys) {
       await prefs.remove(key);
     }
+    if (publicKeyHex.isEmpty) return;
+    await (_db.delete(
+      _db.channelMessageRows,
+    )..where((r) => r.nodeScope.equals(publicKeyHex))).go();
   }
 
   /// Convert ChannelMessage to JSON map
@@ -157,7 +247,8 @@ class ChannelMessageStore {
       pathVariants: (json['pathVariants'] as List<dynamic>?)
           ?.map((entry) => Uint8List.fromList(base64Decode(entry as String)))
           .toList(),
-      repeats: (json['repeats'] as List<dynamic>?)
+      repeats:
+          (json['repeats'] as List<dynamic>?)
               ?.map((entry) => _repeatFromJson(entry as Map<String, dynamic>))
               .toList() ??
           const [],
