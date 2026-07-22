@@ -673,6 +673,7 @@ class MeshCoreConnector extends ChangeNotifier {
   // identity — never stored under a bare index.
   final Map<int, List<ChannelMessage>> _pendingUntrackedChannelMessages = {};
   final Set<int> _slotsToRequery = {};
+  bool _pendingQueueSyncAfterChannelSync = false;
   // Pubkey of the node whose per-node state is currently loaded; a change
   // means all channel state must be wiped before loading the new node's.
   String? _lastLoadedNodeKey;
@@ -3572,6 +3573,21 @@ class MeshCoreConnector extends ChangeNotifier {
       _pendingQueueSync = true;
       return;
     }
+    // Queue messages are slot-indexed: drain only against a verified channel
+    // map. Channels load first, queue after — never concurrently (the radio
+    // can't serve two sequential-request protocols at once).
+    if (!_channelsVerified || _isSyncingChannels) {
+      _pendingQueueSyncAfterChannelSync = true;
+      return;
+    }
+    await _startQueueSyncNow();
+  }
+
+  /// Bypasses the verified-map gate: used by the channel-sync completion and
+  /// failure paths, where re-checking the gate would re-defer forever. On the
+  /// failure path unverified filing is safe — unknown slots buffer.
+  Future<void> _startQueueSyncNow() async {
+    if (!isConnected) return;
     _isSyncingQueuedMessages = true;
     _queuedMessagesRead = 0;
     notifyListeners();
@@ -3852,6 +3868,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       unawaited(sendFrame(buildGetChannelFrame(idx)));
     }
 
+    // Map verified — now the deferred queue drain may run.
+    if (_pendingQueueSyncAfterChannelSync) {
+      _pendingQueueSyncAfterChannelSync = false;
+      unawaited(_startQueueSyncNow());
+    }
+
     // Cache channels for offline use. Retain prior cached entries for slots
     // that merely TIMED OUT this pass — dropping them stranded the slot from
     // both lists, silently no-oping every persist for its bucket.
@@ -3943,6 +3965,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // A failed pass leaves _channels partially rebuilt — the map is not
       // trustworthy for filing or sending until a pass completes.
       _channelsVerified = false;
+      // Don't strand a deferred queue drain behind the failed pass: run it
+      // anyway. Unverified filing is safe — unknown slots buffer.
+      if (_pendingQueueSyncAfterChannelSync) {
+        _pendingQueueSyncAfterChannelSync = false;
+        unawaited(_startQueueSyncNow());
+      }
     }
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
@@ -4081,14 +4109,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               (_activeTransport == MeshCoreTransportType.bluetooth ||
                   _activeTransport == MeshCoreTransportType.usb ||
                   _activeTransport == MeshCoreTransportType.tcp)) {
-            // Defer channel sync until queue sync finishes so the device isn't
-            // handling two sequential-request protocols at once, which causes
-            // channel 0 to reliably time out.
+            // Channels FIRST, queue after (still strictly sequential — the
+            // device can't serve two request protocols at once). The queue's
+            // messages are slot-indexed; draining them before the channel
+            // map loaded was the root of every unverified-window bug.
+            // force: a reconnect must always re-verify the map.
             _pendingDeferredChannelSyncAfterContacts = false;
             _pendingInitialChannelSync = false;
-            _pendingChannelSyncAfterQueueSync = true;
+            _pendingQueueSyncAfterChannelSync = true;
+            unawaited(getChannels(force: true));
+          } else {
+            unawaited(syncQueuedMessages(force: true));
           }
-          unawaited(syncQueuedMessages(force: true));
         } else if (_pendingDeferredChannelSyncAfterContacts &&
             (_activeTransport == MeshCoreTransportType.bluetooth ||
                 _activeTransport == MeshCoreTransportType.usb ||
