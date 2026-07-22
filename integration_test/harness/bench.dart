@@ -791,32 +791,42 @@ Future<(bool?, bool)> repeaterLogin(
   }
 }
 
-/// Sends a CLI command to a repeater contact; returns the first NEW
-/// incoming reply text, or null on timeout. Read-only commands only —
-/// the bench repeater must stay configured and on-air.
+/// Sends a CLI command to a repeater contact; returns the reply text, or
+/// null on timeout. CLI replies are deliberately NOT stored in the chat
+/// conversation (that was the "CLI leak" bug) — management screens consume
+/// them straight off the frame stream, so the bench does the same.
+/// Read-only commands only — the bench repeater must stay configured.
 Future<String?> repeaterCli(
   BenchRadio radio,
   Contact repeater,
   String command, {
   Duration timeout = const Duration(seconds: 45),
 }) async {
-  final seen = radio.connector
-      .getMessages(repeater)
-      .where((m) => !m.isOutgoing)
-      .map((m) => m.messageId)
-      .toSet();
-  blog('${radio.label}: repeater CLI "$command"');
-  await radio.connector
-      .sendFrame(buildSendCliCommandFrame(repeater.publicKey, command));
-  final deadline = DateTime.now().add(timeout);
-  while (DateTime.now().isBefore(deadline)) {
-    for (final m in radio.connector.getMessages(repeater)) {
-      if (m.isOutgoing || seen.contains(m.messageId)) continue;
-      return m.text;
+  final completer = Completer<String?>();
+  final target = repeater.publicKey.sublist(0, 6);
+  final sub = radio.connector.receivedFrames.listen((frame) {
+    if (frame.isEmpty) return;
+    if (frame[0] != respCodeContactMsgRecv &&
+        frame[0] != respCodeContactMsgRecvV3) {
+      return;
     }
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    final parsed = parseContactMessageText(frame);
+    if (parsed == null) return;
+    if (parsed.senderPrefix.length < 6 ||
+        !listEquals(parsed.senderPrefix.sublist(0, 6), target)) {
+      return;
+    }
+    if (!completer.isCompleted) completer.complete(parsed.text);
+  });
+  try {
+    blog('${radio.label}: repeater CLI "$command"');
+    await radio.connector
+        .sendFrame(buildSendCliCommandFrame(repeater.publicKey, command));
+    return await completer.future
+        .timeout(timeout, onTimeout: () => null);
+  } finally {
+    await sub.cancel();
   }
-  return null;
 }
 
 /// idKey -> harness texts currently visible; used for the restart test.
