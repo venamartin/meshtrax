@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/channel.dart';
+import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/services/app_debug_log_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/app_logger.dart';
@@ -374,7 +376,13 @@ void main() {
       (tester) async {
     await beginScenario(tester, 'D5 three-channel slot shuffle');
     requireBench();
-    await awaitSyncIdle(ble);
+    // Earlier scenarios may have deleted these on either radio (S3 removes
+    // #hx1 from the BLE radio) — every scenario provisions its own needs.
+    for (final r in radios) {
+      await ensureChannel(r, '#hx1', psk1);
+      await ensureChannel(r, '#hx2', psk2);
+      await ensureChannel(r, 'HXPRIV', pskPriv);
+    }
     // Phase 1: give each identity fresh history on the BLE radio.
     final phase1 = <String, String>{
       idKey1: tag('D5p1 #hx1'),
@@ -438,6 +446,10 @@ void main() {
       (tester) async {
     await beginScenario(tester, 'D3 reconnect storm');
     requireBench();
+    for (final r in radios) {
+      await ensureChannel(r, '#hx1', psk1);
+      await ensureChannel(r, '#hx2', psk2);
+    }
     for (var cycle = 0; cycle < 3; cycle++) {
       final t = tag('D3 ble-gap#$cycle');
       ledger.expectText(idKey1, t);
@@ -468,6 +480,10 @@ void main() {
       (tester) async {
     await beginScenario(tester, 'D4 dual-offline crossfire');
     requireBench();
+    for (final r in radios) {
+      await ensureChannel(r, '#hx1', psk1);
+      await ensureChannel(r, 'HXPRIV', pskPriv);
+    }
     final m1 = tag('D4 queued #hx1');
     final m2 = tag('D4 queued priv');
     ledger.expectText(idKey1, m1);
@@ -518,6 +534,9 @@ void main() {
       (tester) async {
     await beginScenario(tester, 'D8a volume soak');
     requireBench();
+    for (final r in radios) {
+      await ensureChannel(r, 'HXPRIV', pskPriv);
+    }
     // Node-scope isolation seed: a channel only the USB radio subscribes to.
     await ensureChannel(usb, '#hxsolo', pskSolo);
     final soloText = tag('D8 solo (only usb has this channel)');
@@ -571,6 +590,157 @@ void main() {
     assertTextAbsentEverywhere(ble, soloText);
     await contaminationSweep(radios, ledger);
   }, timeout: const Timeout(Duration(minutes: 15)));
+
+  testWidgets('C1 contacts: adverts flow, DMs deliver and stay out of channels',
+      (tester) async {
+    await beginScenario(tester, 'C1 contact DMs');
+    requireBench();
+    blog('flooding self-adverts so the radios learn each other');
+    await usb.connector.sendSelfAdvert(flood: true);
+    await Future<void>.delayed(const Duration(seconds: 4));
+    await ble.connector.sendSelfAdvert(flood: true);
+
+    final usbOnBle = await ensureSavedContact(
+        ble, usb.connector.selfPublicKeyHex, 'the USB radio');
+    final bleOnUsb = await ensureSavedContact(
+        usb, ble.connector.selfPublicKeyHex, 'the BLE radio');
+
+    final d1 = tag('C1 dm usb->ble');
+    await usb.connector.sendMessage(bleOnUsb, d1);
+    expect(await dmArrived(ble, usbOnBle, d1), isTrue,
+        reason: 'DM usb->ble never arrived');
+    final st1 = await awaitDmStatus(usb, bleOnUsb, d1);
+    blog('usb->ble DM status: ${st1?.name} (DMs carry real ACKs)');
+    expect(st1, isNot(MessageStatus.failed));
+
+    final d2 = tag('C1 dm ble->usb');
+    await ble.connector.sendMessage(usbOnBle, d2);
+    expect(await dmArrived(usb, bleOnUsb, d2), isTrue,
+        reason: 'DM ble->usb never arrived');
+    final st2 = await awaitDmStatus(ble, usbOnBle, d2);
+    blog('ble->usb DM status: ${st2?.name}');
+    expect(st2, isNot(MessageStatus.failed));
+
+    // DMs must never bleed into channel buckets on either radio.
+    for (final r in radios) {
+      assertTextAbsentEverywhere(r, d1);
+      assertTextAbsentEverywhere(r, d2);
+    }
+    await contaminationSweep(radios, ledger);
+  }, timeout: const Timeout(Duration(minutes: 10)));
+
+  testWidgets('C2 offline DM queues and drains exactly once', (tester) async {
+    await beginScenario(tester, 'C2 offline DM');
+    requireBench();
+    final usbOnBle = findContactByHex(
+        ble.connector, usb.connector.selfPublicKeyHex,
+        savedOnly: true);
+    final bleOnUsb = findContactByHex(
+        usb.connector, ble.connector.selfPublicKeyHex,
+        savedOnly: true);
+    expect(usbOnBle, isNotNull, reason: 'C1 must run first');
+    expect(bleOnUsb, isNotNull, reason: 'C1 must run first');
+
+    await ble.connector.disconnect();
+    await Future<void>.delayed(const Duration(seconds: 2));
+    final t = tag('C2 dm queued');
+    await usb.connector.sendMessage(bleOnUsb!, t);
+    await Future<void>.delayed(const Duration(seconds: 10));
+    await ble.reconnect();
+
+    expect(await dmArrived(ble, usbOnBle!, t, timeout: const Duration(seconds: 60)),
+        isTrue,
+        reason: 'queued DM never drained after reconnect');
+    final copies =
+        ble.connector.getMessages(usbOnBle).where((m) => m.text == t).length;
+    expect(copies, 1, reason: 'queued DM duplicated: $copies copies');
+    assertTextAbsentEverywhere(ble, t);
+  }, timeout: const Timeout(Duration(minutes: 8)));
+
+  testWidgets('R2 repeater: discovery, admin login, CLI round-trip',
+      (tester) async {
+    await beginScenario(tester, 'R2 repeater admin + CLI');
+    requireBench();
+    if (BenchConfig.repeaterPassword.isEmpty) {
+      blog('R2 SKIPPED — run with '
+          '--dart-define=BENCH_REPEATER_PASSWORD=… to enable');
+      return;
+    }
+
+    // Find F857 on either radio: discovery from both, then a passive wait
+    // for its periodic advert.
+    (BenchRadio, Contact)? hit;
+    (BenchRadio, Contact)? locate() {
+      for (final r in radios) {
+        final c = findContactByPrefix(
+            r.connector, BenchConfig.repeaterPubKeyPrefix);
+        if (c != null) return (r, c);
+      }
+      return null;
+    }
+
+    hit = locate();
+    if (hit == null) {
+      blog('repeater not known — discovery from ${usb.label}');
+      await usb.connector.sendRepeaterDiscovery();
+      if (!await pollFor(
+          () => (hit = locate()) != null, const Duration(seconds: 45))) {
+        blog('no reply — discovery from ${ble.label}');
+        await ble.connector.sendRepeaterDiscovery();
+        if (!await pollFor(
+            () => (hit = locate()) != null, const Duration(seconds: 45))) {
+          blog('still nothing — waiting for a periodic advert (90s)…');
+          await pollFor(() => (hit = locate()) != null,
+              const Duration(seconds: 90),
+              poll: const Duration(seconds: 2));
+        }
+      }
+    }
+    if (hit == null) {
+      final known = [
+        for (final r in radios)
+          '${r.label}: ${[
+            ...r.connector.contacts,
+            ...r.connector.discoveredContacts,
+          ].map((c) => '${c.name}(${c.publicKeyHex.substring(0, 4)})').join(', ')}',
+      ];
+      fail('F857 never appeared via discovery or advert. Known contacts — '
+          '${known.join(' | ')}. Does this repeater firmware answer '
+          'discovery? Send "advert" from its CLI, or supply its full '
+          'public key.');
+    }
+    final host = hit!.$1;
+    blog('repeater contact: ${hit!.$2.name} '
+        '(${hit!.$2.publicKeyHex.substring(0, 8)}…) via ${host.label}');
+    if (findContactByPrefix(host.connector, BenchConfig.repeaterPubKeyPrefix,
+            savedOnly: true) ==
+        null) {
+      await host.connector.importDiscoveredContact(hit!.$2);
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+    final rep = findContactByPrefix(
+        host.connector, BenchConfig.repeaterPubKeyPrefix,
+        savedOnly: true)!;
+
+    var login = await repeaterLogin(host, rep, BenchConfig.repeaterPassword);
+    if (login.$1 == null) {
+      blog('login attempt timed out — retrying once');
+      login = await repeaterLogin(host, rep, BenchConfig.repeaterPassword);
+    }
+    expect(login.$1, isTrue, reason: 'repeater login failed or timed out');
+    blog('login ok, admin=${login.$2}');
+    expect(login.$2, isTrue,
+        reason: 'admin password did not yield an admin session');
+
+    final ver = await repeaterCli(host, rep, 'ver');
+    expect(ver, isNotNull, reason: 'no reply to CLI "ver"');
+    blog('F857 ver: $ver');
+    final clock = await repeaterCli(host, rep, 'clock');
+    expect(clock, isNotNull, reason: 'no reply to CLI "clock"');
+    blog('F857 clock: $clock');
+    // Read-only CLI only: this repeater must stay configured on 920.000 MHz
+    // for every future bench run.
+  }, timeout: const Timeout(Duration(minutes: 8)));
 
   testWidgets('S5 duplicate-PSK channel creation is refused', (tester) async {
     await beginScenario(tester, 'S5 duplicate-PSK guard');

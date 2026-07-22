@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:drift/drift.dart' as drift;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/services/app_debug_log_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
@@ -231,6 +235,20 @@ Future<MeshCoreConnector> buildConnector() async {
   await connector.loadAllChannelMessages();
   await connector.loadUnreadState();
   return connector;
+}
+
+/// Non-failing poll: true when the condition holds within [timeout].
+Future<bool> pollFor(
+  bool Function() condition,
+  Duration timeout, {
+  Duration poll = const Duration(milliseconds: 500),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!condition()) {
+    if (DateTime.now().isAfter(deadline)) return false;
+    await Future<void>.delayed(poll);
+  }
+  return true;
 }
 
 Future<void> waitUntil(
@@ -636,6 +654,169 @@ Future<void> awaitSendSettled(
   }
   blog('${radio.label}: "$text" still pending after 60s '
       '(no repeat echo heard — repeater off-air?); continuing');
+}
+
+// --- Contact / DM / repeater helpers --------------------------------------
+
+Contact? findContactByHex(
+  MeshCoreConnector c,
+  String pubKeyHex, {
+  bool savedOnly = false,
+}) {
+  final hx = pubKeyHex.toLowerCase();
+  for (final ct in c.contacts) {
+    if (ct.publicKeyHex.toLowerCase() == hx) return ct;
+  }
+  if (!savedOnly) {
+    for (final ct in c.discoveredContacts) {
+      if (ct.publicKeyHex.toLowerCase() == hx) return ct;
+    }
+  }
+  return null;
+}
+
+Contact? findContactByPrefix(
+  MeshCoreConnector c,
+  String hexPrefix, {
+  bool savedOnly = false,
+}) {
+  final px = hexPrefix.toLowerCase();
+  for (final ct in c.contacts) {
+    if (ct.publicKeyHex.toLowerCase().startsWith(px)) return ct;
+  }
+  if (!savedOnly) {
+    for (final ct in c.discoveredContacts) {
+      if (ct.publicKeyHex.toLowerCase().startsWith(px)) return ct;
+    }
+  }
+  return null;
+}
+
+/// Waits for [pubKeyHex] to be known on [on] (advert must have flowed) and
+/// promotes a discovered-only entry to a saved contact.
+Future<Contact> ensureSavedContact(
+  BenchRadio on,
+  String pubKeyHex,
+  String what,
+) async {
+  await waitUntil(
+    () => findContactByHex(on.connector, pubKeyHex) != null,
+    '${on.label}: $what appears in contacts',
+    timeout: const Duration(seconds: 90),
+    poll: const Duration(seconds: 1),
+  );
+  if (findContactByHex(on.connector, pubKeyHex, savedOnly: true) == null) {
+    final discovered = findContactByHex(on.connector, pubKeyHex)!;
+    blog('${on.label}: importing discovered contact ${discovered.name}');
+    await on.connector.importDiscoveredContact(discovered);
+    await waitUntil(
+      () =>
+          findContactByHex(on.connector, pubKeyHex, savedOnly: true) != null,
+      '${on.label}: $what saved to contacts',
+    );
+  }
+  return findContactByHex(on.connector, pubKeyHex, savedOnly: true)!;
+}
+
+Future<bool> dmArrived(
+  BenchRadio radio,
+  Contact from,
+  String text, {
+  Duration? timeout,
+}) async {
+  final deadline =
+      DateTime.now().add(timeout ?? BenchConfig.messageTimeout);
+  while (DateTime.now().isBefore(deadline)) {
+    final hit = radio.connector
+        .getMessages(from)
+        .any((m) => !m.isOutgoing && m.text == text);
+    if (hit) return true;
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+  return false;
+}
+
+/// Polls the sender's copy of a DM until it reaches a terminal status
+/// (delivered/failed) or the window closes; returns the last status seen.
+Future<MessageStatus?> awaitDmStatus(
+  BenchRadio radio,
+  Contact to,
+  String text, {
+  Duration timeout = const Duration(seconds: 60),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  MessageStatus? last;
+  while (DateTime.now().isBefore(deadline)) {
+    for (final m in radio.connector.getMessages(to)) {
+      if (m.isOutgoing && m.text == text) {
+        last = m.status;
+        break;
+      }
+    }
+    if (last == MessageStatus.delivered || last == MessageStatus.failed) {
+      return last;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+  return last;
+}
+
+/// CMD_SEND_LOGIN to a repeater contact; waits for the push response.
+/// Returns (success, isAdmin); success is null on timeout.
+Future<(bool?, bool)> repeaterLogin(
+  BenchRadio radio,
+  Contact repeater,
+  String password, {
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  final completer = Completer<(bool?, bool)>();
+  final targetPrefix = repeater.publicKey.sublist(0, 6);
+  final sub = radio.connector.receivedFrames.listen((frame) {
+    if (frame.isEmpty) return;
+    final code = frame[0];
+    if (code != pushCodeLoginSuccess && code != pushCodeLoginFail) return;
+    if (frame.length < 8) return;
+    if (!listEquals(frame.sublist(2, 8), targetPrefix)) return;
+    if (!completer.isCompleted) {
+      completer.complete((code == pushCodeLoginSuccess, frame[1] == 1));
+    }
+  });
+  try {
+    await radio.connector
+        .sendFrame(buildSendLoginFrame(repeater.publicKey, password));
+    return await completer.future
+        .timeout(timeout, onTimeout: () => (null, false));
+  } finally {
+    await sub.cancel();
+  }
+}
+
+/// Sends a CLI command to a repeater contact; returns the first NEW
+/// incoming reply text, or null on timeout. Read-only commands only —
+/// the bench repeater must stay configured and on-air.
+Future<String?> repeaterCli(
+  BenchRadio radio,
+  Contact repeater,
+  String command, {
+  Duration timeout = const Duration(seconds: 45),
+}) async {
+  final seen = radio.connector
+      .getMessages(repeater)
+      .where((m) => !m.isOutgoing)
+      .map((m) => m.messageId)
+      .toSet();
+  blog('${radio.label}: repeater CLI "$command"');
+  await radio.connector
+      .sendFrame(buildSendCliCommandFrame(repeater.publicKey, command));
+  final deadline = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(deadline)) {
+    for (final m in radio.connector.getMessages(repeater)) {
+      if (m.isOutgoing || seen.contains(m.messageId)) continue;
+      return m.text;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+  return null;
 }
 
 /// idKey -> harness texts currently visible; used for the restart test.

@@ -949,7 +949,13 @@ class MeshCoreConnector extends ChangeNotifier {
   Future<void> loadAllChannelMessages() async {
     // Identity comes from the channel objects; the cached list carries the
     // last known slot->identity mapping until the live sync replaces it.
-    final known = _channels.isNotEmpty ? _channels : _cachedChannels;
+    // SNAPSHOT the list: a channel resync mutates _channels between this
+    // loop's awaits, and iterating the live list then throws a
+    // ConcurrentModificationError that silently aborts the load, leaving
+    // the remaining channels' histories unloaded (two-radio bench, D3).
+    final known = List<Channel>.of(
+      _channels.isNotEmpty ? _channels : _cachedChannels,
+    );
     for (final channel in known) {
       if (channel.isEmpty) continue;
       await _loadChannelMessages(channel);

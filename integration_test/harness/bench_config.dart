@@ -33,6 +33,16 @@ class BenchConfig {
   /// Notify from radio.
   static const String nusTxChar = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 
+  /// Repeater "F857 🚙 GWQ MOBILE": pubkey prefix used to find its contact.
+  static const String repeaterPubKeyPrefix = 'f857';
+
+  /// Admin password comes from --dart-define so it never lands in the repo:
+  ///   flutter test integration_test/two_radio_harness_test.dart -d windows \
+  ///     --dart-define=BENCH_REPEATER_PASSWORD=PASSWORD
+  /// Repeater admin tests skip (loudly) when this is empty.
+  static const String repeaterPassword =
+      String.fromEnvironment('BENCH_REPEATER_PASSWORD');
+
   /// LoRa air time plus queue/push latency between two desk radios.
   static const Duration messageTimeout = Duration(seconds: 45);
 
