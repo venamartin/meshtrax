@@ -681,14 +681,16 @@ void main() {
 
     hit = locate();
     if (hit == null) {
+      // Discovery works on this repeater (v1.16) but the reply can take
+      // well over 45s — give each query a generous window.
       blog('repeater not known — discovery from ${usb.label}');
       await usb.connector.sendRepeaterDiscovery();
       if (!await pollFor(
-          () => (hit = locate()) != null, const Duration(seconds: 45))) {
+          () => (hit = locate()) != null, const Duration(seconds: 90))) {
         blog('no reply — discovery from ${ble.label}');
         await ble.connector.sendRepeaterDiscovery();
         if (!await pollFor(
-            () => (hit = locate()) != null, const Duration(seconds: 45))) {
+            () => (hit = locate()) != null, const Duration(seconds: 90))) {
           blog('still nothing — waiting for a periodic advert (90s)…');
           await pollFor(() => (hit = locate()) != null,
               const Duration(seconds: 90),
