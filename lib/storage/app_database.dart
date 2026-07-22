@@ -31,7 +31,30 @@ class ChannelMessageRows extends Table {
   ];
 }
 
-@DriftDatabase(tables: [ChannelMessageRows])
+/// One row per contact (DM) message — same contract as channel rows: a
+/// message exists exactly once per (node, contact), writes are transactional.
+class ContactMessageRows extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Scope: the connected node's pubkey prefix (one phone, many radios).
+  TextColumn get nodeScope => text()();
+
+  /// The other party's full pubkey hex — contacts' stable identity.
+  TextColumn get contactKey => text()();
+
+  TextColumn get messageId => text()();
+  IntColumn get timestampMs => integer()();
+
+  /// Remaining message fields as JSON; keys live in real columns.
+  TextColumn get payload => text()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {nodeScope, contactKey, messageId},
+  ];
+}
+
+@DriftDatabase(tables: [ChannelMessageRows, ContactMessageRows])
 class AppDatabase extends _$AppDatabase {
   AppDatabase._(super.e);
 
@@ -48,5 +71,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(contactMessageRows);
+      }
+    },
+  );
 }

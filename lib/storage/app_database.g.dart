@@ -425,16 +425,439 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
   }
 }
 
+class $ContactMessageRowsTable extends ContactMessageRows
+    with TableInfo<$ContactMessageRowsTable, ContactMessageRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactMessageRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nodeScopeMeta = const VerificationMeta(
+    'nodeScope',
+  );
+  @override
+  late final GeneratedColumn<String> nodeScope = GeneratedColumn<String>(
+    'node_scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactKeyMeta = const VerificationMeta(
+    'contactKey',
+  );
+  @override
+  late final GeneratedColumn<String> contactKey = GeneratedColumn<String>(
+    'contact_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _messageIdMeta = const VerificationMeta(
+    'messageId',
+  );
+  @override
+  late final GeneratedColumn<String> messageId = GeneratedColumn<String>(
+    'message_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampMsMeta = const VerificationMeta(
+    'timestampMs',
+  );
+  @override
+  late final GeneratedColumn<int> timestampMs = GeneratedColumn<int>(
+    'timestamp_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    nodeScope,
+    contactKey,
+    messageId,
+    timestampMs,
+    payload,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contact_message_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactMessageRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('node_scope')) {
+      context.handle(
+        _nodeScopeMeta,
+        nodeScope.isAcceptableOrUnknown(data['node_scope']!, _nodeScopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nodeScopeMeta);
+    }
+    if (data.containsKey('contact_key')) {
+      context.handle(
+        _contactKeyMeta,
+        contactKey.isAcceptableOrUnknown(data['contact_key']!, _contactKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contactKeyMeta);
+    }
+    if (data.containsKey('message_id')) {
+      context.handle(
+        _messageIdMeta,
+        messageId.isAcceptableOrUnknown(data['message_id']!, _messageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('timestamp_ms')) {
+      context.handle(
+        _timestampMsMeta,
+        timestampMs.isAcceptableOrUnknown(
+          data['timestamp_ms']!,
+          _timestampMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMsMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {nodeScope, contactKey, messageId},
+  ];
+  @override
+  ContactMessageRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactMessageRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nodeScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}node_scope'],
+      )!,
+      contactKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_key'],
+      )!,
+      messageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_id'],
+      )!,
+      timestampMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timestamp_ms'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+    );
+  }
+
+  @override
+  $ContactMessageRowsTable createAlias(String alias) {
+    return $ContactMessageRowsTable(attachedDatabase, alias);
+  }
+}
+
+class ContactMessageRow extends DataClass
+    implements Insertable<ContactMessageRow> {
+  final int id;
+
+  /// Scope: the connected node's pubkey prefix (one phone, many radios).
+  final String nodeScope;
+
+  /// The other party's full pubkey hex — contacts' stable identity.
+  final String contactKey;
+  final String messageId;
+  final int timestampMs;
+
+  /// Remaining message fields as JSON; keys live in real columns.
+  final String payload;
+  const ContactMessageRow({
+    required this.id,
+    required this.nodeScope,
+    required this.contactKey,
+    required this.messageId,
+    required this.timestampMs,
+    required this.payload,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['node_scope'] = Variable<String>(nodeScope);
+    map['contact_key'] = Variable<String>(contactKey);
+    map['message_id'] = Variable<String>(messageId);
+    map['timestamp_ms'] = Variable<int>(timestampMs);
+    map['payload'] = Variable<String>(payload);
+    return map;
+  }
+
+  ContactMessageRowsCompanion toCompanion(bool nullToAbsent) {
+    return ContactMessageRowsCompanion(
+      id: Value(id),
+      nodeScope: Value(nodeScope),
+      contactKey: Value(contactKey),
+      messageId: Value(messageId),
+      timestampMs: Value(timestampMs),
+      payload: Value(payload),
+    );
+  }
+
+  factory ContactMessageRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactMessageRow(
+      id: serializer.fromJson<int>(json['id']),
+      nodeScope: serializer.fromJson<String>(json['nodeScope']),
+      contactKey: serializer.fromJson<String>(json['contactKey']),
+      messageId: serializer.fromJson<String>(json['messageId']),
+      timestampMs: serializer.fromJson<int>(json['timestampMs']),
+      payload: serializer.fromJson<String>(json['payload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nodeScope': serializer.toJson<String>(nodeScope),
+      'contactKey': serializer.toJson<String>(contactKey),
+      'messageId': serializer.toJson<String>(messageId),
+      'timestampMs': serializer.toJson<int>(timestampMs),
+      'payload': serializer.toJson<String>(payload),
+    };
+  }
+
+  ContactMessageRow copyWith({
+    int? id,
+    String? nodeScope,
+    String? contactKey,
+    String? messageId,
+    int? timestampMs,
+    String? payload,
+  }) => ContactMessageRow(
+    id: id ?? this.id,
+    nodeScope: nodeScope ?? this.nodeScope,
+    contactKey: contactKey ?? this.contactKey,
+    messageId: messageId ?? this.messageId,
+    timestampMs: timestampMs ?? this.timestampMs,
+    payload: payload ?? this.payload,
+  );
+  ContactMessageRow copyWithCompanion(ContactMessageRowsCompanion data) {
+    return ContactMessageRow(
+      id: data.id.present ? data.id.value : this.id,
+      nodeScope: data.nodeScope.present ? data.nodeScope.value : this.nodeScope,
+      contactKey: data.contactKey.present
+          ? data.contactKey.value
+          : this.contactKey,
+      messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      timestampMs: data.timestampMs.present
+          ? data.timestampMs.value
+          : this.timestampMs,
+      payload: data.payload.present ? data.payload.value : this.payload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactMessageRow(')
+          ..write('id: $id, ')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('contactKey: $contactKey, ')
+          ..write('messageId: $messageId, ')
+          ..write('timestampMs: $timestampMs, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, nodeScope, contactKey, messageId, timestampMs, payload);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactMessageRow &&
+          other.id == this.id &&
+          other.nodeScope == this.nodeScope &&
+          other.contactKey == this.contactKey &&
+          other.messageId == this.messageId &&
+          other.timestampMs == this.timestampMs &&
+          other.payload == this.payload);
+}
+
+class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
+  final Value<int> id;
+  final Value<String> nodeScope;
+  final Value<String> contactKey;
+  final Value<String> messageId;
+  final Value<int> timestampMs;
+  final Value<String> payload;
+  const ContactMessageRowsCompanion({
+    this.id = const Value.absent(),
+    this.nodeScope = const Value.absent(),
+    this.contactKey = const Value.absent(),
+    this.messageId = const Value.absent(),
+    this.timestampMs = const Value.absent(),
+    this.payload = const Value.absent(),
+  });
+  ContactMessageRowsCompanion.insert({
+    this.id = const Value.absent(),
+    required String nodeScope,
+    required String contactKey,
+    required String messageId,
+    required int timestampMs,
+    required String payload,
+  }) : nodeScope = Value(nodeScope),
+       contactKey = Value(contactKey),
+       messageId = Value(messageId),
+       timestampMs = Value(timestampMs),
+       payload = Value(payload);
+  static Insertable<ContactMessageRow> custom({
+    Expression<int>? id,
+    Expression<String>? nodeScope,
+    Expression<String>? contactKey,
+    Expression<String>? messageId,
+    Expression<int>? timestampMs,
+    Expression<String>? payload,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nodeScope != null) 'node_scope': nodeScope,
+      if (contactKey != null) 'contact_key': contactKey,
+      if (messageId != null) 'message_id': messageId,
+      if (timestampMs != null) 'timestamp_ms': timestampMs,
+      if (payload != null) 'payload': payload,
+    });
+  }
+
+  ContactMessageRowsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? nodeScope,
+    Value<String>? contactKey,
+    Value<String>? messageId,
+    Value<int>? timestampMs,
+    Value<String>? payload,
+  }) {
+    return ContactMessageRowsCompanion(
+      id: id ?? this.id,
+      nodeScope: nodeScope ?? this.nodeScope,
+      contactKey: contactKey ?? this.contactKey,
+      messageId: messageId ?? this.messageId,
+      timestampMs: timestampMs ?? this.timestampMs,
+      payload: payload ?? this.payload,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nodeScope.present) {
+      map['node_scope'] = Variable<String>(nodeScope.value);
+    }
+    if (contactKey.present) {
+      map['contact_key'] = Variable<String>(contactKey.value);
+    }
+    if (messageId.present) {
+      map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (timestampMs.present) {
+      map['timestamp_ms'] = Variable<int>(timestampMs.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactMessageRowsCompanion(')
+          ..write('id: $id, ')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('contactKey: $contactKey, ')
+          ..write('messageId: $messageId, ')
+          ..write('timestampMs: $timestampMs, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ChannelMessageRowsTable channelMessageRows =
       $ChannelMessageRowsTable(this);
+  late final $ContactMessageRowsTable contactMessageRows =
+      $ContactMessageRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [channelMessageRows];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    channelMessageRows,
+    contactMessageRows,
+  ];
 }
 
 typedef $$ChannelMessageRowsTableCreateCompanionBuilder =
@@ -667,10 +1090,242 @@ typedef $$ChannelMessageRowsTableProcessedTableManager =
       ChannelMessageRow,
       PrefetchHooks Function()
     >;
+typedef $$ContactMessageRowsTableCreateCompanionBuilder =
+    ContactMessageRowsCompanion Function({
+      Value<int> id,
+      required String nodeScope,
+      required String contactKey,
+      required String messageId,
+      required int timestampMs,
+      required String payload,
+    });
+typedef $$ContactMessageRowsTableUpdateCompanionBuilder =
+    ContactMessageRowsCompanion Function({
+      Value<int> id,
+      Value<String> nodeScope,
+      Value<String> contactKey,
+      Value<String> messageId,
+      Value<int> timestampMs,
+      Value<String> payload,
+    });
+
+class $$ContactMessageRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContactMessageRowsTable> {
+  $$ContactMessageRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactKey => $composableBuilder(
+    column: $table.contactKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get messageId => $composableBuilder(
+    column: $table.messageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timestampMs => $composableBuilder(
+    column: $table.timestampMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ContactMessageRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContactMessageRowsTable> {
+  $$ContactMessageRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contactKey => $composableBuilder(
+    column: $table.contactKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get messageId => $composableBuilder(
+    column: $table.messageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timestampMs => $composableBuilder(
+    column: $table.timestampMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ContactMessageRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContactMessageRowsTable> {
+  $$ContactMessageRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nodeScope =>
+      $composableBuilder(column: $table.nodeScope, builder: (column) => column);
+
+  GeneratedColumn<String> get contactKey => $composableBuilder(
+    column: $table.contactKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get messageId =>
+      $composableBuilder(column: $table.messageId, builder: (column) => column);
+
+  GeneratedColumn<int> get timestampMs => $composableBuilder(
+    column: $table.timestampMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+}
+
+class $$ContactMessageRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContactMessageRowsTable,
+          ContactMessageRow,
+          $$ContactMessageRowsTableFilterComposer,
+          $$ContactMessageRowsTableOrderingComposer,
+          $$ContactMessageRowsTableAnnotationComposer,
+          $$ContactMessageRowsTableCreateCompanionBuilder,
+          $$ContactMessageRowsTableUpdateCompanionBuilder,
+          (
+            ContactMessageRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ContactMessageRowsTable,
+              ContactMessageRow
+            >,
+          ),
+          ContactMessageRow,
+          PrefetchHooks Function()
+        > {
+  $$ContactMessageRowsTableTableManager(
+    _$AppDatabase db,
+    $ContactMessageRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactMessageRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactMessageRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactMessageRowsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> nodeScope = const Value.absent(),
+                Value<String> contactKey = const Value.absent(),
+                Value<String> messageId = const Value.absent(),
+                Value<int> timestampMs = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+              }) => ContactMessageRowsCompanion(
+                id: id,
+                nodeScope: nodeScope,
+                contactKey: contactKey,
+                messageId: messageId,
+                timestampMs: timestampMs,
+                payload: payload,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String nodeScope,
+                required String contactKey,
+                required String messageId,
+                required int timestampMs,
+                required String payload,
+              }) => ContactMessageRowsCompanion.insert(
+                id: id,
+                nodeScope: nodeScope,
+                contactKey: contactKey,
+                messageId: messageId,
+                timestampMs: timestampMs,
+                payload: payload,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ContactMessageRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContactMessageRowsTable,
+      ContactMessageRow,
+      $$ContactMessageRowsTableFilterComposer,
+      $$ContactMessageRowsTableOrderingComposer,
+      $$ContactMessageRowsTableAnnotationComposer,
+      $$ContactMessageRowsTableCreateCompanionBuilder,
+      $$ContactMessageRowsTableUpdateCompanionBuilder,
+      (
+        ContactMessageRow,
+        BaseReferences<
+          _$AppDatabase,
+          $ContactMessageRowsTable,
+          ContactMessageRow
+        >,
+      ),
+      ContactMessageRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$ChannelMessageRowsTableTableManager get channelMessageRows =>
       $$ChannelMessageRowsTableTableManager(_db, _db.channelMessageRows);
+  $$ContactMessageRowsTableTableManager get contactMessageRows =>
+      $$ContactMessageRowsTableTableManager(_db, _db.contactMessageRows);
 }

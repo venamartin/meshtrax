@@ -1,11 +1,18 @@
 import 'dart:convert';
-import 'dart:typed_data';
-import '../models/message.dart';
+
+import 'package:drift/drift.dart';
 
 import '../helpers/smaz.dart';
+import '../models/message.dart';
 import '../utils/app_logger.dart';
+import 'app_database.dart';
 import 'prefs_manager.dart';
 
+/// Contact (DM) messages are stored one row per message, keyed by the
+/// contact's pubkey with a UNIQUE(nodeScope, contactKey, messageId)
+/// constraint — same contract as the channel store. Legacy SharedPreferences
+/// JSON blobs import once and are removed; JSON remains only as the payload
+/// encoding inside a row and for user-facing export/import.
 class MessageStore {
   static const String _keyPrefix = 'messages_';
 
@@ -15,6 +22,19 @@ class MessageStore {
 
   String get keyFor => '$_keyPrefix$publicKeyHex';
 
+  AppDatabase get _db => AppDatabase.instance;
+
+  ContactMessageRowsCompanion _toRow(String contactKeyHex, Message msg) {
+    return ContactMessageRowsCompanion.insert(
+      nodeScope: publicKeyHex,
+      contactKey: contactKeyHex,
+      messageId: msg.messageId,
+      timestampMs: msg.timestamp.millisecondsSinceEpoch,
+      payload: jsonEncode(_messageToJson(msg)),
+    );
+  }
+
+  /// Replace a conversation's stored messages atomically.
   Future<void> saveMessages(
     String contactKeyHex,
     List<Message> messages,
@@ -23,10 +43,30 @@ class MessageStore {
       appLogger.warn('Public key hex is not set. Cannot save messages.');
       return;
     }
-    final prefs = PrefsManager.instance;
-    final key = '$keyFor$contactKeyHex';
-    final jsonList = messages.map(_messageToJson).toList();
-    await prefs.setString(key, jsonEncode(jsonList));
+    await _db.transaction(() async {
+      await (_db.delete(_db.contactMessageRows)..where(
+            (r) =>
+                r.nodeScope.equals(publicKeyHex) &
+                r.contactKey.equals(contactKeyHex),
+          ))
+          .go();
+      await _db.batch((b) {
+        b.insertAll(
+          _db.contactMessageRows,
+          [for (final msg in messages) _toRow(contactKeyHex, msg)],
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
+  }
+
+  /// Insert or update a single message — the preferred write path going
+  /// forward; no read-modify-write of a whole conversation.
+  Future<void> upsertMessage(String contactKeyHex, Message msg) async {
+    if (publicKeyHex.isEmpty) return;
+    await _db
+        .into(_db.contactMessageRows)
+        .insert(_toRow(contactKeyHex, msg), mode: InsertMode.insertOrReplace);
   }
 
   Future<List<Message>> loadMessages(String contactKeyHex) async {
@@ -34,34 +74,65 @@ class MessageStore {
       appLogger.warn('Public key hex is not set. Cannot load messages.');
       return [];
     }
-    final prefs = PrefsManager.instance;
-    final key = '$keyFor$contactKeyHex';
-    final oldKey = '$_keyPrefix$contactKeyHex';
-    String? jsonString = prefs.getString(key);
-    if (jsonString == null || jsonString.isEmpty) {
-      // Attempt migration from legacy unscoped key on first load
-      final legacyJsonString = prefs.getString(oldKey);
-      prefs.remove(oldKey);
-      if (legacyJsonString != null && legacyJsonString.isNotEmpty) {
-        appLogger.info(
-          'Migrating messages from legacy key $oldKey to scoped key $key',
+    await _importLegacyBlobs(contactKeyHex);
+    final rows =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.contactKey.equals(contactKeyHex),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.timestampMs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    final messages = <Message>[];
+    for (final row in rows) {
+      try {
+        messages.add(
+          _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>),
         );
-        await prefs.setString(key, legacyJsonString);
-        jsonString = legacyJsonString;
+      } catch (e) {
+        appLogger.warn('Skipping unreadable contact message row: $e');
       }
     }
-    if (jsonString == null || jsonString.isEmpty) {
-      jsonString = prefs.getString(keyFor);
-    }
-    if (jsonString == null || jsonString.isEmpty) {
-      return [];
-    }
+    return messages;
+  }
 
-    try {
-      final jsonList = jsonDecode(jsonString) as List<dynamic>;
-      return jsonList.map((json) => _messageFromJson(json)).toList();
-    } catch (e) {
-      return [];
+  /// One-time import of the JSON blobs written by the previous store
+  /// generation: the node-scoped key and the ancient unscoped key.
+  /// Existing rows win (insertOrIgnore).
+  Future<void> _importLegacyBlobs(String contactKeyHex) async {
+    final prefs = PrefsManager.instance;
+    for (final oldKey in [
+      '$keyFor$contactKeyHex',
+      '$_keyPrefix$contactKeyHex',
+    ]) {
+      final legacy = prefs.getString(oldKey);
+      if (legacy != null && legacy.isNotEmpty) {
+        appLogger.info(
+          'Migrating contact messages from legacy key $oldKey into database',
+        );
+        try {
+          final jsonList = jsonDecode(legacy) as List<dynamic>;
+          final messages = [
+            for (final json in jsonList)
+              _messageFromJson(json as Map<String, dynamic>),
+          ];
+          await _db.batch((b) {
+            b.insertAll(
+              _db.contactMessageRows,
+              [for (final msg in messages) _toRow(contactKeyHex, msg)],
+              mode: InsertMode.insertOrIgnore,
+            );
+          });
+          appLogger.info('Imported ${messages.length} messages from $oldKey');
+        } catch (e) {
+          appLogger.warn('Failed to import legacy messages from $oldKey: $e');
+        }
+      }
+      await prefs.remove(oldKey);
     }
   }
 
@@ -71,8 +142,13 @@ class MessageStore {
       return;
     }
     final prefs = PrefsManager.instance;
-    final key = '$keyFor$contactKeyHex';
-    await prefs.remove(key);
+    await prefs.remove('$keyFor$contactKeyHex');
+    await (_db.delete(_db.contactMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) &
+              r.contactKey.equals(contactKeyHex),
+        ))
+        .go();
   }
 
   Map<String, dynamic> _messageToJson(Message msg) {
