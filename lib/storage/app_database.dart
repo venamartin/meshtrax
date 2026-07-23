@@ -9,6 +9,10 @@ part 'app_database.g.dart';
 /// enforces what the JSON-blob store never could: a message exists exactly
 /// once per (node, channel identity), writes are transactional, and order
 /// is a query — not a fragile in-memory list.
+@TableIndex(
+  name: 'idx_channel_packet_hash',
+  columns: {#nodeScope, #channelIdKey, #packetHash},
+)
 class ChannelMessageRows extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -21,6 +25,18 @@ class ChannelMessageRows extends Table {
   TextColumn get messageId => text()();
   IntColumn get timestampMs => integer()();
 
+  /// Firmware packet hash when known — repeat/echo dedup is a SQL lookup,
+  /// not an in-memory scan (v3).
+  TextColumn get packetHash => text().nullable()();
+
+  /// Promoted so ordering/unread queries never parse JSON (v3).
+  BoolColumn get isOutgoing => boolean().withDefault(const Constant(false))();
+
+  /// Decided ONCE at ingest: true only for messages that should count
+  /// toward unread (not outgoing, not authored by this node) (v3).
+  BoolColumn get unreadEligible =>
+      boolean().withDefault(const Constant(false))();
+
   /// Remaining message fields as JSON. Keys live in real columns; promoting
   /// more fields to columns later is an additive migration.
   TextColumn get payload => text()();
@@ -29,6 +45,27 @@ class ChannelMessageRows extends Table {
   List<Set<Column>> get uniqueKeys => [
     {nodeScope, channelIdKey, messageId},
   ];
+}
+
+/// Last-read watermark per channel identity; unread is a watched COUNT of
+/// eligible rows newer than this — never a mutable counter (v3).
+class ChannelReadMarks extends Table {
+  TextColumn get nodeScope => text()();
+  TextColumn get idKey => text()();
+  IntColumn get lastReadMs => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {nodeScope, idKey};
+}
+
+/// Same watermark model for DM conversations (wired in the DM cut) (v3).
+class ContactReadMarks extends Table {
+  TextColumn get nodeScope => text()();
+  TextColumn get contactKey => text()();
+  IntColumn get lastReadMs => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {nodeScope, contactKey};
 }
 
 /// One row per contact (DM) message — same contract as channel rows: a
@@ -54,7 +91,14 @@ class ContactMessageRows extends Table {
   ];
 }
 
-@DriftDatabase(tables: [ChannelMessageRows, ContactMessageRows])
+@DriftDatabase(
+  tables: [
+    ChannelMessageRows,
+    ContactMessageRows,
+    ChannelReadMarks,
+    ContactReadMarks,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase._(super.e);
 
@@ -71,13 +115,26 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (m, from, to) async {
       if (from < 2) {
         await m.createTable(contactMessageRows);
+      }
+      if (from < 3) {
+        await m.addColumn(channelMessageRows, channelMessageRows.packetHash);
+        await m.addColumn(channelMessageRows, channelMessageRows.isOutgoing);
+        await m.addColumn(
+          channelMessageRows,
+          channelMessageRows.unreadEligible,
+        );
+        await m.createTable(channelReadMarks);
+        await m.createTable(contactReadMarks);
+        await m.createIndex(idxChannelPacketHash);
+        // Pre-v3 rows never count as unread: read marks initialize to the
+        // newest existing message per channel on first use.
       }
     },
   );

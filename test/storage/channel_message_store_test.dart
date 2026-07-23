@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/models/channel_message.dart';
@@ -16,16 +17,24 @@ void main() {
   const idKeyA = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
   const idKeyB = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
-  ChannelMessage msg(String text, {String? id, int? ts}) {
+  ChannelMessage msg(
+    String text, {
+    String? id,
+    int? ts,
+    String? hash,
+    Uint8List? sender,
+    bool outgoing = false,
+  }) {
     return ChannelMessage(
-      senderKey: null,
+      senderKey: sender,
       senderName: 'Tester',
       text: text,
       timestamp: DateTime.fromMillisecondsSinceEpoch(ts ?? 1753000000000),
-      isOutgoing: false,
+      isOutgoing: outgoing,
       status: ChannelMessageStatus.sent,
       channelIndex: 2,
       messageId: id,
+      packetHash: hash,
     );
   }
 
@@ -160,5 +169,57 @@ void main() {
 
     final loaded = await store.loadChannelMessages(idKeyA);
     expect(loaded.map((m) => m.text), ['keep']);
+  });
+
+  // --- Phase 3d: watched queries and DB-authoritative ingest -------------
+
+  test('watchChannelMessages: newest N, oldest-first, live-updating',
+      () async {
+    expect(await store.watchChannelMessages(idKeyA).first, isEmpty);
+    await store.upsertMessage(idKeyA, msg('one', id: 'w1', ts: 1000));
+    await store.upsertMessage(idKeyA, msg('two', id: 'w2', ts: 2000));
+    await store.upsertMessage(idKeyA, msg('three', id: 'w3', ts: 3000));
+
+    final view = await store.watchChannelMessages(idKeyA, limit: 2).first;
+    expect(view.map((m) => m.text), ['two', 'three']);
+  });
+
+  test('insertIfNew is the dedup authority', () async {
+    expect(await store.insertIfNew(idKeyA, msg('x', id: 'dup')), isTrue);
+    expect(
+        await store.insertIfNew(idKeyA, msg('x again', id: 'dup')), isFalse);
+    expect((await store.loadChannelMessages(idKeyA)).single.text, 'x');
+  });
+
+  test('findByPacketHash resolves repeats via SQL', () async {
+    await store.upsertMessage(idKeyA, msg('orig', id: 'p1', hash: 'cafe01'));
+    expect((await store.findByPacketHash(idKeyA, 'cafe01'))?.text, 'orig');
+    expect(await store.findByPacketHash(idKeyA, 'beef99'), isNull);
+  });
+
+  test('unread is a watched COUNT against the read mark', () async {
+    await store.insertIfNew(idKeyA, msg('new stuff', id: 'u1', ts: 5000));
+    expect(await store.watchUnreadCount(idKeyA).first, 1);
+
+    await store.markRead(idKeyA);
+    expect(await store.watchUnreadCount(idKeyA).first, 0);
+  });
+
+  test('own and outgoing messages never count as unread', () async {
+    final selfSender =
+        Uint8List.fromList([0xde, 0xad, 0xbe, 0xef, 0x00, 1, 2, 3]);
+    await store.insertIfNew(
+        idKeyA, msg('mine echoed', id: 'u2', sender: selfSender));
+    await store.insertIfNew(idKeyA, msg('sent by me', id: 'u3', outgoing: true));
+    expect(await store.watchUnreadCount(idKeyA).first, 0);
+  });
+
+  test('initializeReadMarkIfAbsent shields pre-existing history', () async {
+    await store.upsertMessage(idKeyA, msg('old history', id: 'h1', ts: 7000));
+    await store.initializeReadMarkIfAbsent(idKeyA);
+    expect(await store.watchUnreadCount(idKeyA).first, 0);
+
+    await store.insertIfNew(idKeyA, msg('fresh', id: 'h2', ts: 9000));
+    expect(await store.watchUnreadCount(idKeyA).first, 1);
   });
 }
