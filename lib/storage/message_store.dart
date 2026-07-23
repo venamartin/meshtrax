@@ -69,6 +69,35 @@ class MessageStore {
         .insert(_toRow(contactKeyHex, msg), mode: InsertMode.insertOrReplace);
   }
 
+  /// Insert-or-update a batch WITHOUT touching any other rows — the only
+  /// write live message paths may use. Unlike [saveMessages] this can NEVER
+  /// shrink a conversation's stored history.
+  Future<void> upsertMessages(
+    String contactKeyHex,
+    List<Message> messages,
+  ) async {
+    if (publicKeyHex.isEmpty || messages.isEmpty) return;
+    await _db.batch((b) {
+      b.insertAll(
+        _db.contactMessageRows,
+        [for (final msg in messages) _toRow(contactKeyHex, msg)],
+        mode: InsertMode.insertOrReplace,
+      );
+    });
+  }
+
+  /// Remove exactly one message — explicit user deletion only.
+  Future<void> deleteMessage(String contactKeyHex, String messageId) async {
+    if (publicKeyHex.isEmpty) return;
+    await (_db.delete(_db.contactMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) &
+              r.contactKey.equals(contactKeyHex) &
+              r.messageId.equals(messageId),
+        ))
+        .go();
+  }
+
   Future<List<Message>> loadMessages(String contactKeyHex) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn('Public key hex is not set. Cannot load messages.');

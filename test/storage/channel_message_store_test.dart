@@ -138,4 +138,27 @@ void main() {
     expect(await other.loadChannelMessages(idKeyA), isEmpty);
     expect(await store.loadChannelMessages(idKeyA), isNotEmpty);
   });
+
+  test('upsertMessages can NEVER shrink history (stale window persist)',
+      () async {
+    for (var i = 0; i < 5; i++) {
+      await store.upsertMessage(idKeyA, msg('old $i', id: 'o$i', ts: 1000 + i));
+    }
+    // A stale/windowed in-memory list persisting must only refresh its own
+    // rows — the truncation class behind Public reverting to old snapshots.
+    await store.upsertMessages(idKeyA, [msg('new', id: 'n1', ts: 9000)]);
+
+    final loaded = await store.loadChannelMessages(idKeyA);
+    expect(loaded, hasLength(6));
+  });
+
+  test('deleteMessage removes exactly one row', () async {
+    await store.upsertMessage(idKeyA, msg('keep', id: 'k1'));
+    await store.upsertMessage(idKeyA, msg('gone', id: 'g1'));
+
+    await store.deleteMessage(idKeyA, 'g1');
+
+    final loaded = await store.loadChannelMessages(idKeyA);
+    expect(loaded.map((m) => m.text), ['keep']);
+  });
 }

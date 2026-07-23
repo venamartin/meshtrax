@@ -71,6 +71,36 @@ class ChannelMessageStore {
         .insert(_toRow(idKey, msg), mode: InsertMode.insertOrReplace);
   }
 
+  /// Insert-or-update a batch WITHOUT touching any other rows — the only
+  /// write live message paths may use. Unlike [saveChannelMessages] this can
+  /// NEVER shrink a channel's stored history: persisting a windowed or
+  /// stale in-memory list only refreshes the rows it actually contains.
+  Future<void> upsertMessages(
+    String idKey,
+    List<ChannelMessage> messages,
+  ) async {
+    if (publicKeyHex.isEmpty || messages.isEmpty) return;
+    await _db.batch((b) {
+      b.insertAll(
+        _db.channelMessageRows,
+        [for (final msg in messages) _toRow(idKey, msg)],
+        mode: InsertMode.insertOrReplace,
+      );
+    });
+  }
+
+  /// Remove exactly one message — explicit user deletion only.
+  Future<void> deleteMessage(String idKey, String messageId) async {
+    if (publicKeyHex.isEmpty) return;
+    await (_db.delete(_db.channelMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) &
+              r.channelIdKey.equals(idKey) &
+              r.messageId.equals(messageId),
+        ))
+        .go();
+  }
+
   Future<List<ChannelMessage>> loadChannelMessages(String idKey) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn(

@@ -132,4 +132,22 @@ void main() {
     expect(await other.loadMessages(contactA), isEmpty);
     expect(await store.loadMessages(contactA), isNotEmpty);
   });
+
+  test('upsertMessages can NEVER shrink a conversation', () async {
+    for (var i = 0; i < 5; i++) {
+      await store.upsertMessage(contactA, msg('old $i', id: 'o$i', ts: 1000 + i));
+    }
+    await store.upsertMessages(contactA, [msg('new', id: 'n1', ts: 9000)]);
+
+    expect(await store.loadMessages(contactA), hasLength(6));
+  });
+
+  test('deleteMessage removes exactly one row', () async {
+    await store.upsertMessage(contactA, msg('keep', id: 'k1'));
+    await store.upsertMessage(contactA, msg('gone', id: 'g1'));
+
+    await store.deleteMessage(contactA, 'g1');
+
+    expect((await store.loadMessages(contactA)).map((m) => m.text), ['keep']);
+  });
 }

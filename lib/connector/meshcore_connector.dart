@@ -574,7 +574,7 @@ class MeshCoreConnector extends ChangeNotifier {
     if (messages == null) return;
     final removed = messages.remove(message);
     if (!removed) return;
-    await _messageStore.saveMessages(contactKeyHex, messages);
+    await _messageStore.deleteMessage(contactKeyHex, message.messageId);
     notifyListeners();
   }
 
@@ -718,12 +718,9 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> _persistChannelMessages(
     int channelIndex,
-    List<ChannelMessage> messages, {
-    bool allowEmpty = false,
-  }) async {
-    // Never clobber stored history with an incidental empty list (e.g. a
-    // bucket created by the reaction path); only explicit user clears may.
-    if (messages.isEmpty && !allowEmpty) return;
+    List<ChannelMessage> messages,
+  ) async {
+    if (messages.isEmpty) return;
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) {
       // Not silently dropped: field report showed a day of messages living
@@ -732,7 +729,12 @@ class MeshCoreConnector extends ChangeNotifier {
       return;
     }
     _unpersistedBuckets.remove(channelIndex);
-    await _channelMessageStore.saveChannelMessages(channel.idKey, messages);
+    // Upsert-only: persisting the windowed in-memory list refreshes the
+    // rows it contains and can NEVER shrink the stored history. The
+    // delete-and-replace save destroyed histories when a stale or
+    // freshly-created bucket won a persist race (field: Public reverting
+    // to a days-old snapshot).
+    await _channelMessageStore.upsertMessages(channel.idKey, messages);
   }
 
   void _repersistIfDirty(Channel channel) {
@@ -749,7 +751,13 @@ class MeshCoreConnector extends ChangeNotifier {
     if (messages == null) return;
     final removed = messages.remove(message);
     if (!removed) return;
-    await _persistChannelMessages(channelIndex, messages, allowEmpty: true);
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel != null) {
+      await _channelMessageStore.deleteMessage(
+        channel.idKey,
+        message.messageId,
+      );
+    }
     notifyListeners();
   }
 
@@ -1197,7 +1205,7 @@ class MeshCoreConnector extends ChangeNotifier {
       );
       if (index != -1) {
         messages[index] = message;
-        _messageStore.saveMessages(contactKey, messages);
+        _messageStore.upsertMessages(contactKey, messages);
         notifyListeners();
       }
     }
@@ -1209,7 +1217,7 @@ class MeshCoreConnector extends ChangeNotifier {
             message.status == MessageStatus.failed)) {
       final contactKey2 = pubKeyToHex(message.senderKey);
       _setReactionStatus(contactKey2, reactionInfo, message.status);
-      _messageStore.saveMessages(
+      _messageStore.upsertMessages(
         contactKey2,
         _conversations[contactKey2] ?? [],
       );
@@ -2912,7 +2920,7 @@ class MeshCoreConnector extends ChangeNotifier {
         reactionInfo,
         MessageStatus.pending,
       );
-      _messageStore.saveMessages(contact.publicKeyHex, messages);
+      _messageStore.upsertMessages(contact.publicKeyHex, messages);
       notifyListeners();
 
       // Route through retry service (same as normal messages)
@@ -3302,7 +3310,7 @@ class MeshCoreConnector extends ChangeNotifier {
 
       // Process reaction locally to update the UI immediately
       _processReaction(messages, reactionInfo);
-      await _channelMessageStore.saveChannelMessages(channel.idKey, messages);
+      await _channelMessageStore.upsertMessages(channel.idKey, messages);
 
       // Mark this reaction as processed
       _processedChannelReactions[channel.idKey]!.add(reactionIdentifier);
@@ -5591,7 +5599,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               tag: 'Connector',
             );
             messages[i] = messages[i].copyWith(status: MessageStatus.sent);
-            _messageStore.saveMessages(
+            _messageStore.upsertMessages(
               pubKeyToHex(messages[i].senderKey),
               messages,
             );
@@ -6086,7 +6094,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (!isDuplicate) {
         // New reaction - process it
         _processContactReaction(messages, reactionInfo, pubKeyHex);
-        _messageStore.saveMessages(pubKeyHex, messages);
+        _messageStore.upsertMessages(pubKeyHex, messages);
 
         // Mark as processed
         _processedContactReactions[pubKeyHex]!.add(reactionIdentifier);
@@ -6097,7 +6105,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     messages.add(processedMessage);
-    _messageStore.saveMessages(pubKeyHex, messages);
+    _messageStore.upsertMessages(pubKeyHex, messages);
     notifyListeners();
   }
 
@@ -7496,7 +7504,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final messages = _conversations[contactKeyHex];
     if (messages == null) return;
     messages.clear();
-    unawaited(_messageStore.saveMessages(contactKeyHex, messages));
+    unawaited(_messageStore.clearMessages(contactKeyHex));
     markContactRead(contactKeyHex);
     notifyListeners();
   }
@@ -7505,9 +7513,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final messages = _channelMessages[channelIndex];
     if (messages == null) return;
     messages.clear();
-    unawaited(
-      _persistChannelMessages(channelIndex, messages, allowEmpty: true),
-    );
+    // Explicit user clear — the only whole-history deletion besides
+    // deleting the channel itself.
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel != null) {
+      unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
+    }
     markChannelRead(channelIndex);
     notifyListeners();
   }
