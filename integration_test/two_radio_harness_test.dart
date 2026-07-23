@@ -304,6 +304,63 @@ void main() {
     await exchange(ble, usb, idKeyPub, tag('D6 ble->usb public'));
   }, timeout: const Timeout(Duration(minutes: 6)));
 
+  testWidgets('D10 display continuity: Public never vanishes mid-resync',
+      (tester) async {
+    await beginScenario(tester, 'D10 display continuity');
+    requireBench();
+    const idKeyPub = Channel.publicChannelPsk;
+    // Seed Public so both radios hold a non-empty bucket.
+    final seed = tag('D10 seed public');
+    ledger.expectText(idKeyPub, seed);
+    await usb.connector
+        .sendChannelMessage(liveByIdKey(usb.connector, idKeyPub)!, seed);
+    await awaitText(ble, idKeyPub, seed);
+
+    // Captured handles, exactly like an open channel screen holds them.
+    final usbPub = liveByIdKey(usb.connector, idKeyPub)!;
+    final blePub = liveByIdKey(ble.connector, idKeyPub)!;
+
+    var usbMsgGaps = 0, bleMsgGaps = 0, usbListGaps = 0, bleListGaps = 0;
+    var samples = 0;
+    var watching = true;
+    final watcher = () async {
+      while (watching) {
+        samples++;
+        if (usb.connector.getChannelMessages(usbPub).isEmpty) usbMsgGaps++;
+        if (ble.connector.getChannelMessages(blePub).isEmpty) bleMsgGaps++;
+        if (!usb.connector.channels.any((c) => c.idKey == idKeyPub)) {
+          usbListGaps++;
+        }
+        if (!ble.connector.channels.any((c) => c.idKey == idKeyPub)) {
+          bleListGaps++;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    }();
+
+    // The phone reality: resyncs fire on every reconnect and channel edit.
+    await usb.connector.getChannels(force: true);
+    await ble.connector.getChannels(force: true);
+    await awaitSyncIdle(usb);
+    await awaitSyncIdle(ble);
+    await usb.connector.getChannels(force: true);
+    await awaitSyncIdle(usb);
+    await ble.connector.disconnect();
+    await Future<void>.delayed(const Duration(seconds: 3));
+    await ble.reconnect();
+    await Future<void>.delayed(const Duration(seconds: 2));
+
+    watching = false;
+    await watcher;
+    blog('D10 over $samples samples — gaps usb(msgs:$usbMsgGaps '
+        'list:$usbListGaps) ble(msgs:$bleMsgGaps list:$bleListGaps)');
+    expect(usbMsgGaps + usbListGaps, 0,
+        reason: '${usb.label}: Public flickered during resync — this is the '
+            'field-reported disappear/reappear');
+    expect(bleMsgGaps + bleListGaps, 0,
+        reason: '${ble.label}: Public flickered across reconnect');
+  }, timeout: const Timeout(Duration(minutes: 8)));
+
   testWidgets('S3 deleted slot reused by a new channel files correctly',
       (tester) async {
     await beginScenario(tester, 'S3 slot reuse by new identity');

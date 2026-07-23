@@ -304,7 +304,8 @@ class BleNusTcpBridge {
   }
 
   Future<void> _reconnectLoop() async {
-    for (var attempt = 1; attempt <= 30 && !_stopping; attempt++) {
+    // Patient enough for multi-hour monitor runs (~10 min of attempts).
+    for (var attempt = 1; attempt <= 300 && !_stopping; attempt++) {
       await Future<void>.delayed(const Duration(seconds: 2));
       try {
         await _connectBle();

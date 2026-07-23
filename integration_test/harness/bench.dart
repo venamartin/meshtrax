@@ -352,9 +352,11 @@ Future<void> removeChannelIfPresent(BenchRadio radio, String idKey) async {
   await awaitSyncIdle(radio);
 }
 
-/// Moves the radio to the bench frequency, keeping its own BW/SF/CR.
-/// Firmware applies CMD_SET_RADIO_PARAMS live — no reboot needed.
-Future<void> alignFrequency(BenchRadio radio) async {
+/// Moves the radio to [khz] (default: bench frequency), keeping its own
+/// BW/SF/CR. Firmware applies CMD_SET_RADIO_PARAMS live — no reboot needed.
+Future<void> alignFrequency(BenchRadio radio, {int? khz}) async {
+  final target = khz ?? BenchConfig.targetFreqKhz;
+  final targetMhz = (target / 1000).toStringAsFixed(3);
   final c = radio.connector;
   await waitUntil(
     () => c.currentFreqHz != null && c.currentSf != null,
@@ -363,26 +365,21 @@ Future<void> alignFrequency(BenchRadio radio) async {
   final mhz = (c.currentFreqHz! / 1000).toStringAsFixed(3);
   blog('${radio.label}: freq=$mhz MHz bw=${c.currentBwHz} '
       'sf=${c.currentSf} cr=${c.currentCr}');
-  if (c.currentFreqHz == BenchConfig.targetFreqKhz) return;
+  if (c.currentFreqHz == target) return;
 
   final cr = c.currentCr! >= 5 ? c.currentCr! : c.currentCr! + 4;
-  blog('${radio.label}: retuning to 920.000 MHz');
+  blog('${radio.label}: retuning to $targetMhz MHz');
   await c.sendFrame(
-    buildSetRadioParamsFrame(
-      BenchConfig.targetFreqKhz,
-      c.currentBwHz!,
-      c.currentSf!,
-      cr,
-    ),
+    buildSetRadioParamsFrame(target, c.currentBwHz!, c.currentSf!, cr),
   );
   await Future<void>.delayed(const Duration(seconds: 1));
   await c.refreshDeviceInfo();
   await waitUntil(
-    () => c.currentFreqHz == BenchConfig.targetFreqKhz,
-    '${radio.label}: frequency confirms 920.000 MHz',
+    () => c.currentFreqHz == target,
+    '${radio.label}: frequency confirms $targetMhz MHz',
     timeout: const Duration(seconds: 20),
   );
-  blog('${radio.label}: now on 920.000 MHz');
+  blog('${radio.label}: now on $targetMhz MHz');
 }
 
 /// Twin-slot warnings are bench failures. Hash-collision and nameless-slot

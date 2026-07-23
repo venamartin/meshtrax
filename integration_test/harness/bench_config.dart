@@ -19,6 +19,10 @@ class BenchConfig {
   /// CMD_SET_RADIO_PARAMS takes kHz: 920.000 MHz = 920000.
   static const int targetFreqKhz = 920000;
 
+  /// The real mesh frequency — used ONLY by the passive Public monitor,
+  /// which never transmits.
+  static const int meshFreqKhz = 910525;
+
   /// These radios are dedicated to the bench (owner's explicit call):
   /// every non-Public slot is wiped at S0 so runs start deterministic.
   /// Set false if the harness ever drives radios with real channels on them.

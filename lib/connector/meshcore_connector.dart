@@ -431,7 +431,14 @@ class MeshCoreConnector extends ChangeNotifier {
     return List.unmodifiable(_discoveredContacts);
   }
 
-  List<Channel> get channels => List.unmodifiable(_channels);
+  /// During a slot resync `_channels` is rebuilt from empty over several
+  /// seconds (slow on BLE) — serving it raw made Public vanish from the UI
+  /// on every phone reconnect (field-reported disappear/reappear; bench
+  /// D10). Display always sees the last SETTLED table; filing and sending
+  /// keep using the live one via [_liveChannelByIdKey].
+  List<Channel> get channels => List.unmodifiable(
+        _isSyncingChannels ? _previousChannelsCache : _channels,
+      );
 
   /// True once this connection's slot map has been confirmed against the
   /// radio. Sends and slot-indexed filing stay blocked while false.
@@ -663,10 +670,20 @@ class MeshCoreConnector extends ChangeNotifier {
     // slot was reassigned by a resync while its screen was open.
     final live = _liveChannelByIdKey(channel.idKey);
     if (live != null) return _channelMessages[live.index] ?? [];
-    // Mid-sync or offline the caller's index is still the best mapping.
-    // But once the list has settled without this identity, the channel is
-    // gone — showing the index's bucket would display another channel.
-    if (_isSyncingChannels || _channels.isEmpty) {
+    // Mid-sync the last settled table is the best identity->slot mapping —
+    // the live list is half-built and the screen must not blank (D10).
+    if (_isSyncingChannels) {
+      for (final c in _previousChannelsCache) {
+        if (c.idKey == channel.idKey) {
+          return _channelMessages[c.index] ?? [];
+        }
+      }
+      return _channelMessages[channel.index] ?? [];
+    }
+    // Offline the caller's index is still the best mapping. But once the
+    // list has settled without this identity, the channel is gone —
+    // showing the index's bucket would display another channel.
+    if (_channels.isEmpty) {
       return _channelMessages[channel.index] ?? [];
     }
     return const [];
@@ -4005,6 +4022,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // A queued follow-up resync dies with the failed pass; reconnect
       // always starts with a fresh full sync anyway.
       _pendingForceChannelResync = false;
+      // Never leave a partial table on display: restore the last settled
+      // list. verified=false keeps filing and sending gated regardless.
+      _channels
+        ..clear()
+        ..addAll(_previousChannelsCache);
       // Don't strand a deferred queue drain behind the failed pass: run it
       // anyway. Unverified filing is safe — unknown slots buffer.
       if (_pendingQueueSyncAfterChannelSync) {
