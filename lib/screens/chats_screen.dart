@@ -555,12 +555,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
       builder: (context, connector, child) {
         final List<_ChatListItem> chatItems = [];
 
-        // Add Active Contacts (exclude repeaters)
+        // Add Active Contacts (exclude repeaters) — "latest" comes from the
+        // watched SQL query, so ordering can never disagree with the DB.
         for (final contact in connector.contacts) {
           if (contact.type == advTypeRepeater) continue;
-          final messages = connector.getMessages(contact);
-          if (messages.isNotEmpty) {
-            final lastMessage = messages.last;
+          final lastMessage = connector.latestContactMessage(contact);
+          if (lastMessage != null) {
             final contactName = contact.name.isEmpty ? 'Unknown' : contact.name;
             final subtitle = lastMessage.isOutgoing ? 'You: ${lastMessage.text}' : lastMessage.text;
             chatItems.add(

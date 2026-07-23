@@ -658,6 +658,36 @@ class $ContactMessageRowsTable extends ContactMessageRows
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isOutgoingMeta = const VerificationMeta(
+    'isOutgoing',
+  );
+  @override
+  late final GeneratedColumn<bool> isOutgoing = GeneratedColumn<bool>(
+    'is_outgoing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_outgoing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _unreadEligibleMeta = const VerificationMeta(
+    'unreadEligible',
+  );
+  @override
+  late final GeneratedColumn<bool> unreadEligible = GeneratedColumn<bool>(
+    'unread_eligible',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("unread_eligible" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _payloadMeta = const VerificationMeta(
     'payload',
   );
@@ -676,6 +706,8 @@ class $ContactMessageRowsTable extends ContactMessageRows
     contactKey,
     messageId,
     timestampMs,
+    isOutgoing,
+    unreadEligible,
     payload,
   ];
   @override
@@ -728,6 +760,21 @@ class $ContactMessageRowsTable extends ContactMessageRows
     } else if (isInserting) {
       context.missing(_timestampMsMeta);
     }
+    if (data.containsKey('is_outgoing')) {
+      context.handle(
+        _isOutgoingMeta,
+        isOutgoing.isAcceptableOrUnknown(data['is_outgoing']!, _isOutgoingMeta),
+      );
+    }
+    if (data.containsKey('unread_eligible')) {
+      context.handle(
+        _unreadEligibleMeta,
+        unreadEligible.isAcceptableOrUnknown(
+          data['unread_eligible']!,
+          _unreadEligibleMeta,
+        ),
+      );
+    }
     if (data.containsKey('payload')) {
       context.handle(
         _payloadMeta,
@@ -769,6 +816,14 @@ class $ContactMessageRowsTable extends ContactMessageRows
         DriftSqlType.int,
         data['${effectivePrefix}timestamp_ms'],
       )!,
+      isOutgoing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_outgoing'],
+      )!,
+      unreadEligible: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}unread_eligible'],
+      )!,
       payload: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}payload'],
@@ -794,6 +849,13 @@ class ContactMessageRow extends DataClass
   final String messageId;
   final int timestampMs;
 
+  /// Promoted so unread/ordering queries never parse JSON (v4).
+  final bool isOutgoing;
+
+  /// Decided ONCE at ingest: counts toward unread only when not outgoing,
+  /// not CLI traffic, and the contact tracks unread (v4).
+  final bool unreadEligible;
+
   /// Remaining message fields as JSON; keys live in real columns.
   final String payload;
   const ContactMessageRow({
@@ -802,6 +864,8 @@ class ContactMessageRow extends DataClass
     required this.contactKey,
     required this.messageId,
     required this.timestampMs,
+    required this.isOutgoing,
+    required this.unreadEligible,
     required this.payload,
   });
   @override
@@ -812,6 +876,8 @@ class ContactMessageRow extends DataClass
     map['contact_key'] = Variable<String>(contactKey);
     map['message_id'] = Variable<String>(messageId);
     map['timestamp_ms'] = Variable<int>(timestampMs);
+    map['is_outgoing'] = Variable<bool>(isOutgoing);
+    map['unread_eligible'] = Variable<bool>(unreadEligible);
     map['payload'] = Variable<String>(payload);
     return map;
   }
@@ -823,6 +889,8 @@ class ContactMessageRow extends DataClass
       contactKey: Value(contactKey),
       messageId: Value(messageId),
       timestampMs: Value(timestampMs),
+      isOutgoing: Value(isOutgoing),
+      unreadEligible: Value(unreadEligible),
       payload: Value(payload),
     );
   }
@@ -838,6 +906,8 @@ class ContactMessageRow extends DataClass
       contactKey: serializer.fromJson<String>(json['contactKey']),
       messageId: serializer.fromJson<String>(json['messageId']),
       timestampMs: serializer.fromJson<int>(json['timestampMs']),
+      isOutgoing: serializer.fromJson<bool>(json['isOutgoing']),
+      unreadEligible: serializer.fromJson<bool>(json['unreadEligible']),
       payload: serializer.fromJson<String>(json['payload']),
     );
   }
@@ -850,6 +920,8 @@ class ContactMessageRow extends DataClass
       'contactKey': serializer.toJson<String>(contactKey),
       'messageId': serializer.toJson<String>(messageId),
       'timestampMs': serializer.toJson<int>(timestampMs),
+      'isOutgoing': serializer.toJson<bool>(isOutgoing),
+      'unreadEligible': serializer.toJson<bool>(unreadEligible),
       'payload': serializer.toJson<String>(payload),
     };
   }
@@ -860,6 +932,8 @@ class ContactMessageRow extends DataClass
     String? contactKey,
     String? messageId,
     int? timestampMs,
+    bool? isOutgoing,
+    bool? unreadEligible,
     String? payload,
   }) => ContactMessageRow(
     id: id ?? this.id,
@@ -867,6 +941,8 @@ class ContactMessageRow extends DataClass
     contactKey: contactKey ?? this.contactKey,
     messageId: messageId ?? this.messageId,
     timestampMs: timestampMs ?? this.timestampMs,
+    isOutgoing: isOutgoing ?? this.isOutgoing,
+    unreadEligible: unreadEligible ?? this.unreadEligible,
     payload: payload ?? this.payload,
   );
   ContactMessageRow copyWithCompanion(ContactMessageRowsCompanion data) {
@@ -880,6 +956,12 @@ class ContactMessageRow extends DataClass
       timestampMs: data.timestampMs.present
           ? data.timestampMs.value
           : this.timestampMs,
+      isOutgoing: data.isOutgoing.present
+          ? data.isOutgoing.value
+          : this.isOutgoing,
+      unreadEligible: data.unreadEligible.present
+          ? data.unreadEligible.value
+          : this.unreadEligible,
       payload: data.payload.present ? data.payload.value : this.payload,
     );
   }
@@ -892,14 +974,24 @@ class ContactMessageRow extends DataClass
           ..write('contactKey: $contactKey, ')
           ..write('messageId: $messageId, ')
           ..write('timestampMs: $timestampMs, ')
+          ..write('isOutgoing: $isOutgoing, ')
+          ..write('unreadEligible: $unreadEligible, ')
           ..write('payload: $payload')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, nodeScope, contactKey, messageId, timestampMs, payload);
+  int get hashCode => Object.hash(
+    id,
+    nodeScope,
+    contactKey,
+    messageId,
+    timestampMs,
+    isOutgoing,
+    unreadEligible,
+    payload,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -909,6 +1001,8 @@ class ContactMessageRow extends DataClass
           other.contactKey == this.contactKey &&
           other.messageId == this.messageId &&
           other.timestampMs == this.timestampMs &&
+          other.isOutgoing == this.isOutgoing &&
+          other.unreadEligible == this.unreadEligible &&
           other.payload == this.payload);
 }
 
@@ -918,6 +1012,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
   final Value<String> contactKey;
   final Value<String> messageId;
   final Value<int> timestampMs;
+  final Value<bool> isOutgoing;
+  final Value<bool> unreadEligible;
   final Value<String> payload;
   const ContactMessageRowsCompanion({
     this.id = const Value.absent(),
@@ -925,6 +1021,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     this.contactKey = const Value.absent(),
     this.messageId = const Value.absent(),
     this.timestampMs = const Value.absent(),
+    this.isOutgoing = const Value.absent(),
+    this.unreadEligible = const Value.absent(),
     this.payload = const Value.absent(),
   });
   ContactMessageRowsCompanion.insert({
@@ -933,6 +1031,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     required String contactKey,
     required String messageId,
     required int timestampMs,
+    this.isOutgoing = const Value.absent(),
+    this.unreadEligible = const Value.absent(),
     required String payload,
   }) : nodeScope = Value(nodeScope),
        contactKey = Value(contactKey),
@@ -945,6 +1045,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     Expression<String>? contactKey,
     Expression<String>? messageId,
     Expression<int>? timestampMs,
+    Expression<bool>? isOutgoing,
+    Expression<bool>? unreadEligible,
     Expression<String>? payload,
   }) {
     return RawValuesInsertable({
@@ -953,6 +1055,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
       if (contactKey != null) 'contact_key': contactKey,
       if (messageId != null) 'message_id': messageId,
       if (timestampMs != null) 'timestamp_ms': timestampMs,
+      if (isOutgoing != null) 'is_outgoing': isOutgoing,
+      if (unreadEligible != null) 'unread_eligible': unreadEligible,
       if (payload != null) 'payload': payload,
     });
   }
@@ -963,6 +1067,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     Value<String>? contactKey,
     Value<String>? messageId,
     Value<int>? timestampMs,
+    Value<bool>? isOutgoing,
+    Value<bool>? unreadEligible,
     Value<String>? payload,
   }) {
     return ContactMessageRowsCompanion(
@@ -971,6 +1077,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
       contactKey: contactKey ?? this.contactKey,
       messageId: messageId ?? this.messageId,
       timestampMs: timestampMs ?? this.timestampMs,
+      isOutgoing: isOutgoing ?? this.isOutgoing,
+      unreadEligible: unreadEligible ?? this.unreadEligible,
       payload: payload ?? this.payload,
     );
   }
@@ -993,6 +1101,12 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     if (timestampMs.present) {
       map['timestamp_ms'] = Variable<int>(timestampMs.value);
     }
+    if (isOutgoing.present) {
+      map['is_outgoing'] = Variable<bool>(isOutgoing.value);
+    }
+    if (unreadEligible.present) {
+      map['unread_eligible'] = Variable<bool>(unreadEligible.value);
+    }
     if (payload.present) {
       map['payload'] = Variable<String>(payload.value);
     }
@@ -1007,6 +1121,8 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
           ..write('contactKey: $contactKey, ')
           ..write('messageId: $messageId, ')
           ..write('timestampMs: $timestampMs, ')
+          ..write('isOutgoing: $isOutgoing, ')
+          ..write('unreadEligible: $unreadEligible, ')
           ..write('payload: $payload')
           ..write(')'))
         .toString();
@@ -1887,6 +2003,8 @@ typedef $$ContactMessageRowsTableCreateCompanionBuilder =
       required String contactKey,
       required String messageId,
       required int timestampMs,
+      Value<bool> isOutgoing,
+      Value<bool> unreadEligible,
       required String payload,
     });
 typedef $$ContactMessageRowsTableUpdateCompanionBuilder =
@@ -1896,6 +2014,8 @@ typedef $$ContactMessageRowsTableUpdateCompanionBuilder =
       Value<String> contactKey,
       Value<String> messageId,
       Value<int> timestampMs,
+      Value<bool> isOutgoing,
+      Value<bool> unreadEligible,
       Value<String> payload,
     });
 
@@ -1930,6 +2050,16 @@ class $$ContactMessageRowsTableFilterComposer
 
   ColumnFilters<int> get timestampMs => $composableBuilder(
     column: $table.timestampMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isOutgoing => $composableBuilder(
+    column: $table.isOutgoing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get unreadEligible => $composableBuilder(
+    column: $table.unreadEligible,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1973,6 +2103,16 @@ class $$ContactMessageRowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isOutgoing => $composableBuilder(
+    column: $table.isOutgoing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get unreadEligible => $composableBuilder(
+    column: $table.unreadEligible,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get payload => $composableBuilder(
     column: $table.payload,
     builder: (column) => ColumnOrderings(column),
@@ -2004,6 +2144,16 @@ class $$ContactMessageRowsTableAnnotationComposer
 
   GeneratedColumn<int> get timestampMs => $composableBuilder(
     column: $table.timestampMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isOutgoing => $composableBuilder(
+    column: $table.isOutgoing,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get unreadEligible => $composableBuilder(
+    column: $table.unreadEligible,
     builder: (column) => column,
   );
 
@@ -2056,6 +2206,8 @@ class $$ContactMessageRowsTableTableManager
                 Value<String> contactKey = const Value.absent(),
                 Value<String> messageId = const Value.absent(),
                 Value<int> timestampMs = const Value.absent(),
+                Value<bool> isOutgoing = const Value.absent(),
+                Value<bool> unreadEligible = const Value.absent(),
                 Value<String> payload = const Value.absent(),
               }) => ContactMessageRowsCompanion(
                 id: id,
@@ -2063,6 +2215,8 @@ class $$ContactMessageRowsTableTableManager
                 contactKey: contactKey,
                 messageId: messageId,
                 timestampMs: timestampMs,
+                isOutgoing: isOutgoing,
+                unreadEligible: unreadEligible,
                 payload: payload,
               ),
           createCompanionCallback:
@@ -2072,6 +2226,8 @@ class $$ContactMessageRowsTableTableManager
                 required String contactKey,
                 required String messageId,
                 required int timestampMs,
+                Value<bool> isOutgoing = const Value.absent(),
+                Value<bool> unreadEligible = const Value.absent(),
                 required String payload,
               }) => ContactMessageRowsCompanion.insert(
                 id: id,
@@ -2079,6 +2235,8 @@ class $$ContactMessageRowsTableTableManager
                 contactKey: contactKey,
                 messageId: messageId,
                 timestampMs: timestampMs,
+                isOutgoing: isOutgoing,
+                unreadEligible: unreadEligible,
                 payload: payload,
               ),
           withReferenceMapper: (p0) => p0

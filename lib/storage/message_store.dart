@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -24,14 +25,263 @@ class MessageStore {
 
   AppDatabase get _db => AppDatabase.instance;
 
-  ContactMessageRowsCompanion _toRow(String contactKeyHex, Message msg) {
+  ContactMessageRowsCompanion _toRow(
+    String contactKeyHex,
+    Message msg, {
+    bool? unreadEligible,
+  }) {
     return ContactMessageRowsCompanion.insert(
       nodeScope: publicKeyHex,
       contactKey: contactKeyHex,
       messageId: msg.messageId,
       timestampMs: msg.timestamp.millisecondsSinceEpoch,
+      isOutgoing: Value(msg.isOutgoing),
+      unreadEligible: Value(
+        unreadEligible ?? (!msg.isOutgoing && !msg.isCli),
+      ),
       payload: jsonEncode(_messageToJson(msg)),
     );
+  }
+
+  // --- Phase 3d: the database is the only message state ------------------
+
+  /// Watched, ordered view of a conversation's newest [limit] messages,
+  /// emitted oldest-first. The UI's ONLY read path.
+  Stream<List<Message>> watchConversation(
+    String contactKeyHex, {
+    int limit = 200,
+  }) {
+    if (publicKeyHex.isEmpty) return Stream.value(const []);
+    unawaited(_importLegacyBlobs(contactKeyHex));
+    final query = (_db.select(_db.contactMessageRows)
+      ..where(
+        (r) =>
+            r.nodeScope.equals(publicKeyHex) &
+            r.contactKey.equals(contactKeyHex),
+      )
+      ..orderBy([
+        (r) => OrderingTerm.desc(r.timestampMs),
+        (r) => OrderingTerm.desc(r.id),
+      ])
+      ..limit(limit));
+    return query.watch().map((rows) {
+      final messages = <Message>[];
+      for (final row in rows.reversed) {
+        try {
+          messages.add(
+            _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>),
+          );
+        } catch (e) {
+          appLogger.warn('Skipping unreadable contact message row: $e');
+        }
+      }
+      return messages;
+    });
+  }
+
+  /// Atomic ingest: true ONLY when no row with this id exists — the unique
+  /// constraint is the dedup authority.
+  Future<bool> insertIfNew(
+    String contactKeyHex,
+    Message msg, {
+    bool? unreadEligible,
+  }) async {
+    if (publicKeyHex.isEmpty) return false;
+    final inserted = await _db
+        .into(_db.contactMessageRows)
+        .insertReturningOrNull(
+          _toRow(contactKeyHex, msg, unreadEligible: unreadEligible),
+          mode: InsertMode.insertOrIgnore,
+        );
+    return inserted != null;
+  }
+
+  Future<Message?> findByMessageId(
+    String contactKeyHex,
+    String messageId,
+  ) async {
+    if (publicKeyHex.isEmpty) return null;
+    final row =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.contactKey.equals(contactKeyHex) &
+                    r.messageId.equals(messageId),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return null;
+    try {
+      return _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Load-transform-upsert of a single row.
+  Future<bool> updateMessage(
+    String contactKeyHex,
+    String messageId,
+    Message Function(Message) transform,
+  ) async {
+    final existing = await findByMessageId(contactKeyHex, messageId);
+    if (existing == null) return false;
+    await upsertMessage(contactKeyHex, transform(existing));
+    return true;
+  }
+
+  /// Scope-wide variant for ACK bookkeeping that only holds a messageId;
+  /// returns (updated, contactKey).
+  Future<(bool, String?)> updateAnyByMessageId(
+    String messageId,
+    Message Function(Message) transform,
+  ) async {
+    if (publicKeyHex.isEmpty) return (false, null);
+    final row =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.messageId.equals(messageId),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return (false, null);
+    try {
+      final msg = _messageFromJson(
+        jsonDecode(row.payload) as Map<String, dynamic>,
+      );
+      await upsertMessage(row.contactKey, transform(msg));
+      return (true, row.contactKey);
+    } catch (_) {
+      return (false, null);
+    }
+  }
+
+  /// Fallback ACK bookkeeping when no id is known: flips the NEWEST
+  /// outgoing row with status [from] to [to]; returns (updated, contactKey).
+  Future<(bool, String?)> promoteLatestOutgoing({
+    required MessageStatus from,
+    required MessageStatus to,
+  }) async {
+    if (publicKeyHex.isEmpty) return (false, null);
+    final row = await _db
+        .customSelect(
+          'SELECT contact_key AS k, message_id AS id '
+          'FROM contact_message_rows '
+          'WHERE node_scope = ?1 AND is_outgoing = 1 '
+          "AND json_extract(payload, '\$.status') = ?2 "
+          'ORDER BY timestamp_ms DESC LIMIT 1',
+          variables: [
+            Variable.withString(publicKeyHex),
+            Variable.withInt(from.index),
+          ],
+          readsFrom: {_db.contactMessageRows},
+        )
+        .getSingleOrNull();
+    if (row == null) return (false, null);
+    final key = row.read<String>('k');
+    final updated = await updateMessage(
+      key,
+      row.read<String>('id'),
+      (m) => m.copyWith(status: to),
+    );
+    return (updated, key);
+  }
+
+  // --- Read marks: unread is a watched COUNT, never a mutable counter ----
+
+  Future<void> markRead(String contactKeyHex, {int? upToMs}) async {
+    if (publicKeyHex.isEmpty) return;
+    await _db
+        .into(_db.contactReadMarks)
+        .insertOnConflictUpdate(
+          ContactReadMarksCompanion.insert(
+            nodeScope: publicKeyHex,
+            contactKey: contactKeyHex,
+            lastReadMs: Value(
+              upToMs ?? DateTime.now().millisecondsSinceEpoch,
+            ),
+          ),
+        );
+  }
+
+  /// First-use initialization so pre-existing history never floods unread.
+  Future<void> initializeReadMarkIfAbsent(String contactKeyHex) async {
+    if (publicKeyHex.isEmpty) return;
+    final newest =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.contactKey.equals(contactKeyHex),
+              )
+              ..orderBy([(r) => OrderingTerm.desc(r.timestampMs)])
+              ..limit(1))
+            .getSingleOrNull();
+    await _db
+        .into(_db.contactReadMarks)
+        .insert(
+          ContactReadMarksCompanion.insert(
+            nodeScope: publicKeyHex,
+            contactKey: contactKeyHex,
+            lastReadMs: Value(newest?.timestampMs ?? 0),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
+  /// Watched unread counts per contact — one query feeds every badge.
+  Stream<Map<String, int>> watchUnreadCounts() {
+    if (publicKeyHex.isEmpty) return Stream.value(const {});
+    return _db
+        .customSelect(
+          'SELECT m.contact_key AS k, COUNT(*) AS c '
+          'FROM contact_message_rows m '
+          'WHERE m.node_scope = ?1 AND m.unread_eligible = 1 '
+          'AND m.timestamp_ms > COALESCE((SELECT last_read_ms '
+          'FROM contact_read_marks '
+          'WHERE node_scope = ?1 AND contact_key = m.contact_key), 0) '
+          'GROUP BY m.contact_key',
+          variables: [Variable.withString(publicKeyHex)],
+          readsFrom: {_db.contactMessageRows, _db.contactReadMarks},
+        )
+        .watch()
+        .map((rows) => {
+              for (final row in rows)
+                row.read<String>('k'): row.read<int>('c'),
+            });
+  }
+
+  /// Watched newest message per contact (chats screen subtitles/ordering).
+  Stream<Map<String, Message>> watchLatestPerContact() {
+    if (publicKeyHex.isEmpty) return Stream.value(const {});
+    return _db
+        .customSelect(
+          'SELECT m.contact_key AS k, m.payload AS p '
+          'FROM contact_message_rows m '
+          'INNER JOIN (SELECT contact_key, MAX(timestamp_ms) AS mx '
+          'FROM contact_message_rows WHERE node_scope = ?1 '
+          'GROUP BY contact_key) latest '
+          'ON m.contact_key = latest.contact_key '
+          'AND m.timestamp_ms = latest.mx '
+          'WHERE m.node_scope = ?1 GROUP BY m.contact_key',
+          variables: [Variable.withString(publicKeyHex)],
+          readsFrom: {_db.contactMessageRows},
+        )
+        .watch()
+        .map((rows) {
+          final latest = <String, Message>{};
+          for (final row in rows) {
+            try {
+              latest[row.read<String>('k')] = _messageFromJson(
+                jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+              );
+            } catch (_) {}
+          }
+          return latest;
+        });
   }
 
   /// Replace a conversation's stored messages atomically.

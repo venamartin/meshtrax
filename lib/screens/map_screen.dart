@@ -1264,10 +1264,21 @@ class _MapScreenState extends State<MapScreen> {
 
   List<_SharedMarker> _collectSharedMarkers(MeshCoreConnector connector) {
     final markers = <_SharedMarker>[];
+    // Contact and channel messages come from the database asynchronously;
+    // the refresh updates state and this rebuild picks them up.
+    unawaited(_refreshChannelMarkers(connector));
+    markers.addAll(_channelMarkers);
+    return markers;
+  }
+
+  Future<void> _collectContactMarkers(
+    MeshCoreConnector connector,
+    List<_SharedMarker> markers,
+  ) async {
     final selfName = connector.selfName ?? 'Me';
 
     for (final contact in connector.contacts) {
-      final messages = connector.getMessages(contact);
+      final messages = await connector.loadMessagesFor(contact);
       for (final message in messages) {
         final payload = _parseMarkerText(message.text);
         if (payload == null) continue;
@@ -1292,12 +1303,6 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
 
-    // Channel messages come from the database asynchronously; the refresh
-    // updates state and this rebuild picks them up.
-    unawaited(_refreshChannelMarkers(connector));
-    markers.addAll(_channelMarkers);
-
-    return markers;
   }
 
   List<_SharedMarker> _channelMarkers = const [];
@@ -1308,6 +1313,7 @@ class _MapScreenState extends State<MapScreen> {
     _refreshingChannelMarkers = true;
     try {
       final markers = <_SharedMarker>[];
+      await _collectContactMarkers(connector, markers);
       for (final channel in connector.channels.where((c) => !c.isEmpty)) {
         final isPublic = _isPublicChannel(channel);
         final messages = await connector.loadChannelMessagesFor(channel);

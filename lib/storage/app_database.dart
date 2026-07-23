@@ -82,6 +82,14 @@ class ContactMessageRows extends Table {
   TextColumn get messageId => text()();
   IntColumn get timestampMs => integer()();
 
+  /// Promoted so unread/ordering queries never parse JSON (v4).
+  BoolColumn get isOutgoing => boolean().withDefault(const Constant(false))();
+
+  /// Decided ONCE at ingest: counts toward unread only when not outgoing,
+  /// not CLI traffic, and the contact tracks unread (v4).
+  BoolColumn get unreadEligible =>
+      boolean().withDefault(const Constant(false))();
+
   /// Remaining message fields as JSON; keys live in real columns.
   TextColumn get payload => text()();
 
@@ -115,7 +123,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -135,6 +143,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createIndex(idxChannelPacketHash);
         // Pre-v3 rows never count as unread: read marks initialize to the
         // newest existing message per channel on first use.
+      }
+      if (from < 4) {
+        await m.addColumn(contactMessageRows, contactMessageRows.isOutgoing);
+        await m.addColumn(
+          contactMessageRows,
+          contactMessageRows.unreadEligible,
+        );
       }
     },
   );

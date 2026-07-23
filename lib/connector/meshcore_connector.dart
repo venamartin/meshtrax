@@ -155,7 +155,6 @@ enum SyncStatus {
 
 class MeshCoreConnector extends ChangeNotifier {
   // Message windowing to limit memory usage
-  static const int _messageWindowSize = 200;
 
   MeshCoreConnectionState _state = MeshCoreConnectionState.disconnected;
   BluetoothDevice? _device;
@@ -182,7 +181,6 @@ class MeshCoreConnector extends ChangeNotifier {
   final List<Contact> _contacts = [];
   final List<Contact> _discoveredContacts = [];
   final List<Channel> _channels = [];
-  final Map<String, List<Message>> _conversations = {};
   /// Mirror of the watched per-channel unread COUNT query — lets legacy
   /// synchronous callers (badges, notification totals) read DB-authoritative
   /// values. Single writer: the subscription in
@@ -191,11 +189,14 @@ class MeshCoreConnector extends ChangeNotifier {
   StreamSubscription<Map<String, int>>? _channelUnreadSub;
   Map<String, ChannelMessage> _channelLatestByIdKey = const {};
   StreamSubscription<Map<String, ChannelMessage>>? _channelLatestSub;
+  Map<String, int> _contactUnreadByKey = const {};
+  StreamSubscription<Map<String, int>>? _contactUnreadSub;
+  Map<String, Message> _contactLatestByKey = const {};
+  StreamSubscription<Map<String, Message>>? _contactLatestSub;
   final List<String> _pendingChannelSentQueue = [];
   final List<_PendingCommandAck> _pendingGenericAckQueue = [];
   static const String _reactionSendQueuePrefix = '__reaction_send__';
   int _reactionSendQueueSequence = 0;
-  final Set<String> _loadedConversationKeys = {};
   final Map<String, Set<String>> _processedChannelReactions =
       {}; // channel idKey -> Set of "targetHash_emoji"
   final Map<String, Set<String>> _processedContactReactions =
@@ -571,98 +572,19 @@ class MeshCoreConnector extends ChangeNotifier {
     return _appSettingsService!.batteryChemistryForDevice(deviceId);
   }
 
-  List<Message> getMessages(Contact contact) {
-    return _conversations[contact.publicKeyHex] ?? [];
-  }
-
   Future<void> deleteMessage(Message message) async {
-    final contactKeyHex = message.senderKeyHex;
-    final messages = _conversations[contactKeyHex];
-    if (messages == null) return;
-    final removed = messages.remove(message);
-    if (!removed) return;
-    await _messageStore.deleteMessage(contactKeyHex, message.messageId);
+    await _messageStore.deleteMessage(
+      message.senderKeyHex,
+      message.messageId,
+    );
     notifyListeners();
   }
 
+  /// A contact became known this session: ensure its read watermark exists
+  /// so pre-existing history never floods unread (Phase 3d — messages live
+  /// in the database and reach the UI through watched queries).
   Future<void> _loadMessagesForContact(String contactKeyHex) async {
-    if (_loadedConversationKeys.contains(contactKeyHex)) return;
-    _loadedConversationKeys.add(contactKeyHex);
-
-    final allMessages = await _messageStore.loadMessages(contactKeyHex);
-    if (allMessages.isNotEmpty) {
-      // Keep only the most recent N messages in memory to bound memory usage
-      final windowedMessages = allMessages.length > _messageWindowSize
-          ? allMessages.sublist(allMessages.length - _messageWindowSize)
-          : allMessages;
-
-      final currentMessages =
-          _conversations[contactKeyHex] ?? const <Message>[];
-      final mergedMessages = <Message>[...windowedMessages];
-      final persistedKeyCounts = <String, int>{};
-      for (final message in windowedMessages) {
-        final key = _messageMergeKey(message);
-        persistedKeyCounts[key] = (persistedKeyCounts[key] ?? 0) + 1;
-      }
-      final currentKeyCounts = <String, int>{};
-
-      for (final message in currentMessages) {
-        final key = _messageMergeKey(message);
-        final currentCount = (currentKeyCounts[key] ?? 0) + 1;
-        currentKeyCounts[key] = currentCount;
-        final persistedCount = persistedKeyCounts[key] ?? 0;
-
-        // Preserve distinct duplicates without IDs (for example same text
-        // received multiple times in the same second) by only skipping the
-        // overlapping occurrences that already exist in persisted storage.
-        if (currentCount > persistedCount) {
-          mergedMessages.add(message);
-        }
-      }
-
-      // Re-sort after merging persisted and in-memory messages so the
-      // conversation window remains stable after optimistic inserts.
-      mergedMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      final windowedMergedMessages = mergedMessages.length > _messageWindowSize
-          ? mergedMessages.sublist(mergedMessages.length - _messageWindowSize)
-          : mergedMessages;
-
-      _conversations[contactKeyHex] = windowedMergedMessages;
-      notifyListeners();
-    }
-  }
-
-  String _messageMergeKey(Message message) {
-    final messageId = message.messageId;
-    if (messageId.isNotEmpty) {
-      return 'id:$messageId';
-    }
-    return 'fallback:${message.senderKeyHex}:${message.isOutgoing}:${message.isCli}:${message.timestamp.millisecondsSinceEpoch}:${message.text}';
-  }
-
-  /// Load older messages for a contact (pagination)
-  Future<List<Message>> loadOlderMessages(
-    String contactKeyHex, {
-    int count = 50,
-  }) async {
-    final allMessages = await _messageStore.loadMessages(contactKeyHex);
-    final currentMessages = _conversations[contactKeyHex] ?? [];
-
-    if (allMessages.length <= currentMessages.length) {
-      return []; // No more messages to load
-    }
-
-    final currentOffset = allMessages.length - currentMessages.length;
-    final fetchCount = count.clamp(0, currentOffset);
-    final startIndex = currentOffset - fetchCount;
-
-    final olderMessages = allMessages.sublist(startIndex, currentOffset);
-
-    // Prepend to current conversation
-    _conversations[contactKeyHex] = [...olderMessages, ...currentMessages];
-    notifyListeners();
-
-    return olderMessages;
+    await _messageStore.initializeReadMarkIfAbsent(contactKeyHex);
   }
 
   Channel? _liveChannelByIdKey(String idKey) {
@@ -728,9 +650,8 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   int getUnreadCountForContactKey(String contactKeyHex) {
-    if (!_unreadStateLoaded) return 0;
     if (!_shouldTrackUnreadForContactKey(contactKeyHex)) return 0;
-    return _contactUnreadCount[contactKeyHex] ?? 0;
+    return _contactUnreadByKey[contactKeyHex] ?? 0;
   }
 
   int getUnreadCountForChannel(Channel channel) {
@@ -805,22 +726,14 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void markContactRead(String contactKeyHex) {
     if (!_shouldTrackUnreadForContactKey(contactKeyHex)) return;
-    final previousCount = _contactUnreadCount[contactKeyHex] ?? 0;
-    if (previousCount > 0) {
-      _contactUnreadCount[contactKeyHex] = 0;
-      _appDebugLogService?.info(
-        'Contact $contactKeyHex marked as read (was $previousCount unread)',
-        tag: 'Unread',
-      );
-      _unreadStore.saveContactUnreadCount(
-        Map<String, int>.from(_contactUnreadCount),
-      );
-      _notificationService.clearContactNotification(
-        contactKeyHex,
-        getTotalUnreadCount(),
-      );
-      notifyListeners();
-    }
+    // The read watermark is the unread authority; the watched COUNT
+    // updates every consumer.
+    unawaited(_messageStore.markRead(contactKeyHex));
+    _notificationService.clearContactNotification(
+      contactKeyHex,
+      getTotalUnreadCount(),
+    );
+    notifyListeners();
   }
 
   void markChannelRead(int channelIndex) {
@@ -1068,31 +981,23 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
-    final messages = _conversations[contactKey];
-    if (messages != null) {
-      final index = messages.indexWhere(
-        (m) => m.messageId == message.messageId,
+    unawaited(() async {
+      final updated = await _messageStore.updateMessage(
+        contactKey,
+        message.messageId,
+        (_) => message,
       );
-      if (index != -1) {
-        messages[index] = message;
-        _messageStore.upsertMessages(contactKey, messages);
+      if (updated) notifyListeners();
+
+      // A settled reaction send updates the target's reaction status row.
+      final reactionInfo = ReactionHelper.parseReaction(message.text);
+      if (reactionInfo != null &&
+          (message.status == MessageStatus.delivered ||
+              message.status == MessageStatus.failed)) {
+        await _setReactionStatus(contactKey, reactionInfo, message.status);
         notifyListeners();
       }
-    }
-
-    // If this is a reaction message, update the target message's reaction status
-    final reactionInfo = ReactionHelper.parseReaction(message.text);
-    if (reactionInfo != null &&
-        (message.status == MessageStatus.delivered ||
-            message.status == MessageStatus.failed)) {
-      final contactKey2 = pubKeyToHex(message.senderKey);
-      _setReactionStatus(contactKey2, reactionInfo, message.status);
-      _messageStore.upsertMessages(
-        contactKey2,
-        _conversations[contactKey2] ?? [],
-      );
-      notifyListeners();
-    }
+    }());
   }
 
 
@@ -2427,8 +2332,6 @@ class MeshCoreConnector extends ChangeNotifier {
     _deviceId = null;
     _contacts.clear();
     _discoveredContacts.clear();
-    _conversations.clear();
-    _loadedConversationKeys.clear();
     _roomAdminPasswords.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
     // queue never redelivers drained messages, flushing requires a fresh
@@ -2780,17 +2683,15 @@ class MeshCoreConnector extends ChangeNotifier {
     // Check if this is a reaction - apply locally with pending status and route through retry service
     final reactionInfo = ReactionHelper.parseReaction(text);
     if (reactionInfo != null) {
-      _conversations.putIfAbsent(contact.publicKeyHex, () => []);
-      final messages = _conversations[contact.publicKeyHex]!;
-
-      // Apply reaction locally with pending status
-      _processOutgoingContactReaction(messages, reactionInfo, contact);
-      _setReactionStatus(
+      // Apply to the target row; watched queries update the UI.
+      final history = await _messageStore.loadMessages(contact.publicKeyHex);
+      _processOutgoingContactReaction(history, reactionInfo, contact);
+      await _messageStore.upsertMessages(contact.publicKeyHex, history);
+      await _setReactionStatus(
         contact.publicKeyHex,
         reactionInfo,
         MessageStatus.pending,
       );
-      _messageStore.upsertMessages(contact.publicKeyHex, messages);
       notifyListeners();
 
       // Route through retry service (same as normal messages)
@@ -3299,8 +3200,6 @@ class MeshCoreConnector extends ChangeNotifier {
     _localDiscoveredTimes.remove(contact.publicKeyHex);
     _contactUnreadCount.remove(contact.publicKeyHex);
     _knownContactKeys.remove(contact.publicKeyHex);
-    _conversations.remove(contact.publicKeyHex);
-    _loadedConversationKeys.remove(contact.publicKeyHex);
     _unreadStore.saveContactUnreadCount(
       Map<String, int>.from(_contactUnreadCount),
     );
@@ -3325,8 +3224,8 @@ class MeshCoreConnector extends ChangeNotifier {
       _localDiscoveredTimes.remove(contact.publicKeyHex);
       _contactUnreadCount.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
-      _conversations.remove(contact.publicKeyHex);
-      _loadedConversationKeys.remove(contact.publicKeyHex);
+
+
       _messageStore.clearMessages(contact.publicKeyHex);
     }
     _unreadStore.saveContactUnreadCount(
@@ -4864,21 +4763,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (contact != null) {
         _updateContactLastMessageAt(contact.publicKeyHex, message.timestamp);
       }
-      if (!message.isOutgoing) {
-        final existing = _conversations[message.senderKeyHex];
-        if (existing != null && existing.isNotEmpty) {
-          final startIndex = existing.length > 10 ? existing.length - 10 : 0;
-          for (int i = existing.length - 1; i >= startIndex; i--) {
-            final recent = existing[i];
-            if (!recent.isOutgoing && recent.messageId == message.messageId) {
-              return;
-            }
-          }
-        }
-      }
+      // Dedup is the database's unique constraint; unread eligibility is
+      // decided inside the ingest.
       _addMessage(message.senderKeyHex, message);
-
-      _maybeIncrementContactUnread(message);
       notifyListeners();
 
       // Show notification for new incoming message
@@ -5463,37 +5350,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // (e.g. self pubkey was null, no hash was pre-computed) and there's no
       // pending channel message, promote the oldest pending DM to 'sent' so
       // the timeout chain begins and the message is never stuck forever.
-      for (var messages in _conversations.values) {
-        for (int i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].isOutgoing &&
-              messages[i].status == MessageStatus.pending) {
-            appLogger.warn(
-              'RESP_CODE_SENT: no retry-service match and no channel msg \u2014 promoting oldest pending DM to sent',
-              tag: 'Connector',
-            );
-            messages[i] = messages[i].copyWith(status: MessageStatus.sent);
-            _messageStore.upsertMessages(
-              pubKeyToHex(messages[i].senderKey),
-              messages,
-            );
-            notifyListeners();
-            return;
-          }
+      unawaited(() async {
+        final (updated, key) = await _messageStore.promoteLatestOutgoing(
+          from: MessageStatus.pending,
+          to: MessageStatus.sent,
+        );
+        if (updated) {
+          appLogger.warn(
+            'RESP_CODE_SENT: no retry-service match and no channel msg \u2014 '
+            'promoted newest pending DM ($key) to sent',
+            tag: 'Connector',
+          );
+          notifyListeners();
         }
-      }
+      }());
     } catch (e) {
       appLogger.warn('Error handling message sent frame: $e');
       // Fallback to old behavior
-      for (var messages in _conversations.values) {
-        for (int i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].isOutgoing &&
-              messages[i].status == MessageStatus.pending) {
-            messages[i] = messages[i].copyWith(status: MessageStatus.sent);
-            notifyListeners();
-            return;
-          }
-        }
-      }
+      unawaited(() async {
+        final (updated, _) = await _messageStore.promoteLatestOutgoing(
+          from: MessageStatus.pending,
+          to: MessageStatus.sent,
+        );
+        if (updated) notifyListeners();
+      }());
     }
   }
 
@@ -5577,16 +5457,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     } catch (e) {
       appLogger.warn('Error handling send confirmed frame: $e');
       // Fallback to old behavior
-      for (var messages in _conversations.values) {
-        for (int i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].isOutgoing &&
-              messages[i].status == MessageStatus.sent) {
-            messages[i] = messages[i].copyWith(status: MessageStatus.delivered);
-            notifyListeners();
-            return;
-          }
-        }
-      }
+      unawaited(() async {
+        final (updated, _) = await _messageStore.promoteLatestOutgoing(
+          from: MessageStatus.sent,
+          to: MessageStatus.delivered,
+        );
+        if (updated) notifyListeners();
+      }());
     }
   }
 
@@ -5648,12 +5525,38 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _channelLatestByIdKey = latest;
       notifyListeners();
     });
+    _contactUnreadSub?.cancel();
+    _contactUnreadSub = _messageStore.watchUnreadCounts().listen((counts) {
+      _contactUnreadByKey = counts;
+      notifyListeners();
+    });
+    _contactLatestSub?.cancel();
+    _contactLatestSub =
+        _messageStore.watchLatestPerContact().listen((latest) {
+      _contactLatestByKey = latest;
+      notifyListeners();
+    });
   }
 
   /// Newest message for a channel, from the watched query (chats screen
   /// subtitles and ordering).
   ChannelMessage? latestChannelMessage(Channel channel) =>
       _channelLatestByIdKey[channel.idKey];
+
+  /// Newest message for a contact, from the watched query.
+  Message? latestContactMessage(Contact contact) =>
+      _contactLatestByKey[contact.publicKeyHex];
+
+  /// Live stream of a conversation — the UI's ONLY DM read path.
+  Stream<List<Message>> watchConversation(
+    Contact contact, {
+    int limit = 200,
+  }) =>
+      _messageStore.watchConversation(contact.publicKeyHex, limit: limit);
+
+  /// One-shot conversation read (export, bench, sorting).
+  Future<List<Message>> loadMessagesFor(Contact contact) =>
+      _messageStore.loadMessages(contact.publicKeyHex);
 
   void _flushPendingForSlot(Channel channel) {
     final pending = _pendingUntrackedChannelMessages.remove(channel.index);
@@ -5844,100 +5747,61 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
 
-  void _maybeIncrementContactUnread(Message message) {
-    if (message.isOutgoing || message.isCli) {
-      _appDebugLogService?.info(
-        'Skip contact unread increment: isOutgoing=${message.isOutgoing}, isCli=${message.isCli}',
-        tag: 'Unread',
-      );
-      return;
-    }
-    final contactKey = message.senderKeyHex;
-    if (!_shouldTrackUnreadForContactKey(contactKey)) {
-      _appDebugLogService?.info(
-        'Skip contact unread increment: should not track for $contactKey',
-        tag: 'Unread',
-      );
-      return;
-    }
-    // Don't increment if user is viewing this contact
-    if (_activeContactKey == contactKey) {
-      _appDebugLogService?.info(
-        'Skip contact unread increment: contact $contactKey is active',
-        tag: 'Unread',
-      );
-      return;
-    }
 
-    final currentCount = _contactUnreadCount[contactKey] ?? 0;
-    _contactUnreadCount[contactKey] = currentCount + 1;
-    _appDebugLogService?.info(
-      'Contact $contactKey unread count incremented to ${currentCount + 1}',
-      tag: 'Unread',
-    );
-    _unreadStore.saveContactUnreadCount(
-      Map<String, int>.from(_contactUnreadCount),
-    );
+  /// Retry-service callback shim — the contract is synchronous, the ingest
+  /// is a database write.
+  void _addMessage(String pubKeyHex, Message message) {
+    unawaited(_ingestContactMessage(pubKeyHex, message));
   }
 
-  void _addMessage(String pubKeyHex, Message message) {
-    _conversations.putIfAbsent(pubKeyHex, () => []);
-    final messages = _conversations[pubKeyHex]!;
+  bool _contactUnreadEligible(Message message) =>
+      !message.isOutgoing &&
+      !message.isCli &&
+      _shouldTrackUnreadForContactKey(message.senderKeyHex);
 
-    // Sanitize timestamp for incoming messages to ensure correct inbox sorting
-    // if sender clock is desynced.
+  /// Phase 3d ingest for DMs — the database is the only message state.
+  Future<void> _ingestContactMessage(String pubKeyHex, Message message) async {
+    // Clamp wildly-wrong sender clocks; SQL ordering is the only ordering.
     Message processedMessage = message;
     if (!message.isOutgoing) {
-      DateTime sanitizedTimestamp = message.timestamp;
       final now = DateTime.now();
-
-      // If timestamp is more than 10 minutes in the past, or in the future,
-      // use arrival time to ensure it hits the top of the inbox.
-      if (sanitizedTimestamp.isBefore(now.subtract(const Duration(minutes: 10))) ||
-          sanitizedTimestamp.isAfter(now.add(const Duration(minutes: 1)))) {
-        sanitizedTimestamp = now;
-      }
-
-      // Ensure monotonic increasing timestamps within the conversation to prevent
-      // messages from being buried at the bottom of the inbox.
-      if (messages.isNotEmpty &&
-          !sanitizedTimestamp.isAfter(messages.last.timestamp)) {
-        sanitizedTimestamp =
-            messages.last.timestamp.add(const Duration(milliseconds: 1));
-      }
-
-      if (sanitizedTimestamp != message.timestamp) {
-        processedMessage = message.copyWith(timestamp: sanitizedTimestamp);
+      if (message.timestamp
+              .isBefore(now.subtract(const Duration(minutes: 10))) ||
+          message.timestamp.isAfter(now.add(const Duration(minutes: 1)))) {
+        processedMessage = message.copyWith(timestamp: now);
       }
     }
 
-    // Parse reaction info
+    // Reactions mutate their target row; never a visible message.
     final reactionInfo = Message.parseReaction(processedMessage.text);
     if (reactionInfo != null) {
-      // Check if we've already processed this exact reaction
       _processedContactReactions.putIfAbsent(pubKeyHex, () => {});
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}';
-
-      final isDuplicate = _processedContactReactions[pubKeyHex]!.contains(
+      if (!_processedContactReactions[pubKeyHex]!.contains(
         reactionIdentifier,
-      );
-
-      if (!isDuplicate) {
-        // New reaction - process it
-        _processContactReaction(messages, reactionInfo, pubKeyHex);
-        _messageStore.upsertMessages(pubKeyHex, messages);
-
-        // Mark as processed
+      )) {
+        final history = await _messageStore.loadMessages(pubKeyHex);
+        _processContactReaction(history, reactionInfo, pubKeyHex);
+        await _messageStore.upsertMessages(pubKeyHex, history);
         _processedContactReactions[pubKeyHex]!.add(reactionIdentifier);
-
         notifyListeners();
       }
-      return; // Don't add reaction as a visible message
+      return;
     }
 
-    messages.add(processedMessage);
-    _messageStore.upsertMessages(pubKeyHex, messages);
+    // The unique constraint is the dedup authority; a duplicate id is a
+    // no-op (parity with the old recent-scan early return).
+    final isNew = await _messageStore.insertIfNew(
+      pubKeyHex,
+      processedMessage,
+      unreadEligible: _contactUnreadEligible(processedMessage),
+    );
+    if (!isNew) return;
+    // Viewing this conversation: the read watermark rides along.
+    if (_activeContactKey == pubKeyHex) {
+      unawaited(_messageStore.markRead(pubKeyHex));
+    }
     notifyListeners();
   }
 
@@ -5991,13 +5855,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  void _setReactionStatus(
+  Future<void> _setReactionStatus(
     String pubKeyHex,
     ReactionInfo reactionInfo,
     MessageStatus status,
-  ) {
-    final messages = _conversations[pubKeyHex];
-    if (messages == null) return;
+  ) async {
+    final messages = await _messageStore.loadMessages(pubKeyHex);
     final contact = _contacts.cast<Contact?>().firstWhere(
       (c) => c?.publicKeyHex == pubKeyHex,
       orElse: () => null,
@@ -6014,7 +5877,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (msgHash == reactionInfo.targetHash) {
         final statuses = Map<String, MessageStatus>.from(msg.reactionStatuses);
         statuses[reactionInfo.emoji] = status;
-        messages[i] = msg.copyWith(reactionStatuses: statuses);
+        await _messageStore.upsertMessage(
+          pubKeyHex,
+          msg.copyWith(reactionStatuses: statuses),
+        );
         break;
       }
     }
@@ -7320,8 +7186,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       await Future.delayed(const Duration(milliseconds: 50));
       _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
-      _conversations.remove(contact.publicKeyHex);
-      _loadedConversationKeys.remove(contact.publicKeyHex);
+
+
       _contactUnreadCount.remove(contact.publicKeyHex);
       _messageStore.clearMessages(contact.publicKeyHex);
     }
@@ -7350,9 +7216,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void clearMessagesForContact(Contact contact) {
     final contactKeyHex = contact.publicKeyHex;
-    final messages = _conversations[contactKeyHex];
-    if (messages == null) return;
-    messages.clear();
     unawaited(_messageStore.clearMessages(contactKeyHex));
     markContactRead(contactKeyHex);
     notifyListeners();

@@ -11,6 +11,11 @@ class BenchConfig {
   /// First octets of the BLE radio's MAC; the most reliable disambiguator.
   static const String bleMacPrefix = '90:70:69:85:22';
 
+  /// Full address, used as a direct-connect fallback when the radio is not
+  /// advertising (e.g. Windows still holds an orphaned link after an
+  /// unclean shutdown — paired devices connect without advertising).
+  static const String bleKnownAddress = '90:70:69:85:22:e5';
+
   /// Localhost port the BLE-NUS bridge listens on; the connector under test
   /// reaches the BLE radio via its real connectTcp() path through this port.
   static const int bridgePort = 58223;

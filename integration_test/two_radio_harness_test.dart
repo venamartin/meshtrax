@@ -707,7 +707,9 @@ void main() {
         isTrue,
         reason: 'queued DM never drained after reconnect');
     final copies =
-        ble.connector.getMessages(usbOnBle).where((m) => m.text == t).length;
+        (await ble.connector.loadMessagesFor(usbOnBle))
+            .where((m) => m.text == t)
+            .length;
     expect(copies, 1, reason: 'queued DM duplicated: $copies copies');
     await assertTextAbsentEverywhere(ble, t);
   }, timeout: const Timeout(Duration(minutes: 8)));

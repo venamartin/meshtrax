@@ -733,8 +733,7 @@ Future<bool> dmArrived(
   final deadline =
       DateTime.now().add(timeout ?? BenchConfig.messageTimeout);
   while (DateTime.now().isBefore(deadline)) {
-    final hit = radio.connector
-        .getMessages(from)
+    final hit = (await radio.connector.loadMessagesFor(from))
         .any((m) => !m.isOutgoing && m.text == text);
     if (hit) return true;
     await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -753,7 +752,7 @@ Future<MessageStatus?> awaitDmStatus(
   final deadline = DateTime.now().add(timeout);
   MessageStatus? last;
   while (DateTime.now().isBefore(deadline)) {
-    for (final m in radio.connector.getMessages(to)) {
+    for (final m in await radio.connector.loadMessagesFor(to)) {
       if (m.isOutgoing && m.text == text) {
         last = m.status;
         break;

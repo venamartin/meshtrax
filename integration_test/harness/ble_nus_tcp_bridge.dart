@@ -128,10 +128,13 @@ class BleNusTcpBridge {
     try {
       return await completer.future.timeout(
         const Duration(seconds: 30),
-        onTimeout: () => throw StateError(
-          'BLE scan: no device named "${BenchConfig.bleName}" seen in 30s. '
-          'Is the radio powered and advertising (no other app connected)?',
-        ),
+        onTimeout: () {
+          // Not advertising — typically an orphaned link from an unclean
+          // shutdown. The device is paired: direct connect works anyway.
+          _log('scan timed out — falling back to known address '
+              '${BenchConfig.bleKnownAddress}');
+          return BenchConfig.bleKnownAddress;
+        },
       );
     } finally {
       WinBle.stopScanning();
