@@ -5226,11 +5226,27 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return 'Channel $channelIndex';
   }
 
+  /// True when a channel message was authored by the connected node itself —
+  /// e.g. our own send echoed back after the original left the in-memory
+  /// window. Own messages must never count as unread or notify.
+  bool _isFromSelf(ChannelMessage message) {
+    final sender = message.senderKey;
+    final self = _selfPublicKey;
+    if (sender == null || self == null) return false;
+    final n = math.min(sender.length, self.length);
+    if (n == 0) return false;
+    for (var i = 0; i < n; i++) {
+      if (sender[i] != self[i]) return false;
+    }
+    return true;
+  }
+
   void _maybeNotifyChannelMessage(
     ChannelMessage message, {
     String? channelName,
   }) {
     if (message.isOutgoing || _appSettingsService == null) return;
+    if (_isFromSelf(message)) return;
     final channelIndex = message.channelIndex;
     if (channelIndex == null) return;
 
@@ -5968,9 +5984,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (_appSettingsService?.isSenderBlocked(message.senderName) ?? false) {
       return;
     }
-    if (!isNew || message.isOutgoing) {
+    if (!isNew || message.isOutgoing || _isFromSelf(message)) {
       _appDebugLogService?.info(
-        'Skip unread increment: isNew=$isNew, isOutgoing=${message.isOutgoing}',
+        'Skip unread increment: isNew=$isNew, '
+        'isOutgoing=${message.isOutgoing}, fromSelf=${_isFromSelf(message)}',
         tag: 'Unread',
       );
       return;
@@ -6507,7 +6524,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _channelMessageTimers[existing.messageId]?.cancel();
       _channelMessageTimers.remove(existing.messageId);
     } else {
-      messages.add(processedMessage);
+      // Insert sorted by timestamp so the live list always matches the
+      // database's ORDER BY. An old-stamped arrival (radio queue backlog,
+      // re-flooded packet) files into history where it belongs instead of
+      // pinning to the thread bottom under a stale date divider and then
+      // "vanishing" upward on the next reload.
+      var insertAt = messages.length;
+      while (insertAt > 0 &&
+          messages[insertAt - 1]
+              .timestamp
+              .isAfter(processedMessage.timestamp)) {
+        insertAt--;
+      }
+      messages.insert(insertAt, processedMessage);
     }
 
     // Save to persistent storage
