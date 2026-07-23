@@ -113,6 +113,102 @@ class ChannelMessageStore {
     return inserted != null;
   }
 
+  /// Lookup by messageId — status updates and same-id echo merges.
+  Future<ChannelMessage?> findByMessageId(
+    String idKey,
+    String messageId,
+  ) async {
+    if (publicKeyHex.isEmpty) return null;
+    final row =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey) &
+                    r.messageId.equals(messageId),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return null;
+    try {
+      return _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Scope-wide variant for callers that only hold a messageId (send-ack
+  /// bookkeeping): returns (updated, idKey).
+  Future<(bool, String?)> updateAnyByMessageId(
+    String messageId,
+    ChannelMessage Function(ChannelMessage) transform,
+  ) async {
+    if (publicKeyHex.isEmpty) return (false, null);
+    final row =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.messageId.equals(messageId),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return (false, null);
+    try {
+      final msg = _messageFromJson(
+        jsonDecode(row.payload) as Map<String, dynamic>,
+      );
+      await upsertMessage(row.channelIdKey, transform(msg));
+      return (true, row.channelIdKey);
+    } catch (_) {
+      return (false, null);
+    }
+  }
+
+  /// Load-transform-upsert of a single row; returns false when the row
+  /// does not exist. The only mutation primitive live paths may use.
+  Future<bool> updateMessage(
+    String idKey,
+    String messageId,
+    ChannelMessage Function(ChannelMessage) transform,
+  ) async {
+    final existing = await findByMessageId(idKey, messageId);
+    if (existing == null) return false;
+    await upsertMessage(idKey, transform(existing));
+    return true;
+  }
+
+  /// Watched newest message per channel identity — one query feeds the
+  /// chats screen's subtitles and ordering (SQL decides "latest").
+  Stream<Map<String, ChannelMessage>> watchLatestPerChannel() {
+    if (publicKeyHex.isEmpty) return Stream.value(const {});
+    return _db
+        .customSelect(
+          'SELECT m.channel_id_key AS k, m.payload AS p '
+          'FROM channel_message_rows m '
+          'INNER JOIN (SELECT channel_id_key, MAX(timestamp_ms) AS mx, '
+          'MAX(id) AS mi FROM channel_message_rows WHERE node_scope = ?1 '
+          'GROUP BY channel_id_key) latest '
+          'ON m.channel_id_key = latest.channel_id_key '
+          'AND m.timestamp_ms = latest.mx '
+          'WHERE m.node_scope = ?1 GROUP BY m.channel_id_key',
+          variables: [Variable.withString(publicKeyHex)],
+          readsFrom: {_db.channelMessageRows},
+        )
+        .watch()
+        .map((rows) {
+          final latest = <String, ChannelMessage>{};
+          for (final row in rows) {
+            try {
+              latest[row.read<String>('k')] = _messageFromJson(
+                jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+              );
+            } catch (_) {}
+          }
+          return latest;
+        });
+  }
+
   /// Repeat/echo lookup by firmware packet hash (indexed).
   Future<ChannelMessage?> findByPacketHash(
     String idKey,

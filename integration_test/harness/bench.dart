@@ -232,7 +232,6 @@ Future<MeshCoreConnector> buildConnector() async {
   await connector.loadContactCache();
   await connector.loadCachedChannels();
   await connector.loadChannelSettings();
-  await connector.loadAllChannelMessages();
   await connector.loadUnreadState();
   return connector;
 }
@@ -416,7 +415,7 @@ Future<void> contaminationSweep(
 ) async {
   for (final radio in radios) {
     for (final ch in radio.connector.channels) {
-      final messages = radio.connector.getChannelMessages(ch);
+      final messages = await radio.connector.loadChannelMessagesFor(ch);
       final counts = <String, int>{};
       for (final m in messages) {
         if (!ledger.allTexts.contains(m.text)) continue;
@@ -446,10 +445,11 @@ Future<void> contaminationSweep(
 
 /// Asserts a text is not visible in ANY channel of a radio (e.g. traffic on
 /// a channel the radio is not subscribed to must vanish entirely).
-void assertTextAbsentEverywhere(BenchRadio radio, String text) {
+Future<void> assertTextAbsentEverywhere(BenchRadio radio, String text) async {
   for (final ch in radio.connector.channels) {
     final hit =
-        radio.connector.getChannelMessages(ch).any((m) => m.text == text);
+        (await radio.connector.loadChannelMessagesFor(ch))
+            .any((m) => m.text == text);
     expect(hit, isFalse,
         reason: 'LEAK on ${radio.label}: "$text" visible in '
             '${ch.displayName} — this radio must never see it');
@@ -469,7 +469,8 @@ Future<bool> textArrived(
   while (DateTime.now().isBefore(deadline)) {
     final ch = liveByIdKey(radio.connector, idKey);
     if (ch != null &&
-        radio.connector.getChannelMessages(ch).any((m) => m.text == text)) {
+        (await radio.connector.loadChannelMessagesFor(ch))
+            .any((m) => m.text == text)) {
       return true;
     }
     await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -583,10 +584,14 @@ Future<void> assertDbTextsGone(
   }
 }
 
-ChannelMessage? findOutgoing(BenchRadio radio, String idKey, String text) {
+Future<ChannelMessage?> findOutgoing(
+  BenchRadio radio,
+  String idKey,
+  String text,
+) async {
   final ch = liveByIdKey(radio.connector, idKey);
   if (ch == null) return null;
-  for (final m in radio.connector.getChannelMessages(ch)) {
+  for (final m in await radio.connector.loadChannelMessagesFor(ch)) {
     if (m.isOutgoing && m.text == text) return m;
   }
   return null;
@@ -603,7 +608,7 @@ Future<void> reportRepeaterEcho(
 }) async {
   final deadline = DateTime.now().add(window);
   while (DateTime.now().isBefore(deadline)) {
-    final m = findOutgoing(radio, idKey, text);
+    final m = await findOutgoing(radio, idKey, text);
     if (m != null &&
         (m.repeats.isNotEmpty ||
             m.status == ChannelMessageStatus.delivered)) {
@@ -627,15 +632,19 @@ Future<void> awaitSendSettled(
   String idKey,
   String text,
 ) async {
-  ChannelMessage? find() => findOutgoing(radio, idKey, text);
-
-  await waitUntil(
-    () => find() != null,
-    '${radio.label}: outgoing "$text" appears locally',
-  );
+  final appearBy = DateTime.now().add(const Duration(seconds: 30));
+  ChannelMessage? m;
+  while (DateTime.now().isBefore(appearBy)) {
+    m = await findOutgoing(radio, idKey, text);
+    if (m != null) break;
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+  }
+  if (m == null) {
+    fail('${radio.label}: outgoing "$text" never appeared locally');
+  }
   final deadline = DateTime.now().add(const Duration(seconds: 60));
   while (DateTime.now().isBefore(deadline)) {
-    final m = find();
+    m = await findOutgoing(radio, idKey, text);
     if (m != null && m.status != ChannelMessageStatus.pending) {
       if (m.status == ChannelMessageStatus.failed) {
         // Delivery is proven by the receive-side assert; "failed" here only
@@ -827,14 +836,13 @@ Future<String?> repeaterCli(
 }
 
 /// idKey -> harness texts currently visible; used for the restart test.
-Map<String, Set<String>> snapshotHarnessTexts(
+Future<Map<String, Set<String>>> snapshotHarnessTexts(
   BenchRadio radio,
   MessageLedger ledger,
-) {
+) async {
   final snapshot = <String, Set<String>>{};
   for (final ch in radio.connector.channels) {
-    final texts = radio.connector
-        .getChannelMessages(ch)
+    final texts = (await radio.connector.loadChannelMessagesFor(ch))
         .map((m) => m.text)
         .where(ledger.allTexts.contains)
         .toSet();

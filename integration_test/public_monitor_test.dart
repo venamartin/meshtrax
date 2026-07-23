@@ -90,7 +90,7 @@ void main() {
       blog('INCIDENT: $what');
     }
 
-    void sampleRadio(BenchRadio r) {
+    Future<void> sampleRadio(BenchRadio r) async {
       final connected = r.connector.isConnected;
       final phase = connected
           ? (r.connector.isLoadingChannels ? 'syncing' : 'connected')
@@ -110,7 +110,7 @@ void main() {
       }
 
       // Message view through a captured handle (what an open screen shows).
-      final msgs = r.connector.getChannelMessages(handles[r]!);
+      final msgs = await r.connector.loadChannelMessagesFor(handles[r]!);
       if (msgs.isEmpty && lastCount[r]! > 0) {
         emptySince[r] ??= DateTime.now();
       } else if (msgs.isNotEmpty && emptySince[r] != null) {
@@ -155,7 +155,7 @@ void main() {
     while (DateTime.now().isBefore(endAt)) {
       samples++;
       for (final r in radios) {
-        sampleRadio(r);
+        await sampleRadio(r);
       }
 
       if (DateTime.now().difference(lastEpochLog) >
@@ -178,7 +178,7 @@ void main() {
         while (DateTime.now().isBefore(resumeAt)) {
           samples++;
           for (final r in radios) {
-            sampleRadio(r);
+            await sampleRadio(r);
           }
           await Future<void>.delayed(const Duration(milliseconds: 250));
         }
@@ -195,7 +195,7 @@ void main() {
         while (DateTime.now().isBefore(resumeAt)) {
           samples++;
           for (final r in radios) {
-            sampleRadio(r);
+            await sampleRadio(r);
           }
           await Future<void>.delayed(const Duration(milliseconds: 250));
         }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
@@ -71,6 +72,44 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   DateTime? _lastChannelSendAt;
   int _previousMessageCount = 0;
 
+  /// The watched database query is the screen's only message source
+  /// (Phase 3d) — ordering and paging belong to SQL.
+  List<ChannelMessage> _messages = const [];
+  StreamSubscription<List<ChannelMessage>>? _messagesSub;
+  int _watchLimit = 200;
+  bool _didInitialAnchor = false;
+
+  void _subscribeMessages(MeshCoreConnector connector) {
+    _messagesSub?.cancel();
+    _messagesSub = connector
+        .watchChannelMessages(widget.channel, limit: _watchLimit)
+        .listen((messages) {
+      if (!mounted) return;
+      setState(() {
+        _messages = messages;
+        if (!_didInitialAnchor) {
+          _didInitialAnchor = true;
+          _previousMessageCount = messages.length;
+          final settings = context.read<AppSettingsService>().settings;
+          final unread = widget.unreadCount ??
+              connector.getUnreadCountForChannelIndex(widget.channel.index);
+          if (settings.jumpToOldestUnread && unread > 0) {
+            _firstUnreadMessage =
+                _findOldestUnreadChannelAnchor(messages, unread);
+            if (_firstUnreadMessage != null) {
+              final msgIdx =
+                  messages.reversed.toList().indexOf(_firstUnreadMessage!);
+              if (msgIdx != -1) {
+                _initialScrollIndex = msgIdx;
+                _isAtBottom = false;
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -79,27 +118,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _textController.addListener(_mentionsListener);
 
     final connector = context.read<MeshCoreConnector>();
-    final settings = context.read<AppSettingsService>().settings;
-    final idx = widget.channel.index;
-    final unread = widget.unreadCount ?? connector.getUnreadCountForChannelIndex(idx);
-    _previousMessageCount = connector.getChannelMessages(widget.channel).length;
-
-    if (settings.jumpToOldestUnread && unread > 0) {
-      final messages = connector.getChannelMessages(widget.channel);
-      _firstUnreadMessage = _findOldestUnreadChannelAnchor(messages, unread);
-      if (_firstUnreadMessage != null) {
-        final reversedMessages = messages.reversed.toList();
-        final msgIdx = reversedMessages.indexOf(_firstUnreadMessage!);
-        if (msgIdx != -1) {
-          _initialScrollIndex = msgIdx;
-          _isAtBottom = false;
-        }
-      }
-    }
+    _subscribeMessages(connector);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      connector.setActiveChannel(idx);
+      connector.setActiveChannel(widget.channel.index);
       _connector = connector;
     });
   }
@@ -139,11 +162,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       setState(() => _isAtBottom = isAtBottom);
     }
 
-    if (_connector != null) {
-      final itemCount = _connector!.getChannelMessages(widget.channel).length;
-      if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
-        _loadOlderMessages();
-      }
+    final itemCount = _messages.length;
+    if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
+      _loadOlderMessages();
     }
   }
 
@@ -188,8 +209,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       if (!textAfterAt.contains(' ') && (charBeforeAt == ' ' || charBeforeAt == '\n')) {
         final search = textAfterAt.toLowerCase();
         final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-        
-        final messages = connector.getChannelMessages(widget.channel);
+
+        final messages = _messages;
         final Set<String> recentSenderKeys = {};
         
         for (var m in messages) {
@@ -367,10 +388,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   Future<void> _loadOlderMessages() async {
     if (_isLoadingOlder) return;
+    // Paging is a bigger LIMIT on the watched query — SQL does the rest.
+    if (_messages.length < _watchLimit) return;
     setState(() => _isLoadingOlder = true);
 
-    final connector = context.read<MeshCoreConnector>();
-    await connector.loadOlderChannelMessages(widget.channel.index);
+    _watchLimit += 200;
+    _subscribeMessages(context.read<MeshCoreConnector>());
 
     if (mounted) {
       setState(() => _isLoadingOlder = false);
@@ -379,6 +402,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   @override
   void dispose() {
+    _messagesSub?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
@@ -401,10 +425,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Future<void> _scrollToMessage(String messageId) async {
-    if (!_itemScrollController.isAttached || _connector == null) return;
-    
-    final messages = _connector!.getChannelMessages(widget.channel);
-    final reversedMessages = messages.reversed.toList();
+    if (!_itemScrollController.isAttached) return;
+
+    final reversedMessages = _messages.reversed.toList();
     final index = reversedMessages.indexWhere((m) => m.messageId == messageId);
     
     if (index != -1) {
@@ -495,8 +518,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               child: Consumer<MeshCoreConnector>(
                 builder: (context, connector, child) {
                   final settingsService = context.watch<AppSettingsService>();
-                  final messages = connector
-                      .getChannelMessages(widget.channel)
+                  final messages = _messages
                       .where((m) =>
                           m.isOutgoing ||
                           !settingsService.isSenderBlocked(m.senderName))

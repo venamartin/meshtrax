@@ -183,7 +183,14 @@ class MeshCoreConnector extends ChangeNotifier {
   final List<Contact> _discoveredContacts = [];
   final List<Channel> _channels = [];
   final Map<String, List<Message>> _conversations = {};
-  final Map<int, List<ChannelMessage>> _channelMessages = {};
+  /// Mirror of the watched per-channel unread COUNT query — lets legacy
+  /// synchronous callers (badges, notification totals) read DB-authoritative
+  /// values. Single writer: the subscription in
+  /// [_resubscribeChannelUnreadWatch].
+  Map<String, int> _channelUnreadByIdKey = const {};
+  StreamSubscription<Map<String, int>>? _channelUnreadSub;
+  Map<String, ChannelMessage> _channelLatestByIdKey = const {};
+  StreamSubscription<Map<String, ChannelMessage>>? _channelLatestSub;
   final List<String> _pendingChannelSentQueue = [];
   final List<_PendingCommandAck> _pendingGenericAckQueue = [];
   static const String _reactionSendQueuePrefix = '__reaction_send__';
@@ -665,29 +672,26 @@ class MeshCoreConnector extends ChangeNotifier {
     return null;
   }
 
-  List<ChannelMessage> getChannelMessages(Channel channel) {
-    // Resolve by identity in case the caller holds a stale Channel whose
-    // slot was reassigned by a resync while its screen was open.
-    final live = _liveChannelByIdKey(channel.idKey);
-    if (live != null) return _channelMessages[live.index] ?? [];
-    // Mid-sync the last settled table is the best identity->slot mapping —
-    // the live list is half-built and the screen must not blank (D10).
-    if (_isSyncingChannels) {
-      for (final c in _previousChannelsCache) {
-        if (c.idKey == channel.idKey) {
-          return _channelMessages[c.index] ?? [];
-        }
-      }
-      return _channelMessages[channel.index] ?? [];
-    }
-    // Offline the caller's index is still the best mapping. But once the
-    // list has settled without this identity, the channel is gone —
-    // showing the index's bucket would display another channel.
-    if (_channels.isEmpty) {
-      return _channelMessages[channel.index] ?? [];
-    }
-    return const [];
-  }
+  /// Live stream of a channel's messages — the UI's ONLY read path.
+  /// Ordering, paging, and dedup belong to the database (Phase 3d);
+  /// identity is the key, so slot churn and resyncs can't blank a screen.
+  Stream<List<ChannelMessage>> watchChannelMessages(
+    Channel channel, {
+    int limit = 200,
+  }) =>
+      _channelMessageStore.watchChannelMessages(channel.idKey, limit: limit);
+
+  /// One-shot read for non-reactive consumers (map pins, export, bench).
+  Future<List<ChannelMessage>> loadChannelMessagesFor(Channel channel) =>
+      _channelMessageStore.loadChannelMessages(channel.idKey);
+
+  /// Watched unread counts per channel identity (chats-screen badges).
+  Stream<Map<String, int>> watchChannelUnreadCounts() =>
+      _channelMessageStore.watchUnreadCounts();
+
+  /// Watched newest message per channel identity (subtitles + ordering).
+  Stream<Map<String, ChannelMessage>> watchChannelLatest() =>
+      _channelMessageStore.watchLatestPerChannel();
 
   // Messages received for a radio slot whose identity the app doesn't know
   // yet. Held until CHANNEL_INFO reveals the slot's channel, then filed by
@@ -709,55 +713,12 @@ class MeshCoreConnector extends ChangeNotifier {
   // must buffer rather than file through it.
   bool _channelsVerified = false;
 
-  /// Persist a slot's in-memory messages under the channel's identity key.
-  /// If the slot's identity is unknown (mid-sync, untracked), skip — the
-  /// in-memory copy persists on the next save once identity is known.
-  // Buckets whose persist was skipped because the slot was unresolvable at
-  // the time; re-persisted as soon as the slot's identity is known.
-  final Set<int> _unpersistedBuckets = {};
-
-  Future<void> _persistChannelMessages(
-    int channelIndex,
-    List<ChannelMessage> messages,
-  ) async {
-    if (messages.isEmpty) return;
-    final channel = _findChannelByIndex(channelIndex);
-    if (channel == null) {
-      // Not silently dropped: field report showed a day of messages living
-      // memory-only through a persist gap, then vanishing on reload.
-      _unpersistedBuckets.add(channelIndex);
-      return;
-    }
-    _unpersistedBuckets.remove(channelIndex);
-    // Upsert-only: persisting the windowed in-memory list refreshes the
-    // rows it contains and can NEVER shrink the stored history. The
-    // delete-and-replace save destroyed histories when a stale or
-    // freshly-created bucket won a persist race (field: Public reverting
-    // to a days-old snapshot).
-    await _channelMessageStore.upsertMessages(channel.idKey, messages);
-  }
-
-  void _repersistIfDirty(Channel channel) {
-    if (!_unpersistedBuckets.contains(channel.index)) return;
-    final messages = _channelMessages[channel.index];
-    if (messages == null || messages.isEmpty) return;
-    unawaited(_persistChannelMessages(channel.index, messages));
-  }
-
   Future<void> deleteChannelMessage(ChannelMessage message) async {
     final channelIndex = message.channelIndex;
     if (channelIndex == null) return;
-    final messages = _channelMessages[channelIndex];
-    if (messages == null) return;
-    final removed = messages.remove(message);
-    if (!removed) return;
     final channel = _findChannelByIndex(channelIndex);
-    if (channel != null) {
-      await _channelMessageStore.deleteMessage(
-        channel.idKey,
-        message.messageId,
-      );
-    }
+    if (channel == null) return;
+    await _channelMessageStore.deleteMessage(channel.idKey, message.messageId);
     notifyListeners();
   }
 
@@ -773,24 +734,26 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   int getUnreadCountForChannel(Channel channel) {
-    return getUnreadCountForChannelIndex(channel.index);
+    return _channelUnreadByIdKey[channel.idKey] ?? 0;
   }
 
   int getUnreadCountForChannelIndex(int channelIndex) {
-    if (!_unreadStateLoaded) return 0;
-    return _findChannelByIndex(channelIndex)?.unreadCount ?? 0;
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) return 0;
+    return _channelUnreadByIdKey[channel.idKey] ?? 0;
   }
 
   int getTotalUnreadCount() {
-    if (!_unreadStateLoaded) return 0;
     var total = 0;
     // Count unread contact messages
-    for (final contact in _contacts) {
-      total += getUnreadCountForContact(contact);
+    if (_unreadStateLoaded) {
+      for (final contact in _contacts) {
+        total += getUnreadCountForContact(contact);
+      }
     }
-    // Count unread channel messages
-    for (final channelIndex in _channelMessages.keys) {
-      total += getUnreadCountForChannelIndex(channelIndex);
+    // Channel unread comes from the watched COUNT (DB-authoritative).
+    for (final count in _channelUnreadByIdKey.values) {
+      total += count;
     }
     return total;
   }
@@ -862,24 +825,16 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void markChannelRead(int channelIndex) {
     final channel = _findChannelByIndex(channelIndex);
-    if (channel != null && channel.unreadCount > 0) {
-      final previousCount = channel.unreadCount;
-      channel.unreadCount = 0;
-      _appDebugLogService?.info(
-        'Channel ${channel.name.isNotEmpty ? channel.name : channelIndex} marked as read (was $previousCount unread)',
-        tag: 'Unread',
-      );
-      unawaited(
-        _channelStore.saveChannels(
-          _channels.isNotEmpty ? _channels : _cachedChannels,
-        ),
-      );
-      _notificationService.clearChannelNotification(
-        channelIndex,
-        getTotalUnreadCount(),
-      );
-      notifyListeners();
-    }
+    if (channel == null) return;
+    channel.unreadCount = 0;
+    // The read watermark is the unread authority; the watched COUNT updates
+    // every consumer.
+    unawaited(_channelMessageStore.markRead(channel.idKey));
+    _notificationService.clearChannelNotification(
+      channelIndex,
+      getTotalUnreadCount(),
+    );
+    notifyListeners();
   }
 
   Future<void> setChannelSmazEnabled(int channelIndex, bool enabled) async {
@@ -900,91 +855,6 @@ class MeshCoreConnector extends ChangeNotifier {
     _channelOrder = await _channelOrderStore.loadChannelOrder();
     _applyChannelOrder();
     notifyListeners();
-  }
-
-  /// Load persisted channel messages for a channel identity into its
-  /// current slot's in-memory bucket.
-  Future<void> _loadChannelMessages(Channel channel) async {
-    await _channelMessageStore.migrateLegacyIndexKey(
-      channel.index,
-      channel.idKey,
-    );
-    final allMessages = await _channelMessageStore.loadChannelMessages(
-      channel.idKey,
-    );
-    if (allMessages.isNotEmpty) {
-      // Keep only the most recent N messages in memory to bound memory usage
-      final windowedMessages = allMessages.length > _messageWindowSize
-          ? allMessages.sublist(allMessages.length - _messageWindowSize)
-          : allMessages;
-
-      final arrivedWhileLoading = _channelMessages[channel.index];
-      if (arrivedWhileLoading == null || arrivedWhileLoading.isEmpty) {
-        _channelMessages[channel.index] = windowedMessages;
-      } else {
-        // Messages landed while history was loading — and their save pass
-        // may have written only themselves over the store. Merge and
-        // re-persist so neither side is lost.
-        final merged = List<ChannelMessage>.from(windowedMessages);
-        for (final m in arrivedWhileLoading) {
-          final dup = merged.any(
-            (x) =>
-                x.messageId == m.messageId ||
-                (x.packetHash != null && x.packetHash == m.packetHash),
-          );
-          if (!dup) merged.add(m);
-        }
-        _channelMessages[channel.index] = merged;
-        unawaited(_persistChannelMessages(channel.index, merged));
-      }
-      notifyListeners();
-    }
-  }
-
-  /// Load older channel messages (pagination)
-  Future<List<ChannelMessage>> loadOlderChannelMessages(
-    int channelIndex, {
-    int count = 50,
-  }) async {
-    final channel = _findChannelByIndex(channelIndex);
-    if (channel == null) return [];
-    final allMessages = await _channelMessageStore.loadChannelMessages(
-      channel.idKey,
-    );
-    final currentMessages = _channelMessages[channelIndex] ?? [];
-
-    if (allMessages.length <= currentMessages.length) {
-      return []; // No more messages to load
-    }
-
-    final currentOffset = allMessages.length - currentMessages.length;
-    final fetchCount = count.clamp(0, currentOffset);
-    final startIndex = currentOffset - fetchCount;
-
-    final olderMessages = allMessages.sublist(startIndex, currentOffset);
-
-    // Prepend to current conversation
-    _channelMessages[channelIndex] = [...olderMessages, ...currentMessages];
-    notifyListeners();
-
-    return olderMessages;
-  }
-
-  /// Load all persisted channel messages on startup
-  Future<void> loadAllChannelMessages() async {
-    // Identity comes from the channel objects; the cached list carries the
-    // last known slot->identity mapping until the live sync replaces it.
-    // SNAPSHOT the list: a channel resync mutates _channels between this
-    // loop's awaits, and iterating the live list then throws a
-    // ConcurrentModificationError that silently aborts the load, leaving
-    // the remaining channels' histories unloaded (two-radio bench, D3).
-    final known = List<Channel>.of(
-      _channels.isNotEmpty ? _channels : _cachedChannels,
-    );
-    for (final channel in known) {
-      if (channel.isEmpty) continue;
-      await _loadChannelMessages(channel);
-    }
   }
 
   void initialize({
@@ -3304,13 +3174,12 @@ class MeshCoreConnector extends ChangeNotifier {
         return;
       }
 
-      // Get the in-memory messages list (same as _addChannelMessage uses)
-      _channelMessages.putIfAbsent(channel.index, () => []);
-      final messages = _channelMessages[channel.index]!;
-
-      // Process reaction locally to update the UI immediately
-      _processReaction(messages, reactionInfo);
-      await _channelMessageStore.upsertMessages(channel.idKey, messages);
+      // Apply to the target row; watched queries update the UI.
+      final history = await _channelMessageStore.loadChannelMessages(
+        channel.idKey,
+      );
+      _processReaction(history, reactionInfo);
+      await _channelMessageStore.upsertMessages(channel.idKey, history);
 
       // Mark this reaction as processed
       _processedChannelReactions[channel.idKey]!.add(reactionIdentifier);
@@ -3335,7 +3204,8 @@ class MeshCoreConnector extends ChangeNotifier {
       channel.index,
       pathHashSize: pathHashByteWidth,
     );
-    _addChannelMessage(channel.index, message, replyTarget: replyTarget);
+    await _ingestChannelMessage(channel.index, message,
+        replyTarget: replyTarget);
     _pendingChannelSentQueue.add(message.messageId);
     _channelMessageRetries[message.messageId] = 0;
     
@@ -3368,26 +3238,21 @@ class MeshCoreConnector extends ChangeNotifier {
       markChannelMessageFailed(channelIndex, messageId);
       return;
     }
-    final messages = _channelMessages[channelIndex];
-    if (messages == null) return;
-    
-    ChannelMessage? message;
-    for (int i = 0; i < messages.length; i++) {
-      if (messages[i].messageId == messageId) {
-        message = messages[i];
-        
-        // Update retry count and status in the model
-        final retries = _channelMessageRetries[messageId] ?? 0;
-        messages[i] = message.copyWith(
-          sendRetryCount: retries,
-          status: ChannelMessageStatus.pending,
-        );
-        unawaited(_persistChannelMessages(channelIndex, messages));
-        notifyListeners();
-        break;
-      }
-    }
+    final message = await _channelMessageStore.findByMessageId(
+      live.idKey,
+      messageId,
+    );
     if (message == null) return;
+    final retries = _channelMessageRetries[messageId] ?? 0;
+    await _channelMessageStore.updateMessage(
+      live.idKey,
+      messageId,
+      (m) => m.copyWith(
+        sendRetryCount: retries,
+        status: ChannelMessageStatus.pending,
+      ),
+    );
+    notifyListeners();
 
     appLogger.info('Retrying channel message $messageId (attempt ${_channelMessageRetries[messageId]})', tag: 'Connector');
     
@@ -3992,18 +3857,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void markChannelMessageFailed(int channelIndex, String messageId) {
-    final messages = _channelMessages[channelIndex];
-    if (messages != null) {
-      for (int i = messages.length - 1; i >= 0; i--) {
-        if (messages[i].messageId == messageId && 
-            messages[i].status == ChannelMessageStatus.pending) {
-          messages[i] = messages[i].copyWith(status: ChannelMessageStatus.failed);
-          unawaited(_persistChannelMessages(channelIndex, messages));
-          notifyListeners();
-          break;
-        }
-      }
-    }
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) return;
+    unawaited(() async {
+      final updated = await _channelMessageStore.updateMessage(
+        channel.idKey,
+        messageId,
+        (m) => m.status == ChannelMessageStatus.pending
+            ? m.copyWith(status: ChannelMessageStatus.failed)
+            : m,
+      );
+      if (updated) notifyListeners();
+    }());
   }
 
   void _startWaitForRepeatTimer(int channelIndex, String messageId) {
@@ -4089,10 +3954,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await sendFrame(buildSetChannelFrame(index, name, psk));
 
     if (isNewChannel) {
-      // Storage is identity-keyed: the new identity's bucket is naturally
-      // fresh (or restores its own history if the same channel is re-added).
-      // Only the slot's in-memory session bucket needs resetting.
-      _channelMessages.remove(index);
+      // Storage is identity-keyed: the new identity's history is naturally
+      // fresh (or restores itself if the same channel is re-added).
       notifyListeners();
     }
 
@@ -4111,8 +3974,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (channel != null) {
       await _channelMessageStore.clearChannelMessages(channel.idKey);
     }
-    // Clear in-memory messages for this channel
-    _channelMessages.remove(index);
     // Refresh channels after deleting
     await getChannels(force: true);
   }
@@ -4378,7 +4239,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (_lastLoadedNodeKey != null && _lastLoadedNodeKey != selfPublicKeyHex) {
       _channels.clear();
       _cachedChannels = [];
-      _channelMessages.clear();
       _pendingUntrackedChannelMessages.clear();
       _queriedUntrackedChannels.clear();
       _slotsToRequery.clear();
@@ -4389,6 +4249,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     _channelStore.setPublicKeyHex = selfPublicKeyHex;
     _unreadStore.setPublicKeyHex = selfPublicKeyHex;
+    _resubscribeChannelUnreadWatch();
 
     // Now that we have self info, we can load all the persisted data for this node
     _loadChannelOrder();
@@ -4397,7 +4258,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // channel list must be in place first.
     loadCachedChannels().then((_) async {
       await loadChannelSettings();
-      await loadAllChannelMessages();
     });
     loadUnreadState();
     _loadDiscoveredContactCache();
@@ -4477,7 +4337,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _maxChannels = nextMaxChannels;
       if (nextMaxChannels > previousMaxChannels) {
         unawaited(loadChannelSettings(maxChannels: nextMaxChannels));
-        unawaited(loadAllChannelMessages());
         if (isConnected &&
             _selfPublicKey != null &&
             (!_shouldGateInitialChannelSync || !_pendingInitialChannelSync)) {
@@ -5347,14 +5206,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return;
       }
 
-      final isNew = _addChannelMessage(channelIndex, message);
-
-      _maybeIncrementChannelUnread(message, isNew: isNew);
-      notifyListeners();
-      if (isNew) {
-        _maybeNotifyChannelMessage(message);
-      }
-      _handleQueuedMessageReceived();
+      unawaited(() async {
+        final isNew = await _ingestChannelMessage(channelIndex, message);
+        if (isNew) {
+          _maybeNotifyChannelMessage(message);
+        }
+        _handleQueuedMessageReceived();
+      }());
     } else if (_isSyncingQueuedMessages) {
       _handleQueuedMessageReceived();
     }
@@ -5436,14 +5294,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             message.timestamp,
             pathBytes: message.pathBytes,
           );
-          final isNew = _addChannelMessage(channel.index, message);
-
-          _maybeIncrementChannelUnread(message, isNew: isNew);
-          notifyListeners();
-          if (isNew) {
-            final label = channel.displayName;
-            _maybeNotifyChannelMessage(message, channelName: label);
-          }
+          final label = channel.displayName;
+          unawaited(() async {
+            final isNew = await _ingestChannelMessage(channel.index, message);
+            if (isNew) {
+              _maybeNotifyChannelMessage(message, channelName: label);
+            }
+          }());
           return;
         } catch (e) {
           appLogger.warn('Decryption failed for channel ${channel.index}: $e');
@@ -5656,29 +5513,24 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   bool _markPendingChannelMessageSentById(String messageId) {
     _channelMessageTimers[messageId]?.cancel();
     _channelMessageTimers.remove(messageId);
-
-    for (final entry in _channelMessages.entries) {
-      final channelMessages = entry.value;
-      for (int i = channelMessages.length - 1; i >= 0; i--) {
-        final message = channelMessages[i];
-        if (message.messageId != messageId) {
-          continue;
-        }
-        if (!message.isOutgoing ||
-            message.status != ChannelMessageStatus.pending) {
-          return false;
-        }
-        channelMessages[i] = message.copyWith(
-          status: ChannelMessageStatus.sent,
-        );
-        _pendingChannelSentQueue.remove(messageId);
-        unawaited(_persistChannelMessages(entry.key, channelMessages));
-        _startWaitForRepeatTimer(entry.key, messageId);
-        notifyListeners();
-        return true;
+    _pendingChannelSentQueue.remove(messageId);
+    // The send queue only ever holds our own pending ids, so consuming the
+    // entry answers the caller synchronously; the row update is async.
+    unawaited(() async {
+      final (updated, idKey) = await _channelMessageStore.updateAnyByMessageId(
+        messageId,
+        (m) => (m.isOutgoing && m.status == ChannelMessageStatus.pending)
+            ? m.copyWith(status: ChannelMessageStatus.sent)
+            : m,
+      );
+      if (!updated || idKey == null) return;
+      final liveIndex = _liveChannelByIdKey(idKey)?.index;
+      if (liveIndex != null) {
+        _startWaitForRepeatTimer(liveIndex, messageId);
       }
-    }
-    return false;
+      notifyListeners();
+    }());
+    return true;
   }
 
   void _handleOk() {
@@ -5766,44 +5618,58 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return true;
   }
 
-  /// Slot [channel.index] is now known to hold [channel]. If the slot held a
-  /// different identity this session, drop that in-memory bucket, then make
-  /// sure the identity's own history is loaded and any messages buffered for
-  /// the slot are filed.
+  /// Slot [channel.index] is now known to hold [channel]: import any legacy
+  /// blobs for its identity, initialize its read watermark, and file the
+  /// messages buffered for the slot. No in-memory state — rows and watched
+  /// queries carry everything (Phase 3d).
   void _adoptSlotIdentity(Channel channel, {Channel? previous}) {
-    if (previous != null && previous.pskHex != channel.pskHex) {
-      _channelMessages.remove(channel.index);
-    }
-    // isEmpty (not containsKey): a present-but-empty bucket (created by the
-    // reaction path) must still reload its history from the store.
-    final existing = _channelMessages[channel.index];
-    if (existing == null || existing.isEmpty) {
-      unawaited(
-        _loadChannelMessages(channel).then((_) {
-          _flushPendingForSlot(channel);
-          _repersistIfDirty(channel);
-        }),
-      );
-    } else {
-      _flushPendingForSlot(channel);
-      _repersistIfDirty(channel);
-    }
+    unawaited(
+      _channelMessageStore
+          .migrateLegacyIndexKey(channel.index, channel.idKey)
+          .then((_) async {
+        await _channelMessageStore.initializeReadMarkIfAbsent(channel.idKey);
+        _flushPendingForSlot(channel);
+      }),
+    );
   }
+
+  /// Keeps the synchronous read-models in step with the database: unread
+  /// counts and newest-message-per-channel. DB stays the single writer.
+  void _resubscribeChannelUnreadWatch() {
+    _channelUnreadSub?.cancel();
+    _channelUnreadSub =
+        _channelMessageStore.watchUnreadCounts().listen((counts) {
+      _channelUnreadByIdKey = counts;
+      notifyListeners();
+    });
+    _channelLatestSub?.cancel();
+    _channelLatestSub =
+        _channelMessageStore.watchLatestPerChannel().listen((latest) {
+      _channelLatestByIdKey = latest;
+      notifyListeners();
+    });
+  }
+
+  /// Newest message for a channel, from the watched query (chats screen
+  /// subtitles and ordering).
+  ChannelMessage? latestChannelMessage(Channel channel) =>
+      _channelLatestByIdKey[channel.idKey];
 
   void _flushPendingForSlot(Channel channel) {
     final pending = _pendingUntrackedChannelMessages.remove(channel.index);
     if (pending == null || pending.isEmpty) return;
-    var anyNew = false;
-    for (final message in pending) {
-      final isNew = _addChannelMessage(channel.index, message);
-      if (isNew) anyNew = true;
-      _maybeIncrementChannelUnread(message, isNew: isNew);
-      if (isNew) {
-        // Parity with the live path — buffered messages were silent.
-        _maybeNotifyChannelMessage(message, channelName: channel.displayName);
+    unawaited(() async {
+      for (final message in pending) {
+        final isNew = await _ingestChannelMessage(channel.index, message);
+        if (isNew) {
+          // Parity with the live path — buffered messages were silent.
+          _maybeNotifyChannelMessage(
+            message,
+            channelName: channel.displayName,
+          );
+        }
       }
-    }
-    if (anyNew) notifyListeners();
+    }());
   }
 
   Channel? _previousIdentityForSlot(int index) {
@@ -5977,57 +5843,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     unawaited(sendFrame(buildGetChannelFrame(channelIndex)));
   }
 
-  void _maybeIncrementChannelUnread(
-    ChannelMessage message, {
-    required bool isNew,
-  }) {
-    if (_appSettingsService?.isSenderBlocked(message.senderName) ?? false) {
-      return;
-    }
-    if (!isNew || message.isOutgoing || _isFromSelf(message)) {
-      _appDebugLogService?.info(
-        'Skip unread increment: isNew=$isNew, '
-        'isOutgoing=${message.isOutgoing}, fromSelf=${_isFromSelf(message)}',
-        tag: 'Unread',
-      );
-      return;
-    }
-    final channelIndex = message.channelIndex;
-    if (channelIndex == null) {
-      _appDebugLogService?.info(
-        'Skip unread increment: channelIndex is null',
-        tag: 'Unread',
-      );
-      return;
-    }
-    // Don't increment if user is viewing this channel
-    if (_activeChannelIndex == channelIndex) {
-      _appDebugLogService?.info(
-        'Skip unread increment: channel $channelIndex is active',
-        tag: 'Unread',
-      );
-      return;
-    }
-
-    final channel = _findChannelByIndex(channelIndex);
-    if (channel != null) {
-      channel.unreadCount++;
-      _appDebugLogService?.info(
-        'Channel ${channel.name.isNotEmpty ? channel.name : channelIndex} unread count incremented to ${channel.unreadCount}',
-        tag: 'Unread',
-      );
-      unawaited(
-        _channelStore.saveChannels(
-          _channels.isNotEmpty ? _channels : _cachedChannels,
-        ),
-      );
-    } else {
-      _appDebugLogService?.info(
-        'Channel $channelIndex not found in _channels (${_channels.length}) or _cachedChannels (${_cachedChannels.length})',
-        tag: 'Unread',
-      );
-    }
-  }
 
   void _maybeIncrementContactUnread(Message message) {
     if (message.isOutgoing || message.isCli) {
@@ -6390,67 +6205,62 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return _ParsedText(senderName: 'Unknown', text: text);
   }
 
-  bool _addChannelMessage(
+  /// Phase 3d ingest — the database is the only message state. Inserts or
+  /// merges a row; watched queries notify every consumer. Returns true when
+  /// the message was NEW (drives notifications; unread is a watched COUNT).
+  Future<bool> _ingestChannelMessage(
     int channelIndex,
     ChannelMessage message, {
     ChannelMessage? replyTarget,
-  }) {
-    _channelMessages.putIfAbsent(channelIndex, () => []);
-    final messages = _channelMessages[channelIndex]!;
+  }) async {
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) {
+      appLogger.warn(
+        'Dropping message for unknown slot $channelIndex',
+        tag: 'Connector',
+      );
+      return false;
+    }
+    final idKey = channel.idKey;
 
-    // Sanitize timestamp for incoming messages to ensure correct inbox sorting
-    // if sender clock is desynced.
+    // Clamp wildly-wrong sender clocks; SQL ordering is the only ordering.
     ChannelMessage sanitizedMessage = message;
     if (!message.isOutgoing) {
-      DateTime sanitizedTimestamp = message.timestamp;
       final now = DateTime.now();
-
-      // If timestamp is more than 10 minutes in the past, or in the future,
-      // use arrival time to ensure it hits the top of the inbox.
-      if (sanitizedTimestamp.isBefore(now.subtract(const Duration(minutes: 10))) ||
-          sanitizedTimestamp.isAfter(now.add(const Duration(minutes: 1)))) {
-        sanitizedTimestamp = now;
-      }
-
-      // Ensure monotonic increasing timestamps within the conversation to prevent
-      // messages from being buried at the bottom of the inbox.
-      if (messages.isNotEmpty &&
-          !sanitizedTimestamp.isAfter(messages.last.timestamp)) {
-        sanitizedTimestamp =
-            messages.last.timestamp.add(const Duration(milliseconds: 1));
-      }
-
-      if (sanitizedTimestamp != message.timestamp) {
-        sanitizedMessage = message.copyWith(timestamp: sanitizedTimestamp);
+      if (message.timestamp
+              .isBefore(now.subtract(const Duration(minutes: 10))) ||
+          message.timestamp.isAfter(now.add(const Duration(minutes: 1)))) {
+        sanitizedMessage = message.copyWith(timestamp: now);
       }
     }
 
-    // Parse reaction info
+    // Reactions mutate their target row; never a visible message.
     final reactionInfo = ChannelMessage.parseReaction(sanitizedMessage.text);
     if (reactionInfo != null) {
-      // Check if we've already processed this exact reaction
-      // Dedup reactions per channel IDENTITY so a reused slot can't swallow
-      // a new channel's reactions with hashes its predecessor left behind.
-      final reactionScope =
-          _findChannelByIndex(channelIndex)?.idKey ?? 'idx:$channelIndex';
-      _processedChannelReactions.putIfAbsent(reactionScope, () => {});
+      _processedChannelReactions.putIfAbsent(idKey, () => {});
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}';
-
-      final isDuplicate = _processedChannelReactions[reactionScope]!.contains(
-        reactionIdentifier,
-      );
-
-      if (!isDuplicate) {
-        // New reaction - process it
-        _processReaction(messages, reactionInfo);
-        // Save updated messages
-        unawaited(_persistChannelMessages(channelIndex, messages));
-
-        // Mark as processed
-        _processedChannelReactions[reactionScope]!.add(reactionIdentifier);
+      if (!_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
+        final history = await _channelMessageStore.loadChannelMessages(idKey);
+        _processReaction(history, reactionInfo);
+        await _channelMessageStore.upsertMessages(idKey, history);
+        _processedChannelReactions[idKey]!.add(reactionIdentifier);
+        notifyListeners();
       }
-      return false; // Don't add reaction as a visible message
+      return false;
+    }
+
+    // Repeat/echo by packet hash: one targeted row update via the index.
+    final incomingHash = sanitizedMessage.packetHash;
+    if (incomingHash != null) {
+      final existing = await _channelMessageStore.findByPacketHash(
+        idKey,
+        incomingHash,
+      );
+      if (existing != null) {
+        await _mergeChannelRepeat(idKey, existing, sanitizedMessage);
+        return false;
+      }
     }
 
     // Resolve reply metadata. On the wire a reply is
@@ -6476,7 +6286,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // Incoming reply — locate the quoted message by sender + snippet prefix.
       // If we don't have it, still show a quote bubble using the snippet text.
       final originalMessage = _findMessageBySenderAndSnippet(
-        messages,
+        await _channelMessageStore.loadChannelMessages(idKey),
         replyInfo.mentionedNode,
         replyInfo.snippet,
       );
@@ -6489,59 +6299,92 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
     }
 
-    final existingIndex = _findChannelRepeatIndex(messages, processedMessage);
-    var isNew = true;
-    if (existingIndex >= 0) {
-      isNew = false;
-      final existing = messages[existingIndex];
-      final mergedPathBytes = _selectPreferredPathBytes(
-        existing.pathBytes,
-        processedMessage.pathBytes,
+    // Heuristic echo match (no packet hash on our original, second-truncated
+    // ids on the wire): compare against the newest rows exactly like the old
+    // in-memory pass did — else our own send comes back as a new message.
+    final recent = await _channelMessageStore
+        .watchChannelMessages(idKey, limit: 80)
+        .first;
+    for (final existing in recent.reversed) {
+      if (_isChannelRepeat(existing, processedMessage)) {
+        await _mergeChannelRepeat(idKey, existing, processedMessage);
+        return false;
+      }
+    }
+
+    final unreadEligible = !processedMessage.isOutgoing &&
+        !_isFromSelf(processedMessage) &&
+        !(_appSettingsService?.isSenderBlocked(processedMessage.senderName) ??
+            false);
+    final isNew = await _channelMessageStore.insertIfNew(
+      idKey,
+      processedMessage,
+      unreadEligible: unreadEligible,
+    );
+    if (!isNew) {
+      // Same content-derived id: an echo whose packet hash we didn't know.
+      final existing = await _channelMessageStore.findByMessageId(
+        idKey,
+        processedMessage.messageId,
       );
-      final mergedPathVariants = _mergePathVariants(
-        existing.pathVariants,
-        processedMessage.pathVariants,
-      );
-      final mergedPathLength = _mergePathLength(
-        existing.pathLength,
-        processedMessage.pathLength,
-        mergedPathBytes,
-        existing.pathHashSize,
-      );
-      final newRepeatCount = existing.repeatCount + 1;
-      messages[existingIndex] = existing.copyWith(
-        repeatCount: newRepeatCount,
+      if (existing != null) {
+        await _mergeChannelRepeat(idKey, existing, processedMessage);
+      }
+      return false;
+    }
+    // Viewing this channel: the read watermark rides along so the message
+    // never accrues as unread (parity with the old active-channel rule).
+    if (_activeChannelIndex != null &&
+        _findChannelByIndex(_activeChannelIndex!)?.idKey == idKey) {
+      unawaited(_channelMessageStore.markRead(idKey));
+    }
+    notifyListeners();
+    return true;
+  }
+
+  /// Repeat/echo bookkeeping: merge paths, bump the repeat count, flip our
+  /// own echoed sends to delivered — one targeted row update.
+  Future<void> _mergeChannelRepeat(
+    String idKey,
+    ChannelMessage existing,
+    ChannelMessage incoming,
+  ) async {
+    final mergedPathBytes = _selectPreferredPathBytes(
+      existing.pathBytes,
+      incoming.pathBytes,
+    );
+    final mergedPathVariants = _mergePathVariants(
+      existing.pathVariants,
+      incoming.pathVariants,
+    );
+    final mergedPathLength = _mergePathLength(
+      existing.pathLength,
+      incoming.pathLength,
+      mergedPathBytes,
+      existing.pathHashSize,
+    );
+    await _channelMessageStore.updateMessage(
+      idKey,
+      existing.messageId,
+      (m) => m.copyWith(
+        repeatCount: m.repeatCount + 1,
         pathLength: mergedPathLength,
         pathBytes: mergedPathBytes,
         pathVariants: mergedPathVariants,
-        packetHash: existing.packetHash ?? processedMessage.packetHash,
-        status: existing.isOutgoing ? ChannelMessageStatus.delivered : existing.status,
-      );
-      _pendingChannelSentQueue.remove(existing.messageId);
-      appLogger.info('Matched repeat for ${existing.messageId}, cancelling timer', tag: 'Connector');
-      _channelRepeatTimers[existing.messageId]?.cancel();
-      _channelRepeatTimers.remove(existing.messageId);
-      _channelMessageTimers[existing.messageId]?.cancel();
-      _channelMessageTimers.remove(existing.messageId);
-    } else {
-      // Insert sorted by timestamp so the live list always matches the
-      // database's ORDER BY. An old-stamped arrival (radio queue backlog,
-      // re-flooded packet) files into history where it belongs instead of
-      // pinning to the thread bottom under a stale date divider and then
-      // "vanishing" upward on the next reload.
-      var insertAt = messages.length;
-      while (insertAt > 0 &&
-          messages[insertAt - 1]
-              .timestamp
-              .isAfter(processedMessage.timestamp)) {
-        insertAt--;
-      }
-      messages.insert(insertAt, processedMessage);
-    }
-
-    // Save to persistent storage
-    unawaited(_persistChannelMessages(channelIndex, messages));
-    return isNew;
+        packetHash: m.packetHash ?? incoming.packetHash,
+        status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
+      ),
+    );
+    _pendingChannelSentQueue.remove(existing.messageId);
+    appLogger.info(
+      'Matched repeat for ${existing.messageId}, cancelling timer',
+      tag: 'Connector',
+    );
+    _channelRepeatTimers[existing.messageId]?.cancel();
+    _channelRepeatTimers.remove(existing.messageId);
+    _channelMessageTimers[existing.messageId]?.cancel();
+    _channelMessageTimers.remove(existing.messageId);
+    notifyListeners();
   }
 
   /// Finds the most recent message from [mentionedNode] whose text starts with
@@ -6622,29 +6465,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
       },
     );
-  }
-
-  int _findChannelRepeatIndex(
-    List<ChannelMessage> messages,
-    ChannelMessage incoming,
-  ) {
-    // First pass: match by packet hash (exact dedup)
-    final incomingHash = incoming.packetHash;
-    if (incomingHash != null) {
-      for (int i = messages.length - 1; i >= 0; i--) {
-        final existingHash = messages[i].packetHash;
-        if (existingHash != null && existingHash == incomingHash) {
-          return i;
-        }
-      }
-    }
-    // Second pass: heuristic fallback (outgoing echo, old messages without hash)
-    for (int i = messages.length - 1; i >= 0; i--) {
-      if (_isChannelRepeat(messages[i], incoming)) {
-        return i;
-      }
-    }
-    return -1;
   }
 
   bool _isChannelRepeat(ChannelMessage existing, ChannelMessage incoming) {
@@ -7539,15 +7359,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void clearMessagesForChannel(int channelIndex) {
-    final messages = _channelMessages[channelIndex];
-    if (messages == null) return;
-    messages.clear();
     // Explicit user clear — the only whole-history deletion besides
     // deleting the channel itself.
     final channel = _findChannelByIndex(channelIndex);
-    if (channel != null) {
-      unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
-    }
+    if (channel == null) return;
+    unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
     notifyListeners();
   }

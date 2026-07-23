@@ -263,7 +263,7 @@ void main() {
           timeout: const Duration(seconds: 75))) {
         arrived++;
       } else {
-        final m = findOutgoing(p.from, p.idKey, p.text);
+        final m = await findOutgoing(p.from, p.idKey, p.text);
         blog('AIR LOSS: "${p.text}" never reached ${p.to.label} '
             '(sender status: ${m?.status.name ?? 'unknown'})');
       }
@@ -326,8 +326,8 @@ void main() {
     final watcher = () async {
       while (watching) {
         samples++;
-        if (usb.connector.getChannelMessages(usbPub).isEmpty) usbMsgGaps++;
-        if (ble.connector.getChannelMessages(blePub).isEmpty) bleMsgGaps++;
+        if ((await usb.connector.loadChannelMessagesFor(usbPub)).isEmpty) usbMsgGaps++;
+        if ((await ble.connector.loadChannelMessagesFor(blePub)).isEmpty) bleMsgGaps++;
         if (!usb.connector.channels.any((c) => c.idKey == idKeyPub)) {
           usbListGaps++;
         }
@@ -420,8 +420,7 @@ void main() {
     await contaminationSweep(radios, ledger);
 
     final decoy = liveByIdKey(ble.connector, idKey4)!;
-    final decoyTexts = ble.connector
-        .getChannelMessages(decoy)
+    final decoyTexts = (await ble.connector.loadChannelMessagesFor(decoy))
         .map((m) => m.text)
         .where(ledger.allTexts.contains);
     expect(decoyTexts, isEmpty,
@@ -478,8 +477,7 @@ void main() {
     // old snapshots reappeared).
     for (final e in phase1.entries) {
       final ch = liveByIdKey(ble.connector, e.key)!;
-      final resurrected = ble.connector
-          .getChannelMessages(ch)
+      final resurrected = (await ble.connector.loadChannelMessagesFor(ch))
           .any((m) => m.text == e.value);
       expect(resurrected, isFalse,
           reason: '${ble.label}: deleted history resurrected in '
@@ -581,7 +579,7 @@ void main() {
     await ble.connector
         .sendChannelMessage(liveByIdKey(ble.connector, idKeyTwinCustom)!, t2);
     await Future<void>.delayed(const Duration(seconds: 15));
-    assertTextAbsentEverywhere(usb, t2);
+    await assertTextAbsentEverywhere(usb, t2);
     await assertDbEmptyFor(
         usb, idKeyTwinCustom, 'radio is not subscribed to this key');
     await contaminationSweep(radios, ledger);
@@ -618,7 +616,7 @@ void main() {
           timeout: const Duration(seconds: 75))) {
         arrived++;
       } else {
-        final m = findOutgoing(s.from, idKeyPriv, s.text);
+        final m = await findOutgoing(s.from, idKeyPriv, s.text);
         blog('AIR LOSS: D8#${s.seq} never reached ${s.to.label} '
             '(sender status: ${m?.status.name ?? 'unknown'})');
       }
@@ -634,7 +632,7 @@ void main() {
     for (final r in radios) {
       final ch = liveByIdKey(r.connector, idKeyPriv)!;
       final seqs = <int>[];
-      for (final m in r.connector.getChannelMessages(ch)) {
+      for (final m in await r.connector.loadChannelMessagesFor(ch)) {
         final match = seqPattern.firstMatch(m.text);
         if (match != null && m.text.startsWith('hx[$runTag]')) {
           seqs.add(int.parse(match.group(1)!));
@@ -644,7 +642,7 @@ void main() {
       expect(seqs, equals(sorted),
           reason: '${r.label}: D8 messages out of order: $seqs');
     }
-    assertTextAbsentEverywhere(ble, soloText);
+    await assertTextAbsentEverywhere(ble, soloText);
     await contaminationSweep(radios, ledger);
   }, timeout: const Timeout(Duration(minutes: 15)));
 
@@ -680,8 +678,8 @@ void main() {
 
     // DMs must never bleed into channel buckets on either radio.
     for (final r in radios) {
-      assertTextAbsentEverywhere(r, d1);
-      assertTextAbsentEverywhere(r, d2);
+      await assertTextAbsentEverywhere(r, d1);
+      await assertTextAbsentEverywhere(r, d2);
     }
     await contaminationSweep(radios, ledger);
   }, timeout: const Timeout(Duration(minutes: 10)));
@@ -711,7 +709,7 @@ void main() {
     final copies =
         ble.connector.getMessages(usbOnBle).where((m) => m.text == t).length;
     expect(copies, 1, reason: 'queued DM duplicated: $copies copies');
-    assertTextAbsentEverywhere(ble, t);
+    await assertTextAbsentEverywhere(ble, t);
   }, timeout: const Timeout(Duration(minutes: 8)));
 
   testWidgets('R2 repeater: discovery, admin login, CLI round-trip',
@@ -827,8 +825,8 @@ void main() {
       (tester) async {
     await beginScenario(tester, 'S6 restart persistence');
     requireBench();
-    final snapUsb = snapshotHarnessTexts(usb, ledger);
-    final snapBle = snapshotHarnessTexts(ble, ledger);
+    final snapUsb = await snapshotHarnessTexts(usb, ledger);
+    final snapBle = await snapshotHarnessTexts(ble, ledger);
     expect(snapUsb.values.expand((t) => t), isNotEmpty,
         reason: 'restart test needs prior traffic');
 
@@ -844,9 +842,9 @@ void main() {
     await usb.reconnect();
     await ble.reconnect();
 
-    expect(snapshotHarnessTexts(usb, ledger), equals(snapUsb),
+    expect(await snapshotHarnessTexts(usb, ledger), equals(snapUsb),
         reason: '${usb.label}: channel histories changed across restart');
-    expect(snapshotHarnessTexts(ble, ledger), equals(snapBle),
+    expect(await snapshotHarnessTexts(ble, ledger), equals(snapBle),
         reason: '${ble.label}: channel histories changed across restart');
     await contaminationSweep(radios, ledger);
   }, timeout: const Timeout(Duration(minutes: 8)));

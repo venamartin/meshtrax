@@ -576,11 +576,11 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           }
         }
 
-        // Add Active Channels
+        // Add Active Channels — "latest" comes from the watched SQL query,
+        // so ordering can never disagree with the database.
         for (final channel in connector.channels) {
-          final messages = connector.getChannelMessages(channel);
-          if (messages.isNotEmpty) {
-            final lastMessage = messages.last;
+          final lastMessage = connector.latestChannelMessage(channel);
+          if (lastMessage != null) {
             final subtitle = lastMessage.isOutgoing ? 'You: ${lastMessage.text}' : '${lastMessage.senderName}: ${lastMessage.text}';
             chatItems.add(
               _ChatListItem(
