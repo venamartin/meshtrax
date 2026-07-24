@@ -39,7 +39,6 @@ import '../storage/contact_settings_store.dart';
 import '../storage/contact_store.dart';
 import '../storage/message_store.dart';
 import '../storage/prefs_manager.dart';
-import '../storage/unread_store.dart';
 import '../utils/app_logger.dart';
 import '../utils/battery_utils.dart';
 import '../utils/platform_info.dart';
@@ -359,16 +358,13 @@ class MeshCoreConnector extends ChangeNotifier {
   final ContactStore _contactStore = ContactStore();
   final ContactDiscoveryStore _discoveryContactStore = ContactDiscoveryStore();
   final ChannelStore _channelStore = ChannelStore();
-  final UnreadStore _unreadStore = UnreadStore();
   List<Channel> _cachedChannels = [];
   final Map<String, bool> _channelSmazEnabled = {}; // keyed by Channel.idKey
   bool _lastSentWasCliCommand =
       false; // Track if last sent message was a CLI command
   final Map<String, bool> _contactSmazEnabled = {};
   final Set<String> _knownContactKeys = {};
-  final Map<String, int> _contactUnreadCount = {};
   final Map<String, RepeaterBatterySnapshot> _repeaterBatterySnapshots = {};
-  bool _unreadStateLoaded = false;
   final Map<String, _RepeaterAckContext> _pendingRepeaterAcks = {};
   String? _activeContactKey;
   int? _activeChannelIndex;
@@ -666,13 +662,10 @@ class MeshCoreConnector extends ChangeNotifier {
 
   int getTotalUnreadCount() {
     var total = 0;
-    // Count unread contact messages
-    if (_unreadStateLoaded) {
-      for (final contact in _contacts) {
-        total += getUnreadCountForContact(contact);
-      }
+    // Both sides come from watched COUNT queries (DB-authoritative).
+    for (final contact in _contacts) {
+      total += getUnreadCountForContact(contact);
     }
-    // Channel unread comes from the watched COUNT (DB-authoritative).
     for (final count in _channelUnreadByIdKey.values) {
       total += count;
     }
@@ -691,14 +684,6 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void ensureContactSmazSettingLoaded(String contactKeyHex) {
     _ensureContactSmazSettingLoaded(contactKeyHex);
-  }
-
-  Future<void> loadUnreadState() async {
-    _contactUnreadCount
-      ..clear()
-      ..addAll(await _unreadStore.loadContactUnreadCount());
-    _unreadStateLoaded = true;
-    notifyListeners();
   }
 
   Future<void> loadCachedChannels() async {
@@ -3198,11 +3183,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _localDiscoveredTimes.remove(contact.publicKeyHex);
-    _contactUnreadCount.remove(contact.publicKeyHex);
     _knownContactKeys.remove(contact.publicKeyHex);
-    _unreadStore.saveContactUnreadCount(
-      Map<String, int>.from(_contactUnreadCount),
-    );
     _messageStore.clearMessages(contact.publicKeyHex);
     notifyListeners();
     unawaited(_persistContacts());
@@ -3222,15 +3203,11 @@ class MeshCoreConnector extends ChangeNotifier {
         (c) => toRemove.any((r) => r.publicKeyHex == c.publicKeyHex));
     for (final contact in toRemove) {
       _localDiscoveredTimes.remove(contact.publicKeyHex);
-      _contactUnreadCount.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
 
       _messageStore.clearMessages(contact.publicKeyHex);
     }
-    _unreadStore.saveContactUnreadCount(
-      Map<String, int>.from(_contactUnreadCount),
-    );
     notifyListeners();
     unawaited(_persistContacts());
   }
@@ -4147,7 +4124,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _lastLoadedNodeKey = selfPublicKeyHex;
 
     _channelStore.setPublicKeyHex = selfPublicKeyHex;
-    _unreadStore.setPublicKeyHex = selfPublicKeyHex;
     _resubscribeChannelUnreadWatch();
 
     // Now that we have self info, we can load all the persisted data for this node
@@ -4158,7 +4134,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     loadCachedChannels().then((_) async {
       await loadChannelSettings();
     });
-    loadUnreadState();
     _loadDiscoveredContactCache();
 
     _awaitingSelfInfo = false;
@@ -4444,10 +4419,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
 
       if (contact.type == advTypeRepeater) {
-        _contactUnreadCount.remove(contact.publicKeyHex);
-        _unreadStore.saveContactUnreadCount(
-          Map<String, int>.from(_contactUnreadCount),
-        );
       }
       // Check if this is a new contact
       final isNewContact = !_knownContactKeys.contains(contact.publicKeyHex);
@@ -4537,10 +4508,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     if (contact.type == advTypeRepeater) {
-      _contactUnreadCount.remove(contact.publicKeyHex);
-      _unreadStore.saveContactUnreadCount(
-        Map<String, int>.from(_contactUnreadCount),
-      );
     }
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contact.publicKeyHex);
@@ -6625,9 +6592,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _usbManager.dispose();
     _tcpConnector.dispose();
 
-    // Flush pending unread writes before disposal
-    _unreadStore.flush();
-
     super.dispose();
   }
 
@@ -7188,7 +7152,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _knownContactKeys.remove(contact.publicKeyHex);
 
 
-      _contactUnreadCount.remove(contact.publicKeyHex);
       _messageStore.clearMessages(contact.publicKeyHex);
     }
 
@@ -7198,9 +7161,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         (cutoff == null || c.lastSeen.isBefore(cutoff)));
 
     unawaited(_persistContacts());
-    _unreadStore.saveContactUnreadCount(
-      Map<String, int>.from(_contactUnreadCount),
-    );
     unawaited(_persistDiscoveredContacts());
     notifyListeners();
   }

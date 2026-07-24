@@ -232,7 +232,6 @@ Future<MeshCoreConnector> buildConnector() async {
   await connector.loadContactCache();
   await connector.loadCachedChannels();
   await connector.loadChannelSettings();
-  await connector.loadUnreadState();
   return connector;
 }
 

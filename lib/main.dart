@@ -89,7 +89,6 @@ void main() async {
 
   // Channel messages live in the database and reach the UI through watched
   // queries — nothing to preload (Phase 3d).
-  await connector.loadUnreadState();
 
   runApp(
     MeshTraxApp(
