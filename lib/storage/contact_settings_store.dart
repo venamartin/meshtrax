@@ -1,6 +1,8 @@
 import '../utils/app_logger.dart';
 import 'prefs_manager.dart';
 
+/// Stays on prefs by design (see docs/phase3d-cut-plan.md §7): scalar
+/// settings keyed by contact identity, not entity data.
 class ContactSettingsStore {
   static const String _keyPrefix = 'contact_smaz_';
 

@@ -81,3 +81,19 @@ Bonus: `_conversations.clear()` on disconnect (the DM-flicker) becomes moot.
 
 **Rule for the whole phase: no compatibility shims.** Call sites move to the new
 API; the old API is deleted in the same commit.
+
+## 7. Final state (2026-07-24, post-3b) — what stays on prefs, and why
+
+All entity data lives in Drift (schema v5): message history (never-delete),
+read marks, saved-contact / discovered-contact / channel-slot caches
+(radio-mirror, whole-list replace). Bench run 15: all 23 scenarios passed.
+
+Three stores remain on SharedPreferences **by design** — they hold scalar
+settings, not entity lists, so the failure class 3d killed (delete-and-replace
+of a list from a partial in-memory view) cannot occur in them:
+
+| Store | Contents | Notes |
+|---|---|---|
+| `channel_settings_store` | one bool per (scope, channel idKey) | smaz flag; already identity-keyed |
+| `contact_settings_store` | one bool per (scope, contact pubkey) | smaz flag; already identity-keyed |
+| `channel_order_store` | one int-list per scope (display order) | cosmetic; slot-indexed, acceptable because only the connected app edits slots — a wrong order after an external reshuffle mis-sorts tiles, never loses data |

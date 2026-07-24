@@ -1,6 +1,8 @@
 import '../utils/app_logger.dart';
 import 'prefs_manager.dart';
 
+/// Stays on prefs by design (see docs/phase3d-cut-plan.md §7): scalar
+/// settings keyed by channel identity, not entity data.
 class ChannelSettingsStore {
   static const String _keyPrefix = 'channel_smaz_';
 

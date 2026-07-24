@@ -2,6 +2,10 @@ import 'dart:convert';
 import '../utils/app_logger.dart';
 import 'prefs_manager.dart';
 
+/// Stays on prefs by design (see docs/phase3d-cut-plan.md §7): a single
+/// cosmetic display-order value per node scope, not entity data. Slot-indexed
+/// is acceptable here — only the connected app edits slots, and a stale order
+/// can only mis-sort tiles, never lose data.
 class ChannelOrderStore {
   static const String _keyPrefix = 'channel_order_';
 
