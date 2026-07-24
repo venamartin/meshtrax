@@ -630,6 +630,14 @@ class MeshCoreConnector extends ChangeNotifier {
   // be rearranged externally while we're away), so slot-indexed messages
   // must buffer rather than file through it.
   bool _channelsVerified = false;
+  // Sends attempted while the map was unverified. Messages file to the DB
+  // at once (pending, keyed by the caller's trusted idKey) and transmit when
+  // a sync pass completes; reactions wait as raw text (messageId == null).
+  final List<({String idKey, String? messageId, String text})>
+  _pendingUnverifiedSends = [];
+  // Re-attempts a channel sync that died with the connection still up —
+  // without it the session stays send-gated until the next reconnect.
+  Timer? _channelSyncRetryTimer;
 
   Future<void> deleteChannelMessage(ChannelMessage message) async {
     final channelIndex = message.channelIndex;
@@ -2325,6 +2333,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _queriedUntrackedChannels.clear();
     _slotsToRequery.clear();
     _channelsVerified = false;
+    _failStrandedUnverifiedSends();
     _selfPublicKey = null;
     _selfName = null;
     _selfLatitude = null;
@@ -3021,6 +3030,29 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
+  Future<void> _failQueuedSend(String idKey, String messageId) async {
+    await _channelMessageStore.updateMessage(
+      idKey,
+      messageId,
+      (m) => m.copyWith(status: ChannelMessageStatus.failed),
+    );
+    notifyListeners();
+  }
+
+  /// Sends queued while the map was unverified cannot survive the connection
+  /// they were typed in: fail their rows so the user sees and can retry.
+  void _failStrandedUnverifiedSends() {
+    _channelSyncRetryTimer?.cancel();
+    if (_pendingUnverifiedSends.isEmpty) return;
+    final stranded = List.of(_pendingUnverifiedSends);
+    _pendingUnverifiedSends.clear();
+    for (final send in stranded) {
+      final messageId = send.messageId;
+      if (messageId == null) continue; // reactions: nothing filed to fail
+      unawaited(_failQueuedSend(send.idKey, messageId));
+    }
+  }
+
   Future<void> sendChannelMessage(
     Channel channel,
     String text, {
@@ -3032,18 +3064,49 @@ class MeshCoreConnector extends ChangeNotifier {
     // Resolve the LIVE slot for this identity — sending by a stale index
     // would encrypt with whatever key now occupies that slot.
     final live = _liveChannelByIdKey(channel.idKey);
-    if (live == null || !_channelsVerified) {
-      // Same rule as the receive path: after a reconnect the slot map is
-      // untrusted until re-verified — sending would encrypt with whatever
-      // key now owns the slot.
+    if (live == null && _channelsVerified) {
+      // Verified map, identity simply not on the radio (channel deleted
+      // from another device). Nothing to encrypt with.
       appLogger.warn(
-        'Refusing channel send: ${channel.displayName} '
-        '(live=${live != null}, verified=$_channelsVerified)',
+        'Refusing channel send: ${channel.displayName} not on radio',
         tag: 'Connector',
       );
       return;
     }
-    channel = live;
+    if (!_channelsVerified) {
+      // Same rule as the receive path: after a reconnect the slot map is
+      // untrusted until re-verified — sending would encrypt with whatever
+      // key now owns the slot. Never DISCARD the user's text though: file
+      // it by trusted identity and transmit when a sync pass completes.
+      if (ReactionHelper.parseReaction(text) != null) {
+        _pendingUnverifiedSends.add(
+          (idKey: channel.idKey, messageId: null, text: text),
+        );
+        return;
+      }
+      final message = ChannelMessage.outgoing(
+        text,
+        _selfName ?? 'Me',
+        channel.index,
+        pathHashSize: pathHashByteWidth,
+      );
+      await _ingestChannelMessage(
+        channel.index,
+        message,
+        replyTarget: replyTarget,
+        identity: channel,
+      );
+      _pendingUnverifiedSends.add(
+        (idKey: channel.idKey, messageId: message.messageId, text: text),
+      );
+      appLogger.warn(
+        'Channel map unverified — queued send for ${channel.displayName}',
+        tag: 'Connector',
+      );
+      notifyListeners();
+      return;
+    }
+    channel = live!;
 
     // Check if this is a reaction - if so, process it immediately instead of adding as a message
     final reactionInfo = ReactionHelper.parseReaction(text);
@@ -3675,6 +3738,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       unawaited(_startQueueSyncNow());
     }
 
+    // Transmit sends that queued while the map was unverified. Rows are
+    // already filed (pending); the resend path rebuilds reply wire text.
+    _channelSyncRetryTimer?.cancel();
+    if (_pendingUnverifiedSends.isNotEmpty) {
+      final queued = List.of(_pendingUnverifiedSends);
+      _pendingUnverifiedSends.clear();
+      for (final send in queued) {
+        final target = _liveChannelByIdKey(send.idKey);
+        final messageId = send.messageId;
+        if (target == null) {
+          appLogger.warn(
+            'Queued send dropped: channel identity no longer on radio',
+            tag: 'Connector',
+          );
+          if (messageId != null) {
+            unawaited(_failQueuedSend(send.idKey, messageId));
+          }
+          continue;
+        }
+        if (messageId == null) {
+          unawaited(sendChannelMessage(target, send.text));
+        } else {
+          unawaited(resendChannelMessageById(target.index, messageId));
+        }
+      }
+    }
+
     _runChannelHealthCheck();
 
     // Cache channels for offline use. Retain prior cached entries for slots
@@ -3781,6 +3871,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (_pendingQueueSyncAfterChannelSync) {
         _pendingQueueSyncAfterChannelSync = false;
         unawaited(_startQueueSyncNow());
+      }
+      // A dead pass with the connection still up must retry: verified stays
+      // false otherwise and every channel send is gated until reconnect.
+      if (isConnected) {
+        _channelSyncRetryTimer?.cancel();
+        _channelSyncRetryTimer = Timer(const Duration(seconds: 3), () {
+          if (isConnected && !_channelsVerified && !_isSyncingChannels) {
+            appLogger.warn(
+              'Channel sync pass failed — retrying',
+              tag: 'Connector',
+            );
+            unawaited(getChannels(force: true));
+          }
+        });
       }
     }
     _isSyncingChannels = false;
@@ -6045,8 +6149,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     int channelIndex,
     ChannelMessage message, {
     ChannelMessage? replyTarget,
+    Channel? identity,
   }) async {
-    final channel = _findChannelByIndex(channelIndex);
+    // [identity] bypasses the slot lookup for sends queued while the map is
+    // unverified: the caller's Channel came from the last settled table, so
+    // its idKey is trusted even though its slot index is not.
+    final channel = identity ?? _findChannelByIndex(channelIndex);
     if (channel == null) {
       appLogger.warn(
         'Dropping message for unknown slot $channelIndex',
@@ -6438,6 +6546,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection.
     _channelsVerified = false;
+    _failStrandedUnverifiedSends();
     // Pending buffers KEPT (see disconnect()): dropping them lost radio-queue
     // messages that are never redelivered.
     _queriedUntrackedChannels.clear();
