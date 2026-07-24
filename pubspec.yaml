@@ -84,15 +84,6 @@ dev_dependencies:
     sdk: flutter
   # Windows BLE for the two-radio hardware bench harness (not shipped in app)
   win_ble: ^1.1.1
-
-dependency_overrides:
-  # Vendored with a framing fix: upstream's stdout parser crashes on frames
-  # split across socket reads and desyncs on multi-byte UTF-8 payloads
-  # (tools/win_ble_patched/lib/src/utils/win_connector.dart). BLEServer.exe
-  # still loads from the pub cache — the vendored copy ships no assets.
-  win_ble:
-    path: tools/win_ble_patched
-
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -102,6 +93,14 @@ dependency_overrides:
   flutter_launcher_icons: ^0.14.4
   drift_dev: ^2.34.0
   build_runner: ^2.15.1
+
+dependency_overrides:
+  # Vendored with a framing fix: upstream's stdout parser crashes on frames
+  # split across socket reads and desyncs on multi-byte UTF-8 payloads
+  # (tools/win_ble_patched/lib/src/utils/win_connector.dart). BLEServer.exe
+  # still loads from the pub cache — the vendored copy ships no assets.
+  win_ble:
+    path: tools/win_ble_patched
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
