@@ -356,7 +356,13 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         );
                       }
-                      for (final c in contactsWithLocation) {
+                      final sortedContacts = List.of(contactsWithLocation)
+                        ..sort(
+                          (a, b) => a.name.toLowerCase().compareTo(
+                            b.name.toLowerCase(),
+                          ),
+                        );
+                      for (final c in sortedContacts) {
                         candidates.add(
                           LineOfSightEndpoint(
                             label: c.name,
