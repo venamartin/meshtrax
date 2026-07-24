@@ -5,7 +5,6 @@ import '../storage/prefs_manager.dart';
 
 class StorageService {
   static const String _pathHistoryPrefix = 'path_history_';
-  static const String _pendingMessagesKey = 'pending_messages';
   static const String _repeaterPasswordsKey = 'repeater_passwords';
   static const String _repeaterAutoClockSyncAfterLoginKey =
       'repeater_auto_clock_sync_after_login';
@@ -85,31 +84,6 @@ class StorageService {
     for (final key in pathHistoryKeys) {
       await prefs.remove(key);
     }
-  }
-
-  Future<Map<String, String>> loadPendingMessages() async {
-    final prefs = PrefsManager.instance;
-    final jsonStr = prefs.getString(_pendingMessagesKey);
-
-    if (jsonStr == null) return {};
-
-    try {
-      final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      return json.map((key, value) => MapEntry(key, value as String));
-    } catch (e) {
-      return {};
-    }
-  }
-
-  Future<void> savePendingMessages(Map<String, String> pending) async {
-    final prefs = PrefsManager.instance;
-    final jsonStr = jsonEncode(pending);
-    await prefs.setString(_pendingMessagesKey, jsonStr);
-  }
-
-  Future<void> clearPendingMessages() async {
-    final prefs = PrefsManager.instance;
-    await prefs.remove(_pendingMessagesKey);
   }
 
   /// Save a repeater password by public key hex
