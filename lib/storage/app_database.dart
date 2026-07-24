@@ -68,6 +68,41 @@ class ContactReadMarks extends Table {
   Set<Column> get primaryKey => {nodeScope, contactKey};
 }
 
+/// Saved-contact cache, one row per contact (v5). The RADIO is the source
+/// of truth for saved contacts; these rows are the offline mirror, so
+/// whole-list replacement on sync is the correct write here.
+class ContactRows extends Table {
+  TextColumn get nodeScope => text()();
+  TextColumn get publicKeyHex => text()();
+  TextColumn get payload => text()();
+
+  @override
+  Set<Column> get primaryKey => {nodeScope, publicKeyHex};
+}
+
+/// Discovered-but-not-saved contacts (v5) — app-only state with no radio
+/// backstop. Deliberately unscoped (scope='global'), matching the legacy
+/// store's semantics: discovery results are shared across radios.
+class DiscoveredContactRows extends Table {
+  TextColumn get nodeScope => text()();
+  TextColumn get publicKeyHex => text()();
+  TextColumn get payload => text()();
+
+  @override
+  Set<Column> get primaryKey => {nodeScope, publicKeyHex};
+}
+
+/// Cached channel slot table (v5) — mirror of the radio's slots for offline
+/// display and identity mapping before the first live sync.
+class CachedChannelRows extends Table {
+  TextColumn get nodeScope => text()();
+  IntColumn get slotIndex => integer()();
+  TextColumn get payload => text()();
+
+  @override
+  Set<Column> get primaryKey => {nodeScope, slotIndex};
+}
+
 /// One row per contact (DM) message — same contract as channel rows: a
 /// message exists exactly once per (node, contact), writes are transactional.
 class ContactMessageRows extends Table {
@@ -105,6 +140,9 @@ class ContactMessageRows extends Table {
     ContactMessageRows,
     ChannelReadMarks,
     ContactReadMarks,
+    ContactRows,
+    DiscoveredContactRows,
+    CachedChannelRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -123,7 +161,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -150,6 +188,11 @@ class AppDatabase extends _$AppDatabase {
           contactMessageRows,
           contactMessageRows.unreadEligible,
         );
+      }
+      if (from < 5) {
+        await m.createTable(contactRows);
+        await m.createTable(discoveredContactRows);
+        await m.createTable(cachedChannelRows);
       }
     },
   );

@@ -1673,6 +1673,826 @@ class ContactReadMarksCompanion extends UpdateCompanion<ContactReadMark> {
   }
 }
 
+class $ContactRowsTable extends ContactRows
+    with TableInfo<$ContactRowsTable, ContactRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nodeScopeMeta = const VerificationMeta(
+    'nodeScope',
+  );
+  @override
+  late final GeneratedColumn<String> nodeScope = GeneratedColumn<String>(
+    'node_scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _publicKeyHexMeta = const VerificationMeta(
+    'publicKeyHex',
+  );
+  @override
+  late final GeneratedColumn<String> publicKeyHex = GeneratedColumn<String>(
+    'public_key_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [nodeScope, publicKeyHex, payload];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contact_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('node_scope')) {
+      context.handle(
+        _nodeScopeMeta,
+        nodeScope.isAcceptableOrUnknown(data['node_scope']!, _nodeScopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nodeScopeMeta);
+    }
+    if (data.containsKey('public_key_hex')) {
+      context.handle(
+        _publicKeyHexMeta,
+        publicKeyHex.isAcceptableOrUnknown(
+          data['public_key_hex']!,
+          _publicKeyHexMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_publicKeyHexMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {nodeScope, publicKeyHex};
+  @override
+  ContactRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactRow(
+      nodeScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}node_scope'],
+      )!,
+      publicKeyHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}public_key_hex'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+    );
+  }
+
+  @override
+  $ContactRowsTable createAlias(String alias) {
+    return $ContactRowsTable(attachedDatabase, alias);
+  }
+}
+
+class ContactRow extends DataClass implements Insertable<ContactRow> {
+  final String nodeScope;
+  final String publicKeyHex;
+  final String payload;
+  const ContactRow({
+    required this.nodeScope,
+    required this.publicKeyHex,
+    required this.payload,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['node_scope'] = Variable<String>(nodeScope);
+    map['public_key_hex'] = Variable<String>(publicKeyHex);
+    map['payload'] = Variable<String>(payload);
+    return map;
+  }
+
+  ContactRowsCompanion toCompanion(bool nullToAbsent) {
+    return ContactRowsCompanion(
+      nodeScope: Value(nodeScope),
+      publicKeyHex: Value(publicKeyHex),
+      payload: Value(payload),
+    );
+  }
+
+  factory ContactRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactRow(
+      nodeScope: serializer.fromJson<String>(json['nodeScope']),
+      publicKeyHex: serializer.fromJson<String>(json['publicKeyHex']),
+      payload: serializer.fromJson<String>(json['payload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'nodeScope': serializer.toJson<String>(nodeScope),
+      'publicKeyHex': serializer.toJson<String>(publicKeyHex),
+      'payload': serializer.toJson<String>(payload),
+    };
+  }
+
+  ContactRow copyWith({
+    String? nodeScope,
+    String? publicKeyHex,
+    String? payload,
+  }) => ContactRow(
+    nodeScope: nodeScope ?? this.nodeScope,
+    publicKeyHex: publicKeyHex ?? this.publicKeyHex,
+    payload: payload ?? this.payload,
+  );
+  ContactRow copyWithCompanion(ContactRowsCompanion data) {
+    return ContactRow(
+      nodeScope: data.nodeScope.present ? data.nodeScope.value : this.nodeScope,
+      publicKeyHex: data.publicKeyHex.present
+          ? data.publicKeyHex.value
+          : this.publicKeyHex,
+      payload: data.payload.present ? data.payload.value : this.payload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactRow(')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('publicKeyHex: $publicKeyHex, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(nodeScope, publicKeyHex, payload);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactRow &&
+          other.nodeScope == this.nodeScope &&
+          other.publicKeyHex == this.publicKeyHex &&
+          other.payload == this.payload);
+}
+
+class ContactRowsCompanion extends UpdateCompanion<ContactRow> {
+  final Value<String> nodeScope;
+  final Value<String> publicKeyHex;
+  final Value<String> payload;
+  final Value<int> rowid;
+  const ContactRowsCompanion({
+    this.nodeScope = const Value.absent(),
+    this.publicKeyHex = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContactRowsCompanion.insert({
+    required String nodeScope,
+    required String publicKeyHex,
+    required String payload,
+    this.rowid = const Value.absent(),
+  }) : nodeScope = Value(nodeScope),
+       publicKeyHex = Value(publicKeyHex),
+       payload = Value(payload);
+  static Insertable<ContactRow> custom({
+    Expression<String>? nodeScope,
+    Expression<String>? publicKeyHex,
+    Expression<String>? payload,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (nodeScope != null) 'node_scope': nodeScope,
+      if (publicKeyHex != null) 'public_key_hex': publicKeyHex,
+      if (payload != null) 'payload': payload,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContactRowsCompanion copyWith({
+    Value<String>? nodeScope,
+    Value<String>? publicKeyHex,
+    Value<String>? payload,
+    Value<int>? rowid,
+  }) {
+    return ContactRowsCompanion(
+      nodeScope: nodeScope ?? this.nodeScope,
+      publicKeyHex: publicKeyHex ?? this.publicKeyHex,
+      payload: payload ?? this.payload,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (nodeScope.present) {
+      map['node_scope'] = Variable<String>(nodeScope.value);
+    }
+    if (publicKeyHex.present) {
+      map['public_key_hex'] = Variable<String>(publicKeyHex.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactRowsCompanion(')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('publicKeyHex: $publicKeyHex, ')
+          ..write('payload: $payload, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DiscoveredContactRowsTable extends DiscoveredContactRows
+    with TableInfo<$DiscoveredContactRowsTable, DiscoveredContactRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DiscoveredContactRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nodeScopeMeta = const VerificationMeta(
+    'nodeScope',
+  );
+  @override
+  late final GeneratedColumn<String> nodeScope = GeneratedColumn<String>(
+    'node_scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _publicKeyHexMeta = const VerificationMeta(
+    'publicKeyHex',
+  );
+  @override
+  late final GeneratedColumn<String> publicKeyHex = GeneratedColumn<String>(
+    'public_key_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [nodeScope, publicKeyHex, payload];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'discovered_contact_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DiscoveredContactRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('node_scope')) {
+      context.handle(
+        _nodeScopeMeta,
+        nodeScope.isAcceptableOrUnknown(data['node_scope']!, _nodeScopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nodeScopeMeta);
+    }
+    if (data.containsKey('public_key_hex')) {
+      context.handle(
+        _publicKeyHexMeta,
+        publicKeyHex.isAcceptableOrUnknown(
+          data['public_key_hex']!,
+          _publicKeyHexMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_publicKeyHexMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {nodeScope, publicKeyHex};
+  @override
+  DiscoveredContactRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DiscoveredContactRow(
+      nodeScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}node_scope'],
+      )!,
+      publicKeyHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}public_key_hex'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+    );
+  }
+
+  @override
+  $DiscoveredContactRowsTable createAlias(String alias) {
+    return $DiscoveredContactRowsTable(attachedDatabase, alias);
+  }
+}
+
+class DiscoveredContactRow extends DataClass
+    implements Insertable<DiscoveredContactRow> {
+  final String nodeScope;
+  final String publicKeyHex;
+  final String payload;
+  const DiscoveredContactRow({
+    required this.nodeScope,
+    required this.publicKeyHex,
+    required this.payload,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['node_scope'] = Variable<String>(nodeScope);
+    map['public_key_hex'] = Variable<String>(publicKeyHex);
+    map['payload'] = Variable<String>(payload);
+    return map;
+  }
+
+  DiscoveredContactRowsCompanion toCompanion(bool nullToAbsent) {
+    return DiscoveredContactRowsCompanion(
+      nodeScope: Value(nodeScope),
+      publicKeyHex: Value(publicKeyHex),
+      payload: Value(payload),
+    );
+  }
+
+  factory DiscoveredContactRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DiscoveredContactRow(
+      nodeScope: serializer.fromJson<String>(json['nodeScope']),
+      publicKeyHex: serializer.fromJson<String>(json['publicKeyHex']),
+      payload: serializer.fromJson<String>(json['payload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'nodeScope': serializer.toJson<String>(nodeScope),
+      'publicKeyHex': serializer.toJson<String>(publicKeyHex),
+      'payload': serializer.toJson<String>(payload),
+    };
+  }
+
+  DiscoveredContactRow copyWith({
+    String? nodeScope,
+    String? publicKeyHex,
+    String? payload,
+  }) => DiscoveredContactRow(
+    nodeScope: nodeScope ?? this.nodeScope,
+    publicKeyHex: publicKeyHex ?? this.publicKeyHex,
+    payload: payload ?? this.payload,
+  );
+  DiscoveredContactRow copyWithCompanion(DiscoveredContactRowsCompanion data) {
+    return DiscoveredContactRow(
+      nodeScope: data.nodeScope.present ? data.nodeScope.value : this.nodeScope,
+      publicKeyHex: data.publicKeyHex.present
+          ? data.publicKeyHex.value
+          : this.publicKeyHex,
+      payload: data.payload.present ? data.payload.value : this.payload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DiscoveredContactRow(')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('publicKeyHex: $publicKeyHex, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(nodeScope, publicKeyHex, payload);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DiscoveredContactRow &&
+          other.nodeScope == this.nodeScope &&
+          other.publicKeyHex == this.publicKeyHex &&
+          other.payload == this.payload);
+}
+
+class DiscoveredContactRowsCompanion
+    extends UpdateCompanion<DiscoveredContactRow> {
+  final Value<String> nodeScope;
+  final Value<String> publicKeyHex;
+  final Value<String> payload;
+  final Value<int> rowid;
+  const DiscoveredContactRowsCompanion({
+    this.nodeScope = const Value.absent(),
+    this.publicKeyHex = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DiscoveredContactRowsCompanion.insert({
+    required String nodeScope,
+    required String publicKeyHex,
+    required String payload,
+    this.rowid = const Value.absent(),
+  }) : nodeScope = Value(nodeScope),
+       publicKeyHex = Value(publicKeyHex),
+       payload = Value(payload);
+  static Insertable<DiscoveredContactRow> custom({
+    Expression<String>? nodeScope,
+    Expression<String>? publicKeyHex,
+    Expression<String>? payload,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (nodeScope != null) 'node_scope': nodeScope,
+      if (publicKeyHex != null) 'public_key_hex': publicKeyHex,
+      if (payload != null) 'payload': payload,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DiscoveredContactRowsCompanion copyWith({
+    Value<String>? nodeScope,
+    Value<String>? publicKeyHex,
+    Value<String>? payload,
+    Value<int>? rowid,
+  }) {
+    return DiscoveredContactRowsCompanion(
+      nodeScope: nodeScope ?? this.nodeScope,
+      publicKeyHex: publicKeyHex ?? this.publicKeyHex,
+      payload: payload ?? this.payload,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (nodeScope.present) {
+      map['node_scope'] = Variable<String>(nodeScope.value);
+    }
+    if (publicKeyHex.present) {
+      map['public_key_hex'] = Variable<String>(publicKeyHex.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DiscoveredContactRowsCompanion(')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('publicKeyHex: $publicKeyHex, ')
+          ..write('payload: $payload, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CachedChannelRowsTable extends CachedChannelRows
+    with TableInfo<$CachedChannelRowsTable, CachedChannelRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedChannelRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nodeScopeMeta = const VerificationMeta(
+    'nodeScope',
+  );
+  @override
+  late final GeneratedColumn<String> nodeScope = GeneratedColumn<String>(
+    'node_scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slotIndexMeta = const VerificationMeta(
+    'slotIndex',
+  );
+  @override
+  late final GeneratedColumn<int> slotIndex = GeneratedColumn<int>(
+    'slot_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [nodeScope, slotIndex, payload];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_channel_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedChannelRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('node_scope')) {
+      context.handle(
+        _nodeScopeMeta,
+        nodeScope.isAcceptableOrUnknown(data['node_scope']!, _nodeScopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nodeScopeMeta);
+    }
+    if (data.containsKey('slot_index')) {
+      context.handle(
+        _slotIndexMeta,
+        slotIndex.isAcceptableOrUnknown(data['slot_index']!, _slotIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slotIndexMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {nodeScope, slotIndex};
+  @override
+  CachedChannelRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedChannelRow(
+      nodeScope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}node_scope'],
+      )!,
+      slotIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}slot_index'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedChannelRowsTable createAlias(String alias) {
+    return $CachedChannelRowsTable(attachedDatabase, alias);
+  }
+}
+
+class CachedChannelRow extends DataClass
+    implements Insertable<CachedChannelRow> {
+  final String nodeScope;
+  final int slotIndex;
+  final String payload;
+  const CachedChannelRow({
+    required this.nodeScope,
+    required this.slotIndex,
+    required this.payload,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['node_scope'] = Variable<String>(nodeScope);
+    map['slot_index'] = Variable<int>(slotIndex);
+    map['payload'] = Variable<String>(payload);
+    return map;
+  }
+
+  CachedChannelRowsCompanion toCompanion(bool nullToAbsent) {
+    return CachedChannelRowsCompanion(
+      nodeScope: Value(nodeScope),
+      slotIndex: Value(slotIndex),
+      payload: Value(payload),
+    );
+  }
+
+  factory CachedChannelRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedChannelRow(
+      nodeScope: serializer.fromJson<String>(json['nodeScope']),
+      slotIndex: serializer.fromJson<int>(json['slotIndex']),
+      payload: serializer.fromJson<String>(json['payload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'nodeScope': serializer.toJson<String>(nodeScope),
+      'slotIndex': serializer.toJson<int>(slotIndex),
+      'payload': serializer.toJson<String>(payload),
+    };
+  }
+
+  CachedChannelRow copyWith({
+    String? nodeScope,
+    int? slotIndex,
+    String? payload,
+  }) => CachedChannelRow(
+    nodeScope: nodeScope ?? this.nodeScope,
+    slotIndex: slotIndex ?? this.slotIndex,
+    payload: payload ?? this.payload,
+  );
+  CachedChannelRow copyWithCompanion(CachedChannelRowsCompanion data) {
+    return CachedChannelRow(
+      nodeScope: data.nodeScope.present ? data.nodeScope.value : this.nodeScope,
+      slotIndex: data.slotIndex.present ? data.slotIndex.value : this.slotIndex,
+      payload: data.payload.present ? data.payload.value : this.payload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedChannelRow(')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('slotIndex: $slotIndex, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(nodeScope, slotIndex, payload);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedChannelRow &&
+          other.nodeScope == this.nodeScope &&
+          other.slotIndex == this.slotIndex &&
+          other.payload == this.payload);
+}
+
+class CachedChannelRowsCompanion extends UpdateCompanion<CachedChannelRow> {
+  final Value<String> nodeScope;
+  final Value<int> slotIndex;
+  final Value<String> payload;
+  final Value<int> rowid;
+  const CachedChannelRowsCompanion({
+    this.nodeScope = const Value.absent(),
+    this.slotIndex = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedChannelRowsCompanion.insert({
+    required String nodeScope,
+    required int slotIndex,
+    required String payload,
+    this.rowid = const Value.absent(),
+  }) : nodeScope = Value(nodeScope),
+       slotIndex = Value(slotIndex),
+       payload = Value(payload);
+  static Insertable<CachedChannelRow> custom({
+    Expression<String>? nodeScope,
+    Expression<int>? slotIndex,
+    Expression<String>? payload,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (nodeScope != null) 'node_scope': nodeScope,
+      if (slotIndex != null) 'slot_index': slotIndex,
+      if (payload != null) 'payload': payload,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedChannelRowsCompanion copyWith({
+    Value<String>? nodeScope,
+    Value<int>? slotIndex,
+    Value<String>? payload,
+    Value<int>? rowid,
+  }) {
+    return CachedChannelRowsCompanion(
+      nodeScope: nodeScope ?? this.nodeScope,
+      slotIndex: slotIndex ?? this.slotIndex,
+      payload: payload ?? this.payload,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (nodeScope.present) {
+      map['node_scope'] = Variable<String>(nodeScope.value);
+    }
+    if (slotIndex.present) {
+      map['slot_index'] = Variable<int>(slotIndex.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedChannelRowsCompanion(')
+          ..write('nodeScope: $nodeScope, ')
+          ..write('slotIndex: $slotIndex, ')
+          ..write('payload: $payload, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1686,6 +2506,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ContactReadMarksTable contactReadMarks = $ContactReadMarksTable(
     this,
   );
+  late final $ContactRowsTable contactRows = $ContactRowsTable(this);
+  late final $DiscoveredContactRowsTable discoveredContactRows =
+      $DiscoveredContactRowsTable(this);
+  late final $CachedChannelRowsTable cachedChannelRows =
+      $CachedChannelRowsTable(this);
   late final Index idxChannelPacketHash = Index(
     'idx_channel_packet_hash',
     'CREATE INDEX idx_channel_packet_hash ON channel_message_rows (node_scope, channel_id_key, packet_hash)',
@@ -1699,6 +2524,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     contactMessageRows,
     channelReadMarks,
     contactReadMarks,
+    contactRows,
+    discoveredContactRows,
+    cachedChannelRows,
     idxChannelPacketHash,
   ];
 }
@@ -2610,6 +3438,528 @@ typedef $$ContactReadMarksTableProcessedTableManager =
       ContactReadMark,
       PrefetchHooks Function()
     >;
+typedef $$ContactRowsTableCreateCompanionBuilder =
+    ContactRowsCompanion Function({
+      required String nodeScope,
+      required String publicKeyHex,
+      required String payload,
+      Value<int> rowid,
+    });
+typedef $$ContactRowsTableUpdateCompanionBuilder =
+    ContactRowsCompanion Function({
+      Value<String> nodeScope,
+      Value<String> publicKeyHex,
+      Value<String> payload,
+      Value<int> rowid,
+    });
+
+class $$ContactRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContactRowsTable> {
+  $$ContactRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ContactRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContactRowsTable> {
+  $$ContactRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ContactRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContactRowsTable> {
+  $$ContactRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get nodeScope =>
+      $composableBuilder(column: $table.nodeScope, builder: (column) => column);
+
+  GeneratedColumn<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+}
+
+class $$ContactRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContactRowsTable,
+          ContactRow,
+          $$ContactRowsTableFilterComposer,
+          $$ContactRowsTableOrderingComposer,
+          $$ContactRowsTableAnnotationComposer,
+          $$ContactRowsTableCreateCompanionBuilder,
+          $$ContactRowsTableUpdateCompanionBuilder,
+          (
+            ContactRow,
+            BaseReferences<_$AppDatabase, $ContactRowsTable, ContactRow>,
+          ),
+          ContactRow,
+          PrefetchHooks Function()
+        > {
+  $$ContactRowsTableTableManager(_$AppDatabase db, $ContactRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> nodeScope = const Value.absent(),
+                Value<String> publicKeyHex = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactRowsCompanion(
+                nodeScope: nodeScope,
+                publicKeyHex: publicKeyHex,
+                payload: payload,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String nodeScope,
+                required String publicKeyHex,
+                required String payload,
+                Value<int> rowid = const Value.absent(),
+              }) => ContactRowsCompanion.insert(
+                nodeScope: nodeScope,
+                publicKeyHex: publicKeyHex,
+                payload: payload,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ContactRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContactRowsTable,
+      ContactRow,
+      $$ContactRowsTableFilterComposer,
+      $$ContactRowsTableOrderingComposer,
+      $$ContactRowsTableAnnotationComposer,
+      $$ContactRowsTableCreateCompanionBuilder,
+      $$ContactRowsTableUpdateCompanionBuilder,
+      (
+        ContactRow,
+        BaseReferences<_$AppDatabase, $ContactRowsTable, ContactRow>,
+      ),
+      ContactRow,
+      PrefetchHooks Function()
+    >;
+typedef $$DiscoveredContactRowsTableCreateCompanionBuilder =
+    DiscoveredContactRowsCompanion Function({
+      required String nodeScope,
+      required String publicKeyHex,
+      required String payload,
+      Value<int> rowid,
+    });
+typedef $$DiscoveredContactRowsTableUpdateCompanionBuilder =
+    DiscoveredContactRowsCompanion Function({
+      Value<String> nodeScope,
+      Value<String> publicKeyHex,
+      Value<String> payload,
+      Value<int> rowid,
+    });
+
+class $$DiscoveredContactRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $DiscoveredContactRowsTable> {
+  $$DiscoveredContactRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DiscoveredContactRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DiscoveredContactRowsTable> {
+  $$DiscoveredContactRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DiscoveredContactRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DiscoveredContactRowsTable> {
+  $$DiscoveredContactRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get nodeScope =>
+      $composableBuilder(column: $table.nodeScope, builder: (column) => column);
+
+  GeneratedColumn<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+}
+
+class $$DiscoveredContactRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DiscoveredContactRowsTable,
+          DiscoveredContactRow,
+          $$DiscoveredContactRowsTableFilterComposer,
+          $$DiscoveredContactRowsTableOrderingComposer,
+          $$DiscoveredContactRowsTableAnnotationComposer,
+          $$DiscoveredContactRowsTableCreateCompanionBuilder,
+          $$DiscoveredContactRowsTableUpdateCompanionBuilder,
+          (
+            DiscoveredContactRow,
+            BaseReferences<
+              _$AppDatabase,
+              $DiscoveredContactRowsTable,
+              DiscoveredContactRow
+            >,
+          ),
+          DiscoveredContactRow,
+          PrefetchHooks Function()
+        > {
+  $$DiscoveredContactRowsTableTableManager(
+    _$AppDatabase db,
+    $DiscoveredContactRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DiscoveredContactRowsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$DiscoveredContactRowsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DiscoveredContactRowsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> nodeScope = const Value.absent(),
+                Value<String> publicKeyHex = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DiscoveredContactRowsCompanion(
+                nodeScope: nodeScope,
+                publicKeyHex: publicKeyHex,
+                payload: payload,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String nodeScope,
+                required String publicKeyHex,
+                required String payload,
+                Value<int> rowid = const Value.absent(),
+              }) => DiscoveredContactRowsCompanion.insert(
+                nodeScope: nodeScope,
+                publicKeyHex: publicKeyHex,
+                payload: payload,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DiscoveredContactRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DiscoveredContactRowsTable,
+      DiscoveredContactRow,
+      $$DiscoveredContactRowsTableFilterComposer,
+      $$DiscoveredContactRowsTableOrderingComposer,
+      $$DiscoveredContactRowsTableAnnotationComposer,
+      $$DiscoveredContactRowsTableCreateCompanionBuilder,
+      $$DiscoveredContactRowsTableUpdateCompanionBuilder,
+      (
+        DiscoveredContactRow,
+        BaseReferences<
+          _$AppDatabase,
+          $DiscoveredContactRowsTable,
+          DiscoveredContactRow
+        >,
+      ),
+      DiscoveredContactRow,
+      PrefetchHooks Function()
+    >;
+typedef $$CachedChannelRowsTableCreateCompanionBuilder =
+    CachedChannelRowsCompanion Function({
+      required String nodeScope,
+      required int slotIndex,
+      required String payload,
+      Value<int> rowid,
+    });
+typedef $$CachedChannelRowsTableUpdateCompanionBuilder =
+    CachedChannelRowsCompanion Function({
+      Value<String> nodeScope,
+      Value<int> slotIndex,
+      Value<String> payload,
+      Value<int> rowid,
+    });
+
+class $$CachedChannelRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedChannelRowsTable> {
+  $$CachedChannelRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get slotIndex => $composableBuilder(
+    column: $table.slotIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedChannelRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedChannelRowsTable> {
+  $$CachedChannelRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get nodeScope => $composableBuilder(
+    column: $table.nodeScope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get slotIndex => $composableBuilder(
+    column: $table.slotIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedChannelRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedChannelRowsTable> {
+  $$CachedChannelRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get nodeScope =>
+      $composableBuilder(column: $table.nodeScope, builder: (column) => column);
+
+  GeneratedColumn<int> get slotIndex =>
+      $composableBuilder(column: $table.slotIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+}
+
+class $$CachedChannelRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedChannelRowsTable,
+          CachedChannelRow,
+          $$CachedChannelRowsTableFilterComposer,
+          $$CachedChannelRowsTableOrderingComposer,
+          $$CachedChannelRowsTableAnnotationComposer,
+          $$CachedChannelRowsTableCreateCompanionBuilder,
+          $$CachedChannelRowsTableUpdateCompanionBuilder,
+          (
+            CachedChannelRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CachedChannelRowsTable,
+              CachedChannelRow
+            >,
+          ),
+          CachedChannelRow,
+          PrefetchHooks Function()
+        > {
+  $$CachedChannelRowsTableTableManager(
+    _$AppDatabase db,
+    $CachedChannelRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedChannelRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedChannelRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedChannelRowsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> nodeScope = const Value.absent(),
+                Value<int> slotIndex = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedChannelRowsCompanion(
+                nodeScope: nodeScope,
+                slotIndex: slotIndex,
+                payload: payload,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String nodeScope,
+                required int slotIndex,
+                required String payload,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedChannelRowsCompanion.insert(
+                nodeScope: nodeScope,
+                slotIndex: slotIndex,
+                payload: payload,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedChannelRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedChannelRowsTable,
+      CachedChannelRow,
+      $$CachedChannelRowsTableFilterComposer,
+      $$CachedChannelRowsTableOrderingComposer,
+      $$CachedChannelRowsTableAnnotationComposer,
+      $$CachedChannelRowsTableCreateCompanionBuilder,
+      $$CachedChannelRowsTableUpdateCompanionBuilder,
+      (
+        CachedChannelRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CachedChannelRowsTable,
+          CachedChannelRow
+        >,
+      ),
+      CachedChannelRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2622,4 +3972,10 @@ class $AppDatabaseManager {
       $$ChannelReadMarksTableTableManager(_db, _db.channelReadMarks);
   $$ContactReadMarksTableTableManager get contactReadMarks =>
       $$ContactReadMarksTableTableManager(_db, _db.contactReadMarks);
+  $$ContactRowsTableTableManager get contactRows =>
+      $$ContactRowsTableTableManager(_db, _db.contactRows);
+  $$DiscoveredContactRowsTableTableManager get discoveredContactRows =>
+      $$DiscoveredContactRowsTableTableManager(_db, _db.discoveredContactRows);
+  $$CachedChannelRowsTableTableManager get cachedChannelRows =>
+      $$CachedChannelRowsTableTableManager(_db, _db.cachedChannelRows);
 }
