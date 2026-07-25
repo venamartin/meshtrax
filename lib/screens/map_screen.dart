@@ -27,6 +27,7 @@ import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 import 'chat_screen.dart';
 import 'chats_screen.dart';
+import '../widgets/path_selection_dialog.dart';
 import '../widgets/repeater_login_dialog.dart';
 import '../widgets/room_login_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -2222,6 +2223,42 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  // Opens the hex/contact path picker so a trace can be typed or built from
+  // contacts without first tapping repeaters on the map. Pre-fills whatever is
+  // already selected, then runs the trace on the entered path.
+  Future<void> _setCustomTracePath() async {
+    final connector = context.read<MeshCoreConnector>();
+    final hashW = connector.pathHashByteWidth;
+    final navigator = Navigator.of(context);
+    final title = context.l10n.contacts_pathTrace;
+    final initial = _pathTrace.isNotEmpty
+        ? PathHelper.formatPathHex(_pathTrace, stride: hashW)
+        : null;
+
+    final result = await PathSelectionDialog.show(
+      context,
+      availableContacts: connector.allContacts,
+      initialPath: initial,
+      pathHashByteWidth: hashW,
+    );
+
+    if (result == null || result.isEmpty || !mounted) return;
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => PathTraceMapScreen(
+          title: title,
+          path: result,
+          pathHashByteWidth: hashW,
+          pathContacts: connector.allContacts,
+        ),
+      ),
+    );
+    setState(() {
+      _isBuildingPathTrace = false;
+    });
+  }
+
   void _removePath(BuildContext context) {
     setState(() {
       final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
@@ -2273,6 +2310,11 @@ class _MapScreenState extends State<MapScreen> {
                 spacing: 1,
                 runSpacing: 1,
                 children: [
+                  IconButton(
+                    onPressed: _setCustomTracePath,
+                    tooltip: l10n.chat_setCustomPath,
+                    icon: const Icon(Icons.edit_road),
+                  ),
                   if (_pathTrace.isNotEmpty)
                     IconButton(
                       onPressed: () {

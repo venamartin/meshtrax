@@ -52,14 +52,18 @@ class PathSelectionDialog extends StatefulWidget {
 
 class _PathSelectionDialogState extends State<PathSelectionDialog> {
   late TextEditingController _controller;
-  final List<Contact> _selectedContacts = [];
   List<Contact> _validContacts = [];
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialPath ?? '');
+    _controller.addListener(_onPathChanged);
     _filterValidContacts();
+  }
+
+  void _onPathChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -71,36 +75,34 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
   }
 
   void _filterValidContacts() {
-    _validContacts = widget.availableContacts
-        .where((c) => c.type == advTypeRepeater || c.type == advTypeRoom)
-        .toList();
+    _validContacts =
+        widget.availableContacts
+            .where((c) => c.type == advTypeRepeater || c.type == advTypeRoom)
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
   }
 
-  void _updateTextFromContacts() {
-    final pathParts = _selectedContacts
-        .map((contact) => contact.hashPrefixWithStride(widget.pathHashByteWidth))
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    _controller.text = pathParts.join(',');
+  // Appends a hop to the path field so tapped contacts stack up one after
+  // another, composing with anything already typed or pre-filled.
+  void _addContactHop(Contact contact) {
+    final prefix = contact
+        .hashPrefixWithStride(widget.pathHashByteWidth)
+        .toUpperCase();
+    if (prefix.isEmpty) return;
+    final current = _controller.text.trim();
+    final needsComma = current.isNotEmpty && !current.endsWith(',');
+    final next =
+        current.isEmpty ? prefix : '$current${needsComma ? ',' : ''}$prefix';
+    _controller.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
   }
 
-  void _toggleContact(Contact contact) {
-    setState(() {
-      if (_selectedContacts.contains(contact)) {
-        _selectedContacts.remove(contact);
-      } else {
-        _selectedContacts.add(contact);
-      }
-      _updateTextFromContacts();
-    });
-  }
-
-  void _clearSelection() {
-    setState(() {
-      _selectedContacts.clear();
-      _controller.clear();
-    });
+  void _clearPath() {
+    _controller.clear();
   }
 
   Future<void> _validateAndSubmit() async {
@@ -150,6 +152,7 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onPathChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -225,9 +228,9 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                     ),
                   ),
                   const Spacer(),
-                  if (_selectedContacts.isNotEmpty)
+                  if (_controller.text.trim().isNotEmpty)
                     TextButton(
-                      onPressed: _clearSelection,
+                      onPressed: _clearPath,
                       child: Text(l10n.common_clear),
                     ),
                 ],
@@ -271,17 +274,14 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                     itemCount: _validContacts.length,
                     itemBuilder: (context, index) {
                       final contact = _validContacts[index];
-                      final isSelected = _selectedContacts.contains(contact);
 
                       return ListTile(
                         dense: true,
                         leading: CircleAvatar(
                           radius: 16,
-                          backgroundColor: isSelected
-                              ? Colors.green
-                              : (contact.type == 2
-                                    ? Colors.blue
-                                    : Colors.purple),
+                          backgroundColor: contact.type == 2
+                              ? Colors.blue
+                              : Colors.purple,
                           child: Icon(
                             contact.type == 2
                                 ? Icons.router
@@ -298,13 +298,8 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                           '${contact.typeLabel} • ${contact.publicKeyHex.substring(0, widget.pathHashByteWidth * 2)}',
                           style: const TextStyle(fontSize: 10),
                         ),
-                        trailing: isSelected
-                            ? const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              )
-                            : const Icon(Icons.add_circle_outline),
-                        onTap: () => _toggleContact(contact),
+                        trailing: const Icon(Icons.add_circle_outline),
+                        onTap: () => _addContactHop(contact),
                       );
                     },
                   ),
