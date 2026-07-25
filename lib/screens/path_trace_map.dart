@@ -15,6 +15,7 @@ import '../helpers/path_helper.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/utils/app_logger.dart';
+import 'package:meshtrax/widgets/path_selection_dialog.dart';
 import 'package:meshtrax/widgets/snr_indicator.dart';
 import 'package:provider/provider.dart';
 
@@ -85,6 +86,9 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   bool _isLoading = false;
   bool _failed2Loaded = false;
   bool _hasData = false;
+  // A manually entered route (repeater hash prefixes) that overrides the path
+  // passed in via the widget. Null until the user edits the trace path.
+  Uint8List? _manualPath;
   PathTraceData? _traceData;
   // Inferred positions for hops that have no GPS location, keyed by hop string.
   Map<String, LatLng> _inferredHopPositions = {};
@@ -128,6 +132,12 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       return PathHelper.pubKeyPrefix(pk, stride: widget.pathHashByteWidth);
     }
 
+    // The user may already supply a complete round-trip route (A2 → F5 → A2).
+    // Send it verbatim; expanding it again would trace every hop twice.
+    if (PathHelper.isRoundTrip(pathBytes, stride: widget.pathHashByteWidth)) {
+      return pathBytes;
+    }
+
     if (widget.targetContact?.type == advTypeRepeater ||
         widget.targetContact?.type == advTypeRoom) {
       return PathHelper.roundTripPath(
@@ -142,6 +152,29 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     return PathHelper.roundTripPath(pathBytes, stride: widget.pathHashByteWidth);
   }
 
+  Future<void> _editTracePath() async {
+    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
+    final current = _manualPath ?? widget.path;
+    final initial = PathHelper.formatPathHex(
+      current,
+      stride: widget.pathHashByteWidth,
+    );
+
+    final result = await PathSelectionDialog.show(
+      context,
+      availableContacts: connector.allContacts,
+      initialPath: initial.isEmpty ? null : initial,
+      pathHashByteWidth: widget.pathHashByteWidth,
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _manualPath = result;
+      });
+      _doPathTrace();
+    }
+  }
+
   Future<void> _doPathTrace() async {
     if (mounted) {
       setState(() {
@@ -150,9 +183,10 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       });
     }
 
+    final base = _manualPath ?? widget.path;
     final pathTmp = widget.reversePathAround
-        ? PathHelper.reverseHops(widget.path, stride: widget.pathHashByteWidth)
-        : widget.path;
+        ? PathHelper.reverseHops(base, stride: widget.pathHashByteWidth)
+        : base;
 
     final path = widget.flipPathAround ? buildPath(pathTmp) : pathTmp;
 
@@ -459,6 +493,11 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
             ),
             centerTitle: false,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.edit_road),
+                onPressed: _isLoading ? null : _editTracePath,
+                tooltip: context.l10n.chat_setCustomPath,
+              ),
               IconButton(
                 icon: _isLoading
                     ? const SizedBox(

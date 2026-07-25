@@ -104,6 +104,26 @@ class PathHelper {
     return writer.toBytes();
   }
 
+  /// Whether [pathBytes] is already a complete round-trip route: its hop
+  /// sequence is a palindrome of at least three hops (e.g. A2 → F5 → A2).
+  ///
+  /// Such a path already traces out to a turnaround and back on its own, so it
+  /// must be sent verbatim — passing it through [roundTripPath] would append a
+  /// second return trip and make every hop report its SNR twice.
+  static bool isRoundTrip(List<int> pathBytes, {int stride = 1}) {
+    final hops = getHops(pathBytes, stride: stride);
+    if (hops.length < 3) return false;
+    for (int i = 0, j = hops.length - 1; i < j; i++, j--) {
+      final a = hops[i];
+      final b = hops[j];
+      if (a.length != b.length) return false;
+      for (int k = 0; k < a.length; k++) {
+        if (a[k] != b[k]) return false;
+      }
+    }
+    return true;
+  }
+
   /// Parses user-entered comma-separated hop prefixes ("AA77, A277") into
   /// path bytes. Each token must supply [stride] bytes (stride × 2 hex
   /// chars); characters beyond the prefix are ignored. Tokens that are too
