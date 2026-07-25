@@ -1,32 +1,93 @@
 import 'dart:convert';
-import 'dart:typed_data';
+
+import 'package:drift/drift.dart';
 
 import '../models/contact.dart';
 import '../helpers/path_helper.dart';
+import 'app_database.dart';
 import 'prefs_manager.dart';
 
 class ContactDiscoveryStore {
   static const String _keyPrefix = 'discovered_contacts';
 
-  Future<List<Contact>> loadContacts() async {
-    final prefs = PrefsManager.instance;
-    final jsonStr = prefs.getString(_keyPrefix);
-    if (jsonStr == null) return [];
+  /// Discovery results are shared across radios (legacy semantics) — a
+  /// fixed scope keeps the schema uniform with the node-scoped caches.
+  static const String _scope = 'global';
 
-    try {
-      final jsonList = jsonDecode(jsonStr) as List<dynamic>;
-      return jsonList
-          .map((entry) => _fromJson(entry as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
+  AppDatabase get _db => AppDatabase.instance;
+
+  Future<List<Contact>> loadContacts() async {
+    await _importLegacyBlob();
+    final rows =
+        await (_db.select(_db.discoveredContactRows)
+              ..where((r) => r.nodeScope.equals(_scope)))
+            .get();
+    final contacts = <Contact>[];
+    for (final row in rows) {
+      try {
+        contacts.add(
+          _fromJson(jsonDecode(row.payload) as Map<String, dynamic>),
+        );
+      } catch (_) {}
     }
+    return contacts;
   }
 
   Future<void> saveContacts(List<Contact> contacts) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.discoveredContactRows)
+            ..where((r) => r.nodeScope.equals(_scope)))
+          .go();
+      await _db.batch((b) {
+        b.insertAll(
+          _db.discoveredContactRows,
+          [
+            for (final contact in contacts)
+              DiscoveredContactRowsCompanion.insert(
+                nodeScope: _scope,
+                publicKeyHex: contact.publicKeyHex,
+                payload: jsonEncode(_toJson(contact)),
+              ),
+          ],
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
+  }
+
+  /// One-time import of the legacy prefs blob.
+  Future<void> _importLegacyBlob() async {
     final prefs = PrefsManager.instance;
-    final jsonList = contacts.map(_toJson).toList();
-    await prefs.setString(_keyPrefix, jsonEncode(jsonList));
+    final jsonStr = prefs.getString(_keyPrefix);
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      final existing =
+          await (_db.select(_db.discoveredContactRows)
+                ..where((r) => r.nodeScope.equals(_scope))
+                ..limit(1))
+              .getSingleOrNull();
+      if (existing == null) {
+        try {
+          final jsonList = jsonDecode(jsonStr) as List<dynamic>;
+          await _db.batch((b) {
+            b.insertAll(
+              _db.discoveredContactRows,
+              [
+                for (final entry in jsonList)
+                  DiscoveredContactRowsCompanion.insert(
+                    nodeScope: _scope,
+                    publicKeyHex: _fromJson(
+                      entry as Map<String, dynamic>,
+                    ).publicKeyHex,
+                    payload: jsonEncode(entry),
+                  ),
+              ],
+              mode: InsertMode.insertOrIgnore,
+            );
+          });
+        } catch (_) {}
+      }
+    }
+    await prefs.remove(_keyPrefix);
   }
 
   Map<String, dynamic> _toJson(Contact contact) {

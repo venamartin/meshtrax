@@ -248,7 +248,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
 
     if (item.channel != null) {
       final channel = item.channel!;
-      final isMuted = settingsService.isChannelMuted(channel.name);
+      final isMuted = settingsService.isChannelMuted(channel.idKey) ||
+          settingsService.isChannelMuted(channel.name) ||
+          settingsService.isChannelMuted(channel.displayName);
       
       showModalBottomSheet(
         context: context,
@@ -285,9 +287,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   if (isMuted) {
+                    // Remove every legacy spelling too, or the mute lingers.
+                    await settingsService.unmuteChannel(channel.idKey);
                     await settingsService.unmuteChannel(channel.name);
+                    await settingsService.unmuteChannel(channel.displayName);
                   } else {
-                    await settingsService.muteChannel(channel.name);
+                    await settingsService.muteChannel(channel.idKey);
                   }
                 },
               ),
@@ -550,12 +555,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
       builder: (context, connector, child) {
         final List<_ChatListItem> chatItems = [];
 
-        // Add Active Contacts (exclude repeaters)
+        // Add Active Contacts (exclude repeaters) — "latest" comes from the
+        // watched SQL query, so ordering can never disagree with the DB.
         for (final contact in connector.contacts) {
           if (contact.type == advTypeRepeater) continue;
-          final messages = connector.getMessages(contact);
-          if (messages.isNotEmpty) {
-            final lastMessage = messages.last;
+          final lastMessage = connector.latestContactMessage(contact);
+          if (lastMessage != null) {
             final contactName = contact.name.isEmpty ? 'Unknown' : contact.name;
             final subtitle = lastMessage.isOutgoing ? 'You: ${lastMessage.text}' : lastMessage.text;
             chatItems.add(
@@ -571,11 +576,11 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           }
         }
 
-        // Add Active Channels
+        // Add Active Channels — "latest" comes from the watched SQL query,
+        // so ordering can never disagree with the database.
         for (final channel in connector.channels) {
-          final messages = connector.getChannelMessages(channel);
-          if (messages.isNotEmpty) {
-            final lastMessage = messages.last;
+          final lastMessage = connector.latestChannelMessage(channel);
+          if (lastMessage != null) {
             final subtitle = lastMessage.isOutgoing ? 'You: ${lastMessage.text}' : '${lastMessage.senderName}: ${lastMessage.text}';
             chatItems.add(
               _ChatListItem(

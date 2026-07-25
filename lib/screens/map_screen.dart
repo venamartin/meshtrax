@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -355,7 +356,13 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         );
                       }
-                      for (final c in contactsWithLocation) {
+                      final sortedContacts = List.of(contactsWithLocation)
+                        ..sort(
+                          (a, b) => a.name.toLowerCase().compareTo(
+                            b.name.toLowerCase(),
+                          ),
+                        );
+                      for (final c in sortedContacts) {
                         candidates.add(
                           LineOfSightEndpoint(
                             label: c.name,
@@ -1263,10 +1270,21 @@ class _MapScreenState extends State<MapScreen> {
 
   List<_SharedMarker> _collectSharedMarkers(MeshCoreConnector connector) {
     final markers = <_SharedMarker>[];
+    // Contact and channel messages come from the database asynchronously;
+    // the refresh updates state and this rebuild picks them up.
+    unawaited(_refreshChannelMarkers(connector));
+    markers.addAll(_channelMarkers);
+    return markers;
+  }
+
+  Future<void> _collectContactMarkers(
+    MeshCoreConnector connector,
+    List<_SharedMarker> markers,
+  ) async {
     final selfName = connector.selfName ?? 'Me';
 
     for (final contact in connector.contacts) {
-      final messages = connector.getMessages(contact);
+      final messages = await connector.loadMessagesFor(contact);
       for (final message in messages) {
         final payload = _parseMarkerText(message.text);
         if (payload == null) continue;
@@ -1291,35 +1309,53 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
 
-    for (final channel in connector.channels.where((c) => !c.isEmpty)) {
-      final isPublic = _isPublicChannel(channel);
-      final messages = connector.getChannelMessages(channel);
-      for (final message in messages) {
-        final payload = _parseMarkerText(message.text);
-        if (payload == null) continue;
-        final id = _buildMarkerId(
-          sourceId: 'channel:${channel.index}',
-          timestamp: message.timestamp,
-          text: message.text,
-        );
-        markers.add(
-          _SharedMarker(
-            id: id,
-            position: payload.position,
-            label: payload.label,
-            flags: payload.flags,
-            fromName: message.senderName,
-            sourceLabel: channel.name.isEmpty
-                ? 'Channel ${channel.index}'
-                : channel.name,
-            isChannel: true,
-            isPublicChannel: isPublic,
-          ),
-        );
-      }
-    }
+  }
 
-    return markers;
+  List<_SharedMarker> _channelMarkers = const [];
+  bool _refreshingChannelMarkers = false;
+
+  Future<void> _refreshChannelMarkers(MeshCoreConnector connector) async {
+    if (_refreshingChannelMarkers) return;
+    _refreshingChannelMarkers = true;
+    try {
+      final markers = <_SharedMarker>[];
+      await _collectContactMarkers(connector, markers);
+      for (final channel in connector.channels.where((c) => !c.isEmpty)) {
+        final isPublic = _isPublicChannel(channel);
+        final messages = await connector.loadChannelMessagesFor(channel);
+        for (final message in messages) {
+          final payload = _parseMarkerText(message.text);
+          if (payload == null) continue;
+          final id = _buildMarkerId(
+            sourceId: 'channel:${channel.index}',
+            timestamp: message.timestamp,
+            text: message.text,
+          );
+          markers.add(
+            _SharedMarker(
+              id: id,
+              position: payload.position,
+              label: payload.label,
+              flags: payload.flags,
+              fromName: message.senderName,
+              sourceLabel: channel.name.isEmpty
+                  ? 'Channel ${channel.index}'
+                  : channel.name,
+              isChannel: true,
+              isPublicChannel: isPublic,
+            ),
+          );
+        }
+      }
+      if (!mounted) return;
+      final newIds = markers.map((m) => m.id).toSet();
+      final oldIds = _channelMarkers.map((m) => m.id).toSet();
+      if (newIds.length != oldIds.length || !newIds.containsAll(oldIds)) {
+        setState(() => _channelMarkers = markers);
+      }
+    } finally {
+      _refreshingChannelMarkers = false;
+    }
   }
 
   _MarkerPayload? _parseMarkerText(String text) {

@@ -83,6 +83,8 @@ keystore.properties
 *.g.dart
 *.freezed.dart
 *.mocks.dart
+# l10n untranslated-strings report emitted by flutter gen-l10n
+untranslated.json
 neighbor-graph-interactive.html
 neighbor-graph-static.pdf
 
@@ -97,3 +99,4 @@ neighbor-graph-static.pdf
 scratch/
 MeshCore/
 notes.md
+!lib/storage/app_database.g.dart

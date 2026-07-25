@@ -1,11 +1,17 @@
 import 'dart:convert';
-import 'dart:typed_data';
+
+import 'package:drift/drift.dart';
 
 import '../models/contact.dart';
 import '../utils/app_logger.dart';
 import '../helpers/path_helper.dart';
+import 'app_database.dart';
 import 'prefs_manager.dart';
 
+/// Cached mirror of the radio's saved-contact list, one row per contact (v5).
+/// The RADIO is the source of truth — whole-list replacement on sync is the
+/// correct write for a mirror. (Message history is different: it is user
+/// data with no backstop, and its stores never delete.)
 class ContactStore {
   static const String _keyPrefix = 'contacts';
 
@@ -15,40 +21,29 @@ class ContactStore {
 
   String get keyFor => '$_keyPrefix$publicKeyHex';
 
+  AppDatabase get _db => AppDatabase.instance;
+
   Future<List<Contact>> loadContacts() async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn('Public key hex is not set. Cannot load contacts.');
       return [];
     }
-    final prefs = PrefsManager.instance;
-    String? jsonString = prefs.getString(keyFor);
-    if (jsonString == null || jsonString.isEmpty) {
-      // Attempt migration from legacy unscoped key on first load
-      final legacyJsonString = prefs.getString(_keyPrefix);
-      prefs.remove(_keyPrefix);
-      if (legacyJsonString != null && legacyJsonString.isNotEmpty) {
-        appLogger.info(
-          'Migrating contacts from legacy key $_keyPrefix to scoped key $keyFor',
+    await _importLegacyBlobs();
+    final rows =
+        await (_db.select(_db.contactRows)
+              ..where((r) => r.nodeScope.equals(publicKeyHex)))
+            .get();
+    final contacts = <Contact>[];
+    for (final row in rows) {
+      try {
+        contacts.add(
+          _fromJson(jsonDecode(row.payload) as Map<String, dynamic>),
         );
-        await prefs.setString(keyFor, legacyJsonString);
-        jsonString = legacyJsonString;
+      } catch (e) {
+        appLogger.warn('Skipping unreadable cached contact row: $e');
       }
     }
-    if (jsonString == null || jsonString.isEmpty) {
-      jsonString = prefs.getString(keyFor);
-    }
-    if (jsonString == null || jsonString.isEmpty) {
-      return [];
-    }
-
-    try {
-      final jsonList = jsonDecode(jsonString) as List<dynamic>;
-      return jsonList
-          .map((entry) => _fromJson(entry as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
-    }
+    return contacts;
   }
 
   Future<void> saveContacts(List<Contact> contacts) async {
@@ -56,9 +51,66 @@ class ContactStore {
       appLogger.warn('Public key hex is not set. Cannot save contacts.');
       return;
     }
+    await _db.transaction(() async {
+      await (_db.delete(_db.contactRows)
+            ..where((r) => r.nodeScope.equals(publicKeyHex)))
+          .go();
+      await _db.batch((b) {
+        b.insertAll(
+          _db.contactRows,
+          [
+            for (final contact in contacts)
+              ContactRowsCompanion.insert(
+                nodeScope: publicKeyHex,
+                publicKeyHex: contact.publicKeyHex,
+                payload: jsonEncode(_toJson(contact)),
+              ),
+          ],
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
+  }
+
+  /// One-time import of the prefs JSON blobs (scoped first, then the
+  /// ancient unscoped key); the keys are removed either way.
+  Future<void> _importLegacyBlobs() async {
     final prefs = PrefsManager.instance;
-    final jsonList = contacts.map(_toJson).toList();
-    await prefs.setString(keyFor, jsonEncode(jsonList));
+    for (final key in [keyFor, _keyPrefix]) {
+      final jsonString = prefs.getString(key);
+      if (jsonString != null && jsonString.isNotEmpty) {
+        final existing =
+            await (_db.select(_db.contactRows)
+                  ..where((r) => r.nodeScope.equals(publicKeyHex))
+                  ..limit(1))
+                .getSingleOrNull();
+        if (existing == null) {
+          try {
+            final jsonList = jsonDecode(jsonString) as List<dynamic>;
+            await _db.batch((b) {
+              b.insertAll(
+                _db.contactRows,
+                [
+                  for (final entry in jsonList)
+                    ContactRowsCompanion.insert(
+                      nodeScope: publicKeyHex,
+                      publicKeyHex: _fromJson(
+                        entry as Map<String, dynamic>,
+                      ).publicKeyHex,
+                      payload: jsonEncode(entry),
+                    ),
+                ],
+                mode: InsertMode.insertOrIgnore,
+              );
+            });
+            appLogger.info('Imported contact cache from legacy key $key');
+          } catch (e) {
+            appLogger.warn('Failed contact cache import from $key: $e');
+          }
+        }
+      }
+      await prefs.remove(key);
+    }
   }
 
   Map<String, dynamic> _toJson(Contact contact) {

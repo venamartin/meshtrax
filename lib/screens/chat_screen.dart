@@ -73,35 +73,56 @@ class _ChatScreenState extends State<ChatScreen> {
   DateTime? _lastTextSendAt;
   int _previousMessageCount = 0;
 
+  /// The watched database query is the screen's only message source
+  /// (Phase 3d) — ordering and paging belong to SQL.
+  List<Message> _messages = const [];
+  StreamSubscription<List<Message>>? _messagesSub;
+  int _watchLimit = 200;
+  bool _didInitialAnchor = false;
+
+  void _subscribeMessages(MeshCoreConnector connector) {
+    _messagesSub?.cancel();
+    _messagesSub = connector
+        .watchConversation(widget.contact, limit: _watchLimit)
+        .listen((messages) {
+      if (!mounted) return;
+      setState(() {
+        _messages = messages;
+        if (!_didInitialAnchor) {
+          _didInitialAnchor = true;
+          _previousMessageCount = messages.length;
+          final settings = context.read<AppSettingsService>().settings;
+          final unread = widget.unreadCount ??
+              connector
+                  .getUnreadCountForContactKey(widget.contact.publicKeyHex);
+          if (settings.jumpToOldestUnread && unread > 0) {
+            _firstUnreadMessage = _findOldestUnreadAnchor(messages, unread);
+            if (_firstUnreadMessage != null) {
+              final idx =
+                  messages.reversed.toList().indexOf(_firstUnreadMessage!);
+              if (idx != -1) {
+                _initialScrollIndex = idx;
+                _isAtBottom = false;
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
-    // Calculate initial scroll synchronously so it snaps instantly on frame 1
     final connector = context.read<MeshCoreConnector>();
-    final settings = context.read<AppSettingsService>().settings;
-    final keyHex = widget.contact.publicKeyHex;
-    final unread = widget.unreadCount ?? connector.getUnreadCountForContactKey(keyHex);
-    _previousMessageCount = connector.getMessages(widget.contact).length;
-
-    if (settings.jumpToOldestUnread && unread > 0) {
-      final messages = connector.getMessages(widget.contact);
-      _firstUnreadMessage = _findOldestUnreadAnchor(messages, unread);
-      if (_firstUnreadMessage != null) {
-        final reversedMessages = messages.reversed.toList();
-        final idx = reversedMessages.indexOf(_firstUnreadMessage!);
-        if (idx != -1) {
-          _initialScrollIndex = idx;
-          _isAtBottom = false;
-        }
-      }
-    }
+    _subscribeMessages(connector);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      connector.setActiveContact(keyHex);
+      connector.setActiveContact(widget.contact.publicKeyHex);
       _connector = connector;
     });
 
@@ -155,11 +176,9 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _isAtBottom = isAtBottom);
     }
 
-    if (_connector != null) {
-      final itemCount = _connector!.getMessages(widget.contact).length;
-      if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
-        _loadOlderMessages();
-      }
+    final itemCount = _messages.length;
+    if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
+      _loadOlderMessages();
     }
   }
 
@@ -179,10 +198,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _loadOlderMessages() async {
     if (_isLoadingOlder) return;
+    // Paging is a bigger LIMIT on the watched query — SQL does the rest.
+    if (_messages.length < _watchLimit) return;
     setState(() => _isLoadingOlder = true);
 
-    final connector = context.read<MeshCoreConnector>();
-    await connector.loadOlderMessages(widget.contact.publicKeyHex);
+    _watchLimit += 200;
+    _subscribeMessages(context.read<MeshCoreConnector>());
 
     if (mounted) {
       setState(() => _isLoadingOlder = false);
@@ -191,6 +212,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _messagesSub?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
@@ -487,9 +509,7 @@ class _ChatScreenState extends State<ChatScreen> {
           final contactBlocked =
               settingsService.isContactBlocked(widget.contact.publicKeyHex);
           // Hide CLI plumbing that older versions stored as chat messages.
-          final visibleMessages = connector
-              .getMessages(widget.contact)
-              .where((m) => !m.isCli);
+          final visibleMessages = _messages.where((m) => !m.isCli);
           final messages = contactBlocked
               ? visibleMessages.where((m) => m.isOutgoing).toList()
               : visibleMessages.toList();

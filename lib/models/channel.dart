@@ -20,6 +20,11 @@ class Channel {
 
   String get pskHex => _bytesToHex(psk);
 
+  /// Stable identity: a channel IS its key material. Slot indexes are radio
+  /// bookkeeping that changes on delete/re-add — never persist anything by
+  /// index, always by this key.
+  String get idKey => pskHex;
+
   bool get isEmpty => name.isEmpty && psk.every((b) => b == 0);
 
   bool get isPublicChannel => pskHex == publicChannelPsk;

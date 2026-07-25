@@ -82,12 +82,13 @@ void main() async {
   );
 
   await connector.loadContactCache();
-  await connector.loadChannelSettings();
+  // Channel settings and messages are keyed by channel identity, so the
+  // cached channel list must load first.
   await connector.loadCachedChannels();
+  await connector.loadChannelSettings();
 
-  // Load persisted channel messages
-  await connector.loadAllChannelMessages();
-  await connector.loadUnreadState();
+  // Channel messages live in the database and reach the UI through watched
+  // queries — nothing to preload (Phase 3d).
 
   runApp(
     MeshTraxApp(

@@ -1,6 +1,8 @@
 import '../utils/app_logger.dart';
 import 'prefs_manager.dart';
 
+/// Stays on prefs by design (see docs/phase3d-cut-plan.md §7): scalar
+/// settings keyed by channel identity, not entity data.
 class ChannelSettingsStore {
   static const String _keyPrefix = 'channel_smaz_';
 
@@ -10,40 +12,26 @@ class ChannelSettingsStore {
 
   String get keyFor => '$_keyPrefix$publicKeyHex';
 
-  Future<bool> loadSmazEnabled(int channelIndex) async {
+  /// Smaz flag for a channel identity (Channel.idKey). Keyed by identity so
+  /// a channel created in a reused radio slot never inherits the previous
+  /// occupant's compression setting.
+  Future<bool> loadSmazEnabled(String idKey) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn(
         'Public key hex is not set. Cannot load channel settings.',
       );
       return false;
     }
-    final prefs = PrefsManager.instance;
-    final key = '$keyFor$channelIndex';
-    final oldKey = '$_keyPrefix$channelIndex';
-    bool? enabled = prefs.getBool(oldKey);
-    if (enabled == null) {
-      // Attempt migration from legacy unscoped key on first load
-      enabled = prefs.getBool(oldKey);
-      prefs.remove(oldKey);
-      if (enabled != null) {
-        appLogger.info(
-          'Migrating channel settings from legacy key $oldKey to scoped key $key',
-        );
-        await prefs.setBool(key, enabled);
-      }
-    }
-    return enabled ?? false;
+    return PrefsManager.instance.getBool('${keyFor}id_$idKey') ?? false;
   }
 
-  Future<void> saveSmazEnabled(int channelIndex, bool enabled) async {
+  Future<void> saveSmazEnabled(String idKey, bool enabled) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn(
         'Public key hex is not set. Cannot save channel settings.',
       );
       return;
     }
-    final prefs = PrefsManager.instance;
-    final key = '$keyFor$channelIndex';
-    await prefs.setBool(key, enabled);
+    await PrefsManager.instance.setBool('${keyFor}id_$idKey', enabled);
   }
 }
