@@ -12,6 +12,7 @@ import '../models/contact.dart';
 import '../helpers/path_resolver.dart';
 import '../models/app_settings.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/snack_bar_builder.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/utils/app_logger.dart';
@@ -183,6 +184,13 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       });
     }
 
+    // Fallback timeout: surfaces a failure even when the device never
+    // acknowledges the request (no respCodeSent), which otherwise leaves the
+    // screen showing the previous trace forever. The respCodeSent handler
+    // replaces this with the device-provided timeout.
+    _timeoutTimer?.cancel();
+    _timeoutTimer = Timer(const Duration(seconds: 30), _markTraceFailed);
+
     final base = _manualPath ?? widget.path;
     final pathTmp = widget.reversePathAround
         ? PathHelper.reverseHops(base, stride: widget.pathHashByteWidth)
@@ -207,6 +215,32 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     connector.sendFrame(frame);
   }
 
+  // Central failure path: stop the spinner, flag the empty-state text, and
+  // surface a toast so a failed trace is visible even when a previous trace
+  // is already on screen (a refresh/edit that fails). Guards against stacking
+  // duplicate toasts within a single attempt.
+  void _markTraceFailed() {
+    if (!mounted) return;
+    final alreadyFailed = _failed2Loaded;
+    setState(() {
+      _isLoading = false;
+      _failed2Loaded = true;
+      // Drop any stale result so a failed re-trace doesn't keep showing the
+      // previous route as if it were current — the empty-state text plus the
+      // toast make the failure unmistakable even if the toast is missed.
+      _hasData = false;
+      _traceData = null;
+      _points = <LatLng>[];
+      _polylines = [];
+    });
+    if (!alreadyFailed) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.pathTrace_failed),
+      );
+    }
+  }
+
   void _setupFrameListener() {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     Uint8List tagData = Uint8List(4);
@@ -226,23 +260,13 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
           _timeoutTimer?.cancel();
           _timeoutTimer = Timer(
             Duration(milliseconds: timeoutMilliseconds),
-            () {
-              if (!mounted) return;
-              setState(() {
-                _isLoading = false;
-                _failed2Loaded = true;
-              });
-            },
+            _markTraceFailed,
           );
         }
 
         if (code == respCodeErr) {
           _timeoutTimer?.cancel();
-          if (!mounted) return;
-          setState(() {
-            _isLoading = false;
-            _failed2Loaded = true;
-          });
+          _markTraceFailed();
         }
 
         // Check if it's a binary response
@@ -258,13 +282,9 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
         }
       } catch (e) {
         _timeoutTimer?.cancel();
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _failed2Loaded = true;
-        });
         // Handle any parsing errors gracefully
         appLogger.error('Error parsing frame: $e', tag: 'PathTraceMapScreen');
+        _markTraceFailed();
       }
     });
   }
@@ -459,12 +479,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
         'Error handling trace response: $e',
         tag: 'PathTraceMapScreen',
       );
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _failed2Loaded = true;
-        });
-      }
+      _markTraceFailed();
     }
   }
 

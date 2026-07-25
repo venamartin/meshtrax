@@ -283,6 +283,11 @@ class MeshCoreConnector extends ChangeNotifier {
   DateTime _lastChannelMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _radioQuietMs = 3000;
   static const int _radioQuietMaxWaitMs = 3000;
+  // Channel sends fire right after the inbound burst the user was reading, so
+  // they need a longer window to find a quiet gap before transmitting into the
+  // still-propagating mesh. DMs keep the shorter ceiling: their 15s pre-sent
+  // safety timer leaves little slack for a long pre-send wait.
+  static const int _channelRadioQuietMaxWaitMs = 8000;
 
   /// When companion radio stats are unavailable, keep the legacy fixed backoff.
   static const int _contactMsgBackoffFallbackMs = 5000;
@@ -912,7 +917,10 @@ class MeshCoreConnector extends ChangeNotifier {
     return bumpAt.isAfter(lastInboundRxTime) ? bumpAt : lastInboundRxTime;
   }
 
-  Future<void> _waitForRadioQuiet({required DateTime lastInboundRxTime}) async {
+  Future<void> _waitForRadioQuiet({
+    required DateTime lastInboundRxTime,
+    int maxQuietWaitMs = _radioQuietMaxWaitMs,
+  }) async {
     // Wait for backoff after inbound traffic / RF airtime (avoid collision with
     // mesh propagation). Elapsed time uses the dot's airtime bump when newer.
     final backoffTargetMs = _contactMessageBackoffTargetMs();
@@ -934,7 +942,7 @@ class MeshCoreConnector extends ChangeNotifier {
     if (msSinceRx >= _radioQuietMs) return;
 
     final deadline = DateTime.now().add(
-      const Duration(milliseconds: _radioQuietMaxWaitMs),
+      Duration(milliseconds: maxQuietWaitMs),
     );
     while (DateTime.now().isBefore(deadline)) {
       final quiet = DateTime.now().difference(_lastRadioRxTime).inMilliseconds;
@@ -945,7 +953,7 @@ class MeshCoreConnector extends ChangeNotifier {
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
     debugPrint(
-      'Radio quiet wait exceeded ${_radioQuietMaxWaitMs}ms, sending anyway',
+      'Radio quiet wait exceeded ${maxQuietWaitMs}ms, sending anyway',
     );
   }
 
@@ -3138,7 +3146,10 @@ class MeshCoreConnector extends ChangeNotifier {
       // Send the reaction to the device (don't add as a visible message)
       final reactionQueueId = _nextReactionSendQueueId();
       _pendingChannelSentQueue.add(reactionQueueId);
-      await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
+      await _waitForRadioQuiet(
+      lastInboundRxTime: _lastChannelMsgRxTime,
+      maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
+    );
       await sendFrame(
         buildSendChannelTextMsgFrame(channel.index, text),
         channelSendQueueId: reactionQueueId,
@@ -3165,7 +3176,10 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
 
     final outboundText = prepareChannelOutboundText(channel.index, text);
-    await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
+    await _waitForRadioQuiet(
+      lastInboundRxTime: _lastChannelMsgRxTime,
+      maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
+    );
     await sendFrame(
       buildSendChannelTextMsgFrame(channel.index, outboundText),
       channelSendQueueId: message.messageId,
@@ -3231,7 +3245,10 @@ class MeshCoreConnector extends ChangeNotifier {
     }
 
     final outboundText = prepareChannelOutboundText(channelIndex, wireText);
-    await _waitForRadioQuiet(lastInboundRxTime: _lastChannelMsgRxTime);
+    await _waitForRadioQuiet(
+      lastInboundRxTime: _lastChannelMsgRxTime,
+      maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
+    );
     await sendFrame(
       buildSendChannelTextMsgFrame(channelIndex, outboundText),
       channelSendQueueId: messageId,

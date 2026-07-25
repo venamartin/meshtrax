@@ -95,8 +95,8 @@ class RepeaterCommandService {
         messageBytes: responseBytes,
       );
       // CLI commands require a full round trip (request + response) plus device processing time.
-      // We multiply the one-way delivery timeout by 3 and enforce a minimum of 15 seconds.
-      final timeoutMs = math.max(15000, baseTimeoutMs * 3);
+      // We multiply the one-way delivery timeout by 3 and enforce a minimum of 8 seconds.
+      final timeoutMs = math.max(8000, baseTimeoutMs * 3);
       final timeoutSeconds = (timeoutMs / 1000).ceil();
       await _connector.sendFrame(frame);
       _commandTimeouts[commandId]?.cancel();
