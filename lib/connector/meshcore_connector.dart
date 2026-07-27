@@ -640,6 +640,11 @@ class MeshCoreConnector extends ChangeNotifier {
   // a sync pass completes; reactions wait as raw text (messageId == null).
   final List<({String idKey, String? messageId, String text})>
   _pendingUnverifiedSends = [];
+  // Queued sends have no transmit timer of their own — the 30s send timeout is
+  // armed only once a frame goes out. Without this a row whose map never
+  // re-verifies sits on the pending clock forever, with no failure to retry.
+  final Map<String, Timer> _unverifiedSendTimers = {};
+  static const Duration _unverifiedSendMaxWait = Duration(seconds: 60);
   // Re-attempts a channel sync that died with the connection still up —
   // without it the session stays send-gated until the next reconnect.
   Timer? _channelSyncRetryTimer;
@@ -3057,8 +3062,28 @@ class MeshCoreConnector extends ChangeNotifier {
     for (final send in stranded) {
       final messageId = send.messageId;
       if (messageId == null) continue; // reactions: nothing filed to fail
+      _cancelUnverifiedSendWatchdog(messageId);
       unawaited(_failQueuedSend(send.idKey, messageId));
     }
+  }
+
+  /// Fails a queued send that no sync pass ever came to transmit — a silently
+  /// pending row is indistinguishable from one in flight, so it must settle.
+  void _armUnverifiedSendWatchdog(String idKey, String messageId) {
+    _unverifiedSendTimers[messageId]?.cancel();
+    _unverifiedSendTimers[messageId] = Timer(_unverifiedSendMaxWait, () {
+      _unverifiedSendTimers.remove(messageId);
+      _pendingUnverifiedSends.removeWhere((s) => s.messageId == messageId);
+      appLogger.warn(
+        'Queued send $messageId never transmitted — failing it',
+        tag: 'Connector',
+      );
+      unawaited(_failQueuedSend(idKey, messageId));
+    });
+  }
+
+  void _cancelUnverifiedSendWatchdog(String messageId) {
+    _unverifiedSendTimers.remove(messageId)?.cancel();
   }
 
   Future<void> sendChannelMessage(
@@ -3107,6 +3132,7 @@ class MeshCoreConnector extends ChangeNotifier {
       _pendingUnverifiedSends.add(
         (idKey: channel.idKey, messageId: message.messageId, text: text),
       );
+      _armUnverifiedSendWatchdog(channel.idKey, message.messageId);
       appLogger.warn(
         'Channel map unverified — queued send for ${channel.displayName}',
         tag: 'Connector',
@@ -3609,6 +3635,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     notifyListeners();
   }
 
+  /// A loaded map that is no longer VERIFIED is not loaded for our purposes:
+  /// every disconnect invalidates the slot->identity map, and the reconnect
+  /// path fetches without force. Skipping there left the map permanently
+  /// unverified, which gates every channel send for the rest of the session.
+  @visibleForTesting
+  static bool shouldSkipChannelFetch({
+    required bool hasLoadedChannels,
+    required bool channelsVerified,
+    required bool force,
+  }) => hasLoadedChannels && channelsVerified && !force;
+
   Future<void> getChannels({int? maxChannels, bool force = false}) async {
     if (!isConnected) return;
     if (_isSyncingChannels) {
@@ -3625,7 +3662,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     // Skip fetching if already loaded and not forced
-    if (_hasLoadedChannels && !force) {
+    if (shouldSkipChannelFetch(
+      hasLoadedChannels: _hasLoadedChannels,
+      channelsVerified: _channelsVerified,
+      force: force,
+    )) {
       debugPrint(
         '[ChannelSync] Channels already loaded, skipping fetch (use force=true to reload)',
       );
@@ -3764,6 +3805,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       for (final send in queued) {
         final target = _liveChannelByIdKey(send.idKey);
         final messageId = send.messageId;
+        if (messageId != null) _cancelUnverifiedSendWatchdog(messageId);
         if (target == null) {
           appLogger.warn(
             'Queued send dropped: channel identity no longer on radio',
@@ -6557,11 +6599,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _maxChannels = _defaultMaxChannels;
     _isSyncingQueuedMessages = false;
     _queuedMessageSyncInFlight = false;
+    _didInitialQueueSync = false;
+    _pendingQueueSync = false;
+    _pendingChannelSyncAfterQueueSync = false;
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
+    _isLoadingChannels = false;
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
-    // channel sync completes on the next connection.
+    // channel sync completes on the next connection. hasLoaded must fall with
+    // verified: the reconnect fetches without force, so leaving it set skips
+    // the sync entirely and the map never re-verifies.
+    _hasLoadedChannels = false;
     _channelsVerified = false;
     _failStrandedUnverifiedSends();
     // Pending buffers KEPT (see disconnect()): dropping them lost radio-queue
