@@ -34,6 +34,7 @@ import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/message_status_icon.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
 import 'map_screen.dart';
@@ -1064,13 +1065,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             ),
           ],
         ),
-        if (message.reactions.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Padding(
-            padding: EdgeInsets.only(left: isOutgoing ? 0 : 48),
-            child: _buildReactionsDisplay(message),
+        if (message.reactions.isNotEmpty)
+          // Chips ride up over the bubble's bottom edge, as in most
+          // messaging apps, instead of floating below it.
+          Transform.translate(
+            offset: const Offset(0, -kReactionOverlap),
+            child: Padding(
+              padding: EdgeInsets.only(left: isOutgoing ? 0 : 48),
+              child: _buildReactionsDisplay(message),
+            ),
           ),
-        ],
       ],
     );
 
@@ -1251,34 +1255,42 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         final emoji = entry.key;
         final count = entry.value;
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.3),
-              width: 1,
-            ),
+        return GestureDetector(
+          onTap: () => showReactionDetails(
+            context,
+            reactions: message.reactions,
+            senders: message.reactionSenders,
+            initialEmoji: emoji,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 16)),
-              if (count > 1) ...[
-                const SizedBox(width: 4),
-                Text(
-                  '$count',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 18)),
+                if (count > 1) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         );
       }).toList(),

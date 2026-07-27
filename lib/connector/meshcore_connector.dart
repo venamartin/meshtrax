@@ -3119,10 +3119,13 @@ class MeshCoreConnector extends ChangeNotifier {
     // Check if this is a reaction - if so, process it immediately instead of adding as a message
     final reactionInfo = ReactionHelper.parseReaction(text);
     if (reactionInfo != null) {
-      // Check if we've already processed this reaction
+      // Check if we've already processed this reaction. Keyed by reactor too:
+      // two people reacting with the same emoji are two reactions, not a
+      // duplicate of one.
+      final reactorName = _selfName ?? 'Me';
       _processedChannelReactions.putIfAbsent(channel.idKey, () => {});
       final reactionIdentifier =
-          '${reactionInfo.targetHash}_${reactionInfo.emoji}';
+          '${reactionInfo.targetHash}_${reactionInfo.emoji}_$reactorName';
 
       if (_processedChannelReactions[channel.idKey]!.contains(
         reactionIdentifier,
@@ -3135,7 +3138,7 @@ class MeshCoreConnector extends ChangeNotifier {
       final history = await _channelMessageStore.loadChannelMessages(
         channel.idKey,
       );
-      _processReaction(history, reactionInfo);
+      _processReaction(history, reactionInfo, reactorName);
       await _channelMessageStore.upsertMessages(channel.idKey, history);
 
       // Mark this reaction as processed
@@ -5863,14 +5866,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Reactions mutate their target row; never a visible message.
     final reactionInfo = Message.parseReaction(processedMessage.text);
     if (reactionInfo != null) {
+      // Keyed by reactor: in a room two members reacting with the same emoji
+      // are two reactions, not a duplicate of one.
+      final reactorName = _resolveReactorName(pubKeyHex, processedMessage);
       _processedContactReactions.putIfAbsent(pubKeyHex, () => {});
       final reactionIdentifier =
-          '${reactionInfo.targetHash}_${reactionInfo.emoji}';
+          '${reactionInfo.targetHash}_${reactionInfo.emoji}_$reactorName';
       if (!_processedContactReactions[pubKeyHex]!.contains(
         reactionIdentifier,
       )) {
         final history = await _messageStore.loadMessages(pubKeyHex);
-        _processContactReaction(history, reactionInfo, pubKeyHex);
+        _processContactReaction(history, reactionInfo, pubKeyHex, reactorName);
         await _messageStore.upsertMessages(pubKeyHex, history);
         _processedContactReactions[pubKeyHex]!.add(reactionIdentifier);
         notifyListeners();
@@ -5897,6 +5903,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     List<Message> messages,
     ReactionInfo reactionInfo,
     String contactPubKeyHex,
+    String reactorName,
   ) {
     final contact = _contacts.cast<Contact?>().firstWhere(
       (c) => c?.publicKeyHex == contactPubKeyHex,
@@ -5907,6 +5914,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ReactionHelper.applyReaction<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
+      reactorName: reactorName,
       // Incoming reactions in 1:1: match against outgoing messages only
       shouldSkip: (msg) => isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
@@ -5914,8 +5922,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
-      updateMessage: (i, reactions) {
-        messages[i] = messages[i].copyWith(reactions: reactions);
+      getReactionSenders: (msg) => msg.reactionSenders,
+      updateMessage: (i, reactions, senders) {
+        messages[i] = messages[i].copyWith(
+          reactions: reactions,
+          reactionSenders: senders,
+        );
       },
     );
   }
@@ -5930,6 +5942,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ReactionHelper.applyReaction<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
+      reactorName: _selfName ?? 'Me',
       // Outgoing reactions in 1:1: match against incoming messages
       shouldSkip: (msg) => !isRoomServer && msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
@@ -5937,8 +5950,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _resolveContactSenderName(msg, contact, isRoomServer),
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
-      updateMessage: (i, reactions) {
-        messages[i] = messages[i].copyWith(reactions: reactions);
+      getReactionSenders: (msg) => msg.reactionSenders,
+      updateMessage: (i, reactions, senders) {
+        messages[i] = messages[i].copyWith(
+          reactions: reactions,
+          reactionSenders: senders,
+        );
       },
     );
   }
@@ -5972,6 +5989,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       }
     }
+  }
+
+  /// Who sent an incoming DM reaction: the contact itself in 1:1, or the room
+  /// member the reaction came from when the contact is a room server.
+  String _resolveReactorName(String pubKeyHex, Message reaction) {
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => c?.publicKeyHex == pubKeyHex,
+      orElse: () => null,
+    );
+    if (contact?.type == advTypeRoom) {
+      final member = allContactsUnfiltered.cast<Contact?>().firstWhere(
+        (c) =>
+            c != null &&
+            _matchesPrefix(c.publicKey, reaction.fourByteRoomContactKey),
+        orElse: () => null,
+      );
+      if (member != null) return member.name;
+    }
+    return contact?.name ?? 'Unknown';
   }
 
   String? _resolveContactSenderName(
@@ -6195,12 +6231,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Reactions mutate their target row; never a visible message.
     final reactionInfo = ChannelMessage.parseReaction(sanitizedMessage.text);
     if (reactionInfo != null) {
+      // Keyed by reactor: the same emoji from two people is two reactions,
+      // while a repeater echo of one person's reaction is still one.
+      final reactorName = sanitizedMessage.senderName;
       _processedChannelReactions.putIfAbsent(idKey, () => {});
       final reactionIdentifier =
-          '${reactionInfo.targetHash}_${reactionInfo.emoji}';
+          '${reactionInfo.targetHash}_${reactionInfo.emoji}_$reactorName';
       if (!_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
         final history = await _channelMessageStore.loadChannelMessages(idKey);
-        _processReaction(history, reactionInfo);
+        _processReaction(history, reactionInfo, reactorName);
         await _channelMessageStore.upsertMessages(idKey, history);
         _processedChannelReactions[idKey]!.add(reactionIdentifier);
         notifyListeners();
@@ -6400,6 +6439,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       messageId: base.messageId,
       packetHash: base.packetHash,
       reactions: base.reactions,
+      reactionSenders: base.reactionSenders,
       replyToMessageId: replyToMessageId,
       replyToSenderName: replyToSenderName,
       replyToText: replyToText,
@@ -6409,17 +6449,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _processReaction(
     List<ChannelMessage> messages,
     ReactionInfo reactionInfo,
+    String reactorName,
   ) {
     ReactionHelper.applyReaction<ChannelMessage>(
       messages: messages,
       reactionInfo: reactionInfo,
+      reactorName: reactorName,
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
-      updateMessage: (i, reactions) {
-        messages[i] = messages[i].copyWith(reactions: reactions);
+      getReactionSenders: (msg) => msg.reactionSenders,
+      updateMessage: (i, reactions, senders) {
+        messages[i] = messages[i].copyWith(
+          reactions: reactions,
+          reactionSenders: senders,
+        );
         notifyListeners();
       },
     );

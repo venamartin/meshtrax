@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../models/message.dart';
 import '../utils/app_logger.dart';
@@ -451,6 +452,7 @@ class MessageStore {
           ? base64Encode(msg.pathBytes)
           : null,
       'reactions': msg.reactions,
+      'reactionSenders': msg.reactionSenders,
       'reactionStatuses': msg.reactionStatuses.map(
         (key, value) => MapEntry(key, value.index),
       ),
@@ -498,6 +500,7 @@ class MessageStore {
             (key, value) => MapEntry(key, value as int),
           ) ??
           {},
+      reactionSenders: ReactionHelper.decodeSenders(json['reactionSenders']),
       reactionStatuses:
           (json['reactionStatuses'] as Map<String, dynamic>?)?.map(
             (key, value) => MapEntry(key, MessageStatus.values[value as int]),

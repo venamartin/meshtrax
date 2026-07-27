@@ -1367,6 +1367,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_addReaction => '反応を追加';
 
   @override
+  String get chat_reactionsTitle => 'Reactions';
+
+  @override
+  String get chat_reactionUnknownSender => 'Unknown';
+
+  @override
   String get chat_me => '私';
 
   @override

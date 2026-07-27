@@ -729,6 +729,8 @@
   "chat_reply": "Reply",
   "chat_newMessages": "NEW MESSAGES",
   "chat_addReaction": "Add Reaction",
+  "chat_reactionsTitle": "Reactions",
+  "chat_reactionUnknownSender": "Unknown",
   "chat_me": "Me",
   "emojiCategorySmileys": "Smileys",
   "emojiCategoryGestures": "Gestures",

@@ -8,6 +8,7 @@ import '../models/channel_message.dart';
 
 import '../helpers/smaz.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/reaction_helper.dart';
 import 'app_database.dart';
 import 'prefs_manager.dart';
 
@@ -522,6 +523,7 @@ class ChannelMessageStore {
       'replyToSenderName': msg.replyToSenderName,
       'replyToText': msg.replyToText,
       'reactions': msg.reactions,
+      'reactionSenders': msg.reactionSenders,
     };
   }
 
@@ -577,6 +579,7 @@ class ChannelMessageStore {
             (key, value) => MapEntry(key, value as int),
           ) ??
           {},
+      reactionSenders: ReactionHelper.decodeSenders(json['reactionSenders']),
     );
   }
 

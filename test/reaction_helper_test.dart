@@ -2,7 +2,119 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/helpers/reaction_helper.dart';
 import 'package:meshtrax/widgets/emoji_picker.dart';
 
+class _FakeMessage {
+  _FakeMessage(this.timestampSecs, this.senderName, this.text);
+
+  final int timestampSecs;
+  final String senderName;
+  final String text;
+  Map<String, int> reactions = {};
+  Map<String, List<String>> reactionSenders = {};
+}
+
+/// Drives applyReaction against [messages] as if [reactorName] sent it.
+bool _react(
+  List<_FakeMessage> messages,
+  String reactionText,
+  String reactorName,
+) {
+  return ReactionHelper.applyReaction<_FakeMessage>(
+    messages: messages,
+    reactionInfo: ReactionHelper.parseReaction(reactionText)!,
+    reactorName: reactorName,
+    shouldSkip: (_) => false,
+    getTimestampSecs: (m) => m.timestampSecs,
+    getSenderName: (m) => m.senderName,
+    getMessageText: (m) => m.text,
+    getReactions: (m) => m.reactions,
+    getReactionSenders: (m) => m.reactionSenders,
+    updateMessage: (i, reactions, senders) {
+      messages[i].reactions = reactions;
+      messages[i].reactionSenders = senders;
+    },
+  );
+}
+
 void main() {
+  group('applyReaction attribution', () {
+    late List<_FakeMessage> messages;
+    late String thumbsUp;
+
+    setUp(() {
+      messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+      final hash = ReactionHelper.computeReactionHash(
+        1234567890,
+        'Alice',
+        'Hello',
+      );
+      thumbsUp = 'r:$hash:${ReactionHelper.emojiToIndex('👍')}';
+    });
+
+    test('records who reacted', () {
+      expect(_react(messages, thumbsUp, 'Bob'), isTrue);
+
+      expect(messages.first.reactions['👍'], 1);
+      expect(messages.first.reactionSenders['👍'], ['Bob']);
+    });
+
+    test('two people sending the same emoji both count', () {
+      _react(messages, thumbsUp, 'Bob');
+      _react(messages, thumbsUp, 'Carol');
+
+      expect(messages.first.reactions['👍'], 2);
+      expect(messages.first.reactionSenders['👍'], ['Bob', 'Carol']);
+    });
+
+    // Channel packets arrive more than once via repeaters; the same person
+    // reacting twice with one emoji is that echo, not a second reaction.
+    test('the same person twice is counted once', () {
+      _react(messages, thumbsUp, 'Bob');
+      _react(messages, thumbsUp, 'Bob');
+
+      expect(messages.first.reactions['👍'], 1);
+      expect(messages.first.reactionSenders['👍'], ['Bob']);
+    });
+
+    test('different emojis from one person are separate reactions', () {
+      final hash = ReactionHelper.computeReactionHash(
+        1234567890,
+        'Alice',
+        'Hello',
+      );
+      _react(messages, thumbsUp, 'Bob');
+      _react(messages, 'r:$hash:${ReactionHelper.emojiToIndex('🎉')}', 'Bob');
+
+      expect(messages.first.reactions, {'👍': 1, '🎉': 1});
+      expect(messages.first.reactionSenders, {
+        '👍': ['Bob'],
+        '🎉': ['Bob'],
+      });
+    });
+
+    test('leaves messages alone when no hash matches', () {
+      expect(_react(messages, 'r:0000:00', 'Bob'), isFalse);
+      expect(messages.first.reactions, isEmpty);
+      expect(messages.first.reactionSenders, isEmpty);
+    });
+  });
+
+  group('decodeSenders', () {
+    test('reads persisted names', () {
+      expect(
+        ReactionHelper.decodeSenders({
+          '👍': ['Bob', 'Carol'],
+        }),
+        {
+          '👍': ['Bob', 'Carol'],
+        },
+      );
+    });
+
+    test('rows stored before attribution decode to empty', () {
+      expect(ReactionHelper.decodeSenders(null), isEmpty);
+    });
+  });
+
   group('ReactionHelper', () {
     group('reactionEmojis', () {
       test('should contain all emoji categories', () {

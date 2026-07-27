@@ -25,6 +25,9 @@ class Message {
   final int? pathLength;
   final Uint8List pathBytes;
   final Map<String, int> reactions;
+  // Who reacted, per emoji. Rows written before attribution existed have
+  // counts with no names, so this can be shorter than the count.
+  final Map<String, List<String>> reactionSenders;
   final Map<String, MessageStatus> reactionStatuses;
   final Uint8List fourByteRoomContactKey;
 
@@ -46,6 +49,7 @@ class Message {
     Uint8List? pathBytes,
     Uint8List? fourByteRoomContactKey,
     Map<String, int>? reactions,
+    Map<String, List<String>>? reactionSenders,
     Map<String, MessageStatus>? reactionStatuses,
     this.pathLength,
   }) : messageId = messageId ??
@@ -53,6 +57,7 @@ class Message {
        pathBytes = pathBytes ?? Uint8List(0),
        fourByteRoomContactKey = fourByteRoomContactKey ?? Uint8List(0),
        reactions = reactions ?? {},
+       reactionSenders = reactionSenders ?? {},
        reactionStatuses = reactionStatuses ?? {};
 
   String get senderKeyHex => pubKeyToHex(senderKey);
@@ -71,6 +76,7 @@ class Message {
     bool? isCli,
 
     Map<String, int>? reactions,
+    Map<String, List<String>>? reactionSenders,
     Map<String, MessageStatus>? reactionStatuses,
     Uint8List? fourByteRoomContactKey,
   }) {
@@ -92,6 +98,7 @@ class Message {
       pathLength: pathLength ?? this.pathLength,
       pathBytes: pathBytes ?? this.pathBytes,
       reactions: reactions ?? this.reactions,
+      reactionSenders: reactionSenders ?? this.reactionSenders,
       reactionStatuses: reactionStatuses ?? this.reactionStatuses,
       fourByteRoomContactKey:
           fourByteRoomContactKey ?? this.fourByteRoomContactKey,
