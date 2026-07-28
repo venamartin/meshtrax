@@ -66,6 +66,21 @@ jobs:
       - run: flutter pub get
       - run: flutter build macos --release --no-pub
 
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+      - run: flutter pub get
+      - run: flutter build windows --release --no-pub
+      # A missing native library does not fail the build — 1.7.7 shipped
+      # without flserial.dll and told every Windows user that USB serial was
+      # unsupported on their platform.
+      - run: dart run tool/verify_windows_bundle.dart
+
   web:
     runs-on: ubuntu-latest
     steps:

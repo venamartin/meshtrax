@@ -255,6 +255,14 @@ class AppLocalizationsSl extends AppLocalizations {
       'USB serijska komunikacija ni podprta na tej platformi.';
 
   @override
+  String get usbErrorNativeLibraryMissing =>
+      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+
+  @override
+  String get usbErrorBrowserUnsupported =>
+      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+
+  @override
   String get usbErrorAlreadyActive => 'USB povezava je že aktivirana.';
 
   @override

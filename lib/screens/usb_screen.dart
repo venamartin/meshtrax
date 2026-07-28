@@ -418,6 +418,17 @@ class _UsbScreenState extends State<UsbScreen> {
     }
 
     if (error is UnsupportedError) {
+      // Three very different faults used to share one message, and the one the
+      // user actually hits — a build shipped without its native library — was
+      // reported as "your platform is unsupported".
+      final detail = error.message?.toString() ?? '';
+      if (detail.contains('cannot load native library') ||
+          detail.contains('flserial')) {
+        return l10n.usbErrorNativeLibraryMissing;
+      }
+      if (detail.contains('Web Serial')) {
+        return l10n.usbErrorBrowserUnsupported;
+      }
       return l10n.usbErrorUnsupported;
     }
 

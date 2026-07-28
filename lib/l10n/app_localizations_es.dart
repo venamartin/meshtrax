@@ -257,6 +257,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'La comunicación serial a través de USB no está soportada en esta plataforma.';
 
   @override
+  String get usbErrorNativeLibraryMissing =>
+      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+
+  @override
+  String get usbErrorBrowserUnsupported =>
+      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+
+  @override
   String get usbErrorAlreadyActive => 'La conexión USB ya está activa.';
 
   @override

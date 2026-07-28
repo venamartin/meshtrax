@@ -247,6 +247,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usbErrorUnsupported => '此平台不支持USB串行通信。';
 
   @override
+  String get usbErrorNativeLibraryMissing =>
+      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+
+  @override
+  String get usbErrorBrowserUnsupported =>
+      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+
+  @override
   String get usbErrorAlreadyActive => 'USB 连接已建立。';
 
   @override
