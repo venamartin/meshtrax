@@ -5330,6 +5330,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final parsed = ChannelMessage.fromFrame(frame);
     if (parsed != null && parsed.channelIndex != null) {
       if (_shouldDropSelfChannelMessage(parsed.senderName, parsed.pathBytes)) {
+        // Dropping the message is right, but the drain still needs telling.
+        // Every channel frame is a destructive pop from the radio's offline
+        // queue, and this early return never acknowledged one — so a self-echo
+        // in the backlog stalled the drain until its 5s watchdog fired, and
+        // enough of them in a row aborted it outright.
+        _handleQueuedMessageReceived();
         return;
       }
       _lastChannelMsgRxTime = DateTime.now();
@@ -5779,6 +5785,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// messages buffered for the slot. No in-memory state — rows and watched
   /// queries carry everything (Phase 3d).
   void _adoptSlotIdentity(Channel channel, {Channel? previous}) {
+    // Messages buffered for a slot were received while that slot meant
+    // something else. If it has changed hands, they cannot be handed to the
+    // new occupant — that is one channel's traffic appearing in another's
+    // history, with readable text and the right sender, because the firmware
+    // had already decrypted it correctly and only the filing was wrong.
+    //
+    // Every caller computed `previous` and this method ignored it, so nothing
+    // could ever notice. Delete a channel, let another take the freed slot,
+    // and the old occupant's backlog landed in the new conversation.
+    //
+    // They are discarded rather than re-homed: nothing in a slot-keyed buffer
+    // records which channel it belonged to, so any other destination would be
+    // a guess.
+    if (previous != null && previous.idKey != channel.idKey) {
+      final orphaned = _pendingUntrackedChannelMessages.remove(channel.index);
+      if (orphaned != null && orphaned.isNotEmpty) {
+        appLogger.warn(
+          'Discarding ${orphaned.length} message(s) buffered for slot '
+          '${channel.index}: it now holds ${channel.displayName}, not '
+          '${previous.displayName} — they cannot be attributed to either',
+          tag: 'Connector',
+        );
+      }
+    }
     unawaited(
       _channelMessageStore
           .migrateLegacyIndexKey(channel.index, channel.idKey)
