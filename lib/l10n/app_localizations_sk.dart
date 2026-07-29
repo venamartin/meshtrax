@@ -257,6 +257,14 @@ class AppLocalizationsSk extends AppLocalizations {
       'Podpora USB sériového rozhrania nie je na tejto platforme dostupná.';
 
   @override
+  String get usbErrorNativeLibraryMissing =>
+      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+
+  @override
+  String get usbErrorBrowserUnsupported =>
+      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+
+  @override
   String get usbErrorAlreadyActive => 'Pripojenie cez USB je už aktivované.';
 
   @override

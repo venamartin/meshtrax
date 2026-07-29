@@ -111,6 +111,8 @@
   "usbErrorOpenFailed": "Failed to open the selected USB device.",
   "usbErrorConnectFailed": "Failed to connect to the selected USB device.",
   "usbErrorUnsupported": "USB serial is not supported on this platform.",
+  "usbErrorNativeLibraryMissing": "This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.",
+  "usbErrorBrowserUnsupported": "This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).",
   "usbErrorAlreadyActive": "A USB connection is already active.",
   "usbErrorNoDeviceSelected": "No USB device was selected.",
   "usbErrorPortClosed": "The USB connection is not open.",

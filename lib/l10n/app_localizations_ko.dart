@@ -248,6 +248,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get usbErrorUnsupported => '이 플랫폼에서는 USB 직렬 통신을 지원하지 않습니다.';
 
   @override
+  String get usbErrorNativeLibraryMissing =>
+      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+
+  @override
+  String get usbErrorBrowserUnsupported =>
+      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+
+  @override
   String get usbErrorAlreadyActive => 'USB 연결이 이미 활성화되어 있습니다.';
 
   @override

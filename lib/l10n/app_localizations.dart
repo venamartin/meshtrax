@@ -586,6 +586,18 @@ abstract class AppLocalizations {
   /// **'USB serial is not supported on this platform.'**
   String get usbErrorUnsupported;
 
+  /// No description provided for @usbErrorNativeLibraryMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.'**
+  String get usbErrorNativeLibraryMissing;
+
+  /// No description provided for @usbErrorBrowserUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).'**
+  String get usbErrorBrowserUnsupported;
+
   /// No description provided for @usbErrorAlreadyActive.
   ///
   /// In en, this message translates to:
