@@ -1927,6 +1927,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
     if (noSpaces.characters.length > 3) return false;
 
+    // The analyzer's regex validator does not understand the \p{Emoji} binary
+    // property, but Dart's engine does with unicode: true. An actually invalid
+    // pattern would throw on construction; emoji_only_regex_test.dart proves
+    // this one does not.
+    // ignore: valid_regexps
     final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
     final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
 
