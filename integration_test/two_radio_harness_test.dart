@@ -801,6 +801,109 @@ void main() {
     // for every future bench run.
   }, timeout: const Timeout(Duration(minutes: 8)));
 
+  // The field reports cluster on "switch to another companion and back":
+  // messages land in the wrong channel, or arrive twice. Every other scenario
+  // keeps one connector glued to one radio for the whole run, so nothing here
+  // has ever made a single app instance meet two different node identities —
+  // which is what makes _lastLoadedNodeKey fire and the slot map change
+  // meaning underneath the app.
+  testWidgets('D12 companion switch: one app, two radios, no duplicates',
+      (tester) async {
+    await beginScenario(tester, 'D12 companion switch');
+    requireBench();
+
+    // Same channel identity, deliberately at DIFFERENT slot numbers on the two
+    // radios. If the app reuses anything it learned from the previous
+    // companion, the slot number it reuses now points at another channel.
+    await ensureChannel(usb, '#hx1', psk1);
+    await awaitSyncIdle(ble);
+    final usbSlot = liveByIdKey(usb.connector, idKey1)!.index;
+    await removeChannelIfPresent(ble, idKey1);
+    final bleSlot = freeSlot(ble, avoid: {usbSlot});
+    await ensureChannel(ble, '#hx1', psk1, atSlot: bleSlot);
+    await ensureChannel(ble, 'HXPRIV', pskPriv);
+    await ensureChannel(usb, 'HXPRIV', pskPriv);
+    blog('#hx1 is slot $usbSlot on ${usb.label}, slot $bleSlot on ${ble.label}');
+    expect(usbSlot, isNot(bleSlot),
+        reason: 'the switch test needs the identity at different slots');
+
+    // A third connector plays the phone that moves between companions.
+    final phone = BenchRadio('PHONE(switching)');
+    phone.connector = await buildConnector();
+    Future<void> phoneTo(BenchRadio radio) async {
+      if (radio == usb) {
+        await phone.connector.connectUsb(portName: BenchConfig.usbPortName);
+      } else {
+        await phone.connector.connectTcp(
+          host: '127.0.0.1',
+          port: BenchConfig.bridgePort,
+        );
+      }
+      await waitConnectedVerified(phone);
+      blog('phone now on ${radio.label} as ${phone.connector.selfName}');
+    }
+
+    final m1 = tag('D12 sent while phone on USB');
+    final m2 = tag('D12 sent while phone on BLE');
+    ledger.expectText(idKey1, m1);
+    ledger.expectText(idKey1, m2);
+
+    try {
+      // --- phone on radio A, radio B transmits -------------------------
+      await usb.connector.disconnect();
+      await phoneTo(usb);
+      await ble.connector
+          .sendChannelMessage(liveByIdKey(ble.connector, idKey1)!, m1);
+      await awaitText(phone, idKey1, m1);
+      final scopeA = nodeScopeOf(phone);
+      expect((await dbRows(scopeA, idKey1)).where((r) => r.payload.contains(m1)),
+          hasLength(1),
+          reason: 'phone stored the first message more than once');
+      await contaminationSweep([phone], ledger);
+
+      // --- switch companion: phone to radio B, radio A transmits -------
+      await phone.connector.disconnect();
+      await ble.connector.disconnect();
+      await phoneTo(ble);
+      await usb.reconnect();
+      await usb.connector
+          .sendChannelMessage(liveByIdKey(usb.connector, idKey1)!, m2);
+      await awaitText(phone, idKey1, m2);
+      await contaminationSweep([phone], ledger);
+
+      // --- switch BACK: radio A re-delivers what it queued while away --
+      // Radio A heard m1 too and queued it with no app attached. Draining
+      // that queue must not produce a second copy of a message the phone
+      // already stored on this node, and must not file it under whatever
+      // channel now occupies the slot the OTHER radio used.
+      await phone.connector.disconnect();
+      await usb.connector.disconnect();
+      await phoneTo(usb);
+      await Future<void>.delayed(const Duration(seconds: 12));
+
+      final rows = await dbRows(scopeA, idKey1);
+      for (final text in [m1, m2]) {
+        final copies = rows.where((r) => r.payload.contains(text)).length;
+        expect(copies, lessThanOrEqualTo(1),
+            reason: 'DUPLICATE after switching companion and back: "$text" '
+                'is stored $copies times under #hx1');
+      }
+      await contaminationSweep([phone], ledger);
+      expect(
+        phone.connector.channels.where((c) => c.idKey == idKey1),
+        hasLength(1),
+        reason: 'the same channel identity is listed more than once',
+      );
+    } finally {
+      // Hand the radios back however this ends, or every later scenario dies.
+      try {
+        await phone.connector.disconnect();
+      } catch (_) {}
+      if (!usb.connector.isConnected) await usb.reconnect();
+      if (!ble.connector.isConnected) await ble.reconnect();
+    }
+  }, timeout: const Timeout(Duration(minutes: 12)));
+
   testWidgets('S5 duplicate-PSK channel creation is refused', (tester) async {
     await beginScenario(tester, 'S5 duplicate-PSK guard');
     requireBench();
