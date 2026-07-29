@@ -12,10 +12,12 @@ class ReactionHelper {
   ///
   /// [messages] - the message list to search
   /// [reactionInfo] - the parsed reaction
+  /// [reactorName] - display name of whoever sent this reaction
   /// [getTimestampSecs] - extract timestamp seconds from a message
   /// [getSenderName] - extract sender name for hash (null for 1:1 implicit)
   /// [getMessageText] - extract message text
   /// [getReactions] - extract current reactions map
+  /// [getReactionSenders] - extract current per-emoji reactor names
   /// [shouldSkip] - filter function to skip messages (e.g., skip outgoing for incoming reactions)
   /// [updateMessage] - callback to update the message at index with new reactions
   ///
@@ -23,12 +25,18 @@ class ReactionHelper {
   static bool applyReaction<T>({
     required List<T> messages,
     required ReactionInfo reactionInfo,
+    required String reactorName,
     required int Function(T) getTimestampSecs,
     required String? Function(T) getSenderName,
     required String Function(T) getMessageText,
     required Map<String, int> Function(T) getReactions,
+    required Map<String, List<String>> Function(T) getReactionSenders,
     required bool Function(T) shouldSkip,
-    required void Function(int index, Map<String, int> newReactions)
+    required void Function(
+      int index,
+      Map<String, int> newReactions,
+      Map<String, List<String>> newSenders,
+    )
     updateMessage,
   }) {
     final targetHash = reactionInfo.targetHash;
@@ -42,14 +50,37 @@ class ReactionHelper {
         getMessageText(msg),
       );
       if (msgHash == targetHash) {
+        final emoji = reactionInfo.emoji;
+        final currentSenders = <String, List<String>>{
+          for (final e in getReactionSenders(msg).entries)
+            e.key: List<String>.from(e.value),
+        };
+        final senders = currentSenders.putIfAbsent(emoji, () => []);
+        // One reaction per person per emoji: a repeat of the same packet
+        // must not inflate the count.
+        if (senders.contains(reactorName)) return true;
+        senders.add(reactorName);
+
         final currentReactions = Map<String, int>.from(getReactions(msg));
-        currentReactions[reactionInfo.emoji] =
-            (currentReactions[reactionInfo.emoji] ?? 0) + 1;
-        updateMessage(i, currentReactions);
+        currentReactions[emoji] = (currentReactions[emoji] ?? 0) + 1;
+        updateMessage(i, currentReactions, currentSenders);
         return true;
       }
     }
     return false;
+  }
+
+  /// Reads the persisted per-emoji reactor names. Rows written before
+  /// attribution existed simply have no entry.
+  static Map<String, List<String>> decodeSenders(dynamic json) {
+    if (json is! Map) return {};
+    return {
+      for (final entry in json.entries)
+        entry.key as String: [
+          for (final name in (entry.value as List<dynamic>? ?? const []))
+            name as String,
+        ],
+    };
   }
 
   static List<String>? _cachedEmojis;

@@ -47,6 +47,9 @@ class ChannelMessage {
   final String? replyToSenderName;
   final String? replyToText;
   final Map<String, int> reactions;
+  // Who reacted, per emoji. Rows written before attribution existed have
+  // counts with no names, so this can be shorter than the count.
+  final Map<String, List<String>> reactionSenders;
 
   ChannelMessage({
     this.senderKey,
@@ -70,10 +73,12 @@ class ChannelMessage {
     this.replyToSenderName,
     this.replyToText,
     Map<String, int>? reactions,
+    Map<String, List<String>>? reactionSenders,
   }) : messageId =
            messageId ??
            '${timestamp.millisecondsSinceEpoch}_${senderName.hashCode}_${text.hashCode}',
        reactions = reactions ?? {},
+       reactionSenders = reactionSenders ?? {},
        pathBytes = pathBytes ?? Uint8List(0),
        pathVariants = _mergePathVariants(
          pathBytes ?? Uint8List(0),
@@ -103,6 +108,7 @@ class ChannelMessage {
     String? replyToText,
 
     Map<String, int>? reactions,
+    Map<String, List<String>>? reactionSenders,
   }) {
     return ChannelMessage(
       senderKey: senderKey,
@@ -126,6 +132,7 @@ class ChannelMessage {
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToText: replyToText ?? this.replyToText,
       reactions: reactions ?? this.reactions,
+      reactionSenders: reactionSenders ?? this.reactionSenders,
     );
   }
 

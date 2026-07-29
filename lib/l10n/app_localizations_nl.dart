@@ -1423,6 +1423,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chat_addReaction => 'Reactie toevoegen';
 
   @override
+  String get chat_reactionsTitle => 'Reactions';
+
+  @override
+  String get chat_reactionUnknownSender => 'Unknown';
+
+  @override
   String get chat_me => 'Mijn';
 
   @override

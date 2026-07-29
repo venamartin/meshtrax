@@ -1439,6 +1439,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chat_addReaction => 'Ajouter une Réaction';
 
   @override
+  String get chat_reactionsTitle => 'Reactions';
+
+  @override
+  String get chat_reactionUnknownSender => 'Unknown';
+
+  @override
   String get chat_me => 'Moi';
 
   @override
