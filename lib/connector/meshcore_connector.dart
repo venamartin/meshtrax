@@ -152,6 +152,19 @@ enum SyncStatus {
   messages,
 }
 
+/// What can be done about a radio whose clock disagrees with the phone's.
+enum DeviceClockAction {
+  /// Close enough to leave alone.
+  ok,
+
+  /// The radio is behind us; the firmware accepts a forward set.
+  windForward,
+
+  /// The radio is ahead of us, and CMD_SET_DEVICE_TIME rejects any time
+  /// earlier than the radio's own, so this app cannot fix it.
+  stuckAhead,
+}
+
 class MeshCoreConnector extends ChangeNotifier {
   // Message windowing to limit memory usage
 
@@ -3420,11 +3433,144 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
+  /// How far the radio's clock sat from the phone's at the last check
+  /// (positive = radio ahead). Null until a connection checks it.
+  Duration? get deviceClockSkew => _lastDeviceClockSkew;
+  Duration? _lastDeviceClockSkew;
+
+  /// True when the radio's clock is wrong and this app cannot fix it, because
+  /// the firmware refuses to wind a clock backwards. Every message the radio
+  /// transmits carries a future timestamp until it is corrected another way.
+  bool get deviceClockStuckAhead => _deviceClockStuckAhead;
+  bool _deviceClockStuckAhead = false;
+
+  /// A radio clock is only worth correcting once it is off by more than this;
+  /// the set/read round-trip itself costs tens of milliseconds.
+  static const Duration deviceClockTolerance = Duration(seconds: 5);
+
+  /// What to do about a radio whose clock differs from ours by [skew]
+  /// (positive = radio ahead of us).
+  ///
+  /// The firmware only accepts a time at or after its current one
+  /// (CMD_SET_DEVICE_TIME in MyMesh.cpp rejects anything earlier with
+  /// ERR_CODE_ILLEGAL_ARG), so a radio running AHEAD cannot be corrected from
+  /// here at all — it can only be reported.
+  @visibleForTesting
+  static DeviceClockAction decideDeviceClockAction(Duration skew) {
+    if (skew.abs() <= deviceClockTolerance) return DeviceClockAction.ok;
+    return skew.isNegative
+        ? DeviceClockAction.windForward
+        : DeviceClockAction.stuckAhead;
+  }
+
+  /// Sets the radio's clock from the phone, then reads it back to confirm it
+  /// actually took.
+  ///
+  /// This used to be a single fire-and-forget SET with no reply check, so a
+  /// dropped frame — or the firmware's refusal to wind a clock backwards —
+  /// left the radio stamping every message it sent with the wrong time, with
+  /// nothing logged and no way to find out after the fact.
   Future<void> syncTime() async {
     if (!isConnected) return;
 
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await sendFrame(buildSetDeviceTimeFrame(now));
+    final before = await _readDeviceClockSkew();
+    if (before == null) {
+      // No reply. Set anyway (the old behaviour) rather than skip the sync.
+      appLogger.warn(
+        'Radio clock unreadable; setting it blind',
+        tag: 'Connector',
+      );
+      await sendFrame(
+        buildSetDeviceTimeFrame(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      );
+      return;
+    }
+
+    _lastDeviceClockSkew = before;
+    switch (decideDeviceClockAction(before)) {
+      case DeviceClockAction.ok:
+        _deviceClockStuckAhead = false;
+        appLogger.info(
+          'Radio clock within ${_describeSkew(before)} of this device',
+          tag: 'Connector',
+        );
+        return;
+      case DeviceClockAction.stuckAhead:
+        // The firmware will reject this, but attempt it so the refusal is
+        // visible in the frame log rather than assumed.
+        await sendFrame(
+          buildSetDeviceTimeFrame(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+        );
+        _deviceClockStuckAhead = true;
+        appLogger.error(
+          'Radio clock is ${_describeSkew(before)} AHEAD of this device and '
+          'the firmware refuses to wind a clock backwards, so it cannot be '
+          'corrected from here. Every message this radio sends will carry a '
+          'future timestamp until its clock is reset on the device itself.',
+          tag: 'Connector',
+        );
+        return;
+      case DeviceClockAction.windForward:
+        await sendFrame(
+          buildSetDeviceTimeFrame(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+        );
+        final after = await _readDeviceClockSkew();
+        _lastDeviceClockSkew = after ?? before;
+        if (after != null &&
+            decideDeviceClockAction(after) == DeviceClockAction.ok) {
+          _deviceClockStuckAhead = false;
+          appLogger.info(
+            'Radio clock was ${_describeSkew(before)} behind; corrected',
+            tag: 'Connector',
+          );
+        } else {
+          appLogger.error(
+            'Radio clock was ${_describeSkew(before)} behind and did not take '
+            'the correction'
+            '${after == null ? ' (no reply on re-read)' : ' (still ${_describeSkew(after)})'}',
+            tag: 'Connector',
+          );
+        }
+        return;
+    }
+  }
+
+  static String _describeSkew(Duration skew) {
+    final s = skew.abs();
+    if (s.inMinutes < 1) return '${s.inSeconds}s';
+    if (s.inHours < 1) return '${s.inMinutes}m ${s.inSeconds % 60}s';
+    return '${s.inHours}h ${s.inMinutes % 60}m';
+  }
+
+  /// Asks the radio for its clock and returns how far it sits from ours
+  /// (positive = radio ahead), or null when it does not answer.
+  Future<Duration?> _readDeviceClockSkew({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    if (!isConnected) return null;
+    final completer = Completer<Duration?>();
+    final subscription = receivedFrames.listen((frame) {
+      if (frame.length < 5 || frame[0] != respCodeCurrTime) return;
+      final deviceSecs = ByteData.sublistView(
+        frame,
+        1,
+        5,
+      ).getUint32(0, Endian.little);
+      if (completer.isCompleted) return;
+      completer.complete(
+        DateTime.fromMillisecondsSinceEpoch(deviceSecs * 1000)
+            .difference(DateTime.now()),
+      );
+    });
+    try {
+      await sendFrame(buildGetDeviceTimeFrame());
+      return await completer.future.timeout(timeout, onTimeout: () => null);
+    } catch (e) {
+      appLogger.warn('Radio clock read failed: $e', tag: 'Connector');
+      return null;
+    } finally {
+      await subscription.cancel();
+    }
   }
 
   Future<void> syncQueuedMessages({bool force = false}) async {
