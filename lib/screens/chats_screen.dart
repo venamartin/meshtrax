@@ -33,16 +33,25 @@ class _ChatListItem {
   final String id;
   final String title;
   final String subtitle;
+
+  /// The last message's claimed send time — DISPLAY only.
   final DateTime timestamp;
+
+  /// When the last message actually arrived (received_at_us). Tiles sort by
+  /// this: sorting by the sender's claimed timestamp would let a chat that
+  /// just received a message sink below one whose older message merely
+  /// claims a newer time.
+  final int sortKeyUs;
   final int unreadCount;
   final Contact? contact;
   final Channel? channel;
-  
+
   _ChatListItem({
     required this.id,
     required this.title,
     required this.subtitle,
     required this.timestamp,
+    required this.sortKeyUs,
     required this.unreadCount,
     this.contact,
     this.channel,
@@ -569,6 +578,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 title: contactName,
                 subtitle: subtitle,
                 timestamp: lastMessage.timestamp,
+                sortKeyUs: connector.latestContactArrivalUs(contact),
                 unreadCount: connector.getUnreadCountForContact(contact),
                 contact: contact,
               ),
@@ -588,6 +598,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 title: channel.name.isEmpty ? 'Channel ${channel.index}' : channel.name,
                 subtitle: subtitle,
                 timestamp: lastMessage.timestamp,
+                sortKeyUs: connector.latestChannelArrivalUs(channel),
                 unreadCount: connector.getUnreadCountForChannel(channel),
                 channel: channel,
               ),
@@ -599,6 +610,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 title: channel.name.isEmpty ? 'Channel ${channel.index}' : channel.name,
                 subtitle: 'Tap to chat',
                 timestamp: DateTime.fromMillisecondsSinceEpoch(0),
+                sortKeyUs: 0,
                 unreadCount: 0,
                 channel: channel,
               ),
@@ -606,8 +618,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           }
         }
 
-        // Sort by most recent
-        chatItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        // Sort by most recent ARRIVAL, not the claimed send time — the whole
+        // point of arrival ordering (v6).
+        chatItems.sort((a, b) => b.sortKeyUs.compareTo(a.sortKeyUs));
 
         Widget? syncBanner;
         final syncStatus = connector.currentSyncStatus;

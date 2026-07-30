@@ -3,6 +3,8 @@ import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 
+import 'arrival_clock.dart';
+
 part 'app_database.g.dart';
 
 /// One row per channel message. The keys are real columns so the database
@@ -235,11 +237,18 @@ class AppDatabase extends _$AppDatabase {
         // every existing chat already displays — nobody's history rearranges
         // on upgrade. Only messages arriving from here on get a true arrival
         // time, which is right: they are the only ones we actually witnessed.
+        //
+        // MAX(..., 1): a stamp of 0 means "unstamped" to the preservation
+        // logic, so a legacy row with timestamp_ms = 0 would be handed a
+        // fresh stamp by its next status update and teleport to the newest
+        // position. Floor it at 1µs — still sorts oldest, never re-stamps.
         await customStatement(
-          'UPDATE channel_message_rows SET received_at_us = timestamp_ms * 1000',
+          'UPDATE channel_message_rows '
+          'SET received_at_us = MAX(timestamp_ms, 1) * 1000',
         );
         await customStatement(
-          'UPDATE contact_message_rows SET received_at_us = timestamp_ms * 1000',
+          'UPDATE contact_message_rows '
+          'SET received_at_us = MAX(timestamp_ms, 1) * 1000',
         );
         // Same scaling for the watermarks, so unread counts do not shift.
         await customStatement(
@@ -249,6 +258,19 @@ class AppDatabase extends _$AppDatabase {
           'UPDATE contact_read_marks SET last_read_seq = last_read_ms * 1000',
         );
       }
+    },
+    beforeOpen: (details) async {
+      // Seed the arrival clock past everything already stored, every open.
+      // Without this, a phone clock that stepped backwards between sessions
+      // would stamp new messages below existing rows — mid-conversation, and
+      // invisibly read if they land under the watermark.
+      final row = await customSelect(
+        'SELECT MAX('
+        '  COALESCE((SELECT MAX(received_at_us) FROM channel_message_rows), 0),'
+        '  COALESCE((SELECT MAX(received_at_us) FROM contact_message_rows), 0)'
+        ') AS m',
+      ).getSingleOrNull();
+      ArrivalClock.seed(row?.read<int?>('m') ?? 0);
     },
   );
 }

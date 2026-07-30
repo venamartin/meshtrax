@@ -32,4 +32,21 @@ void main() {
     expect(second, greaterThan(first));
     expect(ArrivalClock.next(), greaterThan(second));
   });
+
+  // The in-memory floor dies with the process. The database seeds the clock
+  // on open with MAX(received_at_us), so a phone clock that stepped backwards
+  // BETWEEN sessions still cannot stamp new messages below stored rows —
+  // where they would insert mid-conversation and, under the read watermark,
+  // never count as unread.
+  test('seeding raises the floor above persisted stamps', () {
+    final future = DateTime.now().microsecondsSinceEpoch + 3600000000; // +1h
+    ArrivalClock.seed(future);
+    expect(ArrivalClock.next(), greaterThan(future));
+  });
+
+  test('seeding never lowers the floor', () {
+    final a = ArrivalClock.next();
+    ArrivalClock.seed(0);
+    expect(ArrivalClock.next(), greaterThan(a));
+  });
 }

@@ -199,12 +199,16 @@ class MeshCoreConnector extends ChangeNotifier {
   /// [_resubscribeChannelUnreadWatch].
   Map<String, int> _channelUnreadByIdKey = const {};
   StreamSubscription<Map<String, int>>? _channelUnreadSub;
-  Map<String, ChannelMessage> _channelLatestByIdKey = const {};
-  StreamSubscription<Map<String, ChannelMessage>>? _channelLatestSub;
+  Map<String, ({ChannelMessage message, int arrivalUs})>
+      _channelLatestByIdKey = const {};
+  StreamSubscription<Map<String, ({ChannelMessage message, int arrivalUs})>>?
+      _channelLatestSub;
   Map<String, int> _contactUnreadByKey = const {};
   StreamSubscription<Map<String, int>>? _contactUnreadSub;
-  Map<String, Message> _contactLatestByKey = const {};
-  StreamSubscription<Map<String, Message>>? _contactLatestSub;
+  Map<String, ({Message message, int arrivalUs})> _contactLatestByKey =
+      const {};
+  StreamSubscription<Map<String, ({Message message, int arrivalUs})>>?
+      _contactLatestSub;
   final List<String> _pendingChannelSentQueue = [];
   final List<_PendingCommandAck> _pendingGenericAckQueue = [];
   static const String _reactionSendQueuePrefix = '__reaction_send__';
@@ -625,9 +629,10 @@ class MeshCoreConnector extends ChangeNotifier {
   Stream<Map<String, int>> watchChannelUnreadCounts() =>
       _channelMessageStore.watchUnreadCounts();
 
-  /// Watched newest message per channel identity (subtitles + ordering).
-  Stream<Map<String, ChannelMessage>> watchChannelLatest() =>
-      _channelMessageStore.watchLatestPerChannel();
+  /// Watched newest message per channel identity, with its arrival stamp
+  /// (subtitles + tile ordering).
+  Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
+      watchChannelLatest() => _channelMessageStore.watchLatestPerChannel();
 
   // Messages received for a radio slot whose identity the app doesn't know
   // yet. Held until CHANNEL_INFO reveals the slot's channel, then filed by
@@ -5848,13 +5853,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Newest message for a channel, from the watched query (chats screen
-  /// subtitles and ordering).
+  /// subtitles).
   ChannelMessage? latestChannelMessage(Channel channel) =>
-      _channelLatestByIdKey[channel.idKey];
+      _channelLatestByIdKey[channel.idKey]?.message;
+
+  /// When that newest channel message ARRIVED — what conversation tiles must
+  /// sort by. Sorting on the message's claimed timestamp would undo arrival
+  /// ordering at the last step.
+  int latestChannelArrivalUs(Channel channel) =>
+      _channelLatestByIdKey[channel.idKey]?.arrivalUs ?? 0;
 
   /// Newest message for a contact, from the watched query.
   Message? latestContactMessage(Contact contact) =>
-      _contactLatestByKey[contact.publicKeyHex];
+      _contactLatestByKey[contact.publicKeyHex]?.message;
+
+  /// When that newest DM arrived — the tile sort key.
+  int latestContactArrivalUs(Contact contact) =>
+      _contactLatestByKey[contact.publicKeyHex]?.arrivalUs ?? 0;
 
   /// Live stream of a conversation — the UI's ONLY DM read path.
   Stream<List<Message>> watchConversation(

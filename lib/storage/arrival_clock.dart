@@ -22,6 +22,18 @@ class ArrivalClock {
     return _last;
   }
 
+  /// Raises the floor to the newest stamp already persisted.
+  ///
+  /// _last alone only protects within one process lifetime. If the phone's
+  /// clock steps backwards BETWEEN sessions — the exact scenario this class
+  /// exists for — a fresh process would stamp new messages below existing
+  /// rows: they would insert mid-conversation, and below the read watermark
+  /// they would never count as unread. The database calls this on open with
+  /// MAX(received_at_us) across the message tables.
+  static void seed(int floor) {
+    if (floor > _last) _last = floor;
+  }
+
   /// Historical rows are seeded from the sender's timestamp so that existing
   /// conversations keep exactly the order they already display — the same
   /// conversion the v6 migration applies.

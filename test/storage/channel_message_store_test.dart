@@ -83,12 +83,17 @@ void main() {
     expect(loaded.single.text, 'edited');
   });
 
-  test('messages load ordered by timestamp', () async {
-    await store.upsertMessage(idKeyA, msg('late', id: 'x2', ts: 2000));
-    await store.upsertMessage(idKeyA, msg('early', id: 'x1', ts: 1000));
+  // Ordering follows ARRIVAL, not the sender's claimed send time (v6). A mesh
+  // node's clock can be hours out and cannot always be corrected, and ingest
+  // rewrites implausible timestamps outright — so the sender's value is not
+  // something a conversation can be ordered by. Here the message claiming to
+  // be OLDER arrives second, and therefore displays second.
+  test('messages load in arrival order, not sender-timestamp order', () async {
+    await store.upsertMessage(idKeyA, msg('arrived first', id: 'x2', ts: 2000));
+    await store.upsertMessage(idKeyA, msg('arrived second', id: 'x1', ts: 1000));
 
     final loaded = await store.loadChannelMessages(idKeyA);
-    expect(loaded.map((m) => m.text), ['early', 'late']);
+    expect(loaded.map((m) => m.text), ['arrived first', 'arrived second']);
   });
 
   test('legacy index blob imports into identity rows once', () async {
