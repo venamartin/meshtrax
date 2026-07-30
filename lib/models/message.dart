@@ -127,6 +127,6 @@ class Message {
   }
 
   static ReactionInfo? parseReaction(String text) {
-    return ReactionHelper.parseReaction(text);
+    return ReactionHelper.parseIncomingReaction(text);
   }
 }

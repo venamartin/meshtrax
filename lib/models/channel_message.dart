@@ -310,26 +310,46 @@ class ChannelMessage {
     return fits(mention) ? mention : null;
   }
 
-  /// Parses a reply of the form `@[Name] re:<snippet>…<response>`.
-  /// The snippet marker may be "…" or "...", and the response may follow on a
-  /// new line. Returns null for a plain mention or an ordinary message, so
-  /// `@[Name] hello` is treated as a mention, not a reply.
+  /// Parses a reply in either dialect. Returns null for a plain mention or an
+  /// ordinary message, so `@[Name] hello` is treated as a mention, not a reply.
+  ///
+  /// Ours: `@[Name] re:<snippet>…<response>` — marker may be "…" or "...",
+  /// and the response may follow on a new line.
+  ///
+  /// MeshCore One: `@[Name]\n><snippet>[..]\n<response>` — snippet is the
+  /// parent's first 10 chars, ".." only when truncated
+  /// (MentionUtilities.buildReplyText in Avi0n/MeshCoreOne).
   static ReplyInfo? parseReply(String text) {
     final regex = RegExp(
       r'^@\[([^\]]+)\]\s+re:(.*?)(?:…|\.\.\.)\s*([\s\S]+)$',
       caseSensitive: false,
     );
     final match = regex.firstMatch(text);
-    if (match == null) return null;
+    if (match != null) {
+      return ReplyInfo(
+        mentionedNode: match.group(1)!,
+        snippet: match.group(2)!.trim(),
+        actualMessage: match.group(3)!.trim(),
+      );
+    }
+
+    final one = RegExp(
+      r'^@\[([^\]]+)\]\n>([^\n]*)\n([\s\S]+)$',
+    ).firstMatch(text);
+    if (one == null) return null;
+    var snippet = one.group(2)!;
+    if (snippet.endsWith('..')) {
+      snippet = snippet.substring(0, snippet.length - 2);
+    }
     return ReplyInfo(
-      mentionedNode: match.group(1)!,
-      snippet: match.group(2)!.trim(),
-      actualMessage: match.group(3)!.trim(),
+      mentionedNode: one.group(1)!,
+      snippet: snippet.trim(),
+      actualMessage: one.group(3)!.trim(),
     );
   }
 
   static ReactionInfo? parseReaction(String text) {
-    return ReactionHelper.parseReaction(text);
+    return ReactionHelper.parseIncomingReaction(text);
   }
 }
 

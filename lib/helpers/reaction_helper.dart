@@ -1,10 +1,31 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart' as crypto;
+
 import '../widgets/emoji_picker.dart';
+
+/// Which client dialect a reaction arrived in.
+/// [open] is our own `r:HASH:INDEX`; [one] is MeshCore One's
+/// `{emoji}@[{targetSender}]\n{hash}` (channel) / `{emoji}\n{hash}` (DM),
+/// spec: https://github.com/Avi0n/MeshCoreOne/blob/main/docs/Reactions.md
+enum ReactionFormat { open, one }
 
 class ReactionInfo {
   final String targetHash;
   final String emoji;
+  final ReactionFormat format;
 
-  ReactionInfo({required this.targetHash, required this.emoji});
+  /// Sender of the target message (MeshCore One channel reactions only) —
+  /// disambiguates identical text+timestamp from different senders.
+  final String? targetSender;
+
+  ReactionInfo({
+    required this.targetHash,
+    required this.emoji,
+    this.format = ReactionFormat.open,
+    this.targetSender,
+  });
 }
 
 class ReactionHelper {
@@ -20,6 +41,9 @@ class ReactionHelper {
   /// [getReactionSenders] - extract current per-emoji reactor names
   /// [shouldSkip] - filter function to skip messages (e.g., skip outgoing for incoming reactions)
   /// [updateMessage] - callback to update the message at index with new reactions
+  /// [getWireTimestampSecs] - candidate original wire timestamps for a message,
+  /// used for MeshCore One hashes (which are computed over the sender's wire
+  /// clock, untouched by the ingest clamp). Falls back to [getTimestampSecs].
   ///
   /// Returns whether a match was found.
   static bool applyReaction<T>({
@@ -38,36 +62,69 @@ class ReactionHelper {
       Map<String, List<String>> newSenders,
     )
     updateMessage,
+    List<int> Function(T)? getWireTimestampSecs,
   }) {
     final targetHash = reactionInfo.targetHash;
-    for (int i = messages.length - 1; i >= 0; i--) {
-      final msg = messages[i];
-      if (shouldSkip(msg)) continue;
 
-      final msgHash = computeReactionHash(
-        getTimestampSecs(msg),
-        getSenderName(msg),
-        getMessageText(msg),
-      );
-      if (msgHash == targetHash) {
-        final emoji = reactionInfo.emoji;
-        final currentSenders = <String, List<String>>{
-          for (final e in getReactionSenders(msg).entries)
-            e.key: List<String>.from(e.value),
-        };
-        final senders = currentSenders.putIfAbsent(emoji, () => []);
-        // One reaction per person per emoji: a repeat of the same packet
-        // must not inflate the count.
-        if (senders.contains(reactorName)) return true;
-        senders.add(reactorName);
+    bool matches(T msg) {
+      if (reactionInfo.format == ReactionFormat.one) {
+        final text = getMessageText(msg);
+        final candidates =
+            getWireTimestampSecs?.call(msg) ?? [getTimestampSecs(msg)];
+        return candidates
+            .any((secs) => computeMeshCoreOneHash(text, secs) == targetHash);
+      }
+      return computeReactionHash(
+            getTimestampSecs(msg),
+            getSenderName(msg),
+            getMessageText(msg),
+          ) ==
+          targetHash;
+    }
 
-        final currentReactions = Map<String, int>.from(getReactions(msg));
-        currentReactions[emoji] = (currentReactions[emoji] ?? 0) + 1;
-        updateMessage(i, currentReactions, currentSenders);
-        return true;
+    int foundIndex = -1;
+    // A MeshCore One channel reaction names the target's sender; prefer rows
+    // from that sender so identical text+timestamp from two people resolves
+    // to the right one, but fall back to any match (names can drift between
+    // clients).
+    final targetSender = reactionInfo.targetSender;
+    if (targetSender != null) {
+      for (int i = messages.length - 1; i >= 0; i--) {
+        if (shouldSkip(messages[i])) continue;
+        if (getSenderName(messages[i]) != targetSender) continue;
+        if (matches(messages[i])) {
+          foundIndex = i;
+          break;
+        }
       }
     }
-    return false;
+    if (foundIndex < 0) {
+      for (int i = messages.length - 1; i >= 0; i--) {
+        if (shouldSkip(messages[i])) continue;
+        if (matches(messages[i])) {
+          foundIndex = i;
+          break;
+        }
+      }
+    }
+    if (foundIndex < 0) return false;
+
+    final msg = messages[foundIndex];
+    final emoji = reactionInfo.emoji;
+    final currentSenders = <String, List<String>>{
+      for (final e in getReactionSenders(msg).entries)
+        e.key: List<String>.from(e.value),
+    };
+    final senders = currentSenders.putIfAbsent(emoji, () => []);
+    // One reaction per person per emoji: a repeat of the same packet
+    // must not inflate the count.
+    if (senders.contains(reactorName)) return true;
+    senders.add(reactorName);
+
+    final currentReactions = Map<String, int>.from(getReactions(msg));
+    currentReactions[emoji] = (currentReactions[emoji] ?? 0) + 1;
+    updateMessage(foundIndex, currentReactions, currentSenders);
+    return true;
   }
 
   /// Reads the persisted per-emoji reactor names. Rows written before
@@ -126,6 +183,92 @@ class ReactionHelper {
     // Use hashCode and take lower 16 bits, format as 4 hex chars
     final hash = input.hashCode & 0xFFFF;
     return hash.toRadixString(16).padLeft(4, '0');
+  }
+
+  /// Crockford Base32 alphabet (no I, L, O, U).
+  static const String _crockford = '0123456789abcdefghjkmnpqrstvwxyz';
+
+  /// MeshCore One message hash:
+  /// SHA-256(UTF-8 text + little-endian u32 sender timestamp), first 5 bytes,
+  /// as 8 chars of Crockford Base32.
+  static String computeMeshCoreOneHash(String text, int timestampSeconds) {
+    final input = BytesBuilder(copy: false)
+      ..add(utf8.encode(text))
+      ..add(
+        Uint8List(4)
+          ..buffer.asByteData().setUint32(
+            0,
+            timestampSeconds & 0xFFFFFFFF,
+            Endian.little,
+          ),
+      );
+    final digest = crypto.sha256.convert(input.toBytes()).bytes;
+    int bits = 0;
+    for (int i = 0; i < 5; i++) {
+      bits = (bits << 8) | digest[i];
+    }
+    return [
+      for (int shift = 35; shift >= 0; shift -= 5)
+        _crockford[(bits >> shift) & 0x1f],
+    ].join();
+  }
+
+  /// Lowercases and applies Crockford substitutions (O→0, I/L→1). Returns null
+  /// unless the result is exactly 8 valid Crockford Base32 chars.
+  static String? _normalizeCrockford(String raw) {
+    if (raw.length != 8) return null;
+    final out = StringBuffer();
+    for (final rune in raw.toLowerCase().runes) {
+      var ch = String.fromCharCode(rune);
+      if (ch == 'o') ch = '0';
+      if (ch == 'i' || ch == 'l') ch = '1';
+      if (!_crockford.contains(ch)) return null;
+      out.write(ch);
+    }
+    return out.toString();
+  }
+
+  /// Parse a MeshCore One reaction:
+  /// channel `{emoji}@[{targetSender}]\n{hash}`, DM `{emoji}\n{hash}`.
+  ///
+  /// This shape can collide with a genuine two-line message, so callers must
+  /// only consume the text as a reaction when the hash actually resolves to a
+  /// message they hold — otherwise show it as a normal message.
+  static ReactionInfo? parseMeshCoreOneReaction(String text) {
+    final nl = text.lastIndexOf('\n');
+    if (nl < 0) return null;
+    final hash = _normalizeCrockford(text.substring(nl + 1));
+    if (hash == null) return null;
+
+    var emojiPart = text.substring(0, nl);
+    String? targetSender;
+    final at = emojiPart.indexOf('@[');
+    if (at >= 0) {
+      if (!emojiPart.endsWith(']')) return null;
+      targetSender = emojiPart.substring(at + 2, emojiPart.length - 1);
+      if (targetSender.isEmpty) return null;
+      emojiPart = emojiPart.substring(0, at);
+    }
+    if (emojiPart.isEmpty || emojiPart.runes.length > 8) return null;
+    // Emoji, not prose: nearly all emoji start at U+2000 or above; the
+    // exceptions (keycaps, ©/®) carry a variation selector U+FE0F or a
+    // combining keycap U+20E3. Ordinary ASCII text fails both tests.
+    final looksLikeEmoji = emojiPart.runes.first >= 0x2000 ||
+        emojiPart.runes.any((r) => r == 0xFE0F || r == 0x20E3);
+    if (!looksLikeEmoji) return null;
+
+    return ReactionInfo(
+      targetHash: hash,
+      emoji: emojiPart,
+      format: ReactionFormat.one,
+      targetSender: targetSender,
+    );
+  }
+
+  /// All reaction dialects we can display: our own r: format, then
+  /// MeshCore One. Use on the receive path; sends stay r:-format.
+  static ReactionInfo? parseIncomingReaction(String text) {
+    return parseReaction(text) ?? parseMeshCoreOneReaction(text);
   }
 
   /// Parse reaction format: r:HASH:INDEX (where INDEX is 2-char hex emoji index)

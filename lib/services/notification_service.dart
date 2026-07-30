@@ -132,7 +132,7 @@ class NotificationService {
   /// Format special message types for human-readable notifications.
   static String formatNotificationText(String text) {
     final trimmed = text.trim();
-    final reaction = ReactionHelper.parseReaction(trimmed);
+    final reaction = ReactionHelper.parseIncomingReaction(trimmed);
     if (reaction != null) {
       return 'Reacted ${reaction.emoji}';
     }

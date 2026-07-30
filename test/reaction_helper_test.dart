@@ -98,6 +98,229 @@ void main() {
     });
   });
 
+  group('MeshCore One dialect', () {
+    // Reference vectors pinned against the spec:
+    // crockford32(sha256(utf8(text) + le_u32(ts))[0..5])
+    // https://github.com/Avi0n/MeshCoreOne/blob/main/docs/Reactions.md
+    group('computeMeshCoreOneHash', () {
+      test('matches pinned reference vectors', () {
+        expect(
+          ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890),
+          '66nf5k51',
+        );
+        expect(
+          ReactionHelper.computeMeshCoreOneHash('Hello there!', 1234567890),
+          'hqgk5p39',
+        );
+        expect(
+          ReactionHelper.computeMeshCoreOneHash('Hello', 1234567891),
+          'g4g6ht01',
+        );
+        expect(ReactionHelper.computeMeshCoreOneHash('', 0), 'vwzp3604');
+        expect(
+          ReactionHelper.computeMeshCoreOneHash('héllo wörld 👍', 1700000000),
+          'x1cm5x6b',
+        );
+      });
+
+      test('full text matters, unlike the 5-char r: hash', () {
+        expect(
+          ReactionHelper.computeMeshCoreOneHash('Hello world', 1234567890),
+          isNot(
+            ReactionHelper.computeMeshCoreOneHash('Hello there', 1234567890),
+          ),
+        );
+      });
+    });
+
+    group('parseMeshCoreOneReaction', () {
+      test('parses channel shape {emoji}@[{sender}]\\n{hash}', () {
+        final info =
+            ReactionHelper.parseMeshCoreOneReaction('👍@[AlphaNode]\n66nf5k51');
+        expect(info, isNotNull);
+        expect(info!.emoji, '👍');
+        expect(info.targetSender, 'AlphaNode');
+        expect(info.targetHash, '66nf5k51');
+        expect(info.format, ReactionFormat.one);
+      });
+
+      test('parses the observed on-air example', () {
+        final info =
+            ReactionHelper.parseMeshCoreOneReaction('❤️@[Vacasity]\nd68tbhcs');
+        expect(info, isNotNull);
+        expect(info!.emoji, '❤️');
+        expect(info.targetSender, 'Vacasity');
+        expect(info.targetHash, 'd68tbhcs');
+      });
+
+      test('parses DM shape {emoji}\\n{hash}', () {
+        final info = ReactionHelper.parseMeshCoreOneReaction('👍\n66nf5k51');
+        expect(info, isNotNull);
+        expect(info!.emoji, '👍');
+        expect(info.targetSender, isNull);
+        expect(info.targetHash, '66nf5k51');
+      });
+
+      test('normalizes hash case and O/I/L substitutions', () {
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('👍\nX1CM5X6B')!.targetHash,
+          'x1cm5x6b',
+        );
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('👍\ng4g6htOl')!.targetHash,
+          'g4g6ht01',
+        );
+      });
+
+      test('accepts keycap emoji below U+2000', () {
+        expect(ReactionHelper.parseMeshCoreOneReaction('1️⃣\n66nf5k51'),
+            isNotNull);
+      });
+
+      test('rejects prose that merely resembles the shape', () {
+        // ASCII first line: a real two-line message, not a reaction.
+        expect(ReactionHelper.parseMeshCoreOneReaction('Hi\nabcdefgh'), isNull);
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('Hello\n66nf5k51'),
+          isNull,
+        );
+      });
+
+      test('rejects malformed input', () {
+        expect(ReactionHelper.parseMeshCoreOneReaction('👍66nf5k51'), isNull);
+        expect(ReactionHelper.parseMeshCoreOneReaction('👍\n66nf5k5'), isNull);
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('👍\n66nf5k511'),
+          isNull,
+        );
+        expect(ReactionHelper.parseMeshCoreOneReaction('👍\nuuuuuuuu'), isNull);
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('👍@[]\n66nf5k51'),
+          isNull,
+        );
+        expect(ReactionHelper.parseMeshCoreOneReaction(''), isNull);
+      });
+    });
+
+    group('parseIncomingReaction', () {
+      test('reads both dialects', () {
+        expect(
+          ReactionHelper.parseIncomingReaction('r:a1b2:00')!.format,
+          ReactionFormat.open,
+        );
+        expect(
+          ReactionHelper.parseIncomingReaction('👍@[Bob]\n66nf5k51')!.format,
+          ReactionFormat.one,
+        );
+        expect(ReactionHelper.parseIncomingReaction('hello'), isNull);
+      });
+    });
+
+    group('applyReaction with format one', () {
+      bool reactOne(
+        List<_FakeMessage> messages,
+        String reactionText,
+        String reactorName, {
+        List<int> Function(_FakeMessage)? wireSecs,
+      }) {
+        return ReactionHelper.applyReaction<_FakeMessage>(
+          messages: messages,
+          reactionInfo:
+              ReactionHelper.parseMeshCoreOneReaction(reactionText)!,
+          reactorName: reactorName,
+          shouldSkip: (_) => false,
+          getTimestampSecs: (m) => m.timestampSecs,
+          getWireTimestampSecs: wireSecs,
+          getSenderName: (m) => m.senderName,
+          getMessageText: (m) => m.text,
+          getReactions: (m) => m.reactions,
+          getReactionSenders: (m) => m.reactionSenders,
+          updateMessage: (i, reactions, senders) {
+            messages[i].reactions = reactions;
+            messages[i].reactionSenders = senders;
+          },
+        );
+      }
+
+      test('matches by full-text SHA hash', () {
+        final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+        expect(
+          reactOne(messages, '👍@[Alice]\n66nf5k51', 'Bob'),
+          isTrue,
+        );
+        expect(messages.first.reactions['👍'], 1);
+        expect(messages.first.reactionSenders['👍'], ['Bob']);
+      });
+
+      test('prefers the named target sender on identical text+timestamp', () {
+        final messages = [
+          _FakeMessage(1234567890, 'Alice', 'Hello'),
+          _FakeMessage(1234567890, 'Bob', 'Hello'),
+        ];
+        expect(reactOne(messages, '👍@[Alice]\n66nf5k51', 'Carol'), isTrue);
+        expect(messages[0].reactions['👍'], 1);
+        expect(messages[1].reactions, isEmpty);
+      });
+
+      test('falls back to any match when the named sender is absent', () {
+        final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+        expect(
+          reactOne(messages, '👍@[Alice on iPhone]\n66nf5k51', 'Bob'),
+          isTrue,
+        );
+        expect(messages.first.reactions['👍'], 1);
+      });
+
+      test('uses wire timestamp candidates, not the stored clock', () {
+        // Stored timestamp was clamped by ingest; only the wire secs match.
+        final messages = [_FakeMessage(1111111111, 'Alice', 'Hello')];
+        expect(
+          reactOne(
+            messages,
+            '👍@[Alice]\n66nf5k51',
+            'Bob',
+            wireSecs: (_) => [1234567890],
+          ),
+          isTrue,
+        );
+        expect(
+          reactOne(
+            [_FakeMessage(1234567890, 'Alice', 'Hello')],
+            '👍@[Alice]\n66nf5k51',
+            'Bob',
+            wireSecs: (_) => [1111111111],
+          ),
+          isFalse,
+        );
+      });
+
+      test('a second candidate second covers our own send skew', () {
+        expect(
+          reactOne(
+            [_FakeMessage(1234567889, 'Me', 'Hello')],
+            '👍@[Me]\n66nf5k51',
+            'Bob',
+            wireSecs: (m) => [m.timestampSecs, m.timestampSecs + 1],
+          ),
+          isTrue,
+        );
+      });
+
+      test('leaves messages alone when nothing matches', () {
+        final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+        expect(reactOne(messages, '👍@[Alice]\nzzzzzzzz', 'Bob'), isFalse);
+        expect(messages.first.reactions, isEmpty);
+      });
+
+      test('repeat from the same reactor counts once', () {
+        final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+        reactOne(messages, '👍@[Alice]\n66nf5k51', 'Bob');
+        reactOne(messages, '👍@[Alice]\n66nf5k51', 'Bob');
+        expect(messages.first.reactions['👍'], 1);
+      });
+    });
+  });
+
   group('decodeSenders', () {
     test('reads persisted names', () {
       expect(
