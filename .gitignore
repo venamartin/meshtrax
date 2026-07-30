@@ -100,3 +100,4 @@ scratch/
 MeshCore/
 notes.md
 !lib/storage/app_database.g.dart
+.claude/
