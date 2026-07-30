@@ -72,13 +72,16 @@ void main() {
     expect(loaded.single.text, 'edited');
   });
 
-  test('messages load ordered by timestamp', () async {
-    await store.upsertMessage(contactA, msg('late', id: 'x2', ts: 2000));
-    await store.upsertMessage(contactA, msg('early', id: 'x1', ts: 1000));
+  // Arrival order, not the sender's claimed send time (v6) — see the channel
+  // store's equivalent. The message claiming to be OLDER arrives second, and
+  // therefore displays second.
+  test('messages load in arrival order, not sender-timestamp order', () async {
+    await store.upsertMessage(contactA, msg('arrived first', id: 'x2', ts: 2000));
+    await store.upsertMessage(contactA, msg('arrived second', id: 'x1', ts: 1000));
 
     expect(
       (await store.loadMessages(contactA)).map((m) => m.text),
-      ['early', 'late'],
+      ['arrived first', 'arrived second'],
     );
   });
 

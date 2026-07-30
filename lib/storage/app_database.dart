@@ -3,6 +3,8 @@ import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 
+import 'arrival_clock.dart';
+
 part 'app_database.g.dart';
 
 /// One row per channel message. The keys are real columns so the database
@@ -23,7 +25,21 @@ class ChannelMessageRows extends Table {
   TextColumn get channelIdKey => text()();
 
   TextColumn get messageId => text()();
+
+  /// When the SENDER says it sent this. Display only, and not trustworthy:
+  /// mesh clocks drift, reset on a flat battery, and the firmware refuses to
+  /// wind one backwards. Ingest also rewrites this when it looks implausible.
+  /// Never order or deduplicate on it.
   IntColumn get timestampMs => integer()();
+
+  /// When THIS app first saw the message, in microseconds. The radio hands
+  /// its offline queue over strictly in receive order, so this is a fact we
+  /// know even when the sender's clock is nonsense — which makes it the only
+  /// sound basis for ordering a conversation (v6).
+  ///
+  /// Written once, at first insert, and preserved by every later upsert: a
+  /// status change must not move a message in the chat.
+  IntColumn get receivedAtUs => integer().withDefault(const Constant(0))();
 
   /// Firmware packet hash when known — repeat/echo dedup is a SQL lookup,
   /// not an in-memory scan (v3).
@@ -54,6 +70,11 @@ class ChannelReadMarks extends Table {
   TextColumn get idKey => text()();
   IntColumn get lastReadMs => integer().withDefault(const Constant(0))();
 
+  /// The watermark in the same units the rows are ordered by (v6). Unread is
+  /// a comparison, so it has to move to arrival time along with the messages
+  /// or every badge goes wrong the moment ordering changes.
+  IntColumn get lastReadSeq => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {nodeScope, idKey};
 }
@@ -63,6 +84,9 @@ class ContactReadMarks extends Table {
   TextColumn get nodeScope => text()();
   TextColumn get contactKey => text()();
   IntColumn get lastReadMs => integer().withDefault(const Constant(0))();
+
+  /// Arrival-time watermark, mirroring ChannelReadMarks (v6).
+  IntColumn get lastReadSeq => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column> get primaryKey => {nodeScope, contactKey};
@@ -115,7 +139,15 @@ class ContactMessageRows extends Table {
   TextColumn get contactKey => text()();
 
   TextColumn get messageId => text()();
+
+  /// The sender's claimed send time — display only. See the note on
+  /// ChannelMessageRows.timestampMs.
   IntColumn get timestampMs => integer()();
+
+  /// When THIS app first saw the message, in microseconds (v6). DMs drain
+  /// from the same receive-ordered offline queue as channel messages, so they
+  /// have the same problem and the same fix.
+  IntColumn get receivedAtUs => integer().withDefault(const Constant(0))();
 
   /// Promoted so unread/ordering queries never parse JSON (v4).
   BoolColumn get isOutgoing => boolean().withDefault(const Constant(false))();
@@ -161,7 +193,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -194,6 +226,51 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(discoveredContactRows);
         await m.createTable(cachedChannelRows);
       }
+      if (from < 6) {
+        await m.addColumn(channelMessageRows, channelMessageRows.receivedAtUs);
+        await m.addColumn(contactMessageRows, contactMessageRows.receivedAtUs);
+        await m.addColumn(channelReadMarks, channelReadMarks.lastReadSeq);
+        await m.addColumn(contactReadMarks, contactReadMarks.lastReadSeq);
+
+        // Seed arrival time from the sender's timestamp. Conversations are
+        // ordered by timestamp_ms today, so x1000 reproduces exactly the order
+        // every existing chat already displays — nobody's history rearranges
+        // on upgrade. Only messages arriving from here on get a true arrival
+        // time, which is right: they are the only ones we actually witnessed.
+        //
+        // MAX(..., 1): a stamp of 0 means "unstamped" to the preservation
+        // logic, so a legacy row with timestamp_ms = 0 would be handed a
+        // fresh stamp by its next status update and teleport to the newest
+        // position. Floor it at 1µs — still sorts oldest, never re-stamps.
+        await customStatement(
+          'UPDATE channel_message_rows '
+          'SET received_at_us = MAX(timestamp_ms, 1) * 1000',
+        );
+        await customStatement(
+          'UPDATE contact_message_rows '
+          'SET received_at_us = MAX(timestamp_ms, 1) * 1000',
+        );
+        // Same scaling for the watermarks, so unread counts do not shift.
+        await customStatement(
+          'UPDATE channel_read_marks SET last_read_seq = last_read_ms * 1000',
+        );
+        await customStatement(
+          'UPDATE contact_read_marks SET last_read_seq = last_read_ms * 1000',
+        );
+      }
+    },
+    beforeOpen: (details) async {
+      // Seed the arrival clock past everything already stored, every open.
+      // Without this, a phone clock that stepped backwards between sessions
+      // would stamp new messages below existing rows — mid-conversation, and
+      // invisibly read if they land under the watermark.
+      final row = await customSelect(
+        'SELECT MAX('
+        '  COALESCE((SELECT MAX(received_at_us) FROM channel_message_rows), 0),'
+        '  COALESCE((SELECT MAX(received_at_us) FROM contact_message_rows), 0)'
+        ') AS m',
+      ).getSingleOrNull();
+      ArrivalClock.seed(row?.read<int?>('m') ?? 0);
     },
   );
 }

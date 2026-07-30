@@ -66,6 +66,18 @@ class $ChannelMessageRowsTable extends ChannelMessageRows
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _receivedAtUsMeta = const VerificationMeta(
+    'receivedAtUs',
+  );
+  @override
+  late final GeneratedColumn<int> receivedAtUs = GeneratedColumn<int>(
+    'received_at_us',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _packetHashMeta = const VerificationMeta(
     'packetHash',
   );
@@ -125,6 +137,7 @@ class $ChannelMessageRowsTable extends ChannelMessageRows
     channelIdKey,
     messageId,
     timestampMs,
+    receivedAtUs,
     packetHash,
     isOutgoing,
     unreadEligible,
@@ -182,6 +195,15 @@ class $ChannelMessageRowsTable extends ChannelMessageRows
       );
     } else if (isInserting) {
       context.missing(_timestampMsMeta);
+    }
+    if (data.containsKey('received_at_us')) {
+      context.handle(
+        _receivedAtUsMeta,
+        receivedAtUs.isAcceptableOrUnknown(
+          data['received_at_us']!,
+          _receivedAtUsMeta,
+        ),
+      );
     }
     if (data.containsKey('packet_hash')) {
       context.handle(
@@ -245,6 +267,10 @@ class $ChannelMessageRowsTable extends ChannelMessageRows
         DriftSqlType.int,
         data['${effectivePrefix}timestamp_ms'],
       )!,
+      receivedAtUs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}received_at_us'],
+      )!,
       packetHash: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}packet_hash'],
@@ -280,7 +306,21 @@ class ChannelMessageRow extends DataClass
   /// Channel identity (Channel.idKey == pskHex) — never a slot index.
   final String channelIdKey;
   final String messageId;
+
+  /// When the SENDER says it sent this. Display only, and not trustworthy:
+  /// mesh clocks drift, reset on a flat battery, and the firmware refuses to
+  /// wind one backwards. Ingest also rewrites this when it looks implausible.
+  /// Never order or deduplicate on it.
   final int timestampMs;
+
+  /// When THIS app first saw the message, in microseconds. The radio hands
+  /// its offline queue over strictly in receive order, so this is a fact we
+  /// know even when the sender's clock is nonsense — which makes it the only
+  /// sound basis for ordering a conversation (v6).
+  ///
+  /// Written once, at first insert, and preserved by every later upsert: a
+  /// status change must not move a message in the chat.
+  final int receivedAtUs;
 
   /// Firmware packet hash when known — repeat/echo dedup is a SQL lookup,
   /// not an in-memory scan (v3).
@@ -302,6 +342,7 @@ class ChannelMessageRow extends DataClass
     required this.channelIdKey,
     required this.messageId,
     required this.timestampMs,
+    required this.receivedAtUs,
     this.packetHash,
     required this.isOutgoing,
     required this.unreadEligible,
@@ -315,6 +356,7 @@ class ChannelMessageRow extends DataClass
     map['channel_id_key'] = Variable<String>(channelIdKey);
     map['message_id'] = Variable<String>(messageId);
     map['timestamp_ms'] = Variable<int>(timestampMs);
+    map['received_at_us'] = Variable<int>(receivedAtUs);
     if (!nullToAbsent || packetHash != null) {
       map['packet_hash'] = Variable<String>(packetHash);
     }
@@ -331,6 +373,7 @@ class ChannelMessageRow extends DataClass
       channelIdKey: Value(channelIdKey),
       messageId: Value(messageId),
       timestampMs: Value(timestampMs),
+      receivedAtUs: Value(receivedAtUs),
       packetHash: packetHash == null && nullToAbsent
           ? const Value.absent()
           : Value(packetHash),
@@ -351,6 +394,7 @@ class ChannelMessageRow extends DataClass
       channelIdKey: serializer.fromJson<String>(json['channelIdKey']),
       messageId: serializer.fromJson<String>(json['messageId']),
       timestampMs: serializer.fromJson<int>(json['timestampMs']),
+      receivedAtUs: serializer.fromJson<int>(json['receivedAtUs']),
       packetHash: serializer.fromJson<String?>(json['packetHash']),
       isOutgoing: serializer.fromJson<bool>(json['isOutgoing']),
       unreadEligible: serializer.fromJson<bool>(json['unreadEligible']),
@@ -366,6 +410,7 @@ class ChannelMessageRow extends DataClass
       'channelIdKey': serializer.toJson<String>(channelIdKey),
       'messageId': serializer.toJson<String>(messageId),
       'timestampMs': serializer.toJson<int>(timestampMs),
+      'receivedAtUs': serializer.toJson<int>(receivedAtUs),
       'packetHash': serializer.toJson<String?>(packetHash),
       'isOutgoing': serializer.toJson<bool>(isOutgoing),
       'unreadEligible': serializer.toJson<bool>(unreadEligible),
@@ -379,6 +424,7 @@ class ChannelMessageRow extends DataClass
     String? channelIdKey,
     String? messageId,
     int? timestampMs,
+    int? receivedAtUs,
     Value<String?> packetHash = const Value.absent(),
     bool? isOutgoing,
     bool? unreadEligible,
@@ -389,6 +435,7 @@ class ChannelMessageRow extends DataClass
     channelIdKey: channelIdKey ?? this.channelIdKey,
     messageId: messageId ?? this.messageId,
     timestampMs: timestampMs ?? this.timestampMs,
+    receivedAtUs: receivedAtUs ?? this.receivedAtUs,
     packetHash: packetHash.present ? packetHash.value : this.packetHash,
     isOutgoing: isOutgoing ?? this.isOutgoing,
     unreadEligible: unreadEligible ?? this.unreadEligible,
@@ -405,6 +452,9 @@ class ChannelMessageRow extends DataClass
       timestampMs: data.timestampMs.present
           ? data.timestampMs.value
           : this.timestampMs,
+      receivedAtUs: data.receivedAtUs.present
+          ? data.receivedAtUs.value
+          : this.receivedAtUs,
       packetHash: data.packetHash.present
           ? data.packetHash.value
           : this.packetHash,
@@ -426,6 +476,7 @@ class ChannelMessageRow extends DataClass
           ..write('channelIdKey: $channelIdKey, ')
           ..write('messageId: $messageId, ')
           ..write('timestampMs: $timestampMs, ')
+          ..write('receivedAtUs: $receivedAtUs, ')
           ..write('packetHash: $packetHash, ')
           ..write('isOutgoing: $isOutgoing, ')
           ..write('unreadEligible: $unreadEligible, ')
@@ -441,6 +492,7 @@ class ChannelMessageRow extends DataClass
     channelIdKey,
     messageId,
     timestampMs,
+    receivedAtUs,
     packetHash,
     isOutgoing,
     unreadEligible,
@@ -455,6 +507,7 @@ class ChannelMessageRow extends DataClass
           other.channelIdKey == this.channelIdKey &&
           other.messageId == this.messageId &&
           other.timestampMs == this.timestampMs &&
+          other.receivedAtUs == this.receivedAtUs &&
           other.packetHash == this.packetHash &&
           other.isOutgoing == this.isOutgoing &&
           other.unreadEligible == this.unreadEligible &&
@@ -467,6 +520,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
   final Value<String> channelIdKey;
   final Value<String> messageId;
   final Value<int> timestampMs;
+  final Value<int> receivedAtUs;
   final Value<String?> packetHash;
   final Value<bool> isOutgoing;
   final Value<bool> unreadEligible;
@@ -477,6 +531,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
     this.channelIdKey = const Value.absent(),
     this.messageId = const Value.absent(),
     this.timestampMs = const Value.absent(),
+    this.receivedAtUs = const Value.absent(),
     this.packetHash = const Value.absent(),
     this.isOutgoing = const Value.absent(),
     this.unreadEligible = const Value.absent(),
@@ -488,6 +543,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
     required String channelIdKey,
     required String messageId,
     required int timestampMs,
+    this.receivedAtUs = const Value.absent(),
     this.packetHash = const Value.absent(),
     this.isOutgoing = const Value.absent(),
     this.unreadEligible = const Value.absent(),
@@ -503,6 +559,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
     Expression<String>? channelIdKey,
     Expression<String>? messageId,
     Expression<int>? timestampMs,
+    Expression<int>? receivedAtUs,
     Expression<String>? packetHash,
     Expression<bool>? isOutgoing,
     Expression<bool>? unreadEligible,
@@ -514,6 +571,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
       if (channelIdKey != null) 'channel_id_key': channelIdKey,
       if (messageId != null) 'message_id': messageId,
       if (timestampMs != null) 'timestamp_ms': timestampMs,
+      if (receivedAtUs != null) 'received_at_us': receivedAtUs,
       if (packetHash != null) 'packet_hash': packetHash,
       if (isOutgoing != null) 'is_outgoing': isOutgoing,
       if (unreadEligible != null) 'unread_eligible': unreadEligible,
@@ -527,6 +585,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
     Value<String>? channelIdKey,
     Value<String>? messageId,
     Value<int>? timestampMs,
+    Value<int>? receivedAtUs,
     Value<String?>? packetHash,
     Value<bool>? isOutgoing,
     Value<bool>? unreadEligible,
@@ -538,6 +597,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
       channelIdKey: channelIdKey ?? this.channelIdKey,
       messageId: messageId ?? this.messageId,
       timestampMs: timestampMs ?? this.timestampMs,
+      receivedAtUs: receivedAtUs ?? this.receivedAtUs,
       packetHash: packetHash ?? this.packetHash,
       isOutgoing: isOutgoing ?? this.isOutgoing,
       unreadEligible: unreadEligible ?? this.unreadEligible,
@@ -563,6 +623,9 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
     if (timestampMs.present) {
       map['timestamp_ms'] = Variable<int>(timestampMs.value);
     }
+    if (receivedAtUs.present) {
+      map['received_at_us'] = Variable<int>(receivedAtUs.value);
+    }
     if (packetHash.present) {
       map['packet_hash'] = Variable<String>(packetHash.value);
     }
@@ -586,6 +649,7 @@ class ChannelMessageRowsCompanion extends UpdateCompanion<ChannelMessageRow> {
           ..write('channelIdKey: $channelIdKey, ')
           ..write('messageId: $messageId, ')
           ..write('timestampMs: $timestampMs, ')
+          ..write('receivedAtUs: $receivedAtUs, ')
           ..write('packetHash: $packetHash, ')
           ..write('isOutgoing: $isOutgoing, ')
           ..write('unreadEligible: $unreadEligible, ')
@@ -658,6 +722,18 @@ class $ContactMessageRowsTable extends ContactMessageRows
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _receivedAtUsMeta = const VerificationMeta(
+    'receivedAtUs',
+  );
+  @override
+  late final GeneratedColumn<int> receivedAtUs = GeneratedColumn<int>(
+    'received_at_us',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _isOutgoingMeta = const VerificationMeta(
     'isOutgoing',
   );
@@ -706,6 +782,7 @@ class $ContactMessageRowsTable extends ContactMessageRows
     contactKey,
     messageId,
     timestampMs,
+    receivedAtUs,
     isOutgoing,
     unreadEligible,
     payload,
@@ -759,6 +836,15 @@ class $ContactMessageRowsTable extends ContactMessageRows
       );
     } else if (isInserting) {
       context.missing(_timestampMsMeta);
+    }
+    if (data.containsKey('received_at_us')) {
+      context.handle(
+        _receivedAtUsMeta,
+        receivedAtUs.isAcceptableOrUnknown(
+          data['received_at_us']!,
+          _receivedAtUsMeta,
+        ),
+      );
     }
     if (data.containsKey('is_outgoing')) {
       context.handle(
@@ -816,6 +902,10 @@ class $ContactMessageRowsTable extends ContactMessageRows
         DriftSqlType.int,
         data['${effectivePrefix}timestamp_ms'],
       )!,
+      receivedAtUs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}received_at_us'],
+      )!,
       isOutgoing: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_outgoing'],
@@ -847,7 +937,15 @@ class ContactMessageRow extends DataClass
   /// The other party's full pubkey hex — contacts' stable identity.
   final String contactKey;
   final String messageId;
+
+  /// The sender's claimed send time — display only. See the note on
+  /// ChannelMessageRows.timestampMs.
   final int timestampMs;
+
+  /// When THIS app first saw the message, in microseconds (v6). DMs drain
+  /// from the same receive-ordered offline queue as channel messages, so they
+  /// have the same problem and the same fix.
+  final int receivedAtUs;
 
   /// Promoted so unread/ordering queries never parse JSON (v4).
   final bool isOutgoing;
@@ -864,6 +962,7 @@ class ContactMessageRow extends DataClass
     required this.contactKey,
     required this.messageId,
     required this.timestampMs,
+    required this.receivedAtUs,
     required this.isOutgoing,
     required this.unreadEligible,
     required this.payload,
@@ -876,6 +975,7 @@ class ContactMessageRow extends DataClass
     map['contact_key'] = Variable<String>(contactKey);
     map['message_id'] = Variable<String>(messageId);
     map['timestamp_ms'] = Variable<int>(timestampMs);
+    map['received_at_us'] = Variable<int>(receivedAtUs);
     map['is_outgoing'] = Variable<bool>(isOutgoing);
     map['unread_eligible'] = Variable<bool>(unreadEligible);
     map['payload'] = Variable<String>(payload);
@@ -889,6 +989,7 @@ class ContactMessageRow extends DataClass
       contactKey: Value(contactKey),
       messageId: Value(messageId),
       timestampMs: Value(timestampMs),
+      receivedAtUs: Value(receivedAtUs),
       isOutgoing: Value(isOutgoing),
       unreadEligible: Value(unreadEligible),
       payload: Value(payload),
@@ -906,6 +1007,7 @@ class ContactMessageRow extends DataClass
       contactKey: serializer.fromJson<String>(json['contactKey']),
       messageId: serializer.fromJson<String>(json['messageId']),
       timestampMs: serializer.fromJson<int>(json['timestampMs']),
+      receivedAtUs: serializer.fromJson<int>(json['receivedAtUs']),
       isOutgoing: serializer.fromJson<bool>(json['isOutgoing']),
       unreadEligible: serializer.fromJson<bool>(json['unreadEligible']),
       payload: serializer.fromJson<String>(json['payload']),
@@ -920,6 +1022,7 @@ class ContactMessageRow extends DataClass
       'contactKey': serializer.toJson<String>(contactKey),
       'messageId': serializer.toJson<String>(messageId),
       'timestampMs': serializer.toJson<int>(timestampMs),
+      'receivedAtUs': serializer.toJson<int>(receivedAtUs),
       'isOutgoing': serializer.toJson<bool>(isOutgoing),
       'unreadEligible': serializer.toJson<bool>(unreadEligible),
       'payload': serializer.toJson<String>(payload),
@@ -932,6 +1035,7 @@ class ContactMessageRow extends DataClass
     String? contactKey,
     String? messageId,
     int? timestampMs,
+    int? receivedAtUs,
     bool? isOutgoing,
     bool? unreadEligible,
     String? payload,
@@ -941,6 +1045,7 @@ class ContactMessageRow extends DataClass
     contactKey: contactKey ?? this.contactKey,
     messageId: messageId ?? this.messageId,
     timestampMs: timestampMs ?? this.timestampMs,
+    receivedAtUs: receivedAtUs ?? this.receivedAtUs,
     isOutgoing: isOutgoing ?? this.isOutgoing,
     unreadEligible: unreadEligible ?? this.unreadEligible,
     payload: payload ?? this.payload,
@@ -956,6 +1061,9 @@ class ContactMessageRow extends DataClass
       timestampMs: data.timestampMs.present
           ? data.timestampMs.value
           : this.timestampMs,
+      receivedAtUs: data.receivedAtUs.present
+          ? data.receivedAtUs.value
+          : this.receivedAtUs,
       isOutgoing: data.isOutgoing.present
           ? data.isOutgoing.value
           : this.isOutgoing,
@@ -974,6 +1082,7 @@ class ContactMessageRow extends DataClass
           ..write('contactKey: $contactKey, ')
           ..write('messageId: $messageId, ')
           ..write('timestampMs: $timestampMs, ')
+          ..write('receivedAtUs: $receivedAtUs, ')
           ..write('isOutgoing: $isOutgoing, ')
           ..write('unreadEligible: $unreadEligible, ')
           ..write('payload: $payload')
@@ -988,6 +1097,7 @@ class ContactMessageRow extends DataClass
     contactKey,
     messageId,
     timestampMs,
+    receivedAtUs,
     isOutgoing,
     unreadEligible,
     payload,
@@ -1001,6 +1111,7 @@ class ContactMessageRow extends DataClass
           other.contactKey == this.contactKey &&
           other.messageId == this.messageId &&
           other.timestampMs == this.timestampMs &&
+          other.receivedAtUs == this.receivedAtUs &&
           other.isOutgoing == this.isOutgoing &&
           other.unreadEligible == this.unreadEligible &&
           other.payload == this.payload);
@@ -1012,6 +1123,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
   final Value<String> contactKey;
   final Value<String> messageId;
   final Value<int> timestampMs;
+  final Value<int> receivedAtUs;
   final Value<bool> isOutgoing;
   final Value<bool> unreadEligible;
   final Value<String> payload;
@@ -1021,6 +1133,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     this.contactKey = const Value.absent(),
     this.messageId = const Value.absent(),
     this.timestampMs = const Value.absent(),
+    this.receivedAtUs = const Value.absent(),
     this.isOutgoing = const Value.absent(),
     this.unreadEligible = const Value.absent(),
     this.payload = const Value.absent(),
@@ -1031,6 +1144,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     required String contactKey,
     required String messageId,
     required int timestampMs,
+    this.receivedAtUs = const Value.absent(),
     this.isOutgoing = const Value.absent(),
     this.unreadEligible = const Value.absent(),
     required String payload,
@@ -1045,6 +1159,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     Expression<String>? contactKey,
     Expression<String>? messageId,
     Expression<int>? timestampMs,
+    Expression<int>? receivedAtUs,
     Expression<bool>? isOutgoing,
     Expression<bool>? unreadEligible,
     Expression<String>? payload,
@@ -1055,6 +1170,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
       if (contactKey != null) 'contact_key': contactKey,
       if (messageId != null) 'message_id': messageId,
       if (timestampMs != null) 'timestamp_ms': timestampMs,
+      if (receivedAtUs != null) 'received_at_us': receivedAtUs,
       if (isOutgoing != null) 'is_outgoing': isOutgoing,
       if (unreadEligible != null) 'unread_eligible': unreadEligible,
       if (payload != null) 'payload': payload,
@@ -1067,6 +1183,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     Value<String>? contactKey,
     Value<String>? messageId,
     Value<int>? timestampMs,
+    Value<int>? receivedAtUs,
     Value<bool>? isOutgoing,
     Value<bool>? unreadEligible,
     Value<String>? payload,
@@ -1077,6 +1194,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
       contactKey: contactKey ?? this.contactKey,
       messageId: messageId ?? this.messageId,
       timestampMs: timestampMs ?? this.timestampMs,
+      receivedAtUs: receivedAtUs ?? this.receivedAtUs,
       isOutgoing: isOutgoing ?? this.isOutgoing,
       unreadEligible: unreadEligible ?? this.unreadEligible,
       payload: payload ?? this.payload,
@@ -1101,6 +1219,9 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
     if (timestampMs.present) {
       map['timestamp_ms'] = Variable<int>(timestampMs.value);
     }
+    if (receivedAtUs.present) {
+      map['received_at_us'] = Variable<int>(receivedAtUs.value);
+    }
     if (isOutgoing.present) {
       map['is_outgoing'] = Variable<bool>(isOutgoing.value);
     }
@@ -1121,6 +1242,7 @@ class ContactMessageRowsCompanion extends UpdateCompanion<ContactMessageRow> {
           ..write('contactKey: $contactKey, ')
           ..write('messageId: $messageId, ')
           ..write('timestampMs: $timestampMs, ')
+          ..write('receivedAtUs: $receivedAtUs, ')
           ..write('isOutgoing: $isOutgoing, ')
           ..write('unreadEligible: $unreadEligible, ')
           ..write('payload: $payload')
@@ -1167,8 +1289,25 @@ class $ChannelReadMarksTable extends ChannelReadMarks
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _lastReadSeqMeta = const VerificationMeta(
+    'lastReadSeq',
+  );
   @override
-  List<GeneratedColumn> get $columns => [nodeScope, idKey, lastReadMs];
+  late final GeneratedColumn<int> lastReadSeq = GeneratedColumn<int>(
+    'last_read_seq',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    nodeScope,
+    idKey,
+    lastReadMs,
+    lastReadSeq,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1206,6 +1345,15 @@ class $ChannelReadMarksTable extends ChannelReadMarks
         ),
       );
     }
+    if (data.containsKey('last_read_seq')) {
+      context.handle(
+        _lastReadSeqMeta,
+        lastReadSeq.isAcceptableOrUnknown(
+          data['last_read_seq']!,
+          _lastReadSeqMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1227,6 +1375,10 @@ class $ChannelReadMarksTable extends ChannelReadMarks
         DriftSqlType.int,
         data['${effectivePrefix}last_read_ms'],
       )!,
+      lastReadSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_read_seq'],
+      )!,
     );
   }
 
@@ -1240,10 +1392,16 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
   final String nodeScope;
   final String idKey;
   final int lastReadMs;
+
+  /// The watermark in the same units the rows are ordered by (v6). Unread is
+  /// a comparison, so it has to move to arrival time along with the messages
+  /// or every badge goes wrong the moment ordering changes.
+  final int lastReadSeq;
   const ChannelReadMark({
     required this.nodeScope,
     required this.idKey,
     required this.lastReadMs,
+    required this.lastReadSeq,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1251,6 +1409,7 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
     map['node_scope'] = Variable<String>(nodeScope);
     map['id_key'] = Variable<String>(idKey);
     map['last_read_ms'] = Variable<int>(lastReadMs);
+    map['last_read_seq'] = Variable<int>(lastReadSeq);
     return map;
   }
 
@@ -1259,6 +1418,7 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
       nodeScope: Value(nodeScope),
       idKey: Value(idKey),
       lastReadMs: Value(lastReadMs),
+      lastReadSeq: Value(lastReadSeq),
     );
   }
 
@@ -1271,6 +1431,7 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
       nodeScope: serializer.fromJson<String>(json['nodeScope']),
       idKey: serializer.fromJson<String>(json['idKey']),
       lastReadMs: serializer.fromJson<int>(json['lastReadMs']),
+      lastReadSeq: serializer.fromJson<int>(json['lastReadSeq']),
     );
   }
   @override
@@ -1280,6 +1441,7 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
       'nodeScope': serializer.toJson<String>(nodeScope),
       'idKey': serializer.toJson<String>(idKey),
       'lastReadMs': serializer.toJson<int>(lastReadMs),
+      'lastReadSeq': serializer.toJson<int>(lastReadSeq),
     };
   }
 
@@ -1287,10 +1449,12 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
     String? nodeScope,
     String? idKey,
     int? lastReadMs,
+    int? lastReadSeq,
   }) => ChannelReadMark(
     nodeScope: nodeScope ?? this.nodeScope,
     idKey: idKey ?? this.idKey,
     lastReadMs: lastReadMs ?? this.lastReadMs,
+    lastReadSeq: lastReadSeq ?? this.lastReadSeq,
   );
   ChannelReadMark copyWithCompanion(ChannelReadMarksCompanion data) {
     return ChannelReadMark(
@@ -1299,6 +1463,9 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
       lastReadMs: data.lastReadMs.present
           ? data.lastReadMs.value
           : this.lastReadMs,
+      lastReadSeq: data.lastReadSeq.present
+          ? data.lastReadSeq.value
+          : this.lastReadSeq,
     );
   }
 
@@ -1307,37 +1474,42 @@ class ChannelReadMark extends DataClass implements Insertable<ChannelReadMark> {
     return (StringBuffer('ChannelReadMark(')
           ..write('nodeScope: $nodeScope, ')
           ..write('idKey: $idKey, ')
-          ..write('lastReadMs: $lastReadMs')
+          ..write('lastReadMs: $lastReadMs, ')
+          ..write('lastReadSeq: $lastReadSeq')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(nodeScope, idKey, lastReadMs);
+  int get hashCode => Object.hash(nodeScope, idKey, lastReadMs, lastReadSeq);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ChannelReadMark &&
           other.nodeScope == this.nodeScope &&
           other.idKey == this.idKey &&
-          other.lastReadMs == this.lastReadMs);
+          other.lastReadMs == this.lastReadMs &&
+          other.lastReadSeq == this.lastReadSeq);
 }
 
 class ChannelReadMarksCompanion extends UpdateCompanion<ChannelReadMark> {
   final Value<String> nodeScope;
   final Value<String> idKey;
   final Value<int> lastReadMs;
+  final Value<int> lastReadSeq;
   final Value<int> rowid;
   const ChannelReadMarksCompanion({
     this.nodeScope = const Value.absent(),
     this.idKey = const Value.absent(),
     this.lastReadMs = const Value.absent(),
+    this.lastReadSeq = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChannelReadMarksCompanion.insert({
     required String nodeScope,
     required String idKey,
     this.lastReadMs = const Value.absent(),
+    this.lastReadSeq = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : nodeScope = Value(nodeScope),
        idKey = Value(idKey);
@@ -1345,12 +1517,14 @@ class ChannelReadMarksCompanion extends UpdateCompanion<ChannelReadMark> {
     Expression<String>? nodeScope,
     Expression<String>? idKey,
     Expression<int>? lastReadMs,
+    Expression<int>? lastReadSeq,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (nodeScope != null) 'node_scope': nodeScope,
       if (idKey != null) 'id_key': idKey,
       if (lastReadMs != null) 'last_read_ms': lastReadMs,
+      if (lastReadSeq != null) 'last_read_seq': lastReadSeq,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1359,12 +1533,14 @@ class ChannelReadMarksCompanion extends UpdateCompanion<ChannelReadMark> {
     Value<String>? nodeScope,
     Value<String>? idKey,
     Value<int>? lastReadMs,
+    Value<int>? lastReadSeq,
     Value<int>? rowid,
   }) {
     return ChannelReadMarksCompanion(
       nodeScope: nodeScope ?? this.nodeScope,
       idKey: idKey ?? this.idKey,
       lastReadMs: lastReadMs ?? this.lastReadMs,
+      lastReadSeq: lastReadSeq ?? this.lastReadSeq,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1381,6 +1557,9 @@ class ChannelReadMarksCompanion extends UpdateCompanion<ChannelReadMark> {
     if (lastReadMs.present) {
       map['last_read_ms'] = Variable<int>(lastReadMs.value);
     }
+    if (lastReadSeq.present) {
+      map['last_read_seq'] = Variable<int>(lastReadSeq.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1393,6 +1572,7 @@ class ChannelReadMarksCompanion extends UpdateCompanion<ChannelReadMark> {
           ..write('nodeScope: $nodeScope, ')
           ..write('idKey: $idKey, ')
           ..write('lastReadMs: $lastReadMs, ')
+          ..write('lastReadSeq: $lastReadSeq, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1439,8 +1619,25 @@ class $ContactReadMarksTable extends ContactReadMarks
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _lastReadSeqMeta = const VerificationMeta(
+    'lastReadSeq',
+  );
   @override
-  List<GeneratedColumn> get $columns => [nodeScope, contactKey, lastReadMs];
+  late final GeneratedColumn<int> lastReadSeq = GeneratedColumn<int>(
+    'last_read_seq',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    nodeScope,
+    contactKey,
+    lastReadMs,
+    lastReadSeq,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1478,6 +1675,15 @@ class $ContactReadMarksTable extends ContactReadMarks
         ),
       );
     }
+    if (data.containsKey('last_read_seq')) {
+      context.handle(
+        _lastReadSeqMeta,
+        lastReadSeq.isAcceptableOrUnknown(
+          data['last_read_seq']!,
+          _lastReadSeqMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1499,6 +1705,10 @@ class $ContactReadMarksTable extends ContactReadMarks
         DriftSqlType.int,
         data['${effectivePrefix}last_read_ms'],
       )!,
+      lastReadSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_read_seq'],
+      )!,
     );
   }
 
@@ -1512,10 +1722,14 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
   final String nodeScope;
   final String contactKey;
   final int lastReadMs;
+
+  /// Arrival-time watermark, mirroring ChannelReadMarks (v6).
+  final int lastReadSeq;
   const ContactReadMark({
     required this.nodeScope,
     required this.contactKey,
     required this.lastReadMs,
+    required this.lastReadSeq,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1523,6 +1737,7 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
     map['node_scope'] = Variable<String>(nodeScope);
     map['contact_key'] = Variable<String>(contactKey);
     map['last_read_ms'] = Variable<int>(lastReadMs);
+    map['last_read_seq'] = Variable<int>(lastReadSeq);
     return map;
   }
 
@@ -1531,6 +1746,7 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
       nodeScope: Value(nodeScope),
       contactKey: Value(contactKey),
       lastReadMs: Value(lastReadMs),
+      lastReadSeq: Value(lastReadSeq),
     );
   }
 
@@ -1543,6 +1759,7 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
       nodeScope: serializer.fromJson<String>(json['nodeScope']),
       contactKey: serializer.fromJson<String>(json['contactKey']),
       lastReadMs: serializer.fromJson<int>(json['lastReadMs']),
+      lastReadSeq: serializer.fromJson<int>(json['lastReadSeq']),
     );
   }
   @override
@@ -1552,6 +1769,7 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
       'nodeScope': serializer.toJson<String>(nodeScope),
       'contactKey': serializer.toJson<String>(contactKey),
       'lastReadMs': serializer.toJson<int>(lastReadMs),
+      'lastReadSeq': serializer.toJson<int>(lastReadSeq),
     };
   }
 
@@ -1559,10 +1777,12 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
     String? nodeScope,
     String? contactKey,
     int? lastReadMs,
+    int? lastReadSeq,
   }) => ContactReadMark(
     nodeScope: nodeScope ?? this.nodeScope,
     contactKey: contactKey ?? this.contactKey,
     lastReadMs: lastReadMs ?? this.lastReadMs,
+    lastReadSeq: lastReadSeq ?? this.lastReadSeq,
   );
   ContactReadMark copyWithCompanion(ContactReadMarksCompanion data) {
     return ContactReadMark(
@@ -1573,6 +1793,9 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
       lastReadMs: data.lastReadMs.present
           ? data.lastReadMs.value
           : this.lastReadMs,
+      lastReadSeq: data.lastReadSeq.present
+          ? data.lastReadSeq.value
+          : this.lastReadSeq,
     );
   }
 
@@ -1581,37 +1804,43 @@ class ContactReadMark extends DataClass implements Insertable<ContactReadMark> {
     return (StringBuffer('ContactReadMark(')
           ..write('nodeScope: $nodeScope, ')
           ..write('contactKey: $contactKey, ')
-          ..write('lastReadMs: $lastReadMs')
+          ..write('lastReadMs: $lastReadMs, ')
+          ..write('lastReadSeq: $lastReadSeq')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(nodeScope, contactKey, lastReadMs);
+  int get hashCode =>
+      Object.hash(nodeScope, contactKey, lastReadMs, lastReadSeq);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ContactReadMark &&
           other.nodeScope == this.nodeScope &&
           other.contactKey == this.contactKey &&
-          other.lastReadMs == this.lastReadMs);
+          other.lastReadMs == this.lastReadMs &&
+          other.lastReadSeq == this.lastReadSeq);
 }
 
 class ContactReadMarksCompanion extends UpdateCompanion<ContactReadMark> {
   final Value<String> nodeScope;
   final Value<String> contactKey;
   final Value<int> lastReadMs;
+  final Value<int> lastReadSeq;
   final Value<int> rowid;
   const ContactReadMarksCompanion({
     this.nodeScope = const Value.absent(),
     this.contactKey = const Value.absent(),
     this.lastReadMs = const Value.absent(),
+    this.lastReadSeq = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ContactReadMarksCompanion.insert({
     required String nodeScope,
     required String contactKey,
     this.lastReadMs = const Value.absent(),
+    this.lastReadSeq = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : nodeScope = Value(nodeScope),
        contactKey = Value(contactKey);
@@ -1619,12 +1848,14 @@ class ContactReadMarksCompanion extends UpdateCompanion<ContactReadMark> {
     Expression<String>? nodeScope,
     Expression<String>? contactKey,
     Expression<int>? lastReadMs,
+    Expression<int>? lastReadSeq,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (nodeScope != null) 'node_scope': nodeScope,
       if (contactKey != null) 'contact_key': contactKey,
       if (lastReadMs != null) 'last_read_ms': lastReadMs,
+      if (lastReadSeq != null) 'last_read_seq': lastReadSeq,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1633,12 +1864,14 @@ class ContactReadMarksCompanion extends UpdateCompanion<ContactReadMark> {
     Value<String>? nodeScope,
     Value<String>? contactKey,
     Value<int>? lastReadMs,
+    Value<int>? lastReadSeq,
     Value<int>? rowid,
   }) {
     return ContactReadMarksCompanion(
       nodeScope: nodeScope ?? this.nodeScope,
       contactKey: contactKey ?? this.contactKey,
       lastReadMs: lastReadMs ?? this.lastReadMs,
+      lastReadSeq: lastReadSeq ?? this.lastReadSeq,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1655,6 +1888,9 @@ class ContactReadMarksCompanion extends UpdateCompanion<ContactReadMark> {
     if (lastReadMs.present) {
       map['last_read_ms'] = Variable<int>(lastReadMs.value);
     }
+    if (lastReadSeq.present) {
+      map['last_read_seq'] = Variable<int>(lastReadSeq.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1667,6 +1903,7 @@ class ContactReadMarksCompanion extends UpdateCompanion<ContactReadMark> {
           ..write('nodeScope: $nodeScope, ')
           ..write('contactKey: $contactKey, ')
           ..write('lastReadMs: $lastReadMs, ')
+          ..write('lastReadSeq: $lastReadSeq, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2538,6 +2775,7 @@ typedef $$ChannelMessageRowsTableCreateCompanionBuilder =
       required String channelIdKey,
       required String messageId,
       required int timestampMs,
+      Value<int> receivedAtUs,
       Value<String?> packetHash,
       Value<bool> isOutgoing,
       Value<bool> unreadEligible,
@@ -2550,6 +2788,7 @@ typedef $$ChannelMessageRowsTableUpdateCompanionBuilder =
       Value<String> channelIdKey,
       Value<String> messageId,
       Value<int> timestampMs,
+      Value<int> receivedAtUs,
       Value<String?> packetHash,
       Value<bool> isOutgoing,
       Value<bool> unreadEligible,
@@ -2587,6 +2826,11 @@ class $$ChannelMessageRowsTableFilterComposer
 
   ColumnFilters<int> get timestampMs => $composableBuilder(
     column: $table.timestampMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get receivedAtUs => $composableBuilder(
+    column: $table.receivedAtUs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2645,6 +2889,11 @@ class $$ChannelMessageRowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get receivedAtUs => $composableBuilder(
+    column: $table.receivedAtUs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get packetHash => $composableBuilder(
     column: $table.packetHash,
     builder: (column) => ColumnOrderings(column),
@@ -2691,6 +2940,11 @@ class $$ChannelMessageRowsTableAnnotationComposer
 
   GeneratedColumn<int> get timestampMs => $composableBuilder(
     column: $table.timestampMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get receivedAtUs => $composableBuilder(
+    column: $table.receivedAtUs,
     builder: (column) => column,
   );
 
@@ -2758,6 +3012,7 @@ class $$ChannelMessageRowsTableTableManager
                 Value<String> channelIdKey = const Value.absent(),
                 Value<String> messageId = const Value.absent(),
                 Value<int> timestampMs = const Value.absent(),
+                Value<int> receivedAtUs = const Value.absent(),
                 Value<String?> packetHash = const Value.absent(),
                 Value<bool> isOutgoing = const Value.absent(),
                 Value<bool> unreadEligible = const Value.absent(),
@@ -2768,6 +3023,7 @@ class $$ChannelMessageRowsTableTableManager
                 channelIdKey: channelIdKey,
                 messageId: messageId,
                 timestampMs: timestampMs,
+                receivedAtUs: receivedAtUs,
                 packetHash: packetHash,
                 isOutgoing: isOutgoing,
                 unreadEligible: unreadEligible,
@@ -2780,6 +3036,7 @@ class $$ChannelMessageRowsTableTableManager
                 required String channelIdKey,
                 required String messageId,
                 required int timestampMs,
+                Value<int> receivedAtUs = const Value.absent(),
                 Value<String?> packetHash = const Value.absent(),
                 Value<bool> isOutgoing = const Value.absent(),
                 Value<bool> unreadEligible = const Value.absent(),
@@ -2790,6 +3047,7 @@ class $$ChannelMessageRowsTableTableManager
                 channelIdKey: channelIdKey,
                 messageId: messageId,
                 timestampMs: timestampMs,
+                receivedAtUs: receivedAtUs,
                 packetHash: packetHash,
                 isOutgoing: isOutgoing,
                 unreadEligible: unreadEligible,
@@ -2831,6 +3089,7 @@ typedef $$ContactMessageRowsTableCreateCompanionBuilder =
       required String contactKey,
       required String messageId,
       required int timestampMs,
+      Value<int> receivedAtUs,
       Value<bool> isOutgoing,
       Value<bool> unreadEligible,
       required String payload,
@@ -2842,6 +3101,7 @@ typedef $$ContactMessageRowsTableUpdateCompanionBuilder =
       Value<String> contactKey,
       Value<String> messageId,
       Value<int> timestampMs,
+      Value<int> receivedAtUs,
       Value<bool> isOutgoing,
       Value<bool> unreadEligible,
       Value<String> payload,
@@ -2878,6 +3138,11 @@ class $$ContactMessageRowsTableFilterComposer
 
   ColumnFilters<int> get timestampMs => $composableBuilder(
     column: $table.timestampMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get receivedAtUs => $composableBuilder(
+    column: $table.receivedAtUs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2931,6 +3196,11 @@ class $$ContactMessageRowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get receivedAtUs => $composableBuilder(
+    column: $table.receivedAtUs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isOutgoing => $composableBuilder(
     column: $table.isOutgoing,
     builder: (column) => ColumnOrderings(column),
@@ -2972,6 +3242,11 @@ class $$ContactMessageRowsTableAnnotationComposer
 
   GeneratedColumn<int> get timestampMs => $composableBuilder(
     column: $table.timestampMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get receivedAtUs => $composableBuilder(
+    column: $table.receivedAtUs,
     builder: (column) => column,
   );
 
@@ -3034,6 +3309,7 @@ class $$ContactMessageRowsTableTableManager
                 Value<String> contactKey = const Value.absent(),
                 Value<String> messageId = const Value.absent(),
                 Value<int> timestampMs = const Value.absent(),
+                Value<int> receivedAtUs = const Value.absent(),
                 Value<bool> isOutgoing = const Value.absent(),
                 Value<bool> unreadEligible = const Value.absent(),
                 Value<String> payload = const Value.absent(),
@@ -3043,6 +3319,7 @@ class $$ContactMessageRowsTableTableManager
                 contactKey: contactKey,
                 messageId: messageId,
                 timestampMs: timestampMs,
+                receivedAtUs: receivedAtUs,
                 isOutgoing: isOutgoing,
                 unreadEligible: unreadEligible,
                 payload: payload,
@@ -3054,6 +3331,7 @@ class $$ContactMessageRowsTableTableManager
                 required String contactKey,
                 required String messageId,
                 required int timestampMs,
+                Value<int> receivedAtUs = const Value.absent(),
                 Value<bool> isOutgoing = const Value.absent(),
                 Value<bool> unreadEligible = const Value.absent(),
                 required String payload,
@@ -3063,6 +3341,7 @@ class $$ContactMessageRowsTableTableManager
                 contactKey: contactKey,
                 messageId: messageId,
                 timestampMs: timestampMs,
+                receivedAtUs: receivedAtUs,
                 isOutgoing: isOutgoing,
                 unreadEligible: unreadEligible,
                 payload: payload,
@@ -3101,6 +3380,7 @@ typedef $$ChannelReadMarksTableCreateCompanionBuilder =
       required String nodeScope,
       required String idKey,
       Value<int> lastReadMs,
+      Value<int> lastReadSeq,
       Value<int> rowid,
     });
 typedef $$ChannelReadMarksTableUpdateCompanionBuilder =
@@ -3108,6 +3388,7 @@ typedef $$ChannelReadMarksTableUpdateCompanionBuilder =
       Value<String> nodeScope,
       Value<String> idKey,
       Value<int> lastReadMs,
+      Value<int> lastReadSeq,
       Value<int> rowid,
     });
 
@@ -3132,6 +3413,11 @@ class $$ChannelReadMarksTableFilterComposer
 
   ColumnFilters<int> get lastReadMs => $composableBuilder(
     column: $table.lastReadMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastReadSeq => $composableBuilder(
+    column: $table.lastReadSeq,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3159,6 +3445,11 @@ class $$ChannelReadMarksTableOrderingComposer
     column: $table.lastReadMs,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get lastReadSeq => $composableBuilder(
+    column: $table.lastReadSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChannelReadMarksTableAnnotationComposer
@@ -3178,6 +3469,11 @@ class $$ChannelReadMarksTableAnnotationComposer
 
   GeneratedColumn<int> get lastReadMs => $composableBuilder(
     column: $table.lastReadMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastReadSeq => $composableBuilder(
+    column: $table.lastReadSeq,
     builder: (column) => column,
   );
 }
@@ -3222,11 +3518,13 @@ class $$ChannelReadMarksTableTableManager
                 Value<String> nodeScope = const Value.absent(),
                 Value<String> idKey = const Value.absent(),
                 Value<int> lastReadMs = const Value.absent(),
+                Value<int> lastReadSeq = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChannelReadMarksCompanion(
                 nodeScope: nodeScope,
                 idKey: idKey,
                 lastReadMs: lastReadMs,
+                lastReadSeq: lastReadSeq,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3234,11 +3532,13 @@ class $$ChannelReadMarksTableTableManager
                 required String nodeScope,
                 required String idKey,
                 Value<int> lastReadMs = const Value.absent(),
+                Value<int> lastReadSeq = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChannelReadMarksCompanion.insert(
                 nodeScope: nodeScope,
                 idKey: idKey,
                 lastReadMs: lastReadMs,
+                lastReadSeq: lastReadSeq,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -3271,6 +3571,7 @@ typedef $$ContactReadMarksTableCreateCompanionBuilder =
       required String nodeScope,
       required String contactKey,
       Value<int> lastReadMs,
+      Value<int> lastReadSeq,
       Value<int> rowid,
     });
 typedef $$ContactReadMarksTableUpdateCompanionBuilder =
@@ -3278,6 +3579,7 @@ typedef $$ContactReadMarksTableUpdateCompanionBuilder =
       Value<String> nodeScope,
       Value<String> contactKey,
       Value<int> lastReadMs,
+      Value<int> lastReadSeq,
       Value<int> rowid,
     });
 
@@ -3302,6 +3604,11 @@ class $$ContactReadMarksTableFilterComposer
 
   ColumnFilters<int> get lastReadMs => $composableBuilder(
     column: $table.lastReadMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastReadSeq => $composableBuilder(
+    column: $table.lastReadSeq,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3329,6 +3636,11 @@ class $$ContactReadMarksTableOrderingComposer
     column: $table.lastReadMs,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get lastReadSeq => $composableBuilder(
+    column: $table.lastReadSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ContactReadMarksTableAnnotationComposer
@@ -3350,6 +3662,11 @@ class $$ContactReadMarksTableAnnotationComposer
 
   GeneratedColumn<int> get lastReadMs => $composableBuilder(
     column: $table.lastReadMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastReadSeq => $composableBuilder(
+    column: $table.lastReadSeq,
     builder: (column) => column,
   );
 }
@@ -3394,11 +3711,13 @@ class $$ContactReadMarksTableTableManager
                 Value<String> nodeScope = const Value.absent(),
                 Value<String> contactKey = const Value.absent(),
                 Value<int> lastReadMs = const Value.absent(),
+                Value<int> lastReadSeq = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ContactReadMarksCompanion(
                 nodeScope: nodeScope,
                 contactKey: contactKey,
                 lastReadMs: lastReadMs,
+                lastReadSeq: lastReadSeq,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3406,11 +3725,13 @@ class $$ContactReadMarksTableTableManager
                 required String nodeScope,
                 required String contactKey,
                 Value<int> lastReadMs = const Value.absent(),
+                Value<int> lastReadSeq = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ContactReadMarksCompanion.insert(
                 nodeScope: nodeScope,
                 contactKey: contactKey,
                 lastReadMs: lastReadMs,
+                lastReadSeq: lastReadSeq,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

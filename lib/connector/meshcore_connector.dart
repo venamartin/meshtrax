@@ -199,12 +199,16 @@ class MeshCoreConnector extends ChangeNotifier {
   /// [_resubscribeChannelUnreadWatch].
   Map<String, int> _channelUnreadByIdKey = const {};
   StreamSubscription<Map<String, int>>? _channelUnreadSub;
-  Map<String, ChannelMessage> _channelLatestByIdKey = const {};
-  StreamSubscription<Map<String, ChannelMessage>>? _channelLatestSub;
+  Map<String, ({ChannelMessage message, int arrivalUs})>
+      _channelLatestByIdKey = const {};
+  StreamSubscription<Map<String, ({ChannelMessage message, int arrivalUs})>>?
+      _channelLatestSub;
   Map<String, int> _contactUnreadByKey = const {};
   StreamSubscription<Map<String, int>>? _contactUnreadSub;
-  Map<String, Message> _contactLatestByKey = const {};
-  StreamSubscription<Map<String, Message>>? _contactLatestSub;
+  Map<String, ({Message message, int arrivalUs})> _contactLatestByKey =
+      const {};
+  StreamSubscription<Map<String, ({Message message, int arrivalUs})>>?
+      _contactLatestSub;
   final List<String> _pendingChannelSentQueue = [];
   final List<_PendingCommandAck> _pendingGenericAckQueue = [];
   static const String _reactionSendQueuePrefix = '__reaction_send__';
@@ -625,9 +629,10 @@ class MeshCoreConnector extends ChangeNotifier {
   Stream<Map<String, int>> watchChannelUnreadCounts() =>
       _channelMessageStore.watchUnreadCounts();
 
-  /// Watched newest message per channel identity (subtitles + ordering).
-  Stream<Map<String, ChannelMessage>> watchChannelLatest() =>
-      _channelMessageStore.watchLatestPerChannel();
+  /// Watched newest message per channel identity, with its arrival stamp
+  /// (subtitles + tile ordering).
+  Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
+      watchChannelLatest() => _channelMessageStore.watchLatestPerChannel();
 
   // Messages received for a radio slot whose identity the app doesn't know
   // yet. Held until CHANNEL_INFO reveals the slot's channel, then filed by
@@ -5848,13 +5853,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Newest message for a channel, from the watched query (chats screen
-  /// subtitles and ordering).
+  /// subtitles).
   ChannelMessage? latestChannelMessage(Channel channel) =>
-      _channelLatestByIdKey[channel.idKey];
+      _channelLatestByIdKey[channel.idKey]?.message;
+
+  /// When that newest channel message ARRIVED — what conversation tiles must
+  /// sort by. Sorting on the message's claimed timestamp would undo arrival
+  /// ordering at the last step.
+  int latestChannelArrivalUs(Channel channel) =>
+      _channelLatestByIdKey[channel.idKey]?.arrivalUs ?? 0;
 
   /// Newest message for a contact, from the watched query.
   Message? latestContactMessage(Contact contact) =>
-      _contactLatestByKey[contact.publicKeyHex];
+      _contactLatestByKey[contact.publicKeyHex]?.message;
+
+  /// When that newest DM arrived — the tile sort key.
+  int latestContactArrivalUs(Contact contact) =>
+      _contactLatestByKey[contact.publicKeyHex]?.arrivalUs ?? 0;
 
   /// Live stream of a conversation — the UI's ONLY DM read path.
   Stream<List<Message>> watchConversation(
@@ -6689,13 +6704,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
+  /// The ORIGINAL wire timestamp of a message, in ms — even after the ingest
+  /// clamp has rewritten the stored [ChannelMessage.timestamp].
+  ///
+  /// messageId is built at construction as
+  /// `<wire-ms>_<senderName.hashCode>_<text.hashCode>`, before the clamp
+  /// runs, and copyWith preserves it. So the id's leading field IS the wire
+  /// time, recoverable for every stored row with no schema change.
+  @visibleForTesting
+  static int wireTimestampMs(ChannelMessage message) {
+    final id = message.messageId;
+    final cut = id.indexOf('_');
+    if (cut > 0) {
+      final parsed = int.tryParse(id.substring(0, cut));
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return message.timestamp.millisecondsSinceEpoch;
+  }
+
   bool _isChannelRepeat(ChannelMessage existing, ChannelMessage incoming) {
     if (existing.text != incoming.text) return false;
 
+    // Compare WIRE times, never stored ones. The ingest clamp rewrites any
+    // timestamp older than ten minutes to "now", so a retransmitted copy
+    // drained from a radio's offline queue hours later carried a stored time
+    // hours away from its original — the 5-minute window could not see them
+    // as the same message, and the copy filed as a duplicate. That was the
+    // field report: switch companions for a day, come home, messages double.
     final diffMs =
-        (existing.timestamp.millisecondsSinceEpoch -
-                incoming.timestamp.millisecondsSinceEpoch)
-            .abs();
+        (wireTimestampMs(existing) - wireTimestampMs(incoming)).abs();
     // Allow up to 5 minutes difference to account for resent messages
     if (diffMs > 300000) {
       appLogger.info('Repeat rejected for time diff: $diffMs ms', tag: 'Connector');

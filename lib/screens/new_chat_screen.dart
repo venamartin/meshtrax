@@ -862,13 +862,11 @@ class _NewChatScreenState extends State<NewChatScreen> {
             });
             break;
           case ContactSortOption.recentMessages:
-            filteredDeviceContacts.sort((a, b) {
-              final aLast = connector.latestContactMessage(a)?.timestamp ??
-                  DateTime.fromMillisecondsSinceEpoch(0);
-              final bLast = connector.latestContactMessage(b)?.timestamp ??
-                  DateTime.fromMillisecondsSinceEpoch(0);
-              return bLast.compareTo(aLast);
-            });
+            // Arrival order, matching the chats screen — the claimed send
+            // time is display-only (v6).
+            filteredDeviceContacts.sort((a, b) => connector
+                .latestContactArrivalUs(b)
+                .compareTo(connector.latestContactArrivalUs(a)));
             break;
           case ContactSortOption.name:
             filteredDeviceContacts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));

@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../models/message.dart';
 import '../utils/app_logger.dart';
 import 'app_database.dart';
+import 'arrival_clock.dart';
 import 'prefs_manager.dart';
 
 /// Contact (DM) messages are stored one row per message, keyed by the
@@ -30,18 +32,62 @@ class MessageStore {
     String contactKeyHex,
     Message msg, {
     bool? unreadEligible,
+    required int receivedAtUs,
   }) {
     return ContactMessageRowsCompanion.insert(
       nodeScope: publicKeyHex,
       contactKey: contactKeyHex,
       messageId: msg.messageId,
       timestampMs: msg.timestamp.millisecondsSinceEpoch,
+      receivedAtUs: Value(receivedAtUs),
       isOutgoing: Value(msg.isOutgoing),
       unreadEligible: Value(
         unreadEligible ?? (!msg.isOutgoing && !msg.isCli),
       ),
       payload: jsonEncode(_messageToJson(msg)),
     );
+  }
+
+  /// The arrival stamp a write should carry — see the channel store's
+  /// equivalent. insertOrReplace is delete-then-insert, so without this a
+  /// delivery receipt would move a DM to the bottom of the conversation.
+  Future<int> _arrivalStampFor(String contactKeyHex, String messageId) async {
+    if (publicKeyHex.isEmpty) return ArrivalClock.next();
+    final existing =
+        await (_db.selectOnly(_db.contactMessageRows)
+              ..addColumns([_db.contactMessageRows.receivedAtUs])
+              ..where(
+                _db.contactMessageRows.nodeScope.equals(publicKeyHex) &
+                    _db.contactMessageRows.contactKey.equals(contactKeyHex) &
+                    _db.contactMessageRows.messageId.equals(messageId),
+              )
+              ..limit(1))
+            .map((r) => r.read(_db.contactMessageRows.receivedAtUs))
+            .getSingleOrNull();
+    if (existing != null && existing > 0) return existing;
+    return ArrivalClock.next();
+  }
+
+  /// Arrival stamps already on record for a conversation, by messageId.
+  Future<Map<String, int>> _arrivalStampsFor(String contactKeyHex) async {
+    if (publicKeyHex.isEmpty) return const {};
+    final rows =
+        await (_db.selectOnly(_db.contactMessageRows)
+              ..addColumns([
+                _db.contactMessageRows.messageId,
+                _db.contactMessageRows.receivedAtUs,
+              ])
+              ..where(
+                _db.contactMessageRows.nodeScope.equals(publicKeyHex) &
+                    _db.contactMessageRows.contactKey.equals(contactKeyHex),
+              ))
+            .get();
+    return {
+      for (final r in rows)
+        if ((r.read(_db.contactMessageRows.receivedAtUs) ?? 0) > 0)
+          r.read(_db.contactMessageRows.messageId)!:
+              r.read(_db.contactMessageRows.receivedAtUs)!,
+    };
   }
 
   // --- Phase 3d: the database is the only message state ------------------
@@ -60,8 +106,10 @@ class MessageStore {
             r.nodeScope.equals(publicKeyHex) &
             r.contactKey.equals(contactKeyHex),
       )
+      // Arrival order — see the channel store. DMs drain from the same
+      // receive-ordered offline queue, so they have the same problem.
       ..orderBy([
-        (r) => OrderingTerm.desc(r.timestampMs),
+        (r) => OrderingTerm.desc(r.receivedAtUs),
         (r) => OrderingTerm.desc(r.id),
       ])
       ..limit(limit));
@@ -91,7 +139,14 @@ class MessageStore {
     final inserted = await _db
         .into(_db.contactMessageRows)
         .insertReturningOrNull(
-          _toRow(contactKeyHex, msg, unreadEligible: unreadEligible),
+          // insertOrIgnore: a losing insert changes nothing, so a fresh stamp
+          // can never overwrite one we already hold.
+          _toRow(
+            contactKeyHex,
+            msg,
+            unreadEligible: unreadEligible,
+            receivedAtUs: ArrivalClock.next(),
+          ),
           mode: InsertMode.insertOrIgnore,
         );
     return inserted != null;
@@ -173,7 +228,7 @@ class MessageStore {
           'FROM contact_message_rows '
           'WHERE node_scope = ?1 AND is_outgoing = 1 '
           "AND json_extract(payload, '\$.status') = ?2 "
-          'ORDER BY timestamp_ms DESC LIMIT 1',
+          'ORDER BY received_at_us DESC LIMIT 1',
           variables: [
             Variable.withString(publicKeyHex),
             Variable.withInt(from.index),
@@ -193,7 +248,7 @@ class MessageStore {
 
   // --- Read marks: unread is a watched COUNT, never a mutable counter ----
 
-  Future<void> markRead(String contactKeyHex, {int? upToMs}) async {
+  Future<void> markRead(String contactKeyHex) async {
     if (publicKeyHex.isEmpty) return;
     await _db
         .into(_db.contactReadMarks)
@@ -201,11 +256,28 @@ class MessageStore {
           ContactReadMarksCompanion.insert(
             nodeScope: publicKeyHex,
             contactKey: contactKeyHex,
-            lastReadMs: Value(
-              upToMs ?? DateTime.now().millisecondsSinceEpoch,
-            ),
+            lastReadMs: Value(DateTime.now().millisecondsSinceEpoch),
+            // Watermark in the units the rows are ordered by. "Now" would be
+            // wrong: it can sit above a message that arrives a moment later
+            // with a lower stamp, silently marking it read.
+            lastReadSeq: Value(await _newestArrival(contactKeyHex)),
           ),
         );
+  }
+
+  /// Arrival stamp of the newest message held for a conversation, or 0.
+  Future<int> _newestArrival(String contactKeyHex) async {
+    final newest =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.contactKey.equals(contactKeyHex),
+              )
+              ..orderBy([(r) => OrderingTerm.desc(r.receivedAtUs)])
+              ..limit(1))
+            .getSingleOrNull();
+    return newest?.receivedAtUs ?? 0;
   }
 
   /// First-use initialization so pre-existing history never floods unread.
@@ -218,7 +290,7 @@ class MessageStore {
                     r.nodeScope.equals(publicKeyHex) &
                     r.contactKey.equals(contactKeyHex),
               )
-              ..orderBy([(r) => OrderingTerm.desc(r.timestampMs)])
+              ..orderBy([(r) => OrderingTerm.desc(r.receivedAtUs)])
               ..limit(1))
             .getSingleOrNull();
     await _db
@@ -228,6 +300,7 @@ class MessageStore {
             nodeScope: publicKeyHex,
             contactKey: contactKeyHex,
             lastReadMs: Value(newest?.timestampMs ?? 0),
+            lastReadSeq: Value(newest?.receivedAtUs ?? 0),
           ),
           mode: InsertMode.insertOrIgnore,
         );
@@ -241,7 +314,7 @@ class MessageStore {
           'SELECT m.contact_key AS k, COUNT(*) AS c '
           'FROM contact_message_rows m '
           'WHERE m.node_scope = ?1 AND m.unread_eligible = 1 '
-          'AND m.timestamp_ms > COALESCE((SELECT last_read_ms '
+          'AND m.received_at_us > COALESCE((SELECT last_read_seq '
           'FROM contact_read_marks '
           'WHERE node_scope = ?1 AND contact_key = m.contact_key), 0) '
           'GROUP BY m.contact_key',
@@ -256,28 +329,35 @@ class MessageStore {
   }
 
   /// Watched newest message per contact (chats screen subtitles/ordering).
-  Stream<Map<String, Message>> watchLatestPerContact() {
+  /// Newest message per contact plus when it arrived — see the channel
+  /// store's watchLatestPerChannel for why the arrival stamp must ride along.
+  Stream<Map<String, ({Message message, int arrivalUs})>>
+      watchLatestPerContact() {
     if (publicKeyHex.isEmpty) return Stream.value(const {});
     return _db
         .customSelect(
-          'SELECT m.contact_key AS k, m.payload AS p '
+          'SELECT m.contact_key AS k, m.payload AS p, '
+          'latest.mx AS arrival '
           'FROM contact_message_rows m '
-          'INNER JOIN (SELECT contact_key, MAX(timestamp_ms) AS mx '
+          'INNER JOIN (SELECT contact_key, MAX(received_at_us) AS mx '
           'FROM contact_message_rows WHERE node_scope = ?1 '
           'GROUP BY contact_key) latest '
           'ON m.contact_key = latest.contact_key '
-          'AND m.timestamp_ms = latest.mx '
+          'AND m.received_at_us = latest.mx '
           'WHERE m.node_scope = ?1 GROUP BY m.contact_key',
           variables: [Variable.withString(publicKeyHex)],
           readsFrom: {_db.contactMessageRows},
         )
         .watch()
         .map((rows) {
-          final latest = <String, Message>{};
+          final latest = <String, ({Message message, int arrivalUs})>{};
           for (final row in rows) {
             try {
-              latest[row.read<String>('k')] = _messageFromJson(
-                jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+              latest[row.read<String>('k')] = (
+                message: _messageFromJson(
+                  jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+                ),
+                arrivalUs: row.read<int>('arrival'),
               );
             } catch (_) {}
           }
@@ -286,6 +366,11 @@ class MessageStore {
   }
 
   /// Replace a conversation's stored messages atomically.
+  ///
+  /// TEST-ONLY — see the channel store's saveChannelMessages: this re-stamps
+  /// every row from the sender's timestamp, which on a live conversation
+  /// would rewrite the arrival order this store exists to preserve.
+  @visibleForTesting
   Future<void> saveMessages(
     String contactKeyHex,
     List<Message> messages,
@@ -304,7 +389,17 @@ class MessageStore {
       await _db.batch((b) {
         b.insertAll(
           _db.contactMessageRows,
-          [for (final msg in messages) _toRow(contactKeyHex, msg)],
+          [
+            for (final msg in messages)
+              // This path clears the conversation first, so nothing survives
+              // to preserve; seed from the sender's timestamp exactly as the
+              // v6 migration seeded existing history.
+              _toRow(
+                contactKeyHex,
+                msg,
+                receivedAtUs: ArrivalClock.fromSenderTimestamp(msg.timestamp),
+              ),
+          ],
           mode: InsertMode.insertOrReplace,
         );
       });
@@ -315,9 +410,15 @@ class MessageStore {
   /// forward; no read-modify-write of a whole conversation.
   Future<void> upsertMessage(String contactKeyHex, Message msg) async {
     if (publicKeyHex.isEmpty) return;
-    await _db
-        .into(_db.contactMessageRows)
-        .insert(_toRow(contactKeyHex, msg), mode: InsertMode.insertOrReplace);
+    await _db.into(_db.contactMessageRows).insert(
+          _toRow(
+            contactKeyHex,
+            msg,
+            receivedAtUs:
+                await _arrivalStampFor(contactKeyHex, msg.messageId),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
   }
 
   /// Insert-or-update a batch WITHOUT touching any other rows — the only
@@ -328,10 +429,20 @@ class MessageStore {
     List<Message> messages,
   ) async {
     if (publicKeyHex.isEmpty || messages.isEmpty) return;
+    // One query for the batch: these rewrite rows we already hold, and each
+    // must keep the arrival time it was first given.
+    final known = await _arrivalStampsFor(contactKeyHex);
     await _db.batch((b) {
       b.insertAll(
         _db.contactMessageRows,
-        [for (final msg in messages) _toRow(contactKeyHex, msg)],
+        [
+          for (final msg in messages)
+            _toRow(
+              contactKeyHex,
+              msg,
+              receivedAtUs: known[msg.messageId] ?? ArrivalClock.next(),
+            ),
+        ],
         mode: InsertMode.insertOrReplace,
       );
     });
@@ -363,7 +474,7 @@ class MessageStore {
                     r.contactKey.equals(contactKeyHex),
               )
               ..orderBy([
-                (r) => OrderingTerm.asc(r.timestampMs),
+                (r) => OrderingTerm.asc(r.receivedAtUs),
                 (r) => OrderingTerm.asc(r.id),
               ]))
             .get();
@@ -403,7 +514,17 @@ class MessageStore {
           await _db.batch((b) {
             b.insertAll(
               _db.contactMessageRows,
-              [for (final msg in messages) _toRow(contactKeyHex, msg)],
+              [
+                for (final msg in messages)
+                  // Imported history was never witnessed arriving; seed from
+                  // the sender's timestamp, as the v6 migration does.
+                  _toRow(
+                    contactKeyHex,
+                    msg,
+                    receivedAtUs:
+                        ArrivalClock.fromSenderTimestamp(msg.timestamp),
+                  ),
+              ],
               mode: InsertMode.insertOrIgnore,
             );
           });

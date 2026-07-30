@@ -83,12 +83,17 @@ void main() {
     expect(loaded.single.text, 'edited');
   });
 
-  test('messages load ordered by timestamp', () async {
-    await store.upsertMessage(idKeyA, msg('late', id: 'x2', ts: 2000));
-    await store.upsertMessage(idKeyA, msg('early', id: 'x1', ts: 1000));
+  // Ordering follows ARRIVAL, not the sender's claimed send time (v6). A mesh
+  // node's clock can be hours out and cannot always be corrected, and ingest
+  // rewrites implausible timestamps outright — so the sender's value is not
+  // something a conversation can be ordered by. Here the message claiming to
+  // be OLDER arrives second, and therefore displays second.
+  test('messages load in arrival order, not sender-timestamp order', () async {
+    await store.upsertMessage(idKeyA, msg('arrived first', id: 'x2', ts: 2000));
+    await store.upsertMessage(idKeyA, msg('arrived second', id: 'x1', ts: 1000));
 
     final loaded = await store.loadChannelMessages(idKeyA);
-    expect(loaded.map((m) => m.text), ['early', 'late']);
+    expect(loaded.map((m) => m.text), ['arrived first', 'arrived second']);
   });
 
   test('legacy index blob imports into identity rows once', () async {
@@ -221,5 +226,76 @@ void main() {
 
     await store.insertIfNew(idKeyA, msg('fresh', id: 'h2', ts: 9000));
     expect(await store.watchUnreadCount(idKeyA).first, 1);
+  });
+
+  // --- v6: arrival time ---------------------------------------------------
+  //
+  // Conversations will be ordered by when this app first SAW a message, not by
+  // the sender's claimed clock. The stamp is therefore written once and must
+  // survive every later rewrite — upsertMessage uses InsertMode.insertOrReplace,
+  // which SQLite implements as delete-then-insert, so anything derived from the
+  // row id would move a message to the bottom of the chat on every status
+  // change.
+
+  Future<int?> arrivalOf(String idKey, String messageId) async {
+    final db = AppDatabase.instance;
+    final rows = await (db.select(db.channelMessageRows)).get();
+    for (final row in rows) {
+      if (row.channelIdKey == idKey && row.messageId == messageId) {
+        return row.receivedAtUs;
+      }
+    }
+    return null;
+  }
+
+  test('a first insert stamps arrival time', () async {
+    await store.insertIfNew(idKeyA, msg('hello', id: 'a1'));
+    expect(await arrivalOf(idKeyA, 'a1'), greaterThan(0));
+  });
+
+  test('arrival time survives a status update', () async {
+    await store.insertIfNew(idKeyA, msg('pending', id: 'a2'));
+    final first = await arrivalOf(idKeyA, 'a2');
+
+    await store.updateMessage(
+      idKeyA,
+      'a2',
+      (m) => m.copyWith(status: ChannelMessageStatus.delivered),
+    );
+
+    expect(await arrivalOf(idKeyA, 'a2'), first,
+        reason: 'a delivery receipt must not move the message in the chat');
+  });
+
+  test('arrival time survives a batch upsert', () async {
+    await store.insertIfNew(idKeyA, msg('one', id: 'b1'));
+    await store.insertIfNew(idKeyA, msg('two', id: 'b2'));
+    final before = [
+      await arrivalOf(idKeyA, 'b1'),
+      await arrivalOf(idKeyA, 'b2'),
+    ];
+
+    // The shape the reaction and repeat-merge paths use.
+    await store.upsertMessages(idKeyA, [
+      msg('one', id: 'b1'),
+      msg('two', id: 'b2'),
+    ]);
+
+    expect(
+      [await arrivalOf(idKeyA, 'b1'), await arrivalOf(idKeyA, 'b2')],
+      before,
+    );
+  });
+
+  test('messages arriving later get later stamps', () async {
+    // Same sender timestamp on both: ordering must come from arrival, not the
+    // sender's clock, which is the entire point of the column.
+    await store.insertIfNew(idKeyA, msg('first', id: 'c1', ts: 5000));
+    await store.insertIfNew(idKeyA, msg('second', id: 'c2', ts: 5000));
+
+    expect(
+      await arrivalOf(idKeyA, 'c2'),
+      greaterThan((await arrivalOf(idKeyA, 'c1'))!),
+    );
   });
 }

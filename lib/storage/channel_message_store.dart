@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:meshtrax/utils/app_logger.dart';
 
 import '../models/channel_message.dart';
@@ -10,6 +11,7 @@ import '../helpers/smaz.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/reaction_helper.dart';
 import 'app_database.dart';
+import 'arrival_clock.dart';
 import 'prefs_manager.dart';
 
 /// Channel message persistence: one database row per message, keyed by
@@ -45,12 +47,14 @@ class ChannelMessageStore {
     String idKey,
     ChannelMessage msg, {
     bool? unreadEligible,
+    required int receivedAtUs,
   }) {
     return ChannelMessageRowsCompanion.insert(
       nodeScope: publicKeyHex,
       channelIdKey: idKey,
       messageId: msg.messageId,
       timestampMs: msg.timestamp.millisecondsSinceEpoch,
+      receivedAtUs: Value(receivedAtUs),
       packetHash: Value(msg.packetHash),
       isOutgoing: Value(msg.isOutgoing),
       unreadEligible: Value(
@@ -58,6 +62,31 @@ class ChannelMessageStore {
       ),
       payload: jsonEncode(_messageToJson(msg)),
     );
+  }
+
+  /// The arrival stamp a write should carry: whatever the row already has, or
+  /// a fresh one if this is the first time we have seen the message.
+  ///
+  /// Preserving it is the whole point. `upsertMessage` writes with
+  /// InsertMode.insertOrReplace, which SQLite implements as delete-then-insert
+  /// — so anything derived from the row id would change on every status
+  /// update, and a message would jump to the bottom of the chat each time it
+  /// went pending -> sent -> delivered.
+  Future<int> _arrivalStampFor(String idKey, String messageId) async {
+    if (publicKeyHex.isEmpty) return ArrivalClock.next();
+    final existing =
+        await (_db.selectOnly(_db.channelMessageRows)
+              ..addColumns([_db.channelMessageRows.receivedAtUs])
+              ..where(
+                _db.channelMessageRows.nodeScope.equals(publicKeyHex) &
+                    _db.channelMessageRows.channelIdKey.equals(idKey) &
+                    _db.channelMessageRows.messageId.equals(messageId),
+              )
+              ..limit(1))
+            .map((r) => r.read(_db.channelMessageRows.receivedAtUs))
+            .getSingleOrNull();
+    if (existing != null && existing > 0) return existing;
+    return ArrivalClock.next();
   }
 
   // --- Phase 3d: the database is the only message state ------------------
@@ -76,8 +105,12 @@ class ChannelMessageStore {
         (r) =>
             r.nodeScope.equals(publicKeyHex) & r.channelIdKey.equals(idKey),
       )
+      // Arrival order, not the sender's clock. A radio hands its offline
+      // queue over in receive order, so this is something we know; the
+      // sender's timestamp is a claim, and ingest rewrites it outright when
+      // it looks implausible.
       ..orderBy([
-        (r) => OrderingTerm.desc(r.timestampMs),
+        (r) => OrderingTerm.desc(r.receivedAtUs),
         (r) => OrderingTerm.desc(r.id),
       ])
       ..limit(limit));
@@ -105,10 +138,17 @@ class ChannelMessageStore {
     bool? unreadEligible,
   }) async {
     if (publicKeyHex.isEmpty) return false;
+    // insertOrIgnore: a losing insert changes nothing, so a fresh stamp here
+    // can never overwrite the arrival time of a message we already hold.
     final inserted = await _db
         .into(_db.channelMessageRows)
         .insertReturningOrNull(
-          _toRow(idKey, msg, unreadEligible: unreadEligible),
+          _toRow(
+            idKey,
+            msg,
+            unreadEligible: unreadEligible,
+            receivedAtUs: ArrivalClock.next(),
+          ),
           mode: InsertMode.insertOrIgnore,
         );
     return inserted != null;
@@ -181,28 +221,38 @@ class ChannelMessageStore {
 
   /// Watched newest message per channel identity — one query feeds the
   /// chats screen's subtitles and ordering (SQL decides "latest").
-  Stream<Map<String, ChannelMessage>> watchLatestPerChannel() {
+  /// Newest message per channel plus WHEN IT ARRIVED. The arrival stamp must
+  /// travel with the message: the chats screen sorts conversations by it,
+  /// and sorting tiles by the message's claimed timestamp instead would undo
+  /// arrival ordering at the last step — a chat that just received a message
+  /// could sort below one whose older message merely claims a newer time.
+  Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
+      watchLatestPerChannel() {
     if (publicKeyHex.isEmpty) return Stream.value(const {});
     return _db
         .customSelect(
-          'SELECT m.channel_id_key AS k, m.payload AS p '
+          'SELECT m.channel_id_key AS k, m.payload AS p, '
+          'latest.mx AS arrival '
           'FROM channel_message_rows m '
-          'INNER JOIN (SELECT channel_id_key, MAX(timestamp_ms) AS mx, '
-          'MAX(id) AS mi FROM channel_message_rows WHERE node_scope = ?1 '
+          'INNER JOIN (SELECT channel_id_key, MAX(received_at_us) AS mx '
+          'FROM channel_message_rows WHERE node_scope = ?1 '
           'GROUP BY channel_id_key) latest '
           'ON m.channel_id_key = latest.channel_id_key '
-          'AND m.timestamp_ms = latest.mx '
+          'AND m.received_at_us = latest.mx '
           'WHERE m.node_scope = ?1 GROUP BY m.channel_id_key',
           variables: [Variable.withString(publicKeyHex)],
           readsFrom: {_db.channelMessageRows},
         )
         .watch()
         .map((rows) {
-          final latest = <String, ChannelMessage>{};
+          final latest = <String, ({ChannelMessage message, int arrivalUs})>{};
           for (final row in rows) {
             try {
-              latest[row.read<String>('k')] = _messageFromJson(
-                jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+              latest[row.read<String>('k')] = (
+                message: _messageFromJson(
+                  jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+                ),
+                arrivalUs: row.read<int>('arrival'),
               );
             } catch (_) {}
           }
@@ -236,18 +286,24 @@ class ChannelMessageStore {
 
   // --- Read marks: unread is a watched COUNT, never a mutable counter ----
 
-  /// Sets the last-read watermark (defaults to now).
-  Future<void> markRead(String idKey, {int? upToMs}) async {
+  /// Sets the last-read watermark to the newest message actually held.
+  ///
+  /// The watermark has to be in the same units the rows are ordered by, so it
+  /// tracks arrival, not wall-clock. Stamping it with "now" would also mark
+  /// as read any message that arrives moments later with a slightly lower
+  /// stamp. (The old upToMs parameter is gone: nothing ever passed it, and
+  /// the ms watermark it fed is no longer read by any query.)
+  Future<void> markRead(String idKey) async {
     if (publicKeyHex.isEmpty) return;
+    final newest = await _newestArrival(idKey);
     await _db
         .into(_db.channelReadMarks)
         .insertOnConflictUpdate(
           ChannelReadMarksCompanion.insert(
             nodeScope: publicKeyHex,
             idKey: idKey,
-            lastReadMs: Value(
-              upToMs ?? DateTime.now().millisecondsSinceEpoch,
-            ),
+            lastReadMs: Value(DateTime.now().millisecondsSinceEpoch),
+            lastReadSeq: Value(newest),
           ),
         );
   }
@@ -262,7 +318,7 @@ class ChannelMessageStore {
                     r.nodeScope.equals(publicKeyHex) &
                     r.channelIdKey.equals(idKey),
               )
-              ..orderBy([(r) => OrderingTerm.desc(r.timestampMs)])
+              ..orderBy([(r) => OrderingTerm.desc(r.receivedAtUs)])
               ..limit(1))
             .getSingleOrNull();
     await _db
@@ -272,9 +328,25 @@ class ChannelMessageStore {
             nodeScope: publicKeyHex,
             idKey: idKey,
             lastReadMs: Value(newest?.timestampMs ?? 0),
+            lastReadSeq: Value(newest?.receivedAtUs ?? 0),
           ),
           mode: InsertMode.insertOrIgnore,
         );
+  }
+
+  /// Arrival stamp of the newest message held for a channel, or 0.
+  Future<int> _newestArrival(String idKey) async {
+    final newest =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey),
+              )
+              ..orderBy([(r) => OrderingTerm.desc(r.receivedAtUs)])
+              ..limit(1))
+            .getSingleOrNull();
+    return newest?.receivedAtUs ?? 0;
   }
 
   /// Watched unread count for one channel identity.
@@ -285,7 +357,7 @@ class ChannelMessageStore {
           'SELECT COUNT(*) AS c FROM channel_message_rows m '
           'WHERE m.node_scope = ?1 AND m.channel_id_key = ?2 '
           'AND m.unread_eligible = 1 '
-          'AND m.timestamp_ms > COALESCE((SELECT last_read_ms '
+          'AND m.received_at_us > COALESCE((SELECT last_read_seq '
           'FROM channel_read_marks WHERE node_scope = ?1 AND id_key = ?2), 0)',
           variables: [
             Variable.withString(publicKeyHex),
@@ -306,7 +378,7 @@ class ChannelMessageStore {
           'SELECT m.channel_id_key AS k, COUNT(*) AS c '
           'FROM channel_message_rows m '
           'WHERE m.node_scope = ?1 AND m.unread_eligible = 1 '
-          'AND m.timestamp_ms > COALESCE((SELECT last_read_ms '
+          'AND m.received_at_us > COALESCE((SELECT last_read_seq '
           'FROM channel_read_marks '
           'WHERE node_scope = ?1 AND id_key = m.channel_id_key), 0) '
           'GROUP BY m.channel_id_key',
@@ -321,6 +393,12 @@ class ChannelMessageStore {
   }
 
   /// Replace a channel's stored messages atomically.
+  ///
+  /// TEST-ONLY. This deletes the conversation and re-stamps every row from
+  /// the sender's timestamp — on a live conversation that would rewrite the
+  /// arrival order this store exists to preserve. No production caller;
+  /// live paths use [insertIfNew]/[upsertMessage]/[upsertMessages].
+  @visibleForTesting
   Future<void> saveChannelMessages(
     String idKey,
     List<ChannelMessage> messages,
@@ -340,7 +418,17 @@ class ChannelMessageStore {
       await _db.batch((b) {
         b.insertAll(
           _db.channelMessageRows,
-          [for (final msg in messages) _toRow(idKey, msg)],
+          [
+            for (final msg in messages)
+              // This path deletes the channel first, so nothing survives to
+              // preserve. Seed from the sender's timestamp, matching how the
+              // v6 migration seeded existing history.
+              _toRow(
+                idKey,
+                msg,
+                receivedAtUs: ArrivalClock.fromSenderTimestamp(msg.timestamp),
+              ),
+          ],
           mode: InsertMode.insertOrReplace,
         );
       });
@@ -351,9 +439,14 @@ class ChannelMessageStore {
   /// forward; no read-modify-write of a whole conversation.
   Future<void> upsertMessage(String idKey, ChannelMessage msg) async {
     if (publicKeyHex.isEmpty) return;
-    await _db
-        .into(_db.channelMessageRows)
-        .insert(_toRow(idKey, msg), mode: InsertMode.insertOrReplace);
+    await _db.into(_db.channelMessageRows).insert(
+          _toRow(
+            idKey,
+            msg,
+            receivedAtUs: await _arrivalStampFor(idKey, msg.messageId),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
   }
 
   /// Insert-or-update a batch WITHOUT touching any other rows — the only
@@ -365,13 +458,46 @@ class ChannelMessageStore {
     List<ChannelMessage> messages,
   ) async {
     if (publicKeyHex.isEmpty || messages.isEmpty) return;
+    // One query for the whole batch rather than one per message: these are
+    // rewrites of rows we already hold (reaction updates, repeat merges), and
+    // every one of them must keep the arrival time it was first given.
+    final known = await _arrivalStampsFor(idKey);
     await _db.batch((b) {
       b.insertAll(
         _db.channelMessageRows,
-        [for (final msg in messages) _toRow(idKey, msg)],
+        [
+          for (final msg in messages)
+            _toRow(
+              idKey,
+              msg,
+              receivedAtUs: known[msg.messageId] ?? ArrivalClock.next(),
+            ),
+        ],
         mode: InsertMode.insertOrReplace,
       );
     });
+  }
+
+  /// Arrival stamps already on record for a channel, by messageId.
+  Future<Map<String, int>> _arrivalStampsFor(String idKey) async {
+    if (publicKeyHex.isEmpty) return const {};
+    final rows =
+        await (_db.selectOnly(_db.channelMessageRows)
+              ..addColumns([
+                _db.channelMessageRows.messageId,
+                _db.channelMessageRows.receivedAtUs,
+              ])
+              ..where(
+                _db.channelMessageRows.nodeScope.equals(publicKeyHex) &
+                    _db.channelMessageRows.channelIdKey.equals(idKey),
+              ))
+            .get();
+    return {
+      for (final r in rows)
+        if ((r.read(_db.channelMessageRows.receivedAtUs) ?? 0) > 0)
+          r.read(_db.channelMessageRows.messageId)!:
+              r.read(_db.channelMessageRows.receivedAtUs)!,
+    };
   }
 
   /// Remove exactly one message — explicit user deletion only.
@@ -402,7 +528,7 @@ class ChannelMessageStore {
                     r.channelIdKey.equals(idKey),
               )
               ..orderBy([
-                (r) => OrderingTerm.asc(r.timestampMs),
+                (r) => OrderingTerm.asc(r.receivedAtUs),
                 (r) => OrderingTerm.asc(r.id),
               ]))
             .get();
@@ -465,7 +591,16 @@ class ChannelMessageStore {
       await _db.batch((b) {
         b.insertAll(
           _db.channelMessageRows,
-          [for (final msg in messages) _toRow(idKey, msg)],
+          [
+            for (final msg in messages)
+              // Imported history was never witnessed arriving, so seed from
+              // the sender's timestamp — same rule as the v6 migration.
+              _toRow(
+                idKey,
+                msg,
+                receivedAtUs: ArrivalClock.fromSenderTimestamp(msg.timestamp),
+              ),
+          ],
           mode: InsertMode.insertOrIgnore,
         );
       });
