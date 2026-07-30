@@ -6704,13 +6704,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
+  /// The ORIGINAL wire timestamp of a message, in ms — even after the ingest
+  /// clamp has rewritten the stored [ChannelMessage.timestamp].
+  ///
+  /// messageId is built at construction as
+  /// `<wire-ms>_<senderName.hashCode>_<text.hashCode>`, before the clamp
+  /// runs, and copyWith preserves it. So the id's leading field IS the wire
+  /// time, recoverable for every stored row with no schema change.
+  @visibleForTesting
+  static int wireTimestampMs(ChannelMessage message) {
+    final id = message.messageId;
+    final cut = id.indexOf('_');
+    if (cut > 0) {
+      final parsed = int.tryParse(id.substring(0, cut));
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return message.timestamp.millisecondsSinceEpoch;
+  }
+
   bool _isChannelRepeat(ChannelMessage existing, ChannelMessage incoming) {
     if (existing.text != incoming.text) return false;
 
+    // Compare WIRE times, never stored ones. The ingest clamp rewrites any
+    // timestamp older than ten minutes to "now", so a retransmitted copy
+    // drained from a radio's offline queue hours later carried a stored time
+    // hours away from its original — the 5-minute window could not see them
+    // as the same message, and the copy filed as a duplicate. That was the
+    // field report: switch companions for a day, come home, messages double.
     final diffMs =
-        (existing.timestamp.millisecondsSinceEpoch -
-                incoming.timestamp.millisecondsSinceEpoch)
-            .abs();
+        (wireTimestampMs(existing) - wireTimestampMs(incoming)).abs();
     // Allow up to 5 minutes difference to account for resent messages
     if (diffMs > 300000) {
       appLogger.info('Repeat rejected for time diff: $diffMs ms', tag: 'Connector');
