@@ -2644,6 +2644,18 @@ abstract class AppLocalizations {
   /// **'Mention'**
   String get chat_mention;
 
+  /// No description provided for @appSettings_zoomLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom level'**
+  String get appSettings_zoomLevel;
+
+  /// No description provided for @common_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get common_reset;
+
   /// No description provided for @chat_reactionsTitle.
   ///
   /// In en, this message translates to:

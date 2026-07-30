@@ -19,10 +19,11 @@ import '../storage/prefs_manager.dart';
 /// ```
 class ChatTextScaleService extends ChangeNotifier {
   static const _prefKey = 'chat_text_scale';
-  static const double _minScale = 0.8;
-  static const double _maxScale = 1.8;
+  static const double defaultScale = 1.2;
+  static const double minScale = 0.8;
+  static const double maxScale = 1.8;
 
-  double _scale = 1.0;
+  double _scale = defaultScale;
   Timer? _saveTimer;
 
   double get scale => _scale;
@@ -47,7 +48,7 @@ class ChatTextScaleService extends ChangeNotifier {
   }
 
   void reset() {
-    setScale(1.0, persistImmediately: true);
+    setScale(defaultScale, persistImmediately: true);
   }
 
   void persist() => _commitScale();
@@ -68,5 +69,5 @@ class ChatTextScaleService extends ChangeNotifier {
     unawaited(PrefsManager.instance.setDouble(_prefKey, _scale));
   }
 
-  double _clamp(double value) => value.clamp(_minScale, _maxScale).toDouble();
+  double _clamp(double value) => value.clamp(minScale, maxScale).toDouble();
 }

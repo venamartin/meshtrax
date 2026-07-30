@@ -629,6 +629,8 @@
   "chat_reply": "Válasz",
   "chat_addReaction": "Hozzon létre reakciót",
   "chat_mention": "Említés",
+  "appSettings_zoomLevel": "Nagyítási szint",
+  "common_reset": "Visszaállítás",
   "chat_me": "Én",
   "emojiCategorySmileys": "Emoji",
   "emojiCategoryGestures": "Testmozgások",

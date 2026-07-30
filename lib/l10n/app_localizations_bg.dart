@@ -1438,6 +1438,12 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_mention => 'Споменаване';
 
   @override
+  String get appSettings_zoomLevel => 'Ниво на мащабиране';
+
+  @override
+  String get common_reset => 'Нулиране';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

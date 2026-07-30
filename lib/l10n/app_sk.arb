@@ -457,6 +457,8 @@
   "chat_reply": "Odpovedať",
   "chat_addReaction": "Pridať Reakciu",
   "chat_mention": "Spomenúť",
+  "appSettings_zoomLevel": "Úroveň priblíženia",
+  "common_reset": "Obnoviť",
   "chat_me": "Mne",
   "emojiCategorySmileys": "Emoji",
   "emojiCategoryGestures": "Gestá",

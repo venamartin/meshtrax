@@ -1412,6 +1412,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chat_mention => 'Mention';
 
   @override
+  String get appSettings_zoomLevel => 'Zoom level';
+
+  @override
+  String get common_reset => 'Reset';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

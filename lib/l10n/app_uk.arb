@@ -458,6 +458,8 @@
   "chat_reply": "Відповісти",
   "chat_addReaction": "Додати реакцію",
   "chat_mention": "Згадати",
+  "appSettings_zoomLevel": "Рівень масштабу",
+  "common_reset": "Скинути",
   "chat_me": "Я",
   "emojiCategorySmileys": "Емодзі",
   "emojiCategoryGestures": "Жести",

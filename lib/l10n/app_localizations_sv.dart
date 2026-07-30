@@ -1418,6 +1418,12 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_mention => 'Nämn';
 
   @override
+  String get appSettings_zoomLevel => 'Zoomnivå';
+
+  @override
+  String get common_reset => 'Återställ';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

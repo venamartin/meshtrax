@@ -457,6 +457,8 @@
   "chat_reply": "Responder",
   "chat_addReaction": "Adicionar Reação",
   "chat_mention": "Mencionar",
+  "appSettings_zoomLevel": "Nível de zoom",
+  "common_reset": "Redefinir",
   "chat_me": "Eu",
   "emojiCategorySmileys": "Emojis",
   "emojiCategoryGestures": "Gestos",

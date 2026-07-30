@@ -1425,6 +1425,12 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_mention => 'Spomenúť';
 
   @override
+  String get appSettings_zoomLevel => 'Úroveň priblíženia';
+
+  @override
+  String get common_reset => 'Obnoviť';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

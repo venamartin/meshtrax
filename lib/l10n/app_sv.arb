@@ -457,6 +457,8 @@
   "chat_reply": "Svara",
   "chat_addReaction": "Lägg till reaktion",
   "chat_mention": "Nämn",
+  "appSettings_zoomLevel": "Zoomnivå",
+  "common_reset": "Återställ",
   "chat_me": "Mig",
   "emojiCategorySmileys": "Emojis",
   "emojiCategoryGestures": "Gestikuleringar",

@@ -1437,6 +1437,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chat_mention => 'Mencionar';
 
   @override
+  String get appSettings_zoomLevel => 'Nível de zoom';
+
+  @override
+  String get common_reset => 'Redefinir';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

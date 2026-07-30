@@ -1437,6 +1437,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chat_mention => 'Упомянуть';
 
   @override
+  String get appSettings_zoomLevel => 'Уровень масштаба';
+
+  @override
+  String get common_reset => 'Сбросить';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override
