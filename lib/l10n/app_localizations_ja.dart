@@ -1375,6 +1375,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_addReaction => '反応を追加';
 
   @override
+  String get chat_mention => 'メンション';
+
+  @override
+  String get appSettings_zoomLevel => 'ズームレベル';
+
+  @override
+  String get common_reset => 'リセット';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

@@ -1357,6 +1357,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_addReaction => '添加表情';
 
   @override
+  String get chat_mention => '提及';
+
+  @override
+  String get appSettings_zoomLevel => '缩放级别';
+
+  @override
+  String get common_reset => '重置';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

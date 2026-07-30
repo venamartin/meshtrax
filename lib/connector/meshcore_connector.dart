@@ -3271,7 +3271,7 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    // Rebuild the full "@[Name]\nre:<snippet>…\n<body>" reply on resend, since
+    // Rebuild the full "@[Name]\n><snippet>..\n<body>" reply on resend, since
     // message.text only stores the stripped body. Falls back to the body alone.
     var wireText = message.text;
     if (message.replyToSenderName != null) {
@@ -5189,6 +5189,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   bool _matchesPrefix(Uint8List fullKey, Uint8List prefix) {
+    // An empty prefix must never match: it made room reactions with no
+    // author byte "resolve" to whatever contact happened to be listed first.
+    if (prefix.isEmpty) return false;
     if (fullKey.length < prefix.length) return false;
     for (int i = 0; i < prefix.length; i++) {
       if (fullKey[i] != prefix[i]) return false;
@@ -5315,10 +5318,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         : settingsService.isChannelMuted(label);
     if (isMuted) return;
 
-    // message.text is the raw on-wire form; a reply carries
-    // "@[Name]\nre:<snippet>…\n<body>" markup that the chat screen parses away.
-    // Show only the body so the notification doesn't leak the mention, the
-    // "re:" prefix and the quoted snippet's trailing marker dots.
+    // message.text is the raw on-wire form; a reply carries quote markup
+    // ("@[Name]\n><snippet>..\n<body>", or "re:" from older senders) that the
+    // chat screen parses away. Show only the body so the notification doesn't
+    // leak the mention, the quote prefix, or the snippet's trailing dots.
     final replyInfo = ChannelMessage.parseReply(message.text);
     final notificationText = replyInfo?.actualMessage ?? message.text;
 
@@ -6105,16 +6108,29 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _processedContactReactions.putIfAbsent(pubKeyHex, () => {});
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}_$reactorName';
-      if (!_processedContactReactions[pubKeyHex]!.contains(
+      if (_processedContactReactions[pubKeyHex]!.contains(
         reactionIdentifier,
       )) {
-        final history = await _messageStore.loadMessages(pubKeyHex);
-        _processContactReaction(history, reactionInfo, pubKeyHex, reactorName);
+        return;
+      }
+      final history = await _messageStore.loadMessages(pubKeyHex);
+      final applied = _processContactReaction(
+        history,
+        reactionInfo,
+        pubKeyHex,
+        reactorName,
+      );
+      if (applied) {
         await _messageStore.upsertMessages(pubKeyHex, history);
+      }
+      if (applied || reactionInfo.format == ReactionFormat.open) {
+        // Unmatched r: text is unambiguously a reaction — drop it. A
+        // MeshCore One-shaped message whose hash matches nothing we hold
+        // could be a genuine two-line message, so fall through and show it.
         _processedContactReactions[pubKeyHex]!.add(reactionIdentifier);
         notifyListeners();
+        return;
       }
-      return;
     }
 
     // The unique constraint is the dedup authority; a duplicate id is a
@@ -6132,7 +6148,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     notifyListeners();
   }
 
-  void _processContactReaction(
+  bool _processContactReaction(
     List<Message> messages,
     ReactionInfo reactionInfo,
     String contactPubKeyHex,
@@ -6143,14 +6159,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final isRoomServer = contact?.type == advTypeRoom;
+    final isOne = reactionInfo.format == ReactionFormat.one;
 
-    ReactionHelper.applyReaction<Message>(
+    return ReactionHelper.applyReaction<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
       reactorName: reactorName,
-      // Incoming reactions in 1:1: match against outgoing messages only
-      shouldSkip: (msg) => isRoomServer != true && !msg.isOutgoing,
+      // Incoming reactions in 1:1: match against outgoing messages only.
+      // MeshCore One hashes are strong (40-bit over full text) and its
+      // clients may react to any message, so don't restrict those.
+      shouldSkip: (msg) => !isOne && isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+      // The sender's wire clock, untouched by the ingest clamp; retries
+      // reuse the original timestamp, so outgoing rows are exact too.
+      getWireTimestampSecs: (msg) => [_messageWireSecs(msg)],
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -6163,6 +6185,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         );
       },
     );
+  }
+
+  /// The ORIGINAL wire timestamp of a DM in seconds — messageId is built at
+  /// construction as `<wire-ms>_<senderKeyHex>_<text.hashCode>`, before the
+  /// ingest clamp runs (same recovery as [wireTimestampMs] for channels).
+  static int _messageWireSecs(Message message) {
+    final id = message.messageId;
+    final cut = id.indexOf('_');
+    if (cut > 0) {
+      final parsed = int.tryParse(id.substring(0, cut));
+      if (parsed != null) return parsed ~/ 1000;
+    }
+    return message.timestamp.millisecondsSinceEpoch ~/ 1000;
   }
 
   void _processOutgoingContactReaction(
@@ -6232,13 +6267,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     if (contact?.type == advTypeRoom) {
+      final authorPrefix = reaction.fourByteRoomContactKey;
+      // Our own post pushed back by the room carries our key prefix;
+      // attribute it to ourselves so the send-side entry dedups it.
+      final selfKey = _selfPublicKey;
+      if (selfKey != null && _matchesPrefix(selfKey, authorPrefix)) {
+        return _selfName ?? 'Me';
+      }
       final member = allContactsUnfiltered.cast<Contact?>().firstWhere(
-        (c) =>
-            c != null &&
-            _matchesPrefix(c.publicKey, reaction.fourByteRoomContactKey),
+        (c) => c != null && _matchesPrefix(c.publicKey, authorPrefix),
         orElse: () => null,
       );
       if (member != null) return member.name;
+      // Unresolvable author: never fall back to the room's own name — that
+      // fabricates a distinct "person" and inflates the count.
+      return 'Unknown';
     }
     return contact?.name ?? 'Unknown';
   }
@@ -6470,14 +6513,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _processedChannelReactions.putIfAbsent(idKey, () => {});
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}_$reactorName';
-      if (!_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
-        final history = await _channelMessageStore.loadChannelMessages(idKey);
-        _processReaction(history, reactionInfo, reactorName);
+      if (_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
+        return false;
+      }
+      final history = await _channelMessageStore.loadChannelMessages(idKey);
+      final applied = _processReaction(history, reactionInfo, reactorName);
+      if (applied) {
         await _channelMessageStore.upsertMessages(idKey, history);
+      }
+      if (applied || reactionInfo.format == ReactionFormat.open) {
+        // Unmatched r: text is unambiguously a reaction — drop it. A
+        // MeshCore One-shaped message whose hash matches nothing we hold
+        // could be a genuine two-line message, so fall through and show it.
         _processedChannelReactions[idKey]!.add(reactionIdentifier);
         notifyListeners();
+        return false;
       }
-      return false;
     }
 
     // Repeat/echo by packet hash: one targeted row update via the index.
@@ -6494,8 +6545,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     // Resolve reply metadata. On the wire a reply is
-    // "@[Name] re:<snippet>…\n<text>" (see ChannelMessage.parseReply), which
-    // stays human-readable on other MeshCore apps.
+    // "@[Name]\n><snippet>..\n<text>" (see ChannelMessage.parseReply, which
+    // also reads the older "re:" dialect) — human-readable on other apps.
     final replyInfo = ChannelMessage.parseReply(sanitizedMessage.text);
     ChannelMessage processedMessage = sanitizedMessage;
 
@@ -6679,17 +6730,24 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  void _processReaction(
+  bool _processReaction(
     List<ChannelMessage> messages,
     ReactionInfo reactionInfo,
     String reactorName,
   ) {
-    ReactionHelper.applyReaction<ChannelMessage>(
+    return ReactionHelper.applyReaction<ChannelMessage>(
       messages: messages,
       reactionInfo: reactionInfo,
       reactorName: reactorName,
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+      // MeshCore One hashes are computed over the sender's wire clock. For
+      // our own rows the wire frame was stamped moments after the row was
+      // built, so also try the next second.
+      getWireTimestampSecs: (msg) {
+        final secs = wireTimestampMs(msg) ~/ 1000;
+        return msg.isOutgoing ? [secs, secs + 1] : [secs];
+      },
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,

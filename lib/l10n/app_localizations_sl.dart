@@ -1421,6 +1421,15 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_addReaction => 'Dodaj reakcijo';
 
   @override
+  String get chat_mention => 'Omeni';
+
+  @override
+  String get appSettings_zoomLevel => 'Raven povečave';
+
+  @override
+  String get common_reset => 'Ponastavi';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

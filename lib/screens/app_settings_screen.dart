@@ -6,6 +6,7 @@ import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
+import '../services/chat_text_scale_service.dart';
 import '../services/notification_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/adaptive_app_bar_title.dart';
@@ -194,6 +195,21 @@ class AppSettingsScreen extends StatelessWidget {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showThemeModeDialog(context, settingsService),
+          ),
+          const Divider(height: 1),
+          Builder(
+            builder: (context) {
+              final scale = context.select<ChatTextScaleService, double>(
+                (service) => service.scale,
+              );
+              return ListTile(
+                leading: const Icon(Icons.zoom_in_outlined),
+                title: Text(context.l10n.appSettings_zoomLevel),
+                subtitle: Text('${scale.toStringAsFixed(2)}x'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showZoomLevelDialog(context),
+              );
+            },
           ),
           const Divider(height: 1),
           ListTile(
@@ -806,6 +822,51 @@ class AppSettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showZoomLevelDialog(BuildContext context) {
+    final service = context.read<ChatTextScaleService>();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.appSettings_zoomLevel),
+        // Listens to the service directly so the pinch-zoom value, the
+        // slider, and the Reset button all stay in sync while it's open.
+        content: AnimatedBuilder(
+          animation: service,
+          builder: (context, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${service.scale.toStringAsFixed(2)}x',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Slider(
+                value: service.scale,
+                min: ChatTextScaleService.minScale,
+                max: ChatTextScaleService.maxScale,
+                divisions: 20,
+                label: '${service.scale.toStringAsFixed(2)}x',
+                onChanged: service.setScale,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => service.reset(),
+            child: Text(dialogContext.l10n.common_reset),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.l10n.common_close),
+          ),
+        ],
+      ),
+    ).then((_) => service.persist());
   }
 
   void _showThemeModeDialog(

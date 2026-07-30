@@ -1442,6 +1442,15 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_addReaction => 'Hozzon létre reakciót';
 
   @override
+  String get chat_mention => 'Említés';
+
+  @override
+  String get appSettings_zoomLevel => 'Nagyítási szint';
+
+  @override
+  String get common_reset => 'Visszaállítás';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

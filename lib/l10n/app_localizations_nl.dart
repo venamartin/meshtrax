@@ -1423,6 +1423,15 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chat_addReaction => 'Reactie toevoegen';
 
   @override
+  String get chat_mention => 'Vermelden';
+
+  @override
+  String get appSettings_zoomLevel => 'Zoomniveau';
+
+  @override
+  String get common_reset => 'Herstellen';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

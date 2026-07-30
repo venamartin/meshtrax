@@ -1434,6 +1434,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chat_addReaction => 'Añadir Reacción';
 
   @override
+  String get chat_mention => 'Mencionar';
+
+  @override
+  String get appSettings_zoomLevel => 'Nivel de zoom';
+
+  @override
+  String get common_reset => 'Restablecer';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override
