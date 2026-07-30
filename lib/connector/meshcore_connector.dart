@@ -3271,7 +3271,7 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    // Rebuild the full "@[Name]\nre:<snippet>…\n<body>" reply on resend, since
+    // Rebuild the full "@[Name]\n><snippet>..\n<body>" reply on resend, since
     // message.text only stores the stripped body. Falls back to the body alone.
     var wireText = message.text;
     if (message.replyToSenderName != null) {
@@ -5189,6 +5189,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   bool _matchesPrefix(Uint8List fullKey, Uint8List prefix) {
+    // An empty prefix must never match: it made room reactions with no
+    // author byte "resolve" to whatever contact happened to be listed first.
+    if (prefix.isEmpty) return false;
     if (fullKey.length < prefix.length) return false;
     for (int i = 0; i < prefix.length; i++) {
       if (fullKey[i] != prefix[i]) return false;
@@ -5315,10 +5318,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         : settingsService.isChannelMuted(label);
     if (isMuted) return;
 
-    // message.text is the raw on-wire form; a reply carries
-    // "@[Name]\nre:<snippet>…\n<body>" markup that the chat screen parses away.
-    // Show only the body so the notification doesn't leak the mention, the
-    // "re:" prefix and the quoted snippet's trailing marker dots.
+    // message.text is the raw on-wire form; a reply carries quote markup
+    // ("@[Name]\n><snippet>..\n<body>", or "re:" from older senders) that the
+    // chat screen parses away. Show only the body so the notification doesn't
+    // leak the mention, the quote prefix, or the snippet's trailing dots.
     final replyInfo = ChannelMessage.parseReply(message.text);
     final notificationText = replyInfo?.actualMessage ?? message.text;
 
@@ -6264,13 +6267,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     if (contact?.type == advTypeRoom) {
+      final authorPrefix = reaction.fourByteRoomContactKey;
+      // Our own post pushed back by the room carries our key prefix;
+      // attribute it to ourselves so the send-side entry dedups it.
+      final selfKey = _selfPublicKey;
+      if (selfKey != null && _matchesPrefix(selfKey, authorPrefix)) {
+        return _selfName ?? 'Me';
+      }
       final member = allContactsUnfiltered.cast<Contact?>().firstWhere(
-        (c) =>
-            c != null &&
-            _matchesPrefix(c.publicKey, reaction.fourByteRoomContactKey),
+        (c) => c != null && _matchesPrefix(c.publicKey, authorPrefix),
         orElse: () => null,
       );
       if (member != null) return member.name;
+      // Unresolvable author: never fall back to the room's own name — that
+      // fabricates a distinct "person" and inflates the count.
+      return 'Unknown';
     }
     return contact?.name ?? 'Unknown';
   }
@@ -6534,8 +6545,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     // Resolve reply metadata. On the wire a reply is
-    // "@[Name] re:<snippet>…\n<text>" (see ChannelMessage.parseReply), which
-    // stays human-readable on other MeshCore apps.
+    // "@[Name]\n><snippet>..\n<text>" (see ChannelMessage.parseReply, which
+    // also reads the older "re:" dialect) — human-readable on other apps.
     final replyInfo = ChannelMessage.parseReply(sanitizedMessage.text);
     ChannelMessage processedMessage = sanitizedMessage;
 

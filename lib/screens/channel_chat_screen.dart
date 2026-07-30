@@ -1192,7 +1192,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       // the full text and rely on ellipsis overflow instead.
       final isSnippet = message.replyToMessageId == null;
       final previewText = isSnippet && replyText.isNotEmpty
-          ? '$replyText${ChannelMessage.replyMarker}'
+          ? '$replyText..'
           : replyText;
       contentPreview = Text(
         previewText,
@@ -1518,7 +1518,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   Widget _buildMessageComposer() {
     final connector = context.watch<MeshCoreConnector>();
-    // Reserve room for the reply prefix ("@[Name] re:<snippet>…\n") while a
+    // Reserve room for the reply prefix ("@[Name]\n><snippet>..\n") while a
     // reply is active, so the byte counter and typing limit account for it.
     final baseMaxBytes = maxChannelMessageBytes(connector.selfName);
     final reply = _replyingToMessage;
@@ -1526,9 +1526,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         ? 0
         : utf8
               .encode(
-                '@[${reply.senderName}] re:'
-                '${ChannelMessage.buildReplySnippet(reply.text, 15)}'
-                '${ChannelMessage.replyMarker}\n',
+                '@[${reply.senderName}]\n>'
+                '${ChannelMessage.buildReplySnippet(reply.text, 10)}..\n',
               )
               .length;
     final maxBytes = (baseMaxBytes - replyOverhead).clamp(0, baseMaxBytes);
@@ -1734,7 +1733,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
     String messageText;
     if (replyTarget != null) {
-      // Build a compatible "@[Name]\nre:<snippet>…\n<text>" reply, shrinking the
+      // Build a compatible "@[Name]\n><snippet>..\n<text>" reply, shrinking the
       // snippet to fit the byte budget; fall back to a plain mention if needed.
       final built = ChannelMessage.buildReplyWireText(
         targetName: replyTarget.senderName,

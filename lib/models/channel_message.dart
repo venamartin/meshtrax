@@ -267,9 +267,6 @@ class ChannelMessage {
     return true;
   }
 
-  /// Marker appended after the quoted snippet in a reply.
-  static const String replyMarker = '…';
-
   /// A single-line, trimmed prefix of [targetText], at most [chars] characters.
   /// Used to quote the message being replied to in a cross-app-compatible way.
   static String buildReplySnippet(String targetText, int chars) {
@@ -289,7 +286,8 @@ class ChannelMessage {
         : rest;
   }
 
-  /// Builds the on-wire reply text `@[targetName]\nre:<snippet>…\n<body>`,
+  /// Builds the on-wire reply text `@[targetName]\n><snippet>[..]\n<body>`
+  /// (MeshCore One dialect: ".." only when the parent was truncated),
   /// shrinking the quoted snippet until [fits]. A leading self-mention is
   /// stripped from [quoteText] so we don't re-quote our own handle. Falls back
   /// to `@[targetName]\n<body>`; returns null if even that doesn't fit.
@@ -301,9 +299,11 @@ class ChannelMessage {
     required bool Function(String candidate) fits,
   }) {
     final quote = stripLeadingMention(quoteText, selfName);
-    for (int len = 15; len >= 6; len--) {
+    final flatLength = quote.replaceAll(RegExp(r'\s+'), ' ').trim().length;
+    for (int len = 10; len >= 6; len--) {
       final snippet = buildReplySnippet(quote, len);
-      final candidate = '@[$targetName]\nre:$snippet$replyMarker\n$body';
+      final suffix = flatLength > len ? '..' : '';
+      final candidate = '@[$targetName]\n>$snippet$suffix\n$body';
       if (fits(candidate)) return candidate;
     }
     final mention = '@[$targetName]\n$body';
