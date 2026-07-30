@@ -1357,6 +1357,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_addReaction => '添加表情';
 
   @override
+  String get chat_mention => '提及';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

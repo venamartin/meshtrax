@@ -1370,6 +1370,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_addReaction => '댓글 추가';
 
   @override
+  String get chat_mention => '멘션';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

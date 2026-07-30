@@ -1442,6 +1442,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_addReaction => 'Hozzon létre reakciót';
 
   @override
+  String get chat_mention => 'Említés';
+
+  @override
   String get chat_reactionsTitle => 'Reactions';
 
   @override

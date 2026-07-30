@@ -628,6 +628,7 @@
   "chat_sendGif": "GIF 보내기",
   "chat_reply": "답변",
   "chat_addReaction": "댓글 추가",
+  "chat_mention": "멘션",
   "chat_me": "나",
   "emojiCategorySmileys": "이모티콘",
   "emojiCategoryGestures": "제스처",

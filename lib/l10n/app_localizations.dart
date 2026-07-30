@@ -2638,6 +2638,12 @@ abstract class AppLocalizations {
   /// **'Add Reaction'**
   String get chat_addReaction;
 
+  /// No description provided for @chat_mention.
+  ///
+  /// In en, this message translates to:
+  /// **'Mention'**
+  String get chat_mention;
+
   /// No description provided for @chat_reactionsTitle.
   ///
   /// In en, this message translates to:

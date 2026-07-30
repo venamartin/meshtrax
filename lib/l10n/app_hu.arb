@@ -628,6 +628,7 @@
   "chat_sendGif": "Küldj GIF-ot",
   "chat_reply": "Válasz",
   "chat_addReaction": "Hozzon létre reakciót",
+  "chat_mention": "Említés",
   "chat_me": "Én",
   "emojiCategorySmileys": "Emoji",
   "emojiCategoryGestures": "Testmozgások",

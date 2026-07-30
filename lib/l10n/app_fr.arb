@@ -456,6 +456,7 @@
   "chat_sendGif": "Envoyer GIF",
   "chat_reply": "Répondre",
   "chat_addReaction": "Ajouter une Réaction",
+  "chat_mention": "Mentionner",
   "chat_me": "Moi",
   "emojiCategorySmileys": "Émojis",
   "emojiCategoryGestures": "Gestes",

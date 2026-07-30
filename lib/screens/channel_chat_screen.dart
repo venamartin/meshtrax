@@ -321,6 +321,23 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
   }
 
+  /// Inserts "@[name] " at the cursor (or the end) and focuses the composer.
+  /// Used by the message actions sheet and the mention swipe.
+  void _insertMentionOf(String senderName) {
+    final text = _textController.text;
+    final sel = _textController.selection;
+    final start = sel.isValid ? sel.start : text.length;
+    final end = sel.isValid ? sel.end : text.length;
+    final needsSpace =
+        start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n';
+    final mention = '${needsSpace ? ' ' : ''}@[$senderName] ';
+    _textController.value = TextEditingValue(
+      text: text.replaceRange(start, end, mention),
+      selection: TextSelection.collapsed(offset: start + mention.length),
+    );
+    _textFieldFocusNode.requestFocus();
+  }
+
   Widget _buildMentionsOverlay() {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -1083,8 +1100,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         maxSwipeOffset: maxSwipeOffset,
         replySwipeThreshold: replySwipeThreshold,
         onReplyTriggered: () => _setReplyingTo(message),
-        hintBuilder: ({required isStart}) =>
-            _buildReplySwipeHint(isStart: isStart),
+        onMentionTriggered: () => _insertMentionOf(message.senderName),
+        hintBuilder: ({required mention}) => _buildSwipeHint(mention: mention),
         child: messageBody,
       );
     } else {
@@ -1095,43 +1112,32 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
   }
 
-  Widget _buildReplySwipeHint({required bool isStart}) {
+  /// Hint behind a swiped bubble: reply rides the left swipe (label at the
+  /// trailing edge, icon outermost), mention rides the right swipe (mirrored).
+  Widget _buildSwipeHint({required bool mention}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.reply, color: colorScheme.primary),
-        const SizedBox(width: 6),
-        Text(
-          context.l10n.chat_reply,
-          style: TextStyle(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+    final icon = Icon(
+      mention ? Icons.alternate_email : Icons.reply,
+      color: colorScheme.primary,
+    );
+    final label = Text(
+      mention ? context.l10n.chat_mention : context.l10n.chat_reply,
+      style: TextStyle(
+        color: colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
     );
 
     return Container(
-      alignment: isStart ? Alignment.centerLeft : Alignment.centerRight,
+      alignment: mention ? Alignment.centerLeft : Alignment.centerRight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       color: colorScheme.primary.withValues(alpha: 0.08),
-      child: isStart
-          ? content
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.l10n.chat_reply,
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Icon(Icons.reply, color: colorScheme.primary),
-              ],
-            ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: mention
+            ? [icon, const SizedBox(width: 6), label]
+            : [label, const SizedBox(width: 6), icon],
+      ),
     );
   }
 
@@ -1817,8 +1823,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   _showMessagePathInfo(message);
                 },
               ),
-            // Can't react to your own messages
-            if (!message.isOutgoing)
+            // Can't react to (or mention) your own messages
+            if (!message.isOutgoing) ...[
               ListTile(
                 leading: const Icon(Icons.add_reaction_outlined),
                 title: Text(context.l10n.chat_addReaction),
@@ -1827,6 +1833,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   _showEmojiPicker(message);
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.alternate_email),
+                title: Text(context.l10n.chat_mention),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _insertMentionOf(message.senderName);
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.copy),
               title: Text(context.l10n.common_copy),
@@ -1954,13 +1969,16 @@ class _SwipeReplyBubble extends StatefulWidget {
   final double maxSwipeOffset;
   final double replySwipeThreshold;
   final VoidCallback onReplyTriggered;
-  final Widget Function({required bool isStart}) hintBuilder;
+  /// Optional swipe-right action; null keeps the bubble left-swipe only.
+  final VoidCallback? onMentionTriggered;
+  final Widget Function({required bool mention}) hintBuilder;
   final Widget child;
 
   const _SwipeReplyBubble({
     required this.maxSwipeOffset,
     required this.replySwipeThreshold,
     required this.onReplyTriggered,
+    this.onMentionTriggered,
     required this.hintBuilder,
     required this.child,
   });
@@ -1975,6 +1993,10 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   double _maxSwipeDistance = 0;
   int? _swipePointerId;
   bool _swipeLockedToHorizontal = false;
+  // Which way this gesture is going: -1 left (reply), +1 right (mention).
+  int _swipeDirection = 0;
+
+  bool get _mentionEnabled => widget.onMentionTriggered != null;
 
   void _handleSwipeStart(Offset position) {
     _swipeStartPosition = position;
@@ -1987,6 +2009,7 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   void _handleSwipePointerDown(PointerDownEvent event) {
     _swipePointerId = event.pointer;
     _swipeLockedToHorizontal = false;
+    _swipeDirection = 0;
     _handleSwipeStart(event.position);
   }
 
@@ -1999,7 +2022,11 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
 
     const axisLockThreshold = 12.0;
     if (!_swipeLockedToHorizontal) {
-      if (-dx < axisLockThreshold) {
+      if (-dx >= axisLockThreshold) {
+        _swipeDirection = -1;
+      } else if (_mentionEnabled && dx >= axisLockThreshold) {
+        _swipeDirection = 1;
+      } else {
         return;
       }
       _swipeLockedToHorizontal = true;
@@ -2011,17 +2038,19 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   void _handleSwipeUpdate(Offset position) {
     if (_swipeStartPosition == null) return;
 
-    final dx = position.dx - _swipeStartPosition!.dx;
-    if (dx >= 0) return;
+    // Progress along the locked direction; movement the other way resets to 0.
+    final dx =
+        (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
+    final travel = dx < 6 ? 0.0 : dx;
 
-    if (-dx < 6) return;
-
-    if (-dx > _maxSwipeDistance) {
-      _maxSwipeDistance = -dx;
+    if (travel > _maxSwipeDistance) {
+      _maxSwipeDistance = travel;
     }
 
-    final double clamped = dx.clamp(-widget.maxSwipeOffset, 0.0).toDouble();
-    final adjusted = _applySwipeResistance(clamped, widget.maxSwipeOffset);
+    final clamped = travel.clamp(0.0, widget.maxSwipeOffset);
+    final adjusted =
+        _applySwipeResistance(clamped, widget.maxSwipeOffset) *
+        _swipeDirection;
     if (adjusted != _swipeOffset) {
       setState(() => _swipeOffset = adjusted);
     }
@@ -2029,13 +2058,15 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
 
   void _handleSwipePointerUp(Offset position) {
     if (_swipeLockedToHorizontal && _swipeStartPosition != null) {
-      final dx = position.dx - _swipeStartPosition!.dx;
-      final peak = math.max(
-        _maxSwipeDistance,
-        (-dx).clamp(0.0, double.infinity),
-      );
+      final dx =
+          (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
+      final peak = math.max(_maxSwipeDistance, dx.clamp(0.0, double.infinity));
       if (peak >= widget.replySwipeThreshold) {
-        widget.onReplyTriggered();
+        if (_swipeDirection < 0) {
+          widget.onReplyTriggered();
+        } else {
+          widget.onMentionTriggered?.call();
+        }
         HapticFeedback.selectionClick();
       }
     }
@@ -2050,6 +2081,7 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
     _maxSwipeDistance = 0;
     _swipePointerId = null;
     _swipeLockedToHorizontal = false;
+    _swipeDirection = 0;
   }
 
   double _applySwipeResistance(double rawOffset, double maxOffset) {
@@ -2085,7 +2117,7 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
             Positioned.fill(
               child: Opacity(
                 opacity: _swipeOffset.abs() / widget.maxSwipeOffset,
-                child: widget.hintBuilder(isStart: false),
+                child: widget.hintBuilder(mention: _swipeDirection > 0),
               ),
             ),
             AnimatedContainer(

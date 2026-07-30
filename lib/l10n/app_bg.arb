@@ -456,6 +456,7 @@
   "chat_sendGif": "Изпрати GIF",
   "chat_reply": "Отговори",
   "chat_addReaction": "Добави Реакция",
+  "chat_mention": "Споменаване",
   "chat_me": "Аз",
   "emojiCategorySmileys": "Емотикони",
   "emojiCategoryGestures": "Жестове",
