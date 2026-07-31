@@ -32,6 +32,19 @@ class AppDebugLogEntry {
         '${timestamp.second.toString().padLeft(2, '0')}.'
         '${timestamp.millisecond.toString().padLeft(3, '0')}';
   }
+
+  /// Full local date + time. The log ring buffer can span days, and a bare
+  /// HH:MM:SS from yesterday reads as today's.
+  String get formattedDateTime {
+    return '${timestamp.year}-'
+        '${timestamp.month.toString().padLeft(2, '0')}-'
+        '${timestamp.day.toString().padLeft(2, '0')} '
+        '$formattedTime';
+  }
+
+  /// One export/copy line: `[date time] [LEVEL] [tag] message`.
+  String get formattedLine =>
+      '[$formattedDateTime] [$levelLabel] [$tag] $message';
 }
 
 class AppDebugLogService extends ChangeNotifier {
@@ -41,6 +54,19 @@ class AppDebugLogService extends ChangeNotifier {
 
   List<AppDebugLogEntry> get entries => List.unmodifiable(_entries);
   bool get enabled => _enabled;
+
+  /// Entries at [minLevel] or more severe — the level filter authority, so
+  /// the screen never re-implements severity ordering.
+  List<AppDebugLogEntry> entriesAtOrAbove(AppDebugLogLevel minLevel) {
+    if (minLevel == AppDebugLogLevel.info) return entries;
+    return List.unmodifiable(
+      _entries.where((e) => e.level.index >= minLevel.index),
+    );
+  }
+
+  /// The export text for [entries], oldest first.
+  static String buildExportText(Iterable<AppDebugLogEntry> entries) =>
+      entries.map((e) => e.formattedLine).join('\n');
 
   void setEnabled(bool value) {
     _enabled = value;

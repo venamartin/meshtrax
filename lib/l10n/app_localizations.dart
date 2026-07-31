@@ -2758,6 +2758,42 @@ abstract class AppLocalizations {
   /// **'Copy log'**
   String get debugLog_copyLog;
 
+  /// No description provided for @debugLog_saveLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Save log to file'**
+  String get debugLog_saveLog;
+
+  /// No description provided for @debugLog_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Log saved'**
+  String get debugLog_saved;
+
+  /// No description provided for @debugLog_saveCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Save cancelled'**
+  String get debugLog_saveCancelled;
+
+  /// No description provided for @debugLog_filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get debugLog_filterAll;
+
+  /// No description provided for @debugLog_filterWarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Warnings'**
+  String get debugLog_filterWarnings;
+
+  /// No description provided for @debugLog_filterErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Errors'**
+  String get debugLog_filterErrors;
+
   /// No description provided for @debugLog_clearLog.
   ///
   /// In en, this message translates to:

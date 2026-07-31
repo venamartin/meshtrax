@@ -1481,6 +1481,24 @@ class AppLocalizationsSl extends AppLocalizations {
   String get debugLog_copyLog => 'Kopiraj dnevnik';
 
   @override
+  String get debugLog_saveLog => 'Save log to file';
+
+  @override
+  String get debugLog_saved => 'Log saved';
+
+  @override
+  String get debugLog_saveCancelled => 'Save cancelled';
+
+  @override
+  String get debugLog_filterAll => 'All';
+
+  @override
+  String get debugLog_filterWarnings => 'Warnings';
+
+  @override
+  String get debugLog_filterErrors => 'Errors';
+
+  @override
   String get debugLog_clearLog => 'Briši log';
 
   @override
