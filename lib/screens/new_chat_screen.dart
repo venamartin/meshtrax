@@ -324,136 +324,147 @@ class _NewChatScreenState extends State<NewChatScreen> {
             );
           }
 
+          Future<void> createPrivateChannel() async {
+            final name = nameController.text.trim();
+            if (name.isEmpty) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(dialogContext.l10n.channels_enterChannelName),
+              );
+              return;
+            }
+            final random = Random.secure();
+            final psk = Uint8List(16);
+            for (int i = 0; i < 16; i++) {
+              psk[i] = random.nextInt(256);
+            }
+            Navigator.pop(dialogContext);
+            await connector.setChannel(nextIndex, name, psk);
+            if (context.mounted) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(context.l10n.channels_channelAdded(name)),
+              );
+            }
+          }
+
+          void addHashtagChannel() {
+            var hashtag = hashtagController.text.trim();
+            if (hashtag.isEmpty) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(dialogContext.l10n.channels_enterChannelName),
+              );
+              return;
+            }
+            if (hashtag.startsWith('#')) {
+              hashtag = hashtag.substring(1);
+            }
+            final channelName = '#$hashtag';
+            final psk = Channel.derivePskFromHashtag(hashtag);
+
+            Navigator.pop(dialogContext);
+            connector.setChannel(nextIndex, channelName, psk);
+            if (context.mounted) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(context.l10n.channels_channelAdded(channelName)),
+              );
+            }
+          }
+
+          void joinPrivateChannel() {
+            final name = nameController.text.trim();
+            final pskHex = pskController.text.trim();
+            if (name.isEmpty) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(dialogContext.l10n.channels_enterChannelName),
+              );
+              return;
+            }
+            Uint8List psk;
+            try {
+              psk = Channel.parsePskHex(pskHex);
+            } on FormatException {
+              showDismissibleSnackBar(
+                context,
+                content: Text(dialogContext.l10n.channels_pskMustBe32Hex),
+              );
+              return;
+            }
+            Navigator.pop(dialogContext);
+            connector.setChannel(nextIndex, name, psk);
+            if (context.mounted) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(context.l10n.channels_channelAdded(name)),
+              );
+            }
+          }
+
+          void joinPublicChannel() {
+            Navigator.pop(dialogContext);
+            final psk = Channel.parsePskHex(Channel.publicChannelPsk);
+            connector.setChannel(nextIndex, 'Public', psk);
+            if (context.mounted) {
+              showDismissibleSnackBar(
+                context,
+                content: Text(context.l10n.channels_publicChannelAdded),
+              );
+            }
+          }
+
+          // The confirm button lives in the dialog's pinned actions row —
+          // inside the scrollable body the keyboard covered it. Options with
+          // no form (join public) confirm through the same pinned button.
+          String? confirmLabel;
+          VoidCallback? onConfirm;
+          switch (selectedOption) {
+            case 0:
+              confirmLabel = dialogContext.l10n.common_create;
+              onConfirm = createPrivateChannel;
+            case 1:
+              confirmLabel = dialogContext.l10n.common_add;
+              onConfirm = addHashtagChannel;
+            case 3:
+              confirmLabel = dialogContext.l10n.common_add;
+              onConfirm = joinPrivateChannel;
+            case 4:
+              confirmLabel = dialogContext.l10n.common_add;
+              onConfirm = joinPublicChannel;
+          }
+
           Widget? buildExpandedContent() {
             switch (selectedOption) {
               case 0:
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          labelText: dialogContext.l10n.channels_channelName,
-                          border: const OutlineInputBorder(),
-                        ),
-                        maxLength: 31,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () async {
-                                final name = nameController.text.trim();
-                                if (name.isEmpty) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(dialogContext.l10n.channels_enterChannelName),
-                                  );
-                                  return;
-                                }
-                                final random = Random.secure();
-                                final psk = Uint8List(16);
-                                for (int i = 0; i < 16; i++) {
-                                  psk[i] = random.nextInt(256);
-                                }
-                                Navigator.pop(dialogContext);
-                                await connector.setChannel(nextIndex, name, psk);
-                                if (context.mounted) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(context.l10n.channels_channelAdded(name)),
-                                  );
-                                }
-                              },
-                              child: Text(dialogContext.l10n.common_create),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              case 1:
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: TextField(
-                        controller: hashtagController,
-                        decoration: InputDecoration(
-                          labelText: dialogContext.l10n.channels_enterHashtag,
-                          hintText: dialogContext.l10n.channels_hashtagHint,
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.tag),
-                        ),
-                        maxLength: 31,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () {
-                                var hashtag = hashtagController.text.trim();
-                                if (hashtag.isEmpty) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(dialogContext.l10n.channels_enterChannelName),
-                                  );
-                                  return;
-                                }
-                                if (hashtag.startsWith('#')) {
-                                  hashtag = hashtag.substring(1);
-                                }
-                                final channelName = '#$hashtag';
-                                final psk = Channel.derivePskFromHashtag(hashtag);
-
-                                Navigator.pop(dialogContext);
-                                connector.setChannel(nextIndex, channelName, psk);
-                                if (context.mounted) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(context.l10n.channels_channelAdded(channelName)),
-                                  );
-                                }
-                              },
-                              child: Text(dialogContext.l10n.common_add),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              case 2:
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () async {
-                            Navigator.pop(dialogContext);
-                            if (context.mounted) {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ChannelQrScannerScreen(),
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.qr_code_scanner),
-                          label: Text(dialogContext.l10n.channels_shareChannelQr),
-                        ),
-                      ),
-                    ],
+                  child: TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: dialogContext.l10n.channels_channelName,
+                      border: const OutlineInputBorder(),
+                    ),
+                    maxLength: 31,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => createPrivateChannel(),
+                  ),
+                );
+              case 1:
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: TextField(
+                    controller: hashtagController,
+                    decoration: InputDecoration(
+                      labelText: dialogContext.l10n.channels_enterHashtag,
+                      hintText: dialogContext.l10n.channels_hashtagHint,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.tag),
+                    ),
+                    maxLength: 31,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => addHashtagChannel(),
                   ),
                 );
               case 3:
@@ -468,6 +479,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
                           border: const OutlineInputBorder(),
                         ),
                         maxLength: 31,
+                        textInputAction: TextInputAction.next,
                       ),
                     ),
                     Padding(
@@ -478,74 +490,11 @@ class _NewChatScreenState extends State<NewChatScreen> {
                           labelText: dialogContext.l10n.channels_pskHex,
                           border: const OutlineInputBorder(),
                         ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () {
-                                final name = nameController.text.trim();
-                                final pskHex = pskController.text.trim();
-                                if (name.isEmpty) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(dialogContext.l10n.channels_enterChannelName),
-                                  );
-                                  return;
-                                }
-                                Uint8List psk;
-                                try {
-                                  psk = Channel.parsePskHex(pskHex);
-                                } on FormatException {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(dialogContext.l10n.channels_pskMustBe32Hex),
-                                  );
-                                  return;
-                                }
-                                Navigator.pop(dialogContext);
-                                connector.setChannel(nextIndex, name, psk);
-                                if (context.mounted) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(context.l10n.channels_channelAdded(name)),
-                                  );
-                                }
-                              },
-                              child: Text(dialogContext.l10n.common_add),
-                            ),
-                          ),
-                        ],
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => joinPrivateChannel(),
                       ),
                     ),
                   ],
-                );
-              case 4:
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            Navigator.pop(dialogContext);
-                            final psk = Channel.parsePskHex(Channel.publicChannelPsk);
-                            connector.setChannel(nextIndex, 'Public', psk);
-                            if (context.mounted) {
-                              showDismissibleSnackBar(
-                                context,
-                                content: Text(context.l10n.channels_publicChannelAdded),
-                              );
-                            }
-                          },
-                          child: Text(dialogContext.l10n.common_add),
-                        ),
-                      ),
-                    ],
-                  ),
                 );
               default:
                 return null;
@@ -568,7 +517,6 @@ class _NewChatScreenState extends State<NewChatScreen> {
                         title: dialogContext.l10n.channels_joinPublicChannel,
                         subtitle: dialogContext.l10n.channels_joinPublicChannelDesc,
                       ),
-                      if (selectedOption == 4) buildExpandedContent()!,
                       const Divider(height: 1),
                     ],
                     buildOptionTile(
@@ -621,6 +569,11 @@ class _NewChatScreenState extends State<NewChatScreen> {
                 onPressed: () => Navigator.pop(dialogContext),
                 child: Text(dialogContext.l10n.common_close),
               ),
+              if (onConfirm != null)
+                FilledButton(
+                  onPressed: onConfirm,
+                  child: Text(confirmLabel!),
+                ),
             ],
           );
         },
