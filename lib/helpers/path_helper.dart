@@ -38,15 +38,6 @@ class PathHelper {
     return trimPaddingZeros(pathBytes, stride: stride).length ~/ stride;
   }
 
-  /// The number of hops a path of [pathByteLen] raw bytes represents, when
-  /// only the length is known (the firmware's queue frames carry path_len
-  /// but no path bytes). Ceiling division: a partial slot still crossed a
-  /// repeater, and a positive length must never collapse to 0 ("Direct").
-  static int hopCountFromByteLength(int pathByteLen, {int stride = 1}) {
-    final w = stride < 1 ? 1 : stride;
-    return pathByteLen <= 0 ? 0 : (pathByteLen + w - 1) ~/ w;
-  }
-
   /// The leading [stride] bytes of a public key — the node's on-air hash
   /// prefix (its identity in a path).
   static Uint8List pubKeyPrefix(List<int> publicKey, {int stride = 1}) {

@@ -193,8 +193,9 @@ class ChannelMessage {
       // Queue-delivered frames carry a path_len byte but NO path bytes —
       // keep the count instead of recomputing 0 from the empty path, which
       // made every offline-queued message claim it arrived "Direct"
-      // (parity with _parseContactMessage). The byte counts PATH BYTES;
-      // the connector rescales to hops for wider path hashes.
+      // (parity with _parseContactMessage). The wire byte is
+      // (hashSize-1)<<6 | hopCount (firmware Packet.h), so the extract
+      // helpers yield final values; nothing downstream may rescale them.
       final actualHopCount = explicitHopCount < 0
           ? -1
           : (pathBytes.isEmpty

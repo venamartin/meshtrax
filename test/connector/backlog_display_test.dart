@@ -81,14 +81,23 @@ void main() {
       ]);
     }
 
-    test('a repeated message keeps the frame hop-byte count, not 0/Direct',
-        () {
-      // Firmware sends pkt->path_len (path BYTES) with no path bytes
-      // attached; recomputing hops from the empty path made every
-      // queue-delivered message claim it arrived "Direct".
+    test('a repeated message keeps the frame hop count, not 0/Direct', () {
+      // Firmware sends pkt->path_len with no path bytes attached;
+      // recomputing hops from the empty path made every queue-delivered
+      // message claim it arrived "Direct".
       final msg = ChannelMessage.fromFrame(frame(7))!;
       expect(msg.pathLength, 7);
       expect(msg.pathBytes, isEmpty);
+    });
+
+    test('the wire byte low bits are HOPS at any hash width — never rescale',
+        () {
+      // path_len = (hashSize-1)<<6 | hopCount (firmware Packet.h). At
+      // 2-byte hashes, 7 hops arrive as 0x47 — dividing by the width again
+      // showed "4 hops" for a 7-hop message on 2-byte-hash networks.
+      final msg = ChannelMessage.fromFrame(frame((1 << 6) | 7))!;
+      expect(msg.pathLength, 7);
+      expect(msg.pathHashSize, 2);
     });
 
     test('path_len 0 (flood heard directly) is Direct', () {

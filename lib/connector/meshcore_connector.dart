@@ -5352,17 +5352,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         parsed.timestamp.millisecondsSinceEpoch ~/ 1000,
         '${parsed.senderName}: ${parsed.text}',
       );
-      // The queue frame's path_len counts PATH BYTES (firmware pkt->path_len)
-      // and carries no path bytes; at 2-byte hashes 7 hops arrive as 14.
-      final rawHopBytes = parsed.pathLength ?? 0;
+      // fromFrame already decoded path_len fully: the wire byte is
+      // (hashSize-1)<<6 | HOP COUNT (firmware Packet.h getPathHashCount),
+      // so no rescaling by hash width — dividing again halved every hop
+      // count on 2-byte-hash networks.
       final message = parsed.copyWith(
         packetHash: contentHash,
-        pathLength: (rawHopBytes > 0 && parsed.pathBytes.isEmpty)
-            ? PathHelper.hopCountFromByteLength(
-                rawHopBytes,
-                stride: _pathHashByteWidth,
-              )
-            : null,
         pathHashSize: (parsed.pathLength == null || parsed.pathLength == -1 || parsed.pathLength == 0)
             ? 1
             : parsed.pathHashSize,
@@ -6860,7 +6855,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return true;
     }
     
-    appLogger.info('Keeping self-message (repeated, ${pathBytes.length} hops)', tag: 'Connector');
+    appLogger.info('Keeping self-message (repeated, ${pathBytes.length} path bytes)', tag: 'Connector');
     return false;
   }
 
@@ -7193,6 +7188,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final packet = BufferReader(frame);
     int payloadType = 0;
     Uint8List pathBytes = Uint8List(0);
+    int hopCount = -1;
+    int hashSize = 1;
     try {
       packet.skipBytes(1); // Skip frame type byte
       packet.skipBytes(1); // Skip SNR byte
@@ -7206,8 +7203,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
-      // final hopCount = extractPathHopCount(pathLenRaw);
-      // final hashSize = extractPathHashSize(pathLenRaw);
+      hopCount = extractPathHopCount(pathLenRaw);
+      hashSize = extractPathHashSize(pathLenRaw);
       final pathByteLen = _decodePathByteLen(pathLenRaw);
       pathBytes = packet.readBytes(pathByteLen);
     } catch (e) {
@@ -7222,8 +7219,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     int timestamp = 0;
     bool hasLocation = false;
     bool hasName = false;
-    int hopCount = -1;
-    int hashSize = 1;
     if (payloadType != payloadTypeADVERT) {
       appLogger.warn('Unexpected payload type: $payloadType', tag: 'Connector');
       return;
