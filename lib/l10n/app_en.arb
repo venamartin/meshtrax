@@ -621,6 +621,16 @@
   "channels_addChannelConfirmation": "Do you want to add the following channel?",
   "channels_channelAddedSuccess": "Channel added successfully.",
   "channels_noAvailableChannelSlots": "No available channel slots.",
+  "appSettings_mentionNotifications": "Mention notifications",
+  "appSettings_mentionNotificationsSubtitle": "When someone mentions or replies to you — even in muted channels",
+  "notification_mentionIn": "Mention in {channelName}",
+  "@notification_mentionIn": {
+    "placeholders": {
+      "channelName": {
+        "type": "String"
+      }
+    }
+  },
   "channels_channelAdded": "Channel \"{name}\" added",
   "@channels_channelAdded": {
     "placeholders": {

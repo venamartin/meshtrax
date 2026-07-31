@@ -43,7 +43,16 @@ class ChannelChatScreen extends StatefulWidget {
   final Channel channel;
   final int? unreadCount;
 
-  const ChannelChatScreen({super.key, required this.channel, this.unreadCount});
+  /// When set (mention-notification tap), the list opens anchored on this
+  /// message instead of the bottom or the oldest-unread position.
+  final String? scrollToMessageId;
+
+  const ChannelChatScreen({
+    super.key,
+    required this.channel,
+    this.unreadCount,
+    this.scrollToMessageId,
+  });
 
   @override
   State<ChannelChatScreen> createState() => _ChannelChatScreenState();
@@ -94,7 +103,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           final settings = context.read<AppSettingsService>().settings;
           final unread = widget.unreadCount ??
               connector.getUnreadCountForChannelIndex(widget.channel.index);
-          if (settings.jumpToOldestUnread && unread > 0) {
+          final mentionTarget = widget.scrollToMessageId;
+          final mentionIdx = mentionTarget == null
+              ? -1
+              : messages.reversed
+                    .toList()
+                    .indexWhere((m) => m.messageId == mentionTarget);
+          if (mentionIdx != -1) {
+            _initialScrollIndex = mentionIdx;
+            _isAtBottom = false;
+          } else if (settings.jumpToOldestUnread && unread > 0) {
             _firstUnreadMessage =
                 _findOldestUnreadChannelAnchor(messages, unread);
             if (_firstUnreadMessage != null) {
@@ -270,7 +288,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           final bStart = b.name.toLowerCase().startsWith(search);
           if (aStart && !bStart) return -1;
           if (!aStart && bStart) return 1;
-          
+
+          // Emoji-led names can't be reached by typing (and UTF-16 order
+          // sorts them after 'z') — surface them first. They drop out of
+          // the filter the moment a letter is typed anyway.
+          final aEmoji = _startsWithEmoji(a.name);
+          final bEmoji = _startsWithEmoji(b.name);
+          if (aEmoji && !bEmoji) return -1;
+          if (!aEmoji && bEmoji) return 1;
+
           final aIsRecent = recentSenderKeys.contains(a.publicKeyHex);
           final bIsRecent = recentSenderKeys.contains(b.publicKeyHex);
           if (aIsRecent && !bIsRecent) return -1;
@@ -283,7 +309,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           setState(() {
             _mentionSearchText = search;
             _showMentions = filtered.isNotEmpty;
-            _filteredMentionContacts = filtered.take(15).toList();
+            // No cap: the overlay is a lazy, scrollable list. take(15) cut
+            // everyone past the first screen — and names sort by UTF-16, so
+            // emoji-only names landed after 'z' and could NEVER appear.
+            _filteredMentionContacts = filtered;
           });
         }
         return;
@@ -379,6 +408,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         ),
       ),
     );
+  }
+
+  bool _startsWithEmoji(String name) {
+    if (name.isEmpty) return false;
+    return firstEmoji(name.characters.first) != null;
   }
 
   Widget _buildContactMentionAvatar(Contact contact, Color iconColor) {

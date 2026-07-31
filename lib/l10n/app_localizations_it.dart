@@ -1286,6 +1286,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get channels_noAvailableChannelSlots => 'No available channel slots.';
 
   @override
+  String get appSettings_mentionNotifications => 'Mention notifications';
+
+  @override
+  String get appSettings_mentionNotificationsSubtitle =>
+      'When someone mentions or replies to you — even in muted channels';
+
+  @override
+  String notification_mentionIn(String channelName) {
+    return 'Mention in $channelName';
+  }
+
+  @override
   String channels_channelAdded(String name) {
     return 'Canale \"$name\" aggiunto';
   }

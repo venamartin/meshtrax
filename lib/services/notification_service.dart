@@ -213,6 +213,7 @@ class NotificationService {
     required String message,
     int? channelIndex,
     int? badgeCount,
+    String? mentionMessageId,
   }) async {
     if (!await _ensureInitialized()) return;
     if (Platform.isWindows || Platform.isLinux) return;
@@ -232,14 +233,22 @@ class NotificationService {
         ? _l10n.notification_receivedNewMessage
         : preview;
 
-    final id = (channelIndex ?? channelName.hashCode.abs()) ^ 0x0C;
+    // A mention gets its own title, id (so a later plain message doesn't
+    // replace it), and a payload that deep-links to the exact message.
+    final isMention = mentionMessageId != null;
+    final id =
+        (channelIndex ?? channelName.hashCode.abs()) ^ (isMention ? 0x0E : 0x0C);
 
     await _notifications.show(
       id: id,
-      title: channelName,
+      title: isMention
+          ? _l10n.notification_mentionIn(channelName)
+          : channelName,
       body: body,
       notificationDetails: details,
-      payload: 'channel:$channelIndex',
+      payload: isMention
+          ? 'mention:$channelIndex:$mentionMessageId'
+          : 'channel:$channelIndex',
     );
 
     await _showGroupSummary();
@@ -380,6 +389,7 @@ class NotificationService {
     required String message,
     int? channelIndex,
     int? badgeCount,
+    String? mentionMessageId,
   }) async {
     if (_suppressNotifications) return;
 
@@ -390,6 +400,7 @@ class NotificationService {
         body: '$senderName: $message',
         id: channelIndex?.toString(),
         badgeCount: badgeCount,
+        mentionMessageId: mentionMessageId,
       ),
     );
   }
@@ -464,6 +475,7 @@ class NotificationService {
             message: notification.body,
             channelIndex: int.tryParse(notification.id ?? ''),
             badgeCount: notification.badgeCount,
+            mentionMessageId: notification.mentionMessageId,
           );
           break;
       }
@@ -482,6 +494,7 @@ class _PendingNotification {
   final String body;
   final String? id;
   final int? badgeCount;
+  final String? mentionMessageId;
 
   _PendingNotification({
     required this.type,
@@ -489,6 +502,7 @@ class _PendingNotification {
     required this.body,
     this.id,
     this.badgeCount,
+    this.mentionMessageId,
   });
 }
 
