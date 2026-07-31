@@ -301,7 +301,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           setState(() {
             _mentionSearchText = search;
             _showMentions = filtered.isNotEmpty;
-            _filteredMentionContacts = filtered.take(15).toList();
+            // No cap: the overlay is a lazy, scrollable list. take(15) cut
+            // everyone past the first screen — and names sort by UTF-16, so
+            // emoji-only names landed after 'z' and could NEVER appear.
+            _filteredMentionContacts = filtered;
           });
         }
         return;

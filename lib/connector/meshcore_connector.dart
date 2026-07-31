@@ -5289,7 +5289,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // A mention or reply-to-me outranks the channel-message toggle and the
     // channel's mute — cutting through a muted channel is the entire point.
     // One notification per message: when both would apply, mention wins.
+    // Mentioning MYSELF is not a mention (nor is a same-named sender —
+    // names aren't unique on the mesh, and the two are indistinguishable).
     final isMention = settings.notifyOnMention &&
+        message.senderName != _selfName &&
         ChannelMessage.mentionsUser(message.text, _selfName);
     if (!isMention && !settings.notifyOnNewChannelMessage) return;
 
