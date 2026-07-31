@@ -288,7 +288,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           final bStart = b.name.toLowerCase().startsWith(search);
           if (aStart && !bStart) return -1;
           if (!aStart && bStart) return 1;
-          
+
+          // Emoji-led names can't be reached by typing (and UTF-16 order
+          // sorts them after 'z') — surface them first. They drop out of
+          // the filter the moment a letter is typed anyway.
+          final aEmoji = _startsWithEmoji(a.name);
+          final bEmoji = _startsWithEmoji(b.name);
+          if (aEmoji && !bEmoji) return -1;
+          if (!aEmoji && bEmoji) return 1;
+
           final aIsRecent = recentSenderKeys.contains(a.publicKeyHex);
           final bIsRecent = recentSenderKeys.contains(b.publicKeyHex);
           if (aIsRecent && !bIsRecent) return -1;
@@ -400,6 +408,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         ),
       ),
     );
+  }
+
+  bool _startsWithEmoji(String name) {
+    if (name.isEmpty) return false;
+    return firstEmoji(name.characters.first) != null;
   }
 
   Widget _buildContactMentionAvatar(Contact contact, Color iconColor) {
