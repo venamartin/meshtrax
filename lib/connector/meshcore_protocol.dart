@@ -345,16 +345,20 @@ const int maxFrameSize = 176;
 
 /// Extracts the path hash size from the path_len byte.
 /// The top 2 bits encode the size minus 1 (i.e., 00 = 1 byte, 01 = 2 bytes, 10 = 3 bytes).
+/// Tolerates a signed read: 0xFF parsed via readInt8 arrives as -1.
 int extractPathHashSize(int pathLenByte) {
-  if (pathLenByte == 0xFF) return 1;
-  int sizeBits = (pathLenByte >> 6) & 0x03;
+  final b = pathLenByte & 0xFF;
+  if (b == 0xFF) return 1;
+  int sizeBits = (b >> 6) & 0x03;
   return sizeBits + 1;
 }
 
 /// Extracts the actual hop count from the path_len byte by masking off the top 2 bits.
+/// Tolerates a signed read: 0xFF parsed via readInt8 arrives as -1.
 int extractPathHopCount(int pathLenByte) {
-  if (pathLenByte == 0xFF) return -1; // Special case for force flood
-  return pathLenByte & 0x3F;
+  final b = pathLenByte & 0xFF;
+  if (b == 0xFF) return -1; // Special case for force flood
+  return b & 0x3F;
 }
 
 /// Encodes the hop count and hash size into a single path_len byte.

@@ -85,4 +85,22 @@ void main() {
       );
     });
   });
+
+  group('hopCountFromByteLength', () {
+    test('byte count equals hops at 1-byte hashes', () {
+      expect(PathHelper.hopCountFromByteLength(7), 7);
+    });
+
+    test('divides by stride for wider hashes', () {
+      expect(PathHelper.hopCountFromByteLength(14, stride: 2), 7);
+    });
+
+    test('a positive length never collapses to 0 (Direct)', () {
+      expect(PathHelper.hopCountFromByteLength(1, stride: 2), 1);
+    });
+
+    test('zero bytes is zero hops', () {
+      expect(PathHelper.hopCountFromByteLength(0, stride: 2), 0);
+    });
+  });
 }

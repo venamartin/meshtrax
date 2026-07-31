@@ -190,9 +190,16 @@ class ChannelMessage {
 
       final explicitHopCount = extractPathHopCount(pathLen);
       final hashSize = extractPathHashSize(pathLen);
-      final actualHopCount = explicitHopCount < 0 
-          ? -1 
-          : PathHelper.getHopCount(pathBytes, stride: hashSize);
+      // Queue-delivered frames carry a path_len byte but NO path bytes —
+      // keep the count instead of recomputing 0 from the empty path, which
+      // made every offline-queued message claim it arrived "Direct"
+      // (parity with _parseContactMessage). The byte counts PATH BYTES;
+      // the connector rescales to hops for wider path hashes.
+      final actualHopCount = explicitHopCount < 0
+          ? -1
+          : (pathBytes.isEmpty
+              ? explicitHopCount
+              : PathHelper.getHopCount(pathBytes, stride: hashSize));
 
       return ChannelMessage(
         senderKey: null,

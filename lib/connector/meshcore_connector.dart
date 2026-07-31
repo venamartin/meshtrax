@@ -5352,8 +5352,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         parsed.timestamp.millisecondsSinceEpoch ~/ 1000,
         '${parsed.senderName}: ${parsed.text}',
       );
+      // The queue frame's path_len counts PATH BYTES (firmware pkt->path_len)
+      // and carries no path bytes; at 2-byte hashes 7 hops arrive as 14.
+      final rawHopBytes = parsed.pathLength ?? 0;
       final message = parsed.copyWith(
         packetHash: contentHash,
+        pathLength: (rawHopBytes > 0 && parsed.pathBytes.isEmpty)
+            ? PathHelper.hopCountFromByteLength(
+                rawHopBytes,
+                stride: _pathHashByteWidth,
+              )
+            : null,
         pathHashSize: (parsed.pathLength == null || parsed.pathLength == -1 || parsed.pathLength == 0)
             ? 1
             : parsed.pathHashSize,
@@ -6088,14 +6097,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   /// Phase 3d ingest for DMs — the database is the only message state.
   Future<void> _ingestContactMessage(String pubKeyHex, Message message) async {
-    // Clamp wildly-wrong sender clocks; SQL ordering is the only ordering.
+    // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
+    // old-but-plausible time is display truth, not a sorting hazard.
     Message processedMessage = message;
     if (!message.isOutgoing) {
-      final now = DateTime.now();
-      if (message.timestamp
-              .isBefore(now.subtract(const Duration(minutes: 10))) ||
-          message.timestamp.isAfter(now.add(const Duration(minutes: 1)))) {
-        processedMessage = message.copyWith(timestamp: now);
+      final sane = sanitizeSenderTimestamp(message.timestamp, DateTime.now());
+      if (sane != message.timestamp) {
+        processedMessage = message.copyWith(timestamp: sane);
       }
     }
 
@@ -6493,14 +6501,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final idKey = channel.idKey;
 
-    // Clamp wildly-wrong sender clocks; SQL ordering is the only ordering.
+    // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
+    // old-but-plausible time is display truth, not a sorting hazard.
     ChannelMessage sanitizedMessage = message;
     if (!message.isOutgoing) {
-      final now = DateTime.now();
-      if (message.timestamp
-              .isBefore(now.subtract(const Duration(minutes: 10))) ||
-          message.timestamp.isAfter(now.add(const Duration(minutes: 1)))) {
-        sanitizedMessage = message.copyWith(timestamp: now);
+      final sane = sanitizeSenderTimestamp(message.timestamp, DateTime.now());
+      if (sane != message.timestamp) {
+        sanitizedMessage = message.copyWith(timestamp: sane);
       }
     }
 
@@ -6634,6 +6641,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       existing.pathBytes,
       incoming.pathBytes,
     );
+    // The hash size must travel WITH the bytes it describes: a queue-first
+    // insert stores hashSize 1 with no bytes, and keeping it while the
+    // RX-log copy's 2-byte-hash path merges in would render every hop as
+    // garbage single-byte hashes.
+    final mergedHashSize = identical(mergedPathBytes, incoming.pathBytes)
+        ? incoming.pathHashSize
+        : existing.pathHashSize;
     final mergedPathVariants = _mergePathVariants(
       existing.pathVariants,
       incoming.pathVariants,
@@ -6642,7 +6656,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       existing.pathLength,
       incoming.pathLength,
       mergedPathBytes,
-      existing.pathHashSize,
+      mergedHashSize,
     );
     await _channelMessageStore.updateMessage(
       idKey,
@@ -6651,6 +6665,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         repeatCount: m.repeatCount + 1,
         pathLength: mergedPathLength,
         pathBytes: mergedPathBytes,
+        pathHashSize: mergedHashSize,
         pathVariants: mergedPathVariants,
         packetHash: m.packetHash ?? incoming.packetHash,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
@@ -6760,6 +6775,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
       },
     );
+  }
+
+  /// Display timestamps come from the sender's clock; ORDER comes from
+  /// arrival (receivedAtUs). Keep the claimed time unless the clock is
+  /// broken: more than a minute ahead of us, or more than 30 days behind
+  /// (a dead RTC reads 1970). A backlog drained after a night — or a day —
+  /// away keeps its real send times.
+  @visibleForTesting
+  static DateTime sanitizeSenderTimestamp(DateTime timestamp, DateTime now) {
+    if (timestamp.isAfter(now.add(const Duration(minutes: 1))) ||
+        timestamp.isBefore(now.subtract(const Duration(days: 30)))) {
+      return now;
+    }
+    return timestamp;
   }
 
   /// The ORIGINAL wire timestamp of a message, in ms — even after the ingest
