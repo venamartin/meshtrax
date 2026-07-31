@@ -43,7 +43,16 @@ class ChannelChatScreen extends StatefulWidget {
   final Channel channel;
   final int? unreadCount;
 
-  const ChannelChatScreen({super.key, required this.channel, this.unreadCount});
+  /// When set (mention-notification tap), the list opens anchored on this
+  /// message instead of the bottom or the oldest-unread position.
+  final String? scrollToMessageId;
+
+  const ChannelChatScreen({
+    super.key,
+    required this.channel,
+    this.unreadCount,
+    this.scrollToMessageId,
+  });
 
   @override
   State<ChannelChatScreen> createState() => _ChannelChatScreenState();
@@ -94,7 +103,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           final settings = context.read<AppSettingsService>().settings;
           final unread = widget.unreadCount ??
               connector.getUnreadCountForChannelIndex(widget.channel.index);
-          if (settings.jumpToOldestUnread && unread > 0) {
+          final mentionTarget = widget.scrollToMessageId;
+          final mentionIdx = mentionTarget == null
+              ? -1
+              : messages.reversed
+                    .toList()
+                    .indexWhere((m) => m.messageId == mentionTarget);
+          if (mentionIdx != -1) {
+            _initialScrollIndex = mentionIdx;
+            _isAtBottom = false;
+          } else if (settings.jumpToOldestUnread && unread > 0) {
             _firstUnreadMessage =
                 _findOldestUnreadChannelAnchor(messages, unread);
             if (_firstUnreadMessage != null) {

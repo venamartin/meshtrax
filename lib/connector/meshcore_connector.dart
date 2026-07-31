@@ -5284,12 +5284,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (channelIndex == null) return;
 
     final settings = _appSettingsService!.settings;
-    if (!settings.notificationsEnabled || !settings.notifyOnNewChannelMessage) {
-      return;
-    }
+    if (!settings.notificationsEnabled) return;
+
+    // A mention or reply-to-me outranks the channel-message toggle and the
+    // channel's mute — cutting through a muted channel is the entire point.
+    // One notification per message: when both would apply, mention wins.
+    final isMention = settings.notifyOnMention &&
+        ChannelMessage.mentionsUser(message.text, _selfName);
+    if (!isMention && !settings.notifyOnNewChannelMessage) return;
 
     // Blocked senders previously only had their rows hidden in the open
-    // channel screen — notifications still fired.
+    // channel screen — notifications still fired. Blocked stays absolute:
+    // a mention from a blocked sender is still blocked.
     if (_appSettingsService!.isSenderBlocked(message.senderName)) return;
 
     // The radio decrypts and queues messages for any slot it has keyed,
@@ -5316,7 +5322,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               settingsService.isChannelMuted(channel.name) ||
               settingsService.isChannelMuted(channel.displayName))
         : settingsService.isChannelMuted(label);
-    if (isMuted) return;
+    if (isMuted && !isMention) return;
 
     // message.text is the raw on-wire form; a reply carries quote markup
     // ("@[Name]\n><snippet>..\n<body>", or "re:" from older senders) that the
@@ -5331,6 +5337,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       message: notificationText,
       channelIndex: channelIndex,
       badgeCount: getTotalUnreadCount(),
+      mentionMessageId: isMention ? message.messageId : null,
     );
   }
 

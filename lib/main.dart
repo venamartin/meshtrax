@@ -185,7 +185,32 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     if (navigator == null) return;
     final connector = widget.connector;
 
-    if (payload.startsWith('channel:')) {
+    if (payload.startsWith('mention:')) {
+      // mention:<channelIndex>:<messageId> — open the channel AND land on
+      // the message the user was mentioned in.
+      final rest = payload.substring('mention:'.length);
+      final cut = rest.indexOf(':');
+      if (cut <= 0) return;
+      final index = int.tryParse(rest.substring(0, cut));
+      final messageId = rest.substring(cut + 1);
+      if (index == null || messageId.isEmpty) return;
+      Channel? channel;
+      for (final c in connector.channels) {
+        if (c.index == index) {
+          channel = c;
+          break;
+        }
+      }
+      if (channel == null) return;
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ChannelChatScreen(
+            channel: channel!,
+            scrollToMessageId: messageId,
+          ),
+        ),
+      );
+    } else if (payload.startsWith('channel:')) {
       final index = int.tryParse(payload.substring('channel:'.length));
       if (index == null) return;
       Channel? channel;

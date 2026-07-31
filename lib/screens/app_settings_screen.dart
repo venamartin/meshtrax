@@ -361,6 +361,37 @@ class AppSettingsScreen extends StatelessWidget {
           const Divider(height: 1),
           SwitchListTile(
             secondary: Icon(
+              Icons.alternate_email,
+              color: settingsService.settings.notificationsEnabled
+                  ? null
+                  : Colors.grey,
+            ),
+            title: Text(
+              context.l10n.appSettings_mentionNotifications,
+              style: TextStyle(
+                color: settingsService.settings.notificationsEnabled
+                    ? null
+                    : Colors.grey,
+              ),
+            ),
+            subtitle: Text(
+              context.l10n.appSettings_mentionNotificationsSubtitle,
+              style: TextStyle(
+                color: settingsService.settings.notificationsEnabled
+                    ? null
+                    : Colors.grey,
+              ),
+            ),
+            value: settingsService.settings.notifyOnMention,
+            onChanged: settingsService.settings.notificationsEnabled
+                ? (value) {
+                    settingsService.setNotifyOnMention(value);
+                  }
+                : null,
+          ),
+          const Divider(height: 1),
+          SwitchListTile(
+            secondary: Icon(
               Icons.cell_tower,
               color: settingsService.settings.notificationsEnabled
                   ? null

@@ -2380,6 +2380,24 @@ abstract class AppLocalizations {
   /// **'No available channel slots.'**
   String get channels_noAvailableChannelSlots;
 
+  /// No description provided for @appSettings_mentionNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mention notifications'**
+  String get appSettings_mentionNotifications;
+
+  /// No description provided for @appSettings_mentionNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone mentions or replies to you — even in muted channels'**
+  String get appSettings_mentionNotificationsSubtitle;
+
+  /// No description provided for @notification_mentionIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Mention in {channelName}'**
+  String notification_mentionIn(String channelName);
+
   /// No description provided for @channels_channelAdded.
   ///
   /// In en, this message translates to:

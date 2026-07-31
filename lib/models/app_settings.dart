@@ -31,6 +31,9 @@ class AppSettings {
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
+  // Mentions/replies cut through channel mutes and the channel-message
+  // toggle; only the master notifications switch outranks them.
+  final bool notifyOnMention;
   final bool notifyOnNewAdvert;
   final bool autoRouteRotationEnabled;
   final double maxRouteWeight;
@@ -78,6 +81,7 @@ class AppSettings {
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
+    this.notifyOnMention = true,
     this.notifyOnNewAdvert = false,
     this.autoRouteRotationEnabled = true,
     this.maxRouteWeight = 5.0,
@@ -126,6 +130,7 @@ class AppSettings {
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
+      'notify_on_mention': notifyOnMention,
       'notify_on_new_advert': notifyOnNewAdvert,
       'auto_route_rotation_enabled': autoRouteRotationEnabled,
       'max_route_weight': maxRouteWeight,
@@ -183,6 +188,7 @@ class AppSettings {
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
           json['notify_on_new_channel_message'] as bool? ?? true,
+      notifyOnMention: json['notify_on_mention'] as bool? ?? true,
       notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
       autoRouteRotationEnabled:
           json['auto_route_rotation_enabled'] as bool? ?? false,
@@ -252,6 +258,7 @@ class AppSettings {
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
+    bool? notifyOnMention,
     bool? notifyOnNewAdvert,
     bool? autoRouteRotationEnabled,
     double? maxRouteWeight,
@@ -298,6 +305,7 @@ class AppSettings {
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:
           notifyOnNewChannelMessage ?? this.notifyOnNewChannelMessage,
+      notifyOnMention: notifyOnMention ?? this.notifyOnMention,
       notifyOnNewAdvert: notifyOnNewAdvert ?? this.notifyOnNewAdvert,
       autoRouteRotationEnabled:
           autoRouteRotationEnabled ?? this.autoRouteRotationEnabled,

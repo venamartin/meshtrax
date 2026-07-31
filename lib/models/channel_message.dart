@@ -281,6 +281,14 @@ class ChannelMessage {
     return flat.length <= chars ? flat : flat.substring(0, chars);
   }
 
+  /// Whether [text] mentions [name] via the `@[Name]` wire syntax anywhere —
+  /// plain mentions and reply headers alike (a reply to me always carries my
+  /// mention). Case-insensitive: other apps let senders type names by hand.
+  static bool mentionsUser(String text, String? name) {
+    if (name == null || name.isEmpty) return false;
+    return text.toLowerCase().contains('@[${name.toLowerCase()}]');
+  }
+
   /// Removes a single leading `@[name]` mention (with an optional trailing
   /// space or newline) from [text]. Used to avoid echoing our own handle back
   /// inside a reply's quoted snippet.
