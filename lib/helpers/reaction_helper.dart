@@ -44,6 +44,11 @@ class ReactionHelper {
   /// [getWireTimestampSecs] - candidate original wire timestamps for a message,
   /// used for MeshCore One hashes (which are computed over the sender's wire
   /// clock, untouched by the ingest clamp). Falls back to [getTimestampSecs].
+  /// [getMessageTextVariants] - candidate texts for MeshCore One hashes: the
+  /// sender hashes the message AS IT DISPLAYS it, which strips a leading
+  /// mention — so a reaction to "@[Bob] hello" hashes only "hello". Callers
+  /// pass the stored text plus its mention-stripped form. Falls back to
+  /// [getMessageText].
   ///
   /// Returns whether a match was found.
   static bool applyReaction<T>({
@@ -63,16 +68,21 @@ class ReactionHelper {
     )
     updateMessage,
     List<int> Function(T)? getWireTimestampSecs,
+    List<String> Function(T)? getMessageTextVariants,
   }) {
     final targetHash = reactionInfo.targetHash;
 
     bool matches(T msg) {
       if (reactionInfo.format == ReactionFormat.one) {
-        final text = getMessageText(msg);
+        final texts =
+            getMessageTextVariants?.call(msg) ?? [getMessageText(msg)];
         final candidates =
             getWireTimestampSecs?.call(msg) ?? [getTimestampSecs(msg)];
-        return candidates
-            .any((secs) => computeMeshCoreOneHash(text, secs) == targetHash);
+        return texts.any(
+          (text) => candidates.any(
+            (secs) => computeMeshCoreOneHash(text, secs) == targetHash,
+          ),
+        );
       }
       return computeReactionHash(
             getTimestampSecs(msg),

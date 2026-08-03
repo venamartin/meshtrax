@@ -290,6 +290,26 @@ class ChannelMessage {
     return text.toLowerCase().contains('@[${name.toLowerCase()}]');
   }
 
+  /// Removes ALL leading `@[name]` mentions (each with an optional trailing
+  /// space or newline) from [text] — the generic form of
+  /// [stripLeadingMention] for when the mentioned name is unknown.
+  ///
+  /// Other clients treat a leading mention as addressing, not content: they
+  /// build reply snippets and reaction hashes over the STRIPPED body. Any
+  /// code matching a snippet or hash against stored text must compare like
+  /// with like, or replies and reactions to mention-led messages never
+  /// resolve (field report: quote showed "My line of.." though the message
+  /// existed; a 😂 displayed as a raw two-line message).
+  static String stripLeadingMentions(String text) {
+    final re = RegExp(r'^@\[[^\]]+\][ \n]?');
+    var out = text;
+    while (true) {
+      final m = re.firstMatch(out);
+      if (m == null || m.end == 0) return out;
+      out = out.substring(m.end);
+    }
+  }
+
   /// Removes a single leading `@[name]` mention (with an optional trailing
   /// space or newline) from [text]. Used to avoid echoing our own handle back
   /// inside a reply's quoted snippet.
