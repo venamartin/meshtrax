@@ -647,6 +647,7 @@ class ChannelMessageStore {
       'channelIndex': msg.channelIndex,
       'repeatCount': msg.repeatCount,
       'sendRetryCount': msg.sendRetryCount,
+      'sentWireSecs': msg.sentWireSecs,
       'pathLength': msg.pathLength,
       'pathBytes': base64Encode(msg.pathBytes),
       'pathHashSize': msg.pathHashSize,
@@ -683,6 +684,9 @@ class ChannelMessageStore {
       status: ChannelMessageStatus.values[json['status'] as int],
       repeatCount: (json['repeatCount'] as int?) ?? 0,
       sendRetryCount: (json['sendRetryCount'] as int?) ?? 0,
+      sentWireSecs: (json['sentWireSecs'] as List<dynamic>?)
+          ?.map((e) => e as int)
+          .toList(),
       pathLength: () {
         if (pathBytes.isNotEmpty) {
           return PathHelper.getHopCount(pathBytes, stride: pathHashSize);

@@ -36,6 +36,12 @@ class ChannelMessage {
   final List<Repeat> repeats;
   final int repeatCount;
   final int sendRetryCount;
+  // Every wire timestamp this message actually went on the air with (first
+  // send, then any retries — retries MUST re-stamp or mesh dedup drops
+  // them). MeshCore One reaction hashes are computed over the wire clock,
+  // which radio-quiet waits can push seconds past this row's construction
+  // clock. Empty for incoming rows and rows sent before this field existed.
+  final List<int> sentWireSecs;
   final int? pathLength;
   final Uint8List pathBytes;
   final int pathHashSize;
@@ -62,6 +68,7 @@ class ChannelMessage {
     this.repeats = const [],
     this.repeatCount = 0,
     this.sendRetryCount = 0,
+    List<int>? sentWireSecs,
     this.pathLength,
     Uint8List? pathBytes,
     this.pathHashSize = 1,
@@ -77,6 +84,7 @@ class ChannelMessage {
   }) : messageId =
            messageId ??
            '${timestamp.millisecondsSinceEpoch}_${senderName.hashCode}_${text.hashCode}',
+       sentWireSecs = sentWireSecs ?? const [],
        reactions = reactions ?? {},
        reactionSenders = reactionSenders ?? {},
        pathBytes = pathBytes ?? Uint8List(0),
@@ -98,6 +106,7 @@ class ChannelMessage {
     List<Repeat>? repeats,
     int? repeatCount,
     int? sendRetryCount,
+    List<int>? sentWireSecs,
     int? pathLength,
     Uint8List? pathBytes,
     int? pathHashSize,
@@ -121,6 +130,7 @@ class ChannelMessage {
       repeats: repeats ?? this.repeats,
       repeatCount: repeatCount ?? this.repeatCount,
       sendRetryCount: sendRetryCount ?? this.sendRetryCount,
+      sentWireSecs: sentWireSecs ?? this.sentWireSecs,
       pathLength: pathLength ?? this.pathLength,
       pathBytes: pathBytes ?? this.pathBytes,
       pathHashSize: pathHashSize ?? this.pathHashSize,

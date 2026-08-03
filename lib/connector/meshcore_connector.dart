@@ -3227,10 +3227,37 @@ class MeshCoreConnector extends ChangeNotifier {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+    // Stamp here (the same instant the builder used to) and remember it:
+    // radio-quiet waits can push the wire clock seconds past the row's
+    // construction clock, and MeshCore One reaction hashes are computed
+    // over the wire value. Transmitted bytes are unchanged.
+    final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await sendFrame(
-      buildSendChannelTextMsgFrame(channel.index, outboundText),
+      buildSendChannelTextMsgFrame(
+        channel.index,
+        outboundText,
+        timestampSecs: wireSecs,
+      ),
       channelSendQueueId: message.messageId,
       expectsGenericAck: true,
+    );
+    await _recordSentWireSecs(channel.idKey, message.messageId, wireSecs);
+  }
+
+  /// Appends a transmitted wire timestamp to the row's [sentWireSecs] so
+  /// incoming MeshCore One reactions can hash-match every stamp this
+  /// message ever carried on the air.
+  Future<void> _recordSentWireSecs(
+    String idKey,
+    String messageId,
+    int secs,
+  ) {
+    return _channelMessageStore.updateMessage(
+      idKey,
+      messageId,
+      (m) => m.sentWireSecs.contains(secs)
+          ? m
+          : m.copyWith(sentWireSecs: [...m.sentWireSecs, secs]),
     );
   }
 
@@ -3296,11 +3323,20 @@ class MeshCoreConnector extends ChangeNotifier {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+    // Retries re-stamp on purpose (an identical payload would be dropped by
+    // mesh dedup); record this stamp too so reactions to the retry copy
+    // still hash-match our row.
+    final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await sendFrame(
-      buildSendChannelTextMsgFrame(channelIndex, outboundText),
+      buildSendChannelTextMsgFrame(
+        channelIndex,
+        outboundText,
+        timestampSecs: wireSecs,
+      ),
       channelSendQueueId: messageId,
       expectsGenericAck: true,
     );
+    await _recordSentWireSecs(live.idKey, messageId, wireSecs);
   }
 
   Future<void> removeContact(Contact contact) async {
@@ -6183,9 +6219,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // clients may react to any message, so don't restrict those.
       shouldSkip: (msg) => !isOne && isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      // The sender's wire clock, untouched by the ingest clamp; retries
-      // reuse the original timestamp, so outgoing rows are exact too.
-      getWireTimestampSecs: (msg) => [_messageWireSecs(msg)],
+      // The sender's wire clock, untouched by the ingest clamp. Outgoing
+      // rows get a small forward window: the frame is stamped after send
+      // delays, past the row's construction clock.
+      getWireTimestampSecs: (msg) {
+        final secs = _messageWireSecs(msg);
+        return msg.isOutgoing
+            ? [secs, secs + 1, secs + 2, secs + 3]
+            : [secs];
+      },
       // MeshCore One hashes the mention-stripped display text, our rows
       // store the raw text — try both.
       getMessageTextVariants: (msg) => {
@@ -6749,6 +6791,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       repeats: base.repeats,
       repeatCount: base.repeatCount,
       sendRetryCount: base.sendRetryCount,
+      sentWireSecs: base.sentWireSecs,
       pathLength: base.pathLength,
       pathBytes: base.pathBytes,
       pathHashSize: base.pathHashSize,
@@ -6780,7 +6823,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // built, so also try the next second.
       getWireTimestampSecs: (msg) {
         final secs = wireTimestampMs(msg) ~/ 1000;
-        return msg.isOutgoing ? [secs, secs + 1] : [secs];
+        if (!msg.isOutgoing) return [secs];
+        // Outgoing: the frame is stamped after radio-quiet waits, seconds
+        // past the row's construction clock. Recorded stamps are exact
+        // (incl. retries); the t..t+3 window covers rows sent before
+        // recording existed (field case: gap was exactly 2).
+        return {
+          secs,
+          secs + 1,
+          secs + 2,
+          secs + 3,
+          ...msg.sentWireSecs,
+        }.toList();
       },
       // MeshCore One hashes the mention-stripped display text, our rows
       // store the raw text — try both.
