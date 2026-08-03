@@ -57,4 +57,36 @@ void main() {
       expect(AppSettings.fromJson(off.toJson()).notifyOnMention, isFalse);
     });
   });
+
+  group('ChannelMessage.stripLeadingMentions', () {
+    test('strips one leading mention with trailing space', () {
+      expect(
+        ChannelMessage.stripLeadingMentions('@[CWI4] My line of work'),
+        'My line of work',
+      );
+    });
+
+    test('strips a newline-separated mention (reply header shape)', () {
+      expect(ChannelMessage.stripLeadingMentions('@[Bob]\nhello'), 'hello');
+    });
+
+    test('strips stacked mentions', () {
+      expect(ChannelMessage.stripLeadingMentions('@[A]@[B] hi'), 'hi');
+    });
+
+    test('mid-text mentions are content, not addressing', () {
+      expect(
+        ChannelMessage.stripLeadingMentions('ask @[Bob] about it'),
+        'ask @[Bob] about it',
+      );
+    });
+
+    test('plain text is untouched', () {
+      expect(ChannelMessage.stripLeadingMentions('no mentions'), 'no mentions');
+    });
+
+    test('emoji names strip cleanly', () {
+      expect(ChannelMessage.stripLeadingMentions('@[GWQ∆🍓] yo'), 'yo');
+    });
+  });
 }

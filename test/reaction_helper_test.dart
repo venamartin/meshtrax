@@ -936,4 +936,138 @@ void main() {
       });
     });
   });
+
+  group('MeshCore One reaction to a mention-led message', () {
+    // Field report: 😂@[GWQ∆🍓]\nx958frsv displayed as a raw two-line
+    // message. MC1 hashes the message AS IT DISPLAYS it — leading mention
+    // stripped — while our row stores "@[Vacasity] I was just...". The
+    // variants hook must let the stripped form match.
+    const storedText =
+        "@[Vacasity] I was just looking up complicated Starbucks drinks. It's nuts.";
+    const strippedText =
+        "I was just looking up complicated Starbucks drinks. It's nuts.";
+    const wireSecs = 1753974720;
+
+    bool reactOne(List<_FakeMessage> messages, String wireText) {
+      final info = ReactionHelper.parseIncomingReaction(wireText)!;
+      return ReactionHelper.applyReaction<_FakeMessage>(
+        messages: messages,
+        reactionInfo: info,
+        reactorName: 'Vacasity',
+        shouldSkip: (_) => false,
+        getTimestampSecs: (m) => m.timestampSecs,
+        getWireTimestampSecs: (m) => [m.timestampSecs],
+        getMessageTextVariants: (m) => {
+          m.text,
+          // What the connector passes: the generic leading-mention strip.
+          m.text.replaceFirst(RegExp(r'^(@\[[^\]]+\][ \n]?)+'), ''),
+        }.toList(),
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+        getReactions: (m) => m.reactions,
+        getReactionSenders: (m) => m.reactionSenders,
+        updateMessage: (i, reactions, senders) {
+          messages[i].reactions = reactions;
+          messages[i].reactionSenders = senders;
+        },
+      );
+    }
+
+    test('hash over the stripped text resolves to the stored raw row', () {
+      final messages = [_FakeMessage(wireSecs, 'GWQ∆🍓', storedText)];
+      final hash =
+          ReactionHelper.computeMeshCoreOneHash(strippedText, wireSecs);
+      expect(reactOne(messages, '😂@[GWQ∆🍓]\n$hash'), isTrue);
+      expect(messages.first.reactions['😂'], 1);
+      expect(messages.first.reactionSenders['😂'], ['Vacasity']);
+    });
+
+    test('hash over the raw text still resolves (both variants tried)', () {
+      final messages = [_FakeMessage(wireSecs, 'GWQ∆🍓', storedText)];
+      final hash = ReactionHelper.computeMeshCoreOneHash(storedText, wireSecs);
+      expect(reactOne(messages, '😂@[GWQ∆🍓]\n$hash'), isTrue);
+    });
+
+    test('a wrong hash still resolves nothing (falls through to display)',
+        () {
+      final messages = [_FakeMessage(wireSecs, 'GWQ∆🍓', storedText)];
+      expect(reactOne(messages, '😂@[GWQ∆🍓]\nx958frsv'), isFalse);
+      expect(messages.first.reactions, isEmpty);
+    });
+  });
+
+  group('MeshCore One wire-clock drift on outgoing rows', () {
+    // The field 😂 hashed at construction+2s: radio-quiet waits stamp the
+    // frame seconds after the row. The connector feeds a t..t+3 window plus
+    // any recorded send/retry stamps; the helper must accept any of them.
+    const text = 'plain message';
+    const rowSecs = 1785711170;
+
+    bool reactWithCandidates(
+      List<_FakeMessage> messages,
+      String wireText,
+      List<int> Function(_FakeMessage) candidates,
+    ) {
+      final info = ReactionHelper.parseIncomingReaction(wireText)!;
+      return ReactionHelper.applyReaction<_FakeMessage>(
+        messages: messages,
+        reactionInfo: info,
+        reactorName: 'Vacasity',
+        shouldSkip: (_) => false,
+        getTimestampSecs: (m) => m.timestampSecs,
+        getWireTimestampSecs: candidates,
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+        getReactions: (m) => m.reactions,
+        getReactionSenders: (m) => m.reactionSenders,
+        updateMessage: (i, reactions, senders) {
+          messages[i].reactions = reactions;
+          messages[i].reactionSenders = senders;
+        },
+      );
+    }
+
+    test('a hash two seconds past the row clock lands via the window', () {
+      final messages = [_FakeMessage(rowSecs, 'GWQ∆🍓', text)];
+      final hash = ReactionHelper.computeMeshCoreOneHash(text, rowSecs + 2);
+      expect(
+        reactWithCandidates(
+          messages,
+          '😂@[GWQ∆🍓]\n$hash',
+          (m) => [for (var i = 0; i <= 3; i++) m.timestampSecs + i],
+        ),
+        isTrue,
+      );
+    });
+
+    test('a recorded retry stamp far outside the window still lands', () {
+      final messages = [_FakeMessage(rowSecs, 'GWQ∆🍓', text)];
+      final hash = ReactionHelper.computeMeshCoreOneHash(text, rowSecs + 31);
+      expect(
+        reactWithCandidates(
+          messages,
+          '😂@[GWQ∆🍓]\n$hash',
+          (m) => [
+            for (var i = 0; i <= 3; i++) m.timestampSecs + i,
+            rowSecs + 31, // sentWireSecs recorded at retry time
+          ],
+        ),
+        isTrue,
+      );
+    });
+
+    test('without window or recording the same hash misses (old behavior)',
+        () {
+      final messages = [_FakeMessage(rowSecs, 'GWQ∆🍓', text)];
+      final hash = ReactionHelper.computeMeshCoreOneHash(text, rowSecs + 2);
+      expect(
+        reactWithCandidates(
+          messages,
+          '😂@[GWQ∆🍓]\n$hash',
+          (m) => [m.timestampSecs, m.timestampSecs + 1],
+        ),
+        isFalse,
+      );
+    });
+  });
 }

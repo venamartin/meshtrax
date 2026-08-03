@@ -554,8 +554,18 @@ Uint8List buildSendTextMsgFrame(
 
 // Build CMD_SEND_CHANNEL_TXT_MSG frame
 // Format: [cmd][txt_type][channel_idx][timestamp x4][text...]
-Uint8List buildSendChannelTextMsgFrame(int channelIndex, String text) {
-  final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+//
+// [timestampSecs] lets the caller observe the wire timestamp (MeshCore One
+// reaction hashes are computed over it); when omitted the frame is stamped
+// here exactly as before. Callers pass the same now() instant either way —
+// the transmitted bytes never change, only who gets to remember them.
+Uint8List buildSendChannelTextMsgFrame(
+  int channelIndex,
+  String text, {
+  int? timestampSecs,
+}) {
+  final timestamp =
+      timestampSecs ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
   final writer = BufferWriter();
   writer.writeByte(cmdSendChannelTxtMsg);
   writer.writeByte(txtTypePlain);

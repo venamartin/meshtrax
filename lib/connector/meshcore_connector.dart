@@ -3227,10 +3227,37 @@ class MeshCoreConnector extends ChangeNotifier {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+    // Stamp here (the same instant the builder used to) and remember it:
+    // radio-quiet waits can push the wire clock seconds past the row's
+    // construction clock, and MeshCore One reaction hashes are computed
+    // over the wire value. Transmitted bytes are unchanged.
+    final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await sendFrame(
-      buildSendChannelTextMsgFrame(channel.index, outboundText),
+      buildSendChannelTextMsgFrame(
+        channel.index,
+        outboundText,
+        timestampSecs: wireSecs,
+      ),
       channelSendQueueId: message.messageId,
       expectsGenericAck: true,
+    );
+    await _recordSentWireSecs(channel.idKey, message.messageId, wireSecs);
+  }
+
+  /// Appends a transmitted wire timestamp to the row's [sentWireSecs] so
+  /// incoming MeshCore One reactions can hash-match every stamp this
+  /// message ever carried on the air.
+  Future<void> _recordSentWireSecs(
+    String idKey,
+    String messageId,
+    int secs,
+  ) {
+    return _channelMessageStore.updateMessage(
+      idKey,
+      messageId,
+      (m) => m.sentWireSecs.contains(secs)
+          ? m
+          : m.copyWith(sentWireSecs: [...m.sentWireSecs, secs]),
     );
   }
 
@@ -3296,11 +3323,20 @@ class MeshCoreConnector extends ChangeNotifier {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+    // Retries re-stamp on purpose (an identical payload would be dropped by
+    // mesh dedup); record this stamp too so reactions to the retry copy
+    // still hash-match our row.
+    final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await sendFrame(
-      buildSendChannelTextMsgFrame(channelIndex, outboundText),
+      buildSendChannelTextMsgFrame(
+        channelIndex,
+        outboundText,
+        timestampSecs: wireSecs,
+      ),
       channelSendQueueId: messageId,
       expectsGenericAck: true,
     );
+    await _recordSentWireSecs(live.idKey, messageId, wireSecs);
   }
 
   Future<void> removeContact(Contact contact) async {
@@ -6183,9 +6219,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // clients may react to any message, so don't restrict those.
       shouldSkip: (msg) => !isOne && isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      // The sender's wire clock, untouched by the ingest clamp; retries
-      // reuse the original timestamp, so outgoing rows are exact too.
-      getWireTimestampSecs: (msg) => [_messageWireSecs(msg)],
+      // The sender's wire clock, untouched by the ingest clamp. Outgoing
+      // rows get a small forward window: the frame is stamped after send
+      // delays, past the row's construction clock.
+      getWireTimestampSecs: (msg) {
+        final secs = _messageWireSecs(msg);
+        return msg.isOutgoing
+            ? [secs, secs + 1, secs + 2, secs + 3]
+            : [secs];
+      },
+      // MeshCore One hashes the mention-stripped display text, our rows
+      // store the raw text — try both.
+      getMessageTextVariants: (msg) => {
+        msg.text,
+        ChannelMessage.stripLeadingMentions(msg.text),
+      }.toList(),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -6696,13 +6744,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     String mentionedNode,
     String snippet,
   ) {
-    final needle = snippet.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+    // Compare with leading mentions stripped from BOTH sides: the replying
+    // app builds its snippet from the parent as it displays it (mention
+    // stripped), while our stored text keeps the mention — so a reply to
+    // "@[Bob] hello" carried a snippet the raw text could never start with.
+    // Comparison-time copies only; stored text and display are untouched.
+    String norm(String s) => ChannelMessage.stripLeadingMentions(s)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .toLowerCase();
+    final needle = norm(snippet);
     for (int i = messages.length - 1; i >= 0; i--) {
       final m = messages[i];
       if (m.senderName != mentionedNode) continue;
       if (needle.isEmpty) return m;
-      final hay = m.text.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
-      if (hay.startsWith(needle)) return m;
+      if (norm(m.text).startsWith(needle)) return m;
     }
     return null;
   }
@@ -6735,6 +6791,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       repeats: base.repeats,
       repeatCount: base.repeatCount,
       sendRetryCount: base.sendRetryCount,
+      sentWireSecs: base.sentWireSecs,
       pathLength: base.pathLength,
       pathBytes: base.pathBytes,
       pathHashSize: base.pathHashSize,
@@ -6766,8 +6823,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // built, so also try the next second.
       getWireTimestampSecs: (msg) {
         final secs = wireTimestampMs(msg) ~/ 1000;
-        return msg.isOutgoing ? [secs, secs + 1] : [secs];
+        if (!msg.isOutgoing) return [secs];
+        // Outgoing: the frame is stamped after radio-quiet waits, seconds
+        // past the row's construction clock. Recorded stamps are exact
+        // (incl. retries); the t..t+3 window covers rows sent before
+        // recording existed (field case: gap was exactly 2).
+        return {
+          secs,
+          secs + 1,
+          secs + 2,
+          secs + 3,
+          ...msg.sentWireSecs,
+        }.toList();
       },
+      // MeshCore One hashes the mention-stripped display text, our rows
+      // store the raw text — try both.
+      getMessageTextVariants: (msg) => {
+        msg.text,
+        ChannelMessage.stripLeadingMentions(msg.text),
+      }.toList(),
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,

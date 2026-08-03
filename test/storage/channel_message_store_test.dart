@@ -287,6 +287,24 @@ void main() {
     );
   });
 
+  test('sentWireSecs round-trips and appends via updateMessage', () async {
+    await store.insertIfNew(idKeyA, msg('wire', id: 'w9', outgoing: true));
+
+    await store.updateMessage(
+      idKeyA,
+      'w9',
+      (m) => m.copyWith(sentWireSecs: [...m.sentWireSecs, 1785711172]),
+    );
+    await store.updateMessage(
+      idKeyA,
+      'w9',
+      (m) => m.copyWith(sentWireSecs: [...m.sentWireSecs, 1785711202]),
+    );
+
+    final loaded = await store.loadChannelMessages(idKeyA);
+    expect(loaded.single.sentWireSecs, [1785711172, 1785711202]);
+  });
+
   test('messages arriving later get later stamps', () async {
     // Same sender timestamp on both: ordering must come from arrival, not the
     // sender's clock, which is the entire point of the column.
