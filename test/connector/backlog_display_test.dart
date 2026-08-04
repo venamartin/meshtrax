@@ -9,56 +9,108 @@ import 'package:meshtrax/models/channel_message.dart';
 // clock is BROKEN, and it keeps the hop count the frame carried even though
 // the queue frame ships no path bytes.
 void main() {
-  group('sanitizeSenderTimestamp', () {
-    final now = DateTime(2026, 7, 31, 8, 45);
+  group('sanitizeSenderTimestamp — backlog drain (radio heard it earlier)',
+      () {
+    // The causality floor: the channel's newest stored message before sync.
+    // Everything in the radio's queue was heard AFTER it — claims from
+    // before it are broken clocks, however plausible the date looks.
+    final now = DateTime(2026, 8, 9, 18, 0);
+    final floor = DateTime(2026, 8, 2, 9, 30); // left home a week ago
+    DateTime sane(DateTime ts, {DateTime? channelFloor}) =>
+        MeshCoreConnector.sanitizeSenderTimestamp(ts, now,
+            fromBacklog: true, channelFloor: channelFloor);
+
+    test('a week away keeps its real spread of days', () {
+      final midweek = DateTime(2026, 8, 5, 14, 20);
+      expect(sane(midweek, channelFloor: floor), midweek);
+    });
 
     test('an overnight backlog keeps its real send times', () {
       final lastNight = now.subtract(const Duration(hours: 11));
-      expect(
-        MeshCoreConnector.sanitizeSenderTimestamp(lastNight, now),
-        lastNight,
-      );
+      expect(sane(lastNight, channelFloor: floor), lastNight);
     });
 
-    test('a day away on another companion keeps its send times', () {
-      final yesterday = now.subtract(const Duration(days: 1, hours: 3));
-      expect(
-        MeshCoreConnector.sanitizeSenderTimestamp(yesterday, now),
-        yesterday,
-      );
-    });
-
-    test('a recent message is untouched', () {
-      final justNow = now.subtract(const Duration(seconds: 40));
-      expect(MeshCoreConnector.sanitizeSenderTimestamp(justNow, now), justNow);
+    test('a claim from BEFORE the floor is a broken clock', () {
+      // Sync on Aug 9, floor Aug 2 — a "July 13" claim cannot have been
+      // heard by the radio and is rewritten to now.
+      expect(sane(DateTime(2026, 7, 13, 15, 41), channelFloor: floor), now);
     });
 
     test('a dead RTC (1970) is rewritten to now', () {
       expect(
-        MeshCoreConnector.sanitizeSenderTimestamp(
-          DateTime.fromMillisecondsSinceEpoch(0),
-          now,
-        ),
+        sane(DateTime.fromMillisecondsSinceEpoch(0), channelFloor: floor),
         now,
       );
     });
 
-    test('older than 30 days is a broken clock, rewritten to now', () {
-      final stale = now.subtract(const Duration(days: 31));
-      expect(MeshCoreConnector.sanitizeSenderTimestamp(stale, now), now);
+    test('cross-sender skew just past the floor is tolerated', () {
+      final slightlyBeforeFloor =
+          floor.subtract(const Duration(minutes: 5));
+      expect(
+        sane(slightlyBeforeFloor, channelFloor: floor),
+        slightlyBeforeFloor,
+      );
+    });
+
+    test('an empty channel falls back to the 30-day cap', () {
+      final lastWeek = now.subtract(const Duration(days: 6));
+      expect(sane(lastWeek), lastWeek);
+      expect(sane(now.subtract(const Duration(days: 31))), now);
+    });
+
+    test('a floor older than 30 days still governs (six weeks away)', () {
+      // The floor IS the rule when history exists — the 30-day cap only
+      // bounds channels with nothing to compare against.
+      final sixWeekFloor = now.subtract(const Duration(days: 45));
+      final claim = now.subtract(const Duration(days: 40));
+      expect(sane(claim, channelFloor: sixWeekFloor), claim);
+      expect(
+        sane(now.subtract(const Duration(days: 46)),
+            channelFloor: sixWeekFloor),
+        now,
+      );
     });
 
     test('a fast clock more than a minute ahead is rewritten to now', () {
-      final future = now.add(const Duration(minutes: 5));
-      expect(MeshCoreConnector.sanitizeSenderTimestamp(future, now), now);
+      expect(sane(now.add(const Duration(minutes: 5)), channelFloor: floor),
+          now);
+    });
+  });
+
+  group('sanitizeSenderTimestamp — live (heard over RF seconds ago)', () {
+    // Radio waves do not age in flight and mesh propagation is bounded by
+    // ~1 minute (not enough hops for more). Field case: a message claiming
+    // 13 July arrived live on 3 August and built a "Mon, 13 July" section
+    // into the chat.
+    final now = DateTime(2026, 8, 3, 20, 16);
+    DateTime sane(DateTime ts) =>
+        MeshCoreConnector.sanitizeSenderTimestamp(ts, now, fromBacklog: false);
+
+    test('the July-13 live message files under today', () {
+      expect(sane(DateTime(2026, 7, 13, 15, 41)), now);
+    });
+
+    test('propagation plus a little skew is tolerated', () {
+      final ninetySecondsAgo = now.subtract(const Duration(seconds: 90));
+      expect(sane(ninetySecondsAgo), ninetySecondsAgo);
+    });
+
+    test('minutes in the past is a broken clock, rewritten to now', () {
+      expect(sane(now.subtract(const Duration(minutes: 5))), now);
+    });
+
+    test('a recent message is untouched', () {
+      final justNow = now.subtract(const Duration(seconds: 40));
+      expect(sane(justNow), justNow);
     });
 
     test('slightly ahead (propagation slack) is kept', () {
       final slightlyAhead = now.add(const Duration(seconds: 30));
-      expect(
-        MeshCoreConnector.sanitizeSenderTimestamp(slightlyAhead, now),
-        slightlyAhead,
-      );
+      expect(sane(slightlyAhead), slightlyAhead);
+    });
+
+    test('a fast clock more than a minute ahead is rewritten to now', () {
+      expect(sane(now.add(const Duration(minutes: 5))), now);
     });
   });
 

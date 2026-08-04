@@ -341,6 +341,21 @@ class MeshCoreConnector extends ChangeNotifier {
   int _queuedMessagesRead = 0;
   bool _queuedMessageSyncInFlight = false;
   bool _didInitialQueueSync = false;
+  // True once the FIRST queue drain of this connection has fully finished.
+  // Messages arriving during that first drain are BACKLOG (the radio heard
+  // them while we were away — old sender timestamps are legitimate).
+  // Everything after is LIVE: the packet was heard seconds ago, so a
+  // sender timestamp far in the past is a broken clock, never a real date.
+  // An ABORTED first drain deliberately does not latch: the queue still
+  // holds pre-connection content, so its later pops are still backlog (the
+  // per-channel floor keeps broken clocks out either way).
+  bool _completedFirstQueueDrain = false;
+  // Per-channel causality floor, SNAPSHOTTED at first backlog use in this
+  // drain: the newest message stored BEFORE sync. Live-reading the watched
+  // latest-map instead would ratchet as the drain writes — one broken clock
+  // rewritten to "now" would drag the floor to "now" and collapse the rest
+  // of a week-away backlog onto the sync date.
+  final Map<String, DateTime?> _drainFloorByIdKey = {};
   bool _pendingQueueSync = false;
   bool _pendingChannelSyncAfterQueueSync = false;
   Timer? _queueSyncTimeout;
@@ -637,7 +652,9 @@ class MeshCoreConnector extends ChangeNotifier {
   // Messages received for a radio slot whose identity the app doesn't know
   // yet. Held until CHANNEL_INFO reveals the slot's channel, then filed by
   // identity — never stored under a bare index.
-  final Map<int, List<ChannelMessage>> _pendingUntrackedChannelMessages = {};
+  final Map<int,
+          List<({ChannelMessage message, bool fromBacklog, DateTime receivedAt})>>
+      _pendingUntrackedChannelMessages = {};
   final Set<int> _slotsToRequery = {};
   bool _pendingQueueSyncAfterChannelSync = false;
 
@@ -2385,6 +2402,8 @@ class MeshCoreConnector extends ChangeNotifier {
     _isSyncingQueuedMessages = false;
     _queuedMessageSyncInFlight = false;
     _didInitialQueueSync = false;
+    _completedFirstQueueDrain = false;
+    _drainFloorByIdKey.clear();
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
     _isSyncingChannels = false;
@@ -4473,6 +4492,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _slotsToRequery.clear();
       _processedChannelReactions.clear();
       _channelSmazEnabled.clear();
+      // The other node's latest-map must not serve as this node's causality
+      // floor while the scoped subscription re-emits.
+      _channelLatestByIdKey = const {};
+      _drainFloorByIdKey.clear();
     }
     _lastLoadedNodeKey = selfPublicKeyHex;
 
@@ -4592,6 +4615,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleNoMoreMessages() {
     debugPrint('[QueueSync] No more messages, sync complete');
     _queueSyncTimeout?.cancel();
+    _completedFirstQueueDrain = true;
+    // The drain is over; the next one snapshots fresh floors.
+    _drainFloorByIdKey.clear();
     _isSyncingQueuedMessages = false;
     notifyListeners();
     _queuedMessageSyncInFlight = false;
@@ -5393,6 +5419,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return;
       }
       _lastChannelMsgRxTime = DateTime.now();
+      // Captured at receive time: only this connection's FIRST queue drain
+      // delivers messages the radio heard while we were away. Everything
+      // after is live, where old sender stamps are broken clocks.
+      final fromBacklog =
+          _isSyncingQueuedMessages && !_completedFirstQueueDrain;
       final contentHash = _computeContentHash(
         parsed.channelIndex!,
         parsed.timestamp.millisecondsSinceEpoch ~/ 1000,
@@ -5430,14 +5461,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (liveChannel == null || !_channelsVerified) {
         _pendingUntrackedChannelMessages
             .putIfAbsent(channelIndex, () => [])
-            .add(message);
+            .add((
+          message: message,
+          fromBacklog: fromBacklog,
+          receivedAt: DateTime.now(),
+        ));
         _queryUntrackedChannel(channelIndex);
         _handleQueuedMessageReceived();
         return;
       }
 
       unawaited(() async {
-        final isNew = await _ingestChannelMessage(channelIndex, message);
+        final isNew = await _ingestChannelMessage(
+          channelIndex,
+          message,
+          fromBacklog: fromBacklog,
+        );
         if (isNew) {
           _maybeNotifyChannelMessage(message);
         }
@@ -5939,8 +5978,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final pending = _pendingUntrackedChannelMessages.remove(channel.index);
     if (pending == null || pending.isEmpty) return;
     unawaited(() async {
-      for (final message in pending) {
-        final isNew = await _ingestChannelMessage(channel.index, message);
+      for (final entry in pending) {
+        final message = entry.message;
+        final isNew = await _ingestChannelMessage(
+          channel.index,
+          message,
+          fromBacklog: entry.fromBacklog,
+          receivedAt: entry.receivedAt,
+        );
         if (isNew) {
           // Parity with the live path — buffered messages were silent.
           _maybeNotifyChannelMessage(
@@ -6142,7 +6187,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // old-but-plausible time is display truth, not a sorting hazard.
     Message processedMessage = message;
     if (!message.isOutgoing) {
-      final sane = sanitizeSenderTimestamp(message.timestamp, DateTime.now());
+      // DMs keep the lenient window unconditionally: room servers push old
+      // messages while LIVE (legitimate), so the channel-side live/backlog
+      // split does not transfer. Follow-up: strict clamp for non-room DMs.
+      final sane = sanitizeSenderTimestamp(
+        message.timestamp,
+        DateTime.now(),
+        fromBacklog: true,
+      );
       if (sane != message.timestamp) {
         processedMessage = message.copyWith(timestamp: sane);
       }
@@ -6540,6 +6592,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage message, {
     ChannelMessage? replyTarget,
     Channel? identity,
+    bool fromBacklog = false,
+    DateTime? receivedAt,
   }) async {
     // [identity] bypasses the slot lookup for sends queued while the map is
     // unverified: the caller's Channel came from the last settled table, so
@@ -6558,7 +6612,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // old-but-plausible time is display truth, not a sorting hazard.
     ChannelMessage sanitizedMessage = message;
     if (!message.isOutgoing) {
-      final sane = sanitizeSenderTimestamp(message.timestamp, DateTime.now());
+      final sane = sanitizeSenderTimestamp(
+        message.timestamp,
+        // Buffered messages are judged against the moment the radio handed
+        // them over, not the (possibly much later) flush time.
+        receivedAt ?? DateTime.now(),
+        fromBacklog: fromBacklog,
+        channelFloor: fromBacklog
+            ? _drainFloorByIdKey.putIfAbsent(
+                idKey,
+                () => _channelLatestByIdKey[idKey]?.message.timestamp,
+              )
+            : null,
+      );
       if (sane != message.timestamp) {
         sanitizedMessage = message.copyWith(timestamp: sane);
       }
@@ -6857,17 +6923,45 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Display timestamps come from the sender's clock; ORDER comes from
-  /// arrival (receivedAtUs). Keep the claimed time unless the clock is
-  /// broken: more than a minute ahead of us, or more than 30 days behind
-  /// (a dead RTC reads 1970). A backlog drained after a night — or a day —
-  /// away keeps its real send times.
+  /// arrival (receivedAtUs). How much of the past to believe is causality,
+  /// not a tunable:
+  ///
+  ///  - LIVE: the packet was heard over RF seconds ago; mesh propagation is
+  ///    bounded by ~1 minute (not enough hops for more), so a claim beyond
+  ///    ~2 minutes past (propagation + the same 1-minute skew we grant the
+  ///    future direction) is a broken sender clock — never a real date.
+  ///  - BACKLOG (this connection's first queue drain): the radio heard
+  ///    these while we were away, so days-old claims are real — but the
+  ///    radio heard every one of them AFTER the channel's newest stored
+  ///    message ([channelFloor], the reference the user sees at the bottom
+  ///    of the chat before sync). Claims from before the floor (minus a
+  ///    small cross-sender skew slack) are broken clocks. A week away
+  ///    keeps its real spread of days; 1970 RTCs and July-in-August do not
+  ///    survive. Channels with no history fall back to a 30-day cap.
+  ///
+  /// Broken claims are rewritten to [now] — the only moment we can attest.
   @visibleForTesting
-  static DateTime sanitizeSenderTimestamp(DateTime timestamp, DateTime now) {
-    if (timestamp.isAfter(now.add(const Duration(minutes: 1))) ||
-        timestamp.isBefore(now.subtract(const Duration(days: 30)))) {
-      return now;
+  static DateTime sanitizeSenderTimestamp(
+    DateTime timestamp,
+    DateTime now, {
+    required bool fromBacklog,
+    DateTime? channelFloor,
+  }) {
+    if (timestamp.isAfter(now.add(const Duration(minutes: 1)))) return now;
+
+    final DateTime oldestBelievable;
+    if (fromBacklog) {
+      // When the channel has history the floor IS the rule — even a
+      // months-old floor governs (companion off for six weeks: claims after
+      // the floor are real). The 30-day cap only bounds channels with no
+      // stored history to compare against.
+      oldestBelievable = channelFloor != null
+          ? channelFloor.subtract(const Duration(minutes: 10))
+          : now.subtract(const Duration(days: 30));
+    } else {
+      oldestBelievable = now.subtract(const Duration(minutes: 2));
     }
-    return timestamp;
+    return timestamp.isBefore(oldestBelievable) ? now : timestamp;
   }
 
   /// The ORIGINAL wire timestamp of a message, in ms — even after the ingest
@@ -7025,6 +7119,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _isSyncingQueuedMessages = false;
     _queuedMessageSyncInFlight = false;
     _didInitialQueueSync = false;
+    _completedFirstQueueDrain = false;
+    _drainFloorByIdKey.clear();
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
     _isSyncingChannels = false;
