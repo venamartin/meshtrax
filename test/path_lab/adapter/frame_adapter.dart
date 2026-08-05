@@ -213,13 +213,19 @@ class PathLabAdapter {
         rxSnr: rxSnr, messageId: payloadFingerprint(packet.payload));
   }
 
-  /// [0x8E][ctl_type|node_type][uplink SNR ×4][tag ×4][pubkey ...]
-  /// (simple_repeater handleDiscoverReq response layout).
+  /// Wire layout (verified against the connector's own handler):
+  ///   [0x8E][our RX snr][rssi][path_len][ctl payload…]
+  /// ctl payload: [type|node_type][UPLINK snr][tag ×4][pubkey…]
+  /// Byte 1 of the payload is the firmware's "let sender know the
+  /// inbound SNR" — how well the repeater heard US, which is the
+  /// ranking signal we want (the app currently discards it).
   void _handleControlData(Uint8List frame) {
-    if (frame.length < 8) return;
-    if (frame[1] & 0xF0 != _ctlNodeDiscoverResp) return;
-    final uplinkSnr = frame[2].toSigned(8) / 4.0;
-    final pubkey = frame.sublist(7);
+    if (frame.length < 11) return;
+    final ctl = frame.sublist(4);
+    if (ctl[0] & 0xF0 != _ctlNodeDiscoverResp) return;
+    if (ctl[0] & 0x0F != _advTypeRepeater) return;
+    final uplinkSnr = ctl[1].toSigned(8) / 4.0;
+    final pubkey = ctl.sublist(6);
     if (pubkey.length < 2) return;
     pendingDiscover.add(DiscoverResponse(
         repeaterHash: _hex(pubkey.sublist(0, 2)), uplinkSnr: uplinkSnr));

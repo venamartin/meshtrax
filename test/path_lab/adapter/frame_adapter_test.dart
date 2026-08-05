@@ -111,8 +111,9 @@ void main() {
   });
 
   test('discover responses parse uplink SNR and commit as egress', () {
+    // [0x8E][rx snr][rssi][path_len] then ctl: [0x92][uplink snr][tag x4][pk]
     adapter.handleFrame(Uint8List.fromList(
-        [0x8E, 0x92, 30, 0, 0, 0, 0, ...pubkey])); // resp|type, snr*4=7.5dB
+        [0x8E, 40, 0, 0, 0x92, 30, 1, 2, 3, 4, ...pubkey]));
     expect(adapter.pendingDiscover.single.uplinkSnr, closeTo(7.5, 1e-9));
     adapter.commitDiscover(failureEpisode: false);
     expect(graph.egressCandidates().single.repeaterHash, 'A277');

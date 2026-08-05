@@ -140,13 +140,21 @@ class _PathLabScreenState extends State<PathLabScreen> {
 
   Future<void> _discover() async {
     adapter.pendingDiscover.clear();
-    await connector.sendFrame(
-        buildRepeaterDiscoveryFrame(DateTime.now().millisecondsSinceEpoch));
-    setState(() => _status = 'discover sent, 10 s window…');
-    await Future<void>.delayed(const Duration(seconds: 10));
+    // Use the connector's own discovery: random uint32 tag + the 30 s
+    // window the firmware's anti-collision delay actually needs.
+    await connector.sendRepeaterDiscovery();
+    setState(() => _status = 'discover sent, 30 s window…');
+    for (var i = 0; i < 30; i++) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      setState(() => _status =
+          'discover: ${adapter.pendingDiscover.length} so far (${29 - i}s)');
+    }
     final n = adapter.pendingDiscover.length;
     adapter.commitDiscover(failureEpisode: false);
-    setState(() => _status = 'discover: $n responder(s)');
+    setState(() => _status = n == 0
+        ? 'discover: no responders (rate-limited? out of range?)'
+        : 'discover: $n responder(s) committed as proven egress');
   }
 
   void _findPath() {
