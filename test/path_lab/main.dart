@@ -73,6 +73,15 @@ class _PathLabScreenState extends State<PathLabScreen> {
   final _contactPk = TextEditingController();
   String _status = '';
   String _pathResult = '';
+  List<String> _usbPorts = const [];
+
+  Future<void> _listPorts() async {
+    final ports = await connector.listUsbPorts();
+    setState(() {
+      _usbPorts = ports;
+      _status = ports.isEmpty ? 'no USB ports found' : '';
+    });
+  }
 
   Future<void> _import() async {
     try {
@@ -132,22 +141,29 @@ class _PathLabScreenState extends State<PathLabScreen> {
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
-              // ── connection ────────────────────────────────────────
+              // ── connection (USB serial — bench transport) ─────────
               Row(children: [
                 FilledButton(
-                  onPressed: () => connector.startScan(),
-                  child: const Text('Scan'),
+                  onPressed: _listPorts,
+                  child: const Text('USB Ports'),
                 ),
                 const SizedBox(width: 12),
                 Text('state: ${connector.state.name}'
                     '${connector.selfPublicKeyHex.length >= 8 ? ' · ${connector.selfPublicKeyHex.substring(0, 8)}…' : ''}'),
               ]),
-              for (final r in connector.scanResults)
+              for (final port in _usbPorts)
                 ListTile(
                   dense: true,
-                  title: Text(r.device.platformName),
-                  subtitle: Text('${r.rssi} dBm'),
-                  onTap: () => connector.connect(r.device),
+                  title: Text(port),
+                  onTap: () async {
+                    setState(() => _status = 'connecting $port…');
+                    try {
+                      await connector.connectUsb(portName: port);
+                      setState(() => _status = 'connected $port');
+                    } catch (e) {
+                      setState(() => _status = 'USB connect failed: $e');
+                    }
+                  },
                 ),
               const Divider(),
               // ── live feed ─────────────────────────────────────────
