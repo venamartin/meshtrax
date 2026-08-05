@@ -64,6 +64,26 @@ class PathGraphConfig {
   final double slashFactorInferred;
 
   double get tau => -math.log(beta);
+
+  PathGraphConfig copyWith({double? beta, double? pThreshold, int? maxHops}) =>
+      PathGraphConfig(
+        beta: beta ?? this.beta,
+        trafficHalfLifeHours: trafficHalfLifeHours,
+        n0Min: n0Min,
+        n0Max: n0Max,
+        trafficConfidenceHalf: trafficConfidenceHalf,
+        passiveDefaultQ: passiveDefaultQ,
+        snrFullQualityDb: snrFullQualityDb,
+        snrZeroQualityDb: snrZeroQualityDb,
+        pThreshold: pThreshold ?? this.pThreshold,
+        maxHops: maxHops ?? this.maxHops,
+        egressHalfLifeMinutes: egressHalfLifeMinutes,
+        ingressHalfLifeHours: ingressHalfLifeHours,
+        directFreshMinutes: directFreshMinutes,
+        slashEpochMinutes: slashEpochMinutes,
+        slashFactorProven: slashFactorProven,
+        slashFactorInferred: slashFactorInferred,
+      );
 }
 
 /// Pure estimator functions over [EdgeState]. Lazy decay: nothing here

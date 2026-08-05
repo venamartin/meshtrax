@@ -78,6 +78,9 @@ class _PathLabScreenState extends State<PathLabScreen> {
   String _traceResult = '';
   List<String> _usbPorts = const [];
   Uint8List? _lastPath;
+  List<RouteResult> _routes = const [];
+  int _selectedRoute = 0;
+  double _beta = 0.95;
 
   @override
   void initState() {
@@ -153,19 +156,20 @@ class _PathLabScreenState extends State<PathLabScreen> {
     final isRepeater = pk.length == 4;
     final result =
         isRepeater ? graph.findPathToRepeater(pk) : graph.findPath(pk);
-    final alternatives = isRepeater ? <RouteResult>[] : graph.findAlternatives(pk);
+    final alternatives =
+        isRepeater ? <RouteResult>[] : graph.findAlternatives(pk, count: 4);
     setState(() {
-      _lastPath = result is RouteResult ? result.pathBytes : null;
+      _routes = alternatives.isNotEmpty
+          ? alternatives
+          : (result is RouteResult ? [result] : const []);
+      _selectedRoute = 0;
+      _lastPath = _routes.isNotEmpty ? _routes.first.pathBytes : null;
+      _traceResult = '';
       _pathResult = switch (result) {
         DirectResult() => 'DIRECT (zero-hop)',
-        RouteResult(:final pathBytes, :final estDelivery) =>
-          'ROUTE ${_fmtPath(pathBytes)} · est ${(estDelivery * 100).toStringAsFixed(0)}%',
+        RouteResult() => '${_routes.length} route(s) — pick one to trace',
         FloodResult(:final reason) => 'FLOOD (${reason.name})',
       };
-      if (alternatives.length > 1) {
-        _pathResult +=
-            '\nalt: ${alternatives.skip(1).map((r) => _fmtPath(r.pathBytes)).join(' | ')}';
-      }
     });
   }
 
@@ -254,6 +258,46 @@ class _PathLabScreenState extends State<PathLabScreen> {
                   child: Text(_pathResult,
                       style: const TextStyle(fontFamily: 'monospace')),
                 ),
+              // ── alternatives: pick which route to use/trace ───────
+              for (var i = 0; i < _routes.length; i++)
+                ListTile(
+                  dense: true,
+                  selected: i == _selectedRoute,
+                  leading: Icon(i == _selectedRoute
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked),
+                  onTap: () => setState(() {
+                    _selectedRoute = i;
+                    _lastPath = _routes[i].pathBytes;
+                    _traceResult = '';
+                  }),
+                  title: Text('#${i + 1}  ${_fmtPath(_routes[i].pathBytes)}',
+                      style: const TextStyle(fontFamily: 'monospace')),
+                  subtitle: Text(
+                      '${_routes[i].pathBytes.length ~/ 2} hop(s) · est '
+                      '${(_routes[i].estDelivery * 100).toStringAsFixed(0)}%'),
+                ),
+              // ── hop tax β ─────────────────────────────────────────
+              Row(children: [
+                Text('hop tax β: ${_beta.toStringAsFixed(2)}'),
+                Expanded(
+                  child: Slider(
+                    value: _beta,
+                    min: 0.5,
+                    max: 1.0,
+                    divisions: 50,
+                    label: _beta.toStringAsFixed(2),
+                    onChanged: (v) => setState(() {
+                      _beta = v;
+                      graph.updateConfig(graph.config.copyWith(beta: v));
+                    }),
+                    onChangeEnd: (_) => _findPath(),
+                  ),
+                ),
+              ]),
+              const Text(
+                  'β→1: hops free, route by signal · β→0.5: min-hop',
+                  style: TextStyle(fontSize: 11, color: Colors.grey)),
               Row(children: [
                 FilledButton.tonal(
                   onPressed: _lastPath != null &&

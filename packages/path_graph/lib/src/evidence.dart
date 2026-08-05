@@ -44,7 +44,7 @@ class EvidenceStore {
   EvidenceStore(this._db, this.config);
 
   final PathGraphDatabase _db;
-  final PathGraphConfig config;
+  PathGraphConfig config;
 
   /// (ownerPubkey, repeaterHash) → entry.
   final Map<(String, String), IngressEntry> entries = {};

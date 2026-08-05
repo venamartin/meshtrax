@@ -114,14 +114,24 @@ class PathGraph {
     PathGraphConfig config = const PathGraphConfig(),
   })  : _db = PathGraphDatabase(executor),
         _now = now ?? DateTime.now,
-        estimator = Estimator(config) {
+        _estimator = Estimator(config) {
     _store = GraphStore(_db);
     _evidence = EvidenceStore(_db, config);
   }
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
-  final Estimator estimator;
+  Estimator _estimator;
+
+  Estimator get estimator => _estimator;
+  PathGraphConfig get config => _estimator.config;
+
+  /// Live retune (β slider, thresholds). Affects routing immediately;
+  /// stored evidence is untouched.
+  void updateConfig(PathGraphConfig config) {
+    _estimator = Estimator(config);
+    _evidence.config = config;
+  }
   late final GraphStore _store;
   late final EvidenceStore _evidence;
 
