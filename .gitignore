@@ -105,3 +105,4 @@ notes.md
 !lib/storage/app_database.g.dart
 !packages/path_graph/lib/src/db/database.g.dart
 .claude/
+path_lab.db*
