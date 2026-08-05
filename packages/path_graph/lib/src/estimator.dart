@@ -16,6 +16,12 @@ class PathGraphConfig {
     this.snrZeroQualityDb = -18,
     this.pThreshold = 0.40,
     this.maxHops = 32,
+    this.egressHalfLifeMinutes = 10,
+    this.ingressHalfLifeHours = 72,
+    this.directFreshMinutes = 30,
+    this.slashEpochMinutes = 2,
+    this.slashFactorProven = 0.3,
+    this.slashFactorInferred = 0.2,
   });
 
   /// Hop tax: an extra hop hurts like ×β reliability.
@@ -44,6 +50,18 @@ class PathGraphConfig {
 
   /// Path budget: 64 wire bytes ÷ 2-byte hops.
   final int maxHops;
+
+  /// Mobility: self-egress decays in minutes; contact ingress in hours.
+  final double egressHalfLifeMinutes;
+  final double ingressHalfLifeHours;
+
+  /// Zero-hop direct wins while direct-reception evidence is this fresh.
+  final double directFreshMinutes;
+
+  /// Supersede slash: epoch-limited, floored (proven keeps ≥ this).
+  final double slashEpochMinutes;
+  final double slashFactorProven;
+  final double slashFactorInferred;
 
   double get tau => -math.log(beta);
 }

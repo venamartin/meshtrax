@@ -4,9 +4,11 @@ import 'package:drift/drift.dart';
 
 import 'db/database.dart';
 import 'estimator.dart';
+import 'evidence.dart';
 import 'graph_store.dart';
 
 export 'estimator.dart' show Estimator, PathGraphConfig;
+export 'evidence.dart' show Candidate, EvidenceTier, directHash;
 export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
 
 /// Attribution quality of an observed path's originator.
@@ -112,12 +114,14 @@ class PathGraph {
         _now = now ?? DateTime.now,
         estimator = Estimator(config) {
     _store = GraphStore(_db);
+    _evidence = EvidenceStore(_db, config);
   }
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
   final Estimator estimator;
   late final GraphStore _store;
+  late final EvidenceStore _evidence;
 
   Timer? _flushTimer;
   static const _flushDelay = Duration(seconds: 30);
@@ -129,11 +133,14 @@ class PathGraph {
   int _dropped1Byte = 0;
 
   /// Loads persisted state into the in-memory working set.
-  Future<void> init() => _store.load();
+  Future<void> init() async {
+    await _store.load();
+    await _evidence.load();
+  }
 
   Future<void> dispose() async {
     _flushTimer?.cancel();
-    await _store.flush();
+    await flush();
     await _db.close();
   }
 
@@ -142,12 +149,14 @@ class PathGraph {
     _flushTimer?.cancel();
     _flushTimer = null;
     await _store.flush();
+    await _evidence.flush();
   }
 
   void _scheduleFlush() {
     _flushTimer ??= Timer(_flushDelay, () {
       _flushTimer = null;
       _store.flush();
+      _evidence.flush();
     });
   }
 
@@ -184,14 +193,30 @@ class PathGraph {
     GeoPosition? position,
     String? messageId,
   }) {
+    final arrival = _arrivalMillis;
+
+    // Empty path + known sender = direct reception (zero-hop evidence).
+    if (pathBytes.isEmpty) {
+      final contact = switch (origin) {
+        PubkeyConfirmedOrigin(:final contactPubkey) => contactPubkey,
+        UniqueNameOrigin(:final contactPubkey) => contactPubkey,
+        AnonymousOrigin() => null,
+      };
+      if (contact != null) {
+        _evidence.recordDirect(contact, arrival);
+        _observationsApplied++;
+        _scheduleFlush();
+      }
+      return;
+    }
+
     if (stride < 2) {
       _dropped1Byte++;
       return;
     }
-    if (pathBytes.isEmpty || pathBytes.length % stride != 0) return;
+    if (pathBytes.length % stride != 0) return;
 
     final hopCount = pathBytes.length ~/ stride;
-    final arrival = _arrivalMillis;
     for (var i = 0; i < hopCount - 1; i++) {
       _store.observeEdge(
         _hopHex(pathBytes, stride, i),
@@ -200,12 +225,38 @@ class PathGraph {
         messageId: messageId,
       );
     }
-    // Single-hop paths still create/refresh the lone node.
     if (hopCount == 1) {
       _store
           .nodeFor(_hopHex(pathBytes, stride, 0), NodeSource.observed)
           .lastHeard = arrival;
     }
+
+    // Contact ingress: path[0] of traffic they originated.
+    final first = _hopHex(pathBytes, stride, 0);
+    switch (origin) {
+      case PubkeyConfirmedOrigin(:final contactPubkey):
+        _evidence.recordIngress(contactPubkey, first,
+            pubkeyConfirmed: true, arrival: arrival);
+      case UniqueNameOrigin(:final contactPubkey):
+        _evidence.recordIngress(contactPubkey, first,
+            pubkeyConfirmed: false, arrival: arrival);
+      case AnonymousOrigin():
+        break; // edges only
+    }
+
+    // Self egress: final hop is the last-hop prior; penultimate feeds
+    // the hub-signature demotion.
+    final self = _selfPubkey;
+    if (self != null) {
+      _evidence.recordLastHop(
+          self, _hopHex(pathBytes, stride, hopCount - 1), arrival,
+          lat: position?.lat, lon: position?.lon);
+      if (hopCount >= 2) {
+        _evidence.recordPenultimate(
+            self, _hopHex(pathBytes, stride, hopCount - 2));
+      }
+    }
+
     _observationsApplied++;
     _scheduleFlush();
   }
@@ -216,7 +267,15 @@ class PathGraph {
     GeoPosition? position,
     required bool failureEpisode,
   }) {
-    // Lands with the evidence step.
+    final self = _selfPubkey;
+    if (self == null) return;
+    _evidence.applyDiscover(
+      self,
+      [for (final r in responses) (hash: r.repeaterHash, snr: r.uplinkSnr)],
+      _arrivalMillis,
+      failureEpisode: failureEpisode,
+    );
+    _scheduleFlush();
   }
 
   /// Delivery outcome for a path we sent on. Success proves every
@@ -244,7 +303,12 @@ class PathGraph {
       edge.lastObserved = arrival;
       _store.markEdgeDirty(from, to);
     }
-    // First-hop egress upgrade (proven tier) lands with the ingress step.
+    // Delivered send proves the first hop heard us: proven egress.
+    final self = _selfPubkey;
+    if (success && self != null && hopCount >= 1) {
+      _evidence.recordProvenEgress(
+          self, _hopHex(pathBytes, stride, 0), arrival);
+    }
     _scheduleFlush();
   }
 
@@ -277,9 +341,31 @@ class PathGraph {
           );
 
   /// Contact mirror feed (full PK→name refresh on connect, add/rename).
-  void ingestContact(String contactPubkey, String name, {GeoPosition? position}) {
-    // Lands with the ingress step.
+  void ingestContact(String contactPubkey, String name,
+      {GeoPosition? position}) {
+    _evidence.ingestContact(contactPubkey, name, _arrivalMillis);
+    _scheduleFlush();
   }
+
+  /// Channel attribution against the module's own mirror: exactly one
+  /// name match → uniqueName origin, else anonymous.
+  ObservationOrigin resolveName(String name) {
+    final pk = _evidence.contactByUniqueName(name);
+    return pk == null
+        ? const ObservationOrigin.anonymous()
+        : ObservationOrigin.uniqueName(pk);
+  }
+
+  /// Ranked egress candidates for the connected radio (UI/debug).
+  List<Candidate> egressCandidates() {
+    final self = _selfPubkey;
+    if (self == null) return const [];
+    return _evidence.candidatesFor(self, _arrivalMillis, isSelf: true);
+  }
+
+  /// Ranked ingress candidates for a contact (UI/debug).
+  List<Candidate> ingressCandidates(String contactPubkey) =>
+      _evidence.candidatesFor(contactPubkey, _arrivalMillis, isSelf: false);
 
   /// meshtrax-graph-v1 node-link document → prior layer for [region].
   Future<void> importGraph(
@@ -292,8 +378,11 @@ class PathGraph {
 
   /// Best path to this contact: direct | bidirectional route | flood.
   PathResult findPath(String contactPubkey) {
-    // Empty module → flood is the honest answer (and correct today:
-    // no evidence exists until the graph store step lands).
+    // Tier 1: fresh direct-reception evidence → empty path wins.
+    if (_evidence.hasFreshDirect(contactPubkey, _arrivalMillis)) {
+      return const PathResult.direct();
+    }
+    // Tier 2 (bidirectional Dijkstra) lands with the search step.
     return const PathResult.flood(FloodReason.noEvidence);
   }
 
