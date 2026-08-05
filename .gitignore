@@ -87,6 +87,9 @@ keystore.properties
 untranslated.json
 neighbor-graph-interactive.html
 neighbor-graph-static.pdf
+neighbor-graph.json
+nodes.json
+meshtrax-graph-*.json
 
 # IDE
 .vscode/launch.json
