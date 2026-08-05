@@ -99,6 +99,19 @@ void main() {
         [0xA2, 0x77, 0x5C, 0xBB, 0x13, 0x12]);
   });
 
+  test('findPathToRepeater: doorstep target is single hop, trunk is multi',
+      () {
+    graph.reportSendResult(path([0xA2, 0x77]), true);
+    expect((graph.findPathToRepeater('A277') as RouteResult).pathBytes,
+        [0xA2, 0x77]);
+
+    link([0xA2, 0x77], [0x5C, 0xBB]);
+    expect((graph.findPathToRepeater('5CBB') as RouteResult).pathBytes,
+        [0xA2, 0x77, 0x5C, 0xBB]);
+
+    expect(graph.findPathToRepeater('F857'), isA<FloodResult>());
+  });
+
   test('beta steers hop tolerance', () async {
     // With beta near 1, a 2-hop strong route should beat... build both:
     // direct weak-ish corridor vs detour. Here just assert route search

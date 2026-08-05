@@ -363,6 +363,39 @@ class PathGraph {
         : ObservationOrigin.uniqueName(pk);
   }
 
+  /// Best path TO a repeater itself (repeater/room login, map tap):
+  /// the target is the node — no contact ingress list involved. A
+  /// repeater that is also my own doorstep yields a single-hop path.
+  PathResult findPathToRepeater(String repeaterHash) {
+    final now = _arrivalMillis;
+    final self = _selfPubkey;
+    if (self == null) return const PathResult.flood(FloodReason.noEvidence);
+    final egress = _evidence.candidatesFor(self, now, isSelf: true);
+    if (egress.isEmpty) {
+      return const PathResult.flood(FloodReason.noEvidence);
+    }
+
+    final route = PathFinder(estimator.config, estimator).search(
+      egress: egress,
+      ingress: [Candidate(repeaterHash.toUpperCase(), 4.0, EvidenceTier.proven)],
+      edges: _store.edges,
+      nowMillis: now,
+    );
+    if (route == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    return PathResult.path(_hopsToBytes(route.hops), route.estDelivery);
+  }
+
+  static Uint8List _hopsToBytes(List<String> hops) {
+    final bytes = Uint8List(hops.length * 2);
+    for (var i = 0; i < hops.length; i++) {
+      bytes[i * 2] = int.parse(hops[i].substring(0, 2), radix: 16);
+      bytes[i * 2 + 1] = int.parse(hops[i].substring(2, 4), radix: 16);
+    }
+    return bytes;
+  }
+
   /// Up to [count] genuinely divergent routes: after each find, its
   /// edges are penalized so the next search prefers different links
   /// (the retry ladder's alternative-path step, and the harness UI).

@@ -108,8 +108,11 @@ class _PathLabScreenState extends State<PathLabScreen> {
   void _findPath() {
     final pk = _contactPk.text.trim();
     if (pk.isEmpty) return;
-    final result = graph.findPath(pk);
-    final alternatives = graph.findAlternatives(pk);
+    // 4 hex chars = repeater 2-byte hash; otherwise a contact pubkey.
+    final isRepeater = pk.length == 4;
+    final result =
+        isRepeater ? graph.findPathToRepeater(pk) : graph.findPath(pk);
+    final alternatives = isRepeater ? <RouteResult>[] : graph.findAlternatives(pk);
     setState(() {
       _pathResult = switch (result) {
         DirectResult() => 'DIRECT (zero-hop)',
@@ -199,7 +202,8 @@ class _PathLabScreenState extends State<PathLabScreen> {
                     child: TextField(
                         controller: _contactPk,
                         decoration: const InputDecoration(
-                            labelText: 'contact pubkey (hex)'))),
+                            labelText:
+                                'contact pubkey (64 hex) or repeater hash (4 hex)'))),
                 TextButton(onPressed: _findPath, child: const Text('findPath')),
               ]),
               if (_pathResult.isNotEmpty)
