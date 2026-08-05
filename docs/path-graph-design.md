@@ -680,7 +680,12 @@ The whole public surface — everything else is internal:
   reverse-proven). `origin` carries attribution quality:
   `pubkeyConfirmed(contact)` | `uniqueName(contact)` | `anonymous`.
   **Rejects stride < 2** (2-byte-only ingest rule) — dropped observations
-  are counted, not silently ignored.
+  are counted, not silently ignored. `lastHopHeard` flag (implementation
+  refinement, 2026-08-05): true only for paths physically received over
+  RF — their final hop is a repeater *I heard* and feeds the last-hop
+  egress prior; payload-embedded paths (path-return contents, firmware
+  out_paths) pass false, since their final hop proves nothing about my
+  RX.
 * `observeDiscoverResults([(repeaterHash, snr)...], position?,
   failureEpisode)` — proven egress refresh; acts as the supersede/slash
   event only when `failureEpisode` is true.

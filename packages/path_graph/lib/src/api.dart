@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 
@@ -373,13 +374,90 @@ class PathGraph {
   List<Candidate> ingressCandidates(String contactPubkey) =>
       _evidence.candidatesFor(contactPubkey, _arrivalMillis, isSelf: false);
 
-  /// meshtrax-graph-v1 node-link document → prior layer for [region].
+  static const _maxImportNodes = 20000;
+  static const _maxImportLinks = 100000;
+
+  static String _hashOfPubkey(String pubkey) =>
+      pubkey.substring(0, 4).toUpperCase();
+
+  static double _haversineKm(double la1, double lo1, double la2, double lo2) {
+    const r = 6371.0, p = math.pi / 180;
+    final dLa = (la2 - la1) * p, dLo = (lo2 - lo1) * p;
+    final a = math.sin(dLa / 2) * math.sin(dLa / 2) +
+        math.cos(la1 * p) * math.cos(la2 * p) *
+            math.sin(dLo / 2) * math.sin(dLo / 2);
+    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  /// meshtrax-graph-v1 node-link document → prior layer. Never touches
+  /// local evidence (s/n, traffic, ingress); re-import is idempotent.
+  /// Throws [FormatException] on unknown format or cap violations.
   Future<void> importGraph(
     Map<String, dynamic> document, {
     GeoPosition? homePosition,
     double? radiusKm,
   }) async {
-    // Lands with the import step.
+    if (document['format'] != 'meshtrax-graph-v1' ||
+        document['directed'] != true) {
+      throw const FormatException('not a meshtrax-graph-v1 document');
+    }
+    final nodes = (document['nodes'] as List?) ?? const [];
+    final links = (document['links'] as List?) ?? const [];
+    if (nodes.length > _maxImportNodes || links.length > _maxImportLinks) {
+      throw const FormatException('import exceeds size caps');
+    }
+    final meta = (document['graph'] as Map?) ?? const {};
+    final region = meta['region'] as String?;
+
+    final kept = <String, String>{}; // pubkey → hash bucket
+    for (final raw in nodes) {
+      final node = raw as Map;
+      final pubkey = node['id'] as String?;
+      if (pubkey == null || pubkey.length < 4) continue;
+      final lat = (node['lat'] as num?)?.toDouble();
+      final lon = (node['lon'] as num?)?.toDouble();
+      // Geo scope: belt-and-suspenders at 2-byte; position-less kept.
+      if (homePosition != null && radiusKm != null &&
+          lat != null && lon != null &&
+          _haversineKm(homePosition.lat, homePosition.lon, lat, lon) >
+              radiusKm) {
+        continue;
+      }
+      final hash = _hashOfPubkey(pubkey);
+      kept[pubkey] = hash;
+      _store.enrichNode(hash, NodeSource.imported,
+          name: node['name'] as String?,
+          role: node['role'] as String?,
+          lat: lat,
+          lon: lon,
+          pubkey: pubkey,
+          region: region);
+    }
+
+    void seedPrior(String from, String to, double? score, double? snr) {
+      final edge = _store.edges
+          .putIfAbsent((from, to), () => EdgeState(source: 'imported'));
+      edge.importedScore = score; // replace, never accumulate
+      edge.avgSnr = snr;
+      _store.markEdgeDirty(from, to);
+    }
+
+    for (final raw in links) {
+      final link = raw as Map;
+      final from = kept[link['source']];
+      final to = kept[link['target']];
+      if (from == null || to == null) continue;
+      final score = (link['score'] as num?)?.toDouble();
+      final snr = (link['avg_snr'] as num?)?.toDouble();
+      seedPrior(from, to, score, snr);
+      if (link['bidirectional'] == true) seedPrior(to, from, score, snr);
+    }
+
+    await _db.into(_db.graphMeta).insertOnConflictUpdate(
+        GraphMetaCompanion.insert(
+            key: 'import:${region ?? "unknown"}',
+            value: '${meta['generated_at']}'));
+    _scheduleFlush();
   }
 
   /// Best path to this contact: direct | bidirectional route | flood.
