@@ -443,13 +443,28 @@ class PathGraph {
   /// Up to [count] genuinely divergent routes: after each find, its
   /// edges are penalized so the next search prefers different links
   /// (the retry ladder's alternative-path step, and the harness UI).
-  List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) {
+  List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) =>
+      _alternatives(
+          (now) => _evidence.candidatesFor(contactPubkey, now, isSelf: false),
+          count);
+
+  /// Alternatives with a repeater itself as the destination.
+  List<RouteResult> findAlternativesToRepeater(String repeaterHash,
+          {int count = 3}) =>
+      _alternatives(
+          (_) => [
+                Candidate(
+                    repeaterHash.toUpperCase(), 4.0, EvidenceTier.proven)
+              ],
+          count);
+
+  List<RouteResult> _alternatives(
+      List<Candidate> Function(int now) ingressFor, int count) {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const [];
     final egress = _evidence.candidatesFor(self, now, isSelf: true);
-    final ingress =
-        _evidence.candidatesFor(contactPubkey, now, isSelf: false);
+    final ingress = ingressFor(now);
     if (egress.isEmpty || ingress.isEmpty) return const [];
 
     final finder = PathFinder(estimator.config, estimator);

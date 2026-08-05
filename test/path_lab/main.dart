@@ -156,8 +156,9 @@ class _PathLabScreenState extends State<PathLabScreen> {
     final isRepeater = pk.length == 4;
     final result =
         isRepeater ? graph.findPathToRepeater(pk) : graph.findPath(pk);
-    final alternatives =
-        isRepeater ? <RouteResult>[] : graph.findAlternatives(pk, count: 4);
+    final alternatives = isRepeater
+        ? graph.findAlternativesToRepeater(pk, count: 4)
+        : graph.findAlternatives(pk, count: 4);
     setState(() {
       _routes = alternatives.isNotEmpty
           ? alternatives
@@ -337,6 +338,19 @@ class _PathLabScreenState extends State<PathLabScreen> {
                       '${_routes[i].pathBytes.length ~/ 2} hop(s) · est '
                       '${(_routes[i].estDelivery * 100).toStringAsFixed(0)}%'),
                 ),
+              if (_routes.length == 1)
+                Builder(builder: (context) {
+                  final snap = graph.snapshot();
+                  final bidi = snap.edges.keys
+                      .where((k) => snap.edges.containsKey((k.$2, k.$1)))
+                      .length;
+                  return Text(
+                      'only one bidirectional corridor known '
+                      '($bidi of ${snap.edges.length} edges have a reverse '
+                      'twin) — trace more, or wait for two-way traffic',
+                      style: const TextStyle(
+                          fontSize: 11, color: Colors.orange));
+                }),
               // ── hop tax β ─────────────────────────────────────────
               Row(children: [
                 Text('hop tax β: ${_beta.toStringAsFixed(2)}'),
