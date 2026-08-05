@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 
 import 'db/database.dart';
+import 'graph_store.dart';
+
+export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
 
 /// Attribution quality of an observed path's originator.
 sealed class ObservationOrigin {
@@ -97,9 +102,18 @@ class PathGraphCounters {
 /// The module. Push-in, never read-out: this API is the complete
 /// inventory of everything the module will ever know.
 class PathGraph {
-  PathGraph(QueryExecutor executor) : _db = PathGraphDatabase(executor);
+  PathGraph(QueryExecutor executor, {DateTime Function()? now})
+      : _db = PathGraphDatabase(executor),
+        _now = now ?? DateTime.now {
+    _store = GraphStore(_db);
+  }
 
   final PathGraphDatabase _db;
+  final DateTime Function() _now;
+  late final GraphStore _store;
+
+  Timer? _flushTimer;
+  static const _flushDelay = Duration(seconds: 30);
 
   String? _selfPubkey;
   int _selfStride = 2;
@@ -108,12 +122,38 @@ class PathGraph {
   int _dropped1Byte = 0;
 
   /// Loads persisted state into the in-memory working set.
-  Future<void> init() async {
-    // Working-set load lands with the graph store step.
-    await _db.customSelect('SELECT 1').get();
+  Future<void> init() => _store.load();
+
+  Future<void> dispose() async {
+    _flushTimer?.cancel();
+    await _store.flush();
+    await _db.close();
   }
 
-  Future<void> dispose() => _db.close();
+  /// Persists dirty state now (also runs on a debounce after writes).
+  Future<void> flush() async {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    await _store.flush();
+  }
+
+  void _scheduleFlush() {
+    _flushTimer ??= Timer(_flushDelay, () {
+      _flushTimer = null;
+      _store.flush();
+    });
+  }
+
+  int get _arrivalMillis => _now().millisecondsSinceEpoch;
+
+  static String _hopHex(Uint8List path, int stride, int hopIndex) {
+    final start = hopIndex * stride;
+    final b = StringBuffer();
+    for (var i = start; i < start + stride; i++) {
+      b.write(path[i].toRadixString(16).padLeft(2, '0').toUpperCase());
+    }
+    return b.toString();
+  }
 
   /// Identity of the connected radio; scopes egress rows and default
   /// observation stride.
@@ -127,20 +167,40 @@ class PathGraph {
 
   /// Any received path (already parsed by the caller — the module never
   /// touches wire frames). Rejects stride < 2 (counted, not silent).
+  /// Hops wider than 2 bytes truncate losslessly into 2-byte buckets.
+  /// [messageId] enables union-per-message dedup across flood variants.
   void observePath(
     Uint8List pathBytes,
     int stride,
     ObservationOrigin origin, {
     double? rxSnr,
     GeoPosition? position,
+    String? messageId,
   }) {
     if (stride < 2) {
       _dropped1Byte++;
       return;
     }
     if (pathBytes.isEmpty || pathBytes.length % stride != 0) return;
+
+    final hopCount = pathBytes.length ~/ stride;
+    final arrival = _arrivalMillis;
+    for (var i = 0; i < hopCount - 1; i++) {
+      _store.observeEdge(
+        _hopHex(pathBytes, stride, i),
+        _hopHex(pathBytes, stride, i + 1),
+        arrival,
+        messageId: messageId,
+      );
+    }
+    // Single-hop paths still create/refresh the lone node.
+    if (hopCount == 1) {
+      _store
+          .nodeFor(_hopHex(pathBytes, stride, 0), NodeSource.observed)
+          .lastHeard = arrival;
+    }
     _observationsApplied++;
-    // Graph/ingress updates land with the graph store step.
+    _scheduleFlush();
   }
 
   /// Proven egress refresh; supersede/slash only in a failure episode.
@@ -163,7 +223,7 @@ class PathGraph {
     // Lands with the evidence step.
   }
 
-  /// Repeater advert / import metadata enrichment.
+  /// Repeater advert metadata enrichment (advert outranks import).
   void ingestNode(
     String hashBytes, {
     String? name,
@@ -171,8 +231,25 @@ class PathGraph {
     double? lat,
     double? lon,
   }) {
-    // Lands with the graph store step.
+    _store.enrichNode(
+      hashBytes.toUpperCase(),
+      NodeSource.advert,
+      name: name,
+      pubkey: pubkey,
+      lat: lat,
+      lon: lon,
+    );
+    _store.nodeFor(hashBytes.toUpperCase(), NodeSource.advert).lastHeard =
+        _arrivalMillis;
+    _scheduleFlush();
   }
+
+  /// Read-only view of the working set for UI/debug rendering.
+  ({Map<String, NodeState> nodes, Map<(String, String), EdgeState> edges})
+      snapshot() => (
+            nodes: Map.unmodifiable(_store.nodes),
+            edges: Map.unmodifiable(_store.edges),
+          );
 
   /// Contact mirror feed (full PK→name refresh on connect, add/rename).
   void ingestContact(String contactPubkey, String name, {GeoPosition? position}) {
