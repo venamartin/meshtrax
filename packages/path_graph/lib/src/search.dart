@@ -31,6 +31,7 @@ class PathFinder {
     required List<Candidate> ingress,
     required Map<(String, String), EdgeState> edges,
     required int nowMillis,
+    Map<(String, String), double> penalties = const {},
   }) {
     final sources = egress.where((c) => c.repeaterHash != directHash).toList();
     final targets = ingress.where((c) => c.repeaterHash != directHash).toList();
@@ -47,8 +48,11 @@ class PathFinder {
           !estimator.usable(reverse, nowMillis)) {
         continue;
       }
-      (adjacency[from] ??= [])
-          .add((to, estimator.edgeCost(entry.value, nowMillis)));
+      (adjacency[from] ??= []).add((
+        to,
+        estimator.edgeCost(entry.value, nowMillis) +
+            (penalties[entry.key] ?? 0),
+      ));
     }
 
     const virtualSource = '<SRC>';

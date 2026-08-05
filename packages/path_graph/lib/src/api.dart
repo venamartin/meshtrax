@@ -363,6 +363,50 @@ class PathGraph {
         : ObservationOrigin.uniqueName(pk);
   }
 
+  /// Up to [count] genuinely divergent routes: after each find, its
+  /// edges are penalized so the next search prefers different links
+  /// (the retry ladder's alternative-path step, and the harness UI).
+  List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) {
+    final now = _arrivalMillis;
+    final self = _selfPubkey;
+    if (self == null) return const [];
+    final egress = _evidence.candidatesFor(self, now, isSelf: true);
+    final ingress =
+        _evidence.candidatesFor(contactPubkey, now, isSelf: false);
+    if (egress.isEmpty || ingress.isEmpty) return const [];
+
+    final finder = PathFinder(estimator.config, estimator);
+    final penalties = <(String, String), double>{};
+    final results = <RouteResult>[];
+    final seen = <String>{};
+    for (var i = 0; i < count * 2 && results.length < count; i++) {
+      final route = finder.search(
+        egress: egress,
+        ingress: ingress,
+        edges: _store.edges,
+        nowMillis: now,
+        penalties: penalties,
+      );
+      if (route == null) break;
+      final key = route.hops.join('>');
+      if (seen.add(key)) {
+        final bytes = Uint8List(route.hops.length * 2);
+        for (var h = 0; h < route.hops.length; h++) {
+          bytes[h * 2] =
+              int.parse(route.hops[h].substring(0, 2), radix: 16);
+          bytes[h * 2 + 1] =
+              int.parse(route.hops[h].substring(2, 4), radix: 16);
+        }
+        results.add(RouteResult(bytes, route.estDelivery));
+      }
+      for (var h = 0; h < route.hops.length - 1; h++) {
+        final k = (route.hops[h], route.hops[h + 1]);
+        penalties[k] = (penalties[k] ?? 0) + 1.4; // ≈ ×4 in probability
+      }
+    }
+    return results;
+  }
+
   /// Ranked egress candidates for the connected radio (UI/debug).
   List<Candidate> egressCandidates() {
     final self = _selfPubkey;
