@@ -22,9 +22,16 @@ class PathFinder {
   final PathGraphConfig config;
   final Estimator estimator;
 
-  /// Tally → [0,1] confidence for virtual candidate edges.
-  double _candidateConfidence(Candidate c) =>
-      (c.weight / (c.weight + 2)).clamp(0.05, 1.0);
+  /// Confidence for virtual candidate edges. A Discover-measured link
+  /// (dB, both directions) beats a tally: blend measured quality with
+  /// the tally so a strong-but-new responder outranks a weak favourite.
+  double _candidateConfidence(Candidate c) {
+    final tally = (c.weight / (c.weight + 2)).clamp(0.05, 1.0);
+    final snr = c.bestSnr;
+    if (snr == null) return tally;
+    final measured = estimator.snrQuality(snr);
+    return (0.7 * measured + 0.3 * tally).clamp(0.05, 1.0);
+  }
 
   RouteFound? search({
     required List<Candidate> egress,

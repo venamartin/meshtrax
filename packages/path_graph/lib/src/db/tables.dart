@@ -66,6 +66,11 @@ class ContactIngress extends Table {
   RealColumn get observedLat => real().nullable()();
   RealColumn get observedLon => real().nullable()();
 
+  /// Measured first-hop link, both directions (Discover): uplink = how
+  /// well they heard US, downlink = how well we heard THEM.
+  RealColumn get uplinkSnr => real().nullable()();
+  RealColumn get downlinkSnr => real().nullable()();
+
   @override
   Set<Column> get primaryKey => {ownerPubkey, repeaterHash};
 }

@@ -225,10 +225,13 @@ class PathLabAdapter {
     if (ctl[0] & 0xF0 != _ctlNodeDiscoverResp) return;
     if (ctl[0] & 0x0F != _advTypeRepeater) return;
     final uplinkSnr = ctl[1].toSigned(8) / 4.0;
+    final rxSnr = frame[1].toSigned(8) / 4.0; // how well WE heard them
     final pubkey = ctl.sublist(6);
     if (pubkey.length < 2) return;
     pendingDiscover.add(DiscoverResponse(
-        repeaterHash: _hex(pubkey.sublist(0, 2)), uplinkSnr: uplinkSnr));
+        repeaterHash: _hex(pubkey.sublist(0, 2)),
+        uplinkSnr: uplinkSnr,
+        rxSnr: rxSnr));
   }
 
   /// Harness calls this when the discover window closes.

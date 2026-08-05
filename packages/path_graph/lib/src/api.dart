@@ -46,13 +46,19 @@ class AnonymousOrigin extends ObservationOrigin {
 
 /// A single repeater's answer to a zero-hop Discover.
 class DiscoverResponse {
-  const DiscoverResponse({required this.repeaterHash, this.uplinkSnr});
+  const DiscoverResponse(
+      {required this.repeaterHash, this.uplinkSnr, this.rxSnr});
 
   /// 4-hex 2-byte hash bucket.
   final String repeaterHash;
 
-  /// dB at which the repeater heard our request (response byte 1).
+  /// dB at which the repeater heard OUR request (control payload byte
+  /// 1) — the direction that matters for sending.
   final double? uplinkSnr;
+
+  /// dB at which WE heard the response (frame header) — the reverse
+  /// direction of the same exchange.
+  final double? rxSnr;
 }
 
 /// Geographic position (any of the three optional sources).
@@ -288,7 +294,10 @@ class PathGraph {
     if (self == null) return;
     _evidence.applyDiscover(
       self,
-      [for (final r in responses) (hash: r.repeaterHash, snr: r.uplinkSnr)],
+      [
+        for (final r in responses)
+          (hash: r.repeaterHash, snr: r.uplinkSnr, rxSnr: r.rxSnr)
+      ],
       _arrivalMillis,
       failureEpisode: failureEpisode,
     );

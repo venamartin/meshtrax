@@ -25,16 +25,29 @@ class IngressEntry {
   double? observedLat;
   double? observedLon;
 
+  /// Measured first-hop SNR, both directions (Discover).
+  double? uplinkSnr;
+  double? downlinkSnr;
+
   /// Self rows only: hub-signature tracking (final vs penultimate).
   int finalCount = 0;
   int penultimateCount = 0;
 }
 
 class Candidate {
-  const Candidate(this.repeaterHash, this.weight, this.tier);
+  const Candidate(this.repeaterHash, this.weight, this.tier,
+      {this.uplinkSnr, this.downlinkSnr});
   final String repeaterHash;
   final double weight;
   final EvidenceTier tier;
+
+  /// Measured link to this candidate when Discover has run.
+  final double? uplinkSnr;
+  final double? downlinkSnr;
+
+  /// The direction that matters for *sending* is the uplink; fall back
+  /// to the downlink by reciprocity, else null (tally-only candidate).
+  double? get bestSnr => uplinkSnr ?? downlinkSnr;
 }
 
 /// Weighted "who hears them" (contacts) and "who hears me" (self rows,
@@ -108,7 +121,7 @@ class EvidenceStore {
   /// Discover results: proven refresh always; supersede/slash only in a
   /// failure episode, epoch-limited and floored, never on empty results.
   void applyDiscover(String selfPubkey,
-      List<({String hash, double? snr})> responses, int arrival,
+      List<({String hash, double? snr, double? rxSnr})> responses, int arrival,
       {required bool failureEpisode}) {
     if (responses.isEmpty) return; // empty probe = no information
 
@@ -136,8 +149,22 @@ class EvidenceStore {
           : ((r.snr! - config.snrZeroQualityDb) /
                   (config.snrFullQualityDb - config.snrZeroQualityDb))
               .clamp(0.0, 1.0);
-      _upsert(selfPubkey, r.hash, EvidenceTier.proven, 1.0 + 2.0 * quality,
+      final entry = _upsert(
+          selfPubkey, r.hash, EvidenceTier.proven, 1.0 + 2.0 * quality,
           arrival);
+      // Keep the measured dB, both directions — a Discover exchange is
+      // the best-measured link we ever get (fresh, bidirectional, and
+      // it's the first hop). EWMA so repeat probes refine.
+      if (r.snr != null) {
+        entry.uplinkSnr = entry.uplinkSnr == null
+            ? r.snr
+            : entry.uplinkSnr! * 0.6 + r.snr! * 0.4;
+      }
+      if (r.rxSnr != null) {
+        entry.downlinkSnr = entry.downlinkSnr == null
+            ? r.rxSnr
+            : entry.downlinkSnr! * 0.6 + r.rxSnr! * 0.4;
+      }
     }
   }
 
@@ -169,7 +196,10 @@ class EvidenceStore {
           w *= (e.finalCount / appearances); // hub signature demotion
         }
       }
-      if (w > 0.05) out.add(Candidate(entry.key.$2, w, e.tier));
+      if (w > 0.05) {
+        out.add(Candidate(entry.key.$2, w, e.tier,
+            uplinkSnr: e.uplinkSnr, downlinkSnr: e.downlinkSnr));
+      }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
     return out;
@@ -207,7 +237,9 @@ class EvidenceStore {
         tier: EvidenceTier.values.byName(row.evidence),
         observedLat: row.observedLat,
         observedLon: row.observedLon,
-      );
+      )
+        ..uplinkSnr = row.uplinkSnr
+        ..downlinkSnr = row.downlinkSnr;
     }
     for (final row in await _db.select(_db.knownContacts).get()) {
       knownContacts[row.contactPubkey] =
@@ -236,6 +268,8 @@ class EvidenceStore {
             evidence: e.tier.name,
             observedLat: Value(e.observedLat),
             observedLon: Value(e.observedLon),
+            uplinkSnr: Value(e.uplinkSnr),
+            downlinkSnr: Value(e.downlinkSnr),
           ),
           mode: InsertMode.insertOrReplace,
         );

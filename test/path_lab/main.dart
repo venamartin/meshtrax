@@ -267,7 +267,14 @@ class _PathLabScreenState extends State<PathLabScreen> {
                   'traces skipped: ${adapter.tracesSkipped}'),
               Text('graph: ${snap.nodes.length} nodes · '
                   '${snap.edges.length} edges'),
-              Text('egress: ${graph.egressCandidates().take(5).map((c) => '${c.repeaterHash}(${c.weight.toStringAsFixed(1)}${c.tier == EvidenceTier.proven ? '✓' : '?'})').join(' ')}'),
+              Text('egress: ${graph.egressCandidates().take(5).map((c) {
+                final snr = c.uplinkSnr != null
+                    ? ' ↑${c.uplinkSnr!.toStringAsFixed(0)}'
+                        '${c.downlinkSnr != null ? '/↓${c.downlinkSnr!.toStringAsFixed(0)}dB' : 'dB'}'
+                    : '';
+                return '${c.repeaterHash}(${c.weight.toStringAsFixed(1)}'
+                    '${c.tier == EvidenceTier.proven ? '✓' : '?'}$snr)';
+              }).join(' ')}'),
               // Targets that actually have ingress evidence — tap to load.
               Builder(builder: (context) {
                 final targets = graph.contactsWithIngress();

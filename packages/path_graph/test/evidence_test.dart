@@ -105,6 +105,42 @@ void main() {
     expect(graph.egressCandidates().first.repeaterHash, '249F');
   });
 
+  test('discover stores measured dB both ways and it outranks a tally', () {
+    // A weak-but-familiar doorstep vs a freshly measured strong one.
+    for (var i = 0; i < 6; i++) {
+      graph.observePath(path([0x24, 0x9F, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous());
+    }
+    graph.observeDiscoverResults([
+      const DiscoverResponse(
+          repeaterHash: '1312', uplinkSnr: -15, rxSnr: -14), // weak link
+      const DiscoverResponse(
+          repeaterHash: 'A277', uplinkSnr: 9, rxSnr: 8), // strong link
+    ], failureEpisode: false);
+
+    final byHash = {
+      for (final c in graph.egressCandidates()) c.repeaterHash: c
+    };
+    expect(byHash['A277']!.uplinkSnr, 9);
+    expect(byHash['A277']!.downlinkSnr, 8);
+    expect(byHash['1312']!.uplinkSnr, -15);
+
+    // The strong measured link must win the first hop even though 1312
+    // has more accumulated tally weight.
+    graph.observePath(path([0xA2, 0x77, 0x5C, 0xBB]), 2,
+        const ObservationOrigin.anonymous(), lastHopHeard: false);
+    graph.observePath(path([0x5C, 0xBB, 0xA2, 0x77]), 2,
+        const ObservationOrigin.anonymous(), lastHopHeard: false);
+    graph.observePath(path([0x13, 0x12, 0x5C, 0xBB]), 2,
+        const ObservationOrigin.anonymous(), lastHopHeard: false);
+    graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
+        const ObservationOrigin.anonymous(), lastHopHeard: false);
+    final route = graph.findPathToRepeater('5CBB');
+    expect(route, isA<RouteResult>());
+    expect((route as RouteResult).pathBytes.sublist(0, 2), [0xA2, 0x77],
+        reason: 'measured strong uplink beats a bigger tally');
+  });
+
   test('empty discover result is no information', () {
     graph.observeDiscoverResults(
         [const DiscoverResponse(repeaterHash: 'A277', uplinkSnr: 8)],

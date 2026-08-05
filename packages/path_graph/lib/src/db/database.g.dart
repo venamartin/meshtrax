@@ -1067,6 +1067,18 @@ class $ContactIngressTable extends ContactIngress
   late final GeneratedColumn<double> observedLon = GeneratedColumn<double>(
       'observed_lon', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _uplinkSnrMeta =
+      const VerificationMeta('uplinkSnr');
+  @override
+  late final GeneratedColumn<double> uplinkSnr = GeneratedColumn<double>(
+      'uplink_snr', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _downlinkSnrMeta =
+      const VerificationMeta('downlinkSnr');
+  @override
+  late final GeneratedColumn<double> downlinkSnr = GeneratedColumn<double>(
+      'downlink_snr', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         ownerPubkey,
@@ -1075,7 +1087,9 @@ class $ContactIngressTable extends ContactIngress
         lastSeen,
         evidence,
         observedLat,
-        observedLon
+        observedLon,
+        uplinkSnr,
+        downlinkSnr
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1133,6 +1147,16 @@ class $ContactIngressTable extends ContactIngress
           observedLon.isAcceptableOrUnknown(
               data['observed_lon']!, _observedLonMeta));
     }
+    if (data.containsKey('uplink_snr')) {
+      context.handle(_uplinkSnrMeta,
+          uplinkSnr.isAcceptableOrUnknown(data['uplink_snr']!, _uplinkSnrMeta));
+    }
+    if (data.containsKey('downlink_snr')) {
+      context.handle(
+          _downlinkSnrMeta,
+          downlinkSnr.isAcceptableOrUnknown(
+              data['downlink_snr']!, _downlinkSnrMeta));
+    }
     return context;
   }
 
@@ -1156,6 +1180,10 @@ class $ContactIngressTable extends ContactIngress
           .read(DriftSqlType.double, data['${effectivePrefix}observed_lat']),
       observedLon: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}observed_lon']),
+      uplinkSnr: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}uplink_snr']),
+      downlinkSnr: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}downlink_snr']),
     );
   }
 
@@ -1174,6 +1202,11 @@ class ContactIngressData extends DataClass
   final String evidence;
   final double? observedLat;
   final double? observedLon;
+
+  /// Measured first-hop link, both directions (Discover): uplink = how
+  /// well they heard US, downlink = how well we heard THEM.
+  final double? uplinkSnr;
+  final double? downlinkSnr;
   const ContactIngressData(
       {required this.ownerPubkey,
       required this.repeaterHash,
@@ -1181,7 +1214,9 @@ class ContactIngressData extends DataClass
       required this.lastSeen,
       required this.evidence,
       this.observedLat,
-      this.observedLon});
+      this.observedLon,
+      this.uplinkSnr,
+      this.downlinkSnr});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1195,6 +1230,12 @@ class ContactIngressData extends DataClass
     }
     if (!nullToAbsent || observedLon != null) {
       map['observed_lon'] = Variable<double>(observedLon);
+    }
+    if (!nullToAbsent || uplinkSnr != null) {
+      map['uplink_snr'] = Variable<double>(uplinkSnr);
+    }
+    if (!nullToAbsent || downlinkSnr != null) {
+      map['downlink_snr'] = Variable<double>(downlinkSnr);
     }
     return map;
   }
@@ -1212,6 +1253,12 @@ class ContactIngressData extends DataClass
       observedLon: observedLon == null && nullToAbsent
           ? const Value.absent()
           : Value(observedLon),
+      uplinkSnr: uplinkSnr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uplinkSnr),
+      downlinkSnr: downlinkSnr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(downlinkSnr),
     );
   }
 
@@ -1226,6 +1273,8 @@ class ContactIngressData extends DataClass
       evidence: serializer.fromJson<String>(json['evidence']),
       observedLat: serializer.fromJson<double?>(json['observedLat']),
       observedLon: serializer.fromJson<double?>(json['observedLon']),
+      uplinkSnr: serializer.fromJson<double?>(json['uplinkSnr']),
+      downlinkSnr: serializer.fromJson<double?>(json['downlinkSnr']),
     );
   }
   @override
@@ -1239,6 +1288,8 @@ class ContactIngressData extends DataClass
       'evidence': serializer.toJson<String>(evidence),
       'observedLat': serializer.toJson<double?>(observedLat),
       'observedLon': serializer.toJson<double?>(observedLon),
+      'uplinkSnr': serializer.toJson<double?>(uplinkSnr),
+      'downlinkSnr': serializer.toJson<double?>(downlinkSnr),
     };
   }
 
@@ -1249,7 +1300,9 @@ class ContactIngressData extends DataClass
           int? lastSeen,
           String? evidence,
           Value<double?> observedLat = const Value.absent(),
-          Value<double?> observedLon = const Value.absent()}) =>
+          Value<double?> observedLon = const Value.absent(),
+          Value<double?> uplinkSnr = const Value.absent(),
+          Value<double?> downlinkSnr = const Value.absent()}) =>
       ContactIngressData(
         ownerPubkey: ownerPubkey ?? this.ownerPubkey,
         repeaterHash: repeaterHash ?? this.repeaterHash,
@@ -1258,6 +1311,8 @@ class ContactIngressData extends DataClass
         evidence: evidence ?? this.evidence,
         observedLat: observedLat.present ? observedLat.value : this.observedLat,
         observedLon: observedLon.present ? observedLon.value : this.observedLon,
+        uplinkSnr: uplinkSnr.present ? uplinkSnr.value : this.uplinkSnr,
+        downlinkSnr: downlinkSnr.present ? downlinkSnr.value : this.downlinkSnr,
       );
   ContactIngressData copyWithCompanion(ContactIngressCompanion data) {
     return ContactIngressData(
@@ -1273,6 +1328,9 @@ class ContactIngressData extends DataClass
           data.observedLat.present ? data.observedLat.value : this.observedLat,
       observedLon:
           data.observedLon.present ? data.observedLon.value : this.observedLon,
+      uplinkSnr: data.uplinkSnr.present ? data.uplinkSnr.value : this.uplinkSnr,
+      downlinkSnr:
+          data.downlinkSnr.present ? data.downlinkSnr.value : this.downlinkSnr,
     );
   }
 
@@ -1285,14 +1343,16 @@ class ContactIngressData extends DataClass
           ..write('lastSeen: $lastSeen, ')
           ..write('evidence: $evidence, ')
           ..write('observedLat: $observedLat, ')
-          ..write('observedLon: $observedLon')
+          ..write('observedLon: $observedLon, ')
+          ..write('uplinkSnr: $uplinkSnr, ')
+          ..write('downlinkSnr: $downlinkSnr')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(ownerPubkey, repeaterHash, weight, lastSeen,
-      evidence, observedLat, observedLon);
+      evidence, observedLat, observedLon, uplinkSnr, downlinkSnr);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1303,7 +1363,9 @@ class ContactIngressData extends DataClass
           other.lastSeen == this.lastSeen &&
           other.evidence == this.evidence &&
           other.observedLat == this.observedLat &&
-          other.observedLon == this.observedLon);
+          other.observedLon == this.observedLon &&
+          other.uplinkSnr == this.uplinkSnr &&
+          other.downlinkSnr == this.downlinkSnr);
 }
 
 class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
@@ -1314,6 +1376,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
   final Value<String> evidence;
   final Value<double?> observedLat;
   final Value<double?> observedLon;
+  final Value<double?> uplinkSnr;
+  final Value<double?> downlinkSnr;
   final Value<int> rowid;
   const ContactIngressCompanion({
     this.ownerPubkey = const Value.absent(),
@@ -1323,6 +1387,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.evidence = const Value.absent(),
     this.observedLat = const Value.absent(),
     this.observedLon = const Value.absent(),
+    this.uplinkSnr = const Value.absent(),
+    this.downlinkSnr = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ContactIngressCompanion.insert({
@@ -1333,6 +1399,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     required String evidence,
     this.observedLat = const Value.absent(),
     this.observedLon = const Value.absent(),
+    this.uplinkSnr = const Value.absent(),
+    this.downlinkSnr = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : ownerPubkey = Value(ownerPubkey),
         repeaterHash = Value(repeaterHash),
@@ -1347,6 +1415,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     Expression<String>? evidence,
     Expression<double>? observedLat,
     Expression<double>? observedLon,
+    Expression<double>? uplinkSnr,
+    Expression<double>? downlinkSnr,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1357,6 +1427,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       if (evidence != null) 'evidence': evidence,
       if (observedLat != null) 'observed_lat': observedLat,
       if (observedLon != null) 'observed_lon': observedLon,
+      if (uplinkSnr != null) 'uplink_snr': uplinkSnr,
+      if (downlinkSnr != null) 'downlink_snr': downlinkSnr,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1369,6 +1441,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       Value<String>? evidence,
       Value<double?>? observedLat,
       Value<double?>? observedLon,
+      Value<double?>? uplinkSnr,
+      Value<double?>? downlinkSnr,
       Value<int>? rowid}) {
     return ContactIngressCompanion(
       ownerPubkey: ownerPubkey ?? this.ownerPubkey,
@@ -1378,6 +1452,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       evidence: evidence ?? this.evidence,
       observedLat: observedLat ?? this.observedLat,
       observedLon: observedLon ?? this.observedLon,
+      uplinkSnr: uplinkSnr ?? this.uplinkSnr,
+      downlinkSnr: downlinkSnr ?? this.downlinkSnr,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1406,6 +1482,12 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     if (observedLon.present) {
       map['observed_lon'] = Variable<double>(observedLon.value);
     }
+    if (uplinkSnr.present) {
+      map['uplink_snr'] = Variable<double>(uplinkSnr.value);
+    }
+    if (downlinkSnr.present) {
+      map['downlink_snr'] = Variable<double>(downlinkSnr.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1422,6 +1504,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
           ..write('evidence: $evidence, ')
           ..write('observedLat: $observedLat, ')
           ..write('observedLon: $observedLon, ')
+          ..write('uplinkSnr: $uplinkSnr, ')
+          ..write('downlinkSnr: $downlinkSnr, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2477,6 +2561,8 @@ typedef $$ContactIngressTableCreateCompanionBuilder = ContactIngressCompanion
   required String evidence,
   Value<double?> observedLat,
   Value<double?> observedLon,
+  Value<double?> uplinkSnr,
+  Value<double?> downlinkSnr,
   Value<int> rowid,
 });
 typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
@@ -2488,6 +2574,8 @@ typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
   Value<String> evidence,
   Value<double?> observedLat,
   Value<double?> observedLon,
+  Value<double?> uplinkSnr,
+  Value<double?> downlinkSnr,
   Value<int> rowid,
 });
 
@@ -2520,6 +2608,12 @@ class $$ContactIngressTableFilterComposer
 
   ColumnFilters<double> get observedLon => $composableBuilder(
       column: $table.observedLon, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get uplinkSnr => $composableBuilder(
+      column: $table.uplinkSnr, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get downlinkSnr => $composableBuilder(
+      column: $table.downlinkSnr, builder: (column) => ColumnFilters(column));
 }
 
 class $$ContactIngressTableOrderingComposer
@@ -2552,6 +2646,12 @@ class $$ContactIngressTableOrderingComposer
 
   ColumnOrderings<double> get observedLon => $composableBuilder(
       column: $table.observedLon, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get uplinkSnr => $composableBuilder(
+      column: $table.uplinkSnr, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get downlinkSnr => $composableBuilder(
+      column: $table.downlinkSnr, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ContactIngressTableAnnotationComposer
@@ -2583,6 +2683,12 @@ class $$ContactIngressTableAnnotationComposer
 
   GeneratedColumn<double> get observedLon => $composableBuilder(
       column: $table.observedLon, builder: (column) => column);
+
+  GeneratedColumn<double> get uplinkSnr =>
+      $composableBuilder(column: $table.uplinkSnr, builder: (column) => column);
+
+  GeneratedColumn<double> get downlinkSnr => $composableBuilder(
+      column: $table.downlinkSnr, builder: (column) => column);
 }
 
 class $$ContactIngressTableTableManager extends RootTableManager<
@@ -2620,6 +2726,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<String> evidence = const Value.absent(),
             Value<double?> observedLat = const Value.absent(),
             Value<double?> observedLon = const Value.absent(),
+            Value<double?> uplinkSnr = const Value.absent(),
+            Value<double?> downlinkSnr = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ContactIngressCompanion(
@@ -2630,6 +2738,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             evidence: evidence,
             observedLat: observedLat,
             observedLon: observedLon,
+            uplinkSnr: uplinkSnr,
+            downlinkSnr: downlinkSnr,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2640,6 +2750,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             required String evidence,
             Value<double?> observedLat = const Value.absent(),
             Value<double?> observedLon = const Value.absent(),
+            Value<double?> uplinkSnr = const Value.absent(),
+            Value<double?> downlinkSnr = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ContactIngressCompanion.insert(
@@ -2650,6 +2762,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             evidence: evidence,
             observedLat: observedLat,
             observedLon: observedLon,
+            uplinkSnr: uplinkSnr,
+            downlinkSnr: downlinkSnr,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
