@@ -38,6 +38,10 @@ class _UsbScreenState extends State<UsbScreen> {
   void initState() {
     super.initState();
     _connector = context.read<MeshCoreConnector>();
+    // Opening the USB picker is explicit intent to use USB: stop BLE
+    // auto-reconnect (it pins state to `connecting`, which makes
+    // connectUsb silently refuse) and abort any in-flight BLE attempt.
+    _connector.suspendBleAutoReconnect();
     _connectionListener = () {
       if (!mounted) return;
       if (_connector.state == MeshCoreConnectionState.disconnected) {
