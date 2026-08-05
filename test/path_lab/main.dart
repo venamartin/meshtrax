@@ -5,6 +5,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -111,8 +112,13 @@ class _PathLabScreenState extends State<PathLabScreen> {
       _traceResult = '';
       _status = 'tracing ${_fmtPath(roundTrip)}…';
     });
+    // Random tag, NOT a seconds timestamp: repeaters drop packets they
+    // have already seen (_tables->hasSeen), so two traces of the same
+    // route sharing a tag are byte-identical and the second one is
+    // silently dropped mid-path. Trace itself has no rate limiter
+    // (unlike Discover) — dedup is the only real constraint.
     await connector.sendFrame(buildTraceReq(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      Random().nextInt(0xFFFFFFFF),
       0,
       encodeTraceFlags(stride),
       payload: roundTrip,
