@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 
 import 'db/database.dart';
+import 'estimator.dart';
 import 'graph_store.dart';
 
+export 'estimator.dart' show Estimator, PathGraphConfig;
 export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
 
 /// Attribution quality of an observed path's originator.
@@ -102,14 +104,19 @@ class PathGraphCounters {
 /// The module. Push-in, never read-out: this API is the complete
 /// inventory of everything the module will ever know.
 class PathGraph {
-  PathGraph(QueryExecutor executor, {DateTime Function()? now})
-      : _db = PathGraphDatabase(executor),
-        _now = now ?? DateTime.now {
+  PathGraph(
+    QueryExecutor executor, {
+    DateTime Function()? now,
+    PathGraphConfig config = const PathGraphConfig(),
+  })  : _db = PathGraphDatabase(executor),
+        _now = now ?? DateTime.now,
+        estimator = Estimator(config) {
     _store = GraphStore(_db);
   }
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
+  final Estimator estimator;
   late final GraphStore _store;
 
   Timer? _flushTimer;
@@ -213,14 +220,32 @@ class PathGraph {
   }
 
   /// Delivery outcome for a path we sent on. Success proves every
-  /// forward hop (updates s/n); failure applies the small forward
-  /// penalty. The ACK's own route is never inferred.
+  /// forward hop (s+1, n+1); failure is the small forward penalty (n+1
+  /// only — the break can't be localized). The ACK's own route is never
+  /// inferred. Uses the radio's stride ([setRadioIdentity]).
   void reportSendResult(
     Uint8List pathBytes,
     bool success, {
     int? tripTimeMs,
   }) {
-    // Lands with the evidence step.
+    final stride = _selfStride;
+    if (stride < 2 || pathBytes.isEmpty || pathBytes.length % stride != 0) {
+      return;
+    }
+    final hopCount = pathBytes.length ~/ stride;
+    final arrival = _arrivalMillis;
+    for (var i = 0; i < hopCount - 1; i++) {
+      final from = _hopHex(pathBytes, stride, i);
+      final to = _hopHex(pathBytes, stride, i + 1);
+      final edge = _store.edges.putIfAbsent(
+          (from, to), () => EdgeState(source: 'observed'));
+      if (success) edge.s++;
+      edge.n++;
+      edge.lastObserved = arrival;
+      _store.markEdgeDirty(from, to);
+    }
+    // First-hop egress upgrade (proven tier) lands with the ingress step.
+    _scheduleFlush();
   }
 
   /// Repeater advert metadata enrichment (advert outranks import).
