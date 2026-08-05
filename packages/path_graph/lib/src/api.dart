@@ -6,6 +6,7 @@ import 'db/database.dart';
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'search.dart';
 
 export 'estimator.dart' show Estimator, PathGraphConfig;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
@@ -185,6 +186,10 @@ class PathGraph {
   /// touches wire frames). Rejects stride < 2 (counted, not silent).
   /// Hops wider than 2 bytes truncate losslessly into 2-byte buckets.
   /// [messageId] enables union-per-message dedup across flood variants.
+  /// [lastHopHeard]: true for paths physically received over RF (their
+  /// final hop is a repeater *I heard* → feeds the last-hop prior);
+  /// false for payload-embedded paths (path-return contents, firmware
+  /// out_paths) whose final hop proves nothing about my RX.
   void observePath(
     Uint8List pathBytes,
     int stride,
@@ -192,6 +197,7 @@ class PathGraph {
     double? rxSnr,
     GeoPosition? position,
     String? messageId,
+    bool lastHopHeard = true,
   }) {
     final arrival = _arrivalMillis;
 
@@ -245,9 +251,9 @@ class PathGraph {
     }
 
     // Self egress: final hop is the last-hop prior; penultimate feeds
-    // the hub-signature demotion.
+    // the hub-signature demotion. RF-received paths only.
     final self = _selfPubkey;
-    if (self != null) {
+    if (self != null && lastHopHeard) {
       _evidence.recordLastHop(
           self, _hopHex(pathBytes, stride, hopCount - 1), arrival,
           lat: position?.lat, lon: position?.lon);
@@ -378,12 +384,39 @@ class PathGraph {
 
   /// Best path to this contact: direct | bidirectional route | flood.
   PathResult findPath(String contactPubkey) {
+    final now = _arrivalMillis;
+
     // Tier 1: fresh direct-reception evidence → empty path wins.
-    if (_evidence.hasFreshDirect(contactPubkey, _arrivalMillis)) {
+    if (_evidence.hasFreshDirect(contactPubkey, now)) {
       return const PathResult.direct();
     }
-    // Tier 2 (bidirectional Dijkstra) lands with the search step.
-    return const PathResult.flood(FloodReason.noEvidence);
+
+    // Tier 2: bidirectional route over candidate lists.
+    final self = _selfPubkey;
+    if (self == null) return const PathResult.flood(FloodReason.noEvidence);
+    final egress = _evidence.candidatesFor(self, now, isSelf: true);
+    final ingress =
+        _evidence.candidatesFor(contactPubkey, now, isSelf: false);
+    if (egress.isEmpty || ingress.isEmpty) {
+      return const PathResult.flood(FloodReason.noEvidence);
+    }
+
+    final route = PathFinder(estimator.config, estimator).search(
+      egress: egress,
+      ingress: ingress,
+      edges: _store.edges,
+      nowMillis: now,
+    );
+    if (route == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+
+    final bytes = Uint8List(route.hops.length * 2);
+    for (var i = 0; i < route.hops.length; i++) {
+      bytes[i * 2] = int.parse(route.hops[i].substring(0, 2), radix: 16);
+      bytes[i * 2 + 1] = int.parse(route.hops[i].substring(2, 4), radix: 16);
+    }
+    return PathResult.path(bytes, route.estDelivery);
   }
 
   PathGraphCounters get counters => PathGraphCounters(
