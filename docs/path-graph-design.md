@@ -860,10 +860,16 @@ From a saved `neighbor-graph.json` (753 nodes, 2,867 edges):
 
 ## Corescope export utility
 
-Small script (next to analyze.py, sharing its fetch/resolve code) that pulls
-the two endpoints, filters to repeaters + rooms, and emits full pubkeys +
-positions (the analyzer knows them — keep the file lossless; the *app*
-geo-filters by home radius and collapses to hash buckets at import time):
+**Built: `tools/generate_graph.py`** (2026-08-05; `tools/analyze.py` lives
+beside it). Known Corescope instances are a `SOURCES` list in the file —
+one entry per region, no args generates all. Pulls the two endpoints,
+filters to repeaters + rooms, and emits full pubkeys + positions (the
+analyzer knows them — keep the file lossless; the *app* geo-filters by
+home radius and collapses to hash buckets at import time). Prefix-edge
+endpoints: 1-byte always dropped; 2/3-byte resolved when exactly one kept
+pubkey matches, else dropped — all drops counted and reported. Verified:
+NetworkX `node_link_graph()` loads the output natively with all custom
+fields intact.
 
 **Format (decided 2026-08-05): node-link JSON** — the D3 / NetworkX
 convention (`directed`/`multigraph`/`graph`/`nodes`/`links`,
