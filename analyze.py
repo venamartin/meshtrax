@@ -10,6 +10,7 @@
 # pip install igraph matplotlib
 
 import argparse
+from datetime import datetime, timedelta, timezone
 from html import escape as _escape
 import json
 import math
@@ -24,8 +25,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-GRAPH_API_URL = 'https://analyzer.00id.net/api/analytics/neighbor-graph'
-NODES_API_URL = 'https://analyzer.00id.net/api/nodes?limit=10000'
+GRAPH_API_URL = 'https://corescope.stonekitty.net/api/analytics/neighbor-graph'
+NODES_API_URL = 'https://corescope.stonekitty.net/api/nodes?limit=10000'
 
 ROLE_COLORS = {
     'repeater':  '#4e9af1',
@@ -38,11 +39,12 @@ ROLE_COLORS = {
 _LEAFLET_JS = r"""
 (function() {
   // ── lookups ──────────────────────────────────────────────────────────────
-  var nodeById = {}, nameToId = {}, idToName = {};
+  var nodeById = {}, nameToId = {}, idToName = {}, hashToId = {};
   NODES.forEach(function(n) {
     nodeById[n.id] = n;
     nameToId[n.name.toLowerCase()] = n.id;
     idToName[n.id] = n.name;
+    hashToId[n.hash.toLowerCase()] = n.id;
   });
 
   var adj = {};
@@ -98,7 +100,8 @@ _LEAFLET_JS = r"""
       color:   scoreRgba(e.score),
       weight:  1+2*e.score,
       opacity: 0.75
-    }).bindTooltip('Score: '+e.score.toFixed(3)+'<br>SNR: '+snr, {sticky:true});
+    }).bindTooltip('Score: '+e.score.toFixed(3)+'<br>SNR: '+snr+
+                   '<br>Both ways: '+(e.bidi?'yes':'no'), {sticky:true});
     edgeMarkers[e.id] = line;
     edgeGroup.addLayer(line);
   });
@@ -108,7 +111,7 @@ _LEAFLET_JS = r"""
     var gpsNote = n.gps!=='real' ? ' <span style="color:#888">('+n.gps+')</span>' : '';
     var m = L.circleMarker([n.lat,n.lon], nodeStyle(n))
       .bindTooltip(
-        '<b>'+n.name+'</b>'+gpsNote+'<br>Role: '+n.role+
+        '<b>'+n.name+'</b>'+gpsNote+'<br>Hash: '+n.hash+'<br>Role: '+n.role+
         '<br>Degree: '+n.degree+'<br>Betweenness: '+n.betweenness.toFixed(0)+
         '<br>Community: '+n.community,
         {sticky:true}
@@ -127,6 +130,7 @@ _LEAFLET_JS = r"""
 
   function resolveNode(q) {
     q = q.trim().toLowerCase(); if (!q) return undefined;
+    if (hashToId[q]!==undefined) return hashToId[q];
     if (nameToId[q]!==undefined) return nameToId[q];
     for (var k in nameToId) { if (k.indexOf(q)!==-1) return nameToId[k]; }
     return undefined;
@@ -165,7 +169,9 @@ _LEAFLET_JS = r"""
     var mainOnly  = document.getElementById('main-only').checked;
     var showEst   = document.getElementById('show-estimated').checked;
     var showEdges = document.getElementById('show-edges').checked;
-    var roles     = new Set(Array.from(document.querySelectorAll('.role-cb:checked')).map(function(c){return c.value;}));
+    var roles     = document.querySelectorAll('.role-cb').length
+      ? new Set(Array.from(document.querySelectorAll('.role-cb:checked')).map(function(c){return c.value;}))
+      : null;  // no role checkboxes rendered — single-role graph, allow all
     return {minDeg:minDeg, minScore:minScore, mainOnly:mainOnly, showEst:showEst, showEdges:showEdges, roles:roles};
   }
 
@@ -175,7 +181,7 @@ _LEAFLET_JS = r"""
     var vis = new Set();
     NODES.forEach(function(n) {
       if (!nodeMarkers[n.id]) return;
-      if (n.degree<f.minDeg || !f.roles.has(n.role) || (f.mainOnly&&!n.main)) return;
+      if (n.degree<f.minDeg || (f.roles&&!f.roles.has(n.role)) || (f.mainOnly&&!n.main)) return;
       if (!f.showEst && n.gps!=='real') return;
       vis.add(n.id);
       setNode(n, nodeStyle(n));
@@ -194,7 +200,8 @@ _LEAFLET_JS = r"""
     document.getElementById('deg-val').textContent=this.value; applyFilters();
   });
   document.getElementById('min-score').addEventListener('input', function() {
-    document.getElementById('score-val').textContent=(this.value/100).toFixed(2); applyFilters();
+    document.getElementById('score-val').textContent=(this.value/100).toFixed(2);
+    if (nbFocal!==null) applyNeighborhood(); else applyFilters();
   });
   document.querySelectorAll('.role-cb').forEach(function(cb){cb.addEventListener('change',applyFilters);});
   document.getElementById('main-only').addEventListener('change', applyFilters);
@@ -207,11 +214,13 @@ _LEAFLET_JS = r"""
   var nbHops=1, nbFocal=null;
   function applyNeighborhood() {
     if (nbFocal===null) return;
+    var minScore=parseInt(document.getElementById('min-score').value)/100;
     var visited=new Set([nbFocal]), frontier=[nbFocal];
     for (var h=0;h<nbHops;h++) {
       var next=[];
       frontier.forEach(function(id){
         (adj[id]||[]).forEach(function(e){
+          if ((e.score||0)<minScore) return;
           var nb=e.from===id?e.to:e.from;
           if (!visited.has(nb)){visited.add(nb);next.push(nb);}
         });
@@ -227,6 +236,7 @@ _LEAFLET_JS = r"""
     });
     EDGES.forEach(function(e) {
       if (!edgeMarkers[e.id]||!visited.has(e.from)||!visited.has(e.to)) return;
+      if ((e.score||0)<minScore) return;
       edgeMarkers[e.id].setStyle({color:scoreRgba(e.score), weight:1+2*e.score, opacity:0.85});
       edgeGroup.addLayer(edgeMarkers[e.id]);
     });
@@ -259,20 +269,28 @@ _LEAFLET_JS = r"""
     var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*p)*Math.cos(la2*p)*Math.sin(dLo/2)*Math.sin(dLo/2);
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
+  var edgePenalty = {};  // edgeId -> multiplier, used to force alternative routes
   function edgeCost(e,nA,nB) {
     var score = Math.max(e.score||0, 0.01);
     var mode  = document.querySelector('input[name="cost-mode"]:checked').value;
-    if (mode === 'score') return 1/score;
+    var pen   = edgePenalty[e.id]||1;
+    if (mode === 'score') return pen/score;
+    if (mode === 'reliability') {
+      var beta = parseInt(document.getElementById('hop-tax').value)/100;
+      return pen * (-Math.log(score) - Math.log(Math.max(beta, 0.01)));
+    }
     var dist = (nA.lat!==null&&nB.lat!==null&&nA.gps==='real'&&nB.gps==='real')
       ? Math.max(haversine(nA.lat,nA.lon,nB.lat,nB.lon), 1.0)
       : 50.0;
     var w = parseFloat(document.getElementById('dist-weight').value);
-    if (mode === 'multiply') return (1/score) * Math.pow(dist, w);
-    /* add */                return (1/score) + w * dist;
+    if (mode === 'multiply') return pen * (1/score) * Math.pow(dist, w);
+    /* add */                return pen * ((1/score) + w * dist);
   }
 
   function dijkstra(srcId,dstId) {
-    var repeatersOnly=document.getElementById('path-repeaters-only').checked;
+    var roCb=document.getElementById('path-repeaters-only');
+    var repeatersOnly=roCb?roCb.checked:false;
+    var bidiOnly=document.getElementById('path-bidi-only').checked;
     var dist={},prev={},visited=new Set();
     dist[srcId]=0;
     var queue=[{node:srcId,cost:0}];
@@ -285,6 +303,7 @@ _LEAFLET_JS = r"""
       (adj[u.node]||[]).forEach(function(e) {
         var nb=e.from===u.node?e.to:e.from;
         if (visited.has(nb)) return;
+        if (bidiOnly&&!e.bidi) return;
         if (repeatersOnly&&nb!==dstId&&nodeById[nb].role!=='repeater') return;
         var cost=dist[u.node]+edgeCost(e,nodeById[u.node],nodeById[nb]);
         if (dist[nb]===undefined||cost<dist[nb]){dist[nb]=cost;prev[nb]=u.node;queue.push({node:nb,cost:cost});}
@@ -297,7 +316,9 @@ _LEAFLET_JS = r"""
   }
 
   function astar(srcId,dstId) {
-    var repeatersOnly=document.getElementById('path-repeaters-only').checked;
+    var roCb=document.getElementById('path-repeaters-only');
+    var repeatersOnly=roCb?roCb.checked:false;
+    var bidiOnly=document.getElementById('path-bidi-only').checked;
     var hWeight=parseFloat(document.getElementById('astar-weight').value);
     var dst=nodeById[dstId];
     function h(nodeId) {
@@ -317,6 +338,7 @@ _LEAFLET_JS = r"""
       (adj[u.node]||[]).forEach(function(e) {
         var nb=e.from===u.node?e.to:e.from;
         if (visited.has(nb)) return;
+        if (bidiOnly&&!e.bidi) return;
         if (repeatersOnly&&nb!==dstId&&nodeById[nb].role!=='repeater') return;
         var ng=gCost[u.node]+edgeCost(e,nodeById[u.node],nodeById[nb]);
         if (gCost[nb]===undefined||ng<gCost[nb]){gCost[nb]=ng;prev[nb]=u.node;queue.push({node:nb,f:ng+h(nb)});}
@@ -335,9 +357,13 @@ _LEAFLET_JS = r"""
 
   document.querySelectorAll('input[name="cost-mode"]').forEach(function(r) {
     r.addEventListener('change', function() {
-      document.getElementById('dist-weight-row').style.display = (this.value==='score') ? 'none' : 'block';
+      document.getElementById('dist-weight-row').style.display = (this.value==='multiply'||this.value==='add') ? 'block' : 'none';
+      document.getElementById('hop-tax-row').style.display = (this.value==='reliability') ? 'block' : 'none';
       lastActive='path';
     });
+  });
+  document.getElementById('hop-tax').addEventListener('input', function() {
+    document.getElementById('hop-tax-val').textContent = (parseInt(this.value)/100).toFixed(2);
   });
   document.getElementById('dist-weight').addEventListener('input', function() {
     document.getElementById('dist-w-val').textContent = parseFloat(this.value).toFixed(1);
@@ -354,36 +380,66 @@ _LEAFLET_JS = r"""
 
   document.getElementById('path-a').addEventListener('focus', function() { lastActive='path'; });
   document.getElementById('path-b').addEventListener('focus', function() { lastActive='path'; });
-  document.getElementById('path-find').addEventListener('click', function() {
-    lastActive='path';
-    var out=document.getElementById('path-result');
-    var aId=resolveNode(document.getElementById('path-a').value);
-    var bId=resolveNode(document.getElementById('path-b').value);
-    if (aId===undefined||bId===undefined){out.textContent='Node not found';return;}
-    if (aId===bId){out.textContent='Same node';return;}
-    var msg=isolatedMsg(aId)||isolatedMsg(bId);
-    if (msg){out.textContent=msg;return;}
-    var algo=document.querySelector('input[name="path-algo"]:checked').value;
-    var res=(algo==='astar')?astar(aId,bId):dijkstra(aId,bId);
-    if (!res){out.textContent='No path found — nodes may be in disconnected components';return;}
+  var altResults=[], altA=null, altB=null;
 
+  function findAlternatives(aId,bId,k) {
+    var algo=document.querySelector('input[name="path-algo"]:checked').value;
+    var results=[], seen={};
+    edgePenalty={};
+    for (var t=0; t<k*3 && results.length<k; t++) {
+      var res=(algo==='astar')?astar(aId,bId):dijkstra(aId,bId);
+      if (!res) break;
+      var key=res.nodes.join('>');
+      if (!seen[key]) { seen[key]=true; results.push(res); }
+      // penalize this path's edges so the next search prefers different links
+      for (var j=0;j<res.nodes.length-1;j++) {
+        var u=res.nodes[j], v=res.nodes[j+1];
+        (adj[u]||[]).forEach(function(e){
+          if ((e.from===u&&e.to===v)||(e.from===v&&e.to===u))
+            edgePenalty[e.id]=(edgePenalty[e.id]||1)*4;
+        });
+      }
+    }
+    edgePenalty={};
+    // recompute true (unpenalized) cost for each path so the list is comparable
+    results.forEach(function(r){
+      var c=0;
+      for (var j=0;j<r.nodes.length-1;j++) {
+        var u=r.nodes[j], v=r.nodes[j+1], best=null;
+        (adj[u]||[]).forEach(function(e){
+          if ((e.from===u&&e.to===v)||(e.from===v&&e.to===u)) {
+            var ec=edgeCost(e,nodeById[u],nodeById[v]);
+            if (best===null||ec<best) best=ec;
+          }
+        });
+        c+=best||0;
+      }
+      r.cost=c;
+    });
+    return results;
+  }
+
+  function renderAlt(sel) {
+    var out=document.getElementById('path-result');
+    var res=altResults[sel];
     var pathSet=new Set(res.nodes);
     nodeGroup.clearLayers(); edgeGroup.clearLayers();
     NODES.forEach(function(n) {
       if (!nodeMarkers[n.id]||!pathSet.has(n.id)) return;
-      var isSrc=n.id===aId||n.id===bId;
+      var isSrc=n.id===altA||n.id===altB;
       setNode(n,{fillColor:isSrc?'#ff5555':'#f0c040',color:'#fff',weight:3,
                  radius:nodeRadius(n.degree)+3,fillOpacity:1.0});
       nodeGroup.addLayer(nodeMarkers[n.id]);
     });
 
-    var totalScore=0, totalDist=0, hops=res.nodes.length-1;
+    var totalScore=0, totalDist=0, prodScore=1, hops=res.nodes.length-1;
     for (var i=0;i<hops;i++) {
       var u=res.nodes[i],v=res.nodes[i+1];
       EDGES.forEach(function(e) {
         if (!edgeMarkers[e.id]) return;
         if (!((e.from===u&&e.to===v)||(e.from===v&&e.to===u))) return;
         totalScore+=e.score||0;
+        prodScore*=Math.max(e.score||0, 0.01);
         var nA=nodeById[u],nB=nodeById[v];
         if (nA.lat!==null&&nB.lat!==null&&nA.gps==='real'&&nB.gps==='real')
           totalDist+=haversine(nA.lat,nA.lon,nB.lat,nB.lon);
@@ -395,10 +451,45 @@ _LEAFLET_JS = r"""
     var avgScore=hops>0?(totalScore/hops).toFixed(3):'—';
     var distStr=totalDist>0?totalDist.toFixed(0)+' km':'n/a';
     var names=res.nodes.map(function(id){return idToName[id]||id;});
-    out.innerHTML='<b>'+hops+' hop'+(hops!==1?'s':'')+'</b> · avg score: '+avgScore+' · '+distStr+'<br><br>'+
+    var hashPath=res.nodes.map(function(id){return nodeById[id].hash;}).join(',');
+
+    var listHtml='';
+    if (altResults.length>1) {
+      listHtml=altResults.map(function(r,i){
+        var h=r.nodes.length-1;
+        return '<div data-alt="'+i+'" style="cursor:pointer;padding:1px 4px;margin:1px 0;border-radius:3px;'+
+          (i===sel?'background:#2a3a5a;color:#fff;':'color:#9ab;')+'">'+
+          '#'+(i+1)+' · '+h+' hop'+(h!==1?'s':'')+' · cost '+r.cost.toFixed(2)+'</div>';
+      }).join('')+'<br>';
+    }
+
+    out.innerHTML=listHtml+
+      '<b>'+hops+' hop'+(hops!==1?'s':'')+'</b> · avg score: '+avgScore+' · '+distStr+
+      ' · est. delivery: '+(prodScore*100).toFixed(0)+'%<br><br>'+
       names.map(function(n,i){
-        return '<span style="color:'+(i===0||i===names.length-1?'#ff9090':'#f0c040')+'">'+n+'</span>';
-      }).join('<br><span style="color:#666">↓</span><br>');
+        return '<span style="color:'+(i===0||i===names.length-1?'#ff9090':'#f0c040')+'">'+n+
+          '</span> <span style="color:#888">'+nodeById[res.nodes[i]].hash+'</span>';
+      }).join('<br><span style="color:#666">↓</span><br>')+
+      '<br><br>Path (2-byte hops): <span style="color:#8f8;user-select:all;">'+hashPath+'</span>';
+
+    out.querySelectorAll('[data-alt]').forEach(function(el){
+      el.addEventListener('click',function(){ renderAlt(parseInt(el.getAttribute('data-alt'))); });
+    });
+  }
+
+  document.getElementById('path-find').addEventListener('click', function() {
+    lastActive='path';
+    var out=document.getElementById('path-result');
+    var aId=resolveNode(document.getElementById('path-a').value);
+    var bId=resolveNode(document.getElementById('path-b').value);
+    if (aId===undefined||bId===undefined){out.textContent='Node not found';return;}
+    if (aId===bId){out.textContent='Same node';return;}
+    var msg=isolatedMsg(aId)||isolatedMsg(bId);
+    if (msg){out.textContent=msg;return;}
+    altResults=findAlternatives(aId,bId,parseInt(document.getElementById('path-alts').value));
+    altA=aId; altB=bId;
+    if (!altResults.length){out.textContent='No path found — nodes may be in disconnected components';return;}
+    renderAlt(0);
   });
 
   document.getElementById('path-reset').addEventListener('click', function() {
@@ -439,7 +530,7 @@ def load_graph(path=None, data=None):
     g.vs['role']   = [n['role']   for n in nodes]
 
     valid, ambiguous = [], []
-    edge_keys = ('weight', 'score', 'avg_snr')
+    edge_keys = ('weight', 'score', 'avg_snr', 'bidirectional')
     attrs = {k: [] for k in edge_keys}
     for e in edges:
         src = pubkey_to_idx.get(e['source'])
@@ -478,6 +569,8 @@ def resolve_ambiguous_edges(g, ambiguous, loc_by_pubkey):
 
     def _candidates(prefix):
         p = prefix.replace('prefix:', '').lower()
+        if len(p) < 4:
+            return []  # 1-byte prefixes are too ambiguous — 2-byte mode only
         return [i for i, pk in enumerate(pubkeys) if pk.lower().startswith(p)]
 
     def _pick_closest(cands, anchor_pubkey):
@@ -507,7 +600,7 @@ def resolve_ambiguous_edges(g, ambiguous, loc_by_pubkey):
             return _pick_closest(cands, anchor_pubkey)
         return None
 
-    new_edges, new_attrs = [], {'weight': [], 'score': [], 'avg_snr': []}
+    new_edges, new_attrs = [], {'weight': [], 'score': [], 'avg_snr': [], 'bidirectional': []}
     fixed = unfixed = 0
 
     for e in ambiguous:
@@ -535,7 +628,8 @@ def resolve_ambiguous_edges(g, ambiguous, loc_by_pubkey):
         for k, vals in new_attrs.items():
             new_es[k] = vals
 
-    print(f'Ambiguous edge resolution: {fixed} fixed, {unfixed} unresolvable', file=sys.stderr)
+    print(f'Ambiguous edge resolution (2-byte mode, 1-byte prefixes dropped): '
+          f'{fixed} fixed, {unfixed} dropped', file=sys.stderr)
     return fixed, unfixed
 
 
@@ -644,6 +738,52 @@ def load_node_locations(path=None, data=None):
     return result
 
 
+def load_last_heard(data):
+    """pubkey -> last_heard datetime (UTC) from the nodes endpoint data."""
+    result = {}
+    for n in data.get('nodes', []):
+        pk = n.get('public_key')
+        lh = n.get('last_heard') or n.get('last_seen')
+        if pk and lh:
+            try:
+                result[pk] = datetime.fromisoformat(lh.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+    return result
+
+
+def filter_graph(g, repeaters_only=False, max_age_days=None, last_heard_by_pubkey=None):
+    drop = set()
+    role_dropped = 0
+    if repeaters_only:
+        for v in g.vs:
+            if v['role'] != 'repeater':
+                drop.add(v.index)
+        role_dropped = len(drop)
+
+    stale = unknown = 0
+    if max_age_days is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+        for v in g.vs:
+            if v.index in drop:
+                continue
+            lh = (last_heard_by_pubkey or {}).get(v['pubkey'])
+            if lh is None:
+                unknown += 1
+            elif lh < cutoff:
+                drop.add(v.index)
+                stale += 1
+
+    if drop:
+        g.delete_vertices(sorted(drop))
+    if repeaters_only:
+        print(f'Filter: dropped {role_dropped} non-repeater nodes', file=sys.stderr)
+    if max_age_days is not None:
+        print(f'Filter: dropped {stale} nodes older than {max_age_days:g} days '
+              f'({unknown} kept with unknown last_heard)', file=sys.stderr)
+    print(f'Filter: {g.vcount()} nodes, {g.ecount()} edges remain', file=sys.stderr)
+
+
 def attach_locations(g, loc_by_pubkey):
     lats     = [None] * g.vcount()
     lons     = [None] * g.vcount()
@@ -690,6 +830,7 @@ def save_interactive(g, path):
         {
             'id':          v.index,
             'name':        v['name'],
+            'hash':        v['pubkey'][:4].upper(),
             'role':        v['role'],
             'lat':         v['lat'],
             'lon':         v['lon'],
@@ -710,6 +851,7 @@ def save_interactive(g, path):
             'score':   round(e['score'] or 0, 4),
             'avg_snr': round(e['avg_snr'], 1) if e['avg_snr'] is not None else None,
             'weight':  e['weight'],
+            'bidi':    bool(e['bidirectional']),
         }
         for e in g.es
     ]
@@ -721,6 +863,22 @@ def save_interactive(g, path):
     inp = 'width:100%;background:#1a1a2e;color:#eee;border:1px solid #555;padding:3px 5px;border-radius:3px;box-sizing:border-box;'
     btn = 'background:#2a3a5a;color:#ddd;border:1px solid #555;border-radius:3px;padding:2px 8px;cursor:pointer;'
 
+    present_roles = sorted({v['role'] or '' for v in g.vs})
+    role_labels = {'repeater': 'Repeaters', 'companion': 'Companions',
+                   'room': 'Rooms', 'observer': 'Observers', '': '(no role)'}
+    multi_role = len(present_roles) > 1
+    roles_html = ''
+    if multi_role:
+        roles_html = '<br><div style="color:#888;margin-top:4px;">Roles</div>' + ''.join(
+            f'<label><input type="checkbox" class="role-cb" value="{r}" checked> '
+            f'{role_labels.get(r, r)}</label><br>'
+            for r in present_roles
+        )
+    path_ro_html = (
+        '<div style="margin-top:4px;"><label><input type="checkbox" id="path-repeaters-only" checked>'
+        ' Repeaters only (exclude observers, companions, rooms)</label></div>'
+    ) if multi_role else ''
+
     panel = (
         f'<datalist id="node-dl">{datalist_opts}</datalist>'
         '<div id="fp" style="position:fixed;top:10px;left:10px;z-index:1000;'
@@ -729,18 +887,14 @@ def save_interactive(g, path):
         'min-width:240px;max-height:90vh;overflow-y:auto;line-height:1.6;">'
 
         '<details open><summary style="cursor:pointer;color:#8af;font-weight:bold;margin-bottom:4px;">▸ Filters</summary>'
-        f'Min degree: <b id="deg-val">0</b><br>'
-        f'<input type="range" id="min-deg" min="0" max="{max_degree}" value="0" style="width:100%">'
+        f'Min degree: <b id="deg-val">6</b><br>'
+        f'<input type="range" id="min-deg" min="0" max="{max_degree}" value="6" style="width:100%">'
         '<br>Min edge score: <b id="score-val">0.00</b><br>'
         '<input type="range" id="min-score" min="0" max="100" value="0" style="width:100%">'
-        '<br><div style="color:#888;margin-top:4px;">Roles</div>'
-        '<label><input type="checkbox" class="role-cb" value="repeater" checked> Repeaters</label><br>'
-        '<label><input type="checkbox" class="role-cb" value="companion" checked> Companions</label><br>'
-        '<label><input type="checkbox" class="role-cb" value="room" checked> Rooms</label><br>'
-        '<label><input type="checkbox" class="role-cb" value="observer" checked> Observers</label><br>'
+        + roles_html +
         '<hr style="border-color:#334;margin:6px 0">'
         '<label><input type="checkbox" id="main-only"> Main component only</label><br>'
-        '<label><input type="checkbox" id="show-estimated" checked> Show position-estimated nodes</label><br>'
+        '<label><input type="checkbox" id="show-estimated"> Show position-estimated nodes</label><br>'
         '<label><input type="checkbox" id="show-edges"> Show edges</label>'
         '</details>'
 
@@ -752,17 +906,23 @@ def save_interactive(g, path):
         f'<button id="nb-reset" style="{btn}">Reset</button></div>'
         '</details>'
 
-        '<details id="path-details" style="margin-top:8px;"><summary style="cursor:pointer;color:#8af;font-weight:bold;margin-bottom:4px;">▸ Shortest Path</summary>'
+        '<details id="path-details" open style="margin-top:8px;"><summary style="cursor:pointer;color:#8af;font-weight:bold;margin-bottom:4px;">▸ Shortest Path</summary>'
         '<div style="color:#777;font-size:11px;margin-bottom:4px;">Click two nodes, or type names.</div>'
         f'<input id="path-a" list="node-dl" placeholder="From…" style="{inp}margin-bottom:4px;">'
         f'<input id="path-b" list="node-dl" placeholder="To…"   style="{inp}">'
         '<div style="color:#888;margin-top:6px;margin-bottom:2px;">Cost function</div>'
         '<label><input type="radio" name="cost-mode" value="score"> Score only</label><br>'
         '<label><input type="radio" name="cost-mode" value="multiply"> (1/score) × dist<sup>w</sup></label><br>'
-        '<label><input type="radio" name="cost-mode" value="add" checked> (1/score) + w × dist</label>'
-        '<div id="dist-weight-row" style="margin-top:4px;">'
+        '<label><input type="radio" name="cost-mode" value="add"> (1/score) + w × dist</label><br>'
+        '<label><input type="radio" name="cost-mode" value="reliability" checked> Reliability: −log(score) + hop tax</label>'
+        '<div id="dist-weight-row" style="margin-top:4px;display:none;">'
         'w: <b id="dist-w-val">0.7</b><br>'
         f'<input type="range" id="dist-weight" min="0" max="2" step="0.1" value="0.7" style="width:100%">'
+        '</div>'
+        '<div id="hop-tax-row" style="margin-top:4px;">'
+        'Hop tax β: <b id="hop-tax-val">0.99</b><br>'
+        '<input type="range" id="hop-tax" min="50" max="100" step="1" value="99" style="width:100%">'
+        '<div style="color:#666;font-size:10px;">Extra hop hurts like ×β reliability · 1.00 = hops free, route by signal only</div>'
         '</div>'
         '<div style="color:#888;margin-top:6px;margin-bottom:2px;">Algorithm</div>'
         '<label><input type="radio" name="path-algo" value="dijkstra" checked> Dijkstra</label><br>'
@@ -772,8 +932,13 @@ def save_interactive(g, path):
         f'<input type="range" id="astar-weight" min="0" max="3" step="0.1" value="0.5" style="width:100%">'
         '<div style="color:#666;font-size:10px;">Higher = faster, less optimal · 0 = Dijkstra</div>'
         '</div>'
-        '<div style="margin-top:4px;"><label><input type="checkbox" id="path-repeaters-only" checked>'
-        ' Repeaters only (exclude observers, companions, rooms)</label></div>'
+        '<div style="margin-top:4px;"><label><input type="checkbox" id="path-bidi-only" checked>'
+        ' Bidirectional links only</label></div>'
+        '<div style="margin-top:4px;">Alternatives: '
+        '<select id="path-alts" style="background:#1a1a2e;color:#eee;border:1px solid #555;border-radius:3px;">'
+        '<option value="1">1</option><option value="3" selected>3</option><option value="5">5</option>'
+        '</select></div>'
+        + path_ro_html +
         f'<div style="margin-top:6px;"><button id="path-find" style="{btn}margin-right:6px;">Find Path</button>'
         f'<button id="path-reset" style="{btn}">Reset</button></div>'
         '<div id="path-result" style="margin-top:8px;font-size:11px;color:#adf;line-height:1.5;"></div>'
@@ -823,6 +988,10 @@ def parse_args():
                    help='Save fetched node data to FILE')
     p.add_argument('--resolve-ambiguous', '-r', action='store_true',
                    help='Resolve ambiguous edges using geographic proximity (requires location data)')
+    p.add_argument('--repeaters-only', action='store_true',
+                   help='Drop observers, rooms, and companions — keep only repeaters')
+    p.add_argument('--max-age-days', type=float, metavar='DAYS', default=None,
+                   help='Drop nodes not heard within DAYS (needs last_heard from node data)')
     p.add_argument('--pdf',        metavar='FILE', default='neighbor-graph-static.pdf',
                    help='Static PDF output (default: neighbor-graph-static.pdf)')
     p.add_argument('--html',       metavar='FILE', default='neighbor-graph-interactive.html',
@@ -841,12 +1010,26 @@ if __name__ == '__main__':
 
     if args.fetch_nodes:
         nodes_raw = fetch_nodes(save_path=args.save_nodes)
-        loc_by_pubkey = load_node_locations(data=nodes_raw)
     elif os.path.exists(args.nodes):
-        loc_by_pubkey = load_node_locations(path=args.nodes)
+        with open(args.nodes, encoding='utf-8') as f:
+            nodes_raw = json.load(f)
     else:
         print(f'No node location file at {args.nodes!r} — use --nodes or --fetch-nodes', file=sys.stderr)
-        loc_by_pubkey = {}
+        nodes_raw = None
+
+    loc_by_pubkey = load_node_locations(data=nodes_raw) if nodes_raw else {}
+    last_heard_by_pubkey = load_last_heard(nodes_raw) if nodes_raw else {}
+
+    if args.max_age_days is not None and not last_heard_by_pubkey:
+        print('Warning: --max-age-days needs node data (--nodes or --fetch-nodes)', file=sys.stderr)
+
+    if args.repeaters_only or args.max_age_days is not None:
+        filter_graph(
+            g,
+            repeaters_only=args.repeaters_only,
+            max_age_days=args.max_age_days,
+            last_heard_by_pubkey=last_heard_by_pubkey,
+        )
 
     if args.resolve_ambiguous:
         if ambiguous and not loc_by_pubkey:
