@@ -319,6 +319,40 @@ class PathGraph {
     _scheduleFlush();
   }
 
+  /// Trace result: top-grade evidence — the only source of middle-hop
+  /// SNR. [hops] are 2-byte hash hex in traversal order; [snrs][i] is
+  /// the level at which hops[i] heard the *previous* transmission (so
+  /// snrs[0] is my first hop hearing ME → proven egress). Each hop pair
+  /// gets measuredSnr plus an attempt-counted success. Round-trip paths
+  /// (A,B,A) fill the reverse edges by the same rule, no special case.
+  void observeTrace(List<String> hops, List<double> snrs) {
+    if (hops.isEmpty) return;
+    final arrival = _arrivalMillis;
+    final self = _selfPubkey;
+
+    if (self != null && snrs.isNotEmpty) {
+      _evidence.recordProvenEgress(self, hops[0].toUpperCase(), arrival);
+    }
+    for (var i = 1; i < hops.length; i++) {
+      final from = hops[i - 1].toUpperCase();
+      final to = hops[i].toUpperCase();
+      final edge = _store.edges
+          .putIfAbsent((from, to), () => EdgeState(source: 'trace'));
+      if (i < snrs.length) {
+        // EWMA so repeated traces refine rather than overwrite.
+        edge.measuredSnr = edge.measuredSnr == null
+            ? snrs[i]
+            : edge.measuredSnr! * 0.6 + snrs[i] * 0.4;
+      }
+      edge.s++;
+      edge.n++;
+      edge.lastObserved = arrival;
+      _store.markEdgeDirty(from, to);
+      _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
+    }
+    _scheduleFlush();
+  }
+
   /// Repeater advert metadata enrichment (advert outranks import).
   void ingestNode(
     String hashBytes, {

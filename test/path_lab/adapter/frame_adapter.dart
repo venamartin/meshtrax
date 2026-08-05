@@ -31,6 +31,7 @@ const int _advNameMask = 0x80;
 
 // Companion push codes.
 const int pushLogRxData = 0x88;
+const int pushTraceData = 0x89;
 const int pushControlData = 0x8E;
 const int _ctlNodeDiscoverResp = 0x90;
 
@@ -111,6 +112,28 @@ ParsedAdvert? parseAdvert(Uint8List payload) {
   return ParsedAdvert(pubkey, flags & _advTypeMask, name, lat, lon);
 }
 
+/// Trace response (0x89):
+/// [code][reserved][path_len][flag][tag x4][auth x4][path][snr per hop]
+/// Each SNR byte is signed, quarter-dB: the level at which that hop
+/// heard the *previous* transmission (snr[0] = hop 1 heard us).
+({List<String> hops, List<double> snrs})? parseTraceResponse(
+    Uint8List frame, int stride) {
+  if (frame.length < 12) return null;
+  final pathLen = frame[2];
+  const headerLen = 12;
+  if (headerLen + pathLen > frame.length) return null;
+  final pathBytes = frame.sublist(headerLen, headerLen + pathLen);
+  final hops = <String>[];
+  for (var i = 0; i + stride <= pathBytes.length; i += stride) {
+    hops.add(_hex(pathBytes.sublist(i, i + 2))); // 2-byte bucket
+  }
+  final snrs = frame
+      .sublist(headerLen + pathLen)
+      .map((b) => b.toSigned(8) / 4.0)
+      .toList();
+  return (hops: hops, snrs: snrs);
+}
+
 /// Feeds parsed frames into the module. The harness owns windowing of
 /// discover responses (they arrive one push per responder).
 class PathLabAdapter {
@@ -121,14 +144,30 @@ class PathLabAdapter {
   int framesSeen = 0;
   int tracesSkipped = 0;
 
+  /// Last trace result, for the harness to display.
+  ({List<String> hops, List<double> snrs})? lastTrace;
+  void Function()? onTrace;
+
   void handleFrame(Uint8List frame) {
     if (frame.isEmpty) return;
     switch (frame[0]) {
       case pushLogRxData:
         _handleRawRx(frame);
+      case pushTraceData:
+        _handleTraceData(frame);
       case pushControlData:
         _handleControlData(frame);
     }
+  }
+
+  /// Trace results are top-grade evidence: per-hop SNR in the traversal
+  /// direction (round-trip paths fill both directions naturally).
+  void _handleTraceData(Uint8List frame) {
+    final parsed = parseTraceResponse(frame, graph.selfStride);
+    if (parsed == null || parsed.hops.isEmpty) return;
+    lastTrace = parsed;
+    graph.observeTrace(parsed.hops, parsed.snrs);
+    onTrace?.call();
   }
 
   /// [0x88][snr][rssi][raw packet] — 3-byte header per connector.

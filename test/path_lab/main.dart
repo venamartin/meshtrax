@@ -5,11 +5,13 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/path_history_service.dart';
 import 'package:meshtrax/services/storage_service.dart';
@@ -73,7 +75,46 @@ class _PathLabScreenState extends State<PathLabScreen> {
   final _contactPk = TextEditingController();
   String _status = '';
   String _pathResult = '';
+  String _traceResult = '';
   List<String> _usbPorts = const [];
+  Uint8List? _lastPath;
+
+  @override
+  void initState() {
+    super.initState();
+    adapter.onTrace = () {
+      final t = adapter.lastTrace;
+      if (t == null || !mounted) return;
+      setState(() {
+        _traceResult = [
+          for (var i = 0; i < t.hops.length; i++)
+            '${t.hops[i]}${i < t.snrs.length ? ' ${t.snrs[i].toStringAsFixed(1)}dB' : ''}'
+        ].join('  →  ');
+        _status = 'trace: ${t.hops.length} hop(s) measured';
+      });
+    };
+  }
+
+  /// Round-trip so the trace measures BOTH directions of every link.
+  Future<void> _trace() async {
+    final path = _lastPath;
+    if (path == null || path.isEmpty) {
+      setState(() => _status = 'find a path first');
+      return;
+    }
+    final stride = connector.pathHashByteWidth;
+    final roundTrip = PathHelper.roundTripPath(path, stride: stride);
+    setState(() {
+      _traceResult = '';
+      _status = 'tracing ${_fmtPath(roundTrip)}…';
+    });
+    await connector.sendFrame(buildTraceReq(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      0,
+      encodeTraceFlags(stride),
+      payload: roundTrip,
+    ));
+  }
 
   Future<void> _listPorts() async {
     final ports = await connector.listUsbPorts();
@@ -114,6 +155,7 @@ class _PathLabScreenState extends State<PathLabScreen> {
         isRepeater ? graph.findPathToRepeater(pk) : graph.findPath(pk);
     final alternatives = isRepeater ? <RouteResult>[] : graph.findAlternatives(pk);
     setState(() {
+      _lastPath = result is RouteResult ? result.pathBytes : null;
       _pathResult = switch (result) {
         DirectResult() => 'DIRECT (zero-hop)',
         RouteResult(:final pathBytes, :final estDelivery) =>
@@ -211,6 +253,26 @@ class _PathLabScreenState extends State<PathLabScreen> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(_pathResult,
                       style: const TextStyle(fontFamily: 'monospace')),
+                ),
+              Row(children: [
+                FilledButton.tonal(
+                  onPressed: _lastPath != null &&
+                          connector.state == MeshCoreConnectionState.connected
+                      ? _trace
+                      : null,
+                  child: const Text('Trace (round-trip)'),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                    child: Text('measures per-hop SNR both ways',
+                        style: TextStyle(fontSize: 11, color: Colors.grey))),
+              ]),
+              if (_traceResult.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(_traceResult,
+                      style: const TextStyle(
+                          fontFamily: 'monospace', color: Colors.teal)),
                 ),
             ],
           );
