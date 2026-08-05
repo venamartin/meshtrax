@@ -16,7 +16,8 @@ class PathGraphConfig {
     this.snrZeroQualityDb = -18,
     this.pThreshold = 0.40,
     this.maxHops = 32,
-    this.egressHalfLifeMinutes = 10,
+    this.egressHalfLifeMinutes = 45,
+    this.egressProvenDecayFactor = 4,
     this.ingressHalfLifeHours = 72,
     this.directFreshMinutes = 30,
     this.slashEpochMinutes = 2,
@@ -51,8 +52,18 @@ class PathGraphConfig {
   /// Path budget: 64 wire bytes ÷ 2-byte hops.
   final int maxHops;
 
-  /// Mobility: self-egress decays in minutes; contact ingress in hours.
+  /// Mobility: self-egress ages fast (my doorstep changes when I move),
+  /// contact ingress slowly. Verification finding (2026-08-05): a
+  /// 10-minute half-life evaporates bench evidence between tests —
+  /// minutes-scale must still survive a quiet coffee break. Movement,
+  /// not the clock, is the real invalidator (position gating handles
+  /// that when a position source exists).
   final double egressHalfLifeMinutes;
+
+  /// Proven egress (Discover response, delivered send, trace) decays
+  /// this many times slower than an inferred last-hop guess.
+  final double egressProvenDecayFactor;
+
   final double ingressHalfLifeHours;
 
   /// Zero-hop direct wins while direct-reception evidence is this fresh.
@@ -78,6 +89,7 @@ class PathGraphConfig {
         pThreshold: pThreshold ?? this.pThreshold,
         maxHops: maxHops ?? this.maxHops,
         egressHalfLifeMinutes: egressHalfLifeMinutes,
+        egressProvenDecayFactor: egressProvenDecayFactor,
         ingressHalfLifeHours: ingressHalfLifeHours,
         directFreshMinutes: directFreshMinutes,
         slashEpochMinutes: slashEpochMinutes,

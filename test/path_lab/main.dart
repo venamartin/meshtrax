@@ -168,9 +168,45 @@ class _PathLabScreenState extends State<PathLabScreen> {
       _pathResult = switch (result) {
         DirectResult() => 'DIRECT (zero-hop)',
         RouteResult() => '${_routes.length} route(s) — pick one to trace',
-        FloodResult(:final reason) => 'FLOOD (${reason.name})',
+        FloodResult(:final reason) => 'FLOOD (${reason.name})\n${_why(pk, isRepeater)}',
       };
     });
+  }
+
+  /// Turns a flood verdict into an actionable diagnosis.
+  String _why(String target, bool isRepeater) {
+    final self = graph.selfPubkey;
+    if (self == null || self.isEmpty) {
+      return '· no radio identity yet — connect first';
+    }
+    final egress = graph.egressCandidates();
+    final ingress =
+        isRepeater ? const <Candidate>[] : graph.ingressCandidates(target);
+    final lines = <String>[];
+    if (egress.isEmpty) {
+      lines.add('· egress EMPTY — nobody known to hear me. '
+          'Run Discover, or wait for multi-hop traffic.');
+    } else {
+      lines.add('· egress ${egress.length}: '
+          '${egress.take(3).map((c) => c.repeaterHash).join(",")}');
+    }
+    if (!isRepeater) {
+      if (ingress.isEmpty) {
+        lines.add('· ingress EMPTY for this contact — no attributed '
+            'traffic from them yet (adverts/DMs attribute; channel '
+            'chatter is anonymous).');
+      } else {
+        lines.add('· ingress ${ingress.length}: '
+            '${ingress.take(3).map((c) => c.repeaterHash).join(",")}');
+      }
+    }
+    final snap = graph.snapshot();
+    final bidi = snap.edges.keys
+        .where((k) => snap.edges.containsKey((k.$2, k.$1)))
+        .length;
+    lines.add('· graph ${snap.nodes.length}n/${snap.edges.length}e '
+        '($bidi directed edges have a reverse twin)');
+    return lines.join('\n');
   }
 
   String _fmtPath(List<int> bytes) => [
@@ -223,6 +259,30 @@ class _PathLabScreenState extends State<PathLabScreen> {
               Text('graph: ${snap.nodes.length} nodes · '
                   '${snap.edges.length} edges'),
               Text('egress: ${graph.egressCandidates().take(5).map((c) => '${c.repeaterHash}(${c.weight.toStringAsFixed(1)}${c.tier == EvidenceTier.proven ? '✓' : '?'})').join(' ')}'),
+              // Targets that actually have ingress evidence — tap to load.
+              Builder(builder: (context) {
+                final targets = graph.contactsWithIngress();
+                if (targets.isEmpty) {
+                  return const Text(
+                      'no contact has ingress yet — adverts/DMs attribute; '
+                      'try a repeater hash (4 hex) instead',
+                      style: TextStyle(fontSize: 11, color: Colors.orange));
+                }
+                return Wrap(
+                  spacing: 6,
+                  children: [
+                    for (final t in targets.take(8))
+                      ActionChip(
+                        label: Text(t.length > 8 ? '${t.substring(0, 8)}…' : t,
+                            style: const TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          _contactPk.text = t;
+                          _findPath();
+                        },
+                      ),
+                  ],
+                );
+              }),
               const Divider(),
               // ── controls ──────────────────────────────────────────
               Row(children: [

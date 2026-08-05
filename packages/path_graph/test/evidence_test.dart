@@ -114,19 +114,37 @@ void main() {
     expect(graph.egressCandidates().single.weight, before);
   });
 
-  test('egress decays in minutes, contact ingress in hours', () {
+  test('egress ages faster than ingress, but survives a coffee break', () {
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
     final egress0 = graph.egressCandidates().single.weight;
     final ingress0 = graph.ingressCandidates(bobPk).single.weight;
 
-    nowMillis += 60 * 60 * 1000; // one hour
+    nowMillis += 30 * 60 * 1000; // half an hour away from the bench
+    expect(graph.egressCandidates(), isNotEmpty,
+        reason: 'evidence must not evaporate between test runs');
+    final egressFade =
+        graph.egressCandidates().single.weight / egress0;
+    final ingressFade =
+        graph.ingressCandidates(bobPk).single.weight / ingress0;
+    expect(egressFade, lessThan(ingressFade),
+        reason: 'my doorstep ages faster than theirs');
+
+    nowMillis += 6 * 60 * 60 * 1000; // long idle
     expect(graph.egressCandidates(), isEmpty,
-        reason: 'minutes-scale egress decayed to noise');
-    expect(graph.ingressCandidates(bobPk).single.weight,
-        closeTo(ingress0 * 0.99, ingress0 * 0.02),
-        reason: 'hours-scale ingress barely moved');
-    expect(egress0, greaterThan(0));
+        reason: 'an inferred last-hop guess does expire eventually');
+  });
+
+  test('proven egress outlives an inferred guess', () {
+    graph.observePath(path([0x24, 0x9F, 0x13, 0x12]), 2,
+        const ObservationOrigin.anonymous()); // inferred 1312
+    graph.reportSendResult(path([0xA2, 0x77, 0x5C, 0xBB]), true); // proven A277
+
+    nowMillis += 4 * 60 * 60 * 1000;
+    final survivors =
+        graph.egressCandidates().map((c) => c.repeaterHash).toList();
+    expect(survivors, contains('A277'));
+    expect(survivors, isNot(contains('1312')));
   });
 
   test('resolveName: unique → uniqueName, duplicate → anonymous', () {

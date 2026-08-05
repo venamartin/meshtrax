@@ -142,8 +142,13 @@ class EvidenceStore {
   }
 
   double _decayedWeight(String owner, IngressEntry e, int now, bool isSelf) {
+    // Proven egress (Discover, delivered send, trace) is a measurement,
+    // not a guess — it outlives an inferred last-hop tally.
+    final provenBoost = (isSelf && e.tier != EvidenceTier.inferred)
+        ? config.egressProvenDecayFactor
+        : 1.0;
     final halfLifeMs = isSelf
-        ? config.egressHalfLifeMinutes * 60 * 1000
+        ? config.egressHalfLifeMinutes * provenBoost * 60 * 1000
         : config.ingressHalfLifeHours * 60 * 60 * 1000;
     final dt = now - e.lastSeen;
     if (dt <= 0) return e.weight;

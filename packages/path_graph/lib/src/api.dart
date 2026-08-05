@@ -491,6 +491,17 @@ class PathGraph {
     return _evidence.candidatesFor(self, _arrivalMillis, isSelf: true);
   }
 
+  /// Contacts that have at least one ingress entry — i.e. targets
+  /// `findPath` can actually reason about (UI/debug).
+  List<String> contactsWithIngress() {
+    final self = _selfPubkey;
+    return _evidence.entries.keys
+        .map((k) => k.$1)
+        .where((owner) => owner != self)
+        .toSet()
+        .toList();
+  }
+
   /// Ranked ingress candidates for a contact (UI/debug).
   List<Candidate> ingressCandidates(String contactPubkey) =>
       _evidence.candidatesFor(contactPubkey, _arrivalMillis, isSelf: false);
