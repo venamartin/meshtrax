@@ -32,8 +32,17 @@ const int _advNameMask = 0x80;
 // Companion push codes.
 const int pushLogRxData = 0x88;
 const int pushTraceData = 0x89;
+const int pushPathDiscoveryResponse = 0x8D;
 const int pushControlData = 0x8E;
 const int _ctlNodeDiscoverResp = 0x90;
+
+/// CMD_SEND_PATH_DISCOVERY_REQ (companion_radio MyMesh.cpp:52).
+const int _cmdSendPathDiscoveryReq = 52;
+
+/// `[52][0][pubkey x32]` — firmware forces a flood telemetry REQ to the
+/// contact and reports both proven paths when the response returns.
+Uint8List buildPathDiscoveryReq(Uint8List contactPubkey) =>
+    Uint8List.fromList([_cmdSendPathDiscoveryReq, 0, ...contactPubkey]);
 
 String _hex(List<int> bytes) => bytes
     .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
@@ -134,6 +143,43 @@ ParsedAdvert? parseAdvert(Uint8List payload) {
   return (hops: hops, snrs: snrs);
 }
 
+/// Path-discovery response (0x8D):
+/// `[code][reserved][pubkey_prefix x6][out_len][out_path][in_len][in_path]`
+/// where each `*_len` is the raw path_len byte (stride in bits 7:6,
+/// hop count in bits 5:0). out_path = the route our flood took TO them
+/// (forward-proven); in_path = the route the response came BACK
+/// (reverse-proven; its path[0] is THEIR doorstep).
+({String pubkeyPrefix, Uint8List outPath, int outStride, Uint8List inPath,
+    int inStride})? parsePathDiscovery(Uint8List frame) {
+  if (frame.length < 9) return null;
+  var i = 2;
+  final prefix = _hex(frame.sublist(i, i + 6));
+  i += 6;
+
+  (Uint8List, int)? readPath() {
+    if (i >= frame.length) return null;
+    final raw = frame[i++];
+    final stride = (raw >> 6) + 1;
+    final bytes = (raw & 0x3F) * stride;
+    if (i + bytes > frame.length) return null;
+    final path = Uint8List.sublistView(frame, i, i + bytes);
+    i += bytes;
+    return (path, stride);
+  }
+
+  final out = readPath();
+  if (out == null) return null;
+  final back = readPath();
+  if (back == null) return null;
+  return (
+    pubkeyPrefix: prefix,
+    outPath: out.$1,
+    outStride: out.$2,
+    inPath: back.$1,
+    inStride: back.$2
+  );
+}
+
 /// Feeds parsed frames into the module. The harness owns windowing of
 /// discover responses (they arrive one push per responder).
 class PathLabAdapter {
@@ -148,6 +194,14 @@ class PathLabAdapter {
   ({List<String> hops, List<double> snrs})? lastTrace;
   void Function()? onTrace;
 
+  /// Last path-discovery result (formatted), for the harness to show.
+  String? lastPathDiscovery;
+  void Function()? onPathDiscovery;
+
+  /// Full pubkey of the contact we probed — the 0x8D push carries only
+  /// a 6-byte prefix, and ingress attribution needs the whole key.
+  String? pendingDiscoveryPubkey;
+
   void handleFrame(Uint8List frame) {
     if (frame.isEmpty) return;
     switch (frame[0]) {
@@ -155,9 +209,50 @@ class PathLabAdapter {
         _handleRawRx(frame);
       case pushTraceData:
         _handleTraceData(frame);
+      case pushPathDiscoveryResponse:
+        _handlePathDiscovery(frame);
       case pushControlData:
         _handleControlData(frame);
     }
+  }
+
+  /// Both paths land through existing module inputs, no new API needed:
+  ///  * out_path is a *delivered* send (they answered) → reportSendResult
+  ///    gives forward attempt counts and proves hop 0 heard us.
+  ///  * in_path was physically received → observePath with confirmed
+  ///    attribution gives reverse edges, their doorstep (path[0]) as
+  ///    contact ingress, and our last-hop egress prior.
+  void _handlePathDiscovery(Uint8List frame) {
+    final parsed = parsePathDiscovery(frame);
+    if (parsed == null) return;
+    final contact = pendingDiscoveryPubkey;
+
+    if (parsed.outPath.isNotEmpty) {
+      graph.reportSendResult(parsed.outPath, true);
+    }
+    if (parsed.inPath.isNotEmpty) {
+      graph.observePath(
+        parsed.inPath,
+        parsed.inStride,
+        contact == null
+            ? const ObservationOrigin.anonymous()
+            : ObservationOrigin.pubkeyConfirmed(contact),
+        messageId: 'pathdisc:${parsed.pubkeyPrefix}',
+      );
+    }
+
+    String fmt(Uint8List p, int stride) => p.isEmpty
+        ? '(direct)'
+        : [
+            for (var i = 0; i + stride <= p.length; i += stride)
+              _hex(p.sublist(i, i + 2))
+          ].join(',');
+
+    lastPathDiscovery = 'to ${parsed.pubkeyPrefix}: '
+        'out ${fmt(parsed.outPath, parsed.outStride)} · '
+        'back ${fmt(parsed.inPath, parsed.inStride)}';
+    pendingDiscoveryPubkey = null;
+    onPathDiscovery?.call();
   }
 
   /// Trace results are top-grade evidence: per-hop SNR in the traversal

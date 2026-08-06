@@ -86,6 +86,10 @@ class _PathLabScreenState extends State<PathLabScreen> {
   @override
   void initState() {
     super.initState();
+    adapter.onPathDiscovery = () {
+      if (!mounted) return;
+      setState(() => _status = adapter.lastPathDiscovery ?? '');
+    };
     adapter.onTrace = () {
       final t = adapter.lastTrace;
       if (t == null || !mounted) return;
@@ -97,6 +101,24 @@ class _PathLabScreenState extends State<PathLabScreen> {
         _status = 'trace: ${t.hops.length} hop(s) measured';
       });
     };
+  }
+
+  /// The remote probe: one flood pair teaches us BOTH proven paths —
+  /// including their doorstep, which passive listening can only learn
+  /// if they happen to advertise or message us.
+  Future<void> _pathDiscovery() async {
+    final pk = _contactPk.text.trim();
+    if (pk.length != 64) {
+      setState(() => _status = 'path discovery needs a full 64-hex pubkey');
+      return;
+    }
+    final bytes = Uint8List.fromList([
+      for (var i = 0; i < 64; i += 2) int.parse(pk.substring(i, i + 2), radix: 16)
+    ]);
+    adapter.pendingDiscoveryPubkey = pk;
+    adapter.lastPathDiscovery = null;
+    setState(() => _status = 'path discovery sent (flood pair)…');
+    await connector.sendFrame(buildPathDiscoveryReq(bytes));
   }
 
   /// Round-trip so the trace measures BOTH directions of every link.
@@ -333,6 +355,20 @@ class _PathLabScreenState extends State<PathLabScreen> {
                             labelText:
                                 'contact pubkey (64 hex) or repeater hash (4 hex)'))),
                 TextButton(onPressed: _findPath, child: const Text('findPath')),
+              ]),
+              Row(children: [
+                FilledButton.tonal(
+                  onPressed:
+                      connector.state == MeshCoreConnectionState.connected
+                          ? _pathDiscovery
+                          : null,
+                  child: const Text('Path Discovery'),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                    child: Text(
+                        'flood pair → their doorstep + both proven paths',
+                        style: TextStyle(fontSize: 11, color: Colors.grey))),
               ]),
               if (_pathResult.isNotEmpty)
                 Padding(

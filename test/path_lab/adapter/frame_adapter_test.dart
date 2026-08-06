@@ -110,6 +110,32 @@ void main() {
     expect(graph.snapshot().edges, isEmpty);
   });
 
+  test('path discovery feeds both proven paths', () {
+    final contact = 'b0' * 32;
+    adapter.pendingDiscoveryPubkey = contact;
+    // [0x8D][rsv][prefix x6][out_len][out][in_len][in]
+    // out = A277,1312 (us->them); in = 5CBB,249F (them->us)
+    final pathLen = (1 << 6) | 2; // stride 2, 2 hops
+    adapter.handleFrame(Uint8List.fromList([
+      0x8D, 0, 0xB0, 0xB0, 0xB0, 0xB0, 0xB0, 0xB0,
+      pathLen, 0xA2, 0x77, 0x13, 0x12,
+      pathLen, 0x5C, 0xBB, 0x24, 0x9F,
+    ]));
+
+    final snap = graph.snapshot();
+    // Forward path proven as a delivered send.
+    expect(snap.edges[('A277', '1312')]!.s, 1);
+    // Return path proven in reverse.
+    expect(snap.edges[('5CBB', '249F')]!.n, greaterThanOrEqualTo(0));
+    expect(snap.edges.containsKey(('5CBB', '249F')), isTrue);
+    // Their doorstep = first hop of the return path.
+    expect(graph.ingressCandidates(contact).single.repeaterHash, '5CBB');
+    // My doorstep proven from the outbound first hop.
+    expect(graph.egressCandidates().map((c) => c.repeaterHash),
+        contains('A277'));
+    expect(adapter.lastPathDiscovery, contains('B0B0B0B0B0B0'));
+  });
+
   test('discover responses parse uplink SNR and commit as egress', () {
     // [0x8E][rx snr][rssi][path_len] then ctl: [0x92][uplink snr][tag x4][pk]
     adapter.handleFrame(Uint8List.fromList(
