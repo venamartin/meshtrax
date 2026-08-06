@@ -1,6 +1,12 @@
 # Weighted Graph Path Determination Module for DMs
 
-Status: **design complete** — all open questions resolved; no code yet.
+Status: **implementation underway** — design complete; Phase 0 (the
+`packages/path_graph` module) and most of Phase 1 (the `test/path_lab`
+harness) are built and running against real hardware on branch
+`feat/path-graph-package` (draft PR #71, held unmerged through the
+verification campaign). See `docs/path-graph-implementation.md` for the
+phase plan and "Implementation status" below for what exists and what
+the bench has already corrected.
 Last updated: 2026-08-05.
 
 ## In plain language
@@ -152,6 +158,17 @@ me and who hears my contact, what path bytes should this DM use?*
   and dropped. Advert parsing is the priority `_parseRawPacket`
   extension. Cleartext path bytes on undecryptable packets harvest edges
   at `anonymous` grade.
+* **2026-08-05 (implementation)** — Phase 0 package + Phase 1 harness
+  **built** (branch `feat/path-graph-package`, draft PR #71 held
+  unmerged; 50 tests). Bench-driven corrections: egress half-life
+  45 min with proven-tier 4× slower decay; Discover stores measured dB
+  both directions (uplink = ctl payload byte 1, downlink = frame byte 1;
+  30 s response window) and first-hop cost blends measured quality
+  70/tally 30; trace needs random uint32 tags (packet dedup) and has no
+  firmware rate limiter; `observeTrace` + `findPathToRepeater` +
+  `findAlternatives` + `updateConfig` added to the API; `lastHopHeard`
+  flag on `observePath`. Separate app fix PR #72 (USB picker suspends
+  BLE auto-reconnect).
 * **2026-08-05 (position policy)** — position is **optional, opt-in, and
   three-sourced**: Off/manual (default — zero permissions, home position
   by map tap), radio position (companion GPS/user-set node position when
@@ -387,9 +404,9 @@ independent review 2026-08-05):
 
 | Probe | Reach | Network cost | What it teaches |
 |---|---|---|---|
-| **Discover** | direct RF range only | ~free on air — zero-hop CONTROL, never retransmitted (`Mesh.cpp:69-75`). **But responses are rate-limited: 4 per 2 min per repeater, shared across ALL requesters** (`discover_limiter`) | "who hears me right now". Response **byte 1 is the uplink SNR** — the level at which the repeater heard *our request* (the ideal ranking signal; the app currently skips this byte). No response ≠ absent — may be limiter-exhausted. |
+| **Discover** | direct RF range only | ~free on air — zero-hop CONTROL, never retransmitted (`Mesh.cpp:69-75`). **But responses are rate-limited: 4 per 2 min per repeater, shared across ALL requesters** (`discover_limiter`), and arrive over a **~30 s window** (randomized anti-collision delay, `getRetransmitDelay×4`) | **Measures the first hop in BOTH directions** (bench-corrected layout: the 0x8E frame is `[code][our RX snr][rssi][path_len][ctl payload…]`; **uplink SNR = ctl payload byte 1** — how well they heard US; **downlink = frame byte 1** — how well we heard them). Both dB values are stored on the egress entry (EWMA over repeat probes). No response ≠ absent — may be limiter-exhausted. |
 | **Path discovery** (`CMD_SEND_PATH_DISCOVERY_REQ`) | network (one flood REQ + flooded response) | ~2 floods | **The remote probe we thought didn't exist.** Firmware pushes 0x8D with BOTH proven paths: out_path (us→them) *and* in_path (them→us — its `path[0]` is their doorstep). MeshTrax doesn't send the command or handle 0x8D yet — small connector work. |
-| **Trace** | the named path only | ~2×hops packets, rest of mesh silent | whether one specific route works end-to-end + per-hop SNR. **TRACE path bytes are SNRs, not hashes — never feed them to `observePath`.** |
+| **Trace** | the named path only | ~2×hops packets, rest of mesh silent. **No rate limiter** (firmware-verified — unlike Discover); the only gates are `disable_fwd`, next-hop match, and packet dedup — so every trace needs a **random uint32 tag** (same tag + path = byte-identical packet, silently dropped by `hasSeen`; a seconds-timestamp tag breaks rapid re-traces — bug found on the bench, also present in `path_trace_map.dart`) | whether one specific route works end-to-end + per-hop SNR (snr[i] = how well hop i heard the *previous* transmission, so snr[0] proves my first hop heard ME). A **round-trip trace fills both directions of every link with the same rule** — the fastest way to mint a bidirectional corridor. **TRACE path bytes are SNRs, not hashes — never feed them to `observePath`; feed `observeTrace` instead.** |
 | **Flood DM** | network *as configured* | every forwarding repeater retransmits once. **Scoped flooding is real**: with a transport/region code set, only matching repeaters forward; repeaters may deny unscoped floods (`REGION_DENY_FLOOD`); advert floods default-cap at 8 hops | full route both ways via the flooded path-return — and delivers the message. "Flood always works" is configuration-dependent; the module must know whether sends were scoped. |
 
 Escalation ladder for a DM send (flood is the last resort, and the cheap
@@ -458,9 +475,15 @@ infrastructure (stable), the contact's ingress moves at *their* pace — only
 my own egress list has a minutes-scale shelf life. Conveniently it's the
 smallest table and pairs with the cheapest probe. Adjustments:
 
-* **Asymmetric decay**: egress entries decay in minutes and weight
-  recency-dominant (latest last-hop beats an hour of tally); contact
-  ingress keeps slow decay.
+* **Asymmetric decay (bench-corrected 2026-08-05)**: egress ages on a
+  minutes scale, contact ingress on hours — but the original 10-minute
+  egress half-life **evaporated bench evidence between tests** (a
+  repeater that routed fine returned FLOOD(noEvidence) 40 quiet minutes
+  later). Corrected: **45-minute half-life**, and **proven egress
+  (Discover / delivered send / trace) decays 4× slower than an inferred
+  last-hop guess** — a measurement outlives a guess. Movement, not the
+  clock, is the real invalidator; position gating covers that when a
+  position source exists.
 * **Position-tag egress entries** (phone GPS already in scope): each
   observation stamped with where it was made; weight collapses with
   distance from the recording position — staleness becomes a measured
@@ -594,6 +617,7 @@ remembering when judging firmware-chosen out_paths.
   value), genuinely two-way traffic on busy corridors, and our own
   handshakes/probes. Adverts supply freshness and coverage, never
   bidirectionality by themselves.
+* **Fabrication defense — dropped for v1 (decided 2026-08-05)**: path
   bytes are technically unauthenticated, but on a cooperative hobbyist
   mesh the chance of deliberate path fabrication is near zero — no
   rate-capping machinery. What stays is cheap hygiene against
@@ -686,9 +710,18 @@ The whole public surface — everything else is internal:
   egress prior; payload-embedded paths (path-return contents, firmware
   out_paths) pass false, since their final hop proves nothing about my
   RX.
-* `observeDiscoverResults([(repeaterHash, snr)...], position?,
-  failureEpisode)` — proven egress refresh; acts as the supersede/slash
-  event only when `failureEpisode` is true.
+* `observeDiscoverResults([(repeaterHash, uplinkSnr, rxSnr)...],
+  position?, failureEpisode)` — proven egress refresh carrying the
+  measured dB in **both directions** (uplink = they heard us, rx = we
+  heard them; stored per entry, EWMA over repeat probes, and the
+  first-hop candidate cost blends measured quality 70% with the tally
+  30% — a strong new responder outranks a weak favourite). Acts as the
+  supersede/slash event only when `failureEpisode` is true.
+* `observeTrace(hops, snrs)` — trace results as a first-class input
+  (implemented 2026-08-05): snr[i] is how well hop i heard the previous
+  transmission, so snr[0] upgrades my first hop to proven egress, each
+  hop pair gets `measuredSnr` (EWMA) plus an attempt-counted success,
+  and a round-trip path fills both directions with no special case.
 * `reportSendResult(pathBytes, success, {tripTimeMs?})` — drives the
   escalation ladder and the failure penalty; success upgrades the first
   hop to proven egress; trip time kept as tiebreaker and forwarded signal
@@ -702,7 +735,19 @@ The whole public surface — everything else is internal:
   egress rows and observation stride to the connected radio.
 * `importGraph(json, homePosition, radiusKm)` — region seed.
 * `findPath(contactPubkey)` → `PathResult.direct()` (zero-hop) |
-  `PathResult(bidirectional bytes)` | `PathResult.flood()`.
+  `PathResult(bytes, estDelivery)` | `PathResult.flood(reason)` — the
+  flood reason (`noEvidence` / `noBidirectionalRoute` / …) feeds the
+  why-this-path UI.
+* `findPathToRepeater(repeaterHash)` — added 2026-08-05: the target is
+  the node itself (repeater/room login, map tap); a repeater that is
+  also my doorstep yields a single-hop path.
+* `findAlternatives(contactPubkey)` / `findAlternativesToRepeater(hash)`
+  — up to k genuinely divergent routes via edge penalties (the retry
+  ladder's alternative step and the UI's route picker).
+* `updateConfig(config)` — live retune (the β slider); affects routing
+  immediately, never touches stored evidence.
+* `snapshot()` / `egressCandidates()` / `ingressCandidates(pk)` /
+  `counters` — read-only views for UI, debug, and the harness.
 
 App-side hooks required (connector/service level — corrected by review):
 
@@ -814,9 +859,11 @@ explicit buttons.
 
 Contact ingress lists are per-contact facts but live in the *module's* DB
 as their own table — `contact_ingress(contactPubkey, repeaterHash, weight,
-lastSeen, evidence, observedLat?, observedLon?)`, self as just another row
-keyed by my pubkey; the nullable position stamp (phone GPS at observation
-time, mainly for self rows) powers the mobility distance-gating.
+lastSeen, evidence, observedLat?, observedLon?, uplinkSnr?, downlinkSnr?)`,
+self as just another row keyed by my pubkey; the nullable position stamp
+(phone GPS at observation time, mainly for self rows) powers the mobility
+distance-gating, and the SNR pair (added 2026-08-05) holds the
+Discover-measured first-hop link in both directions.
 `evidence` is `proven` (Discover response, repeat-echo, observed reverse
 path, successful direct send through it) or `inferred` (last-hop prior) —
 inferred rows weight candidate selection but never feed the graph.
@@ -904,6 +951,56 @@ directed prior-edges at import, `false` to from→to only. `weight`
 (observation count) scales prior confidence. Published as a raw file on a GitHub
 branch/gist/release asset, app fetches by URL — which also naturally enables
 multiple region files.
+
+## Implementation status (2026-08-05)
+
+Branch `feat/path-graph-package`, draft **PR #71 — held unmerged**
+through the verification campaign (user directive). Phases per
+`docs/path-graph-implementation.md`.
+
+**Phase 0 — the package: BUILT.** `packages/path_graph/` — pure Dart,
+`drift` only, injected `QueryExecutor`, compiler-enforced isolation
+(cannot import the app), 50 tests under bare `dart test`. Everything in
+the Module API section above is implemented: graph store with
+load/debounced-flush, two-layer estimator, evidence tiers with hub
+demotion and slash discipline, bidirectional multi-source Dijkstra,
+alternatives, trace ingestion, layered idempotent import, live config.
+
+**Phase 1 — path_lab harness: BUILT, in active bench use.**
+`test/path_lab/` (`flutter run -d windows -t test/path_lab/main.dart`,
+zero `lib/` changes) — frame adapter owning ALL wire parsing (adverts →
+`ingestNode`/`ingestContact` + attributed path; anonymous edge harvest
+with payload-fingerprint variant dedup; discover responses; trace
+responses), USB serial connect, live counters, seed import, Discover
+with 30 s window, findPath for contacts AND repeaters with selectable
+alternatives, β slider, round-trip Trace, self-diagnosing flood
+verdicts.
+
+**Bench findings so far** (each one corrected the design or code — the
+verification phase doing its job):
+1. **Egress decay too aggressive** — 10-min half-life evaporated
+   evidence between tests; now 45 min with proven-tier decaying 4×
+   slower (§ Mobility).
+2. **Discover response layout** — my first parse read the RX-SNR byte
+   as the message type (0 responders next to a live repeater); corrected
+   against the connector's own handler, and the exchange now stores
+   measured dB in BOTH directions (§ Probe toolset).
+3. **Trace tags must be random** — repeater packet dedup silently drops
+   byte-identical re-traces; seconds-resolution tags break rapid
+   re-tracing (same latent bug exists in `path_trace_map.dart` —
+   deferred app fix, noted in memory).
+4. **`lastHopHeard` API flag** — payload-embedded paths must not feed
+   the last-hop egress prior (§ Module API).
+5. **Windows main-app finding** (separate branch, PR #72): BLE
+   auto-reconnect pins state to `connecting` and silently blocks
+   `connectUsb`; opening the USB picker now suspends it.
+
+**Remaining before the Phase 2 gate**: staleness GC + growth caps,
+replay-corpus recorder (harness observation log → offline regression
+suite), package CI lines, `CMD_SEND_PATH_DISCOVERY_REQ`/0x8D path
+discovery, then the verification campaign itself (coverage / ACK-rate /
+freshness / trace-honesty / 1-byte-share metrics with the go/no-go
+gate).
 
 ## Independent review outcomes (2026-08-05)
 
