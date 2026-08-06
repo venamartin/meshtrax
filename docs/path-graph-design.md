@@ -1000,7 +1000,47 @@ replay-corpus recorder (harness observation log → offline regression
 suite), package CI lines, `CMD_SEND_PATH_DISCOVERY_REQ`/0x8D path
 discovery, then the verification campaign itself (coverage / ACK-rate /
 freshness / trace-honesty / 1-byte-share metrics with the go/no-go
-gate).
+gate). Details in TODO below.
+
+## TODO
+
+### Staleness / retention — manual + automatic (decided 2026-08-05)
+
+Nothing is ever deleted today: decay makes old evidence weigh nothing,
+but the rows persist forever, so months of driving accrete nodes and
+edges (including junk minted from corrupt frames), and position-tagged
+egress rows are effectively a drive log. Retention is therefore a
+**user-facing setting with two halves**:
+
+* **Manual — "Clear learned data"** button. Wipes the *local evidence
+  layer* only: observed nodes/edges, ingress/egress rows, position
+  tags, counters. Imported priors survive (they are removed separately
+  by "remove imported region"), so a user can reset what the radio
+  learned without losing the community starter map. Confirm-on-tap; it
+  is the privacy escape hatch as much as a debugging tool.
+* **Automatic — a retention policy setting**, default on. Simplest
+  shape that covers the real needs: *"forget unused data older than
+  N days"* (default ~30, with an Off option for people who want a
+  permanent map). A periodic sweep — cheap, run on connect and daily —
+  deletes:
+  * edges whose decayed weight is below ε **and** `lastObserved` older
+    than N days (never delete an edge with live attempt counts unless
+    it is also long-unseen — a proven corridor you simply haven't used
+    lately is exactly what we want to keep);
+  * nodes left with no edges and no advert/import metadata (hashes
+    minted once by a corrupt frame);
+  * ingress/egress rows past the same age gate;
+  * **position tags on a shorter, separate clock** (default ~7 days) —
+    the coordinate is only useful for recent distance-gating, and it is
+    the most sensitive thing stored. Ageing out the tag must NOT delete
+    the evidence row itself; it just drops the position column.
+* **Growth caps as a backstop**: max nodes/edges per region; when
+  exceeded, evict the lowest decayed-weight `source: observed` rows
+  first. Imported rows and rows with attempt counts are evicted last.
+* **Surface the numbers**: the settings screen shows current row counts
+  and what the last sweep removed — the same counters the harness
+  already displays. Silent deletion of a user's learned map would be
+  the wrong kind of surprise.
 
 ## Independent review outcomes (2026-08-05)
 
