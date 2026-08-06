@@ -1018,15 +1018,33 @@ egress rows are effectively a drive log. Retention is therefore a
   by "remove imported region"), so a user can reset what the radio
   learned without losing the community starter map. Confirm-on-tap; it
   is the privacy escape hatch as much as a debugging tool.
+**What decays and what does NOT (clarified 2026-08-05).** Repeaters are
+fixed infrastructure — a link between two towers does not get worse
+because nobody used it this week. So **repeater↔repeater link quality
+never decays** in the implementation, and must not: `calibratedP` is
+built from attempt counts and the SNR/import prior, none of which are
+time-scaled. The only time-decayed quantities are (a) the passive
+**traffic** term, which merely scales prior *confidence* (n₀) and
+breaks ties — a quiet link keeps its quality, it just stops
+accumulating extra trust — and (b) the **ingress/egress doorstep
+lists**, which are genuinely perishable because *people* move even
+though repeaters don't. That asymmetry is the whole point of the
+design's "movement invalidates exactly one hop" observation.
+
 * **Automatic — a retention policy setting**, default on. Simplest
   shape that covers the real needs: *"forget unused data older than
   N days"* (default ~30, with an Off option for people who want a
   permanent map). A periodic sweep — cheap, run on connect and daily —
   deletes:
-  * edges whose decayed weight is below ε **and** `lastObserved` older
-    than N days (never delete an edge with live attempt counts unless
-    it is also long-unseen — a proven corridor you simply haven't used
-    lately is exactly what we want to keep);
+  * edges with **no attempt counts and no import provenance** whose
+    traffic has decayed to ε and whose `lastObserved` is older than
+    N days — i.e. hearsay we never confirmed and haven't seen since.
+    **Infrastructure is protected**: an edge with `s/n` attempt counts
+    (we sent through it, traced it, or a handshake proved it) or an
+    imported prior is *never* aged out by idleness alone; a tower link
+    you last used in spring is still a tower link. Those only go via
+    an explicit "clear learned data" / "remove imported region", or a
+    much longer safety horizon (≥1 year) if one is wanted at all;
   * nodes left with no edges and no advert/import metadata (hashes
     minted once by a corrupt frame);
   * ingress/egress rows past the same age gate;
