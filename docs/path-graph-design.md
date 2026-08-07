@@ -1023,6 +1023,75 @@ gate). Details in TODO below.
 
 ## TODO
 
+### DECIDED 2026-08-07: drop Corescope edges; the file becomes a TRUE directed graph
+
+Verified on the live export: 1,388 links, **zero** with a reverse
+entry, one `avg_snr` per pair. Reporting the same number for A→B and
+B→A does not merely omit information — on a medium that is genuinely
+asymmetric (different TX power, antenna, and noise floor at each end)
+it **asserts something false**, and it then clears our bidirectional
+routing threshold on the strength of that assertion. That is the worst
+possible combination: bad data with routing authority. Scrapped.
+
+**What replaces it**: the module's own observations, exported. Every
+received path proves one direction and only that direction; every
+trace hop measures one direction; a round-trip trace measures both,
+separately. That is a real weighted directed graph, collected by the
+radio that will route on it.
+
+**Format `meshtrax-graph-v2` — one entry per direction, no symmetry
+anywhere:**
+
+```json
+{ "format": "meshtrax-graph-v2",
+  "directed": true, "multigraph": false,
+  "graph": { "generated_at": "...", "collector": "meshtrax 1.7.x",
+             "region_hint": "bayarea", "hash_width": 2 },
+  "nodes": [ { "id": "A277", "pubkey": "<64-hex, when known>",
+               "name": "...", "lat": 0, "lon": 0, "last_heard": "..." } ],
+  "links": [ { "source": "A277", "target": "1312",
+               "observations": 47,
+               "measured_snr": 6.5,
+               "trace_confirmed": true,
+               "delivered": 3, "attempts": 4,
+               "last_observed": "..." } ] }
+```
+
+Rules that keep it honest:
+
+* **A→B and B→A are separate entries** with independent values. If we
+  have only measured one direction, only that entry carries
+  `measured_snr`; the other is absent or null. **Never** copy a value
+  across directions.
+* **`measured_snr` means measured** — from a trace hop (or Discover,
+  for a first hop), in that direction. No inferred, averaged, or
+  imported values in this field.
+* **No `score`** — that was Corescope's opaque metric. Confidence comes
+  from `observations` plus `delivered`/`attempts`, which are things we
+  actually counted.
+* **No `bidirectional` flag.** Bidirectionality is derivable: both
+  entries exist. A flag would just be another chance to lie.
+* Node `id` is the 2-byte routing hash; `pubkey` rides along when known
+  (adverts and imports supply it). Open tension for merge: hash is the
+  routing identity but pubkey is the safer *merge* identity, since two
+  collectors in different regions could hold different repeaters under
+  one hash. Settle when merge is built.
+
+**Corescope's remaining role, if any**: its *node* data (pubkey, name,
+position) is not directional and is therefore not wrong — it could
+survive as an optional gazetteer for map labels. But adverts supply the
+same thing, self-authenticated, within ~47 h. Recommendation: retire
+`tools/generate_graph.py` from the routing path entirely; if we keep a
+Corescope tool at all it emits **nodes only, no links**, and is clearly
+labelled as labels-not-topology. `tools/analyze.py` stays — as a
+*viewer*, now pointed at our own exported graph.
+
+**Code consequences to implement**: `importGraph` must stop seeding
+both directions from one symmetric link (that path exists today);
+imported edges must not clear the bidirectional threshold on symmetric
+evidence; add `exportGraph()` emitting v2 under the
+repeater-topology-only privacy filter.
+
 ### Export & the app as primary collector (decided 2026-08-07)
 
 **The app is the observer.** It is already connected and running, and —
