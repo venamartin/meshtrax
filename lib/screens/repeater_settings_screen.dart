@@ -43,9 +43,21 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
 
   bool _isLoading = false;
   bool _hasChanges = false;
+
+  /// What the repeater last told us each field was. A save sends only
+  /// the fields that differ from this — editing TX power used to
+  /// transmit name, radio, lat, lon, both toggles and both intervals as
+  /// well, which is ten round trips at ~1.5 s each for a one-field edit.
+  /// Captured on load and after every refresh, so an untouched field
+  /// always matches and is never sent (which also stops a save from
+  /// writing screen defaults over good values).
+  final Map<String, String> _baseline = {};
+
+  /// Shown while saving; the sends are sequential and slow, so silence
+  /// reads as a hang.
+  String? _saveProgress;
   bool _refreshingBasic = false;
   bool _refreshingRadio = false;
-  bool _refreshingTxPower = false;
   bool _refreshingLocation = false;
   bool _refreshingRepeat = false;
   bool _refreshingAllowReadOnly = false;
@@ -280,6 +292,9 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
         _floodAdvertEnable = _floodAdvertInterval > 0;
       }
     });
+    // These values came FROM the repeater, so they are what a save must
+    // compare against.
+    _captureBaseline();
   }
 
   bool _normalizeOnOff(String value) {
@@ -449,12 +464,15 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     var successCount = 0;
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     final repeater = _resolveRepeater(connector);
+    // Once for the batch, not once per command.
+    final selection = await _commandService!.preparePath(repeater);
     for (final command in commands) {
       try {
         final response = await _commandService!.sendCommand(
           repeater,
           command,
           retries: _settingsRetries,
+          selection: selection,
         );
         _applySettingResponse(command, response);
         successCount += 1;
@@ -501,17 +519,8 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     final l10n = context.l10n;
     await _refreshSection(
       label: l10n.repeater_radioSettings,
-      commands: const ['get radio'],
+      commands: const ['get radio', 'get tx'],
       setRefreshing: (value) => _refreshingRadio = value,
-    );
-  }
-
-  Future<void> _refreshTxPower() async {
-    final l10n = context.l10n;
-    await _refreshSection(
-      label: l10n.repeater_txPower,
-      commands: const ['get tx'],
-      setRefreshing: (value) => _refreshingTxPower = value,
     );
   }
 
@@ -574,17 +583,66 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     setState(() {
       _autoClockSyncAfterLogin = autoClockSync;
     });
+    // Baseline for an unsynced screen: whatever it is showing now. An
+    // untouched field therefore matches and is never transmitted, so a
+    // save cannot write screen defaults over the repeater's real values.
+    _captureBaseline();
   }
 
   /// Commands the firmware actually implements, in MeshCore/src/helpers/
   /// CommonCLI.cpp. Anything not in that file is silently rejected with
   /// `??: name` — which the old blind save could never notice.
+  /// `set radio` takes full precision — `strtof` parses it, and one
+  /// decimal turned 910.525 into "910.5", retuning the repeater off
+  /// frequency.
+  String? _radioValue() {
+    if (_freqController.text.isEmpty ||
+        _bandwidth == null ||
+        _spreadingFactor == null ||
+        _codingRate == null) {
+      return null;
+    }
+    final freqMHz = double.tryParse(_freqController.text);
+    if (freqMHz == null) return null;
+    return '${freqMHz.toStringAsFixed(3)} ${_bandwidth! / 1000} '
+        '$_spreadingFactor $_codingRate';
+  }
+
+  /// advert.interval is stored as minutes/2, so odd values round down.
+  String _advertValue() => '${_advertInterval - (_advertInterval % 2)}';
+
+  /// Every field's current value, keyed by its firmware setting name.
+  Map<String, String> _currentValues() => {
+        if (_nameController.text.isNotEmpty) 'name': _nameController.text,
+        if (_radioValue() != null) 'radio': _radioValue()!,
+        if (_txPowerController.text.isNotEmpty)
+          'tx': _txPowerController.text.trim(),
+        if (_latController.text.isNotEmpty) 'lat': _latController.text,
+        if (_lonController.text.isNotEmpty) 'lon': _lonController.text,
+        'repeat': _repeatEnabled ? 'on' : 'off',
+        'allow.read.only': _allowReadOnly ? 'on' : 'off',
+        'advert.interval': _advertValue(),
+        'flood.advert.interval': '$_floodAdvertInterval',
+      };
+
+  /// Records what the repeater currently holds, so the next save can tell
+  /// what the user actually changed.
+  void _captureBaseline() {
+    _baseline
+      ..clear()
+      ..addAll(_currentValues());
+  }
+
+  /// Commands the firmware actually implements, in MeshCore/src/helpers/
+  /// CommonCLI.cpp. Anything not in that file is silently rejected with
+  /// `??: name` — which the old blind save could never notice.
+  ///
+  /// Only fields that differ from [_baseline] are sent: a save is the
+  /// user's edits, not a broadcast of the whole form.
   List<String> _buildSaveCommands() {
     final commands = <String>[];
 
-    if (_nameController.text.isNotEmpty) {
-      commands.add('set name ${_nameController.text}');
-    }
+    // Passwords have no readable baseline — a non-empty box IS the intent.
     if (_passwordController.text.isNotEmpty) {
       commands.add('password ${_passwordController.text}');
     }
@@ -592,41 +650,10 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
       commands.add('set guest.password ${_guestPasswordController.text}');
     }
 
-    // set radio <freq> <bw_khz> <sf> <cr> — parsed with strtof, so full
-    // precision is both accepted and required: one decimal turned
-    // 910.525 into "910.5" and retuned the repeater off-frequency.
-    if (_freqController.text.isNotEmpty &&
-        _bandwidth != null &&
-        _spreadingFactor != null &&
-        _codingRate != null) {
-      final freqMHz = double.tryParse(_freqController.text);
-      if (freqMHz != null) {
-        final bwKHz = _bandwidth! / 1000;
-        commands.add('set radio ${freqMHz.toStringAsFixed(3)} $bwKHz '
-            '$_spreadingFactor $_codingRate');
-      }
-    }
-
-    // TX power was displayed and refreshed but never saved — the command
-    // was simply missing from this list.
-    final txPower = int.tryParse(_txPowerController.text);
-    if (txPower != null) {
-      commands.add('set tx $txPower');
-    }
-
-    if (_latController.text.isNotEmpty) {
-      commands.add('set lat ${_latController.text}');
-    }
-    if (_lonController.text.isNotEmpty) {
-      commands.add('set lon ${_lonController.text}');
-    }
-
-    commands.add('set repeat ${_repeatEnabled ? "on" : "off"}');
-    commands.add('set allow.read.only ${_allowReadOnly ? "on" : "off"}');
-
-    // advert.interval is stored as minutes/2, so odd values round down.
-    commands.add('set advert.interval ${_advertInterval - (_advertInterval % 2)}');
-    commands.add('set flood.advert.interval $_floodAdvertInterval');
+    _currentValues().forEach((key, value) {
+      if (_baseline[key] == value) return; // untouched
+      commands.add('set $key $value');
+    });
 
     // NOT SENT: "set privacy" and "set priv.advert.interval" do not exist
     // in the firmware at all — they were always answered with "??".
@@ -640,21 +667,40 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     final service = _commandService;
     if (service == null) return;
 
+    final commands = _buildSaveCommands();
+    if (commands.isEmpty) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(l10n.repeater_settingsSaved),
+        backgroundColor: Colors.green,
+      );
+      setState(() => _hasChanges = false);
+      return;
+    }
+
     setState(() {
       _isLoading = true;
+      _saveProgress = '0/${commands.length}';
     });
 
     final failures = <String>[];
     var sent = 0;
+    // Once for the whole save, not once per command.
+    final selection = await service.preparePath(repeater);
 
     // One command at a time, waiting for the repeater's reply, exactly as
     // the refresh buttons already do. The old version fired everything
     // blind 200 ms apart and reported success unconditionally, so a lost
     // or rejected write was indistinguishable from a saved one.
-    for (final command in _buildSaveCommands()) {
+    for (var i = 0; i < commands.length; i++) {
+      final command = commands[i];
+      if (mounted) {
+        setState(() => _saveProgress = '${i + 1}/${commands.length} · '
+            '${command.split(' ').take(2).join(' ')}');
+      }
       try {
         final response = await service.sendCommand(repeater, command,
-            retries: _settingsRetries);
+            retries: _settingsRetries, selection: selection);
         final trimmed = response.trim();
         if (trimmed.startsWith('Err') ||
             trimmed.startsWith('Error') ||
@@ -673,8 +719,11 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     if (!mounted) return;
     setState(() {
       _isLoading = false;
+      _saveProgress = null;
       _hasChanges = failures.isNotEmpty;
     });
+    // What landed is the new baseline; only the failures remain "changed".
+    if (failures.isEmpty) _captureBaseline();
 
     for (final failure in failures) {
       Provider.of<AppDebugLogService>(context, listen: false)
@@ -728,28 +777,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
           tooltip: tooltip,
         ),
       ],
-    );
-  }
-
-  Widget _buildInlineRefreshButton({
-    required bool isRefreshing,
-    required VoidCallback onRefresh,
-    required String tooltip,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: IconButton(
-        icon: isRefreshing
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.refresh, size: 20),
-        onPressed: isRefreshing ? null : onRefresh,
-        tooltip: tooltip,
-        visualDensity: VisualDensity.compact,
-      ),
     );
   }
 
@@ -877,7 +904,27 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
             onPressed: () =>
                 PathManagementDialog.show(context, contact: repeater),
           ),
-          if (_hasChanges)
+          // Saving is a sequence of slow round trips; show which one is
+          // in flight so a 3-command save does not look like a hang.
+          if (_saveProgress != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_saveProgress!, style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            )
+          else if (_hasChanges)
             TextButton.icon(
               onPressed: _isLoading ? null : _saveSettings,
               icon: const Icon(Icons.save),
@@ -992,29 +1039,21 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
               onChanged: (_) => _markChanged(),
             ),
             const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _txPowerController,
-                    decoration: InputDecoration(
-                      labelText: l10n.repeater_txPower,
-                      helperText: l10n.repeater_txPowerHelper,
-                      border: const OutlineInputBorder(),
-                      suffixText: 'dBm',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => _markChanged(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _buildInlineRefreshButton(
-                  isRefreshing: _refreshingTxPower,
-                  onRefresh: _refreshTxPower,
-                  tooltip: l10n.repeater_refreshTxPower,
-                ),
-              ],
+            // No refresh button of its own: the Radio Settings refresh
+            // fetches "get radio" and "get tx" together. They are only
+            // separate commands because the firmware keeps TX power out
+            // of the radio line — that is not a reason to make the user
+            // press two buttons.
+            TextField(
+              controller: _txPowerController,
+              decoration: InputDecoration(
+                labelText: l10n.repeater_txPower,
+                helperText: l10n.repeater_txPowerHelper,
+                border: const OutlineInputBorder(),
+                suffixText: 'dBm',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (_) => _markChanged(),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
