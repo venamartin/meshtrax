@@ -103,6 +103,21 @@ class _PathLabScreenState extends State<PathLabScreen> {
     };
   }
 
+  /// Auto-add everything + overwrite oldest. Path discovery needs the
+  /// contact to exist in the RADIO's list (ERR_CODE_NOT_FOUND
+  /// otherwise), and the graph wants every advert it can get.
+  Future<void> _enableAutoAdd() async {
+    await connector.sendFrame(buildSetAutoAddConfigFrame(
+      autoAddChat: true,
+      autoAddRepeater: true,
+      autoAddRoomServer: true,
+      autoAddSensor: true,
+      overwriteOldest: true,
+    ));
+    setState(() =>
+        _status = 'auto-add ON (chat/repeater/room/sensor, overwrite oldest)');
+  }
+
   /// The remote probe: one flood pair teaches us BOTH proven paths —
   /// including their doorstep, which passive listening can only learn
   /// if they happen to advertise or message us.
@@ -345,8 +360,41 @@ class _PathLabScreenState extends State<PathLabScreen> {
                             : null,
                     child: const Text('Discover')),
                 const SizedBox(width: 8),
+                OutlinedButton(
+                    onPressed:
+                        connector.state == MeshCoreConnectionState.connected
+                            ? _enableAutoAdd
+                            : null,
+                    child: const Text('Auto-add ON')),
+                const SizedBox(width: 8),
                 Expanded(child: Text(_status)),
               ]),
+              // Pick a target from the radio's own contact list.
+              if (connector.contacts.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: connector.contacts
+                          .any((c) => c.publicKeyHex == _contactPk.text)
+                      ? _contactPk.text
+                      : null,
+                  decoration: const InputDecoration(
+                      labelText: 'contact on the radio', isDense: true),
+                  items: [
+                    for (final c in connector.contacts)
+                      DropdownMenuItem(
+                        value: c.publicKeyHex,
+                        child: Text(
+                            '${c.name}  ·  ${c.publicKeyHex.substring(0, 4).toUpperCase()}'
+                            '  ·  ${c.typeLabel}',
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    _contactPk.text = v;
+                    _findPath();
+                  },
+                ),
               Row(children: [
                 Expanded(
                     child: TextField(
