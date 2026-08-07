@@ -633,6 +633,83 @@ class PathGraph {
     _scheduleFlush();
   }
 
+  static String _isoFromMillis(int millis) =>
+      DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true)
+          .toIso8601String();
+
+  /// This radio's observations as a meshtrax-graph-v2 document, ready to
+  /// hand to another collector.
+  ///
+  /// **Repeater topology only.** The export carries directed links
+  /// between forwarding nodes and the public advert metadata of the
+  /// nodes those links touch — nothing else. Contact ingress lists are
+  /// never exported (they are a position-tagged log of who I talked to
+  /// and where I stood), nor is the contact mirror, nor my own identity
+  /// or doorstep. A node appears only if a link references it, so the
+  /// document cannot name a node I merely heard about.
+  ///
+  /// Only locally observed edges are exported. An imported prior belongs
+  /// to the collector that measured it and is not laundered through my
+  /// file — which also keeps a two-way exchange from feeding each side
+  /// its own data back. (Multi-collector merge is a separate problem,
+  /// deliberately deferred.)
+  Map<String, dynamic> exportGraph({
+    String? regionHint,
+    String collector = 'meshtrax',
+  }) {
+    final links = <Map<String, dynamic>>[];
+    final referenced = <String>{};
+
+    for (final entry in _store.edges.entries) {
+      final e = entry.value;
+      final local = e.obsCount > 0 || e.n > 0 || e.measuredSnr != null;
+      if (!local) continue;
+      final (from, to) = entry.key;
+      referenced
+        ..add(from)
+        ..add(to);
+      links.add({
+        'source': from,
+        'target': to,
+        'observations': e.obsCount,
+        if (e.measuredSnr != null) 'measured_snr': e.measuredSnr,
+        'trace_confirmed': e.measuredSnr != null,
+        if (e.n > 0) 'delivered': e.s,
+        if (e.n > 0) 'attempts': e.n,
+        if (e.lastObserved != null)
+          'last_observed': _isoFromMillis(e.lastObserved!),
+      });
+    }
+
+    final nodes = <Map<String, dynamic>>[];
+    for (final hash in referenced.toList()..sort()) {
+      final n = _store.nodes[hash];
+      nodes.add({
+        'id': hash,
+        if (n?.pubkey != null) 'pubkey': n!.pubkey,
+        if (n?.name != null) 'name': n!.name,
+        if (n?.role != null) 'role': n!.role,
+        if (n?.lat != null) 'lat': n!.lat,
+        if (n?.lon != null) 'lon': n!.lon,
+        if (n?.lastHeard != null) 'last_heard': _isoFromMillis(n!.lastHeard!),
+      });
+    }
+
+    return {
+      'format': 'meshtrax-graph-v2',
+      'directed': true,
+      'multigraph': false,
+      'graph': {
+        'generated_at': _isoFromMillis(_arrivalMillis),
+        'collector': collector,
+        if (regionHint != null) 'region_hint': regionHint,
+        'hash_width': 2,
+      },
+      'nodes': nodes,
+      'links': links,
+    };
+  }
+
   /// Best path to this contact: direct | bidirectional route | flood.
   PathResult findPath(String contactPubkey) {
     final now = _arrivalMillis;

@@ -180,6 +180,20 @@ class _PathLabScreenState extends State<PathLabScreen> {
     }
   }
 
+  Future<void> _export() async {
+    try {
+      final doc = graph.exportGraph(collector: 'meshtrax path_lab');
+      await File(_importPath.text).writeAsString(
+          const JsonEncoder.withIndent(' ').convert(doc));
+      final links = (doc['links'] as List).length;
+      final nodes = (doc['nodes'] as List).length;
+      setState(() => _status =
+          'exported $nodes nodes / $links directed links → ${_importPath.text}');
+    } catch (e) {
+      setState(() => _status = 'export failed: $e');
+    }
+  }
+
   Future<void> _discover() async {
     adapter.pendingDiscover.clear();
     // Use the connector's own discovery: random uint32 tag + the 30 s
@@ -348,8 +362,9 @@ class _PathLabScreenState extends State<PathLabScreen> {
                     child: TextField(
                         controller: _importPath,
                         decoration:
-                            const InputDecoration(labelText: 'seed file'))),
+                            const InputDecoration(labelText: 'graph file'))),
                 TextButton(onPressed: _import, child: const Text('Import')),
+                TextButton(onPressed: _export, child: const Text('Export')),
               ]),
               Row(children: [
                 FilledButton.tonal(
