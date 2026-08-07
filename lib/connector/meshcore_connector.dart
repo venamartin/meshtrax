@@ -3832,10 +3832,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await sendFrame(buildRebootFrame());
   }
 
-  Future<void> setPrivacyMode(bool enabled) async {
-    await sendCliCommand('set privacy ${enabled ? 'on' : 'off'}');
-  }
-
   Future<void> setTelemetryModeBase(
     int base,
     int location,
