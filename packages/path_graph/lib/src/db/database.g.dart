@@ -518,17 +518,42 @@ class $GraphEdgesTable extends GraphEdges
   late final GeneratedColumn<String> source = GeneratedColumn<String>(
       'source', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _importedScoreMeta =
-      const VerificationMeta('importedScore');
+  static const VerificationMeta _importedSnrMeta =
+      const VerificationMeta('importedSnr');
   @override
-  late final GeneratedColumn<double> importedScore = GeneratedColumn<double>(
-      'imported_score', aliasedName, true,
+  late final GeneratedColumn<double> importedSnr = GeneratedColumn<double>(
+      'imported_snr', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _avgSnrMeta = const VerificationMeta('avgSnr');
+  static const VerificationMeta _importedObservationsMeta =
+      const VerificationMeta('importedObservations');
   @override
-  late final GeneratedColumn<double> avgSnr = GeneratedColumn<double>(
-      'avg_snr', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+  late final GeneratedColumn<int> importedObservations = GeneratedColumn<int>(
+      'imported_observations', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _importedDeliveredMeta =
+      const VerificationMeta('importedDelivered');
+  @override
+  late final GeneratedColumn<int> importedDelivered = GeneratedColumn<int>(
+      'imported_delivered', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _importedAttemptsMeta =
+      const VerificationMeta('importedAttempts');
+  @override
+  late final GeneratedColumn<int> importedAttempts = GeneratedColumn<int>(
+      'imported_attempts', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _importedLastObservedMeta =
+      const VerificationMeta('importedLastObserved');
+  @override
+  late final GeneratedColumn<int> importedLastObserved = GeneratedColumn<int>(
+      'imported_last_observed', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _measuredSnrMeta =
       const VerificationMeta('measuredSnr');
   @override
@@ -545,8 +570,11 @@ class $GraphEdgesTable extends GraphEdges
         lastObserved,
         obsCount,
         source,
-        importedScore,
-        avgSnr,
+        importedSnr,
+        importedObservations,
+        importedDelivered,
+        importedAttempts,
+        importedLastObserved,
         measuredSnr
       ];
   @override
@@ -599,15 +627,35 @@ class $GraphEdgesTable extends GraphEdges
     } else if (isInserting) {
       context.missing(_sourceMeta);
     }
-    if (data.containsKey('imported_score')) {
+    if (data.containsKey('imported_snr')) {
       context.handle(
-          _importedScoreMeta,
-          importedScore.isAcceptableOrUnknown(
-              data['imported_score']!, _importedScoreMeta));
+          _importedSnrMeta,
+          importedSnr.isAcceptableOrUnknown(
+              data['imported_snr']!, _importedSnrMeta));
     }
-    if (data.containsKey('avg_snr')) {
-      context.handle(_avgSnrMeta,
-          avgSnr.isAcceptableOrUnknown(data['avg_snr']!, _avgSnrMeta));
+    if (data.containsKey('imported_observations')) {
+      context.handle(
+          _importedObservationsMeta,
+          importedObservations.isAcceptableOrUnknown(
+              data['imported_observations']!, _importedObservationsMeta));
+    }
+    if (data.containsKey('imported_delivered')) {
+      context.handle(
+          _importedDeliveredMeta,
+          importedDelivered.isAcceptableOrUnknown(
+              data['imported_delivered']!, _importedDeliveredMeta));
+    }
+    if (data.containsKey('imported_attempts')) {
+      context.handle(
+          _importedAttemptsMeta,
+          importedAttempts.isAcceptableOrUnknown(
+              data['imported_attempts']!, _importedAttemptsMeta));
+    }
+    if (data.containsKey('imported_last_observed')) {
+      context.handle(
+          _importedLastObservedMeta,
+          importedLastObserved.isAcceptableOrUnknown(
+              data['imported_last_observed']!, _importedLastObservedMeta));
     }
     if (data.containsKey('measured_snr')) {
       context.handle(
@@ -640,10 +688,16 @@ class $GraphEdgesTable extends GraphEdges
           .read(DriftSqlType.int, data['${effectivePrefix}obs_count'])!,
       source: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
-      importedScore: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}imported_score']),
-      avgSnr: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}avg_snr']),
+      importedSnr: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}imported_snr']),
+      importedObservations: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}imported_observations'])!,
+      importedDelivered: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}imported_delivered'])!,
+      importedAttempts: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}imported_attempts'])!,
+      importedLastObserved: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}imported_last_observed']),
       measuredSnr: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}measured_snr']),
     );
@@ -670,8 +724,11 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
   final int? lastObserved;
   final int obsCount;
   final String source;
-  final double? importedScore;
-  final double? avgSnr;
+  final double? importedSnr;
+  final int importedObservations;
+  final int importedDelivered;
+  final int importedAttempts;
+  final int? importedLastObserved;
   final double? measuredSnr;
   const GraphEdge(
       {required this.fromHash,
@@ -682,8 +739,11 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       this.lastObserved,
       required this.obsCount,
       required this.source,
-      this.importedScore,
-      this.avgSnr,
+      this.importedSnr,
+      required this.importedObservations,
+      required this.importedDelivered,
+      required this.importedAttempts,
+      this.importedLastObserved,
       this.measuredSnr});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -698,11 +758,14 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
     }
     map['obs_count'] = Variable<int>(obsCount);
     map['source'] = Variable<String>(source);
-    if (!nullToAbsent || importedScore != null) {
-      map['imported_score'] = Variable<double>(importedScore);
+    if (!nullToAbsent || importedSnr != null) {
+      map['imported_snr'] = Variable<double>(importedSnr);
     }
-    if (!nullToAbsent || avgSnr != null) {
-      map['avg_snr'] = Variable<double>(avgSnr);
+    map['imported_observations'] = Variable<int>(importedObservations);
+    map['imported_delivered'] = Variable<int>(importedDelivered);
+    map['imported_attempts'] = Variable<int>(importedAttempts);
+    if (!nullToAbsent || importedLastObserved != null) {
+      map['imported_last_observed'] = Variable<int>(importedLastObserved);
     }
     if (!nullToAbsent || measuredSnr != null) {
       map['measured_snr'] = Variable<double>(measuredSnr);
@@ -722,11 +785,15 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           : Value(lastObserved),
       obsCount: Value(obsCount),
       source: Value(source),
-      importedScore: importedScore == null && nullToAbsent
+      importedSnr: importedSnr == null && nullToAbsent
           ? const Value.absent()
-          : Value(importedScore),
-      avgSnr:
-          avgSnr == null && nullToAbsent ? const Value.absent() : Value(avgSnr),
+          : Value(importedSnr),
+      importedObservations: Value(importedObservations),
+      importedDelivered: Value(importedDelivered),
+      importedAttempts: Value(importedAttempts),
+      importedLastObserved: importedLastObserved == null && nullToAbsent
+          ? const Value.absent()
+          : Value(importedLastObserved),
       measuredSnr: measuredSnr == null && nullToAbsent
           ? const Value.absent()
           : Value(measuredSnr),
@@ -745,8 +812,13 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       lastObserved: serializer.fromJson<int?>(json['lastObserved']),
       obsCount: serializer.fromJson<int>(json['obsCount']),
       source: serializer.fromJson<String>(json['source']),
-      importedScore: serializer.fromJson<double?>(json['importedScore']),
-      avgSnr: serializer.fromJson<double?>(json['avgSnr']),
+      importedSnr: serializer.fromJson<double?>(json['importedSnr']),
+      importedObservations:
+          serializer.fromJson<int>(json['importedObservations']),
+      importedDelivered: serializer.fromJson<int>(json['importedDelivered']),
+      importedAttempts: serializer.fromJson<int>(json['importedAttempts']),
+      importedLastObserved:
+          serializer.fromJson<int?>(json['importedLastObserved']),
       measuredSnr: serializer.fromJson<double?>(json['measuredSnr']),
     );
   }
@@ -762,8 +834,11 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       'lastObserved': serializer.toJson<int?>(lastObserved),
       'obsCount': serializer.toJson<int>(obsCount),
       'source': serializer.toJson<String>(source),
-      'importedScore': serializer.toJson<double?>(importedScore),
-      'avgSnr': serializer.toJson<double?>(avgSnr),
+      'importedSnr': serializer.toJson<double?>(importedSnr),
+      'importedObservations': serializer.toJson<int>(importedObservations),
+      'importedDelivered': serializer.toJson<int>(importedDelivered),
+      'importedAttempts': serializer.toJson<int>(importedAttempts),
+      'importedLastObserved': serializer.toJson<int?>(importedLastObserved),
       'measuredSnr': serializer.toJson<double?>(measuredSnr),
     };
   }
@@ -777,8 +852,11 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           Value<int?> lastObserved = const Value.absent(),
           int? obsCount,
           String? source,
-          Value<double?> importedScore = const Value.absent(),
-          Value<double?> avgSnr = const Value.absent(),
+          Value<double?> importedSnr = const Value.absent(),
+          int? importedObservations,
+          int? importedDelivered,
+          int? importedAttempts,
+          Value<int?> importedLastObserved = const Value.absent(),
           Value<double?> measuredSnr = const Value.absent()}) =>
       GraphEdge(
         fromHash: fromHash ?? this.fromHash,
@@ -790,9 +868,13 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
             lastObserved.present ? lastObserved.value : this.lastObserved,
         obsCount: obsCount ?? this.obsCount,
         source: source ?? this.source,
-        importedScore:
-            importedScore.present ? importedScore.value : this.importedScore,
-        avgSnr: avgSnr.present ? avgSnr.value : this.avgSnr,
+        importedSnr: importedSnr.present ? importedSnr.value : this.importedSnr,
+        importedObservations: importedObservations ?? this.importedObservations,
+        importedDelivered: importedDelivered ?? this.importedDelivered,
+        importedAttempts: importedAttempts ?? this.importedAttempts,
+        importedLastObserved: importedLastObserved.present
+            ? importedLastObserved.value
+            : this.importedLastObserved,
         measuredSnr: measuredSnr.present ? measuredSnr.value : this.measuredSnr,
       );
   GraphEdge copyWithCompanion(GraphEdgesCompanion data) {
@@ -809,10 +891,20 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           : this.lastObserved,
       obsCount: data.obsCount.present ? data.obsCount.value : this.obsCount,
       source: data.source.present ? data.source.value : this.source,
-      importedScore: data.importedScore.present
-          ? data.importedScore.value
-          : this.importedScore,
-      avgSnr: data.avgSnr.present ? data.avgSnr.value : this.avgSnr,
+      importedSnr:
+          data.importedSnr.present ? data.importedSnr.value : this.importedSnr,
+      importedObservations: data.importedObservations.present
+          ? data.importedObservations.value
+          : this.importedObservations,
+      importedDelivered: data.importedDelivered.present
+          ? data.importedDelivered.value
+          : this.importedDelivered,
+      importedAttempts: data.importedAttempts.present
+          ? data.importedAttempts.value
+          : this.importedAttempts,
+      importedLastObserved: data.importedLastObserved.present
+          ? data.importedLastObserved.value
+          : this.importedLastObserved,
       measuredSnr:
           data.measuredSnr.present ? data.measuredSnr.value : this.measuredSnr,
     );
@@ -829,16 +921,32 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           ..write('lastObserved: $lastObserved, ')
           ..write('obsCount: $obsCount, ')
           ..write('source: $source, ')
-          ..write('importedScore: $importedScore, ')
-          ..write('avgSnr: $avgSnr, ')
+          ..write('importedSnr: $importedSnr, ')
+          ..write('importedObservations: $importedObservations, ')
+          ..write('importedDelivered: $importedDelivered, ')
+          ..write('importedAttempts: $importedAttempts, ')
+          ..write('importedLastObserved: $importedLastObserved, ')
           ..write('measuredSnr: $measuredSnr')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(fromHash, toHash, s, n, trafficWeight,
-      lastObserved, obsCount, source, importedScore, avgSnr, measuredSnr);
+  int get hashCode => Object.hash(
+      fromHash,
+      toHash,
+      s,
+      n,
+      trafficWeight,
+      lastObserved,
+      obsCount,
+      source,
+      importedSnr,
+      importedObservations,
+      importedDelivered,
+      importedAttempts,
+      importedLastObserved,
+      measuredSnr);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -851,8 +959,11 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           other.lastObserved == this.lastObserved &&
           other.obsCount == this.obsCount &&
           other.source == this.source &&
-          other.importedScore == this.importedScore &&
-          other.avgSnr == this.avgSnr &&
+          other.importedSnr == this.importedSnr &&
+          other.importedObservations == this.importedObservations &&
+          other.importedDelivered == this.importedDelivered &&
+          other.importedAttempts == this.importedAttempts &&
+          other.importedLastObserved == this.importedLastObserved &&
           other.measuredSnr == this.measuredSnr);
 }
 
@@ -865,8 +976,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
   final Value<int?> lastObserved;
   final Value<int> obsCount;
   final Value<String> source;
-  final Value<double?> importedScore;
-  final Value<double?> avgSnr;
+  final Value<double?> importedSnr;
+  final Value<int> importedObservations;
+  final Value<int> importedDelivered;
+  final Value<int> importedAttempts;
+  final Value<int?> importedLastObserved;
   final Value<double?> measuredSnr;
   final Value<int> rowid;
   const GraphEdgesCompanion({
@@ -878,8 +992,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     this.lastObserved = const Value.absent(),
     this.obsCount = const Value.absent(),
     this.source = const Value.absent(),
-    this.importedScore = const Value.absent(),
-    this.avgSnr = const Value.absent(),
+    this.importedSnr = const Value.absent(),
+    this.importedObservations = const Value.absent(),
+    this.importedDelivered = const Value.absent(),
+    this.importedAttempts = const Value.absent(),
+    this.importedLastObserved = const Value.absent(),
     this.measuredSnr = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -892,8 +1009,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     this.lastObserved = const Value.absent(),
     this.obsCount = const Value.absent(),
     required String source,
-    this.importedScore = const Value.absent(),
-    this.avgSnr = const Value.absent(),
+    this.importedSnr = const Value.absent(),
+    this.importedObservations = const Value.absent(),
+    this.importedDelivered = const Value.absent(),
+    this.importedAttempts = const Value.absent(),
+    this.importedLastObserved = const Value.absent(),
     this.measuredSnr = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : fromHash = Value(fromHash),
@@ -908,8 +1028,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     Expression<int>? lastObserved,
     Expression<int>? obsCount,
     Expression<String>? source,
-    Expression<double>? importedScore,
-    Expression<double>? avgSnr,
+    Expression<double>? importedSnr,
+    Expression<int>? importedObservations,
+    Expression<int>? importedDelivered,
+    Expression<int>? importedAttempts,
+    Expression<int>? importedLastObserved,
     Expression<double>? measuredSnr,
     Expression<int>? rowid,
   }) {
@@ -922,8 +1045,13 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       if (lastObserved != null) 'last_observed': lastObserved,
       if (obsCount != null) 'obs_count': obsCount,
       if (source != null) 'source': source,
-      if (importedScore != null) 'imported_score': importedScore,
-      if (avgSnr != null) 'avg_snr': avgSnr,
+      if (importedSnr != null) 'imported_snr': importedSnr,
+      if (importedObservations != null)
+        'imported_observations': importedObservations,
+      if (importedDelivered != null) 'imported_delivered': importedDelivered,
+      if (importedAttempts != null) 'imported_attempts': importedAttempts,
+      if (importedLastObserved != null)
+        'imported_last_observed': importedLastObserved,
       if (measuredSnr != null) 'measured_snr': measuredSnr,
       if (rowid != null) 'rowid': rowid,
     });
@@ -938,8 +1066,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       Value<int?>? lastObserved,
       Value<int>? obsCount,
       Value<String>? source,
-      Value<double?>? importedScore,
-      Value<double?>? avgSnr,
+      Value<double?>? importedSnr,
+      Value<int>? importedObservations,
+      Value<int>? importedDelivered,
+      Value<int>? importedAttempts,
+      Value<int?>? importedLastObserved,
       Value<double?>? measuredSnr,
       Value<int>? rowid}) {
     return GraphEdgesCompanion(
@@ -951,8 +1082,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       lastObserved: lastObserved ?? this.lastObserved,
       obsCount: obsCount ?? this.obsCount,
       source: source ?? this.source,
-      importedScore: importedScore ?? this.importedScore,
-      avgSnr: avgSnr ?? this.avgSnr,
+      importedSnr: importedSnr ?? this.importedSnr,
+      importedObservations: importedObservations ?? this.importedObservations,
+      importedDelivered: importedDelivered ?? this.importedDelivered,
+      importedAttempts: importedAttempts ?? this.importedAttempts,
+      importedLastObserved: importedLastObserved ?? this.importedLastObserved,
       measuredSnr: measuredSnr ?? this.measuredSnr,
       rowid: rowid ?? this.rowid,
     );
@@ -985,11 +1119,20 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     if (source.present) {
       map['source'] = Variable<String>(source.value);
     }
-    if (importedScore.present) {
-      map['imported_score'] = Variable<double>(importedScore.value);
+    if (importedSnr.present) {
+      map['imported_snr'] = Variable<double>(importedSnr.value);
     }
-    if (avgSnr.present) {
-      map['avg_snr'] = Variable<double>(avgSnr.value);
+    if (importedObservations.present) {
+      map['imported_observations'] = Variable<int>(importedObservations.value);
+    }
+    if (importedDelivered.present) {
+      map['imported_delivered'] = Variable<int>(importedDelivered.value);
+    }
+    if (importedAttempts.present) {
+      map['imported_attempts'] = Variable<int>(importedAttempts.value);
+    }
+    if (importedLastObserved.present) {
+      map['imported_last_observed'] = Variable<int>(importedLastObserved.value);
     }
     if (measuredSnr.present) {
       map['measured_snr'] = Variable<double>(measuredSnr.value);
@@ -1011,8 +1154,11 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
           ..write('lastObserved: $lastObserved, ')
           ..write('obsCount: $obsCount, ')
           ..write('source: $source, ')
-          ..write('importedScore: $importedScore, ')
-          ..write('avgSnr: $avgSnr, ')
+          ..write('importedSnr: $importedSnr, ')
+          ..write('importedObservations: $importedObservations, ')
+          ..write('importedDelivered: $importedDelivered, ')
+          ..write('importedAttempts: $importedAttempts, ')
+          ..write('importedLastObserved: $importedLastObserved, ')
           ..write('measuredSnr: $measuredSnr, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2297,8 +2443,11 @@ typedef $$GraphEdgesTableCreateCompanionBuilder = GraphEdgesCompanion Function({
   Value<int?> lastObserved,
   Value<int> obsCount,
   required String source,
-  Value<double?> importedScore,
-  Value<double?> avgSnr,
+  Value<double?> importedSnr,
+  Value<int> importedObservations,
+  Value<int> importedDelivered,
+  Value<int> importedAttempts,
+  Value<int?> importedLastObserved,
   Value<double?> measuredSnr,
   Value<int> rowid,
 });
@@ -2311,8 +2460,11 @@ typedef $$GraphEdgesTableUpdateCompanionBuilder = GraphEdgesCompanion Function({
   Value<int?> lastObserved,
   Value<int> obsCount,
   Value<String> source,
-  Value<double?> importedScore,
-  Value<double?> avgSnr,
+  Value<double?> importedSnr,
+  Value<int> importedObservations,
+  Value<int> importedDelivered,
+  Value<int> importedAttempts,
+  Value<int?> importedLastObserved,
   Value<double?> measuredSnr,
   Value<int> rowid,
 });
@@ -2350,11 +2502,24 @@ class $$GraphEdgesTableFilterComposer
   ColumnFilters<String> get source => $composableBuilder(
       column: $table.source, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get importedScore => $composableBuilder(
-      column: $table.importedScore, builder: (column) => ColumnFilters(column));
+  ColumnFilters<double> get importedSnr => $composableBuilder(
+      column: $table.importedSnr, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get avgSnr => $composableBuilder(
-      column: $table.avgSnr, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get importedObservations => $composableBuilder(
+      column: $table.importedObservations,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get importedDelivered => $composableBuilder(
+      column: $table.importedDelivered,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get importedAttempts => $composableBuilder(
+      column: $table.importedAttempts,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get importedLastObserved => $composableBuilder(
+      column: $table.importedLastObserved,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get measuredSnr => $composableBuilder(
       column: $table.measuredSnr, builder: (column) => ColumnFilters(column));
@@ -2395,12 +2560,24 @@ class $$GraphEdgesTableOrderingComposer
   ColumnOrderings<String> get source => $composableBuilder(
       column: $table.source, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get importedScore => $composableBuilder(
-      column: $table.importedScore,
+  ColumnOrderings<double> get importedSnr => $composableBuilder(
+      column: $table.importedSnr, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get importedObservations => $composableBuilder(
+      column: $table.importedObservations,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get avgSnr => $composableBuilder(
-      column: $table.avgSnr, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get importedDelivered => $composableBuilder(
+      column: $table.importedDelivered,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get importedAttempts => $composableBuilder(
+      column: $table.importedAttempts,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get importedLastObserved => $composableBuilder(
+      column: $table.importedLastObserved,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get measuredSnr => $composableBuilder(
       column: $table.measuredSnr, builder: (column) => ColumnOrderings(column));
@@ -2439,11 +2616,20 @@ class $$GraphEdgesTableAnnotationComposer
   GeneratedColumn<String> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
 
-  GeneratedColumn<double> get importedScore => $composableBuilder(
-      column: $table.importedScore, builder: (column) => column);
+  GeneratedColumn<double> get importedSnr => $composableBuilder(
+      column: $table.importedSnr, builder: (column) => column);
 
-  GeneratedColumn<double> get avgSnr =>
-      $composableBuilder(column: $table.avgSnr, builder: (column) => column);
+  GeneratedColumn<int> get importedObservations => $composableBuilder(
+      column: $table.importedObservations, builder: (column) => column);
+
+  GeneratedColumn<int> get importedDelivered => $composableBuilder(
+      column: $table.importedDelivered, builder: (column) => column);
+
+  GeneratedColumn<int> get importedAttempts => $composableBuilder(
+      column: $table.importedAttempts, builder: (column) => column);
+
+  GeneratedColumn<int> get importedLastObserved => $composableBuilder(
+      column: $table.importedLastObserved, builder: (column) => column);
 
   GeneratedColumn<double> get measuredSnr => $composableBuilder(
       column: $table.measuredSnr, builder: (column) => column);
@@ -2483,8 +2669,11 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             Value<int?> lastObserved = const Value.absent(),
             Value<int> obsCount = const Value.absent(),
             Value<String> source = const Value.absent(),
-            Value<double?> importedScore = const Value.absent(),
-            Value<double?> avgSnr = const Value.absent(),
+            Value<double?> importedSnr = const Value.absent(),
+            Value<int> importedObservations = const Value.absent(),
+            Value<int> importedDelivered = const Value.absent(),
+            Value<int> importedAttempts = const Value.absent(),
+            Value<int?> importedLastObserved = const Value.absent(),
             Value<double?> measuredSnr = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -2497,8 +2686,11 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             lastObserved: lastObserved,
             obsCount: obsCount,
             source: source,
-            importedScore: importedScore,
-            avgSnr: avgSnr,
+            importedSnr: importedSnr,
+            importedObservations: importedObservations,
+            importedDelivered: importedDelivered,
+            importedAttempts: importedAttempts,
+            importedLastObserved: importedLastObserved,
             measuredSnr: measuredSnr,
             rowid: rowid,
           ),
@@ -2511,8 +2703,11 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             Value<int?> lastObserved = const Value.absent(),
             Value<int> obsCount = const Value.absent(),
             required String source,
-            Value<double?> importedScore = const Value.absent(),
-            Value<double?> avgSnr = const Value.absent(),
+            Value<double?> importedSnr = const Value.absent(),
+            Value<int> importedObservations = const Value.absent(),
+            Value<int> importedDelivered = const Value.absent(),
+            Value<int> importedAttempts = const Value.absent(),
+            Value<int?> importedLastObserved = const Value.absent(),
             Value<double?> measuredSnr = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -2525,8 +2720,11 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             lastObserved: lastObserved,
             obsCount: obsCount,
             source: source,
-            importedScore: importedScore,
-            avgSnr: avgSnr,
+            importedSnr: importedSnr,
+            importedObservations: importedObservations,
+            importedDelivered: importedDelivered,
+            importedAttempts: importedAttempts,
+            importedLastObserved: importedLastObserved,
             measuredSnr: measuredSnr,
             rowid: rowid,
           ),

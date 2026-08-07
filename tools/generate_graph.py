@@ -2,7 +2,21 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Generate MeshTrax path-graph seed files from Corescope instances.
+"""HISTORICAL — Corescope seed generator. Its output is NO LONGER
+IMPORTABLE.
+
+Superseded 2026-08-07. Corescope publishes one entry per node pair with
+a single symmetric SNR (verified: no edge ever appears in both
+directions), so `a -> b` and `b -> a` were the same number pretending to
+be two measurements. The module now imports `meshtrax-graph-v2` only — a
+true directed graph where each direction carries its own measurement —
+produced by MeshTrax's own export. See docs/path-graph-design.md,
+"§ HISTORICAL — Corescope export utility".
+
+Kept for the fetch/resolve/geo-filter logic and as the record of what
+the v1 format was. tools/analyze.py still reads v1 files as a viewer.
+
+Generate MeshTrax path-graph seed files from Corescope instances.
 
 For each known Corescope instance, fetches the neighbor graph and node
 list, then writes one `meshtrax-graph-v1` node-link JSON file per region

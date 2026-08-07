@@ -24,9 +24,10 @@ class GraphNodes extends Table {
   Set<Column> get primaryKey => {hashBytes};
 }
 
-/// Directed edge. Local evidence (s/n, trafficWeight, measuredSnr) is
-/// never touched by imports; the prior (importedScore/avgSnr) is
-/// replaceable per region. Calibrated p combines the layers at read.
+/// Directed edge — from→to and to→from are separate rows that never
+/// copy each other. Local evidence (s/n, trafficWeight, measuredSnr) is
+/// never touched by imports; the imported_* prior is replaceable
+/// wholesale. Calibrated p combines the layers at read.
 @TableIndex(name: 'idx_edges_from', columns: {#fromHash})
 class GraphEdges extends Table {
   TextColumn get fromHash => text()();
@@ -44,9 +45,15 @@ class GraphEdges extends Table {
   IntColumn get obsCount => integer().withDefault(const Constant(0))();
   TextColumn get source => text()();
 
-  // Import layer (replaceable).
-  RealColumn get importedScore => real().nullable()();
-  RealColumn get avgSnr => real().nullable()();
+  // Import layer (meshtrax-graph-v2, replaceable). Another collector's
+  // measurements OF THIS DIRECTION — mirrors the local columns above so
+  // the two layers stay separable at read.
+  RealColumn get importedSnr => real().nullable()();
+  IntColumn get importedObservations =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get importedDelivered => integer().withDefault(const Constant(0))();
+  IntColumn get importedAttempts => integer().withDefault(const Constant(0))();
+  IntColumn get importedLastObserved => integer().nullable()();
 
   // Local layer: trace-fed per-hop SNR EWMA.
   RealColumn get measuredSnr => real().nullable()();

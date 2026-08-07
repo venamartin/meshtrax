@@ -15,8 +15,13 @@ class PathGraphDatabase extends _$PathGraphDatabase {
 
   /// v2 (2026-08-05): contact_ingress gains uplinkSnr/downlinkSnr —
   /// the Discover-measured first-hop link in both directions.
+  /// v3 (2026-08-07): the Corescope prior (importedScore/avgSnr — one
+  /// symmetric number seeded into both directions) is replaced by the
+  /// per-direction meshtrax-graph-v2 prior. The old columns are dropped
+  /// rather than migrated: a symmetric estimate has no honest
+  /// per-direction value to become.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -25,6 +30,21 @@ class PathGraphDatabase extends _$PathGraphDatabase {
           if (from < 2) {
             await m.addColumn(contactIngress, contactIngress.uplinkSnr);
             await m.addColumn(contactIngress, contactIngress.downlinkSnr);
+          }
+          if (from < 3) {
+            // Rebuild from the new schema: copies the local-evidence
+            // columns across, drops imported_score/avg_snr, defaults the
+            // imported_* columns.
+            await m.alterTable(TableMigration(
+              graphEdges,
+              newColumns: [
+                graphEdges.importedSnr,
+                graphEdges.importedObservations,
+                graphEdges.importedDelivered,
+                graphEdges.importedAttempts,
+                graphEdges.importedLastObserved,
+              ],
+            ));
           }
         },
       );

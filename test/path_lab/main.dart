@@ -71,8 +71,7 @@ class PathLabScreen extends StatefulWidget {
 }
 
 class _PathLabScreenState extends State<PathLabScreen> {
-  final _importPath =
-      TextEditingController(text: 'meshtrax-graph-bayarea.json');
+  final _importPath = TextEditingController(text: 'meshtrax-graph.json');
   final _contactPk = TextEditingController();
   String _status = '';
   String _pathResult = '';

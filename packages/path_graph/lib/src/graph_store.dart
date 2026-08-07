@@ -33,12 +33,21 @@ class EdgeState {
   int obsCount = 0;
   String source;
 
-  // Import layer (replaceable).
-  double? importedScore;
-  double? avgSnr;
+  // Import layer (meshtrax-graph-v2, replaced wholesale per collector).
+  // Somebody else's measurements of THIS direction — never merged into
+  // the local counters above, never copied to the reverse edge.
+  double? importedSnr;
+  int importedObservations = 0;
+  int importedDelivered = 0;
+  int importedAttempts = 0;
+  int? importedLastObserved;
 
   // Local layer: trace-fed SNR EWMA.
   double? measuredSnr;
+
+  /// Anything at all in the import layer?
+  bool get hasImport =>
+      importedSnr != null || importedObservations > 0 || importedAttempts > 0;
 }
 
 /// In-memory working set over the Drift durability layer. All hot
@@ -141,8 +150,11 @@ class GraphStore {
         ..trafficWeight = row.trafficWeight
         ..lastObserved = row.lastObserved
         ..obsCount = row.obsCount
-        ..importedScore = row.importedScore
-        ..avgSnr = row.avgSnr
+        ..importedSnr = row.importedSnr
+        ..importedObservations = row.importedObservations
+        ..importedDelivered = row.importedDelivered
+        ..importedAttempts = row.importedAttempts
+        ..importedLastObserved = row.importedLastObserved
         ..measuredSnr = row.measuredSnr;
     }
   }
@@ -188,8 +200,11 @@ class GraphStore {
             lastObserved: Value(e.lastObserved),
             obsCount: Value(e.obsCount),
             source: e.source,
-            importedScore: Value(e.importedScore),
-            avgSnr: Value(e.avgSnr),
+            importedSnr: Value(e.importedSnr),
+            importedObservations: Value(e.importedObservations),
+            importedDelivered: Value(e.importedDelivered),
+            importedAttempts: Value(e.importedAttempts),
+            importedLastObserved: Value(e.importedLastObserved),
             measuredSnr: Value(e.measuredSnr),
           ),
           mode: InsertMode.insertOrReplace,

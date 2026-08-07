@@ -533,9 +533,6 @@ class PathGraph {
   static const _maxImportNodes = 20000;
   static const _maxImportLinks = 100000;
 
-  static String _hashOfPubkey(String pubkey) =>
-      pubkey.substring(0, 4).toUpperCase();
-
   static double _haversineKm(double la1, double lo1, double la2, double lo2) {
     const r = 6371.0, p = math.pi / 180;
     final dLa = (la2 - la1) * p, dLo = (lo2 - lo1) * p;
@@ -545,35 +542,54 @@ class PathGraph {
     return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
   }
 
-  /// meshtrax-graph-v1 node-link document → prior layer. Never touches
-  /// local evidence (s/n, traffic, ingress); re-import is idempotent.
-  /// Throws [FormatException] on unknown format or cap violations.
+  static final _hashPattern = RegExp(r'^[0-9A-F]{4}$');
+
+  static int? _millisFromIso(Object? value) =>
+      value is String ? DateTime.tryParse(value)?.millisecondsSinceEpoch : null;
+
+  /// meshtrax-graph-v2 node-link document → the import prior layer.
+  ///
+  /// v2 is a true directed graph: A→B and B→A are separate links with
+  /// their own measurements, and neither is ever derived from the other.
+  /// A document that only knows one direction seeds only that direction,
+  /// so an imported link cannot on its own satisfy the bidirectional
+  /// route contract — which is the whole point of dropping v1, where one
+  /// symmetric Corescope SNR was copied into both directions and made
+  /// unproven links look routable.
+  ///
+  /// Node ids are 2-byte hash buckets (4 hex chars); the full pubkey
+  /// rides alongside when the exporter knew it. Local evidence (s/n,
+  /// traffic, measured SNR, ingress) is never touched, and re-importing
+  /// replaces the prior wholesale rather than accumulating.
+  ///
+  /// Throws [FormatException] on an unknown format or cap violation.
   Future<void> importGraph(
     Map<String, dynamic> document, {
     GeoPosition? homePosition,
     double? radiusKm,
   }) async {
-    if (document['format'] != 'meshtrax-graph-v1') {
-      throw const FormatException('not a meshtrax-graph-v1 document');
+    if (document['format'] != 'meshtrax-graph-v2') {
+      throw FormatException(
+          'not a meshtrax-graph-v2 document (got ${document['format']})');
     }
-    // `directed: false` (Corescope's real shape — one entry per pair,
-    // one symmetric avg_snr) means every link seeds BOTH directions.
-    // `directed: true` means a link seeds source→target only and a
-    // reverse link must appear as its own entry.
-    final undirected = document['directed'] == false;
+    if (document['directed'] == false) {
+      throw const FormatException(
+          'undirected documents are not importable — one SNR for both '
+          'directions is not a measurement of either');
+    }
     final nodes = (document['nodes'] as List?) ?? const [];
     final links = (document['links'] as List?) ?? const [];
     if (nodes.length > _maxImportNodes || links.length > _maxImportLinks) {
       throw const FormatException('import exceeds size caps');
     }
     final meta = (document['graph'] as Map?) ?? const {};
-    final region = meta['region'] as String?;
+    final region = meta['region_hint'] as String?;
 
-    final kept = <String, String>{}; // pubkey → hash bucket
+    final kept = <String>{}; // hash buckets that survived the geo filter
     for (final raw in nodes) {
       final node = raw as Map;
-      final pubkey = node['id'] as String?;
-      if (pubkey == null || pubkey.length < 4) continue;
+      final hash = (node['id'] as String?)?.toUpperCase();
+      if (hash == null || !_hashPattern.hasMatch(hash)) continue;
       final lat = (node['lat'] as num?)?.toDouble();
       final lon = (node['lon'] as num?)?.toDouble();
       // Geo scope: belt-and-suspenders at 2-byte; position-less kept.
@@ -583,39 +599,31 @@ class PathGraph {
               radiusKm) {
         continue;
       }
-      final hash = _hashOfPubkey(pubkey);
-      kept[pubkey] = hash;
+      kept.add(hash);
       _store.enrichNode(hash, NodeSource.imported,
           name: node['name'] as String?,
           role: node['role'] as String?,
           lat: lat,
           lon: lon,
-          pubkey: pubkey,
+          pubkey: node['pubkey'] as String?,
           region: region);
-    }
-
-    void seedPrior(String from, String to, double? score, double? snr) {
-      final edge = _store.edges
-          .putIfAbsent((from, to), () => EdgeState(source: 'imported'));
-      edge.importedScore = score; // replace, never accumulate
-      edge.avgSnr = snr;
-      _store.markEdgeDirty(from, to);
     }
 
     for (final raw in links) {
       final link = raw as Map;
-      final from = kept[link['source']];
-      final to = kept[link['target']];
+      final from = (link['source'] as String?)?.toUpperCase();
+      final to = (link['target'] as String?)?.toUpperCase();
       if (from == null || to == null) continue;
-      final score = (link['score'] as num?)?.toDouble();
-      final snr = (link['avg_snr'] as num?)?.toDouble();
-      seedPrior(from, to, score, snr);
-      if (undirected || link['bidirectional'] == true) {
-        // Same numbers both ways — a symmetric PRIOR, not two
-        // measurements. Locally measured SNR (trace / Discover)
-        // outranks it in priorQuality, which is the point.
-        seedPrior(to, from, score, snr);
-      }
+      if (!kept.contains(from) || !kept.contains(to)) continue;
+      final edge = _store.edges
+          .putIfAbsent((from, to), () => EdgeState(source: 'imported'));
+      // Replace, never accumulate: this is one collector's current view.
+      edge.importedSnr = (link['measured_snr'] as num?)?.toDouble();
+      edge.importedObservations = (link['observations'] as num?)?.toInt() ?? 0;
+      edge.importedDelivered = (link['delivered'] as num?)?.toInt() ?? 0;
+      edge.importedAttempts = (link['attempts'] as num?)?.toInt() ?? 0;
+      edge.importedLastObserved = _millisFromIso(link['last_observed']);
+      _store.markEdgeDirty(from, to);
     }
 
     await _db.into(_db.graphMeta).insertOnConflictUpdate(

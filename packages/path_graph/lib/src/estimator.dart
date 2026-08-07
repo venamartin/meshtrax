@@ -120,21 +120,44 @@ class Estimator {
     return ((db - config.snrZeroQualityDb) / span).clamp(0.0, 1.0);
   }
 
-  /// Prior quality q₀: measured SNR (trace) > import score/SNR >
-  /// passive default.
-  double priorQuality(EdgeState e) {
-    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
-    if (e.importedScore != null) {
-      final score = e.importedScore!.clamp(0.0, 1.0);
-      if (e.avgSnr != null) return (score + snrQuality(e.avgSnr!)) / 2;
-      return score;
-    }
-    return config.passiveDefaultQ;
+  /// Someone else's traffic count for this direction, decayed from
+  /// *their* last observation. Feeds confidence only — never p.
+  double importedTraffic(EdgeState e, int nowMillis) {
+    final last = e.importedLastObserved;
+    if (e.importedObservations == 0) return 0;
+    final obs = e.importedObservations.toDouble();
+    if (last == null) return obs;
+    final hours = (nowMillis - last) / (1000 * 60 * 60);
+    if (hours <= 0) return obs;
+    return obs * math.pow(0.5, hours / config.trafficHalfLifeHours);
   }
 
-  /// Prior confidence n₀: traffic frequency scales trust in q₀.
+  /// Prior quality q₀ for THIS direction: my own measured SNR (trace)
+  /// outranks an imported measurement, which outranks the passive
+  /// default. An import carrying both a measured SNR and a delivery
+  /// record averages the two — they are independent readings of the
+  /// same link.
+  double priorQuality(EdgeState e) {
+    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
+    var sum = 0.0, parts = 0;
+    if (e.importedSnr != null) {
+      sum += snrQuality(e.importedSnr!);
+      parts++;
+    }
+    if (e.importedAttempts > 0) {
+      // Beta-smoothed toward the passive default so a lone 1/1 does not
+      // read as certainty.
+      sum += (e.importedDelivered + config.passiveDefaultQ * config.n0Min) /
+          (e.importedAttempts + config.n0Min);
+      parts++;
+    }
+    return parts == 0 ? config.passiveDefaultQ : sum / parts;
+  }
+
+  /// Prior confidence n₀: how often this direction has been seen — by
+  /// me or by the collector I imported from — scales trust in q₀.
   double priorConfidence(EdgeState e, int nowMillis) {
-    final t = decayedTraffic(e, nowMillis);
+    final t = decayedTraffic(e, nowMillis) + importedTraffic(e, nowMillis);
     final scale = t / (t + config.trafficConfidenceHalf);
     return config.n0Min + (config.n0Max - config.n0Min) * scale;
   }
@@ -147,8 +170,7 @@ class Estimator {
 
   /// Any evidence at all? (Nodes minted by a single sighting shouldn't
   /// route on the bare passive default.)
-  bool hasEvidence(EdgeState e) =>
-      e.n > 0 || e.importedScore != null || e.obsCount > 0;
+  bool hasEvidence(EdgeState e) => e.n > 0 || e.obsCount > 0 || e.hasImport;
 
   /// Usable in this direction.
   bool usable(EdgeState e, int nowMillis) =>
