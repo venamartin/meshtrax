@@ -485,9 +485,15 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                               pathLen: -1,
                             );
                           } else if (mode == 'direct') {
+                            // pathBytes is required, not optional: without
+                            // it copyWith keeps the previous override bytes
+                            // AND setPathOverride skips the device sync, so
+                            // the radio keeps routing on the old multi-hop
+                            // path while the UI claims Direct.
                             await connector.setPathOverride(
                               repeater,
                               pathLen: 0,
+                              pathBytes: Uint8List(0),
                             );
                           } else {
                             await connector.setPathOverride(

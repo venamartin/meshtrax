@@ -404,7 +404,12 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                           ? () async {
                               Contact? loginContact = contact;
                               if (loginContact != null) {
-                                await widget.connector.setPathOverride(loginContact, pathLen: 0);
+                                // pathBytes: without it the previous override
+                                // bytes survive and the device is never told.
+                                await widget.connector.setPathOverride(
+                                    loginContact,
+                                    pathLen: 0,
+                                    pathBytes: Uint8List(0));
                                 final idx = widget.connector.contacts.indexWhere((c) => c.publicKeyHex == loginContact!.publicKeyHex);
                                 if (idx >= 0) loginContact = widget.connector.contacts[idx];
                               } else {

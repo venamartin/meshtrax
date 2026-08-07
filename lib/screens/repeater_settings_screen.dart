@@ -62,7 +62,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
   // Feature toggles
   bool _repeatEnabled = true;
   bool _allowReadOnly = true;
-  bool _privacyMode = false;
   bool _autoClockSyncAfterLogin = false;
 
   // Advertisement settings
@@ -70,7 +69,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
   int _advertInterval = 120; // minutes/2
   bool _floodAdvertEnable = true;
   int _floodAdvertInterval = 12; // hours
-  int _privAdvertInterval = 60; // minutes
 
   final List<int> _bandwidthOptions = [
     7800,
@@ -255,10 +253,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
       if (_fetchedSettings.containsKey('allow.read.only')) {
         _allowReadOnly = _normalizeOnOff(_fetchedSettings['allow.read.only']!);
       }
-      if (_fetchedSettings.containsKey('privacy')) {
-        _privacyMode = _normalizeOnOff(_fetchedSettings['privacy']!);
-      }
-
       if (_fetchedSettings.containsKey('advert.interval')) {
         _advertInterval = _parseIntWithFallback(
           _fetchedSettings['advert.interval']!,
@@ -272,12 +266,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
           _floodAdvertInterval,
         );
         _floodAdvertEnable = _floodAdvertInterval > 0;
-      }
-      if (_fetchedSettings.containsKey('priv.advert.interval')) {
-        _privAdvertInterval = _parseIntWithFallback(
-          _fetchedSettings['priv.advert.interval']!,
-          _privAdvertInterval,
-        );
       }
     });
   }
@@ -334,10 +322,8 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
       case 'lon':
       case 'repeat':
       case 'allow.read.only':
-      case 'privacy':
       case 'advert.interval':
       case 'flood.advert.interval':
-      case 'priv.advert.interval':
         appLog.info('Storing key="$key" value="$value"', tag: 'RadioSettings');
         _fetchedSettings[key] = value;
         break;
@@ -380,7 +366,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
 
       case 'repeat':
       case 'allow.read.only':
-      case 'privacy':
         // Boolean values: on/off/true/false/1/0/enabled/disabled
         final lower = value.toLowerCase().trim();
         return [
@@ -552,7 +537,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
       commands: const [
         'get advert.interval',
         'get flood.advert.interval',
-        // 'get priv.advert.interval', // Hidden until privacy mode is implemented
       ],
       setRefreshing: (value) => _refreshingAdvertisement = value,
     );
@@ -580,112 +564,119 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     });
   }
 
+  /// Commands the firmware actually implements, in MeshCore/src/helpers/
+  /// CommonCLI.cpp. Anything not in that file is silently rejected with
+  /// `??: name` — which the old blind save could never notice.
+  List<String> _buildSaveCommands() {
+    final commands = <String>[];
+
+    if (_nameController.text.isNotEmpty) {
+      commands.add('set name ${_nameController.text}');
+    }
+    if (_passwordController.text.isNotEmpty) {
+      commands.add('password ${_passwordController.text}');
+    }
+    if (_guestPasswordController.text.isNotEmpty) {
+      commands.add('set guest.password ${_guestPasswordController.text}');
+    }
+
+    // set radio <freq> <bw_khz> <sf> <cr> — parsed with strtof, so full
+    // precision is both accepted and required: one decimal turned
+    // 910.525 into "910.5" and retuned the repeater off-frequency.
+    if (_freqController.text.isNotEmpty &&
+        _bandwidth != null &&
+        _spreadingFactor != null &&
+        _codingRate != null) {
+      final freqMHz = double.tryParse(_freqController.text);
+      if (freqMHz != null) {
+        final bwKHz = _bandwidth! / 1000;
+        commands.add('set radio ${freqMHz.toStringAsFixed(3)} $bwKHz '
+            '$_spreadingFactor $_codingRate');
+      }
+    }
+
+    // TX power was displayed and refreshed but never saved — the command
+    // was simply missing from this list.
+    final txPower = int.tryParse(_txPowerController.text);
+    if (txPower != null) {
+      commands.add('set tx $txPower');
+    }
+
+    if (_latController.text.isNotEmpty) {
+      commands.add('set lat ${_latController.text}');
+    }
+    if (_lonController.text.isNotEmpty) {
+      commands.add('set lon ${_lonController.text}');
+    }
+
+    commands.add('set repeat ${_repeatEnabled ? "on" : "off"}');
+    commands.add('set allow.read.only ${_allowReadOnly ? "on" : "off"}');
+
+    // advert.interval is stored as minutes/2, so odd values round down.
+    commands.add('set advert.interval ${_advertInterval - (_advertInterval % 2)}');
+    commands.add('set flood.advert.interval $_floodAdvertInterval');
+
+    // NOT SENT: "set privacy" and "set priv.advert.interval" do not exist
+    // in the firmware at all — they were always answered with "??".
+    return commands;
+  }
+
   Future<void> _saveSettings() async {
+    final l10n = context.l10n;
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     final repeater = _resolveRepeater(connector);
+    final service = _commandService;
+    if (service == null) return;
 
     setState(() {
       _isLoading = true;
     });
 
-    try {
-      final selection = await connector.preparePathForContactSend(repeater);
-      final commands = <String>[];
+    final failures = <String>[];
+    var sent = 0;
 
-      // Build set commands for each setting
-      if (_nameController.text.isNotEmpty) {
-        commands.add('set name ${_nameController.text}');
-      }
-
-      if (_passwordController.text.isNotEmpty) {
-        commands.add('password ${_passwordController.text}');
-      }
-
-      if (_guestPasswordController.text.isNotEmpty) {
-        commands.add('set guest.password ${_guestPasswordController.text}');
-      }
-
-      // Radio parameters
-      if (_freqController.text.isNotEmpty &&
-          _bandwidth != null &&
-          _spreadingFactor != null &&
-          _codingRate != null) {
-        final freqMHz = double.tryParse(_freqController.text);
-        if (freqMHz != null) {
-          final bwKHz = _bandwidth! / 1000;
-          commands.add(
-            'set radio ${freqMHz.toStringAsFixed(1)} $bwKHz $_spreadingFactor $_codingRate',
-          );
+    // One command at a time, waiting for the repeater's reply, exactly as
+    // the refresh buttons already do. The old version fired everything
+    // blind 200 ms apart and reported success unconditionally, so a lost
+    // or rejected write was indistinguishable from a saved one.
+    for (final command in _buildSaveCommands()) {
+      try {
+        final response = await service.sendCommand(repeater, command);
+        final trimmed = response.trim();
+        if (trimmed.startsWith('Err') ||
+            trimmed.startsWith('Error') ||
+            trimmed.startsWith('??')) {
+          failures.add('$command → $trimmed');
+        } else {
+          sent += 1;
         }
+      } catch (e) {
+        failures.add('$command → $e');
       }
-
-      // Location
-      if (_latController.text.isNotEmpty) {
-        commands.add('set lat ${_latController.text}');
-      }
-      if (_lonController.text.isNotEmpty) {
-        commands.add('set lon ${_lonController.text}');
-      }
-
-      // Feature toggles
-      commands.add('set repeat ${_repeatEnabled ? "on" : "off"}');
-      commands.add('set allow.read.only ${_allowReadOnly ? "on" : "off"}');
-      commands.add('set privacy ${_privacyMode ? "on" : "off"}');
-
-      // Advertisement intervals
-      commands.add('set advert.interval $_advertInterval');
-      commands.add('set flood.advert.interval $_floodAdvertInterval');
-      if (_privacyMode) {
-        commands.add('set priv.advert.interval $_privAdvertInterval');
-      }
-
-      // Send all commands
-      for (final command in commands) {
-        final timestampSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        connector.trackRepeaterAck(
-          contact: repeater,
-          selection: selection,
-          text: command,
-          timestampSeconds: timestampSeconds,
-        );
-        final frame = buildSendCliCommandFrame(
-          repeater.publicKey,
-          command,
-          timestampSeconds: timestampSeconds,
-        );
-        await connector.sendFrame(frame);
-        await Future.delayed(
-          const Duration(milliseconds: 200),
-        ); // Delay between commands
-      }
-
-      setState(() {
-        _isLoading = false;
-        _hasChanges = false;
-      });
-
-      if (mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.repeater_settingsSaved),
-          backgroundColor: Colors.green,
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(
-            context.l10n.repeater_errorSavingSettings(e.toString()),
-          ),
-          backgroundColor: Colors.red,
-        );
-      }
+      // No inter-command delay: the reply IS the pacing. Nothing is ever
+      // in flight but the command we are waiting on.
     }
+
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+      _hasChanges = failures.isNotEmpty;
+    });
+
+    for (final failure in failures) {
+      Provider.of<AppDebugLogService>(context, listen: false)
+          .warn(failure, tag: 'RadioSettings');
+    }
+
+    showDismissibleSnackBar(
+      context,
+      content: Text(failures.isEmpty
+          ? l10n.repeater_settingsSaved
+          : l10n.repeater_errorSavingSettings(
+              '${failures.length} of ${sent + failures.length} failed: '
+              '${failures.first}')),
+      backgroundColor: failures.isEmpty ? Colors.green : Colors.red,
+    );
   }
 
   void _markChanged() {
@@ -1195,21 +1186,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
               },
               contentPadding: EdgeInsets.zero,
             ),
-            // Privacy mode - hidden until fully implemented
-            // _buildFeatureToggleRow(
-            //   title: l10n.repeater_privacyMode,
-            //   subtitle: l10n.repeater_privacyModeSubtitle,
-            //   value: _privacyMode,
-            //   isRefreshing: _refreshingPrivacy,
-            //   onChanged: (value) {
-            //     setState(() {
-            //       _privacyMode = value;
-            //     });
-            //     _markChanged();
-            //   },
-            //   onRefresh: _refreshPrivacy,
-            //   refreshTooltip: l10n.repeater_refreshPrivacyMode,
-            // ),
           ],
         ),
       ),
@@ -1337,28 +1313,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
                     }
                   : null,
             ),
-            // Encrypted advertisement interval - hidden until privacy mode is implemented
-            // if (_privacyMode) ...[
-            //   const SizedBox(height: 16),
-            //   ListTile(
-            //     title: Text(l10n.repeater_encryptedAdvertInterval),
-            //     subtitle: Text(l10n.repeater_localAdvertIntervalMinutes(_privAdvertInterval)),
-            //     trailing: Text(l10n.repeater_localAdvertIntervalMinutes(_privAdvertInterval)),
-            //   ),
-            //   Slider(
-            //     value: _privAdvertInterval.toDouble(),
-            //     min: 30,
-            //     max: 240,
-            //     divisions: 21,
-            //     label: l10n.repeater_localAdvertIntervalMinutes(_privAdvertInterval),
-            //     onChanged: (value) {
-            //       setState(() {
-            //         _privAdvertInterval = value.toInt();
-            //       });
-            //       _markChanged();
-            //     },
-            //   ),
-            // ],
           ],
         ),
       ),

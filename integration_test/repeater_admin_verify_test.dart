@@ -52,9 +52,36 @@ void main() {
     if (!ready) fail('Bench not ready — see the first failure above.');
   }
 
+  /// How long a direct CLI round trip may legitimately take, every term
+  /// taken from the firmware rather than guessed:
+  ///
+  ///  * two legs of airtime — the connector's own physics model;
+  ///  * CLI_REPLY_DELAY_MILLIS = 600 (MyMesh.cpp:59), a deliberate wait
+  ///    before the repeater transmits its reply;
+  ///  * up to CADFailMaxDuration = 4000 (Dispatcher.cpp:62) of carrier-
+  ///    sense backoff, retried every 200 ms, before the send is forced.
+  ///
+  /// That last term is why "timeouts" appeared next to a repeater in the
+  /// same house: on a live mesh the channel is often busy, and the reply
+  /// is deferred, not lost. Anything under ~5.2 s reports late replies as
+  /// failures. The app's RepeaterCommandService already floors its own
+  /// timeout at 8 s for exactly this reason.
+  /// The CAD ceiling is NOT a global cap: cad_busy_start resets every
+  /// time the channel goes quiet, so intermittent traffic can restart the
+  /// backoff indefinitely. A budget cannot guarantee delivery — retrying
+  /// is the only correct answer, which is why this harness and
+  /// RepeaterCommandService both retry.
+  Duration cliBudget({int hops = 0, int bytes = 100}) {
+    const cliReplyDelayMs = 600; // MyMesh.cpp:59
+    const cadBackoffCeilingMs = 4000; // Dispatcher.cpp:62
+    final leg = usb.connector
+        .calculateTimeout(pathLength: hops, messageBytes: bytes);
+    return Duration(
+        milliseconds: leg * 2 + cliReplyDelayMs + cadBackoffCeilingMs + 500);
+  }
+
   /// Sends one CLI command and waits for the repeater's reply.
-  Future<String?> cli(String command,
-      {Duration timeout = const Duration(seconds: 45)}) async {
+  Future<String?> cli(String command, {Duration? timeout}) async {
     final completer = Completer<String?>();
     final target = a277!.publicKey.sublist(0, 6);
     final sub = usb.connector.receivedFrames.listen((frame) {
@@ -69,12 +96,15 @@ void main() {
       if (!completer.isCompleted) completer.complete(parsed.text);
     });
     try {
-      blog('-> "$command"');
+      final budget = timeout ?? cliBudget();
+      final started = DateTime.now();
+      blog('-> "$command"  (budget ${budget.inMilliseconds} ms)');
       await usb.connector.sendFrame(
           buildSendCliCommandFrame(a277!.publicKey, command));
-      final reply = await completer.future
-          .timeout(timeout, onTimeout: () => null);
-      blog('<- ${reply == null ? "(no reply)" : '"$reply"'}');
+      final reply =
+          await completer.future.timeout(budget, onTimeout: () => null);
+      final ms = DateTime.now().difference(started).inMilliseconds;
+      blog('<- ${reply == null ? "(no reply)" : '"$reply"'}  [$ms ms]');
       return reply;
     } finally {
       await sub.cancel();
@@ -86,7 +116,7 @@ void main() {
   /// reads, and exactly what _saveSettings does NOT do for writes.
   Future<String?> cliRetry(String command, {int attempts = 3}) async {
     for (var i = 1; i <= attempts; i++) {
-      final reply = await cli(command, timeout: const Duration(seconds: 30));
+      final reply = await cli(command);
       if (reply != null) {
         if (i > 1) blog('   (took $i attempts)');
         return reply;
@@ -188,7 +218,17 @@ void main() {
     expect(live().pathOverride, 0,
         reason: 'preparing the send cleared the override');
 
-    final (ok, admin) = await repeaterLogin(usb, live(), password);
+    // A login is one packet each way like anything else — retry it on the
+    // same derived budget rather than staking the run on a single shot.
+    // A false (wrong password) is final; only a null is worth repeating.
+    bool? ok;
+    bool admin = false;
+    for (var i = 1; i <= 3 && ok != true; i++) {
+      (ok, admin) = await repeaterLogin(usb, live(), password,
+          timeout: cliBudget());
+      if (ok == null) blog('   login attempt $i/3: no reply');
+      if (ok == false) break;
+    }
     blog('login: ok=$ok admin=$admin');
     expect(ok, isTrue, reason: 'login to A277 failed');
     blog('after login: override=${live().pathOverride} '
@@ -238,61 +278,6 @@ void main() {
     expect(restored, originalTx, reason: 'FAILED TO RESTORE TX POWER');
   });
 
-  testWidgets('V3 the save screens burst cadence: how much survives?',
-      (tester) async {
-    requireReady();
-    await beginScenario(tester, 'V3 blind 200 ms burst');
-
-    // repeater_settings_screen._saveSettings fires every command back to
-    // back, 200 ms apart, and never waits for or reads a reply. Replay
-    // that cadence with READ-ONLY commands and count what comes back.
-    const commands = [
-      'get tx',
-      'get name',
-      'get repeat',
-      'get allow.read.only',
-      'get privacy',
-      'get advert.interval',
-      'get flood.advert.interval',
-      'get lat',
-    ];
-
-    final replies = <String>[];
-    final target = a277!.publicKey.sublist(0, 6);
-    final sub = usb.connector.receivedFrames.listen((frame) {
-      if (frame.isEmpty) return;
-      if (frame[0] != respCodeContactMsgRecv &&
-          frame[0] != respCodeContactMsgRecvV3) {
-        return;
-      }
-      final parsed = parseContactMessageText(frame);
-      if (parsed == null || parsed.senderPrefix.length < 6) return;
-      if (!listEquals(parsed.senderPrefix.sublist(0, 6), target)) return;
-      replies.add(parsed.text);
-      blog('<- reply ${replies.length}: "${parsed.text}"');
-    });
-
-    try {
-      for (final command in commands) {
-        blog('-> "$command"');
-        await usb.connector.sendFrame(
-            buildSendCliCommandFrame(a277!.publicKey, command));
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      }
-      blog('all ${commands.length} sent; collecting replies for 30 s…');
-      await Future<void>.delayed(const Duration(seconds: 30));
-    } finally {
-      await sub.cancel();
-    }
-
-    blog('BURST RESULT: ${replies.length}/${commands.length} replied');
-    for (final r in replies) {
-      blog('  "$r"');
-    }
-    // Recorded, not asserted — this measurement IS the finding.
-    expect(replies.length, lessThanOrEqualTo(commands.length));
-  });
-
   testWidgets('V5 login-dialog Direct vs settings-screen Direct',
       (tester) async {
     requireReady();
@@ -338,7 +323,7 @@ void main() {
 
   /// Sends with an EXPLICIT sender_timestamp and waits for the reply.
   Future<String?> cliAt(String command, int ts,
-      {Duration timeout = const Duration(seconds: 25)}) async {
+      {Duration? timeout}) async {
     final completer = Completer<String?>();
     final target = a277!.publicKey.sublist(0, 6);
     final sub = usb.connector.receivedFrames.listen((frame) {
@@ -357,8 +342,8 @@ void main() {
       await usb.connector.sendFrame(buildSendCliCommandFrame(
           a277!.publicKey, command,
           timestampSeconds: ts));
-      final reply =
-          await completer.future.timeout(timeout, onTimeout: () => null);
+      final reply = await completer.future
+          .timeout(timeout ?? cliBudget(), onTimeout: () => null);
       blog('<- ${reply == null ? "(NO REPLY)" : '"$reply"'}');
       return reply;
     } finally {
@@ -387,7 +372,7 @@ void main() {
     final c = await cliAt('get repeat', base - 30);
     blog('  [3] OLDER timestamp      -> ${c == null ? "DROPPED" : "answered"}');
 
-    final d = await cliAt('get privacy', base + 5);
+    final d = await cliAt('get lat', base + 5);
     blog('  [4] NEWER timestamp      -> ${d == null ? "DROPPED" : "answered"}');
 
     blog('=== VERDICT ===');
@@ -399,6 +384,137 @@ void main() {
     } else {
       blog('NOT the mechanism — A277 answers same-second commands.');
     }
+  });
+
+  testWidgets('V7 a non-TX setting saves through the fixed path',
+      (tester) async {
+    requireReady();
+    await beginScenario(tester, 'V7 sequential save');
+
+    String? val(String? reply) =>
+        reply?.replaceFirst(RegExp(r'^>\s*'), '').trim();
+
+    final origAdvert = int.tryParse(
+        val(await cliRetry('get advert.interval')) ?? '');
+    final origFlood = int.tryParse(
+        val(await cliRetry('get flood.advert.interval')) ?? '');
+    final origRepeat = val(await cliRetry('get repeat'));
+    final origReadOnly = val(await cliRetry('get allow.read.only'));
+    blog('current: advert=$origAdvert flood=$origFlood '
+        'repeat=$origRepeat allow.read.only=$origReadOnly');
+    expect(origAdvert, isNotNull, reason: 'could not read advert.interval');
+
+    // MUST be even. CommonCLI.cpp:525 stores advert.interval as minutes/2
+    // in a uint8, and the getter multiplies back by 2 — so "121" is stored
+    // as 60 and reads back as 120. An odd offset round-trips to the
+    // starting value and proves nothing about whether the write landed.
+    final target = origAdvert! + 2;
+
+    // What _saveSettings does now: send, wait for the reply, send the
+    // next — nothing is ever in flight but the command being awaited.
+    // Every value except advert.interval is the repeater's current one,
+    // so only that field moves. "set radio" and "set name" are excluded
+    // by hand; the app does send them.
+    final batch = [
+      'set repeat $origRepeat',
+      'set allow.read.only $origReadOnly',
+      'set advert.interval $target',
+      'set flood.advert.interval $origFlood',
+    ];
+    final rejected = <String>[];
+    for (final command in batch) {
+      final reply = (await cliRetry(command))?.trim() ?? '(no reply)';
+      final bad = reply.startsWith('Err') ||
+          reply.startsWith('Error') ||
+          reply.startsWith('??') ||
+          reply == '(no reply)';
+      blog('  ${bad ? "REJECTED" : "ok      "}  "$command" -> "$reply"');
+      if (bad) rejected.add(command);
+    }
+
+    final after = int.tryParse(val(await cliRetry('get advert.interval')) ?? '');
+    blog('=== advert.interval: was $origAdvert, set $target, now $after ===');
+    expect(rejected, isEmpty, reason: 'every command must be answered');
+    expect(after, target,
+        reason: 'a setting saved the sequential way must stick');
+
+    // Restore whatever happened.
+    await cliRetry('set advert.interval $origAdvert');
+    final restored =
+        int.tryParse(val(await cliRetry('get advert.interval')) ?? '');
+    blog('restored advert.interval to: $restored (was $origAdvert)');
+    expect(restored, origAdvert, reason: 'FAILED TO RESTORE advert.interval');
+  });
+
+  testWidgets('V8 the FIXED save path: every command lands', (tester) async {
+    requireReady();
+    await beginScenario(tester, 'V8 verify the fix');
+
+    String? val(String? r) => r?.replaceFirst(RegExp(r'^>\s*'), '').trim();
+
+    // The old builder wrote the frequency with one decimal. Prove the
+    // damage without transmitting it: read the real radio line and format
+    // it both ways.
+    final radio = val(await cliRetry('get radio'));
+    blog('A277 radio: "$radio"');
+    final freq = double.tryParse(radio?.split(',').first ?? '');
+    if (freq != null) {
+      // The firmware keeps freq as a float32, so "910.525" reads back as
+      // 910.5250244. Tolerance, not bit-equality, is the right test.
+      final oldErrKhz = (double.parse(freq.toStringAsFixed(1)) - freq).abs()
+          * 1000;
+      final newErrKhz = (double.parse(freq.toStringAsFixed(3)) - freq).abs()
+          * 1000;
+      blog('  old builder: "set radio ${freq.toStringAsFixed(1)} …" '
+          '-> off by ${oldErrKhz.toStringAsFixed(1)} kHz');
+      blog('  new builder: "set radio ${freq.toStringAsFixed(3)} …" '
+          '-> off by ${newErrKhz.toStringAsFixed(3)} kHz');
+      expect(newErrKhz, lessThan(1.0),
+          reason: '3 decimals must land within 1 kHz of the real frequency');
+    }
+
+    final origTx = parseTx(await cliRetry('get tx'));
+    final origAdvert =
+        int.tryParse(val(await cliRetry('get advert.interval')) ?? '');
+    final origFlood =
+        int.tryParse(val(await cliRetry('get flood.advert.interval')) ?? '');
+    final origRepeat = val(await cliRetry('get repeat'));
+    final origReadOnly = val(await cliRetry('get allow.read.only'));
+
+    // The command list _buildSaveCommands now produces, with A277's own
+    // current values so this run changes nothing. "set radio", "set name"
+    // and the password commands are excluded by hand.
+    final commands = [
+      'set tx $origTx',
+      'set repeat $origRepeat',
+      'set allow.read.only $origReadOnly',
+      'set advert.interval ${origAdvert! - (origAdvert % 2)}',
+      'set flood.advert.interval $origFlood',
+    ];
+
+    final rejected = <String>[];
+    for (final command in commands) {
+      final reply = (await cliRetry(command))?.trim() ?? '(no reply)';
+      final bad = reply.startsWith('Err') ||
+          reply.startsWith('Error') ||
+          reply.startsWith('??') ||
+          reply == '(no reply)';
+      blog('  ${bad ? "REJECTED" : "ok      "}  "$command" -> "$reply"');
+      if (bad) rejected.add('$command -> $reply');
+    }
+    blog('=== ${commands.length - rejected.length}/${commands.length} '
+        'accepted ===');
+    expect(rejected, isEmpty,
+        reason: 'the app now sends only commands the firmware implements');
+
+    // And the headline fix: TX power actually persists.
+    await cliRetry('set tx 5');
+    final low = parseTx(await cliRetry('get tx'));
+    await cliRetry('set tx $origTx');
+    final back = parseTx(await cliRetry('get tx'));
+    blog('=== TX: $origTx -> set 5 -> read $low -> restored $back ===');
+    expect(low, 5, reason: 'set tx must stick');
+    expect(back, origTx, reason: 'FAILED TO RESTORE TX POWER');
   });
 
   testWidgets('V4 report', (tester) async {
