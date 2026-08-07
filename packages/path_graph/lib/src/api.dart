@@ -553,10 +553,14 @@ class PathGraph {
     GeoPosition? homePosition,
     double? radiusKm,
   }) async {
-    if (document['format'] != 'meshtrax-graph-v1' ||
-        document['directed'] != true) {
+    if (document['format'] != 'meshtrax-graph-v1') {
       throw const FormatException('not a meshtrax-graph-v1 document');
     }
+    // `directed: false` (Corescope's real shape — one entry per pair,
+    // one symmetric avg_snr) means every link seeds BOTH directions.
+    // `directed: true` means a link seeds source→target only and a
+    // reverse link must appear as its own entry.
+    final undirected = document['directed'] == false;
     final nodes = (document['nodes'] as List?) ?? const [];
     final links = (document['links'] as List?) ?? const [];
     if (nodes.length > _maxImportNodes || links.length > _maxImportLinks) {
@@ -606,7 +610,12 @@ class PathGraph {
       final score = (link['score'] as num?)?.toDouble();
       final snr = (link['avg_snr'] as num?)?.toDouble();
       seedPrior(from, to, score, snr);
-      if (link['bidirectional'] == true) seedPrior(to, from, score, snr);
+      if (undirected || link['bidirectional'] == true) {
+        // Same numbers both ways — a symmetric PRIOR, not two
+        // measurements. Locally measured SNR (trace / Discover)
+        // outranks it in priorQuality, which is the point.
+        seedPrior(to, from, score, snr);
+      }
     }
 
     await _db.into(_db.graphMeta).insertOnConflictUpdate(

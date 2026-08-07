@@ -934,11 +934,29 @@ bits ride along without breaking anything. Full pubkey is the node `id`
 (the lossless-file rule). A GeoJSON companion export can be a later
 analyze.py flag for GIS tooling.
 
+**The source data is UNDIRECTED — verified 2026-08-07.** Corescope
+publishes exactly one entry per node pair with a single `avg_snr`; a
+scan of the live feed found **zero** edges appearing in both directions,
+and the per-edge `bidirectional` flag is `true` on all 2,866 of them
+(i.e. it carries no information). So there is **no per-direction SNR**
+in the import: A→B and B→A necessarily receive the *same* number.
+Declaring `directed: true` and duplicating that value would misrepresent
+one measurement as two, so the export declares **`directed: false`**
+plus `snr_directionality: "symmetric"`, and the app expands each link
+into two directed priors at import while treating the SNR as a
+*symmetric estimate*. This is exactly why locally measured SNR (trace
+per-hop, Discover uplink/downlink) outranks the imported value in
+`priorQuality` — local measurement is the only true per-direction dB
+the module ever gets. Import accepts both shapes: `directed: false`
+seeds both ways; `directed: true` seeds source→target only and expects
+a reverse entry of its own.
+
 ```json
 { "format": "meshtrax-graph-v1",
-  "directed": true, "multigraph": false,
+  "directed": false, "multigraph": false,
   "graph": { "generated_at": "...", "region": "socal",
-             "source": "corescope", "hash_width": 2 },
+             "source": "corescope", "hash_width": 2,
+             "snr_directionality": "symmetric" },
   "nodes": [ { "id": "<64-hex pubkey>", "name": "...",
                "lat": 0, "lon": 0, "last_heard": 0 } ],
   "links": [ { "source": "<pubkey>", "target": "<pubkey>",
@@ -946,9 +964,10 @@ analyze.py flag for GIS tooling.
                "bidirectional": true, "weight": 3791 } ] }
 ```
 
-Edges carry the analyzer's `bidirectional` flag: `true` expands to two
-directed prior-edges at import, `false` to from→to only. `weight`
-(observation count) scales prior confidence. Published as a raw file on a GitHub
+`weight` (observation count) scales prior confidence. The legacy
+per-edge `bidirectional` flag is still honoured when a document
+declares `directed: true`, but Corescope sets it unconditionally, so
+`directed: false` is the accurate declaration for its data. Published as a raw file on a GitHub
 branch/gist/release asset, app fetches by URL — which also naturally enables
 multiple region files.
 

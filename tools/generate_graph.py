@@ -123,13 +123,20 @@ def build_region(region, base_url):
 
     document = {
         "format": "meshtrax-graph-v1",
-        "directed": True,
+        # Corescope publishes ONE entry per node pair with a single
+        # avg_snr — verified: no edge appears in both directions. So the
+        # source data is undirected and its SNR is a symmetric estimate,
+        # NOT a per-direction measurement. Declaring directed:false keeps
+        # that honest; the app expands each link into two directed priors
+        # at import and marks them as symmetric-prior quality.
+        "directed": False,
         "multigraph": False,
         "graph": {
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "region": region,
             "source": base_url,
             "hash_width": 2,
+            "snr_directionality": "symmetric",
         },
         "nodes": nodes,
         "links": links,

@@ -54,6 +54,35 @@ void main() {
     expect(snap.edges[('1312', 'A277')]!.importedScore, 0.9);
   });
 
+  test('undirected document seeds both directions with a SYMMETRIC prior',
+      () async {
+    // Corescope's real shape: one entry per pair, one avg_snr, no
+    // reverse entry anywhere in the file.
+    final doc = {
+      'format': 'meshtrax-graph-v1',
+      'directed': false,
+      'graph': {'region': 'testland', 'snr_directionality': 'symmetric'},
+      'nodes': [
+        {'id': pkA, 'name': 'Alpha'},
+        {'id': pkB, 'name': 'Bravo'},
+      ],
+      'links': [
+        {'source': pkA, 'target': pkB, 'score': 0.8, 'avg_snr': 6.0},
+      ],
+    };
+    await graph.importGraph(doc);
+    final snap = graph.snapshot();
+    final fwd = snap.edges[('A277', '1312')]!;
+    final rev = snap.edges[('1312', 'A277')]!;
+    expect(fwd.avgSnr, 6.0);
+    expect(rev.avgSnr, 6.0, reason: 'same number both ways — one estimate');
+    // And it is only a PRIOR: a locally measured value must win.
+    fwd.measuredSnr = -12;
+    expect(graph.estimator.priorQuality(fwd),
+        lessThan(graph.estimator.priorQuality(rev)),
+        reason: 'measured SNR outranks the imported symmetric estimate');
+  });
+
   test('one-way link seeds source->target only', () async {
     await graph.importGraph(doc(links: [
       {'source': pkA, 'target': pkB, 'score': 0.8, 'bidirectional': false},
