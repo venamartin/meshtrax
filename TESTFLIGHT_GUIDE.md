@@ -4,9 +4,9 @@
 
 - [x] Apple Developer Account ($99/year) - [developer.apple.com](https://developer.apple.com)
 - [x] Xcode installed
-- [x] Apple Transporter app installed
+- [ ] Apple Transporter app (optional — Xcode's Organizer uploads too)
 - [x] App icons ready (1024x1024px)
-- [x] Bundle ID configured: `com.monitormx.meshcoreopen`
+- [x] Bundle ID configured: `com.vena.meshtrax` (matches the Android `applicationId`)
 
 ## Step 1: Register Bundle Identifier
 
@@ -16,9 +16,13 @@
 4. Select **"App"** → Continue
 5. Fill in:
    - **Description**: MeshTrax
-   - **Bundle ID**: Explicit - `com.monitormx.meshcoreopen`
-   - **Capabilities**: Leave defaults (or add as needed)
+   - **Bundle ID**: Explicit - `com.vena.meshtrax`
+   - **Capabilities**: Leave defaults. The only background mode is
+     `bluetooth-central`, which needs no App ID capability.
 6. Click **Continue** → **Register**
+
+Xcode's automatic signing registers the App ID on its own during the first
+archive, so this step is often already done.
 
 ## Step 2: Create App in App Store Connect
 
@@ -28,12 +32,18 @@
 4. Click the **"+"** button → **"New App"**
 5. Fill in the form:
    - **Platforms**: iOS
-   - **Name**: MeshTrax
+   - **Name**: `MeshTrax Beta` — the name must be unique across all of Apple,
+     and plain "MeshTrax" is taken by the older `com.monitormx.meshcoreopen`
+     record
    - **Primary Language**: English (U.S.)
-   - **Bundle ID**: Select `com.monitormx.meshcoreopen` from dropdown
-   - **SKU**: `meshcore-open-001` (or any unique identifier)
+   - **Bundle ID**: Select `com.vena.meshtrax` from dropdown
+   - **SKU**: `meshtrax-vena-001` (or any unique identifier)
    - **User Access**: Full Access
 6. Click **"Create"**
+
+The record is created with a placeholder version (1.0) that will not match
+`pubspec.yaml`. TestFlight reads the version from the uploaded build, so this
+only needs reconciling for an actual App Store submission.
 
 ## Step 3: Build the IPA
 
@@ -49,20 +59,32 @@ flutter build ipa
 
 The IPA will be created at: `build/ios/ipa/MeshTrax.ipa`
 
-## Step 4: Upload to App Store Connect via Transporter
+## Step 4: Upload to App Store Connect
 
-1. **Open Apple Transporter**
-   - Launch from Applications folder
-   - Sign in with your Apple ID
+### Via Xcode Organizer (no extra tooling)
 
-2. **Upload the IPA**
-   - Drag and drop `build/ios/ipa/MeshTrax.ipa` into Transporter
-   - Click **"Deliver"**
-   - Wait for upload to complete (usually 1-5 minutes)
+`flutter build ipa` also leaves an archive at
+`build/ios/archive/Runner.xcarchive`. Open it to load Xcode's Organizer:
 
-3. **Processing**
-   - Apple will process your build (10-30 minutes)
-   - You'll receive an email when processing is complete
+```bash
+open build/ios/archive/Runner.xcarchive
+```
+
+Then **Distribute App** → **App Store Connect** → **Upload** → accept the
+defaults → **Automatically manage signing** → **Upload**.
+
+A `MinimumOSVersion too low` warning is expected if the deployment target is
+below 15.0; see Troubleshooting. "Uploaded with warnings" is a success state.
+
+### Via Transporter (alternative)
+
+1. Install [Transporter](https://apps.apple.com/us/app/transporter/id1450874784)
+   and sign in with your Apple ID
+2. Drag `build/ios/ipa/MeshTrax.ipa` in, click **"Deliver"**
+
+### Processing
+
+Apple processes the build (10-30 minutes) and emails you when it is done.
 
 ## Step 5: Configure App Store Connect Metadata
 
@@ -166,8 +188,10 @@ When you need to release an update:
 
 1. **Update version** in `pubspec.yaml`:
    ```yaml
-   version: 0.5.0+6  # Increment version (0.5.0) and build number (+6)
+   version: 1.7.13+23  # Increment version (1.7.13) and build number (+23)
    ```
+   App Store Connect rejects a build number it has already seen, so the build
+   number must increase even when the version name does not.
 
 2. **Build new IPA**:
    ```bash
@@ -175,7 +199,7 @@ When you need to release an update:
    flutter build ipa
    ```
 
-3. **Upload via Transporter** (same process as above)
+3. **Upload** (same process as Step 4 above)
 
 4. **Create new version** in App Store Connect:
    - Click **"+"** next to versions
@@ -209,7 +233,12 @@ Distribution:
 ### Upload Errors
 - **No profiles found**: Create app in App Store Connect first
 - **Bundle ID not registered**: Register in Apple Developer portal
-- **Authentication failed**: Use Transporter app instead of CLI
+- **Authentication failed**: Use Xcode Organizer or Transporter instead of CLI
+- **MinimumOSVersion too low**: a warning, not an error — the upload still
+  succeeds. From Spring 2027 Apple requires 15.0 or later. Set
+  `IPHONEOS_DEPLOYMENT_TARGET` in `ios/Runner.xcodeproj/project.pbxproj`; keep
+  it in sync with `platform :ios` in `ios/Podfile`, or the app advertises
+  support for iOS versions its Pods were never built for.
 
 ### TestFlight Issues
 - **Build not appearing**: Wait 10-30 minutes for processing
