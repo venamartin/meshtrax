@@ -130,6 +130,23 @@ class GraphStore {
 
   void markEdgeDirty(String from, String to) => _dirtyEdges.add((from, to));
 
+  /// Session restore: drop everything, in memory and on disk.
+  Future<void> clear() async {
+    nodes.clear();
+    edges.clear();
+    _dirtyNodes.clear();
+    _dirtyEdges.clear();
+    _seenMessageEdges.clear();
+    _seenOrder.clear();
+    await _db.delete(_db.graphEdges).go();
+    await _db.delete(_db.graphNodes).go();
+  }
+
+  void markAllDirty() {
+    _dirtyNodes.addAll(nodes.keys);
+    _dirtyEdges.addAll(edges.keys);
+  }
+
   Future<void> load() async {
     for (final row in await _db.select(_db.graphNodes).get()) {
       nodes[row.hashBytes] = NodeState(

@@ -229,6 +229,22 @@ class EvidenceStore {
     return found;
   }
 
+  /// Session restore: drop everything, in memory and on disk.
+  Future<void> clear() async {
+    entries.clear();
+    knownContacts.clear();
+    _dirty.clear();
+    _dirtyContacts.clear();
+    _lastSlashMillis.clear();
+    await _db.delete(_db.contactIngress).go();
+    await _db.delete(_db.knownContacts).go();
+  }
+
+  void markAllDirty() {
+    _dirty.addAll(entries.keys);
+    _dirtyContacts.addAll(knownContacts.keys);
+  }
+
   Future<void> load() async {
     for (final row in await _db.select(_db.contactIngress).get()) {
       entries[(row.ownerPubkey, row.repeaterHash)] = IngressEntry(

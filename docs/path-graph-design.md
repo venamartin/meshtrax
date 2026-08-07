@@ -1074,6 +1074,23 @@ open; the sections after this one are rationale and history.
    recorder**, **package CI lines**.
 5. **Verification campaign** → the go/no-go gate.
 
+**Session checkpoints (done 2026-08-07).** `saveSession()` /
+`loadSession()` write and restore a complete private snapshot —
+everything `exportGraph` withholds by design (contact ingress, the
+contact mirror, my identity and doorstep) plus imported priors and the
+in-memory hub counters. Restoring **replaces** all state, memory and
+database both. Ordinary restarts never need it (state already persists
+in Drift); it exists to checkpoint before an experiment and roll back
+after one, which the campaign will lean on. Never share one — it is a
+position-tagged log of who this radio talks to.
+
+**Known gap found while building it:** `IngressEntry.finalCount` and
+`penultimateCount` have no database columns, so a plain restart resets
+the hub-signature demotion to zero and inferred egress candidates lose
+their demotion until the counts rebuild. A session checkpoint carries
+them, so save/load preserves more than a restart does. Fix is a schema
+v4 with two columns.
+
 Deferred: merge of multi-collector files (needs real single-collector
 data first); Python/Pi always-on collector (optional, not a second
 implementation).

@@ -73,6 +73,7 @@ class PathLabScreen extends StatefulWidget {
 
 class _PathLabScreenState extends State<PathLabScreen> {
   final _importPath = TextEditingController(text: 'meshtrax-graph.json');
+  final _sessionPath = TextEditingController(text: 'path_lab_session.json');
   final _contactPk = TextEditingController();
   String _status = '';
   String _pathResult = '';
@@ -192,6 +193,54 @@ class _PathLabScreenState extends State<PathLabScreen> {
           'exported $nodes nodes / $links directed links → ${_importPath.text}');
     } catch (e) {
       setState(() => _status = 'export failed: $e');
+    }
+  }
+
+  Future<void> _saveSession() async {
+    try {
+      await graph.flush();
+      final doc = graph.saveSession();
+      await File(_sessionPath.text).writeAsString(
+          const JsonEncoder.withIndent(' ').convert(doc));
+      setState(() => _status =
+          'saved ${(doc['nodes'] as List).length}n/'
+          '${(doc['edges'] as List).length}e/'
+          '${(doc['ingress'] as List).length}i → ${_sessionPath.text}');
+    } catch (e) {
+      setState(() => _status = 'save failed: $e');
+    }
+  }
+
+  Future<void> _loadSession() async {
+    final snap = graph.snapshot();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Replace current graph?'),
+        content: Text('Loading discards everything collected so far '
+            '(${snap.nodes.length} nodes, ${snap.edges.length} links) and '
+            'restores ${_sessionPath.text}.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Load')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final doc = jsonDecode(await File(_sessionPath.text).readAsString())
+          as Map<String, dynamic>;
+      await graph.loadSession(doc);
+      final now = graph.snapshot();
+      setState(() => _status = 'loaded ${_sessionPath.text} — '
+          '${now.nodes.length} nodes, ${now.edges.length} links, '
+          'saved ${doc['saved_at']}');
+    } catch (e) {
+      setState(() => _status = 'load failed: $e');
     }
   }
 
@@ -376,6 +425,19 @@ class _PathLabScreenState extends State<PathLabScreen> {
                             const InputDecoration(labelText: 'graph file'))),
                 TextButton(onPressed: _import, child: const Text('Import')),
                 TextButton(onPressed: _export, child: const Text('Export')),
+              ]),
+              // Full private checkpoint — everything, not the shareable
+              // export. Save before an experiment, load to undo it.
+              Row(children: [
+                Expanded(
+                    child: TextField(
+                        controller: _sessionPath,
+                        decoration: const InputDecoration(
+                            labelText: 'session checkpoint (private)'))),
+                TextButton(
+                    onPressed: _saveSession, child: const Text('Save')),
+                TextButton(
+                    onPressed: _loadSession, child: const Text('Load')),
               ]),
               Row(children: [
                 FilledButton.tonal(

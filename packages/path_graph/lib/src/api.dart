@@ -710,6 +710,181 @@ class PathGraph {
     };
   }
 
+  static const _sessionFormat = 'meshtrax-path-graph-session-v1';
+
+  /// A complete private checkpoint of everything the module holds.
+  ///
+  /// This is NOT [exportGraph]. Export is the shareable file and
+  /// withholds contact ingress, the contact mirror, my identity and my
+  /// doorstep by design. A session carries all of it, plus imported
+  /// priors and the in-memory hub counters, so a restore lands exactly
+  /// where the save left off. Keep it local — sharing one hands over a
+  /// position-tagged log of who this radio talks to.
+  ///
+  /// Timestamps are raw arrival millis, not wire times: a session is a
+  /// machine checkpoint, and converting them would only lose precision.
+  ///
+  /// Ordinary restarts do not need this — state persists in the
+  /// database. It exists to checkpoint before an experiment and roll
+  /// back after one.
+  Map<String, dynamic> saveSession() {
+    return {
+      'format': _sessionFormat,
+      'private': true,
+      'saved_at': _isoFromMillis(_arrivalMillis),
+      'self': {'pubkey': _selfPubkey, 'stride': _selfStride},
+      'counters': {
+        'observations_applied': _observationsApplied,
+        'dropped_1byte': _dropped1Byte,
+      },
+      'nodes': [
+        for (final e in _store.nodes.entries)
+          {
+            'hash': e.key,
+            'source': e.value.source.name,
+            if (e.value.name != null) 'name': e.value.name,
+            if (e.value.role != null) 'role': e.value.role,
+            if (e.value.lat != null) 'lat': e.value.lat,
+            if (e.value.lon != null) 'lon': e.value.lon,
+            if (e.value.lastHeard != null) 'last_heard': e.value.lastHeard,
+            if (e.value.region != null) 'region': e.value.region,
+            if (e.value.pubkey != null) 'pubkey': e.value.pubkey,
+          }
+      ],
+      'edges': [
+        for (final e in _store.edges.entries)
+          {
+            'from': e.key.$1,
+            'to': e.key.$2,
+            'source': e.value.source,
+            's': e.value.s,
+            'n': e.value.n,
+            'traffic_weight': e.value.trafficWeight,
+            'obs_count': e.value.obsCount,
+            if (e.value.lastObserved != null)
+              'last_observed': e.value.lastObserved,
+            if (e.value.measuredSnr != null)
+              'measured_snr': e.value.measuredSnr,
+            if (e.value.importedSnr != null)
+              'imported_snr': e.value.importedSnr,
+            'imported_observations': e.value.importedObservations,
+            'imported_delivered': e.value.importedDelivered,
+            'imported_attempts': e.value.importedAttempts,
+            if (e.value.importedLastObserved != null)
+              'imported_last_observed': e.value.importedLastObserved,
+          }
+      ],
+      'ingress': [
+        for (final e in _evidence.entries.entries)
+          {
+            'owner': e.key.$1,
+            'repeater': e.key.$2,
+            'weight': e.value.weight,
+            'last_seen': e.value.lastSeen,
+            'tier': e.value.tier.name,
+            if (e.value.observedLat != null) 'lat': e.value.observedLat,
+            if (e.value.observedLon != null) 'lon': e.value.observedLon,
+            if (e.value.uplinkSnr != null) 'uplink_snr': e.value.uplinkSnr,
+            if (e.value.downlinkSnr != null)
+              'downlink_snr': e.value.downlinkSnr,
+            'final_count': e.value.finalCount,
+            'penultimate_count': e.value.penultimateCount,
+          }
+      ],
+      'contacts': [
+        for (final e in _evidence.knownContacts.entries)
+          {
+            'pubkey': e.key,
+            'name': e.value.name,
+            'last_refreshed': e.value.lastRefreshed,
+          }
+      ],
+    };
+  }
+
+  /// Restores a [saveSession] checkpoint, **replacing** everything the
+  /// module currently holds — memory and database both. Throws
+  /// [FormatException] on anything else.
+  Future<void> loadSession(Map<String, dynamic> document) async {
+    if (document['format'] != _sessionFormat) {
+      throw FormatException(
+          'not a $_sessionFormat document (got ${document['format']})');
+    }
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    await _store.clear();
+    await _evidence.clear();
+
+    for (final raw in (document['nodes'] as List?) ?? const []) {
+      final n = raw as Map;
+      _store.nodes[n['hash'] as String] = NodeState(
+        source: NodeSource.values.byName(n['source'] as String),
+        name: n['name'] as String?,
+        role: n['role'] as String?,
+        lat: (n['lat'] as num?)?.toDouble(),
+        lon: (n['lon'] as num?)?.toDouble(),
+        lastHeard: (n['last_heard'] as num?)?.toInt(),
+        region: n['region'] as String?,
+        pubkey: n['pubkey'] as String?,
+      );
+    }
+    for (final raw in (document['edges'] as List?) ?? const []) {
+      final e = raw as Map;
+      _store.edges[(e['from'] as String, e['to'] as String)] =
+          EdgeState(source: e['source'] as String? ?? 'observed')
+            ..s = (e['s'] as num?)?.toInt() ?? 0
+            ..n = (e['n'] as num?)?.toInt() ?? 0
+            ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
+            ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
+            ..lastObserved = (e['last_observed'] as num?)?.toInt()
+            ..measuredSnr = (e['measured_snr'] as num?)?.toDouble()
+            ..importedSnr = (e['imported_snr'] as num?)?.toDouble()
+            ..importedObservations =
+                (e['imported_observations'] as num?)?.toInt() ?? 0
+            ..importedDelivered =
+                (e['imported_delivered'] as num?)?.toInt() ?? 0
+            ..importedAttempts = (e['imported_attempts'] as num?)?.toInt() ?? 0
+            ..importedLastObserved =
+                (e['imported_last_observed'] as num?)?.toInt();
+    }
+    for (final raw in (document['ingress'] as List?) ?? const []) {
+      final i = raw as Map;
+      _evidence.entries[(i['owner'] as String, i['repeater'] as String)] =
+          IngressEntry(
+        weight: (i['weight'] as num).toDouble(),
+        lastSeen: (i['last_seen'] as num).toInt(),
+        tier: EvidenceTier.values.byName(i['tier'] as String),
+        observedLat: (i['lat'] as num?)?.toDouble(),
+        observedLon: (i['lon'] as num?)?.toDouble(),
+      )
+            ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()
+            ..downlinkSnr = (i['downlink_snr'] as num?)?.toDouble()
+            ..finalCount = (i['final_count'] as num?)?.toInt() ?? 0
+            ..penultimateCount = (i['penultimate_count'] as num?)?.toInt() ?? 0;
+    }
+    for (final raw in (document['contacts'] as List?) ?? const []) {
+      final c = raw as Map;
+      _evidence.knownContacts[c['pubkey'] as String] = (
+        name: c['name'] as String,
+        lastRefreshed: (c['last_refreshed'] as num).toInt(),
+      );
+    }
+
+    final self = (document['self'] as Map?) ?? const {};
+    final pubkey = self['pubkey'] as String?;
+    if (pubkey != null) {
+      setRadioIdentity(pubkey, (self['stride'] as num?)?.toInt() ?? 2);
+    }
+    final counters = (document['counters'] as Map?) ?? const {};
+    _observationsApplied =
+        (counters['observations_applied'] as num?)?.toInt() ?? 0;
+    _dropped1Byte = (counters['dropped_1byte'] as num?)?.toInt() ?? 0;
+
+    _store.markAllDirty();
+    _evidence.markAllDirty();
+    await flush();
+  }
+
   /// Best path to this contact: direct | bidirectional route | flood.
   PathResult findPath(String contactPubkey) {
     final now = _arrivalMillis;
