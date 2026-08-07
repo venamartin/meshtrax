@@ -1,6 +1,10 @@
 # Weighted Graph Path Determination Module for DMs
 
-Status: **implementation underway** — design complete; Phase 0 (the
+Status: **implementation underway.** Start at **§ TODO — active work**
+for what happens next; everything after it is rationale, history, and
+the record of how each decision was reached.
+
+Design complete; Phase 0 (the
 `packages/path_graph` module) and most of Phase 1 (the `test/path_lab`
 harness) are built and running against real hardware on branch
 `feat/path-graph-package` (draft PR #71, held unmerged through the
@@ -883,7 +887,14 @@ only enrich nodes with name/position metadata. "Independent" means *own
 storage, no reads from the contacts/discovered DB*, not *ignores local
 adverts*.
 
-## Corescope source data (empirical, 2026-08-03 snapshot)
+## HISTORICAL — Corescope source data (2026-08-03 snapshot)
+
+> **Superseded 2026-08-07.** Corescope's *edge* data is no longer used
+> (see TODO § "drop Corescope edges"): it is undirected, its SNR is a
+> single symmetric number, and its `bidirectional` flag is `true` on
+> every edge. Kept below because the measurements it records — the
+> 1-byte collision rate, the mixed-width prefix evidence — are what
+> justified hash-native 2-byte identity, and those findings stand.
 
 From a saved `neighbor-graph.json` (753 nodes, 2,867 edges):
 
@@ -910,7 +921,14 @@ From a saved `neighbor-graph.json` (753 nodes, 2,867 edges):
   2- and 3-byte prefix edges (a hash *is* our node key, they map cleanly),
   drop the 1-byte ones as too ambiguous.
 
-## Corescope export utility
+## HISTORICAL — Corescope export utility (`meshtrax-graph-v1`)
+
+> **Superseded 2026-08-07 by `meshtrax-graph-v2`** (TODO § "drop
+> Corescope edges"), which the *module* exports from its own directed
+> observations. `tools/generate_graph.py` is retired from the routing
+> path; `tools/analyze.py` survives as a viewer, to be pointed at our
+> own exported graph. The v1 notes below remain useful for the format
+> lineage (node-link JSON, NetworkX/D3 compatibility) which v2 keeps.
 
 **Built: `tools/generate_graph.py`** (2026-08-05; `tools/analyze.py` lives
 beside it). Known Corescope instances are a `SOURCES` list in the file —
@@ -1021,7 +1039,28 @@ discovery, then the verification campaign itself (coverage / ACK-rate /
 freshness / trace-honesty / 1-byte-share metrics with the go/no-go
 gate). Details in TODO below.
 
-## TODO
+## TODO — active work
+
+Ordered by what blocks what. Everything below is decided unless marked
+open; the sections after this one are rationale and history.
+
+1. **Cut Corescope out of `path_graph`** — `importGraph` accepts only
+   `meshtrax-graph-v2` (directed, per-direction); stop seeding both
+   directions from one link; imported edges no longer clear the
+   bidirectional threshold on symmetric evidence.
+2. **`exportGraph()`** — emit v2 under the repeater-topology-only
+   privacy filter (§ Export).
+3. **path_lab map view** — repeaters plotted as they appear (positions
+   from adverts), click a node to show its **directed** links as
+   arrows, colour-coded by `measured_snr` once populated. Plus the
+   remaining informational surfaces for the campaign.
+4. **Staleness GC + growth caps** (§ Staleness), **replay-corpus
+   recorder**, **package CI lines**.
+5. **Verification campaign** → the go/no-go gate.
+
+Deferred: merge of multi-collector files (needs real single-collector
+data first); Python/Pi always-on collector (optional, not a second
+implementation).
 
 ### DECIDED 2026-08-07: drop Corescope edges; the file becomes a TRUE directed graph
 
@@ -1131,62 +1170,6 @@ all decide the merge rules (notably whether *distinct-observer count*
 must replace summed counts, since counts are observer-relative).
 Nothing is wasted by waiting — a directed graph with trace-filled SNR
 is what a merge would consume either way; merge only adds provenance.
-
-### How much is the Corescope import actually worth? (open, 2026-08-07)
-
-Raised on the bench and worth settling with data rather than argument.
-After the undirected-SNR finding above, the honest inventory is:
-
-* **Still valuable**: node identities (pubkey/name/position) for hash
-  buckets, and a topology skeleton for a region you have never
-  visited (the Watsonville→Arizona case) — the one thing local
-  listening cannot give you on arrival.
-* **Weak**: the SNR is a single symmetric number, the `score` is the
-  analyzer's metric rather than a delivery probability calibrated to
-  *our* radio, it says nothing about our egress (the hop that matters
-  most and changes most), and repeater **adverts supersede the node
-  metadata within ~47 h of listening** — so most of the import's value
-  is a head start on something we get free.
-* **The sharp edge**: the design currently lets imported priors *clear
-  the bidirectional threshold*, so a purely imported corridor is
-  routable with **no local evidence at all**. That is third-party
-  hearsay carrying real routing weight. The original justification was
-  "otherwise day-1 is all-flood" — but flooding on day one is honest,
-  and it is what teaches the graph anyway.
-
-**Reachability is the natural filter (2026-08-07).** To *route* through
-edge A→B you must first reach A; to *trace* it you must reach A and get
-back. So the traceable set and the routable set are nearly identical —
-**anything we cannot trace, we could never route through anyway**.
-Consequences: (a) there is no "coverage gap" to engineer around, since
-the gap is exactly the part that could never be acted on; (b) a
-*survey* of the regional backbone (systematically tracing high-degree
-edges) is the wrong shape for this module — **demand-driven** tracing
-of the corridors `findPath` actually proposes measures the same useful
-set at a fraction of the airtime; (c) imported edges we cannot reach
-are pure storage cost, never routing influence. Caveat: reachability
-is not permanent — driving somewhere makes new edges reachable, which
-is precisely the new-region case that remains the import's job.
-
-**Worth asking CoreScope before spending airtime**: its SNR most likely
-originates from each repeater's own neighbor table, and those readings
-*are* inherently directional ("I heard X at N dB"). If the raw
-database/API retains them before the export collapses them, per-
-direction SNR already exists and costs one question rather than a
-trace campaign. Also unverified: the exact meaning of the per-edge
-`bidirectional` flag — though its being `true` on all 2,866 edges is
-itself evidence that it discriminates nothing.
-
-**Proposed (not yet decided)**: demote the import from foundation to
-accelerant. Make "imported priors may be routed on" a **setting,
-default OFF** — imports always contribute node metadata and cold-start
-skeleton, but routing requires locally-observed or probed evidence
-unless the user opts in. Then **let the verification campaign decide**:
-compare ACK rate on imported-only corridors vs locally-proven ones. If
-imported corridors underperform, the setting stays off and Corescope
-becomes a names-and-positions convenience plus a new-region map.
-Requires the harness to label *why* a route was chosen (imported-only
-vs locally proven) so the comparison is measurable.
 
 ### Staleness / retention — manual + automatic (decided 2026-08-05)
 
@@ -1343,7 +1326,7 @@ hooks). Accepted findings still to fold in at implementation planning:
   live `proven` evidence for that repeater — a doorstep that is *also* a
   transit hub must not be punished for its transit traffic.
 
-## Open questions — ALL RESOLVED (2026-08-05)
+## Resolved questions (2026-08-05) — kept for rationale
 
 1. **Trace policy — DECIDED: manual only, from the map tab.** The module
    never fires traces on its own. The map tab integrates with the module
