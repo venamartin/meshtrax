@@ -29,6 +29,18 @@ class RepeaterSettingsScreen extends StatefulWidget {
 class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
   final StorageService _storage = StorageService();
 
+  /// A repeater defers its reply while the channel is busy — carrier
+  /// sense retries every 200 ms, and because cad_busy_start resets on
+  /// every quiet instant (Dispatcher.cpp) that deferral has no upper
+  /// bound. A single attempt therefore reports failure for commands that
+  /// actually ran; on the bench roughly 1 in 20 exceeded even a 10 s
+  /// window. Three attempts absorb that without making an unreachable
+  /// repeater take the full 5 x 8 s to admit defeat.
+  ///
+  /// The CLI screen deliberately does NOT do this: there the user is
+  /// driving and decides when to send again.
+  static const int _settingsRetries = 3;
+
   bool _isLoading = false;
   bool _hasChanges = false;
   bool _refreshingBasic = false;
@@ -442,7 +454,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
         final response = await _commandService!.sendCommand(
           repeater,
           command,
-          retries: 1,
+          retries: _settingsRetries,
         );
         _applySettingResponse(command, response);
         successCount += 1;
@@ -641,7 +653,8 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     // or rejected write was indistinguishable from a saved one.
     for (final command in _buildSaveCommands()) {
       try {
-        final response = await service.sendCommand(repeater, command);
+        final response = await service.sendCommand(repeater, command,
+            retries: _settingsRetries);
         final trimmed = response.trim();
         if (trimmed.startsWith('Err') ||
             trimmed.startsWith('Error') ||
