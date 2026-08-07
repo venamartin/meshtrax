@@ -1044,16 +1044,32 @@ gate). Details in TODO below.
 Ordered by what blocks what. Everything below is decided unless marked
 open; the sections after this one are rationale and history.
 
-1. **Cut Corescope out of `path_graph`** — `importGraph` accepts only
-   `meshtrax-graph-v2` (directed, per-direction); stop seeding both
-   directions from one link; imported edges no longer clear the
-   bidirectional threshold on symmetric evidence.
-2. **`exportGraph()`** — emit v2 under the repeater-topology-only
-   privacy filter (§ Export).
-3. **path_lab map view** — repeaters plotted as they appear (positions
-   from adverts), click a node to show its **directed** links as
-   arrows, colour-coded by `measured_snr` once populated. Plus the
-   remaining informational surfaces for the campaign.
+1. ~~**Cut Corescope out of `path_graph`**~~ — DONE 2026-08-07
+   (`06497c5`). `importGraph` takes `meshtrax-graph-v2` and nothing
+   else; undirected documents are rejected outright rather than
+   expanded; a link seeds its own direction alone. The prior layer
+   changed shape with it — `importedScore`/`avgSnr` (one symmetric
+   guess) became `importedSnr` / `importedObservations` /
+   `importedDelivered` / `importedAttempts` / `importedLastObserved`,
+   mirroring the local columns so the two layers stay separable at
+   read. Schema v3 rebuilds `graph_edges`: local evidence rides
+   through, the Corescope prior is dropped rather than migrated.
+2. ~~**`exportGraph()`**~~ — DONE 2026-08-07 (`7b76844`). Emits v2 under
+   two filters: repeater topology only (links between forwarding nodes
+   plus the advert metadata of nodes a link references — a test asserts
+   the encoded document holds no contact pubkey, contact name, self
+   identity or position tag), and locally observed edges only, so an
+   imported prior is never laundered through our file and a two-way
+   exchange cannot feed each side its own data back.
+3. ~~**path_lab map view**~~ — DONE 2026-08-07. Advert positions place a
+   node; everything else lands in a "no position" strip, because a hash
+   bucket seen only as a path hop is still a real node. Tapping draws
+   its links as arrows, one per direction, offset so A→B and B→A sit
+   side by side; arrow colour is the estimator's own SNR→quality curve,
+   grey when never measured. The detail panel splits *reaches* (they
+   heard this node) from *hears* (this node heard them) and flags
+   ONE-WAY links. Remaining informational surfaces for the campaign
+   still to come.
 4. **Staleness GC + growth caps** (§ Staleness), **replay-corpus
    recorder**, **package CI lines**.
 5. **Verification campaign** → the go/no-go gate.

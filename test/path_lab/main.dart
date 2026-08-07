@@ -19,6 +19,7 @@ import 'package:meshtrax/services/storage_service.dart';
 import 'package:path_graph/path_graph.dart';
 
 import 'adapter/frame_adapter.dart';
+import 'map_view.dart';
 
 late final MeshCoreConnector connector;
 late final PathGraph graph;
@@ -282,7 +283,17 @@ class _PathLabScreenState extends State<PathLabScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PathLab — path_graph harness')),
+      appBar: AppBar(
+        title: const Text('PathLab — path_graph harness'),
+        actions: [
+          IconButton(
+            tooltip: 'topology map',
+            icon: const Icon(Icons.hub_outlined),
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MapScreen())),
+          ),
+        ],
+      ),
       body: AnimatedBuilder(
         animation: connector,
         builder: (context, _) {
