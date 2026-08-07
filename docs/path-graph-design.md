@@ -1023,6 +1023,39 @@ gate). Details in TODO below.
 
 ## TODO
 
+### How much is the Corescope import actually worth? (open, 2026-08-07)
+
+Raised on the bench and worth settling with data rather than argument.
+After the undirected-SNR finding above, the honest inventory is:
+
+* **Still valuable**: node identities (pubkey/name/position) for hash
+  buckets, and a topology skeleton for a region you have never
+  visited (the Watsonville→Arizona case) — the one thing local
+  listening cannot give you on arrival.
+* **Weak**: the SNR is a single symmetric number, the `score` is the
+  analyzer's metric rather than a delivery probability calibrated to
+  *our* radio, it says nothing about our egress (the hop that matters
+  most and changes most), and repeater **adverts supersede the node
+  metadata within ~47 h of listening** — so most of the import's value
+  is a head start on something we get free.
+* **The sharp edge**: the design currently lets imported priors *clear
+  the bidirectional threshold*, so a purely imported corridor is
+  routable with **no local evidence at all**. That is third-party
+  hearsay carrying real routing weight. The original justification was
+  "otherwise day-1 is all-flood" — but flooding on day one is honest,
+  and it is what teaches the graph anyway.
+
+**Proposed (not yet decided)**: demote the import from foundation to
+accelerant. Make "imported priors may be routed on" a **setting,
+default OFF** — imports always contribute node metadata and cold-start
+skeleton, but routing requires locally-observed or probed evidence
+unless the user opts in. Then **let the verification campaign decide**:
+compare ACK rate on imported-only corridors vs locally-proven ones. If
+imported corridors underperform, the setting stays off and Corescope
+becomes a names-and-positions convenience plus a new-region map.
+Requires the harness to label *why* a route was chosen (imported-only
+vs locally proven) so the comparison is measurable.
+
 ### Staleness / retention — manual + automatic (decided 2026-08-05)
 
 Nothing is ever deleted today: decay makes old evidence weigh nothing,
