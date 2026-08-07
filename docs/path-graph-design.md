@@ -1023,6 +1023,46 @@ gate). Details in TODO below.
 
 ## TODO
 
+### Export & the app as primary collector (decided 2026-08-07)
+
+**The app is the observer.** It is already connected and running, and —
+unlike a fixed collector — it *travels*, which is an advantage: a
+stationary listener samples one neighborhood deeply, a phone samples
+many. Travelling to a region with no Corescope instance (Europe,
+hypothetically) is the no-import bootstrap case working as designed:
+listen → adverts fill names/positions → Discover finds the doorstep →
+first flood handshakes mint corridors. A dedicated always-on Python/Pi
+collector keeps one real advantage (24/7 uptime without a phone
+battery) and stays a possible later addition, but it is **not** the
+plan — no second implementation of the observation pipeline.
+
+**Export filter — FIRM RULE: repeater topology only.** An exported
+graph contains `graph_nodes` + `graph_edges` and nothing else:
+
+* **Exported** — repeater hashes, names, positions, directed edges with
+  their observation counts, trace-measured per-direction SNR, and
+  whether a link is trace-confirmed. This is public infrastructure;
+  sharing it is the point.
+* **NEVER exported** — `contact_ingress` (which includes
+  position-tagged records of where *I* was when a repeater heard me: a
+  drive log), `known_contacts` (an address book), and any per-contact
+  ingress list (who talks to whom, and through where). None of this
+  belongs in a file that gets emailed or handed over on a USB stick.
+
+The rule is simple to state and simple to audit: **if a row is about a
+person, it does not leave the device; if it is about a repeater, it
+may.** Convenient consequence — repeater topology is also exactly what
+a future merge wants, so the privacy filter and the merge payload are
+the same set.
+
+**Merge deferred (2026-08-07)** until real single-collector data
+exists: how many edges one listener accumulates, what fraction become
+bidirectional without probing, and how skewed observation counts are
+all decide the merge rules (notably whether *distinct-observer count*
+must replace summed counts, since counts are observer-relative).
+Nothing is wasted by waiting — a directed graph with trace-filled SNR
+is what a merge would consume either way; merge only adds provenance.
+
 ### How much is the Corescope import actually worth? (open, 2026-08-07)
 
 Raised on the bench and worth settling with data rather than argument.
