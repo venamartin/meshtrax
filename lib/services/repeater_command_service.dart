@@ -19,12 +19,22 @@ class RepeaterCommandService {
 
   /// Send a CLI command to a repeater with automatic retries
   /// Returns a future that completes when a response is received or after max retries
+  /// Resolves the send path once for a batch of commands. Each
+  /// [sendCommand] otherwise re-derives it, and that writes a contact-path
+  /// frame to the radio (plus a settle delay) every single time — for a
+  /// ten-command save, ten pushes of a path that never changed.
+  Future<PathSelection> preparePath(Contact repeater) =>
+      _connector.preparePathForContactSend(repeater);
+
+  /// Pass [selection] from [preparePath] when sending several commands in
+  /// a row; omit it for one-offs and the path is resolved per call.
   Future<String> sendCommand(
     Contact repeater,
     String command, {
     Function(String)? onResponse,
     Function(int)? onAttempt,
     int retries = maxRetries,
+    PathSelection? selection,
   }) async {
     final repeaterKey = repeater.publicKeyHex;
     final hasPending = _pendingCommands.keys.any(
@@ -35,7 +45,8 @@ class RepeaterCommandService {
     }
 
     final attemptCount = retries < 1 ? 1 : retries;
-    final selection = await _connector.preparePathForContactSend(repeater);
+    final resolved =
+        selection ?? await _connector.preparePathForContactSend(repeater);
 
     for (int attempt = 0; attempt < attemptCount; attempt++) {
       onAttempt?.call(attempt + 1);
@@ -43,7 +54,7 @@ class RepeaterCommandService {
         final response = await _sendCommandAttempt(
           repeater,
           command,
-          selection,
+          resolved,
           attempt,
         );
         onResponse?.call(response);
