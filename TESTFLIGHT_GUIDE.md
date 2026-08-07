@@ -40,14 +40,11 @@
 Run these commands from the project directory:
 
 ```bash
-# Add CocoaPods to PATH
-export PATH="/opt/homebrew/lib/ruby/gems/4.0.0/bin:$PATH"
-
 # Clean previous builds
-../flutter/bin/flutter clean
+flutter clean
 
 # Build IPA for App Store
-../flutter/bin/flutter build ipa
+flutter build ipa
 ```
 
 The IPA will be created at: `build/ios/ipa/MeshTrax.ipa`
@@ -174,9 +171,8 @@ When you need to release an update:
 
 2. **Build new IPA**:
    ```bash
-   export PATH="/opt/homebrew/lib/ruby/gems/4.0.0/bin:$PATH"
-   ../flutter/bin/flutter clean
-   ../flutter/bin/flutter build ipa
+   flutter clean
+   flutter build ipa
    ```
 
 3. **Upload via Transporter** (same process as above)
@@ -193,8 +189,7 @@ When you need to release an update:
 To build for macOS:
 
 ```bash
-export PATH="/opt/homebrew/lib/ruby/gems/4.0.0/bin:$PATH"
-../flutter/bin/flutter build macos --release
+flutter build macos --release
 cd build/macos/Build/Products/Release
 zip -r MeshTrax-macos.zip MeshTrax.app
 ```
@@ -207,7 +202,7 @@ Distribution:
 ## Troubleshooting
 
 ### Build Errors
-- **CocoaPods not found**: Ensure PATH includes `/opt/homebrew/lib/ruby/gems/4.0.0/bin`
+- **CocoaPods not found**: Install with `brew install cocoapods`
 - **No signing certificate**: Configure Team in Xcode (Signing & Capabilities)
 - **Bundle ID mismatch**: Check `ios/Runner.xcodeproj/project.pbxproj`
 
