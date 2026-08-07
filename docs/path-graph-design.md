@@ -1045,6 +1045,29 @@ After the undirected-SNR finding above, the honest inventory is:
   "otherwise day-1 is all-flood" — but flooding on day one is honest,
   and it is what teaches the graph anyway.
 
+**Reachability is the natural filter (2026-08-07).** To *route* through
+edge A→B you must first reach A; to *trace* it you must reach A and get
+back. So the traceable set and the routable set are nearly identical —
+**anything we cannot trace, we could never route through anyway**.
+Consequences: (a) there is no "coverage gap" to engineer around, since
+the gap is exactly the part that could never be acted on; (b) a
+*survey* of the regional backbone (systematically tracing high-degree
+edges) is the wrong shape for this module — **demand-driven** tracing
+of the corridors `findPath` actually proposes measures the same useful
+set at a fraction of the airtime; (c) imported edges we cannot reach
+are pure storage cost, never routing influence. Caveat: reachability
+is not permanent — driving somewhere makes new edges reachable, which
+is precisely the new-region case that remains the import's job.
+
+**Worth asking CoreScope before spending airtime**: its SNR most likely
+originates from each repeater's own neighbor table, and those readings
+*are* inherently directional ("I heard X at N dB"). If the raw
+database/API retains them before the export collapses them, per-
+direction SNR already exists and costs one question rather than a
+trace campaign. Also unverified: the exact meaning of the per-edge
+`bidirectional` flag — though its being `true` on all 2,866 edges is
+itself evidence that it discriminates nothing.
+
 **Proposed (not yet decided)**: demote the import from foundation to
 accelerant. Make "imported priors may be routed on" a **setting,
 default OFF** — imports always contribute node metadata and cold-start
