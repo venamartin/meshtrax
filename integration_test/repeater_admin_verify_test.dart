@@ -279,8 +279,8 @@ void main() {
             buildSendCliCommandFrame(a277!.publicKey, command));
         await Future<void>.delayed(const Duration(milliseconds: 200));
       }
-      blog('all ${commands.length} sent; collecting replies for 90 s…');
-      await Future<void>.delayed(const Duration(seconds: 90));
+      blog('all ${commands.length} sent; collecting replies for 30 s…');
+      await Future<void>.delayed(const Duration(seconds: 30));
     } finally {
       await sub.cancel();
     }
@@ -291,6 +291,114 @@ void main() {
     }
     // Recorded, not asserted — this measurement IS the finding.
     expect(replies.length, lessThanOrEqualTo(commands.length));
+  });
+
+  testWidgets('V5 login-dialog Direct vs settings-screen Direct',
+      (tester) async {
+    requireReady();
+    await beginScenario(tester, 'V5 the two shapes of "set Direct"');
+    final c = usb.connector;
+    Contact live() => c.contacts.firstWhere(
+        (x) => x.publicKeyHex == a277!.publicKeyHex);
+
+    void dump(String when) {
+      final x = live();
+      final sel = resolvePathSelection(x);
+      blog('$when: override=${x.pathOverride} '
+          'overrideBytes=${x.pathOverrideBytes?.length ?? 0}B '
+          'devicePath=${x.pathLength} pathBytes=${x.path.length}B '
+          'label="${x.pathLabel}" '
+          '| resolves to hops=${sel.hopCount} '
+          'bytes=${sel.pathBytes.length}B flood=${sel.useFlood}');
+    }
+
+    // Pretend a 2-hop path was chosen earlier (Path Management does this).
+    await c.setPathOverride(live(),
+        pathLen: 2, pathBytes: Uint8List.fromList([0x11, 0x22, 0x33, 0x44]));
+    dump('seeded 2-hop');
+
+    // EXACTLY what repeater_login_dialog.dart:488 does — no pathBytes.
+    await c.setPathOverride(live(), pathLen: 0);
+    dump('login-dialog Direct');
+    final afterLoginDialog = live();
+
+    // EXACTLY what repeater_settings_screen.dart:790 does.
+    await c.setPathOverride(live(), pathLen: 0, pathBytes: Uint8List(0));
+    dump('settings-screen Direct');
+    final afterSettings = live();
+
+    blog('--- the difference ---');
+    blog('login dialog left ${afterLoginDialog.pathOverrideBytes?.length ?? 0} '
+        'bytes of stale path behind; settings left '
+        '${afterSettings.pathOverrideBytes?.length ?? 0}');
+    expect(afterSettings.pathOverrideBytes?.isEmpty ?? true, isTrue);
+    expect(afterSettings.pathLength, 0,
+        reason: 'settings-screen Direct syncs the device to zero hops');
+  });
+
+  /// Sends with an EXPLICIT sender_timestamp and waits for the reply.
+  Future<String?> cliAt(String command, int ts,
+      {Duration timeout = const Duration(seconds: 25)}) async {
+    final completer = Completer<String?>();
+    final target = a277!.publicKey.sublist(0, 6);
+    final sub = usb.connector.receivedFrames.listen((frame) {
+      if (frame.isEmpty) return;
+      if (frame[0] != respCodeContactMsgRecv &&
+          frame[0] != respCodeContactMsgRecvV3) {
+        return;
+      }
+      final parsed = parseContactMessageText(frame);
+      if (parsed == null || parsed.senderPrefix.length < 6) return;
+      if (!listEquals(parsed.senderPrefix.sublist(0, 6), target)) return;
+      if (!completer.isCompleted) completer.complete(parsed.text);
+    });
+    try {
+      blog('-> "$command" @ts=$ts');
+      await usb.connector.sendFrame(buildSendCliCommandFrame(
+          a277!.publicKey, command,
+          timestampSeconds: ts));
+      final reply =
+          await completer.future.timeout(timeout, onTimeout: () => null);
+      blog('<- ${reply == null ? "(NO REPLY)" : '"$reply"'}');
+      return reply;
+    } finally {
+      await sub.cancel();
+    }
+  }
+
+  testWidgets('V6 sender_timestamp replay guard', (tester) async {
+    requireReady();
+    await beginScenario(tester, 'V6 does the timestamp guard eat commands');
+
+    // MeshCore simple_repeater/MyMesh.cpp:696
+    //   else if (sender_timestamp >= client->last_timestamp)   <- older = dropped
+    //   bool is_retry = (sender_timestamp == client->last_timestamp)
+    //   if (is_retry) { *reply = 0; }                          <- never executed
+    // _saveSettings recomputes now()~/1000 inside a 200 ms loop, so several
+    // of its commands share a second. Does that suppress them?
+    final base = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    final a = await cliAt('get tx', base);
+    blog('  [1] fresh timestamp      -> ${a == null ? "DROPPED" : "answered"}');
+
+    final b = await cliAt('get name', base);
+    blog('  [2] SAME timestamp       -> ${b == null ? "DROPPED" : "answered"}');
+
+    final c = await cliAt('get repeat', base - 30);
+    blog('  [3] OLDER timestamp      -> ${c == null ? "DROPPED" : "answered"}');
+
+    final d = await cliAt('get privacy', base + 5);
+    blog('  [4] NEWER timestamp      -> ${d == null ? "DROPPED" : "answered"}');
+
+    blog('=== VERDICT ===');
+    blog('same-second command answered: ${b != null}');
+    blog('older-timestamp command answered: ${c != null}');
+    if (b == null) {
+      blog('CONFIRMED: two commands in one second -> the second is eaten.');
+      blog('_saveSettings fires ~5 commands per second. That is the bug.');
+    } else {
+      blog('NOT the mechanism — A277 answers same-second commands.');
+    }
   });
 
   testWidgets('V4 report', (tester) async {
