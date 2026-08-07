@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:path_graph/path_graph.dart';
@@ -54,6 +55,39 @@ void main() {
     dir.deleteSync(recursive: true);
   });
 
+  test('hub-signature counters survive a restart', () async {
+    final dir = Directory.systemTemp.createTempSync('path_graph_hub');
+    final file = File('${dir.path}/hub.db');
+    const self = 'ab' 'ab' 'ab';
+
+    final first = PathGraph(NativeDatabase(file));
+    await first.init();
+    first.setRadioIdentity(self, 2);
+    // A277 is a hub: heard through it three times, at my doorstep once.
+    for (var i = 0; i < 3; i++) {
+      first.observePath(
+          Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous(),
+          messageId: 'm$i');
+    }
+    first.observePath(Uint8List.fromList([0xA2, 0x77]), 2,
+        const ObservationOrigin.anonymous());
+    final before = first.egressCandidates()
+        .firstWhere((c) => c.repeaterHash == 'A277').weight;
+    await first.dispose();
+
+    final second = PathGraph(NativeDatabase(file));
+    await second.init();
+    second.setRadioIdentity(self, 2);
+    final after = second.egressCandidates()
+        .firstWhere((c) => c.repeaterHash == 'A277').weight;
+    expect(after, closeTo(before, 0.01),
+        reason: 'the demotion must not reset to zero across a restart');
+
+    await second.dispose();
+    dir.deleteSync(recursive: true);
+  });
+
   test('v2 sheds the Corescope prior and keeps local evidence', () async {
     final dir = Directory.systemTemp.createTempSync('path_graph_mig3');
     final file = File('${dir.path}/v2.db');
@@ -79,11 +113,36 @@ void main() {
     await v2.customStatement(
         "INSERT INTO graph_edges VALUES ('A277', '1312', 4, 5, 9.0, 1000, "
         "9, 'observed', 0.9, 6.0, -3.5)");
+    // v2 contact_ingress: uplink/downlink present, hub counters not yet.
+    await v2.customStatement('DROP TABLE IF EXISTS contact_ingress');
+    await v2.customStatement('''
+      CREATE TABLE contact_ingress (
+        owner_pubkey TEXT NOT NULL,
+        repeater_hash TEXT NOT NULL,
+        weight REAL NOT NULL,
+        last_seen INTEGER NOT NULL,
+        evidence TEXT NOT NULL,
+        observed_lat REAL,
+        observed_lon REAL,
+        uplink_snr REAL,
+        downlink_snr REAL,
+        PRIMARY KEY (owner_pubkey, repeater_hash))''');
+    await v2.customStatement(
+        "INSERT INTO contact_ingress VALUES ('me', 'A277', 3.0, "
+        "${DateTime.now().millisecondsSinceEpoch}, 'proven', NULL, NULL, "
+        '9.0, 7.0)');
     await v2.customStatement('PRAGMA user_version = 2');
     await v2.close();
 
     final graph = PathGraph(NativeDatabase(file));
     await graph.init();
+    graph.setRadioIdentity('me', 2);
+
+    // v4 adds the hub counters; the pre-existing row keeps its measured
+    // SNRs and starts the counters at zero.
+    final egress = graph.egressCandidates().single;
+    expect(egress.repeaterHash, 'A277');
+    expect(egress.uplinkSnr, 9.0);
 
     final e = graph.snapshot().edges[('A277', '1312')]!;
     expect(e.s, 4, reason: 'local evidence rides through the rebuild');

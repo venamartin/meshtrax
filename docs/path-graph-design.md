@@ -1084,12 +1084,13 @@ in Drift); it exists to checkpoint before an experiment and roll back
 after one, which the campaign will lean on. Never share one — it is a
 position-tagged log of who this radio talks to.
 
-**Known gap found while building it:** `IngressEntry.finalCount` and
-`penultimateCount` have no database columns, so a plain restart resets
-the hub-signature demotion to zero and inferred egress candidates lose
-their demotion until the counts rebuild. A session checkpoint carries
-them, so save/load preserves more than a restart does. Fix is a schema
-v4 with two columns.
+**Gap found while building it, fixed the same day (schema v4).**
+`IngressEntry.finalCount` and `penultimateCount` were in-memory only, so
+every restart reset the hub-signature demotion to zero: a repeater I
+merely hear *through* looked like a doorstep I can reach until the
+counts rebuilt. They are now columns on `contact_ingress`, and a
+migration test pins that a demoted candidate keeps its demotion across a
+close and reopen.
 
 Deferred: merge of multi-collector files (needs real single-collector
 data first); Python/Pi always-on collector (optional, not a second

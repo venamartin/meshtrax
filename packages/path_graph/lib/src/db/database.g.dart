@@ -1225,6 +1225,22 @@ class $ContactIngressTable extends ContactIngress
   late final GeneratedColumn<double> downlinkSnr = GeneratedColumn<double>(
       'downlink_snr', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _finalCountMeta =
+      const VerificationMeta('finalCount');
+  @override
+  late final GeneratedColumn<int> finalCount = GeneratedColumn<int>(
+      'final_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _penultimateCountMeta =
+      const VerificationMeta('penultimateCount');
+  @override
+  late final GeneratedColumn<int> penultimateCount = GeneratedColumn<int>(
+      'penultimate_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   @override
   List<GeneratedColumn> get $columns => [
         ownerPubkey,
@@ -1235,7 +1251,9 @@ class $ContactIngressTable extends ContactIngress
         observedLat,
         observedLon,
         uplinkSnr,
-        downlinkSnr
+        downlinkSnr,
+        finalCount,
+        penultimateCount
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1303,6 +1321,18 @@ class $ContactIngressTable extends ContactIngress
           downlinkSnr.isAcceptableOrUnknown(
               data['downlink_snr']!, _downlinkSnrMeta));
     }
+    if (data.containsKey('final_count')) {
+      context.handle(
+          _finalCountMeta,
+          finalCount.isAcceptableOrUnknown(
+              data['final_count']!, _finalCountMeta));
+    }
+    if (data.containsKey('penultimate_count')) {
+      context.handle(
+          _penultimateCountMeta,
+          penultimateCount.isAcceptableOrUnknown(
+              data['penultimate_count']!, _penultimateCountMeta));
+    }
     return context;
   }
 
@@ -1330,6 +1360,10 @@ class $ContactIngressTable extends ContactIngress
           .read(DriftSqlType.double, data['${effectivePrefix}uplink_snr']),
       downlinkSnr: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}downlink_snr']),
+      finalCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}final_count'])!,
+      penultimateCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}penultimate_count'])!,
     );
   }
 
@@ -1353,6 +1387,12 @@ class ContactIngressData extends DataClass
   /// well they heard US, downlink = how well we heard THEM.
   final double? uplinkSnr;
   final double? downlinkSnr;
+
+  /// Self rows only: hub signature. A repeater that shows up second-to-
+  /// last far more often than last is a hub I hear *through*, not a
+  /// doorstep I can reach — the ratio demotes it.
+  final int finalCount;
+  final int penultimateCount;
   const ContactIngressData(
       {required this.ownerPubkey,
       required this.repeaterHash,
@@ -1362,7 +1402,9 @@ class ContactIngressData extends DataClass
       this.observedLat,
       this.observedLon,
       this.uplinkSnr,
-      this.downlinkSnr});
+      this.downlinkSnr,
+      required this.finalCount,
+      required this.penultimateCount});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1383,6 +1425,8 @@ class ContactIngressData extends DataClass
     if (!nullToAbsent || downlinkSnr != null) {
       map['downlink_snr'] = Variable<double>(downlinkSnr);
     }
+    map['final_count'] = Variable<int>(finalCount);
+    map['penultimate_count'] = Variable<int>(penultimateCount);
     return map;
   }
 
@@ -1405,6 +1449,8 @@ class ContactIngressData extends DataClass
       downlinkSnr: downlinkSnr == null && nullToAbsent
           ? const Value.absent()
           : Value(downlinkSnr),
+      finalCount: Value(finalCount),
+      penultimateCount: Value(penultimateCount),
     );
   }
 
@@ -1421,6 +1467,8 @@ class ContactIngressData extends DataClass
       observedLon: serializer.fromJson<double?>(json['observedLon']),
       uplinkSnr: serializer.fromJson<double?>(json['uplinkSnr']),
       downlinkSnr: serializer.fromJson<double?>(json['downlinkSnr']),
+      finalCount: serializer.fromJson<int>(json['finalCount']),
+      penultimateCount: serializer.fromJson<int>(json['penultimateCount']),
     );
   }
   @override
@@ -1436,6 +1484,8 @@ class ContactIngressData extends DataClass
       'observedLon': serializer.toJson<double?>(observedLon),
       'uplinkSnr': serializer.toJson<double?>(uplinkSnr),
       'downlinkSnr': serializer.toJson<double?>(downlinkSnr),
+      'finalCount': serializer.toJson<int>(finalCount),
+      'penultimateCount': serializer.toJson<int>(penultimateCount),
     };
   }
 
@@ -1448,7 +1498,9 @@ class ContactIngressData extends DataClass
           Value<double?> observedLat = const Value.absent(),
           Value<double?> observedLon = const Value.absent(),
           Value<double?> uplinkSnr = const Value.absent(),
-          Value<double?> downlinkSnr = const Value.absent()}) =>
+          Value<double?> downlinkSnr = const Value.absent(),
+          int? finalCount,
+          int? penultimateCount}) =>
       ContactIngressData(
         ownerPubkey: ownerPubkey ?? this.ownerPubkey,
         repeaterHash: repeaterHash ?? this.repeaterHash,
@@ -1459,6 +1511,8 @@ class ContactIngressData extends DataClass
         observedLon: observedLon.present ? observedLon.value : this.observedLon,
         uplinkSnr: uplinkSnr.present ? uplinkSnr.value : this.uplinkSnr,
         downlinkSnr: downlinkSnr.present ? downlinkSnr.value : this.downlinkSnr,
+        finalCount: finalCount ?? this.finalCount,
+        penultimateCount: penultimateCount ?? this.penultimateCount,
       );
   ContactIngressData copyWithCompanion(ContactIngressCompanion data) {
     return ContactIngressData(
@@ -1477,6 +1531,11 @@ class ContactIngressData extends DataClass
       uplinkSnr: data.uplinkSnr.present ? data.uplinkSnr.value : this.uplinkSnr,
       downlinkSnr:
           data.downlinkSnr.present ? data.downlinkSnr.value : this.downlinkSnr,
+      finalCount:
+          data.finalCount.present ? data.finalCount.value : this.finalCount,
+      penultimateCount: data.penultimateCount.present
+          ? data.penultimateCount.value
+          : this.penultimateCount,
     );
   }
 
@@ -1491,14 +1550,26 @@ class ContactIngressData extends DataClass
           ..write('observedLat: $observedLat, ')
           ..write('observedLon: $observedLon, ')
           ..write('uplinkSnr: $uplinkSnr, ')
-          ..write('downlinkSnr: $downlinkSnr')
+          ..write('downlinkSnr: $downlinkSnr, ')
+          ..write('finalCount: $finalCount, ')
+          ..write('penultimateCount: $penultimateCount')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(ownerPubkey, repeaterHash, weight, lastSeen,
-      evidence, observedLat, observedLon, uplinkSnr, downlinkSnr);
+  int get hashCode => Object.hash(
+      ownerPubkey,
+      repeaterHash,
+      weight,
+      lastSeen,
+      evidence,
+      observedLat,
+      observedLon,
+      uplinkSnr,
+      downlinkSnr,
+      finalCount,
+      penultimateCount);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1511,7 +1582,9 @@ class ContactIngressData extends DataClass
           other.observedLat == this.observedLat &&
           other.observedLon == this.observedLon &&
           other.uplinkSnr == this.uplinkSnr &&
-          other.downlinkSnr == this.downlinkSnr);
+          other.downlinkSnr == this.downlinkSnr &&
+          other.finalCount == this.finalCount &&
+          other.penultimateCount == this.penultimateCount);
 }
 
 class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
@@ -1524,6 +1597,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
   final Value<double?> observedLon;
   final Value<double?> uplinkSnr;
   final Value<double?> downlinkSnr;
+  final Value<int> finalCount;
+  final Value<int> penultimateCount;
   final Value<int> rowid;
   const ContactIngressCompanion({
     this.ownerPubkey = const Value.absent(),
@@ -1535,6 +1610,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.observedLon = const Value.absent(),
     this.uplinkSnr = const Value.absent(),
     this.downlinkSnr = const Value.absent(),
+    this.finalCount = const Value.absent(),
+    this.penultimateCount = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ContactIngressCompanion.insert({
@@ -1547,6 +1624,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.observedLon = const Value.absent(),
     this.uplinkSnr = const Value.absent(),
     this.downlinkSnr = const Value.absent(),
+    this.finalCount = const Value.absent(),
+    this.penultimateCount = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : ownerPubkey = Value(ownerPubkey),
         repeaterHash = Value(repeaterHash),
@@ -1563,6 +1642,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     Expression<double>? observedLon,
     Expression<double>? uplinkSnr,
     Expression<double>? downlinkSnr,
+    Expression<int>? finalCount,
+    Expression<int>? penultimateCount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1575,6 +1656,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       if (observedLon != null) 'observed_lon': observedLon,
       if (uplinkSnr != null) 'uplink_snr': uplinkSnr,
       if (downlinkSnr != null) 'downlink_snr': downlinkSnr,
+      if (finalCount != null) 'final_count': finalCount,
+      if (penultimateCount != null) 'penultimate_count': penultimateCount,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1589,6 +1672,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       Value<double?>? observedLon,
       Value<double?>? uplinkSnr,
       Value<double?>? downlinkSnr,
+      Value<int>? finalCount,
+      Value<int>? penultimateCount,
       Value<int>? rowid}) {
     return ContactIngressCompanion(
       ownerPubkey: ownerPubkey ?? this.ownerPubkey,
@@ -1600,6 +1685,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       observedLon: observedLon ?? this.observedLon,
       uplinkSnr: uplinkSnr ?? this.uplinkSnr,
       downlinkSnr: downlinkSnr ?? this.downlinkSnr,
+      finalCount: finalCount ?? this.finalCount,
+      penultimateCount: penultimateCount ?? this.penultimateCount,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1634,6 +1721,12 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     if (downlinkSnr.present) {
       map['downlink_snr'] = Variable<double>(downlinkSnr.value);
     }
+    if (finalCount.present) {
+      map['final_count'] = Variable<int>(finalCount.value);
+    }
+    if (penultimateCount.present) {
+      map['penultimate_count'] = Variable<int>(penultimateCount.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1652,6 +1745,8 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
           ..write('observedLon: $observedLon, ')
           ..write('uplinkSnr: $uplinkSnr, ')
           ..write('downlinkSnr: $downlinkSnr, ')
+          ..write('finalCount: $finalCount, ')
+          ..write('penultimateCount: $penultimateCount, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2761,6 +2856,8 @@ typedef $$ContactIngressTableCreateCompanionBuilder = ContactIngressCompanion
   Value<double?> observedLon,
   Value<double?> uplinkSnr,
   Value<double?> downlinkSnr,
+  Value<int> finalCount,
+  Value<int> penultimateCount,
   Value<int> rowid,
 });
 typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
@@ -2774,6 +2871,8 @@ typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
   Value<double?> observedLon,
   Value<double?> uplinkSnr,
   Value<double?> downlinkSnr,
+  Value<int> finalCount,
+  Value<int> penultimateCount,
   Value<int> rowid,
 });
 
@@ -2812,6 +2911,13 @@ class $$ContactIngressTableFilterComposer
 
   ColumnFilters<double> get downlinkSnr => $composableBuilder(
       column: $table.downlinkSnr, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get finalCount => $composableBuilder(
+      column: $table.finalCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get penultimateCount => $composableBuilder(
+      column: $table.penultimateCount,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$ContactIngressTableOrderingComposer
@@ -2850,6 +2956,13 @@ class $$ContactIngressTableOrderingComposer
 
   ColumnOrderings<double> get downlinkSnr => $composableBuilder(
       column: $table.downlinkSnr, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get finalCount => $composableBuilder(
+      column: $table.finalCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get penultimateCount => $composableBuilder(
+      column: $table.penultimateCount,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ContactIngressTableAnnotationComposer
@@ -2887,6 +3000,12 @@ class $$ContactIngressTableAnnotationComposer
 
   GeneratedColumn<double> get downlinkSnr => $composableBuilder(
       column: $table.downlinkSnr, builder: (column) => column);
+
+  GeneratedColumn<int> get finalCount => $composableBuilder(
+      column: $table.finalCount, builder: (column) => column);
+
+  GeneratedColumn<int> get penultimateCount => $composableBuilder(
+      column: $table.penultimateCount, builder: (column) => column);
 }
 
 class $$ContactIngressTableTableManager extends RootTableManager<
@@ -2926,6 +3045,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<double?> observedLon = const Value.absent(),
             Value<double?> uplinkSnr = const Value.absent(),
             Value<double?> downlinkSnr = const Value.absent(),
+            Value<int> finalCount = const Value.absent(),
+            Value<int> penultimateCount = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ContactIngressCompanion(
@@ -2938,6 +3059,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             observedLon: observedLon,
             uplinkSnr: uplinkSnr,
             downlinkSnr: downlinkSnr,
+            finalCount: finalCount,
+            penultimateCount: penultimateCount,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2950,6 +3073,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<double?> observedLon = const Value.absent(),
             Value<double?> uplinkSnr = const Value.absent(),
             Value<double?> downlinkSnr = const Value.absent(),
+            Value<int> finalCount = const Value.absent(),
+            Value<int> penultimateCount = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ContactIngressCompanion.insert(
@@ -2962,6 +3087,8 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             observedLon: observedLon,
             uplinkSnr: uplinkSnr,
             downlinkSnr: downlinkSnr,
+            finalCount: finalCount,
+            penultimateCount: penultimateCount,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

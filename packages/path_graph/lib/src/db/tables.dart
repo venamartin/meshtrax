@@ -78,6 +78,13 @@ class ContactIngress extends Table {
   RealColumn get uplinkSnr => real().nullable()();
   RealColumn get downlinkSnr => real().nullable()();
 
+  /// Self rows only: hub signature. A repeater that shows up second-to-
+  /// last far more often than last is a hub I hear *through*, not a
+  /// doorstep I can reach — the ratio demotes it.
+  IntColumn get finalCount => integer().withDefault(const Constant(0))();
+  IntColumn get penultimateCount =>
+      integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {ownerPubkey, repeaterHash};
 }

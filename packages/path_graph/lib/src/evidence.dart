@@ -255,7 +255,9 @@ class EvidenceStore {
         observedLon: row.observedLon,
       )
         ..uplinkSnr = row.uplinkSnr
-        ..downlinkSnr = row.downlinkSnr;
+        ..downlinkSnr = row.downlinkSnr
+        ..finalCount = row.finalCount
+        ..penultimateCount = row.penultimateCount;
     }
     for (final row in await _db.select(_db.knownContacts).get()) {
       knownContacts[row.contactPubkey] =
@@ -286,6 +288,8 @@ class EvidenceStore {
             observedLon: Value(e.observedLon),
             uplinkSnr: Value(e.uplinkSnr),
             downlinkSnr: Value(e.downlinkSnr),
+            finalCount: Value(e.finalCount),
+            penultimateCount: Value(e.penultimateCount),
           ),
           mode: InsertMode.insertOrReplace,
         );

@@ -20,8 +20,12 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// per-direction meshtrax-graph-v2 prior. The old columns are dropped
   /// rather than migrated: a symmetric estimate has no honest
   /// per-direction value to become.
+  /// v4 (2026-08-07): contact_ingress gains finalCount/penultimateCount.
+  /// They were in-memory only, so every restart reset the hub-signature
+  /// demotion to zero and inferred egress candidates briefly looked
+  /// better than they are.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,6 +49,11 @@ class PathGraphDatabase extends _$PathGraphDatabase {
                 graphEdges.importedLastObserved,
               ],
             ));
+          }
+          if (from < 4) {
+            await m.addColumn(contactIngress, contactIngress.finalCount);
+            await m.addColumn(
+                contactIngress, contactIngress.penultimateCount);
           }
         },
       );
