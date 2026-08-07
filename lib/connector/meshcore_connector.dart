@@ -2266,6 +2266,23 @@ class MeshCoreConnector extends ChangeNotifier {
     _reconnectAttempts = 0;
   }
 
+  /// Explicit user intent to use another transport (the USB port picker
+  /// is open): stop BLE auto-reconnect and abort any in-flight BLE
+  /// attempt, so connectUsb isn't silently refused mid-attempt. Any
+  /// subsequent connect (any transport) re-enables auto-reconnect.
+  Future<void> suspendBleAutoReconnect() async {
+    _cancelReconnectTimer();
+    _manualDisconnect = true;
+    if (_state == MeshCoreConnectionState.connecting &&
+        _activeTransport == MeshCoreTransportType.bluetooth) {
+      _appDebugLogService?.info(
+        'Aborting BLE attempt: USB picker opened',
+        tag: 'Connection',
+      );
+      await disconnect(manual: true);
+    }
+  }
+
   int _nextReconnectDelayMs() {
     final attempt = _reconnectAttempts < 6 ? _reconnectAttempts : 6;
     _reconnectAttempts += 1;
