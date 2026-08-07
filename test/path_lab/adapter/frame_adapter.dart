@@ -204,6 +204,30 @@ class PathLabAdapter {
 
   void handleFrame(Uint8List frame) {
     if (frame.isEmpty) return;
+    // Command acks while a path discovery is outstanding: the firmware
+    // answers RESP_CODE_SENT (accepted, with the estimated timeout) or
+    // an error — most usefully ERR_CODE_NOT_FOUND, which means the
+    // radio has no such contact in its own list (auto-add off).
+    if (pendingDiscoveryPubkey != null) {
+      if (frame[0] == 6 && frame.length >= 10) {
+        final estTimeout =
+            ByteData.sublistView(frame, 6, 10).getUint32(0, Endian.little);
+        lastPathDiscovery =
+            'accepted — waiting up to ${(estTimeout / 1000).round()}s for '
+            'the contact to answer';
+        onPathDiscovery?.call();
+      } else if (frame[0] == 1) {
+        final err = frame.length > 1 ? frame[1] : 0;
+        lastPathDiscovery = switch (err) {
+          2 => 'REJECTED: contact not in the radio\'s list — add the '
+              'contact on the radio first (auto-add is off)',
+          3 => 'REJECTED: radio request table full — retry shortly',
+          _ => 'REJECTED by radio (err $err)',
+        };
+        pendingDiscoveryPubkey = null;
+        onPathDiscovery?.call();
+      }
+    }
     switch (frame[0]) {
       case pushLogRxData:
         _handleRawRx(frame);
