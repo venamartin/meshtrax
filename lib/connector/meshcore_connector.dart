@@ -178,6 +178,9 @@ class MeshCoreConnector extends ChangeNotifier {
   String? _lastDeviceId;
   String? _lastDeviceDisplayName;
   bool _launchAutoConnectAttempted = false;
+  /// Bumped by every [connect] call so a superseded attempt can tell that it no
+  /// longer owns the connector and bow out instead of tearing down its successor.
+  int _bleConnectAttempt = 0;
   static const String _lastBleDeviceIdKey = 'last_ble_device_id';
   static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
@@ -437,12 +440,16 @@ class MeshCoreConnector extends ChangeNotifier {
     if (_selfName != null && _selfName!.isNotEmpty) {
       return _selfName!;
     }
+    // Our own name comes from the advert we just heard (or the name the radio
+    // reported last time). BluetoothDevice.platformName is the OS's cached
+    // GATT name, which Android does not refresh when a device renames itself,
+    // so it is the last resort rather than the second choice.
+    if (_deviceDisplayName != null && _deviceDisplayName!.isNotEmpty) {
+      return _deviceDisplayName!;
+    }
     final platformName = _device?.platformName;
     if (platformName != null && platformName.isNotEmpty) {
       return platformName;
-    }
-    if (_deviceDisplayName != null && _deviceDisplayName!.isNotEmpty) {
-      return _deviceDisplayName!;
     }
     return 'Unknown Device';
   }
@@ -1525,16 +1532,50 @@ class MeshCoreConnector extends ChangeNotifier {
         activeTransport == MeshCoreTransportType.tcp;
   }
 
+  /// A BLE connect attempt whose error arrives after the connector has moved
+  /// on must not run the dropped-link path: that calls `disconnect(manual:
+  /// false)`, which clears [_manualDisconnect] and schedules a reconnect. It
+  /// is why tapping Disconnect during the initial sync silently reconnected,
+  /// and it would also tear down whatever connection took over. Mirrors
+  /// [shouldIgnoreLateTcpConnectError].
+  @visibleForTesting
+  static bool shouldIgnoreLateBleConnectError({
+    required bool manualDisconnect,
+    required MeshCoreConnectionState state,
+    required MeshCoreTransportType activeTransport,
+    required bool supersededByNewerAttempt,
+  }) {
+    if (supersededByNewerAttempt) return true;
+    if (activeTransport != MeshCoreTransportType.bluetooth) return true;
+    return manualDisconnect &&
+        (state == MeshCoreConnectionState.disconnected ||
+            state == MeshCoreConnectionState.disconnecting);
+  }
+
   Future<void> connect(
     BluetoothDevice device, {
     String? displayName,
     Future<String?> Function()? linuxPairingPinProvider,
   }) async {
+    final requestedDeviceId = device.remoteId.toString();
     if (_state == MeshCoreConnectionState.connecting ||
         _state == MeshCoreConnectionState.connected) {
-      return;
+      // Tapping the device we are already busy with is a no-op. Tapping a
+      // DIFFERENT one is explicit user intent and must win over the in-flight
+      // attempt — usually the launch auto-connect, which used to swallow the
+      // tap entirely with no connect, no error and no feedback.
+      if (_activeTransport == MeshCoreTransportType.bluetooth &&
+          _deviceId == requestedDeviceId) {
+        return;
+      }
+      _appDebugLogService?.info(
+        'Aborting in-flight connection to switch to $requestedDeviceId',
+        tag: 'BLE Connect',
+      );
+      await disconnect(manual: true);
     }
 
+    final attemptId = ++_bleConnectAttempt;
     _activeTransport = MeshCoreTransportType.bluetooth;
 
     await stopScan();
@@ -1762,6 +1803,17 @@ class MeshCoreConnector extends ChangeNotifier {
         }
       }
 
+      if (attemptId != _bleConnectAttempt) {
+        _appDebugLogService?.info(
+          'Discarding superseded connect to $connectLabel',
+          tag: 'BLE Connect',
+        );
+        try {
+          await device.disconnect(queue: false);
+        } catch (_) {}
+        return;
+      }
+
       if (PlatformInfo.isLinux) {
         await _ensureLinuxBleBond(
           device,
@@ -1886,6 +1938,17 @@ class MeshCoreConnector extends ChangeNotifier {
           }
         }
       }
+      if (attemptId != _bleConnectAttempt) {
+        _appDebugLogService?.info(
+          'Discarding superseded connect to $connectLabel after discovery',
+          tag: 'BLE Connect',
+        );
+        try {
+          await device.disconnect(queue: false);
+        } catch (_) {}
+        return;
+      }
+
       _notifySubscription = _txCharacteristic!.onValueReceived.listen(
         _handleFrame,
       );
@@ -1899,6 +1962,19 @@ class MeshCoreConnector extends ChangeNotifier {
       await _startBleInitialSync();
     } catch (e) {
       _appDebugLogService?.error('Connection error: $e', tag: 'BLE Connect');
+      if (shouldIgnoreLateBleConnectError(
+        manualDisconnect: _manualDisconnect,
+        state: _state,
+        activeTransport: _activeTransport,
+        supersededByNewerAttempt: attemptId != _bleConnectAttempt,
+      )) {
+        _appDebugLogService?.info(
+          'Ignoring connect error after disconnect/switch: '
+          'state=$_state transport=$_activeTransport',
+          tag: 'BLE Connect',
+        );
+        return;
+      }
       final errorText = e.toString();
       final lowerErrorText = errorText.toLowerCase();
       final isLinuxPairingFailure =
@@ -2281,6 +2357,15 @@ class MeshCoreConnector extends ChangeNotifier {
       );
       await disconnect(manual: true);
     }
+  }
+
+  /// User cancelled the connection attempt from the scanner. Aborts whatever is
+  /// in flight and stops auto-connect for the rest of this process, so the
+  /// launch attempt doesn't restart the moment the adapter reports on again.
+  Future<void> cancelAutoConnect() async {
+    _launchAutoConnectAttempted = true;
+    await suspendBleAutoReconnect();
+    notifyListeners();
   }
 
   int _nextReconnectDelayMs() {
@@ -4485,6 +4570,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         selfName != null &&
         selfName.isNotEmpty) {
       _usbManager.updateConnectedLabel(selfName);
+    }
+    if (_activeTransport == MeshCoreTransportType.bluetooth &&
+        selfName != null &&
+        selfName.isNotEmpty &&
+        selfName != _lastDeviceDisplayName) {
+      // The radio's own name is authoritative; adopt it as the remembered name
+      // so the next launch's auto-connect banner doesn't show a pre-rename one.
+      _deviceDisplayName = selfName;
+      _lastDeviceDisplayName = selfName;
+      unawaited(_persistLastBleDevice());
     }
 
     //set all the stores' public key so they can load the correct data

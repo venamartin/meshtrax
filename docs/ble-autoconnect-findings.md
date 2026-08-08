@@ -1,8 +1,8 @@
 # BLE auto-connect / naming — diagnosis in progress
 
 Branch: `fix/ble-autoconnect-control` (off master @ 1.7.16+25).
-Nothing implemented yet. Written before a context compaction so the
-line-level detail does not have to be re-derived.
+All three are diagnosed and fixed; this is the record of why.
+Line numbers are from the pre-fix file.
 
 Three reported problems:
 
@@ -33,11 +33,13 @@ solved by `suspendBleAutoReconnect()` (`:2273`), which cancels the
 reconnect timer, sets `_manualDisconnect = true`, and aborts an
 in-flight BLE attempt.
 
-**Fix shape:** a BLE connect request for a *different* device id should
-abort the in-flight attempt and proceed, rather than returning. Plus a
-visible cancel affordance on the scanner while auto-connecting —
-`scanner_screen.dart:71` fires `autoConnectToLastDevice()` and the UI
-shows no way out of it.
+**Fix:** the guard now only short-circuits when the request is for the
+device already in flight; a *different* id aborts the in-flight attempt
+with `disconnect(manual: true)` and proceeds. The scanner grows a Cancel
+button in the status bar while connecting (`cancelAutoConnect()`, which
+also stops auto-connect for the rest of the process so the adapter-state
+listener at `scanner_screen.dart:71` cannot restart it), and an
+overflow-menu toggle for the auto-connect setting itself.
 
 Relevant state:
 * `autoConnectToLastDevice()` — `:2232`, guarded by
@@ -47,9 +49,40 @@ Relevant state:
 * Setting lives at `app_settings.dart:57` / toggled in
   `app_settings_screen.dart:165`.
 
-## 2. Reconnect after a manual disconnect — NOT YET EXPLAINED
+## 2. Reconnect after a manual disconnect — CONFIRMED
 
-On paper this is already blocked:
+**Root cause: BLE `connect()`'s catch-all runs the dropped-link path even
+when the failure was caused by the user's own disconnect.**
+
+`connect()` sets state to `connected` and *then* — still inside its own
+`try` — awaits `_startBleInitialSync()` (`:2149`), which is
+`_requestDeviceInfo()` → up to 6s waiting for SELF_INFO → `syncTime()`.
+For that whole window the UI already says "connected", so this is
+precisely when a user taps Disconnect.
+
+The moment they do, `disconnect(manual: true)` tears down the link and
+the in-flight sync's next `sendFrame` throws `Not connected to a MeshCore
+device` (`:2451`). That lands in `connect()`'s catch, whose default arm
+is `await disconnect(manual: false)` — and `manual: false` **sets
+`_manualDisconnect = false`** (`:2347`) and then calls
+`_scheduleReconnect()` (`:2441`). The user's intent is erased by the
+error their own disconnect caused.
+
+TCP already guards this exact shape with `shouldIgnoreLateTcpConnectError`;
+BLE never got the equivalent.
+
+The same arm also fires when another transport or another device takes
+over mid-attempt, in which case `disconnect(manual: false)` tears down
+the *successor's* connection.
+
+**Fix:** `shouldIgnoreLateBleConnectError` — ignore the error when a
+newer attempt owns the connector (`_bleConnectAttempt` counter), when the
+active transport is no longer Bluetooth, or when a manual disconnect has
+already taken the state to disconnected/disconnecting. Plus two
+supersede checks inside `connect()` so a stale attempt that *succeeds*
+doesn't clobber the live one's characteristics.
+
+The rest of the mechanism was already correct:
 
 * `disconnect({bool manual = true})` — `:2320`; when `manual` it sets
   `_manualDisconnect = true` and cancels the reconnect timer (`:2342`).
@@ -60,16 +93,8 @@ On paper this is already blocked:
   `manual: true`).
 
 `_scheduleReconnect()` is called from three places — `:2315`, `:2441`,
-and `:7170`. `:7170` is the unexpected-drop teardown and is gated
-correctly.
-
-**NEXT STEP: read `:2441` and its enclosing function** — most likely the
-flutter_blue_plus `connectionState` listener. Hypothesis to test: the
-stack's own disconnected event arrives *after* our manual disconnect
-completes and re-enters a path that clears `_manualDisconnect`, or the
-flag is reset by one of `:1301`, `:1405`, `:1559` (all
-`_manualDisconnect = false` on a connect attempt) racing the teardown.
-Do not write a fix before confirming which.
+and `:7170`. All three are gated on `_shouldAutoReconnect`, so they were
+never the problem; clearing the flag underneath them was.
 
 ## 3. Stale companion name — ANSWERED
 
@@ -88,8 +113,18 @@ in the scanner list and for the whole of connecting — the user sees
 Android's cached name. That is why it is intermittent: it depends
 whether you look before or after the handshake.
 
-**Fix shape (design decision needed):** we cannot clear Android's GATT
-cache from Flutter. Options: prefer our own `_lastDeviceDisplayName`
-over `platformName` once we have ever learned a `_selfName` for that
-device id; or cache `selfName` per device id and show that in the
-scanner list. Worth deciding with the user rather than guessing.
+The scanner made it worse: both `DeviceTile` and `_connectToDevice`
+picked `device.platformName` **first** and only fell back to
+`advertisementData.advName` — i.e. they preferred the OS cache over the
+name the radio had just broadcast in the advert we were looking at.
+
+**Fix:** we cannot clear Android's GATT cache from Flutter, so demote it
+everywhere instead.
+
+* Scanner and `DeviceTile` prefer `advName` (fresh, from this advert)
+  and fall back to `platformName`.
+* `deviceDisplayName` order becomes `_selfName` → `_deviceDisplayName`
+  (ours, from the advert) → `platformName` → `Unknown Device`.
+* When SELF_INFO arrives on BLE, adopt the radio's own name as
+  `_lastDeviceDisplayName` and persist it, so the next launch's
+  auto-connect shows the current name rather than a pre-rename one.
