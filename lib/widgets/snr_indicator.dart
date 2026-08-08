@@ -1,67 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/repeater_identity.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../screens/repeater_hub_screen.dart';
 import 'repeater_login_dialog.dart';
 import 'signal_ui.dart';
-
-Contact? _getRepeaterPrefixMatchNearLocation(
-  List<Contact> contacts,
-  DirectRepeater repeater, {
-  LatLng? searchPoint,
-  bool preferFavorites = false,
-}) {
-  final candidates = contacts
-      .where(
-        (c) =>
-            c.publicKey.isNotEmpty &&
-            repeater.matchesHash(c.publicKey) &&
-            c.type == advTypeRepeater,
-      )
-      .toList();
-
-  if (candidates.isEmpty) return null;
-
-  candidates.sort((a, b) {
-    if (preferFavorites) {
-      final favA = a.isFavorite ? 1 : 0;
-      final favB = b.isFavorite ? 1 : 0;
-      final favCompare = favB.compareTo(favA);
-      if (favCompare != 0) return favCompare;
-    }
-
-    final seenCompare = b.lastSeen.compareTo(a.lastSeen);
-    if (seenCompare != 0) return seenCompare;
-
-    return a.publicKeyHex.compareTo(b.publicKeyHex);
-  });
-
-  if (searchPoint == null) {
-    return candidates.first;
-  }
-
-  final distance = Distance();
-  Contact best = candidates.first;
-  var bestDistance = double.infinity;
-
-  for (final c in candidates) {
-    if (c.hasLocation && c.latitude != null && c.longitude != null) {
-      final d = distance(searchPoint, LatLng(c.latitude!, c.longitude!));
-      if (d < bestDistance) {
-        bestDistance = d;
-        best = c;
-      }
-    }
-  }
-
-  return best;
-}
 
 class SNRUi {
   final IconData icon;
@@ -179,6 +127,22 @@ class _SNRIndicatorState extends State<SNRIndicator> {
         lat <= 90.0 &&
         lon >= -180.0 &&
         lon <= 180.0;
+  }
+
+  /// The identity line under a nearby-repeater tile: the key we can act on, or
+  /// why we cannot act on this one.
+  String _identityLine(DirectRepeater repeater, RepeaterIdentity identity) {
+    final key = identity.addressableKey;
+    if (key != null) {
+      final hex = pubKeyToHex(key);
+      final short = '<${hex.substring(0, 6)}...${hex.substring(hex.length - 4)}>';
+      return identity.isUnknownContact ? '$short — not in contacts' : short;
+    }
+    if (identity.isAmbiguous) {
+      return 'Hash ${repeater.prefixHex} answers to '
+          '${identity.candidates.length} contacts — cannot identify';
+    }
+    return 'Heard as ${repeater.prefixHex} — full identity required to log in';
   }
 
   @override
@@ -328,62 +292,23 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                       repeater.snr,
                       widget.connector.currentSf,
                     );
-                    final allContacts = widget.connector.allContacts;
+                    final identity = RepeaterIdentityHelper.resolve(
+                      contacts: widget.connector.allContacts,
+                      publicKey: repeater.publicKey,
+                      hashPrefix: repeater.pubkeyPrefix,
+                    );
+                    final contact = identity.contact;
 
-                    Contact? contact;
-
-                    final selfLat = widget.connector.selfLatitude;
-                    final selfLon = widget.connector.selfLongitude;
-
-                    LatLng? selfPoint;
-                    if (selfLat != null &&
-                        selfLon != null &&
-                        _isValidSelfLocation(selfLat, selfLon)) {
-                      selfPoint = LatLng(selfLat, selfLon);
-                    }
-
-                    // First try repeater/room type match
-                    if (repeater.publicKey != null) {
-                      final hex = pubKeyToHex(repeater.publicKey!);
-                      final idx = allContacts.indexWhere((c) => c.publicKeyHex == hex);
-                      if (idx >= 0) contact = allContacts[idx];
-                    }
-
-                    contact ??= _getRepeaterPrefixMatchNearLocation(
-                        allContacts,
-                        repeater,
-                        searchPoint: selfPoint,
-                        preferFavorites: true,
-                      );
-
-                    // If not found, try any contact with matching prefix for display name only
-                    if (contact == null) {
-                      final candidates = allContacts
-                          .where(
-                            (c) =>
-                                c.publicKey.isNotEmpty &&
-                                repeater.matchesHash(c.publicKey),
-                          )
-                          .toList();
-
-                      if (candidates.isNotEmpty) {
-                        candidates.sort((a, b) {
-                          final seenCompare = b.lastSeen.compareTo(a.lastSeen);
-                          if (seenCompare != 0) return seenCompare;
-                          return a.publicKeyHex.compareTo(b.publicKeyHex);
-                        });
-                        contact = candidates.first;
-                      }
-                    }
-
-                    final name = contact?.name ?? repeater.name;
-                    final displayName = (name != null && name.isNotEmpty)
-                        ? name
-                        : repeater.prefixHex;
+                    // A name the node put on air beats a lookup, but only when
+                    // the lookup found nothing — a matched contact carries the
+                    // name this user chose for it.
+                    final displayName = contact == null &&
+                            repeater.name?.isNotEmpty == true
+                        ? repeater.name!
+                        : identity.displayName;
 
                     final hasLocation = contact?.hasLocation ?? false;
-                    final fullPubKey = contact?.publicKey ?? repeater.publicKey;
-                    final pubKeyHex = fullPubKey != null ? pubKeyToHex(fullPubKey) : null;
+                    final fullPubKey = identity.addressableKey;
                     final durationSinceUpdate = DateTime.now().difference(repeater.lastUpdated);
                     final isRecent = durationSinceUpdate.inSeconds < 12;
                     final tileColor = isRecent ? Colors.green.withValues(alpha: 0.15) : null;
@@ -394,7 +319,7 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                       title: Text(displayName),
                       subtitle: Text(
                         'SNR: ${repeater.snr.toStringAsFixed(1)} dB\n'
-                        '${pubKeyHex != null ? '<${pubKeyHex.substring(0, 6)}...${pubKeyHex.substring(pubKeyHex.length - 4)}>\n' : 'Full identity required to log in\n'}'
+                        '${_identityLine(repeater, identity)}\n'
                         '${l10n.snrIndicator_lastSeen}: ${_formatLastUpdated(repeater.lastUpdated)}',
                       ),
                       trailing: hasLocation

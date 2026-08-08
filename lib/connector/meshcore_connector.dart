@@ -15,6 +15,7 @@ import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../services/app_debug_log_service.dart';
@@ -86,6 +87,38 @@ class DirectRepeater {
   void update(double newSNR) {
     snr = newSNR;
     lastUpdated = DateTime.now();
+  }
+
+  /// The entry in [tracked] that a newly heard node refers to, or null when a
+  /// new one should be started.
+  ///
+  /// A node heard by its full key matches on that key alone. It may still adopt
+  /// an entry we had only ever heard by hash — that is how a neighbour learns
+  /// its own identity — but never when two such entries answer to the same
+  /// hash, because then the hash names neither of them.
+  ///
+  /// A node heard by hash alone may refresh any single entry that answers to
+  /// it, keyed or not. That only moves an SNR and a timestamp; identity is
+  /// never written from a hash, and requiring a collision *within the handful
+  /// of neighbours we can hear directly* is a far stronger test than requiring
+  /// one across a whole contact book.
+  static DirectRepeater? findTracked(
+    List<DirectRepeater> tracked, {
+    Uint8List? fullKey,
+    required List<int> hashPrefix,
+  }) {
+    if (fullKey != null && fullKey.isNotEmpty) {
+      final hex = pubKeyToHex(fullKey);
+      for (final r in tracked) {
+        if (r.publicKey != null && pubKeyToHex(r.publicKey!) == hex) return r;
+      }
+      final adoptable = tracked
+          .where((r) => r.publicKey == null && r.matchesHash(hashPrefix))
+          .toList();
+      return adoptable.length == 1 ? adoptable.first : null;
+    }
+    final matches = tracked.where((r) => r.matchesHash(hashPrefix)).toList();
+    return matches.length == 1 ? matches.first : null;
   }
 
   static int compare(DirectRepeater a, DirectRepeater b) {
@@ -5616,19 +5649,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           return;
         }
 
-        final hasFullPubKey = ctlPayload.length >= 6 + 32;
-        final Uint8List? pubKey = hasFullPubKey ? ctlPayload.sublist(6, 38) : null;
+        // A repeater's NODE_DISCOVER_RESP is [type][snr][tag x4][pub_key x32]
+        // — the full key, and no name at all (simple_repeater/MyMesh.cpp). We
+        // ask for it in full (prefix_only = 0), so identity here is exact and
+        // must never be narrowed to a hash. The name can only come from the
+        // contact book, resolved against those 32 bytes.
+        final hasFullPubKey = ctlPayload.length >= 6 + pubKeySize;
+        final Uint8List? pubKey =
+            hasFullPubKey ? ctlPayload.sublist(6, 6 + pubKeySize) : null;
         final hex = pubKey != null ? pubKeyToHex(pubKey) : null;
-        // Discovery responses carry at least an 8-byte pubkey prefix at [6..];
-        // keep the on-air hash width of it as the repeater's identity.
-        final prefixEnd = math.min(6 + _pathHashByteWidth, ctlPayload.length);
-        final pubkeyPrefix = prefixEnd > 6
-            ? Uint8List.fromList(ctlPayload.sublist(6, prefixEnd))
-            : Uint8List(0);
+        // Kept for display and for matching hash-only neighbours heard from
+        // advert paths; never used to identify a response that carried a key.
+        final pubkeyPrefix = pubKey != null
+            ? PathHelper.pubKeyPrefix(pubKey, stride: _pathHashByteWidth)
+            : Uint8List.fromList(
+                ctlPayload.sublist(
+                  6,
+                  math.min(6 + _pathHashByteWidth, ctlPayload.length),
+                ),
+              );
 
+        // No firmware appends a name today; decoded only so a future one that
+        // does is not silently ignored.
         String? parsedName;
-        if (hasFullPubKey && ctlPayload.length > 38) {
-          parsedName = utf8.decode(ctlPayload.sublist(38), allowMalformed: true).trim();
+        if (hasFullPubKey && ctlPayload.length > 6 + pubKeySize) {
+          parsedName = utf8
+              .decode(ctlPayload.sublist(6 + pubKeySize), allowMalformed: true)
+              .trim();
           if (parsedName.isNotEmpty && parsedName.codeUnitAt(parsedName.length - 1) == 0) {
             parsedName = parsedName.substring(0, parsedName.length - 1);
           }
@@ -5637,18 +5684,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         appLogger.info('Discovered repeater with pubkey prefix 0x${PathHelper.hopHex(pubkeyPrefix)} at SNR $snr dB');
 
         _directRepeaters.removeWhere((r) => r.isStale());
-        final existing = _directRepeaters.where((r) {
-          if (r.publicKey != null && hex != null) {
-            return pubKeyToHex(r.publicKey!) == hex;
-          }
-          return r.matchesHash(pubkeyPrefix);
-        });
+        final existing = _findTrackedRepeater(
+          fullKey: pubKey,
+          hashPrefix: pubkeyPrefix,
+        );
 
-        if (existing.isNotEmpty) {
-          existing.first.update(snr);
-          existing.first.publicKey ??= pubKey;
+        if (existing != null) {
+          existing.update(snr);
+          existing.publicKey ??= pubKey;
           if (parsedName != null && parsedName.isNotEmpty) {
-            existing.first.name = parsedName;
+            existing.name = parsedName;
           }
         } else {
           if (_directRepeaters.length >= 5) {
@@ -5680,7 +5725,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           if (!alreadyKnown && !_discoveredContacts.any((c) => c.publicKeyHex == hex!)) {
             final resolvedName = (parsedName != null && parsedName.isNotEmpty)
                 ? parsedName
-                : 'Repeater ${hex!.substring(0, 4).toUpperCase()}';
+                : RepeaterIdentityHelper.unnamedLabel(pubKey!);
             final newContact = Contact(
               publicKey: pubKey!,
               name: resolvedName,
@@ -7664,54 +7709,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (path.isEmpty) {
       lastHopPublicKey = contact.publicKey;
     } else {
-      final int take = math.min(hashSize, path.length);
-      final lastHopBytes = path.sublist(path.length - take);
-      Contact? match;
-      for (final c in _contacts) {
-        if (c.type != advTypeRepeater && c.type != advTypeRoom) continue;
-        if (c.publicKey.length >= take) {
-          bool isMatch = true;
-          for (int i = 0; i < take; i++) {
-            if (c.publicKey[i] != lastHopBytes[i]) {
-              isMatch = false;
-              break;
-            }
-          }
-          if (isMatch) {
-            match = c;
-            break;
-          }
-        }
-      }
-      if (match == null) {
-        for (final c in _discoveredContacts) {
-          if (c.type != advTypeRepeater && c.type != advTypeRoom) continue;
-          if (c.publicKey.length >= take) {
-            bool isMatch = true;
-            for (int i = 0; i < take; i++) {
-              if (c.publicKey[i] != lastHopBytes[i]) {
-                isMatch = false;
-                break;
-              }
-            }
-            if (isMatch) {
-              match = c;
-              break;
-            }
-          }
-        }
-      }
-      if (match != null) {
-        lastHopPublicKey = match.publicKey;
+      // An advert only gives us the last hop's 1-2 byte hash, so this is a
+      // guess by construction. Taking the first contact that shared the hash
+      // is what named a repeater 100 miles away as the one in the room; with
+      // several matches we do not know which node we heard, so we keep the
+      // hash and leave the entry unidentified rather than pick.
+      final matches = RepeaterIdentityHelper.contactsMatchingHash(
+        [..._contacts, ..._discoveredContacts],
+        pubkeyPrefix,
+      );
+      if (matches.length == 1) {
+        lastHopPublicKey = matches.first.publicKey;
+      } else if (matches.length > 1) {
+        appLogger.info(
+          'Advert last hop 0x${PathHelper.hopHex(pubkeyPrefix)} matches '
+          '${matches.length} contacts — left unidentified',
+          tag: 'Connector',
+        );
       }
     }
 
-    final isTracked = _directRepeaters.where((r) {
-      if (r.publicKey != null && lastHopPublicKey != null) {
-        return pubKeyToHex(r.publicKey!) == pubKeyToHex(lastHopPublicKey);
-      }
-      return r.matchesHash(pubkeyPrefix);
-    });
+    final tracked = _findTrackedRepeater(
+      fullKey: lastHopPublicKey,
+      hashPrefix: pubkeyPrefix,
+    );
 
     final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
       ..sort(DirectRepeater.compare);
@@ -7721,12 +7742,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     if (_directRepeaters.length >= 5 &&
         weakestRepeater != null &&
-        isTracked.isEmpty) {
+        tracked == null) {
       _directRepeaters.remove(weakestRepeater);
     }
 
-    if (isTracked.isNotEmpty) {
-      final repeater = isTracked.first;
+    if (tracked != null) {
+      final repeater = tracked;
       repeater.update(snr);
       if (repeater.publicKey == null && lastHopPublicKey != null) {
         repeater.publicKey = lastHopPublicKey;
@@ -7742,6 +7763,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     notifyListeners();
   }
+
+  DirectRepeater? _findTrackedRepeater({
+    Uint8List? fullKey,
+    required List<int> hashPrefix,
+  }) => DirectRepeater.findTracked(
+    _directRepeaters,
+    fullKey: fullKey,
+    hashPrefix: hashPrefix,
+  );
 
   void _handleAutoAddConfig(Uint8List frame) {
     final reader = BufferReader(frame);
