@@ -1943,6 +1943,12 @@ class MeshCoreConnector extends ChangeNotifier {
           'Discarding superseded connect to $connectLabel after discovery',
           tag: 'BLE Connect',
         );
+        // Discovery above assigned the characteristics of a device we are
+        // abandoning. Drop them unless a successor is already using its own.
+        if (_state == MeshCoreConnectionState.disconnected) {
+          _rxCharacteristic = null;
+          _txCharacteristic = null;
+        }
         try {
           await device.disconnect(queue: false);
         } catch (_) {}
@@ -2355,6 +2361,7 @@ class MeshCoreConnector extends ChangeNotifier {
         'Aborting BLE attempt: USB picker opened',
         tag: 'Connection',
       );
+      _bleConnectAttempt++;
       await disconnect(manual: true);
     }
   }
@@ -2364,7 +2371,23 @@ class MeshCoreConnector extends ChangeNotifier {
   /// launch attempt doesn't restart the moment the adapter reports on again.
   Future<void> cancelAutoConnect() async {
     _launchAutoConnectAttempted = true;
-    await suspendBleAutoReconnect();
+    _cancelReconnectTimer();
+    _manualDisconnect = true;
+    // Invalidating the attempt is what makes the cancel stick. Tearing down
+    // alone is not enough: the in-flight connect() is parked on an await, and
+    // when it resumes it finishes the handshake against a link we already
+    // dropped — reaching `connected` with no _connectionSubscription, so the
+    // contact stream stalls part-way and nothing is left to notice the drop.
+    _bleConnectAttempt++;
+    if (_activeTransport == MeshCoreTransportType.bluetooth &&
+        (_state == MeshCoreConnectionState.connecting ||
+            _state == MeshCoreConnectionState.connected)) {
+      _appDebugLogService?.info(
+        'Cancelling BLE connect at user request (state=$_state)',
+        tag: 'Connection',
+      );
+      await disconnect(manual: true);
+    }
     notifyListeners();
   }
 
@@ -2511,6 +2534,12 @@ class MeshCoreConnector extends ChangeNotifier {
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _hasLoadedChannels = false;
+    // The contact stream only ends on END_OF_CONTACTS, which a disconnect
+    // mid-stream never delivers — without this the "Reading contacts (n/total)"
+    // banner stays up forever on a stream that stopped.
+    _isLoadingContacts = false;
+    _isLoadingChannels = false;
+    _preserveContactsOnRefresh = false;
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
@@ -7234,6 +7263,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
+    // See disconnect(): END_OF_CONTACTS never arrives on a dropped link, so the
+    // sync banner has to be cleared here or it sticks at its last count.
+    _isLoadingContacts = false;
+    _preserveContactsOnRefresh = false;
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
