@@ -15,6 +15,7 @@ import '../utils/contact_search.dart';
 import '../helpers/contact_import_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../utils/telemetry_dialog.dart';
+import 'channel_chat_screen.dart';
 import 'channel_qr_scanner_screen.dart';
 import 'chat_screen.dart';
 import 'contact_qr_scanner_screen.dart';
@@ -251,6 +252,28 @@ class _NewChatScreenState extends State<NewChatScreen> {
     );
   }
 
+  /// Lands the user in the channel they just added, ready to type. Replaces
+  /// this screen so the back arrow returns to the chats list rather than the
+  /// add screen they are done with.
+  ///
+  /// The channel is looked up by PSK against the live list [setChannel] has
+  /// just refreshed — never by slot index, which the radio owns. A miss means
+  /// the radio did not take the channel, so we simply stay put.
+  void _openChannel(Uint8List psk) {
+    final connector = context.read<MeshCoreConnector>();
+    final idKey = Channel.formatPskHex(psk);
+    final matches = connector.channels.where((c) => c.idKey == idKey);
+    if (matches.isEmpty) return;
+    final channel = matches.first;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChannelChatScreen(channel: channel),
+      ),
+    );
+  }
+
   int _findNextAvailableIndex(List<Channel> channels, int maxChannels) {
     final usedIndices = channels.map((c) => c.index).toSet();
     for (int i = 0; i < maxChannels; i++) {
@@ -340,15 +363,15 @@ class _NewChatScreenState extends State<NewChatScreen> {
             }
             Navigator.pop(dialogContext);
             await connector.setChannel(nextIndex, name, psk);
-            if (context.mounted) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(context.l10n.channels_channelAdded(name)),
-              );
-            }
+            if (!context.mounted) return;
+            showDismissibleSnackBar(
+              context,
+              content: Text(context.l10n.channels_channelAdded(name)),
+            );
+            _openChannel(psk);
           }
 
-          void addHashtagChannel() {
+          Future<void> addHashtagChannel() async {
             var hashtag = hashtagController.text.trim();
             if (hashtag.isEmpty) {
               showDismissibleSnackBar(
@@ -364,16 +387,16 @@ class _NewChatScreenState extends State<NewChatScreen> {
             final psk = Channel.derivePskFromHashtag(hashtag);
 
             Navigator.pop(dialogContext);
-            connector.setChannel(nextIndex, channelName, psk);
-            if (context.mounted) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(context.l10n.channels_channelAdded(channelName)),
-              );
-            }
+            await connector.setChannel(nextIndex, channelName, psk);
+            if (!context.mounted) return;
+            showDismissibleSnackBar(
+              context,
+              content: Text(context.l10n.channels_channelAdded(channelName)),
+            );
+            _openChannel(psk);
           }
 
-          void joinPrivateChannel() {
+          Future<void> joinPrivateChannel() async {
             final name = nameController.text.trim();
             final pskHex = pskController.text.trim();
             if (name.isEmpty) {
@@ -394,25 +417,25 @@ class _NewChatScreenState extends State<NewChatScreen> {
               return;
             }
             Navigator.pop(dialogContext);
-            connector.setChannel(nextIndex, name, psk);
-            if (context.mounted) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(context.l10n.channels_channelAdded(name)),
-              );
-            }
+            await connector.setChannel(nextIndex, name, psk);
+            if (!context.mounted) return;
+            showDismissibleSnackBar(
+              context,
+              content: Text(context.l10n.channels_channelAdded(name)),
+            );
+            _openChannel(psk);
           }
 
-          void joinPublicChannel() {
+          Future<void> joinPublicChannel() async {
             Navigator.pop(dialogContext);
             final psk = Channel.parsePskHex(Channel.publicChannelPsk);
-            connector.setChannel(nextIndex, 'Public', psk);
-            if (context.mounted) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(context.l10n.channels_publicChannelAdded),
-              );
-            }
+            await connector.setChannel(nextIndex, 'Public', psk);
+            if (!context.mounted) return;
+            showDismissibleSnackBar(
+              context,
+              content: Text(context.l10n.channels_publicChannelAdded),
+            );
+            _openChannel(psk);
           }
 
           // The confirm button lives in the dialog's pinned actions row —
