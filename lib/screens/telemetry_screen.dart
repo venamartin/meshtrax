@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
-import '../models/path_selection.dart';
 import '../models/app_settings.dart';
 import '../connector/meshcore_connector.dart';
-import '../connector/meshcore_protocol.dart';
 import '../services/app_settings_service.dart';
 import '../services/repeater_command_service.dart';
-import '../utils/app_logger.dart';
 import '../widgets/path_management_dialog.dart';
 import '../helpers/cayenne_lpp.dart';
 import '../utils/battery_utils.dart';
@@ -26,18 +23,11 @@ class TelemetryScreen extends StatefulWidget {
 }
 
 class _TelemetryScreenState extends State<TelemetryScreen> {
-  int _tagData = 0;
-
   bool _isLoading = false;
   bool _isLoaded = false;
   bool _hasData = false;
-  Timer? _statusTimeout;
-  StreamSubscription<Uint8List>? _frameSubscription;
   RepeaterCommandService? _commandService;
-  PathSelection? _pendingStatusSelection;
   List<Map<String, dynamic>>? _parsedTelemetry;
-
-  int _tripTime = 0;
 
   int _resolveContactIndex = -1;
 
@@ -62,63 +52,8 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
     super.initState();
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     _commandService = RepeaterCommandService(connector);
-    _setupMessageListener();
     _loadTelemetry();
     _hasData = false;
-  }
-
-  void _setupMessageListener() {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-
-    // Listen for incoming text messages from the repeater
-    _frameSubscription = connector.receivedFrames.listen((frame) {
-      if (frame.isEmpty) return;
-      final reader = BufferReader(frame);
-      try {
-        final cmd = reader.readByte();
-        if (cmd == respCodeSent) {
-          reader.skipBytes(1); // Skip the reserved byte
-          _tagData = reader.readUInt32LE();
-          _tripTime = reader.readUInt32LE();
-          _statusTimeout?.cancel();
-          _statusTimeout = Timer(Duration(milliseconds: _tripTime), () {
-            if (!mounted) return;
-            setState(() {
-              _isLoading = false;
-              _isLoaded = false;
-            });
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.telemetry_requestTimeout),
-              backgroundColor: Colors.red,
-            );
-            _recordTelemetryResult(false);
-          });
-        }
-
-        // Check if it's a binary response
-        if (cmd == pushCodeBinaryResponse) {
-          if (!mounted) return;
-          reader.skipBytes(1); // Skip the reserved byte
-          if (reader.readUInt32LE() != _tagData) return;
-          _handleTelemetryResponse(reader.readRemainingBytes());
-        }
-
-        // Check if it's a telemetry response (for chat contacts)
-        if (cmd == pushCodeTelemetryResponse) {
-          reader.skipBytes(1); // Skip the reserved byte
-          final pubkey = reader.readBytes(6);
-          if (!mounted) return;
-          if (!listEquals(widget.contact.publicKey.sublist(0, 6), pubkey)) {
-            return;
-          }
-          _handleTelemetryResponse(reader.readRemainingBytes());
-        }
-      } catch (e) {
-        appLogger.error('Error parsing incoming frame: $e');
-        // If parsing fails, ignore the frame
-      }
-    });
   }
 
   void _handleTelemetryResponse(Uint8List frame) {
@@ -142,7 +77,6 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
       content: Text(context.l10n.telemetry_receivedData),
       backgroundColor: Colors.green,
     );
-    _statusTimeout?.cancel();
     if (!mounted) return;
     setState(() {
       _isLoading = false;
@@ -152,7 +86,8 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   }
 
   Future<void> _loadTelemetry() async {
-    if (_commandService == null) return;
+    final service = _commandService;
+    if (service == null) return;
 
     setState(() {
       _isLoading = true;
@@ -160,20 +95,27 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
     });
     try {
       final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-      final selection = await connector.preparePathForContactSend(
+      // Retries, per-attempt escalation, timeout-model training and path
+      // stats all live in the service. The old code armed one timer with
+      // the companion's est_timeout — an OUTBOUND-only estimate that never
+      // budgeted the repeater's 300 ms reply hold or the response airtime.
+      final payload = await service.sendTelemetryRequest(
         _resolveContact(connector),
       );
-      _pendingStatusSelection = selection;
-      Uint8List frame;
-      if (widget.contact.type != advTypeChat) {
-        frame = buildSendBinaryReq(
-          widget.contact.publicKey,
-          payload: Uint8List.fromList([reqTypeGetTelemetry]),
+      if (!mounted) return;
+      _handleTelemetryResponse(payload);
+    } on TimeoutException {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLoaded = false;
+        });
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.telemetry_requestTimeout),
+          backgroundColor: Colors.red,
         );
-      } else {
-        frame = buildSendTelemetryReq(widget.contact.publicKey);
       }
-      await connector.sendFrame(frame);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -190,24 +132,9 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
     }
   }
 
-  void _recordTelemetryResult(bool success) {
-    final selection = _pendingStatusSelection;
-    if (selection == null) return;
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    connector.recordRepeaterPathResult(
-      widget.contact,
-      selection,
-      success,
-      null,
-    );
-    _pendingStatusSelection = null;
-  }
-
   @override
   void dispose() {
-    _frameSubscription?.cancel();
     _commandService?.dispose();
-    _statusTimeout?.cancel();
     super.dispose();
   }
 

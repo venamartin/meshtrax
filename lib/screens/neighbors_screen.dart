@@ -5,7 +5,6 @@ import 'package:meshtrax/utils/app_logger.dart';
 import 'package:provider/provider.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
-import '../models/path_selection.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../services/repeater_command_service.dart';
@@ -29,20 +28,12 @@ class NeighborsScreen extends StatefulWidget {
 
 class _NeighborsScreenState extends State<NeighborsScreen> {
   static const int _reqNeighborsKeyLen = 4;
-  static const int _statusPayloadOffset = 8;
-  static const int _statusStatsSize = 52;
-  static const int _statusResponseBytes =
-      _statusPayloadOffset + _statusStatsSize;
-  Uint8List _tagData = Uint8List(4);
   int _neighborCount = 0;
 
   bool _isLoading = false;
   bool _isLoaded = false;
   bool _hasData = false;
-  Timer? _statusTimeout;
-  StreamSubscription<Uint8List>? _frameSubscription;
   RepeaterCommandService? _commandService;
-  PathSelection? _pendingStatusSelection;
   List<Map<String, dynamic>>? _parsedNeighbors;
 
   int _resolveRepeaterIndex = -1;
@@ -68,28 +59,8 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
     super.initState();
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     _commandService = RepeaterCommandService(connector);
-    _setupMessageListener();
     _loadNeighbors();
     _hasData = false;
-  }
-
-  void _setupMessageListener() {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-
-    // Listen for incoming text messages from the repeater
-    _frameSubscription = connector.receivedFrames.listen((frame) {
-      if (frame.isEmpty) return;
-
-      if (frame[0] == respCodeSent) {
-        _tagData = frame.sublist(2, 6);
-      }
-
-      // Check if it's a binary response
-      if (frame[0] == pushCodeBinaryResponse &&
-          listEquals(frame.sublist(2, 6), _tagData)) {
-        _handleNeighborsResponse(connector, frame.sublist(6));
-      }
-    });
   }
 
   String fmtDuration(double seconds) {
@@ -169,7 +140,6 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
         content: Text(context.l10n.neighbors_receivedData),
         backgroundColor: Colors.green,
       );
-      _statusTimeout?.cancel();
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -182,7 +152,8 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
   }
 
   Future<void> _loadNeighbors() async {
-    if (_commandService == null) return;
+    final service = _commandService;
+    if (service == null) return;
 
     setState(() {
       _isLoading = true;
@@ -191,13 +162,13 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
     try {
       final connector = Provider.of<MeshCoreConnector>(context, listen: false);
       final repeater = _resolveRepeater(connector);
-      final selection = await connector.preparePathForContactSend(repeater);
-      _pendingStatusSelection = selection;
-
+      // Retries, per-attempt escalation, timeout-model training and path
+      // stats all live in the service — this used to be one frame and one
+      // timer, which turned every ~5%-loss packet into a red banner.
       //[version][number of requested neighbors][offset_16bit][order by][len of public key]
-      final frame = buildSendBinaryReq(
-        repeater.publicKey,
-        payload: Uint8List.fromList([
+      final payload = await service.sendBinaryRequest(
+        repeater,
+        Uint8List.fromList([
           reqTypeGetNeighbors,
           0x00,
           0x0F,
@@ -207,19 +178,10 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
           _reqNeighborsKeyLen,
         ]),
       );
-      await connector.sendFrame(frame);
-
-      final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
-      final messageBytes = frame.length >= _statusResponseBytes
-          ? frame.length
-          : _statusResponseBytes;
-      final timeoutMs = connector.calculateTimeout(
-        pathLength: pathLengthValue,
-        messageBytes: messageBytes,
-      );
-      _statusTimeout?.cancel();
-      _statusTimeout = Timer(Duration(milliseconds: timeoutMs), () {
-        if (!mounted) return;
+      if (!mounted) return;
+      _handleNeighborsResponse(connector, payload);
+    } on TimeoutException {
+      if (mounted) {
         setState(() {
           _isLoading = false;
           _isLoaded = false;
@@ -229,8 +191,7 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
           content: Text(context.l10n.neighbors_requestTimedOut),
           backgroundColor: Colors.red,
         );
-        _recordStatusResult(false);
-      });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -247,20 +208,9 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
     }
   }
 
-  void _recordStatusResult(bool success) {
-    final selection = _pendingStatusSelection;
-    if (selection == null) return;
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final repeater = _resolveRepeater(connector);
-    connector.recordRepeaterPathResult(repeater, selection, success, null);
-    _pendingStatusSelection = null;
-  }
-
   @override
   void dispose() {
-    _frameSubscription?.cancel();
     _commandService?.dispose();
-    _statusTimeout?.cancel();
     super.dispose();
   }
 
