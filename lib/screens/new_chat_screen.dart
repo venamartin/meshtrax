@@ -256,15 +256,14 @@ class _NewChatScreenState extends State<NewChatScreen> {
   /// this screen so the back arrow returns to the chats list rather than the
   /// add screen they are done with.
   ///
-  /// The channel is looked up by PSK against the live list [setChannel] has
-  /// just refreshed — never by slot index, which the radio owns. A miss means
-  /// the radio did not take the channel, so we simply stay put.
-  void _openChannel(Uint8List psk) {
+  /// The channel is resolved by PSK against the radio's own slot map — never
+  /// by the slot index we asked for, which the radio owns. The resolve waits
+  /// out the slot resync; a miss means the radio never took the channel, so
+  /// we stay put.
+  Future<void> _openChannel(Uint8List psk) async {
     final connector = context.read<MeshCoreConnector>();
-    final idKey = Channel.formatPskHex(psk);
-    final matches = connector.channels.where((c) => c.idKey == idKey);
-    if (matches.isEmpty) return;
-    final channel = matches.first;
+    final channel = await connector.awaitChannelByPsk(psk);
+    if (channel == null || !mounted) return;
 
     Navigator.pushReplacement(
       context,
@@ -368,7 +367,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
               context,
               content: Text(context.l10n.channels_channelAdded(name)),
             );
-            _openChannel(psk);
+            await _openChannel(psk);
           }
 
           Future<void> addHashtagChannel() async {
@@ -393,7 +392,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
               context,
               content: Text(context.l10n.channels_channelAdded(channelName)),
             );
-            _openChannel(psk);
+            await _openChannel(psk);
           }
 
           Future<void> joinPrivateChannel() async {
@@ -423,7 +422,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
               context,
               content: Text(context.l10n.channels_channelAdded(name)),
             );
-            _openChannel(psk);
+            await _openChannel(psk);
           }
 
           Future<void> joinPublicChannel() async {
@@ -435,7 +434,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
               context,
               content: Text(context.l10n.channels_publicChannelAdded),
             );
-            _openChannel(psk);
+            await _openChannel(psk);
           }
 
           // The confirm button lives in the dialog's pinned actions row —
