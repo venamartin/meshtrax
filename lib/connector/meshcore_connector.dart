@@ -3145,7 +3145,23 @@ class MeshCoreConnector extends ChangeNotifier {
     PathSelection? autoSelection;
     final autoRotationEnabled =
         _appSettingsService?.settings.autoRouteRotationEnabled == true;
-    if (autoRotationEnabled && contact.pathOverride == null) {
+
+    // A zero-hop contact is already on the best route that exists, so route
+    // rotation has nothing to explore for it.
+    //
+    // Letting it pick flood here does not just slow one send. The flood
+    // branch below calls clearContactPath, which erases the direct path from
+    // the contact itself — and resolvePathSelection returns flood for any
+    // contact whose pathLength is negative. So one rotation experiment
+    // permanently demotes a neighbour to flood, with nothing to restore it
+    // but a fresh path discovery.
+    //
+    // Measured on the bench against a repeater in the same room at -46 dBm,
+    // reporting "Direct": it came back as "Flood" and stayed there, which
+    // also more than doubled the command give-up budget (12.4s -> 28.6s).
+    final isDirect = contact.pathLength == 0;
+
+    if (autoRotationEnabled && contact.pathOverride == null && !isDirect) {
       final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
       autoSelection = _selectAutoPathForAttempt(
         contact.publicKeyHex,
