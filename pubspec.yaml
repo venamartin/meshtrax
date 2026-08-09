@@ -75,6 +75,7 @@ dependencies:
   image_picker: ^1.2.2
   drift: ^2.34.2
   drift_flutter: ^0.3.1
+  emoji_picker_flutter: ^4.4.0
 
 
 dev_dependencies:

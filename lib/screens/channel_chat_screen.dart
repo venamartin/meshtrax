@@ -29,7 +29,7 @@ import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
-import '../widgets/emoji_picker.dart';
+import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/message_status_icon.dart';
@@ -784,6 +784,55 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Widget _buildMessageBubble(ChannelMessage message, double textScale) {
+    // A stored MeshCore One reaction is one whose target message we don't
+    // hold: render a low-emphasis stub — never a chat bubble, never the raw
+    // hash. If the target arrives later the connector lands the reaction on
+    // it and deletes this row.
+    final orphanReaction = ReactionHelper.parseMeshCoreOneReaction(
+      message.text,
+    );
+    if (orphanReaction != null) {
+      return _buildOrphanReactionRow(message, orphanReaction, textScale);
+    }
+    return _buildRegularMessageBubble(message, textScale);
+  }
+
+  Widget _buildOrphanReactionRow(
+    ChannelMessage message,
+    ReactionInfo reaction,
+    double textScale,
+  ) {
+    final muted = Theme.of(context).colorScheme.outline;
+    final target =
+        reaction.targetSender != null ? ' @[${reaction.targetSender}]' : '';
+    return Tooltip(
+      message: context.l10n.chat_reactionTargetMissing(message.senderName),
+      triggerMode: TooltipTriggerMode.longPress,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                '${message.senderName}  ${reaction.emoji}$target',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: muted, fontSize: 13 * textScale),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.add_reaction_outlined,
+              size: 15 * textScale,
+              color: muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegularMessageBubble(ChannelMessage message, double textScale) {
     final settingsService = context.read<AppSettingsService>();
     final uiState = context.read<UiViewStateService>();
     final connector = context.read<MeshCoreConnector>();
@@ -1941,7 +1990,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => EmojiPicker(
+      builder: (context) => ReactionPickerSheet(
         onEmojiSelected: (emoji) {
           _sendReaction(message, emoji);
         },
@@ -1951,16 +2000,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   void _sendReaction(ChannelMessage message, String emoji) {
     final connector = context.read<MeshCoreConnector>();
-    final emojiIndex = ReactionHelper.emojiToIndex(emoji);
-    if (emojiIndex == null) return; // Unknown emoji, skip
-    final timestampSecs = message.timestamp.millisecondsSinceEpoch ~/ 1000;
-    final hash = ReactionHelper.computeReactionHash(
-      timestampSecs,
-      message.senderName,
-      message.text,
+    // MeshCore One dialect: readable on every client, SHA-hashed target,
+    // any emoji — no fixed table.
+    connector.sendChannelMessage(
+      widget.channel,
+      MeshCoreConnector.channelReactionText(message, emoji),
     );
-    final reactionText = ReactionHelper.encodeReaction(hash, emojiIndex);
-    connector.sendChannelMessage(widget.channel, reactionText);
   }
 
   void _copyMessageText(String text) {

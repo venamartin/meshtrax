@@ -37,7 +37,7 @@ import 'map_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
-import '../widgets/emoji_picker.dart';
+import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/room_login_dialog.dart';
@@ -665,8 +665,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 textScale: textScale,
                 onTap: () => _openMessagePath(message, contact),
                 onLongPress: () => _showMessageActions(message, contact),
-                onRetryReaction: (msg, emoji) =>
-                    _sendReaction(msg, contact, emoji),
+                onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
               bool showDayMarker = false;
               if (index == reversedMessages.length - 1) {
@@ -1711,7 +1710,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: Text(context.l10n.chat_addReaction),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _showEmojiPicker(message, contact);
+                  _showEmojiPicker(message);
                 },
               ),
             if (PlatformInfo.isDesktop)
@@ -1828,38 +1827,27 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _showEmojiPicker(Message message, Contact senderContact) {
+  void _showEmojiPicker(Message message) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => EmojiPicker(
+      builder: (context) => ReactionPickerSheet(
         onEmojiSelected: (emoji) {
-          _sendReaction(message, senderContact, emoji);
+          _sendReaction(message, emoji);
         },
       ),
     );
   }
 
-  void _sendReaction(Message message, Contact senderContact, String emoji) {
+  void _sendReaction(Message message, String emoji) {
     final connector = context.read<MeshCoreConnector>();
-    final emojiIndex = ReactionHelper.emojiToIndex(emoji);
-    if (emojiIndex == null) return; // Unknown emoji, skip
-    final timestampSecs = message.timestamp.millisecondsSinceEpoch ~/ 1000;
-
-    // For room servers, include sender name (like channels) since multiple users
-    // For 1:1 chats, sender is implicit (null)
-    final liveContact = _resolveContact(connector);
-    final senderName = liveContact.type == advTypeRoom
-        ? senderContact.name
-        : null;
-        
-    final hash = ReactionHelper.computeReactionHash(
-      timestampSecs,
-      senderName,
-      message.text,
+    // MeshCore One dialect: the SHA hash names the target on every client,
+    // so unlike the legacy r: format there is no sender field and no fixed
+    // emoji table — any emoji goes.
+    connector.sendMessage(
+      _resolveContact(connector),
+      MeshCoreConnector.contactReactionText(message, emoji),
     );
-    final reactionText = ReactionHelper.encodeReaction(hash, emojiIndex);
-    connector.sendMessage(_resolveContact(connector), reactionText);
   }
 }
 
@@ -1884,6 +1872,44 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A stored MeshCore One reaction is one whose target message we don't
+    // hold: render a low-emphasis stub — never a chat bubble, never the raw
+    // hash. If the target arrives later the connector lands the reaction on
+    // it and deletes this row.
+    final orphanReaction = ReactionHelper.parseMeshCoreOneReaction(
+      message.text,
+    );
+    if (orphanReaction != null) {
+      final muted = Theme.of(context).colorScheme.outline;
+      final target = orphanReaction.targetSender != null
+          ? ' @[${orphanReaction.targetSender}]'
+          : '';
+      return Tooltip(
+        message: context.l10n.chat_reactionTargetMissing(senderName),
+        triggerMode: TooltipTriggerMode.longPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  '$senderName  ${orphanReaction.emoji}$target',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: muted, fontSize: 13 * textScale),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.add_reaction_outlined,
+                size: 15 * textScale,
+                color: muted,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final settingsService = context.watch<AppSettingsService>();
     final uiState = context.watch<UiViewStateService>();
     final enableTracing = settingsService.settings.enableMessageTracing;

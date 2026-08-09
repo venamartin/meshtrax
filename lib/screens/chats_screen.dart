@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import '../services/notification_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/disconnect_navigation_mixin.dart';
 import '../utils/emoji_utils.dart';
@@ -571,7 +572,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           final lastMessage = connector.latestContactMessage(contact);
           if (lastMessage != null) {
             final contactName = contact.name.isEmpty ? 'Unknown' : contact.name;
-            final subtitle = lastMessage.isOutgoing ? 'You: ${lastMessage.text}' : lastMessage.text;
+            // Reaction/GIF rows preview as their human-readable form, never
+            // raw wire text (a parked MC1 reaction would show its hash).
+            final preview =
+                NotificationService.formatNotificationText(lastMessage.text);
+            final subtitle =
+                lastMessage.isOutgoing ? 'You: $preview' : preview;
             chatItems.add(
               _ChatListItem(
                 id: 'contact_${contact.publicKeyHex}',
@@ -591,7 +597,11 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
         for (final channel in connector.channels) {
           final lastMessage = connector.latestChannelMessage(channel);
           if (lastMessage != null) {
-            final subtitle = lastMessage.isOutgoing ? 'You: ${lastMessage.text}' : '${lastMessage.senderName}: ${lastMessage.text}';
+            final preview =
+                NotificationService.formatNotificationText(lastMessage.text);
+            final subtitle = lastMessage.isOutgoing
+                ? 'You: $preview'
+                : '${lastMessage.senderName}: $preview';
             chatItems.add(
               _ChatListItem(
                 id: 'channel_${channel.index}',

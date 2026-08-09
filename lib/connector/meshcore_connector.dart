@@ -650,6 +650,8 @@ class MeshCoreConnector extends ChangeNotifier {
       message.senderKeyHex,
       message.messageId,
     );
+    _contactOrphanRows[message.senderKeyHex]
+        ?.removeWhere((o) => o.messageId == message.messageId);
     notifyListeners();
   }
 
@@ -730,6 +732,8 @@ class MeshCoreConnector extends ChangeNotifier {
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) return;
     await _channelMessageStore.deleteMessage(channel.idKey, message.messageId);
+    _channelOrphanRows[channel.idKey]
+        ?.removeWhere((o) => o.messageId == message.messageId);
     notifyListeners();
   }
 
@@ -1071,7 +1075,7 @@ class MeshCoreConnector extends ChangeNotifier {
       if (updated) notifyListeners();
 
       // A settled reaction send updates the target's reaction status row.
-      final reactionInfo = ReactionHelper.parseReaction(message.text);
+      final reactionInfo = ReactionHelper.parseIncomingReaction(message.text);
       if (reactionInfo != null &&
           (message.status == MessageStatus.delivered ||
               message.status == MessageStatus.failed)) {
@@ -2889,7 +2893,7 @@ class MeshCoreConnector extends ChangeNotifier {
     if (!isConnected || text.isEmpty) return;
 
     // Check if this is a reaction - apply locally with pending status and route through retry service
-    final reactionInfo = ReactionHelper.parseReaction(text);
+    final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
       // Apply to the target row; watched queries update the UI.
       final history = await _messageStore.loadMessages(contact.publicKeyHex);
@@ -3352,7 +3356,7 @@ class MeshCoreConnector extends ChangeNotifier {
       // untrusted until re-verified — sending would encrypt with whatever
       // key now owns the slot. Never DISCARD the user's text though: file
       // it by trusted identity and transmit when a sync pass completes.
-      if (ReactionHelper.parseReaction(text) != null) {
+      if (ReactionHelper.parseIncomingReaction(text) != null) {
         _pendingUnverifiedSends.add(
           (idKey: channel.idKey, messageId: null, text: text),
         );
@@ -3384,7 +3388,7 @@ class MeshCoreConnector extends ChangeNotifier {
     channel = live!;
 
     // Check if this is a reaction - if so, process it immediately instead of adding as a message
-    final reactionInfo = ReactionHelper.parseReaction(text);
+    final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
       // Check if we've already processed this reaction. Keyed by reactor too:
       // two people reacting with the same emoji are two reactions, not a
@@ -4750,6 +4754,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _slotsToRequery.clear();
       _processedChannelReactions.clear();
       _channelSmazEnabled.clear();
+      // Orphan caches point at rows in the previous node's stores.
+      _channelOrphanRows.clear();
+      _channelOrphansScanned.clear();
+      _contactOrphanRows.clear();
+      _contactOrphansScanned.clear();
       // The other node's latest-map must not serve as this node's causality
       // floor while the scoped subscription re-emits.
       _channelLatestByIdKey = const {};
@@ -6516,6 +6525,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (_activeContactKey == pubKeyHex) {
       unawaited(_messageStore.markRead(pubKeyHex));
     }
+    // A stored MeshCore One reaction is a parked orphan (its target wasn't
+    // here — yet); anything else might BE the target an orphan waits for.
+    if (ReactionHelper.parseMeshCoreOneReaction(processedMessage.text) !=
+        null) {
+      if (!processedMessage.isOutgoing) {
+        await _registerContactOrphan(pubKeyHex, processedMessage);
+      }
+    } else {
+      await _resolveContactOrphansFor(pubKeyHex, processedMessage);
+    }
     notifyListeners();
   }
 
@@ -6541,21 +6560,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // clients may react to any message, so don't restrict those.
       shouldSkip: (msg) => !isOne && isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      // The sender's wire clock, untouched by the ingest clamp. Outgoing
-      // rows get a small forward window: the frame is stamped after send
-      // delays, past the row's construction clock.
-      getWireTimestampSecs: (msg) {
-        final secs = _messageWireSecs(msg);
-        return msg.isOutgoing
-            ? [secs, secs + 1, secs + 2, secs + 3]
-            : [secs];
-      },
-      // MeshCore One hashes the mention-stripped display text, our rows
-      // store the raw text — try both.
-      getMessageTextVariants: (msg) => {
-        msg.text,
-        ChannelMessage.stripLeadingMentions(msg.text),
-      }.toList(),
+      getWireTimestampSecs: _contactWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -6583,20 +6589,227 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return message.timestamp.millisecondsSinceEpoch ~/ 1000;
   }
 
+  /// Every wire timestamp a DM row may have carried, for MeshCore One hash
+  /// matching. Outgoing rows get a small forward window: the frame is
+  /// stamped after send delays, past the row's construction clock.
+  static List<int> _contactWireSecsCandidates(Message msg) {
+    final secs = _messageWireSecs(msg);
+    return msg.isOutgoing ? [secs, secs + 1, secs + 2, secs + 3] : [secs];
+  }
+
+  /// Every wire timestamp a channel row may have carried. Outgoing rows try
+  /// the recorded send/retry stamps plus the t..t+3 window that covers rows
+  /// sent before recording existed (field case: the gap was exactly 2).
+  static List<int> _channelWireSecsCandidates(ChannelMessage msg) {
+    final secs = wireTimestampMs(msg) ~/ 1000;
+    if (!msg.isOutgoing) return [secs];
+    return {
+      secs,
+      secs + 1,
+      secs + 2,
+      secs + 3,
+      ...msg.sentWireSecs,
+    }.toList();
+  }
+
+  /// MeshCore One hashes the mention-stripped display text, our rows store
+  /// the raw text — try both.
+  static List<String> _mc1TextVariants(String text) => {
+        text,
+        ChannelMessage.stripLeadingMentions(text),
+      }.toList();
+
+  /// The text a MeshCore One reaction to [target] is hashed over: sends
+  /// commit to the mention-stripped display form, which is what other MC1
+  /// clients hold — our own receive matcher tries both variants anyway.
+  static String _mc1HashText(String text) =>
+      ChannelMessage.stripLeadingMentions(text);
+
+  /// Reaction wire text for a channel message — MeshCore One dialect,
+  /// readable on every client. The hash commits to ONE wire timestamp: the
+  /// received stamp for incoming rows, the last transmitted stamp for our
+  /// own (the retry that actually got through is what everyone else holds).
+  static String channelReactionText(ChannelMessage target, String emoji) {
+    final secs = target.isOutgoing && target.sentWireSecs.isNotEmpty
+        ? target.sentWireSecs.last
+        : wireTimestampMs(target) ~/ 1000;
+    final hash = ReactionHelper.computeMeshCoreOneHash(
+      _mc1HashText(target.text),
+      secs,
+    );
+    return ReactionHelper.encodeMeshCoreOne(
+      emoji,
+      hash,
+      targetSender: target.senderName,
+    );
+  }
+
+  /// Reaction wire text for a DM message — MeshCore One DM shape, which
+  /// names no sender: the hash alone identifies the target.
+  static String contactReactionText(Message target, String emoji) {
+    final hash = ReactionHelper.computeMeshCoreOneHash(
+      _mc1HashText(target.text),
+      _messageWireSecs(target),
+    );
+    return ReactionHelper.encodeMeshCoreOne(emoji, hash);
+  }
+
+  // ── Parked MeshCore One reactions ──────────────────────────────────────
+  //
+  // A MeshCore One reaction whose target isn't stored yet falls through
+  // ingest as an ordinary row (the UI draws it as a compact reaction stub,
+  // never the raw hash). Most of these are ordering, not loss: the reaction
+  // beat its target out of the radio's backlog queue. So every newly stored
+  // message is checked against the parked rows, and on a hash match the
+  // reaction lands on its real target and the stub row is deleted.
+  //
+  // The per-chat lists are rebuilt lazily from the store (one history scan
+  // per chat per session), so parked reactions survive restarts for free.
+  final Map<String, List<ChannelMessage>> _channelOrphanRows = {};
+  final Set<String> _channelOrphansScanned = {};
+  final Map<String, List<Message>> _contactOrphanRows = {};
+  final Set<String> _contactOrphansScanned = {};
+
+  Future<List<ChannelMessage>> _channelOrphans(String idKey) async {
+    if (_channelOrphansScanned.add(idKey)) {
+      final history = await _channelMessageStore.loadChannelMessages(idKey);
+      _channelOrphanRows[idKey] = [
+        for (final m in history)
+          if (!m.isOutgoing &&
+              ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
+            m,
+      ];
+    }
+    return _channelOrphanRows.putIfAbsent(idKey, () => []);
+  }
+
+  Future<List<Message>> _contactOrphans(String pubKeyHex) async {
+    if (_contactOrphansScanned.add(pubKeyHex)) {
+      final history = await _messageStore.loadMessages(pubKeyHex);
+      _contactOrphanRows[pubKeyHex] = [
+        for (final m in history)
+          if (!m.isOutgoing &&
+              ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
+            m,
+      ];
+    }
+    return _contactOrphanRows.putIfAbsent(pubKeyHex, () => []);
+  }
+
+  Future<void> _registerChannelOrphan(String idKey, ChannelMessage row) async {
+    final orphans = await _channelOrphans(idKey);
+    if (orphans.any((o) => o.messageId == row.messageId)) return;
+    orphans.add(row);
+  }
+
+  Future<void> _registerContactOrphan(String pubKeyHex, Message row) async {
+    final orphans = await _contactOrphans(pubKeyHex);
+    if (orphans.any((o) => o.messageId == row.messageId)) return;
+    orphans.add(row);
+  }
+
+  /// Every MeshCore One hash [target] could have been reacted to under.
+  Set<String> _mc1HashesFor(
+    Iterable<String> texts,
+    Iterable<int> wireSecs,
+  ) =>
+      {
+        for (final text in texts)
+          for (final secs in wireSecs)
+            ReactionHelper.computeMeshCoreOneHash(text, secs),
+      };
+
+  /// A new message just stored in [idKey]: land any parked reactions that
+  /// were waiting for it, then remove their stub rows.
+  Future<void> _resolveChannelOrphansFor(
+    String idKey,
+    ChannelMessage target,
+  ) async {
+    final orphans = await _channelOrphans(idKey);
+    if (orphans.isEmpty) return;
+    final hashes = _mc1HashesFor(
+      _mc1TextVariants(target.text),
+      _channelWireSecsCandidates(target),
+    );
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null || !hashes.contains(info.targetHash)) continue;
+      await _channelMessageStore.updateMessage(idKey, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          orphan.senderName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _channelMessageStore.deleteMessage(idKey, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+    }
+    if (landed) notifyListeners();
+  }
+
+  Future<void> _resolveContactOrphansFor(
+    String pubKeyHex,
+    Message target,
+  ) async {
+    final orphans = await _contactOrphans(pubKeyHex);
+    if (orphans.isEmpty) return;
+    final hashes = _mc1HashesFor(
+      _mc1TextVariants(target.text),
+      _contactWireSecsCandidates(target),
+    );
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null || !hashes.contains(info.targetHash)) continue;
+      final reactorName = _resolveReactorName(pubKeyHex, orphan);
+      await _messageStore.updateMessage(pubKeyHex, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          reactorName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _messageStore.deleteMessage(pubKeyHex, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+    }
+    if (landed) notifyListeners();
+  }
+
   void _processOutgoingContactReaction(
     List<Message> messages,
     ReactionInfo reactionInfo,
     Contact contact,
   ) {
     final isRoomServer = contact.type == advTypeRoom;
+    final isOne = reactionInfo.format == ReactionFormat.one;
 
     ReactionHelper.applyReaction<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
       reactorName: _selfName ?? 'Me',
-      // Outgoing reactions in 1:1: match against incoming messages
-      shouldSkip: (msg) => !isRoomServer && msg.isOutgoing,
+      // Outgoing reactions in 1:1: match against incoming messages. The
+      // MeshCore One hash is strong enough to trust against any row.
+      shouldSkip: (msg) => !isOne && !isRoomServer && msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+      getWireTimestampSecs: _contactWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer),
       getMessageText: (msg) => msg.text,
@@ -6622,24 +6835,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final isRoomServer = contact?.type == advTypeRoom;
-    for (int i = messages.length - 1; i >= 0; i--) {
-      final msg = messages[i];
-      final timestampSecs = msg.timestamp.millisecondsSinceEpoch ~/ 1000;
-      final msgHash = ReactionHelper.computeReactionHash(
-        timestampSecs,
-        _resolveContactSenderName(msg, contact, isRoomServer == true),
-        msg.text,
-      );
-      if (msgHash == reactionInfo.targetHash) {
-        final statuses = Map<String, MessageStatus>.from(msg.reactionStatuses);
-        statuses[reactionInfo.emoji] = status;
-        await _messageStore.upsertMessage(
-          pubKeyHex,
-          msg.copyWith(reactionStatuses: statuses),
-        );
-        break;
-      }
-    }
+    // The same matcher that applied the reaction finds its status row — the
+    // formats hash differently, and re-deriving only one of them here is
+    // exactly how MC1 chips would get stuck at "pending" forever.
+    final index = ReactionHelper.findTargetIndex<Message>(
+      messages: messages,
+      reactionInfo: reactionInfo,
+      shouldSkip: (_) => false,
+      getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+      getWireTimestampSecs: _contactWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getSenderName: (msg) =>
+          _resolveContactSenderName(msg, contact, isRoomServer == true),
+      getMessageText: (msg) => msg.text,
+    );
+    if (index < 0) return;
+    final msg = messages[index];
+    final statuses = Map<String, MessageStatus>.from(msg.reactionStatuses);
+    statuses[reactionInfo.emoji] = status;
+    await _messageStore.upsertMessage(
+      pubKeyHex,
+      msg.copyWith(reactionStatuses: statuses),
+    );
   }
 
   /// Who sent an incoming DM reaction: the contact itself in 1:1, or the room
@@ -7015,6 +7232,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _findChannelByIndex(_activeChannelIndex!)?.idKey == idKey) {
       unawaited(_channelMessageStore.markRead(idKey));
     }
+    // A stored MeshCore One reaction is a parked orphan (its target wasn't
+    // here — yet); anything else might BE the target an orphan waits for.
+    if (ReactionHelper.parseMeshCoreOneReaction(processedMessage.text) !=
+        null) {
+      if (!processedMessage.isOutgoing) {
+        await _registerChannelOrphan(idKey, processedMessage);
+      }
+    } else {
+      await _resolveChannelOrphansFor(idKey, processedMessage);
+    }
     notifyListeners();
     return true;
   }
@@ -7154,30 +7381,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       reactorName: reactorName,
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      // MeshCore One hashes are computed over the sender's wire clock. For
-      // our own rows the wire frame was stamped moments after the row was
-      // built, so also try the next second.
-      getWireTimestampSecs: (msg) {
-        final secs = wireTimestampMs(msg) ~/ 1000;
-        if (!msg.isOutgoing) return [secs];
-        // Outgoing: the frame is stamped after radio-quiet waits, seconds
-        // past the row's construction clock. Recorded stamps are exact
-        // (incl. retries); the t..t+3 window covers rows sent before
-        // recording existed (field case: gap was exactly 2).
-        return {
-          secs,
-          secs + 1,
-          secs + 2,
-          secs + 3,
-          ...msg.sentWireSecs,
-        }.toList();
-      },
-      // MeshCore One hashes the mention-stripped display text, our rows
-      // store the raw text — try both.
-      getMessageTextVariants: (msg) => {
-        msg.text,
-        ChannelMessage.stripLeadingMentions(msg.text),
-      }.toList(),
+      getWireTimestampSecs: _channelWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
