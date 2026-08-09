@@ -194,6 +194,207 @@ class RepeaterCommandService {
     }
   }
 
+  /// Attempts for a binary request (status / telemetry / neighbors). One
+  /// fewer than [maxRetries]: these are user-watched screens where 3 slow
+  /// attempts already take ~15 s, and the per-request cost of a retry is a
+  /// whole packet, not a keystroke.
+  static const int maxBinaryRequestAttempts = 3;
+
+  /// Sends a CMD_SEND_BINARY_REQ (PAYLOAD_TYPE_REQ) to a repeater with the
+  /// same retry-and-escalate treatment CLI commands get, and returns the
+  /// response payload (everything after the reflected 4-byte tag).
+  ///
+  /// The screens used to send ONE frame and arm ONE timer, so ~5% baseline
+  /// packet loss meant a red "timed out" banner — and their still-subscribed
+  /// listeners then painted the screen green when the reply arrived anyway.
+  /// Retrying is safe here in a way it never was for CLI text: the companion
+  /// stamps every attempt with getCurrentTimeUnique() (a fresh tag, so the
+  /// repeater's strict replay guard accepts it) and clearPendingReqs() makes
+  /// it drop a late response to an earlier attempt, so cross-talk cannot
+  /// happen at this layer.
+  Future<Uint8List> sendBinaryRequest(
+    Contact repeater,
+    Uint8List requestPayload, {
+    int retries = maxBinaryRequestAttempts,
+    void Function(int attempt)? onAttempt,
+    PathSelection? selection,
+  }) {
+    return _requestWithRetries(
+      repeater: repeater,
+      buildFrame: () =>
+          buildSendBinaryReq(repeater.publicKey, payload: requestPayload),
+      match: (frame, tag) {
+        if (frame[0] != pushCodeBinaryResponse || frame.length < 7) {
+          return null;
+        }
+        if (tag == null || !listEquals(frame.sublist(2, 6), tag)) return null;
+        return Uint8List.fromList(frame.sublist(6));
+      },
+      retries: retries,
+      onAttempt: onAttempt,
+      selection: selection,
+    );
+  }
+
+  /// Sends a CMD_SEND_STATUS_REQ and returns the full
+  /// pushCodeStatusResponse frame (callers already parse that layout).
+  /// Status responses carry the repeater's key prefix instead of a tag.
+  Future<Uint8List> sendStatusRequest(
+    Contact repeater, {
+    int retries = maxBinaryRequestAttempts,
+    void Function(int attempt)? onAttempt,
+    PathSelection? selection,
+  }) {
+    return _requestWithRetries(
+      repeater: repeater,
+      buildFrame: () => buildSendStatusRequestFrame(repeater.publicKey),
+      match: (frame, tag) {
+        if (frame[0] != pushCodeStatusResponse || frame.length < 8) {
+          return null;
+        }
+        if (!_prefixMatches(frame.sublist(2, 8), repeater.publicKey)) {
+          return null;
+        }
+        return frame;
+      },
+      retries: retries,
+      onAttempt: onAttempt,
+      selection: selection,
+    );
+  }
+
+  /// Telemetry: repeaters answer a binary request (tag-matched); chat
+  /// contacts answer with pushCodeTelemetryResponse (prefix-matched).
+  /// Returns the Cayenne LPP payload either way.
+  Future<Uint8List> sendTelemetryRequest(
+    Contact contact, {
+    int retries = maxBinaryRequestAttempts,
+    void Function(int attempt)? onAttempt,
+    PathSelection? selection,
+  }) {
+    if (contact.type != advTypeChat) {
+      return sendBinaryRequest(
+        contact,
+        Uint8List.fromList([reqTypeGetTelemetry]),
+        retries: retries,
+        onAttempt: onAttempt,
+        selection: selection,
+      );
+    }
+    return _requestWithRetries(
+      repeater: contact,
+      buildFrame: () => buildSendTelemetryReq(contact.publicKey),
+      match: (frame, tag) {
+        if (frame[0] != pushCodeTelemetryResponse || frame.length < 8) {
+          return null;
+        }
+        if (!_prefixMatches(frame.sublist(2, 8), contact.publicKey)) {
+          return null;
+        }
+        return Uint8List.fromList(frame.sublist(8));
+      },
+      retries: retries,
+      onAttempt: onAttempt,
+      selection: selection,
+    );
+  }
+
+  static bool _prefixMatches(Uint8List prefix, Uint8List pubKey) {
+    if (pubKey.length < 6 || prefix.length < 6) return false;
+    for (var i = 0; i < 6; i++) {
+      if (prefix[i] != pubKey[i]) return false;
+    }
+    return true;
+  }
+
+  Future<Uint8List> _requestWithRetries({
+    required Contact repeater,
+    required Uint8List Function() buildFrame,
+    required Uint8List? Function(Uint8List frame, Uint8List? tag) match,
+    required int retries,
+    void Function(int attempt)? onAttempt,
+    PathSelection? selection,
+  }) async {
+    final resolved =
+        selection ?? await _connector.preparePathForContactSend(repeater);
+    final attemptCount = retries < 1 ? 1 : retries;
+    for (var attempt = 0; attempt < attemptCount; attempt++) {
+      onAttempt?.call(attempt + 1);
+      try {
+        final response = await _requestAttempt(
+          repeater: repeater,
+          frame: buildFrame(),
+          match: match,
+          selection: resolved,
+          attempt: attempt,
+          attemptCount: attemptCount,
+        );
+        // Success trains the rotation stats too — these screens used to
+        // record only failures, so they could only ever hurt a path's score.
+        _connector.recordRepeaterPathResult(repeater, resolved, true, null);
+        return response;
+      } on TimeoutException {
+        // fall through to the next attempt
+      }
+    }
+    _connector.recordRepeaterPathResult(repeater, resolved, false, null);
+    throw TimeoutException('No response after $attemptCount attempts');
+  }
+
+  Future<Uint8List> _requestAttempt({
+    required Contact repeater,
+    required Uint8List frame,
+    required Uint8List? Function(Uint8List frame, Uint8List? tag) match,
+    required PathSelection selection,
+    required int attempt,
+    required int attemptCount,
+  }) async {
+    final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
+    // The RESPONSE dominates the round trip — a full neighbors reply is
+    // ~150 bytes against a ~50-byte request — and the repeater holds it for
+    // SERVER_RESPONSE_DELAY (300 ms) first. Budgeting a full frame keeps
+    // the airtime estimate honest for the return leg.
+    final messageBytes =
+        frame.length > maxFrameSize ? frame.length : maxFrameSize;
+    final baseTimeoutMs = _connector.calculateTimeout(
+      pathLength: pathLengthValue,
+      messageBytes: messageBytes,
+      contactKey: repeater.publicKeyHex,
+    );
+    final timeoutMs = attemptTimeoutMs(baseTimeoutMs, attempt, attemptCount);
+
+    final completer = Completer<Uint8List>();
+    Uint8List? tag;
+    final sub = _connector.receivedFrames.listen((f) {
+      if (f.isEmpty) return;
+      if (f[0] == respCodeSent && f.length >= 6) {
+        // First SENT after our write is ours: the companion answers serial
+        // commands in order.
+        tag ??= Uint8List.fromList(f.sublist(2, 6));
+        return;
+      }
+      final payload = match(f, tag);
+      if (payload != null && !completer.isCompleted) {
+        completer.complete(payload);
+      }
+    });
+    final sentAt = DateTime.now();
+    try {
+      await _connector.sendFrame(frame);
+      final response = await completer.future
+          .timeout(Duration(milliseconds: timeoutMs));
+      _connector.recordRepeaterCommandRoundTrip(
+        contactKey: repeater.publicKeyHex,
+        pathLength: pathLengthValue,
+        messageBytes: messageBytes,
+        tripTimeMs: DateTime.now().difference(sentAt).inMilliseconds,
+      );
+      return response;
+    } finally {
+      await sub.cancel();
+    }
+  }
+
   /// Call this when a text message response is received from a repeater
   void handleResponse(Contact repeater, String responseText) {
     // Find pending command for this repeater and complete it

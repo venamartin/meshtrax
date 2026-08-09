@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
-import '../models/path_selection.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../services/app_settings_service.dart';
@@ -37,7 +36,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
   bool _isLoading = false;
   StreamSubscription<Uint8List>? _frameSubscription;
   RepeaterCommandService? _commandService;
-  Timer? _statusTimeout;
   DateTime? _statusRequestedAt;
   int? _batteryMv;
   int? _uptimeSecs;
@@ -56,7 +54,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
   int? _directRx;
   int? _dupFlood;
   int? _dupDirect;
-  PathSelection? _pendingStatusSelection;
 
   @override
   void initState() {
@@ -71,21 +68,18 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
   void dispose() {
     _frameSubscription?.cancel();
     _commandService?.dispose();
-    _statusTimeout?.cancel();
     super.dispose();
   }
 
   void _setupMessageListener() {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
 
-    // Listen for incoming text messages from the repeater
+    // Legacy text-JSON status replies only; the binary status response is
+    // consumed by the command service's request/retry loop in _loadStatus.
     _frameSubscription = connector.receivedFrames.listen((frame) {
       if (frame.isEmpty) return;
 
-      // Check if it's a text message response
-      if (frame[0] == pushCodeStatusResponse) {
-        _handleStatusResponse(frame);
-      } else if (frame[0] == respCodeContactMsgRecv ||
+      if (frame[0] == respCodeContactMsgRecv ||
           frame[0] == respCodeContactMsgRecvV3) {
         _handleTextMessageResponse(frame);
       }
@@ -120,7 +114,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
 
     // Parse status responses
     _parseStatusResponse(parsed.text);
-    _recordStatusResult(true);
   }
 
   void _handleStatusResponse(Uint8List frame) {
@@ -171,7 +164,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     offset += 2;
     final rxAirSecs = data.getUint32(offset, Endian.little);
 
-    _statusTimeout?.cancel();
     if (!mounted) return;
     setState(() {
       _isLoading = false;
@@ -199,7 +191,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
       batteryMv,
       source: 'status_binary',
     );
-    _recordStatusResult(true);
   }
 
   bool _matchesRepeaterPrefix(Uint8List prefix) {
@@ -265,7 +256,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     setState(() {
       _isLoading = true;
       _statusRequestedAt = DateTime.now();
-      _pendingStatusSelection = null;
       _batteryMv = null;
       _uptimeSecs = null;
       _queueLen = null;
@@ -288,25 +278,14 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     try {
       final connector = Provider.of<MeshCoreConnector>(context, listen: false);
       final repeater = _resolveRepeater(connector);
-      final selection = await connector.preparePathForContactSend(repeater);
-      _pendingStatusSelection = selection;
-      final frame = buildSendStatusRequestFrame(repeater.publicKey);
-      await connector.sendFrame(frame);
-
-      final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
-      var messageBytes = frame.length >= _statusResponseBytes
-          ? frame.length
-          : _statusResponseBytes;
-      if (messageBytes < maxFrameSize) {
-        messageBytes = maxFrameSize;
-      }
-      final timeoutMs = connector.calculateTimeout(
-        pathLength: pathLengthValue,
-        messageBytes: messageBytes,
-      );
-      _statusTimeout?.cancel();
-      _statusTimeout = Timer(Duration(milliseconds: timeoutMs), () {
-        if (!mounted) return;
+      // Retries, per-attempt escalation, timeout-model training and path
+      // stats all live in the service — this used to be one frame and one
+      // timer, which turned every ~5%-loss packet into a red banner.
+      final frame = await _commandService!.sendStatusRequest(repeater);
+      if (!mounted) return;
+      _handleStatusResponse(frame);
+    } on TimeoutException {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -315,8 +294,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
           content: Text(context.l10n.repeater_statusRequestTimeout),
           backgroundColor: Colors.red,
         );
-        _recordStatusResult(false);
-      });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -329,17 +307,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
           backgroundColor: Colors.red,
         );
       }
-      _recordStatusResult(false);
     }
-  }
-
-  void _recordStatusResult(bool success) {
-    final selection = _pendingStatusSelection;
-    if (selection == null) return;
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final repeater = _resolveRepeater(connector);
-    connector.recordRepeaterPathResult(repeater, selection, success, null);
-    _pendingStatusSelection = null;
   }
 
   @override
