@@ -5612,6 +5612,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final channelIndex = message.channelIndex;
     if (channelIndex == null) return;
 
+    // A reaction we could not place is still a reaction. Notifying here would
+    // make the SAME event behave two different ways: a reaction whose target
+    // we hold is applied as a chip and never reaches this function at all
+    // (_ingestChannelMessage returns false), while an unplaced one would
+    // alarm — and worse, its "{emoji}@[target]" text contains the reacted-to
+    // person's name, so mentionsUser() reads it as a mention and mentions
+    // deliberately cut through a muted channel. Someone reacting to your
+    // message must not be able to pierce a mute you set.
+    if (ReactionHelper.parseMeshCoreOneReaction(message.text) != null) return;
+
     final settings = _appSettingsService!.settings;
     if (!settings.notificationsEnabled) return;
 
