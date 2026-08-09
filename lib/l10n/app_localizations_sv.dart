@@ -1442,6 +1442,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_reactionUnknownSender => 'Unknown';
 
   @override
+  String chat_reactionTargetMissing(String sender) {
+    return '$sender reacted to a message that isn\'t in this chat';
+  }
+
+  @override
   String get chat_me => 'Mig';
 
   @override

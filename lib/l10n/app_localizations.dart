@@ -2686,6 +2686,12 @@ abstract class AppLocalizations {
   /// **'Unknown'**
   String get chat_reactionUnknownSender;
 
+  /// No description provided for @chat_reactionTargetMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{sender} reacted to a message that isn\'t in this chat'**
+  String chat_reactionTargetMissing(String sender);
+
   /// No description provided for @chat_me.
   ///
   /// In en, this message translates to:

@@ -37,7 +37,7 @@ import 'map_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
-import '../widgets/emoji_picker.dart';
+import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/room_login_dialog.dart';
@@ -665,8 +665,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 textScale: textScale,
                 onTap: () => _openMessagePath(message, contact),
                 onLongPress: () => _showMessageActions(message, contact),
-                onRetryReaction: (msg, emoji) =>
-                    _sendReaction(msg, contact, emoji),
+                onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
               bool showDayMarker = false;
               if (index == reversedMessages.length - 1) {
@@ -1711,7 +1710,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: Text(context.l10n.chat_addReaction),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _showEmojiPicker(message, contact);
+                  _showEmojiPicker(message);
                 },
               ),
             if (PlatformInfo.isDesktop)
@@ -1828,38 +1827,27 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _showEmojiPicker(Message message, Contact senderContact) {
+  void _showEmojiPicker(Message message) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => EmojiPicker(
+      builder: (context) => ReactionPickerSheet(
         onEmojiSelected: (emoji) {
-          _sendReaction(message, senderContact, emoji);
+          _sendReaction(message, emoji);
         },
       ),
     );
   }
 
-  void _sendReaction(Message message, Contact senderContact, String emoji) {
+  void _sendReaction(Message message, String emoji) {
     final connector = context.read<MeshCoreConnector>();
-    final emojiIndex = ReactionHelper.emojiToIndex(emoji);
-    if (emojiIndex == null) return; // Unknown emoji, skip
-    final timestampSecs = message.timestamp.millisecondsSinceEpoch ~/ 1000;
-
-    // For room servers, include sender name (like channels) since multiple users
-    // For 1:1 chats, sender is implicit (null)
-    final liveContact = _resolveContact(connector);
-    final senderName = liveContact.type == advTypeRoom
-        ? senderContact.name
-        : null;
-        
-    final hash = ReactionHelper.computeReactionHash(
-      timestampSecs,
-      senderName,
-      message.text,
+    // MeshCore One dialect: the SHA hash names the target on every client,
+    // so unlike the legacy r: format there is no sender field and no fixed
+    // emoji table — any emoji goes.
+    connector.sendMessage(
+      _resolveContact(connector),
+      MeshCoreConnector.contactReactionText(message, emoji),
     );
-    final reactionText = ReactionHelper.encodeReaction(hash, emojiIndex);
-    connector.sendMessage(_resolveContact(connector), reactionText);
   }
 }
 
@@ -1884,6 +1872,15 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A stored MeshCore One reaction is one whose target message we don't
+    // hold. It stays an ordinary bubble — same sender header, avatar and
+    // timestamp as any message — but shows "{emoji}@[{target}]" instead of
+    // the raw hash line, with a reaction icon marking what it is. If the
+    // target arrives later the connector lands the reaction on it and
+    // deletes this row.
+    final orphanReaction = ReactionHelper.parseMeshCoreOneReaction(
+      message.text,
+    );
     final settingsService = context.watch<AppSettingsService>();
     final uiState = context.watch<UiViewStateService>();
     final enableTracing = settingsService.settings.enableMessageTracing;
@@ -1909,7 +1906,14 @@ class _MessageBubble extends StatelessWidget {
             ? ChatColors.bubbleText
             : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
     final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
-    final cleanDisplayText = messageText.replaceAll(gifPattern, '').trim();
+    // An unresolved reaction shows what it reacted with and to — never the
+    // Crockford hash line, which means nothing to a reader.
+    final cleanDisplayText = orphanReaction != null
+        ? orphanReaction.emoji +
+            (orphanReaction.targetSender != null
+                ? '@[${orphanReaction.targetSender}]'
+                : '')
+        : messageText.replaceAll(gifPattern, '').trim();
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
@@ -2077,6 +2081,26 @@ class _MessageBubble extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              if (orphanReaction != null) ...[
+                                const SizedBox(width: 5),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  // Anchored to the icon, not the bubble: the
+                                  // bubble's own long-press opens the message
+                                  // actions sheet.
+                                  child: Tooltip(
+                                    message: context.l10n
+                                        .chat_reactionTargetMissing(senderName),
+                                    triggerMode: TooltipTriggerMode.longPress,
+                                    padding: const EdgeInsets.all(8),
+                                    child: Icon(
+                                      Icons.add_reaction_outlined,
+                                      size: 15 * textScale,
+                                      color: displayMetaColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (!enableTracing && isOutgoing) ...[
                                 const SizedBox(width: 4),
                                 Padding(

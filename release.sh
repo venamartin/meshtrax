@@ -211,6 +211,11 @@ echo "INFO: Running flutter clean..."
 flutter clean
 flutter pub get
 
+# A registrant left over from an integration-test run breaks the release
+# build; see the script for why. Must run AFTER 'flutter pub get' above,
+# which is itself capable of regenerating the contaminated file.
+bash tool/strip_integration_registrant.sh
+
 DIST_DIR="dist"
 
 if [ "$BUILD_APK" = true ]; then

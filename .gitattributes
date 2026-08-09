@@ -2,5 +2,7 @@
 *.aab filter=lfs diff=lfs merge=lfs -text
 *.so filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
-release.sh text eol=lf
+# Shell scripts must keep LF: core.autocrlf=true would otherwise check them
+# out with CRLF, and bash fails on the stray \r ("$'\r': command not found").
+*.sh text eol=lf
 untranslated.json text eol=lf
