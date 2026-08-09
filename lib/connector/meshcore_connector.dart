@@ -4338,6 +4338,54 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Keep cache on failure/disconnection for future attempts
   }
 
+  /// Resolves the live channel holding [psk], waiting out the slot resync
+  /// [setChannel] kicks off.
+  ///
+  /// [setChannel] returns as soon as the resync is *requested*: slots arrive
+  /// one CHANNEL_INFO at a time, and [channels] serves the pre-sync cache
+  /// until the pass completes. A caller that has just written a channel and
+  /// wants to act on it has to wait for the radio's own entry — the slot it
+  /// asked for is a request, not an answer.
+  ///
+  /// Null means the radio never reported it: refused, dropped, or the link
+  /// went away.
+  Future<Channel?> awaitChannelByPsk(
+    Uint8List psk, {
+    Duration timeout = const Duration(seconds: 20),
+    Duration poll = const Duration(milliseconds: 200),
+    int maxResyncs = 2,
+  }) async {
+    final idKey = Channel.formatPskHex(psk);
+    final existing = _liveChannelByIdKey(idKey);
+    if (existing != null) return existing;
+    if (!isConnected) return null;
+    // Nothing pending on entry: the map is settled and has no such identity,
+    // so there is nothing to wait for. Only sound before the wait starts —
+    // measured on hardware, a pass can settle mid-write and still be one
+    // pass short of reporting the new slot.
+    if (_channelsVerified && !_isSyncingChannels) return null;
+
+    final deadline = DateTime.now().add(timeout);
+    var resyncsLeft = maxResyncs;
+    while (true) {
+      await Future<void>.delayed(poll);
+      final match = _liveChannelByIdKey(idKey);
+      if (match != null) return match;
+      if (!isConnected) return null;
+      if (DateTime.now().isAfter(deadline)) return null;
+
+      // A pass that reached the slot before the radio committed the write
+      // reports it empty, and nothing re-reads it afterwards. Measured on
+      // hardware the same write lands in pass 1 or pass 2 depending on
+      // timing, so a settled-but-absent map earns one more look.
+      if (!_isSyncingChannels) {
+        if (resyncsLeft == 0) return null;
+        resyncsLeft--;
+        unawaited(getChannels(force: true));
+      }
+    }
+  }
+
   Future<void> setChannel(int index, String name, Uint8List psk) async {
     if (!isConnected) return;
 
