@@ -317,6 +317,21 @@ void main() {
         reactOne(messages, '👍@[Alice]\n66nf5k51', 'Bob');
         expect(messages.first.reactions['👍'], 1);
       });
+
+      // Regression: an outgoing DM reaction is applied once on the send path
+      // (under OUR name) and reaches the ingest path again, where
+      // _resolveReactorName yields the CONTACT's name in a 1:1. Two different
+      // reactor names means the dedup above cannot save us — one tap reads
+      // as a count of two. The connector must not re-apply its own sends.
+      test('the same reaction under two names WOULD double-count', () {
+        final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+        reactOne(messages, '👍@[Alice]\n66nf5k51', 'Me');
+        reactOne(messages, '👍@[Alice]\n66nf5k51', 'Alice');
+        expect(messages.first.reactions['👍'], 2,
+            reason: 'if this ever stops being true the guard in '
+                '_ingestContactMessage can be revisited');
+        expect(messages.first.reactionSenders['👍'], ['Me', 'Alice']);
+      });
     });
   });
 

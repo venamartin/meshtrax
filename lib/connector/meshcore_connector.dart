@@ -6482,6 +6482,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Reactions mutate their target row; never a visible message.
     final reactionInfo = Message.parseReaction(processedMessage.text);
     if (reactionInfo != null) {
+      // Our own reaction, arriving here only because the retry service files
+      // every send it tracks. sendMessage already applied it under OUR name;
+      // re-applying would attribute a second reactor — _resolveReactorName
+      // returns the CONTACT's name in a 1:1 — and show one tap as a count of
+      // two. (The legacy r: format was saved from this by the incoming-only
+      // shouldSkip rule, which a strong MeshCore One hash does not need.)
+      if (processedMessage.isOutgoing) return;
       // Keyed by reactor: in a room two members reacting with the same emoji
       // are two reactions, not a duplicate of one.
       final reactorName = _resolveReactorName(pubKeyHex, processedMessage);
