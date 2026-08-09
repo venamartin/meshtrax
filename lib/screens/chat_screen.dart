@@ -1873,43 +1873,14 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // A stored MeshCore One reaction is one whose target message we don't
-    // hold: render a low-emphasis stub — never a chat bubble, never the raw
-    // hash. If the target arrives later the connector lands the reaction on
-    // it and deletes this row.
+    // hold. It stays an ordinary bubble — same sender header, avatar and
+    // timestamp as any message — but shows "{emoji}@[{target}]" instead of
+    // the raw hash line, with a reaction icon marking what it is. If the
+    // target arrives later the connector lands the reaction on it and
+    // deletes this row.
     final orphanReaction = ReactionHelper.parseMeshCoreOneReaction(
       message.text,
     );
-    if (orphanReaction != null) {
-      final muted = Theme.of(context).colorScheme.outline;
-      final target = orphanReaction.targetSender != null
-          ? ' @[${orphanReaction.targetSender}]'
-          : '';
-      return Tooltip(
-        message: context.l10n.chat_reactionTargetMissing(senderName),
-        triggerMode: TooltipTriggerMode.longPress,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  '$senderName  ${orphanReaction.emoji}$target',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: muted, fontSize: 13 * textScale),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.add_reaction_outlined,
-                size: 15 * textScale,
-                color: muted,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
     final settingsService = context.watch<AppSettingsService>();
     final uiState = context.watch<UiViewStateService>();
     final enableTracing = settingsService.settings.enableMessageTracing;
@@ -1935,7 +1906,14 @@ class _MessageBubble extends StatelessWidget {
             ? ChatColors.bubbleText
             : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
     final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
-    final cleanDisplayText = messageText.replaceAll(gifPattern, '').trim();
+    // An unresolved reaction shows what it reacted with and to — never the
+    // Crockford hash line, which means nothing to a reader.
+    final cleanDisplayText = orphanReaction != null
+        ? orphanReaction.emoji +
+            (orphanReaction.targetSender != null
+                ? '@[${orphanReaction.targetSender}]'
+                : '')
+        : messageText.replaceAll(gifPattern, '').trim();
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
@@ -2103,6 +2081,26 @@ class _MessageBubble extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              if (orphanReaction != null) ...[
+                                const SizedBox(width: 5),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  // Anchored to the icon, not the bubble: the
+                                  // bubble's own long-press opens the message
+                                  // actions sheet.
+                                  child: Tooltip(
+                                    message: context.l10n
+                                        .chat_reactionTargetMissing(senderName),
+                                    triggerMode: TooltipTriggerMode.longPress,
+                                    padding: const EdgeInsets.all(8),
+                                    child: Icon(
+                                      Icons.add_reaction_outlined,
+                                      size: 15 * textScale,
+                                      color: displayMetaColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (!enableTracing && isOutgoing) ...[
                                 const SizedBox(width: 4),
                                 Padding(
