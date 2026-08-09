@@ -3213,6 +3213,30 @@ class MeshCoreConnector extends ChangeNotifier {
     );
   }
 
+  /// Feeds one repeater CLI round trip into the timeout model.
+  ///
+  /// Repeater commands never reach [_handleRepeaterCommandAck]: the firmware
+  /// sends no ack for TXT_TYPE_CLI_DATA, and _handleMessageSent returns early
+  /// on CLI sends, so the ack plumbing that trains the model for ordinary
+  /// messages is dead on this path. Without this the model never learns what
+  /// a repeater command actually costs and every one is budgeted from the
+  /// worst-case physics bound — 4.1 s on a link measured at 955 ms.
+  void recordRepeaterCommandRoundTrip({
+    required String contactKey,
+    required int pathLength,
+    required int messageBytes,
+    required int tripTimeMs,
+  }) {
+    if (tripTimeMs <= 0) return;
+    _timeoutPredictionService?.recordObservation(
+      contactKey: contactKey,
+      pathLength: pathLength,
+      messageBytes: messageBytes,
+      tripTimeMs: tripTimeMs,
+      secondsSinceLastRx: DateTime.now().difference(_lastRxTime).inSeconds,
+    );
+  }
+
   void recordRepeaterPathResult(
     Contact contact,
     PathSelection selection,

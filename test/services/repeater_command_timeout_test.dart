@@ -1,63 +1,74 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/services/repeater_command_service.dart';
 
-/// Measured on the bench against repeater F857 over a direct link: the
-/// connector's physics bound came out at 4134 ms (direct) and 9524 ms
-/// (flood), while the actual round trip was 954-1009 ms across 100+ samples.
-const int _directBase = 4134;
-const int _floodBase = 9524;
+/// Values produced by the connector's physics bound
+/// `500 + (airtime*6 + 250) * (hops+1)` on the bench radios (SF7, 62.5 kHz,
+/// max-size frame -> airtime 564 ms). The direct and flood figures were read
+/// straight off the hardware; the rest follow from the same formula.
+const int _direct = 4134; // 0 hops
+const int _oneHop = 7768;
+const int _threeHop = 15036;
+const int _flood = 9524;
 
 void main() {
-  group('CLI attempt timeouts escalate', () {
-    test('the first attempt is sized for a link that is working', () {
-      expect(
-        RepeaterCommandService.attemptTimeoutMs(_directBase, 0, 3),
-        RepeaterCommandService.firstAttemptTimeoutMs,
-      );
-      // The old policy — max(8000, base*3) on every attempt — is what made a
-      // single lost packet cost 12.4 s on a link that answers in 1 s.
-      expect(RepeaterCommandService.attemptTimeoutMs(_directBase, 0, 3),
-          lessThan(_directBase * 3));
+  group('CLI attempt timeouts', () {
+    test('the first attempt scales with the path, not a flat constant', () {
+      // The bug this replaced: a flat 3 s first attempt expired on nearly
+      // every 3-hop command and put a duplicate on the mesh before the real
+      // reply could arrive.
+      final direct = RepeaterCommandService.attemptTimeoutMs(_direct, 0, 3);
+      final oneHop = RepeaterCommandService.attemptTimeoutMs(_oneHop, 0, 3);
+      final threeHop =
+          RepeaterCommandService.attemptTimeoutMs(_threeHop, 0, 3);
+
+      expect(oneHop, greaterThan(direct));
+      expect(threeHop, greaterThan(oneHop));
+      expect(threeHop, greaterThanOrEqualTo(_threeHop),
+          reason: 'a 3-hop first attempt must cover the full one-way bound');
+    });
+
+    test('never drops below the firmware reply delay floor', () {
+      // The repeater waits 600 ms before it transmits at all, so a tiny
+      // budget cannot succeed on any path.
+      expect(RepeaterCommandService.attemptTimeoutMs(100, 0, 3),
+          RepeaterCommandService.minAttemptTimeoutMs);
     });
 
     test('later attempts widen', () {
-      final first = RepeaterCommandService.attemptTimeoutMs(_directBase, 0, 4);
-      final second = RepeaterCommandService.attemptTimeoutMs(_directBase, 1, 4);
-      final third = RepeaterCommandService.attemptTimeoutMs(_directBase, 2, 4);
+      final first = RepeaterCommandService.attemptTimeoutMs(_direct, 0, 4);
+      final second = RepeaterCommandService.attemptTimeoutMs(_direct, 1, 4);
+      final third = RepeaterCommandService.attemptTimeoutMs(_direct, 2, 4);
       expect(second, greaterThan(first));
-      expect(third, greaterThan(second));
+      expect(third, greaterThanOrEqualTo(second));
     });
 
     test('the final attempt keeps the full conservative budget', () {
-      // A genuinely slow multi-hop path must still complete; it just is not
-      // the first thing the user waits for.
-      expect(RepeaterCommandService.attemptTimeoutMs(_floodBase, 2, 3),
-          _floodBase * 3);
-      expect(RepeaterCommandService.attemptTimeoutMs(_directBase, 2, 3),
-          _directBase * 3);
+      for (final base in [_direct, _oneHop, _threeHop, _flood]) {
+        expect(RepeaterCommandService.attemptTimeoutMs(base, 2, 3), base * 3,
+            reason: 'base=$base');
+      }
     });
 
-    test('a single attempt gets the full budget, never the short one', () {
+    test('a single attempt gets the full budget, never a short one', () {
       // retries: 1 means there is no second chance, so it must not be cut
       // short — this is the CLI screen's one-shot path.
-      expect(RepeaterCommandService.attemptTimeoutMs(_directBase, 0, 1),
-          _directBase * 3);
+      expect(
+          RepeaterCommandService.attemptTimeoutMs(_direct, 0, 1), _direct * 3);
     });
 
     test('the 8 s floor still applies to the last attempt on a fast path', () {
       expect(RepeaterCommandService.attemptTimeoutMs(100, 0, 1), 8000);
     });
 
-    test('no attempt ever exceeds the old give-up point', () {
-      // The change may only make the app give up EARLIER on early attempts,
-      // never later than it used to on any of them.
-      for (final base in [100, 1000, _directBase, _floodBase]) {
-        final ceiling = base * 3 < 8000 ? 8000 : base * 3;
+    test('no attempt ever waits longer than the old policy did', () {
+      // The change may only make the app give up EARLIER on early attempts.
+      for (final base in [100, 1000, _direct, _oneHop, _threeHop, _flood]) {
+        final old = base * 3 < 8000 ? 8000 : base * 3;
         for (var count = 1; count <= 5; count++) {
           for (var attempt = 0; attempt < count; attempt++) {
             expect(
               RepeaterCommandService.attemptTimeoutMs(base, attempt, count),
-              lessThanOrEqualTo(ceiling),
+              lessThanOrEqualTo(old),
               reason: 'base=$base attempt=$attempt of $count',
             );
           }
@@ -66,33 +77,14 @@ void main() {
     });
 
     test('the common case — one lost packet, then success — collapses', () {
-      // This is what the user actually experiences. About 5% of commands get
-      // no reply, and the retry then succeeds in ~1 s. The cost of that is
-      // the FIRST attempt's timeout, not the whole retry budget.
-      final was = _directBase * 3;
-      final now = RepeaterCommandService.attemptTimeoutMs(_directBase, 0, 3);
-      expect(now, lessThan(was ~/ 4),
-          reason: 'one dropped packet used to cost ${was}ms before the first '
-              'retry, on a link measured at ~955ms');
-
-      final wasFlood = _floodBase * 3;
-      final nowFlood = RepeaterCommandService.attemptTimeoutMs(_floodBase, 0, 3);
-      expect(nowFlood, lessThan(wasFlood ~/ 8));
-    });
-
-    test('worst case still improves, without capping the slow path', () {
-      var total = 0;
-      for (var attempt = 0; attempt < 3; attempt++) {
-        total +=
-            RepeaterCommandService.attemptTimeoutMs(_directBase, attempt, 3);
+      // What the user actually experiences: ~5% of commands get no reply and
+      // the retry succeeds, so the cost is the FIRST attempt's timeout.
+      for (final base in [_direct, _oneHop, _threeHop, _flood]) {
+        final old = base * 3;
+        final now = RepeaterCommandService.attemptTimeoutMs(base, 0, 3);
+        expect(now, lessThan(old),
+            reason: 'base=$base: one dropped packet used to cost ${old}ms');
       }
-      // Three attempts used to mean three full budgets back to back;
-      // measured on hardware, one "get radio" burned 85.8 s that way.
-      expect(total, lessThan((_directBase * 3) * 3));
-      // But the last attempt is untouched, so a genuinely slow path still
-      // gets its full conservative budget before anything is declared dead.
-      expect(RepeaterCommandService.attemptTimeoutMs(_directBase, 2, 3),
-          _directBase * 3);
     });
   });
 }

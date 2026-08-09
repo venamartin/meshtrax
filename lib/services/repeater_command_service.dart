@@ -16,30 +16,32 @@ class RepeaterCommandService {
 
   static const int maxRetries = 5;
 
-  /// What a first attempt is allowed before it is retried.
+  /// Floor for an early attempt, not a target.
   ///
-  /// A repeater on a working link answers in about a second: the firmware
-  /// waits CLI_REPLY_DELAY_MILLIS (600 ms, simple_repeater/MyMesh.cpp:59)
-  /// before it even transmits, and the rest is airtime. Measured against
-  /// F857 over a direct link, 100+ round trips landed between 954 and
-  /// 1009 ms.
-  ///
-  /// The connector's [calculateTimeout] returns a worst case for a busy
-  /// multi-hop path; tripling it and flooring at 8 s produced give-up points
-  /// of 12.4 s direct and 28.6 s flood against that 1 s reality, so a single
-  /// missing packet cost half a minute and three of them cost 86 s.
-  static const int firstAttemptTimeoutMs = 3000;
+  /// The repeater waits CLI_REPLY_DELAY_MILLIS (600 ms,
+  /// simple_repeater/MyMesh.cpp:59) before it even transmits its reply, so a
+  /// budget much under this cannot succeed on any path and would only add a
+  /// duplicate transmission.
+  static const int minAttemptTimeoutMs = 3000;
 
   RepeaterCommandService(this._connector);
 
-  /// Early attempts are sized for a link that is working; the final attempt
-  /// keeps the full conservative budget so a genuinely slow multi-hop path
-  /// still completes — it just is not the first thing the user waits for.
+  /// Every attempt scales with the path, and the last attempt keeps the full
+  /// conservative budget so a genuinely slow multi-hop path still completes.
   ///
-  /// About 5% of commands get no reply even on a quiet band with the
-  /// repeater in the same room, because a half-duplex radio is deaf while it
-  /// forwards someone else's traffic. Retrying is the only cure, so the cost
-  /// of one retry is what matters.
+  /// [baseTimeoutMs] already carries the hop count — the connector's physics
+  /// bound is `500 + (airtime*6 + 250) * (hops+1)`, so on the bench radios it
+  /// runs 4.1 s direct, 7.8 s at one hop, 15.0 s at three, 9.5 s flood.
+  /// Scaling attempts by it keeps a distant repeater's first attempt long
+  /// enough to succeed, which a flat constant did not: 3 s would have expired
+  /// on nearly every 3-hop command and put a duplicate on the mesh before the
+  /// real reply arrived.
+  ///
+  /// About 5% of commands get no reply even on a quiet band with the repeater
+  /// in the same room, because a half-duplex radio is deaf while it forwards
+  /// someone else's traffic. Retrying is the only cure, so what matters is
+  /// the cost of one retry — previously `max(8000, base*3)` on every attempt,
+  /// i.e. 12.4 s direct and 28.6 s flood against a measured 955 ms round trip.
   ///
   /// Only safe because [handleResponse] discards a reply whose token no
   /// longer matches a pending command. Without that, shortening the timeout
@@ -52,7 +54,8 @@ class RepeaterCommandService {
   ) {
     final ceiling = math.max(8000, baseTimeoutMs * 3);
     if (attempt >= attemptCount - 1) return ceiling;
-    return math.min(ceiling, firstAttemptTimeoutMs * (1 << attempt));
+    final scaled = baseTimeoutMs * (attempt + 1);
+    return math.min(ceiling, math.max(minAttemptTimeoutMs, scaled));
   }
 
   /// Send a CLI command to a repeater with automatic retries
@@ -118,12 +121,17 @@ class RepeaterCommandService {
     final completer = Completer<String>();
     _pendingCommands[commandId] = completer;
 
+    // Kept for the round-trip observation below, which needs the same
+    // features the prediction was made from.
+    final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
+    var responseBytes = maxFrameSize;
+    final sentAt = DateTime.now();
+
     try {
       final prefix = _nextPrefixToken();
       _commandPrefixes[commandId] = prefix;
       _pendingByPrefix[prefix] = commandId;
       final framedCommand = '$prefix$command';
-      final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
       final timestampSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       _connector.trackRepeaterAck(
         contact: repeater,
@@ -138,12 +146,14 @@ class RepeaterCommandService {
         attempt: attempt,
         timestampSeconds: timestampSeconds,
       );
-      final responseBytes = frame.length > maxFrameSize
-          ? frame.length
-          : maxFrameSize;
+      responseBytes = frame.length > maxFrameSize ? frame.length : maxFrameSize;
+      // contactKey lets the model blend in what THIS repeater actually costs
+      // once it has enough round trips; without it every repeater is budgeted
+      // from the worst-case physics bound forever.
       final baseTimeoutMs = _connector.calculateTimeout(
         pathLength: pathLengthValue,
         messageBytes: responseBytes,
+        contactKey: repeaterKey,
       );
       final timeoutMs = attemptTimeoutMs(baseTimeoutMs, attempt, attemptCount);
       final timeoutSeconds = (timeoutMs / 1000).ceil();
@@ -167,7 +177,18 @@ class RepeaterCommandService {
     }
 
     try {
-      return await completer.future;
+      final response = await completer.future;
+      // The only place a repeater round trip can be observed. The firmware
+      // does not ack TXT_TYPE_CLI_DATA and _handleMessageSent returns early
+      // for CLI sends, so _handleRepeaterCommandAck — which trains the model
+      // for ordinary messages — never fires for these commands.
+      _connector.recordRepeaterCommandRoundTrip(
+        contactKey: repeaterKey,
+        pathLength: pathLengthValue,
+        messageBytes: responseBytes,
+        tripTimeMs: DateTime.now().difference(sentAt).inMilliseconds,
+      );
+      return response;
     } finally {
       _cleanup(commandId);
     }
