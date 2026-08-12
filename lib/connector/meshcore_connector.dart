@@ -5377,33 +5377,42 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _updateContactLastMessageAt(contact.publicKeyHex, message.timestamp);
       }
       // Dedup is the database's unique constraint; unread eligibility is
-      // decided inside the ingest.
-      _addMessage(message.senderKeyHex, message);
-      notifyListeners();
-
-      // Show notification for new incoming message
-      if (!message.isOutgoing &&
-          !message.isCli &&
-          _appSettingsService != null) {
-        final settings = _appSettingsService!.settings;
-        if (settings.notificationsEnabled && settings.notifyOnNewMessage) {
-          if (contact?.type == advTypeChat) {
-            _notificationService.showMessageNotification(
-              contactName: contact?.name ?? 'Unknown',
-              message: message.text,
-              contactId: message.senderKeyHex,
-              badgeCount: getTotalUnreadCount(),
-            );
-          } else if (contact?.type == advTypeRoom) {
-            _notificationService.showMessageNotification(
-              contactName: contact?.name ?? 'Unknown Room',
-              message: message.text,
-              contactId: message.senderKeyHex,
-              badgeCount: getTotalUnreadCount(),
-            );
+      // decided inside the ingest. Captured non-null: promotion of the
+      // outer nullable doesn't survive into the closure.
+      final incoming = message;
+      unawaited(() async {
+        final isNew = await _ingestContactMessage(
+          incoming.senderKeyHex,
+          incoming,
+        );
+        // A sender that missed our ACK retries the SAME message; the DB
+        // dedups the row, and the notification must dedup with it — one
+        // message, one notification, however many copies the air delivers.
+        if (!isNew) return;
+        if (!incoming.isOutgoing &&
+            !incoming.isCli &&
+            _appSettingsService != null) {
+          final settings = _appSettingsService!.settings;
+          if (settings.notificationsEnabled && settings.notifyOnNewMessage) {
+            if (contact?.type == advTypeChat) {
+              _notificationService.showMessageNotification(
+                contactName: contact?.name ?? 'Unknown',
+                message: incoming.text,
+                contactId: incoming.senderKeyHex,
+                badgeCount: getTotalUnreadCount(),
+              );
+            } else if (contact?.type == advTypeRoom) {
+              _notificationService.showMessageNotification(
+                contactName: contact?.name ?? 'Unknown Room',
+                message: incoming.text,
+                contactId: incoming.senderKeyHex,
+                badgeCount: getTotalUnreadCount(),
+              );
+            }
           }
         }
-      }
+      }());
+      notifyListeners();
       _handleQueuedMessageReceived();
     } else if (_isSyncingQueuedMessages) {
       _handleQueuedMessageReceived();
@@ -6471,7 +6480,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _shouldTrackUnreadForContactKey(message.senderKeyHex);
 
   /// Phase 3d ingest for DMs — the database is the only message state.
-  Future<void> _ingestContactMessage(String pubKeyHex, Message message) async {
+  /// Returns whether this frame carried anything NEW: false for a retry of
+  /// an already-stored message (a sender that missed our ACK re-sends the
+  /// same message) and for repeats of an already-applied reaction. Callers
+  /// gate user-facing side effects — notifications — on it.
+  Future<bool> _ingestContactMessage(String pubKeyHex, Message message) async {
     // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
     // old-but-plausible time is display truth, not a sorting hazard.
     Message processedMessage = message;
@@ -6498,7 +6511,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // returns the CONTACT's name in a 1:1 — and show one tap as a count of
       // two. (The legacy r: format was saved from this by the incoming-only
       // shouldSkip rule, which a strong MeshCore One hash does not need.)
-      if (processedMessage.isOutgoing) return;
+      if (processedMessage.isOutgoing) return false;
       // Keyed by reactor: in a room two members reacting with the same emoji
       // are two reactions, not a duplicate of one.
       final reactorName = _resolveReactorName(pubKeyHex, processedMessage);
@@ -6508,7 +6521,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (_processedContactReactions[pubKeyHex]!.contains(
         reactionIdentifier,
       )) {
-        return;
+        return false;
       }
       final history = await _messageStore.loadMessages(pubKeyHex);
       final applied = _processContactReaction(
@@ -6526,7 +6539,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // could be a genuine two-line message, so fall through and show it.
         _processedContactReactions[pubKeyHex]!.add(reactionIdentifier);
         notifyListeners();
-        return;
+        return true;
       }
     }
 
@@ -6537,7 +6550,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       processedMessage,
       unreadEligible: _contactUnreadEligible(processedMessage),
     );
-    if (!isNew) return;
+    if (!isNew) return false;
     // Viewing this conversation: the read watermark rides along.
     if (_activeContactKey == pubKeyHex) {
       unawaited(_messageStore.markRead(pubKeyHex));
@@ -6553,6 +6566,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       await _resolveContactOrphansFor(pubKeyHex, processedMessage);
     }
     notifyListeners();
+    return true;
   }
 
   bool _processContactReaction(
