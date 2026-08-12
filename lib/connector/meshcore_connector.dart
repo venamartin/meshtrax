@@ -6617,9 +6617,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// Every wire timestamp a channel row may have carried. Outgoing rows try
   /// the recorded send/retry stamps plus the t..t+3 window that covers rows
   /// sent before recording existed (field case: the gap was exactly 2).
+  /// Incoming rows also try every stamp harvested from repeats: a sender's
+  /// RETRY re-stamps the packet, so a reactor who heard the retry hashes a
+  /// timestamp we only know if we heard (and merged) that copy too — the
+  /// #mtdebug capture caught exactly this, a reaction 31 s off the stamp of
+  /// the first-heard copy.
   static List<int> _channelWireSecsCandidates(ChannelMessage msg) {
     final secs = wireTimestampMs(msg) ~/ 1000;
-    if (!msg.isOutgoing) return [secs];
+    if (!msg.isOutgoing) return {secs, ...msg.sentWireSecs}.toList();
     return {
       secs,
       secs + 1,
@@ -6629,21 +6634,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }.toList();
   }
 
-  /// MeshCore One hashes the mention-stripped display text, our rows store
-  /// the raw text — try both.
-  static List<String> _mc1TextVariants(String text) => {
+  /// Every text form a MeshCore One reaction to this row could have been
+  /// hashed over. The stored display [text] and its stripped forms cover
+  /// plain messages; [wireText] covers rows whose display text was rewritten
+  /// (replies) — the 2026-08-12 #mtdebug capture showed MC1 hashing the raw
+  /// reply markup, which no display-text variant can reproduce.
+  static List<String> _mc1TextVariants(String text, [String? wireText]) => {
         text,
+        ChannelMessage.mc1DisplayText(text),
         ChannelMessage.stripLeadingMentions(text),
+        if (wireText != null) ...{
+          wireText,
+          ChannelMessage.mc1DisplayText(wireText),
+        },
       }.toList();
 
-  /// The text a MeshCore One reaction to [target] is hashed over: sends
-  /// commit to the mention-stripped display form, which is what other MC1
-  /// clients hold — our own receive matcher tries both variants anyway.
-  static String _mc1HashText(String text) =>
-      ChannelMessage.stripLeadingMentions(text);
-
   /// Reaction wire text for a channel message — MeshCore One dialect,
-  /// readable on every client. The hash commits to ONE wire timestamp: the
+  /// readable on every client. The hash commits to ONE text form (the raw
+  /// wire markup for replies, MC1's display rule otherwise — measured on
+  /// the air, #mtdebug capture 2026-08-12) and ONE wire timestamp: the
   /// received stamp for incoming rows, the last transmitted stamp for our
   /// own (the retry that actually got through is what everyone else holds).
   static String channelReactionText(ChannelMessage target, String emoji) {
@@ -6651,7 +6660,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ? target.sentWireSecs.last
         : wireTimestampMs(target) ~/ 1000;
     final hash = ReactionHelper.computeMeshCoreOneHash(
-      _mc1HashText(target.text),
+      target.wireText ?? ChannelMessage.mc1DisplayText(target.text),
       secs,
     );
     return ReactionHelper.encodeMeshCoreOne(
@@ -6665,7 +6674,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// names no sender: the hash alone identifies the target.
   static String contactReactionText(Message target, String emoji) {
     final hash = ReactionHelper.computeMeshCoreOneHash(
-      _mc1HashText(target.text),
+      ChannelMessage.mc1DisplayText(target.text),
       _messageWireSecs(target),
     );
     return ReactionHelper.encodeMeshCoreOne(emoji, hash);
@@ -6745,7 +6754,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final orphans = await _channelOrphans(idKey);
     if (orphans.isEmpty) return;
     final hashes = _mc1HashesFor(
-      _mc1TextVariants(target.text),
+      _mc1TextVariants(target.text, target.wireText),
       _channelWireSecsCandidates(target),
     );
     var landed = false;
@@ -7291,6 +7300,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       mergedPathBytes,
       mergedHashSize,
     );
+    // A repeat can be the sender's re-stamped RETRY: harvest its wire
+    // timestamp so reaction hashes computed against THAT copy still match
+    // this row (#mtdebug capture: a reaction 31 s off the first-heard stamp).
+    final incomingSecs = wireTimestampMs(incoming) ~/ 1000;
     await _channelMessageStore.updateMessage(
       idKey,
       existing.messageId,
@@ -7302,6 +7315,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathVariants: mergedPathVariants,
         packetHash: m.packetHash ?? incoming.packetHash,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
+        sentWireSecs: m.sentWireSecs.contains(incomingSecs)
+            ? m.sentWireSecs
+            : [...m.sentWireSecs, incomingSecs],
       ),
     );
     _pendingChannelSentQueue.remove(existing.messageId);
@@ -7354,6 +7370,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Returns a copy of [base] with a new [text] and reply metadata attached.
+  /// [base]'s original text is kept as [ChannelMessage.wireText]: MeshCore
+  /// One hashes reactions over the raw on-air reply markup, so the row must
+  /// remember what actually flew even though it displays only the body.
   ChannelMessage _withReplyMetadata(
     ChannelMessage base, {
     required String text,
@@ -7365,6 +7384,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       senderKey: base.senderKey,
       senderName: base.senderName,
       text: text,
+      wireText: base.text == text ? null : base.text,
       timestamp: base.timestamp,
       isOutgoing: base.isOutgoing,
       status: base.status,
@@ -7399,7 +7419,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: _channelWireSecsCandidates,
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) =>
+          _mc1TextVariants(msg.text, msg.wireText),
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
