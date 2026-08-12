@@ -101,6 +101,118 @@ void main() {
     });
   });
 
+  group('reply rows — pinned to the 2026-08-12 #mtdebug on-air capture', () {
+    // Ground truth measured against MeshCore One (iOS) on real radios:
+    //   hash 8p4kahn8 = MC1's 😂 to a MeshTrax reply, computed over the RAW
+    //   wire markup '@[GWQ∆🚀]\n>This is a ..\nSure is.' at ts 1786548879.
+    //   hash 2s693yek = MC1's 😮 to the SAME reply, hashed over the RETRY
+    //   copy's stamp (ts+31) — proof reactors hash whichever copy they heard.
+    //   hash 2ehjvpha = what MeshTrax USED to send for a reply (body-only
+    //   'Nice!' at 1786549146) — the form MC1 can never match.
+    const rawReply = '@[GWQ∆🚀]\n>This is a ..\nSure is.';
+    const replySecs = 1786548879;
+
+    test('pinned vectors reproduce', () {
+      expect(ReactionHelper.computeMeshCoreOneHash(rawReply, replySecs),
+          '8p4kahn8');
+      expect(ReactionHelper.computeMeshCoreOneHash(rawReply, replySecs + 31),
+          '2s693yek');
+      expect(ReactionHelper.computeMeshCoreOneHash('Nice!', 1786549146),
+          '2ehjvpha');
+    });
+
+    test('reacting to a reply row hashes the RAW wire markup', () {
+      // The row displays only the body; wireText carries what flew.
+      final replyRow = ChannelMessage(
+        senderName: 'GWQ∆🍓',
+        text: 'Sure is.',
+        wireText: rawReply,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(replySecs * 1000),
+        isOutgoing: false,
+        messageId: '${replySecs}000_x_y',
+      );
+      final wire = MeshCoreConnector.channelReactionText(replyRow, '😂');
+      expect(wire, '😂@[GWQ∆🍓]\n8p4kahn8',
+          reason: 'must produce the hash MeshCore One resolves — the '
+              'body-only hash (2ehjvpha) chips on nobody');
+    });
+
+    test('an incoming MC1 reaction to our reply resolves via wireText', () {
+      final replyRow = ChannelMessage(
+        senderName: 'GWQ∆🍓',
+        text: 'Sure is.',
+        wireText: rawReply,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(replySecs * 1000),
+        isOutgoing: false,
+        messageId: '${replySecs}000_x_y',
+      );
+      final rows = [replyRow];
+      final applied = ReactionHelper.applyReaction<ChannelMessage>(
+        messages: rows,
+        reactionInfo:
+            ReactionHelper.parseIncomingReaction('😂@[GWQ∆🍓]\n8p4kahn8')!,
+        reactorName: 'GWQ∆🚀',
+        shouldSkip: (_) => false,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: (m) => [replySecs],
+        getMessageTextVariants: (m) => {
+          m.text,
+          if (m.wireText != null) m.wireText!,
+        }.toList(),
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+        getReactions: (m) => m.reactions,
+        getReactionSenders: (m) => m.reactionSenders,
+        updateMessage: (i, reactions, senders) {
+          rows[i] = rows[i]
+              .copyWith(reactions: reactions, reactionSenders: senders);
+        },
+      );
+      expect(applied, isTrue);
+      expect(rows.first.reactions['😂'], 1);
+    });
+
+    test('a reaction hashed over a RETRY stamp resolves via harvested secs',
+        () {
+      // The 😮 case: the reactor heard the re-stamped retry (+31 s). The
+      // row must carry every stamp heard, and the matcher must try them.
+      final replyRow = ChannelMessage(
+        senderName: 'GWQ∆🍓',
+        text: 'Sure is.',
+        wireText: rawReply,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(replySecs * 1000),
+        isOutgoing: false,
+        messageId: '${replySecs}000_x_y',
+        sentWireSecs: const [replySecs + 31],
+      );
+      final index = ReactionHelper.findTargetIndex<ChannelMessage>(
+        messages: [replyRow],
+        reactionInfo:
+            ReactionHelper.parseIncomingReaction('😮@[GWQ∆🍓]\n2s693yek')!,
+        shouldSkip: (_) => false,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: (m) => {replySecs, ...m.sentWireSecs}.toList(),
+        getMessageTextVariants: (m) => {
+          m.text,
+          if (m.wireText != null) m.wireText!,
+        }.toList(),
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+      );
+      expect(index, 0,
+          reason: 'without the harvested retry stamp this reaction orphans');
+    });
+
+    test('mc1DisplayText strips inline addressing, keeps reply markup', () {
+      // Measured MC1 rule: '@[name] ' (space) is addressing and is not
+      // hashed; '@[name]\n' is reply markup and IS hashed.
+      expect(ChannelMessage.mc1DisplayText('@[Bob] hello'), 'hello');
+      expect(ChannelMessage.mc1DisplayText('@[Bob]\n>quote..\nhello'),
+          '@[Bob]\n>quote..\nhello');
+      expect(ChannelMessage.mc1DisplayText('plain'), 'plain');
+    });
+  });
+
   group('contactReactionText', () {
     test('DM shape: no sender tag, wire-clock hash', () {
       final target = Message(
