@@ -57,7 +57,19 @@ flutter clean
 flutter build ipa
 ```
 
-The IPA will be created at: `build/ios/ipa/MeshTrax.ipa`
+The IPA will be created at: `build/ios/ipa/MeshTrax.ipa`, and the archive at
+`build/ios/archive/Runner.xcarchive`.
+
+Two warnings are expected and do not fail the build:
+
+- `file_saver` and `flutter_foreground_task` "do not support Swift Package
+  Manager for ios". Flutter falls back to CocoaPods for them, which still
+  works; it will become an error only once Flutter drops the fallback.
+- "Launch image is set to the default placeholder icon."
+
+Check the `App Settings Validation` block in the output before uploading —
+version, build number, and bundle identifier must match `pubspec.yaml` and
+`com.vena.meshtrax`.
 
 ## Step 4: Upload to App Store Connect
 
@@ -73,8 +85,7 @@ open build/ios/archive/Runner.xcarchive
 Then **Distribute App** → **App Store Connect** → **Upload** → accept the
 defaults → **Automatically manage signing** → **Upload**.
 
-A `MinimumOSVersion too low` warning is expected if the deployment target is
-below 15.0; see Troubleshooting. "Uploaded with warnings" is a success state.
+"Uploaded with warnings" is a success state.
 
 ### Via Transporter (alternative)
 
@@ -188,7 +199,7 @@ When you need to release an update:
 
 1. **Update version** in `pubspec.yaml`:
    ```yaml
-   version: 1.7.13+23  # Increment version (1.7.13) and build number (+23)
+   version: 1.7.20+29  # Increment version (1.7.20) and build number (+29)
    ```
    App Store Connect rejects a build number it has already seen, so the build
    number must increase even when the version name does not.
@@ -235,9 +246,10 @@ Distribution:
 - **Bundle ID not registered**: Register in Apple Developer portal
 - **Authentication failed**: Use Xcode Organizer or Transporter instead of CLI
 - **MinimumOSVersion too low**: a warning, not an error — the upload still
-  succeeds. From Spring 2027 Apple requires 15.0 or later. Set
-  `IPHONEOS_DEPLOYMENT_TARGET` in `ios/Runner.xcodeproj/project.pbxproj`; keep
-  it in sync with `platform :ios` in `ios/Podfile`, or the app advertises
+  succeeds. From Spring 2027 Apple requires 15.0 or later. The project is
+  already at 15.5, so this should not appear; if it does, check
+  `IPHONEOS_DEPLOYMENT_TARGET` in `ios/Runner.xcodeproj/project.pbxproj` and
+  keep it in sync with `platform :ios` in `ios/Podfile`, or the app advertises
   support for iOS versions its Pods were never built for.
 
 ### TestFlight Issues
@@ -265,4 +277,4 @@ Distribution:
 For issues with:
 - **App Store Process**: [Apple Developer Support](https://developer.apple.com/contact/)
 - **Flutter Build Issues**: [Flutter GitHub](https://github.com/flutter/flutter/issues)
-- **MeshTrax App**: [GitHub Issues](https://github.com/wel97459/meshcore-open/issues)
+- **MeshTrax App**: [GitHub Issues](https://github.com/venamartin/meshtrax/issues)
