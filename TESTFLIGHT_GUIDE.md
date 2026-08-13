@@ -120,25 +120,41 @@ Until then it shows as *Processing* in the TestFlight tab. Nothing to do.
 
 ## A5. Clear export compliance
 
-The new build shows a **"Missing Compliance"** warning and cannot be given to
-testers until it is answered. See
+The new build may show a **"Missing Compliance"** warning and cannot be given
+to testers until it is answered. Apple can carry the answer over from the
+previous build (1.7.20+29 processed straight to *Ready to Submit* with no
+prompt), so this step may not appear at all. If it does, see
 [Export compliance](#export-compliance-read-before-answering) below — this app
 implements its own AES encryption, so the answer is not the trivial one.
 
+A build showing **"Ready to Submit"** is fine: that is TestFlight's label for
+"processed and usable", not a task waiting on you. There is no general Submit
+button — submission happens implicitly when a build is added to an external
+group (A6).
+
 ## A6. Release to testers
 
-In App Store Connect → your app → **TestFlight** tab:
+Distribution goes through the **External** group (created in B3), which has
+**automatic distribution** enabled and a public link. Per release:
 
-1. A new **Version x.y.z** section appears above the previous ones.
-2. Internal testing groups already exist, so just add the new build to the
-   group.
-3. Testers get a notification automatically and update from the TestFlight app.
+1. TestFlight tab → the new **Version x.y.z** section → or open the
+   **External** group → **Builds** → add the new build.
+2. Adding the build to the external group submits it for **Beta App Review**
+   automatically. The first review took 24–48 hours; subsequent builds are
+   usually faster, since only significant changes trigger a full re-review.
+3. On approval, everyone who joined via the public link gets the update
+   automatically — nothing further to do, no emails to manage.
 
-Internal testing needs **no Apple review** — it is live as soon as processing
-and compliance are done. External testing (up to 10,000 testers) does require a
-Beta App Review, typically 24–48 hours.
+Updates install **in place** for testers, like a normal App Store update: same
+bundle ID, data preserved, no uninstall/reinstall.
 
 Builds expire **90 days** after upload.
+
+> **Do not add testers per-build.** A build's detail page offers "Individual
+> Testers … added to this specific build". That is how builds 23 and earlier
+> were distributed, and it is a trap: the list does not carry forward, so every
+> release means re-adding everyone by hand, and a new build silently goes to
+> nobody. Groups (with automatic distribution) exist to solve exactly this.
 
 ---
 
@@ -183,11 +199,41 @@ TestFlight builds — it stays at 1.0 and says "Prepare for Submission" even
 after you have TestFlight builds live. Do not read it as "nothing uploaded";
 check the **TestFlight** tab for that.
 
-## B3. Create an internal testing group
+## B3. Create a testing group
 
-TestFlight tab → **Internal Testing** → **+** → name the group (e.g. "Internal
-Testers") → add testers by email. Testers must be App Store Connect users on
-the team. Up to 100 internal testers.
+TestFlight distinguishes two kinds of group, and the choice matters:
+
+| | Internal | External |
+|---|---|---|
+| Who can join | Only App Store Connect users on the team | **Anyone, any email address** |
+| Tester limit | 100 | 10,000 |
+| Beta App Review | Not required — builds are live immediately | Required (first ~24–48 h, faster after) |
+| Public link | No | **Yes** — one URL, testers self-join |
+
+For outside testers — which is this project's situation — internal groups are
+a dead end: the add-tester picker only offers team members. Use an
+**external** group:
+
+1. TestFlight sidebar → **EXTERNAL TESTING** → **+** → name the group.
+2. Enable **automatic distribution** so each new build goes to the group
+   without a per-release step.
+3. Fill in **Test Information** (required before external review): beta app
+   description, feedback email, and privacy policy URL — paste-ready text for
+   all three is in [docs/app-review-notes.md](docs/app-review-notes.md).
+4. Add a build to the group; this submits it for Beta App Review. The **What
+   to Test** field is required at this point — a summary of user-facing
+   changes since the last build (`git log --oneline <old>..master --no-merges`
+   is a good starting point).
+5. After the build is approved, enable the **Public Link** in the group's
+   settings and share it. Testers tap the link, install TestFlight, and get
+   every future approved build automatically.
+
+This project's public link:
+`https://testflight.apple.com/join/Sa4Pw4wh` — MeshTrax Beta, "External"
+group. The link is dormant (testers cannot join) until the group has at least
+one approved build, and it can be disabled or capped at any time. Note the
+public link does not collect tester emails, so there is no way to contact
+link-joined testers individually — feedback arrives through TestFlight.
 
 Then follow **Part A** from A1.
 
@@ -269,8 +315,11 @@ Beyond TestFlight, a public release additionally needs:
    **description**, **keywords** (`lora,mesh,networking,bluetooth,communication`),
    **support URL**.
 6. **App Review Information** — contact details, and notes for the reviewer.
-   The app needs MeshCore hardware to be useful; say so, or review will likely
-   fail.
+   The app needs MeshCore hardware to be useful; the biggest rejection risk is
+   Guideline 4.2 (minimum functionality) from a reviewer who opens the app
+   with no LoRa radio and sees an empty scanner. Paste the notes from
+   [docs/app-review-notes.md](docs/app-review-notes.md), and attach a screen
+   recording of the app working against a real device if possible.
 
 Review typically takes 24–48 hours.
 
@@ -315,6 +364,14 @@ which differs from the iOS `com.vena.meshtrax`.
 - **Build not appearing**: wait 10–30 minutes for processing
 - **Build present but not installable**: almost always unanswered export
   compliance
+- **Build says "Ready to Submit"**: not an error and not a pending task — it
+  means processed and usable. There is no Submit button; adding the build to
+  an external group is what submits it for review
+- **New build reached nobody**: testers were attached to the previous build as
+  per-build "Individual Testers" instead of a group. Add the testers to the
+  external group (or the build to the group) — see A6
+- **Group only offers team members**: it is an *internal* group; outside
+  emails need an *external* group — see B3
 - **Can't add testers**: check available slots (100 internal, 10,000 external)
 - **TestFlight crashes**: check device logs in Xcode → Devices & Simulators
 
