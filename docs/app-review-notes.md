@@ -28,10 +28,30 @@ communication is directly between the phone and the LoRa device over
 Bluetooth/USB, and then over the LoRa mesh.
 
 Source code: https://github.com/venamartin/meshtrax
+
+The attached video shows the app next to a physical MeshCore radio: scanning,
+connecting over Bluetooth, and exchanging messages with other nodes on a live
+mesh.
 ```
 
-If possible, attach a short screen recording of the app connected to a real
-MeshCore device — it materially reduces the rejection risk.
+Attach the demo video described below. If the attachment upload rejects the
+file size, upload it unlisted to YouTube and put the link in the notes instead
+— reviewers follow those.
+
+## Demo video (attach to App Review Information)
+
+Film with a second phone so the physical radio and the app are in the same
+frame — a screen recording alone cannot prove the hardware exists. One
+continuous take, 60–90 seconds, landscape:
+
+1. The MeshCore radio on the table, powered, clearly visible
+2. Launch MeshTrax next to it; the scanner finds the device
+3. Connect; the signal/battery header appears
+4. Send a channel message; ideally a reply or reaction arrives from another
+   node — that proves the mesh, not just the link
+5. Optional: the node map showing live nodes
+
+Keep both the radio and the phone screen legible throughout.
 
 ## Beta App Description (TestFlight → Test Information)
 
