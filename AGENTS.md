@@ -19,9 +19,9 @@
 - Identity hash: `PATH_HASH_SIZE` is 1 byte; it is the prefix of the public key (see `Identity::copyHashTo`). Flooded packets append this hash to the path as they traverse hops. Self-identification via log data should compare sender name and presence of self pubkey prefix within the path bytes.
 
 ## Build, Test, and Development Commands
-- `~/flutter/bin/flutter pub get` installs dependencies (or `flutter pub get` if Flutter is on PATH).
-- `~/flutter/bin/flutter run` launches the app; `~/flutter/bin/flutter build apk|ios` produces release builds.
-- `~/flutter/bin/flutter analyze` and `~/flutter/bin/flutter test` run linting and tests.
+- `flutter pub get` installs dependencies.
+- `flutter run` launches the app; `flutter build apk|ios` produces release builds.
+- `flutter analyze` and `flutter test` run linting and tests.
 
 ## Coding Style & Naming Conventions
 - Follow `flutter_lints`, use `lowerCamelCase`/`UpperCamelCase`/`snake_case`, prefer `StatelessWidget` + `Consumer`, and use `const` constructors.

@@ -70,15 +70,19 @@ class NotificationService {
     }
 
     const androidSettings = AndroidInitializationSettings('ic_notification');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+    // Permissions are requested from [requestPermissions] once the UI is up,
+    // not here: initialization runs before runApp() and awaiting the Darwin
+    // authorization prompt would leave the app blank until it is answered.
+    const darwinSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const initSettings = InitializationSettings(
       android: androidSettings,
-      iOS: iosSettings,
+      iOS: darwinSettings,
+      macOS: darwinSettings,
     );
 
     await _notifications.initialize(
@@ -116,13 +120,39 @@ class NotificationService {
 
     // On Android 13+ (API 33+) POST_NOTIFICATIONS is a runtime permission and
     // must be requested explicitly; without it the foreground-service and
-    // message notifications are hidden. (iOS/macOS request during init.)
+    // message notifications are hidden.
     if (Platform.isAndroid) {
       final android = _notifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
       final granted = await android?.requestNotificationsPermission();
+      return granted ?? false;
+    }
+
+    if (Platform.isIOS) {
+      final ios = _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final granted = await ios?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return granted ?? false;
+    }
+
+    if (Platform.isMacOS) {
+      final macos = _notifications
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >();
+      final granted = await macos?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
       return granted ?? false;
     }
 
@@ -158,8 +188,12 @@ class NotificationService {
       priority: Priority.high,
       groupKey: _groupKey,
     );
-    const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const darwinDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: darwinDetails,
+      macOS: darwinDetails,
+    );
 
     final id = (contactId ?? contactName).hashCode.abs();
 
@@ -193,8 +227,12 @@ class NotificationService {
       priority: Priority.low,
       groupKey: _groupKey,
     );
-    const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const darwinDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: darwinDetails,
+      macOS: darwinDetails,
+    );
 
     final id = (contactId ?? contactName).hashCode.abs() ^ 0x0A;
 
@@ -225,8 +263,12 @@ class NotificationService {
       priority: Priority.high,
       groupKey: _groupKey,
     );
-    const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const darwinDetails = DarwinNotificationDetails();
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: darwinDetails,
+      macOS: darwinDetails,
+    );
 
     final preview = formatNotificationText(message.trim());
     final body = preview.isEmpty
