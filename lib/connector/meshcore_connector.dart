@@ -15,6 +15,7 @@ import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../services/app_debug_log_service.dart';
@@ -86,6 +87,38 @@ class DirectRepeater {
   void update(double newSNR) {
     snr = newSNR;
     lastUpdated = DateTime.now();
+  }
+
+  /// The entry in [tracked] that a newly heard node refers to, or null when a
+  /// new one should be started.
+  ///
+  /// A node heard by its full key matches on that key alone. It may still adopt
+  /// an entry we had only ever heard by hash — that is how a neighbour learns
+  /// its own identity — but never when two such entries answer to the same
+  /// hash, because then the hash names neither of them.
+  ///
+  /// A node heard by hash alone may refresh any single entry that answers to
+  /// it, keyed or not. That only moves an SNR and a timestamp; identity is
+  /// never written from a hash, and requiring a collision *within the handful
+  /// of neighbours we can hear directly* is a far stronger test than requiring
+  /// one across a whole contact book.
+  static DirectRepeater? findTracked(
+    List<DirectRepeater> tracked, {
+    Uint8List? fullKey,
+    required List<int> hashPrefix,
+  }) {
+    if (fullKey != null && fullKey.isNotEmpty) {
+      final hex = pubKeyToHex(fullKey);
+      for (final r in tracked) {
+        if (r.publicKey != null && pubKeyToHex(r.publicKey!) == hex) return r;
+      }
+      final adoptable = tracked
+          .where((r) => r.publicKey == null && r.matchesHash(hashPrefix))
+          .toList();
+      return adoptable.length == 1 ? adoptable.first : null;
+    }
+    final matches = tracked.where((r) => r.matchesHash(hashPrefix)).toList();
+    return matches.length == 1 ? matches.first : null;
   }
 
   static int compare(DirectRepeater a, DirectRepeater b) {
@@ -178,6 +211,9 @@ class MeshCoreConnector extends ChangeNotifier {
   String? _lastDeviceId;
   String? _lastDeviceDisplayName;
   bool _launchAutoConnectAttempted = false;
+  /// Bumped by every [connect] call so a superseded attempt can tell that it no
+  /// longer owns the connector and bow out instead of tearing down its successor.
+  int _bleConnectAttempt = 0;
   static const String _lastBleDeviceIdKey = 'last_ble_device_id';
   static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
@@ -437,12 +473,16 @@ class MeshCoreConnector extends ChangeNotifier {
     if (_selfName != null && _selfName!.isNotEmpty) {
       return _selfName!;
     }
+    // Our own name comes from the advert we just heard (or the name the radio
+    // reported last time). BluetoothDevice.platformName is the OS's cached
+    // GATT name, which Android does not refresh when a device renames itself,
+    // so it is the last resort rather than the second choice.
+    if (_deviceDisplayName != null && _deviceDisplayName!.isNotEmpty) {
+      return _deviceDisplayName!;
+    }
     final platformName = _device?.platformName;
     if (platformName != null && platformName.isNotEmpty) {
       return platformName;
-    }
-    if (_deviceDisplayName != null && _deviceDisplayName!.isNotEmpty) {
-      return _deviceDisplayName!;
     }
     return 'Unknown Device';
   }
@@ -610,6 +650,8 @@ class MeshCoreConnector extends ChangeNotifier {
       message.senderKeyHex,
       message.messageId,
     );
+    _contactOrphanRows[message.senderKeyHex]
+        ?.removeWhere((o) => o.messageId == message.messageId);
     notifyListeners();
   }
 
@@ -690,6 +732,8 @@ class MeshCoreConnector extends ChangeNotifier {
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) return;
     await _channelMessageStore.deleteMessage(channel.idKey, message.messageId);
+    _channelOrphanRows[channel.idKey]
+        ?.removeWhere((o) => o.messageId == message.messageId);
     notifyListeners();
   }
 
@@ -1031,7 +1075,7 @@ class MeshCoreConnector extends ChangeNotifier {
       if (updated) notifyListeners();
 
       // A settled reaction send updates the target's reaction status row.
-      final reactionInfo = ReactionHelper.parseReaction(message.text);
+      final reactionInfo = ReactionHelper.parseIncomingReaction(message.text);
       if (reactionInfo != null &&
           (message.status == MessageStatus.delivered ||
               message.status == MessageStatus.failed)) {
@@ -1525,16 +1569,50 @@ class MeshCoreConnector extends ChangeNotifier {
         activeTransport == MeshCoreTransportType.tcp;
   }
 
+  /// A BLE connect attempt whose error arrives after the connector has moved
+  /// on must not run the dropped-link path: that calls `disconnect(manual:
+  /// false)`, which clears [_manualDisconnect] and schedules a reconnect. It
+  /// is why tapping Disconnect during the initial sync silently reconnected,
+  /// and it would also tear down whatever connection took over. Mirrors
+  /// [shouldIgnoreLateTcpConnectError].
+  @visibleForTesting
+  static bool shouldIgnoreLateBleConnectError({
+    required bool manualDisconnect,
+    required MeshCoreConnectionState state,
+    required MeshCoreTransportType activeTransport,
+    required bool supersededByNewerAttempt,
+  }) {
+    if (supersededByNewerAttempt) return true;
+    if (activeTransport != MeshCoreTransportType.bluetooth) return true;
+    return manualDisconnect &&
+        (state == MeshCoreConnectionState.disconnected ||
+            state == MeshCoreConnectionState.disconnecting);
+  }
+
   Future<void> connect(
     BluetoothDevice device, {
     String? displayName,
     Future<String?> Function()? linuxPairingPinProvider,
   }) async {
+    final requestedDeviceId = device.remoteId.toString();
     if (_state == MeshCoreConnectionState.connecting ||
         _state == MeshCoreConnectionState.connected) {
-      return;
+      // Tapping the device we are already busy with is a no-op. Tapping a
+      // DIFFERENT one is explicit user intent and must win over the in-flight
+      // attempt — usually the launch auto-connect, which used to swallow the
+      // tap entirely with no connect, no error and no feedback.
+      if (_activeTransport == MeshCoreTransportType.bluetooth &&
+          _deviceId == requestedDeviceId) {
+        return;
+      }
+      _appDebugLogService?.info(
+        'Aborting in-flight connection to switch to $requestedDeviceId',
+        tag: 'BLE Connect',
+      );
+      await disconnect(manual: true);
     }
 
+    final attemptId = ++_bleConnectAttempt;
     _activeTransport = MeshCoreTransportType.bluetooth;
 
     await stopScan();
@@ -1762,6 +1840,17 @@ class MeshCoreConnector extends ChangeNotifier {
         }
       }
 
+      if (attemptId != _bleConnectAttempt) {
+        _appDebugLogService?.info(
+          'Discarding superseded connect to $connectLabel',
+          tag: 'BLE Connect',
+        );
+        try {
+          await device.disconnect(queue: false);
+        } catch (_) {}
+        return;
+      }
+
       if (PlatformInfo.isLinux) {
         await _ensureLinuxBleBond(
           device,
@@ -1886,6 +1975,23 @@ class MeshCoreConnector extends ChangeNotifier {
           }
         }
       }
+      if (attemptId != _bleConnectAttempt) {
+        _appDebugLogService?.info(
+          'Discarding superseded connect to $connectLabel after discovery',
+          tag: 'BLE Connect',
+        );
+        // Discovery above assigned the characteristics of a device we are
+        // abandoning. Drop them unless a successor is already using its own.
+        if (_state == MeshCoreConnectionState.disconnected) {
+          _rxCharacteristic = null;
+          _txCharacteristic = null;
+        }
+        try {
+          await device.disconnect(queue: false);
+        } catch (_) {}
+        return;
+      }
+
       _notifySubscription = _txCharacteristic!.onValueReceived.listen(
         _handleFrame,
       );
@@ -1899,6 +2005,19 @@ class MeshCoreConnector extends ChangeNotifier {
       await _startBleInitialSync();
     } catch (e) {
       _appDebugLogService?.error('Connection error: $e', tag: 'BLE Connect');
+      if (shouldIgnoreLateBleConnectError(
+        manualDisconnect: _manualDisconnect,
+        state: _state,
+        activeTransport: _activeTransport,
+        supersededByNewerAttempt: attemptId != _bleConnectAttempt,
+      )) {
+        _appDebugLogService?.info(
+          'Ignoring connect error after disconnect/switch: '
+          'state=$_state transport=$_activeTransport',
+          tag: 'BLE Connect',
+        );
+        return;
+      }
       final errorText = e.toString();
       final lowerErrorText = errorText.toLowerCase();
       final isLinuxPairingFailure =
@@ -2266,6 +2385,49 @@ class MeshCoreConnector extends ChangeNotifier {
     _reconnectAttempts = 0;
   }
 
+  /// Explicit user intent to use another transport (the USB port picker
+  /// is open): stop BLE auto-reconnect and abort any in-flight BLE
+  /// attempt, so connectUsb isn't silently refused mid-attempt. Any
+  /// subsequent connect (any transport) re-enables auto-reconnect.
+  Future<void> suspendBleAutoReconnect() async {
+    _cancelReconnectTimer();
+    _manualDisconnect = true;
+    if (_state == MeshCoreConnectionState.connecting &&
+        _activeTransport == MeshCoreTransportType.bluetooth) {
+      _appDebugLogService?.info(
+        'Aborting BLE attempt: USB picker opened',
+        tag: 'Connection',
+      );
+      _bleConnectAttempt++;
+      await disconnect(manual: true);
+    }
+  }
+
+  /// User cancelled the connection attempt from the scanner. Aborts whatever is
+  /// in flight and stops auto-connect for the rest of this process, so the
+  /// launch attempt doesn't restart the moment the adapter reports on again.
+  Future<void> cancelAutoConnect() async {
+    _launchAutoConnectAttempted = true;
+    _cancelReconnectTimer();
+    _manualDisconnect = true;
+    // Invalidating the attempt is what makes the cancel stick. Tearing down
+    // alone is not enough: the in-flight connect() is parked on an await, and
+    // when it resumes it finishes the handshake against a link we already
+    // dropped — reaching `connected` with no _connectionSubscription, so the
+    // contact stream stalls part-way and nothing is left to notice the drop.
+    _bleConnectAttempt++;
+    if (_activeTransport == MeshCoreTransportType.bluetooth &&
+        (_state == MeshCoreConnectionState.connecting ||
+            _state == MeshCoreConnectionState.connected)) {
+      _appDebugLogService?.info(
+        'Cancelling BLE connect at user request (state=$_state)',
+        tag: 'Connection',
+      );
+      await disconnect(manual: true);
+    }
+    notifyListeners();
+  }
+
   int _nextReconnectDelayMs() {
     final attempt = _reconnectAttempts < 6 ? _reconnectAttempts : 6;
     _reconnectAttempts += 1;
@@ -2409,6 +2571,12 @@ class MeshCoreConnector extends ChangeNotifier {
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _hasLoadedChannels = false;
+    // The contact stream only ends on END_OF_CONTACTS, which a disconnect
+    // mid-stream never delivers — without this the "Reading contacts (n/total)"
+    // banner stays up forever on a stream that stopped.
+    _isLoadingContacts = false;
+    _isLoadingChannels = false;
+    _preserveContactsOnRefresh = false;
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
@@ -2725,7 +2893,7 @@ class MeshCoreConnector extends ChangeNotifier {
     if (!isConnected || text.isEmpty) return;
 
     // Check if this is a reaction - apply locally with pending status and route through retry service
-    final reactionInfo = ReactionHelper.parseReaction(text);
+    final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
       // Apply to the target row; watched queries update the UI.
       final history = await _messageStore.loadMessages(contact.publicKeyHex);
@@ -2981,7 +3149,23 @@ class MeshCoreConnector extends ChangeNotifier {
     PathSelection? autoSelection;
     final autoRotationEnabled =
         _appSettingsService?.settings.autoRouteRotationEnabled == true;
-    if (autoRotationEnabled && contact.pathOverride == null) {
+
+    // A zero-hop contact is already on the best route that exists, so route
+    // rotation has nothing to explore for it.
+    //
+    // Letting it pick flood here does not just slow one send. The flood
+    // branch below calls clearContactPath, which erases the direct path from
+    // the contact itself — and resolvePathSelection returns flood for any
+    // contact whose pathLength is negative. So one rotation experiment
+    // permanently demotes a neighbour to flood, with nothing to restore it
+    // but a fresh path discovery.
+    //
+    // Measured on the bench against a repeater in the same room at -46 dBm,
+    // reporting "Direct": it came back as "Flood" and stayed there, which
+    // also more than doubled the command give-up budget (12.4s -> 28.6s).
+    final isDirect = contact.pathLength == 0;
+
+    if (autoRotationEnabled && contact.pathOverride == null && !isDirect) {
       final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
       autoSelection = _selectAutoPathForAttempt(
         contact.publicKeyHex,
@@ -3030,6 +3214,30 @@ class MeshCoreConnector extends ChangeNotifier {
       selection: selection,
       pathLength: selection.useFlood ? -1 : selection.hopCount,
       messageBytes: messageBytes,
+    );
+  }
+
+  /// Feeds one repeater CLI round trip into the timeout model.
+  ///
+  /// Repeater commands never reach [_handleRepeaterCommandAck]: the firmware
+  /// sends no ack for TXT_TYPE_CLI_DATA, and _handleMessageSent returns early
+  /// on CLI sends, so the ack plumbing that trains the model for ordinary
+  /// messages is dead on this path. Without this the model never learns what
+  /// a repeater command actually costs and every one is budgeted from the
+  /// worst-case physics bound — 4.1 s on a link measured at 955 ms.
+  void recordRepeaterCommandRoundTrip({
+    required String contactKey,
+    required int pathLength,
+    required int messageBytes,
+    required int tripTimeMs,
+  }) {
+    if (tripTimeMs <= 0) return;
+    _timeoutPredictionService?.recordObservation(
+      contactKey: contactKey,
+      pathLength: pathLength,
+      messageBytes: messageBytes,
+      tripTimeMs: tripTimeMs,
+      secondsSinceLastRx: DateTime.now().difference(_lastRxTime).inSeconds,
     );
   }
 
@@ -3148,7 +3356,7 @@ class MeshCoreConnector extends ChangeNotifier {
       // untrusted until re-verified — sending would encrypt with whatever
       // key now owns the slot. Never DISCARD the user's text though: file
       // it by trusted identity and transmit when a sync pass completes.
-      if (ReactionHelper.parseReaction(text) != null) {
+      if (ReactionHelper.parseIncomingReaction(text) != null) {
         _pendingUnverifiedSends.add(
           (idKey: channel.idKey, messageId: null, text: text),
         );
@@ -3180,7 +3388,7 @@ class MeshCoreConnector extends ChangeNotifier {
     channel = live!;
 
     // Check if this is a reaction - if so, process it immediately instead of adding as a message
-    final reactionInfo = ReactionHelper.parseReaction(text);
+    final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
       // Check if we've already processed this reaction. Keyed by reactor too:
       // two people reacting with the same emoji are two reactions, not a
@@ -3815,10 +4023,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await sendFrame(buildRebootFrame());
   }
 
-  Future<void> setPrivacyMode(bool enabled) async {
-    await sendCliCommand('set privacy ${enabled ? 'on' : 'off'}');
-  }
-
   Future<void> setTelemetryModeBase(
     int base,
     int location,
@@ -4178,6 +4382,54 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Keep cache on failure/disconnection for future attempts
   }
 
+  /// Resolves the live channel holding [psk], waiting out the slot resync
+  /// [setChannel] kicks off.
+  ///
+  /// [setChannel] returns as soon as the resync is *requested*: slots arrive
+  /// one CHANNEL_INFO at a time, and [channels] serves the pre-sync cache
+  /// until the pass completes. A caller that has just written a channel and
+  /// wants to act on it has to wait for the radio's own entry — the slot it
+  /// asked for is a request, not an answer.
+  ///
+  /// Null means the radio never reported it: refused, dropped, or the link
+  /// went away.
+  Future<Channel?> awaitChannelByPsk(
+    Uint8List psk, {
+    Duration timeout = const Duration(seconds: 20),
+    Duration poll = const Duration(milliseconds: 200),
+    int maxResyncs = 2,
+  }) async {
+    final idKey = Channel.formatPskHex(psk);
+    final existing = _liveChannelByIdKey(idKey);
+    if (existing != null) return existing;
+    if (!isConnected) return null;
+    // Nothing pending on entry: the map is settled and has no such identity,
+    // so there is nothing to wait for. Only sound before the wait starts —
+    // measured on hardware, a pass can settle mid-write and still be one
+    // pass short of reporting the new slot.
+    if (_channelsVerified && !_isSyncingChannels) return null;
+
+    final deadline = DateTime.now().add(timeout);
+    var resyncsLeft = maxResyncs;
+    while (true) {
+      await Future<void>.delayed(poll);
+      final match = _liveChannelByIdKey(idKey);
+      if (match != null) return match;
+      if (!isConnected) return null;
+      if (DateTime.now().isAfter(deadline)) return null;
+
+      // A pass that reached the slot before the radio committed the write
+      // reports it empty, and nothing re-reads it afterwards. Measured on
+      // hardware the same write lands in pass 1 or pass 2 depending on
+      // timing, so a settled-but-absent map earns one more look.
+      if (!_isSyncingChannels) {
+        if (resyncsLeft == 0) return null;
+        resyncsLeft--;
+        unawaited(getChannels(force: true));
+      }
+    }
+  }
+
   Future<void> setChannel(int index, String name, Uint8List psk) async {
     if (!isConnected) return;
 
@@ -4473,6 +4725,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         selfName.isNotEmpty) {
       _usbManager.updateConnectedLabel(selfName);
     }
+    if (_activeTransport == MeshCoreTransportType.bluetooth &&
+        selfName != null &&
+        selfName.isNotEmpty &&
+        selfName != _lastDeviceDisplayName) {
+      // The radio's own name is authoritative; adopt it as the remembered name
+      // so the next launch's auto-connect banner doesn't show a pre-rename one.
+      _deviceDisplayName = selfName;
+      _lastDeviceDisplayName = selfName;
+      unawaited(_persistLastBleDevice());
+    }
 
     //set all the stores' public key so they can load the correct data
     _channelMessageStore.setPublicKeyHex = selfPublicKeyHex;
@@ -4492,6 +4754,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _slotsToRequery.clear();
       _processedChannelReactions.clear();
       _channelSmazEnabled.clear();
+      // Orphan caches point at rows in the previous node's stores.
+      _channelOrphanRows.clear();
+      _channelOrphansScanned.clear();
+      _contactOrphanRows.clear();
+      _contactOrphansScanned.clear();
       // The other node's latest-map must not serve as this node's causality
       // floor while the scoped subscription re-emits.
       _channelLatestByIdKey = const {};
@@ -5110,33 +5377,42 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _updateContactLastMessageAt(contact.publicKeyHex, message.timestamp);
       }
       // Dedup is the database's unique constraint; unread eligibility is
-      // decided inside the ingest.
-      _addMessage(message.senderKeyHex, message);
-      notifyListeners();
-
-      // Show notification for new incoming message
-      if (!message.isOutgoing &&
-          !message.isCli &&
-          _appSettingsService != null) {
-        final settings = _appSettingsService!.settings;
-        if (settings.notificationsEnabled && settings.notifyOnNewMessage) {
-          if (contact?.type == advTypeChat) {
-            _notificationService.showMessageNotification(
-              contactName: contact?.name ?? 'Unknown',
-              message: message.text,
-              contactId: message.senderKeyHex,
-              badgeCount: getTotalUnreadCount(),
-            );
-          } else if (contact?.type == advTypeRoom) {
-            _notificationService.showMessageNotification(
-              contactName: contact?.name ?? 'Unknown Room',
-              message: message.text,
-              contactId: message.senderKeyHex,
-              badgeCount: getTotalUnreadCount(),
-            );
+      // decided inside the ingest. Captured non-null: promotion of the
+      // outer nullable doesn't survive into the closure.
+      final incoming = message;
+      unawaited(() async {
+        final isNew = await _ingestContactMessage(
+          incoming.senderKeyHex,
+          incoming,
+        );
+        // A sender that missed our ACK retries the SAME message; the DB
+        // dedups the row, and the notification must dedup with it — one
+        // message, one notification, however many copies the air delivers.
+        if (!isNew) return;
+        if (!incoming.isOutgoing &&
+            !incoming.isCli &&
+            _appSettingsService != null) {
+          final settings = _appSettingsService!.settings;
+          if (settings.notificationsEnabled && settings.notifyOnNewMessage) {
+            if (contact?.type == advTypeChat) {
+              _notificationService.showMessageNotification(
+                contactName: contact?.name ?? 'Unknown',
+                message: incoming.text,
+                contactId: incoming.senderKeyHex,
+                badgeCount: getTotalUnreadCount(),
+              );
+            } else if (contact?.type == advTypeRoom) {
+              _notificationService.showMessageNotification(
+                contactName: contact?.name ?? 'Unknown Room',
+                message: incoming.text,
+                contactId: incoming.senderKeyHex,
+                badgeCount: getTotalUnreadCount(),
+              );
+            }
           }
         }
-      }
+      }());
+      notifyListeners();
       _handleQueuedMessageReceived();
     } else if (_isSyncingQueuedMessages) {
       _handleQueuedMessageReceived();
@@ -5344,6 +5620,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (_isFromSelf(message)) return;
     final channelIndex = message.channelIndex;
     if (channelIndex == null) return;
+
+    // A reaction we could not place is still a reaction. Notifying here would
+    // make the SAME event behave two different ways: a reaction whose target
+    // we hold is applied as a chip and never reaches this function at all
+    // (_ingestChannelMessage returns false), while an unplaced one would
+    // alarm — and worse, its "{emoji}@[target]" text contains the reacted-to
+    // person's name, so mentionsUser() reads it as a mention and mentions
+    // deliberately cut through a muted channel. Someone reacting to your
+    // message must not be able to pierce a mute you set.
+    if (ReactionHelper.parseMeshCoreOneReaction(message.text) != null) return;
 
     final settings = _appSettingsService!.settings;
     if (!settings.notificationsEnabled) return;
@@ -5603,19 +5889,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           return;
         }
 
-        final hasFullPubKey = ctlPayload.length >= 6 + 32;
-        final Uint8List? pubKey = hasFullPubKey ? ctlPayload.sublist(6, 38) : null;
+        // A repeater's NODE_DISCOVER_RESP is [type][snr][tag x4][pub_key x32]
+        // — the full key, and no name at all (simple_repeater/MyMesh.cpp). We
+        // ask for it in full (prefix_only = 0), so identity here is exact and
+        // must never be narrowed to a hash. The name can only come from the
+        // contact book, resolved against those 32 bytes.
+        final hasFullPubKey = ctlPayload.length >= 6 + pubKeySize;
+        final Uint8List? pubKey =
+            hasFullPubKey ? ctlPayload.sublist(6, 6 + pubKeySize) : null;
         final hex = pubKey != null ? pubKeyToHex(pubKey) : null;
-        // Discovery responses carry at least an 8-byte pubkey prefix at [6..];
-        // keep the on-air hash width of it as the repeater's identity.
-        final prefixEnd = math.min(6 + _pathHashByteWidth, ctlPayload.length);
-        final pubkeyPrefix = prefixEnd > 6
-            ? Uint8List.fromList(ctlPayload.sublist(6, prefixEnd))
-            : Uint8List(0);
+        // Kept for display and for matching hash-only neighbours heard from
+        // advert paths; never used to identify a response that carried a key.
+        final pubkeyPrefix = pubKey != null
+            ? PathHelper.pubKeyPrefix(pubKey, stride: _pathHashByteWidth)
+            : Uint8List.fromList(
+                ctlPayload.sublist(
+                  6,
+                  math.min(6 + _pathHashByteWidth, ctlPayload.length),
+                ),
+              );
 
+        // No firmware appends a name today; decoded only so a future one that
+        // does is not silently ignored.
         String? parsedName;
-        if (hasFullPubKey && ctlPayload.length > 38) {
-          parsedName = utf8.decode(ctlPayload.sublist(38), allowMalformed: true).trim();
+        if (hasFullPubKey && ctlPayload.length > 6 + pubKeySize) {
+          parsedName = utf8
+              .decode(ctlPayload.sublist(6 + pubKeySize), allowMalformed: true)
+              .trim();
           if (parsedName.isNotEmpty && parsedName.codeUnitAt(parsedName.length - 1) == 0) {
             parsedName = parsedName.substring(0, parsedName.length - 1);
           }
@@ -5624,18 +5924,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         appLogger.info('Discovered repeater with pubkey prefix 0x${PathHelper.hopHex(pubkeyPrefix)} at SNR $snr dB');
 
         _directRepeaters.removeWhere((r) => r.isStale());
-        final existing = _directRepeaters.where((r) {
-          if (r.publicKey != null && hex != null) {
-            return pubKeyToHex(r.publicKey!) == hex;
-          }
-          return r.matchesHash(pubkeyPrefix);
-        });
+        final existing = _findTrackedRepeater(
+          fullKey: pubKey,
+          hashPrefix: pubkeyPrefix,
+        );
 
-        if (existing.isNotEmpty) {
-          existing.first.update(snr);
-          existing.first.publicKey ??= pubKey;
+        if (existing != null) {
+          existing.update(snr);
+          existing.publicKey ??= pubKey;
           if (parsedName != null && parsedName.isNotEmpty) {
-            existing.first.name = parsedName;
+            existing.name = parsedName;
           }
         } else {
           if (_directRepeaters.length >= 5) {
@@ -5667,7 +5965,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           if (!alreadyKnown && !_discoveredContacts.any((c) => c.publicKeyHex == hex!)) {
             final resolvedName = (parsedName != null && parsedName.isNotEmpty)
                 ? parsedName
-                : 'Repeater ${hex!.substring(0, 4).toUpperCase()}';
+                : RepeaterIdentityHelper.unnamedLabel(pubKey!);
             final newContact = Contact(
               publicKey: pubKey!,
               name: resolvedName,
@@ -6182,7 +6480,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _shouldTrackUnreadForContactKey(message.senderKeyHex);
 
   /// Phase 3d ingest for DMs — the database is the only message state.
-  Future<void> _ingestContactMessage(String pubKeyHex, Message message) async {
+  /// Returns whether this frame carried anything NEW: false for a retry of
+  /// an already-stored message (a sender that missed our ACK re-sends the
+  /// same message) and for repeats of an already-applied reaction. Callers
+  /// gate user-facing side effects — notifications — on it.
+  Future<bool> _ingestContactMessage(String pubKeyHex, Message message) async {
     // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
     // old-but-plausible time is display truth, not a sorting hazard.
     Message processedMessage = message;
@@ -6203,6 +6505,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Reactions mutate their target row; never a visible message.
     final reactionInfo = Message.parseReaction(processedMessage.text);
     if (reactionInfo != null) {
+      // Our own reaction, arriving here only because the retry service files
+      // every send it tracks. sendMessage already applied it under OUR name;
+      // re-applying would attribute a second reactor — _resolveReactorName
+      // returns the CONTACT's name in a 1:1 — and show one tap as a count of
+      // two. (The legacy r: format was saved from this by the incoming-only
+      // shouldSkip rule, which a strong MeshCore One hash does not need.)
+      if (processedMessage.isOutgoing) return false;
       // Keyed by reactor: in a room two members reacting with the same emoji
       // are two reactions, not a duplicate of one.
       final reactorName = _resolveReactorName(pubKeyHex, processedMessage);
@@ -6212,7 +6521,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (_processedContactReactions[pubKeyHex]!.contains(
         reactionIdentifier,
       )) {
-        return;
+        return false;
       }
       final history = await _messageStore.loadMessages(pubKeyHex);
       final applied = _processContactReaction(
@@ -6230,7 +6539,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // could be a genuine two-line message, so fall through and show it.
         _processedContactReactions[pubKeyHex]!.add(reactionIdentifier);
         notifyListeners();
-        return;
+        return true;
       }
     }
 
@@ -6241,12 +6550,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       processedMessage,
       unreadEligible: _contactUnreadEligible(processedMessage),
     );
-    if (!isNew) return;
+    if (!isNew) return false;
     // Viewing this conversation: the read watermark rides along.
     if (_activeContactKey == pubKeyHex) {
       unawaited(_messageStore.markRead(pubKeyHex));
     }
+    // A stored MeshCore One reaction is a parked orphan (its target wasn't
+    // here — yet); anything else might BE the target an orphan waits for.
+    if (ReactionHelper.parseMeshCoreOneReaction(processedMessage.text) !=
+        null) {
+      if (!processedMessage.isOutgoing) {
+        await _registerContactOrphan(pubKeyHex, processedMessage);
+      }
+    } else {
+      await _resolveContactOrphansFor(pubKeyHex, processedMessage);
+    }
     notifyListeners();
+    return true;
   }
 
   bool _processContactReaction(
@@ -6271,21 +6591,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // clients may react to any message, so don't restrict those.
       shouldSkip: (msg) => !isOne && isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      // The sender's wire clock, untouched by the ingest clamp. Outgoing
-      // rows get a small forward window: the frame is stamped after send
-      // delays, past the row's construction clock.
-      getWireTimestampSecs: (msg) {
-        final secs = _messageWireSecs(msg);
-        return msg.isOutgoing
-            ? [secs, secs + 1, secs + 2, secs + 3]
-            : [secs];
-      },
-      // MeshCore One hashes the mention-stripped display text, our rows
-      // store the raw text — try both.
-      getMessageTextVariants: (msg) => {
-        msg.text,
-        ChannelMessage.stripLeadingMentions(msg.text),
-      }.toList(),
+      getWireTimestampSecs: _contactWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -6313,20 +6620,236 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return message.timestamp.millisecondsSinceEpoch ~/ 1000;
   }
 
+  /// Every wire timestamp a DM row may have carried, for MeshCore One hash
+  /// matching. Outgoing rows get a small forward window: the frame is
+  /// stamped after send delays, past the row's construction clock.
+  static List<int> _contactWireSecsCandidates(Message msg) {
+    final secs = _messageWireSecs(msg);
+    return msg.isOutgoing ? [secs, secs + 1, secs + 2, secs + 3] : [secs];
+  }
+
+  /// Every wire timestamp a channel row may have carried. Outgoing rows try
+  /// the recorded send/retry stamps plus the t..t+3 window that covers rows
+  /// sent before recording existed (field case: the gap was exactly 2).
+  /// Incoming rows also try every stamp harvested from repeats: a sender's
+  /// RETRY re-stamps the packet, so a reactor who heard the retry hashes a
+  /// timestamp we only know if we heard (and merged) that copy too — the
+  /// #mtdebug capture caught exactly this, a reaction 31 s off the stamp of
+  /// the first-heard copy.
+  static List<int> _channelWireSecsCandidates(ChannelMessage msg) {
+    final secs = wireTimestampMs(msg) ~/ 1000;
+    if (!msg.isOutgoing) return {secs, ...msg.sentWireSecs}.toList();
+    return {
+      secs,
+      secs + 1,
+      secs + 2,
+      secs + 3,
+      ...msg.sentWireSecs,
+    }.toList();
+  }
+
+  /// Every text form a MeshCore One reaction to this row could have been
+  /// hashed over. The stored display [text] and its stripped forms cover
+  /// plain messages; [wireText] covers rows whose display text was rewritten
+  /// (replies) — the 2026-08-12 #mtdebug capture showed MC1 hashing the raw
+  /// reply markup, which no display-text variant can reproduce.
+  static List<String> _mc1TextVariants(String text, [String? wireText]) => {
+        text,
+        ChannelMessage.mc1DisplayText(text),
+        ChannelMessage.stripLeadingMentions(text),
+        if (wireText != null) ...{
+          wireText,
+          ChannelMessage.mc1DisplayText(wireText),
+        },
+      }.toList();
+
+  /// Reaction wire text for a channel message — MeshCore One dialect,
+  /// readable on every client. The hash commits to ONE text form (the raw
+  /// wire markup for replies, MC1's display rule otherwise — measured on
+  /// the air, #mtdebug capture 2026-08-12) and ONE wire timestamp: the
+  /// received stamp for incoming rows, the last transmitted stamp for our
+  /// own (the retry that actually got through is what everyone else holds).
+  static String channelReactionText(ChannelMessage target, String emoji) {
+    final secs = target.isOutgoing && target.sentWireSecs.isNotEmpty
+        ? target.sentWireSecs.last
+        : wireTimestampMs(target) ~/ 1000;
+    final hash = ReactionHelper.computeMeshCoreOneHash(
+      target.wireText ?? ChannelMessage.mc1DisplayText(target.text),
+      secs,
+    );
+    return ReactionHelper.encodeMeshCoreOne(
+      emoji,
+      hash,
+      targetSender: target.senderName,
+    );
+  }
+
+  /// Reaction wire text for a DM message — MeshCore One DM shape, which
+  /// names no sender: the hash alone identifies the target.
+  static String contactReactionText(Message target, String emoji) {
+    final hash = ReactionHelper.computeMeshCoreOneHash(
+      ChannelMessage.mc1DisplayText(target.text),
+      _messageWireSecs(target),
+    );
+    return ReactionHelper.encodeMeshCoreOne(emoji, hash);
+  }
+
+  // ── Parked MeshCore One reactions ──────────────────────────────────────
+  //
+  // A MeshCore One reaction whose target isn't stored yet falls through
+  // ingest as an ordinary row (the UI draws it as a compact reaction stub,
+  // never the raw hash). Most of these are ordering, not loss: the reaction
+  // beat its target out of the radio's backlog queue. So every newly stored
+  // message is checked against the parked rows, and on a hash match the
+  // reaction lands on its real target and the stub row is deleted.
+  //
+  // The per-chat lists are rebuilt lazily from the store (one history scan
+  // per chat per session), so parked reactions survive restarts for free.
+  final Map<String, List<ChannelMessage>> _channelOrphanRows = {};
+  final Set<String> _channelOrphansScanned = {};
+  final Map<String, List<Message>> _contactOrphanRows = {};
+  final Set<String> _contactOrphansScanned = {};
+
+  Future<List<ChannelMessage>> _channelOrphans(String idKey) async {
+    if (_channelOrphansScanned.add(idKey)) {
+      final history = await _channelMessageStore.loadChannelMessages(idKey);
+      _channelOrphanRows[idKey] = [
+        for (final m in history)
+          if (!m.isOutgoing &&
+              ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
+            m,
+      ];
+    }
+    return _channelOrphanRows.putIfAbsent(idKey, () => []);
+  }
+
+  Future<List<Message>> _contactOrphans(String pubKeyHex) async {
+    if (_contactOrphansScanned.add(pubKeyHex)) {
+      final history = await _messageStore.loadMessages(pubKeyHex);
+      _contactOrphanRows[pubKeyHex] = [
+        for (final m in history)
+          if (!m.isOutgoing &&
+              ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
+            m,
+      ];
+    }
+    return _contactOrphanRows.putIfAbsent(pubKeyHex, () => []);
+  }
+
+  Future<void> _registerChannelOrphan(String idKey, ChannelMessage row) async {
+    final orphans = await _channelOrphans(idKey);
+    if (orphans.any((o) => o.messageId == row.messageId)) return;
+    orphans.add(row);
+  }
+
+  Future<void> _registerContactOrphan(String pubKeyHex, Message row) async {
+    final orphans = await _contactOrphans(pubKeyHex);
+    if (orphans.any((o) => o.messageId == row.messageId)) return;
+    orphans.add(row);
+  }
+
+  /// Every MeshCore One hash [target] could have been reacted to under.
+  Set<String> _mc1HashesFor(
+    Iterable<String> texts,
+    Iterable<int> wireSecs,
+  ) =>
+      {
+        for (final text in texts)
+          for (final secs in wireSecs)
+            ReactionHelper.computeMeshCoreOneHash(text, secs),
+      };
+
+  /// A new message just stored in [idKey]: land any parked reactions that
+  /// were waiting for it, then remove their stub rows.
+  Future<void> _resolveChannelOrphansFor(
+    String idKey,
+    ChannelMessage target,
+  ) async {
+    final orphans = await _channelOrphans(idKey);
+    if (orphans.isEmpty) return;
+    final hashes = _mc1HashesFor(
+      _mc1TextVariants(target.text, target.wireText),
+      _channelWireSecsCandidates(target),
+    );
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null || !hashes.contains(info.targetHash)) continue;
+      await _channelMessageStore.updateMessage(idKey, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          orphan.senderName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _channelMessageStore.deleteMessage(idKey, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+    }
+    if (landed) notifyListeners();
+  }
+
+  Future<void> _resolveContactOrphansFor(
+    String pubKeyHex,
+    Message target,
+  ) async {
+    final orphans = await _contactOrphans(pubKeyHex);
+    if (orphans.isEmpty) return;
+    final hashes = _mc1HashesFor(
+      _mc1TextVariants(target.text),
+      _contactWireSecsCandidates(target),
+    );
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null || !hashes.contains(info.targetHash)) continue;
+      final reactorName = _resolveReactorName(pubKeyHex, orphan);
+      await _messageStore.updateMessage(pubKeyHex, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          reactorName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _messageStore.deleteMessage(pubKeyHex, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+    }
+    if (landed) notifyListeners();
+  }
+
   void _processOutgoingContactReaction(
     List<Message> messages,
     ReactionInfo reactionInfo,
     Contact contact,
   ) {
     final isRoomServer = contact.type == advTypeRoom;
+    final isOne = reactionInfo.format == ReactionFormat.one;
 
     ReactionHelper.applyReaction<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
       reactorName: _selfName ?? 'Me',
-      // Outgoing reactions in 1:1: match against incoming messages
-      shouldSkip: (msg) => !isRoomServer && msg.isOutgoing,
+      // Outgoing reactions in 1:1: match against incoming messages. The
+      // MeshCore One hash is strong enough to trust against any row.
+      shouldSkip: (msg) => !isOne && !isRoomServer && msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+      getWireTimestampSecs: _contactWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer),
       getMessageText: (msg) => msg.text,
@@ -6352,24 +6875,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final isRoomServer = contact?.type == advTypeRoom;
-    for (int i = messages.length - 1; i >= 0; i--) {
-      final msg = messages[i];
-      final timestampSecs = msg.timestamp.millisecondsSinceEpoch ~/ 1000;
-      final msgHash = ReactionHelper.computeReactionHash(
-        timestampSecs,
-        _resolveContactSenderName(msg, contact, isRoomServer == true),
-        msg.text,
-      );
-      if (msgHash == reactionInfo.targetHash) {
-        final statuses = Map<String, MessageStatus>.from(msg.reactionStatuses);
-        statuses[reactionInfo.emoji] = status;
-        await _messageStore.upsertMessage(
-          pubKeyHex,
-          msg.copyWith(reactionStatuses: statuses),
-        );
-        break;
-      }
-    }
+    // The same matcher that applied the reaction finds its status row — the
+    // formats hash differently, and re-deriving only one of them here is
+    // exactly how MC1 chips would get stuck at "pending" forever.
+    final index = ReactionHelper.findTargetIndex<Message>(
+      messages: messages,
+      reactionInfo: reactionInfo,
+      shouldSkip: (_) => false,
+      getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+      getWireTimestampSecs: _contactWireSecsCandidates,
+      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getSenderName: (msg) =>
+          _resolveContactSenderName(msg, contact, isRoomServer == true),
+      getMessageText: (msg) => msg.text,
+    );
+    if (index < 0) return;
+    final msg = messages[index];
+    final statuses = Map<String, MessageStatus>.from(msg.reactionStatuses);
+    statuses[reactionInfo.emoji] = status;
+    await _messageStore.upsertMessage(
+      pubKeyHex,
+      msg.copyWith(reactionStatuses: statuses),
+    );
   }
 
   /// Who sent an incoming DM reaction: the contact itself in 1:1, or the room
@@ -6745,6 +7272,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _findChannelByIndex(_activeChannelIndex!)?.idKey == idKey) {
       unawaited(_channelMessageStore.markRead(idKey));
     }
+    // A stored MeshCore One reaction is a parked orphan (its target wasn't
+    // here — yet); anything else might BE the target an orphan waits for.
+    if (ReactionHelper.parseMeshCoreOneReaction(processedMessage.text) !=
+        null) {
+      if (!processedMessage.isOutgoing) {
+        await _registerChannelOrphan(idKey, processedMessage);
+      }
+    } else {
+      await _resolveChannelOrphansFor(idKey, processedMessage);
+    }
     notifyListeners();
     return true;
   }
@@ -6777,6 +7314,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       mergedPathBytes,
       mergedHashSize,
     );
+    // A repeat can be the sender's re-stamped RETRY: harvest its wire
+    // timestamp so reaction hashes computed against THAT copy still match
+    // this row (#mtdebug capture: a reaction 31 s off the first-heard stamp).
+    final incomingSecs = wireTimestampMs(incoming) ~/ 1000;
     await _channelMessageStore.updateMessage(
       idKey,
       existing.messageId,
@@ -6788,6 +7329,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathVariants: mergedPathVariants,
         packetHash: m.packetHash ?? incoming.packetHash,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
+        sentWireSecs: m.sentWireSecs.contains(incomingSecs)
+            ? m.sentWireSecs
+            : [...m.sentWireSecs, incomingSecs],
       ),
     );
     _pendingChannelSentQueue.remove(existing.messageId);
@@ -6840,6 +7384,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Returns a copy of [base] with a new [text] and reply metadata attached.
+  /// [base]'s original text is kept as [ChannelMessage.wireText]: MeshCore
+  /// One hashes reactions over the raw on-air reply markup, so the row must
+  /// remember what actually flew even though it displays only the body.
   ChannelMessage _withReplyMetadata(
     ChannelMessage base, {
     required String text,
@@ -6851,6 +7398,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       senderKey: base.senderKey,
       senderName: base.senderName,
       text: text,
+      wireText: base.text == text ? null : base.text,
       timestamp: base.timestamp,
       isOutgoing: base.isOutgoing,
       status: base.status,
@@ -6884,30 +7432,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       reactorName: reactorName,
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      // MeshCore One hashes are computed over the sender's wire clock. For
-      // our own rows the wire frame was stamped moments after the row was
-      // built, so also try the next second.
-      getWireTimestampSecs: (msg) {
-        final secs = wireTimestampMs(msg) ~/ 1000;
-        if (!msg.isOutgoing) return [secs];
-        // Outgoing: the frame is stamped after radio-quiet waits, seconds
-        // past the row's construction clock. Recorded stamps are exact
-        // (incl. retries); the t..t+3 window covers rows sent before
-        // recording existed (field case: gap was exactly 2).
-        return {
-          secs,
-          secs + 1,
-          secs + 2,
-          secs + 3,
-          ...msg.sentWireSecs,
-        }.toList();
-      },
-      // MeshCore One hashes the mention-stripped display text, our rows
-      // store the raw text — try both.
-      getMessageTextVariants: (msg) => {
-        msg.text,
-        ChannelMessage.stripLeadingMentions(msg.text),
-      }.toList(),
+      getWireTimestampSecs: _channelWireSecsCandidates,
+      getMessageTextVariants: (msg) =>
+          _mc1TextVariants(msg.text, msg.wireText),
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
@@ -7126,6 +7653,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
+    // See disconnect(): END_OF_CONTACTS never arrives on a dropped link, so the
+    // sync banner has to be cleared here or it sticks at its last count.
+    _isLoadingContacts = false;
+    _preserveContactsOnRefresh = false;
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -7651,54 +8182,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (path.isEmpty) {
       lastHopPublicKey = contact.publicKey;
     } else {
-      final int take = math.min(hashSize, path.length);
-      final lastHopBytes = path.sublist(path.length - take);
-      Contact? match;
-      for (final c in _contacts) {
-        if (c.type != advTypeRepeater && c.type != advTypeRoom) continue;
-        if (c.publicKey.length >= take) {
-          bool isMatch = true;
-          for (int i = 0; i < take; i++) {
-            if (c.publicKey[i] != lastHopBytes[i]) {
-              isMatch = false;
-              break;
-            }
-          }
-          if (isMatch) {
-            match = c;
-            break;
-          }
-        }
-      }
-      if (match == null) {
-        for (final c in _discoveredContacts) {
-          if (c.type != advTypeRepeater && c.type != advTypeRoom) continue;
-          if (c.publicKey.length >= take) {
-            bool isMatch = true;
-            for (int i = 0; i < take; i++) {
-              if (c.publicKey[i] != lastHopBytes[i]) {
-                isMatch = false;
-                break;
-              }
-            }
-            if (isMatch) {
-              match = c;
-              break;
-            }
-          }
-        }
-      }
-      if (match != null) {
-        lastHopPublicKey = match.publicKey;
+      // An advert only gives us the last hop's 1-2 byte hash, so this is a
+      // guess by construction. Taking the first contact that shared the hash
+      // is what named a repeater 100 miles away as the one in the room; with
+      // several matches we do not know which node we heard, so we keep the
+      // hash and leave the entry unidentified rather than pick.
+      final matches = RepeaterIdentityHelper.contactsMatchingHash(
+        [..._contacts, ..._discoveredContacts],
+        pubkeyPrefix,
+      );
+      if (matches.length == 1) {
+        lastHopPublicKey = matches.first.publicKey;
+      } else if (matches.length > 1) {
+        appLogger.info(
+          'Advert last hop 0x${PathHelper.hopHex(pubkeyPrefix)} matches '
+          '${matches.length} contacts — left unidentified',
+          tag: 'Connector',
+        );
       }
     }
 
-    final isTracked = _directRepeaters.where((r) {
-      if (r.publicKey != null && lastHopPublicKey != null) {
-        return pubKeyToHex(r.publicKey!) == pubKeyToHex(lastHopPublicKey);
-      }
-      return r.matchesHash(pubkeyPrefix);
-    });
+    final tracked = _findTrackedRepeater(
+      fullKey: lastHopPublicKey,
+      hashPrefix: pubkeyPrefix,
+    );
 
     final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
       ..sort(DirectRepeater.compare);
@@ -7708,12 +8215,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     if (_directRepeaters.length >= 5 &&
         weakestRepeater != null &&
-        isTracked.isEmpty) {
+        tracked == null) {
       _directRepeaters.remove(weakestRepeater);
     }
 
-    if (isTracked.isNotEmpty) {
-      final repeater = isTracked.first;
+    if (tracked != null) {
+      final repeater = tracked;
       repeater.update(snr);
       if (repeater.publicKey == null && lastHopPublicKey != null) {
         repeater.publicKey = lastHopPublicKey;
@@ -7729,6 +8236,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     notifyListeners();
   }
+
+  DirectRepeater? _findTrackedRepeater({
+    Uint8List? fullKey,
+    required List<int> hashPrefix,
+  }) => DirectRepeater.findTracked(
+    _directRepeaters,
+    fullKey: fullKey,
+    hashPrefix: hashPrefix,
+  );
 
   void _handleAutoAddConfig(Uint8List frame) {
     final reader = BufferReader(frame);

@@ -66,13 +66,12 @@ class Contact {
     if (pathOverride != null) {
       if (pathOverride! < 0) return 'Flood (forced)';
       if (pathOverride == 0) return 'Direct (forced)';
-      // Derive hop count from bytes when available — pathOverride int
-      // may be stale if it was stored as a raw byte count by older code.
-      if (pathOverrideBytes != null && pathOverrideBytes!.isNotEmpty) {
-        final hopCount = PathHelper.getHopCount(pathOverrideBytes!, stride: pathHashSize);
-        if (hopCount == 0) return 'Direct (forced)';
-        return '$hopCount hops (forced)';
-      }
+      // pathOverride IS the hop count — every setPathOverride caller
+      // passes one. Recomputing it from pathOverrideBytes was wrong:
+      // those bytes are written at the connector's pathHashByteWidth,
+      // but the only stride a model can see is pathHashSize, which
+      // describes the *device* path and defaults to 1. A 2-byte-hash
+      // override then counted double (a 2-hop path read "4 hops").
       return '$pathOverride hops (forced)';
     }
     if (pathLength < 0) return 'Flood';

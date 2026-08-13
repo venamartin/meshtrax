@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
+import '../services/app_settings_service.dart';
 import '../services/linux_ble_error_classifier.dart';
 import '../services/notification_service.dart';
 import '../utils/app_logger.dart';
@@ -116,6 +117,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         title: AdaptiveAppBarTitle(context.l10n.scanner_title),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        actions: [_buildAutoConnectMenu(context)],
       ),
       body: Stack(
         children: [
@@ -243,6 +245,27 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
+  Widget _buildAutoConnectMenu(BuildContext context) {
+    return Consumer<AppSettingsService>(
+      builder: (context, settingsService, child) {
+        final enabled = settingsService.settings.autoConnectLastDevice;
+        return PopupMenuButton<void>(
+          icon: const Icon(Icons.more_vert),
+          itemBuilder: (menuContext) => [
+            CheckedPopupMenuItem<void>(
+              checked: enabled,
+              onTap: () {
+                settingsService.setAutoConnectLastDevice(!enabled);
+                if (enabled) unawaited(_connector.cancelAutoConnect());
+              },
+              child: const Text('Auto-connect on startup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildStatusBar(BuildContext context, MeshCoreConnector connector) {
     String statusText;
     Color statusColor;
@@ -279,10 +302,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
         children: [
           Icon(Icons.circle, size: 12, color: statusColor),
           const SizedBox(width: 8),
-          Text(
-            statusText,
-            style: TextStyle(color: statusColor, fontWeight: FontWeight.w500),
+          Expanded(
+            child: Text(
+              statusText,
+              style: TextStyle(color: statusColor, fontWeight: FontWeight.w500),
+            ),
           ),
+          if (connector.state == MeshCoreConnectionState.connecting)
+            TextButton(
+              onPressed: () => unawaited(_connector.cancelAutoConnect()),
+              child: Text(context.l10n.common_cancel),
+            ),
         ],
       ),
     );
@@ -326,9 +356,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     MeshCoreConnector connector,
     ScanResult result,
   ) async {
-    final name = result.device.platformName.isNotEmpty
-        ? result.device.platformName
-        : result.advertisementData.advName;
+    // Prefer the advertised name over the OS's cached GATT name (see DeviceTile).
+    final advName = result.advertisementData.advName;
+    final name = advName.isNotEmpty ? advName : result.device.platformName;
     try {
       await connector.connect(
         result.device,
