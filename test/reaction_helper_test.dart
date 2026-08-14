@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/helpers/reaction_helper.dart';
-import 'package:meshtrax/widgets/emoji_picker.dart';
 
 class _FakeMessage {
   _FakeMessage(this.timestampSecs, this.senderName, this.text);
@@ -318,6 +317,21 @@ void main() {
         reactOne(messages, '👍@[Alice]\n66nf5k51', 'Bob');
         expect(messages.first.reactions['👍'], 1);
       });
+
+      // Regression: an outgoing DM reaction is applied once on the send path
+      // (under OUR name) and reaches the ingest path again, where
+      // _resolveReactorName yields the CONTACT's name in a 1:1. Two different
+      // reactor names means the dedup above cannot save us — one tap reads
+      // as a count of two. The connector must not re-apply its own sends.
+      test('the same reaction under two names WOULD double-count', () {
+        final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+        reactOne(messages, '👍@[Alice]\n66nf5k51', 'Me');
+        reactOne(messages, '👍@[Alice]\n66nf5k51', 'Alice');
+        expect(messages.first.reactions['👍'], 2,
+            reason: 'if this ever stops being true the guard in '
+                '_ingestContactMessage can be revisited');
+        expect(messages.first.reactionSenders['👍'], ['Me', 'Alice']);
+      });
     });
   });
 
@@ -340,53 +354,15 @@ void main() {
 
   group('ReactionHelper', () {
     group('reactionEmojis', () {
-      test('should contain all emoji categories', () {
-        final emojis = ReactionHelper.reactionEmojis;
-
-        // Should contain quickEmojis
-        for (final emoji in EmojiPicker.quickEmojis) {
-          expect(
-            emojis.contains(emoji),
-            isTrue,
-            reason: 'Missing quick emoji: $emoji',
-          );
-        }
-
-        // Should contain smileys
-        for (final emoji in EmojiPicker.smileys) {
-          expect(
-            emojis.contains(emoji),
-            isTrue,
-            reason: 'Missing smiley: $emoji',
-          );
-        }
-
-        // Should contain gestures
-        for (final emoji in EmojiPicker.gestures) {
-          expect(
-            emojis.contains(emoji),
-            isTrue,
-            reason: 'Missing gesture: $emoji',
-          );
-        }
-
-        // Should contain hearts
-        for (final emoji in EmojiPicker.hearts) {
-          expect(
-            emojis.contains(emoji),
-            isTrue,
-            reason: 'Missing heart: $emoji',
-          );
-        }
-
-        // Should contain objects
-        for (final emoji in EmojiPicker.objects) {
-          expect(
-            emojis.contains(emoji),
-            isTrue,
-            reason: 'Missing object: $emoji',
-          );
-        }
+      // The table is the decode side of the legacy r: wire index and can
+      // never change. These pins would catch any accidental edit.
+      test('is frozen: length and known anchor positions', () {
+        expect(ReactionHelper.reactionEmojis.length, 184);
+        expect(ReactionHelper.reactionEmojis[0], '👍');
+        expect(ReactionHelper.reactionEmojis[1], '❤️');
+        expect(ReactionHelper.reactionEmojis[5], '🔥');
+        expect(ReactionHelper.reactionEmojis[6], '😀'); // first smiley
+        expect(ReactionHelper.reactionEmojis.last, '🚀');
       });
 
       test('should fit in 1 byte (max 256 emojis)', () {
@@ -993,6 +969,136 @@ void main() {
       final messages = [_FakeMessage(wireSecs, 'GWQ∆🍓', storedText)];
       expect(reactOne(messages, '😂@[GWQ∆🍓]\nx958frsv'), isFalse);
       expect(messages.first.reactions, isEmpty);
+    });
+  });
+
+  group('encodeMeshCoreOne — the send format', () {
+    test('channel shape round-trips through the parser', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
+      final wire =
+          ReactionHelper.encodeMeshCoreOne('😂', hash, targetSender: 'GWQ∆🍓');
+      expect(wire, '😂@[GWQ∆🍓]\n$hash');
+      final info = ReactionHelper.parseMeshCoreOneReaction(wire)!;
+      expect(info.emoji, '😂');
+      expect(info.targetSender, 'GWQ∆🍓');
+      expect(info.targetHash, hash);
+      expect(info.format, ReactionFormat.one);
+    });
+
+    test('DM shape has no sender and round-trips', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('Hi', 1700000000);
+      final wire = ReactionHelper.encodeMeshCoreOne('👍', hash);
+      expect(wire, '👍\n$hash');
+      final info = ReactionHelper.parseMeshCoreOneReaction(wire)!;
+      expect(info.emoji, '👍');
+      expect(info.targetSender, isNull);
+      expect(info.targetHash, hash);
+    });
+
+    test('emojis outside the legacy table survive — the point of switching',
+        () {
+      const unicorn = '🦄';
+      expect(ReactionHelper.emojiToIndex(unicorn), isNull,
+          reason: 'premise: the r: table cannot carry this emoji');
+      final hash = ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
+      final info = ReactionHelper.parseMeshCoreOneReaction(
+        ReactionHelper.encodeMeshCoreOne(unicorn, hash, targetSender: 'Bob'),
+      );
+      expect(info!.emoji, unicorn);
+    });
+
+    test('multi-codepoint emoji round-trip (skin tone, ZWJ sequence)', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('x', 1);
+      for (final emoji in ['👍🏽', '❤️‍🔥', '1️⃣']) {
+        final info = ReactionHelper.parseMeshCoreOneReaction(
+          ReactionHelper.encodeMeshCoreOne(emoji, hash, targetSender: 'Bob'),
+        );
+        expect(info?.emoji, emoji, reason: emoji);
+      }
+    });
+
+    test('the encoded text is never mistaken for the legacy format', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
+      final wire =
+          ReactionHelper.encodeMeshCoreOne('😂', hash, targetSender: 'Bob');
+      final info = ReactionHelper.parseIncomingReaction(wire)!;
+      expect(info.format, ReactionFormat.one);
+    });
+  });
+
+  group('findTargetIndex — shared by apply and status paths', () {
+    // _setReactionStatus used to re-derive the LEGACY hash per row, so a
+    // MeshCore One reaction's status row could never be found and its chip
+    // stayed at "pending" forever. Both formats must resolve through the
+    // one matcher.
+    int find(List<_FakeMessage> messages, String wireText) {
+      return ReactionHelper.findTargetIndex<_FakeMessage>(
+        messages: messages,
+        reactionInfo: ReactionHelper.parseIncomingReaction(wireText)!,
+        shouldSkip: (_) => false,
+        getTimestampSecs: (m) => m.timestampSecs,
+        getWireTimestampSecs: (m) => [m.timestampSecs],
+        getMessageTextVariants: (m) => [m.text],
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+      );
+    }
+
+    test('resolves a MeshCore One reaction to its row', () {
+      final messages = [
+        _FakeMessage(1, 'Alice', 'other'),
+        _FakeMessage(1234567890, 'Alice', 'Hello'),
+      ];
+      expect(find(messages, '👍@[Alice]\n66nf5k51'), 1);
+    });
+
+    test('resolves a legacy r: reaction to its row', () {
+      final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+      final hash =
+          ReactionHelper.computeReactionHash(1234567890, 'Alice', 'Hello');
+      expect(find(messages, 'r:$hash:00'), 0);
+    });
+
+    test('returns -1 when nothing matches', () {
+      final messages = [_FakeMessage(1234567890, 'Alice', 'Hello')];
+      expect(find(messages, '👍@[Alice]\nzzzzzzzz'), -1);
+    });
+  });
+
+  group('mergeReaction', () {
+    test('adds a new reactor and never mutates the inputs', () {
+      final reactions = {'👍': 1};
+      final senders = {
+        '👍': ['Bob'],
+      };
+      final merged =
+          ReactionHelper.mergeReaction(reactions, senders, '👍', 'Carol')!;
+      expect(merged.reactions['👍'], 2);
+      expect(merged.senders['👍'], ['Bob', 'Carol']);
+      expect(reactions['👍'], 1);
+      expect(senders['👍'], ['Bob']);
+    });
+
+    test('returns null for a repeat of the same reactor+emoji', () {
+      expect(
+        ReactionHelper.mergeReaction(
+          {'👍': 1},
+          {
+            '👍': ['Bob'],
+          },
+          '👍',
+          'Bob',
+        ),
+        isNull,
+      );
+    });
+
+    test('a new emoji starts its own count', () {
+      final merged = ReactionHelper.mergeReaction({}, {}, '🔥', 'Bob')!;
+      expect(merged.reactions, {'🔥': 1});
+      expect(merged.senders, {
+        '🔥': ['Bob'],
+      });
     });
   });
 

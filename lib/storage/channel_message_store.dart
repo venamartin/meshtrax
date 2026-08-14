@@ -658,6 +658,7 @@ class ChannelMessageStore {
       'replyToMessageId': msg.replyToMessageId,
       'replyToSenderName': msg.replyToSenderName,
       'replyToText': msg.replyToText,
+      'wireText': msg.wireText,
       'reactions': msg.reactions,
       'reactionSenders': msg.reactionSenders,
     };
@@ -713,6 +714,7 @@ class ChannelMessageStore {
       replyToMessageId: json['replyToMessageId'] as String?,
       replyToSenderName: json['replyToSenderName'] as String?,
       replyToText: json['replyToText'] as String?,
+      wireText: json['wireText'] as String?,
       reactions:
           (json['reactions'] as Map<String, dynamic>?)?.map(
             (key, value) => MapEntry(key, value as int),

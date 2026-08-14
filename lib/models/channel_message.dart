@@ -36,11 +36,12 @@ class ChannelMessage {
   final List<Repeat> repeats;
   final int repeatCount;
   final int sendRetryCount;
-  // Every wire timestamp this message actually went on the air with (first
-  // send, then any retries — retries MUST re-stamp or mesh dedup drops
-  // them). MeshCore One reaction hashes are computed over the wire clock,
-  // which radio-quiet waits can push seconds past this row's construction
-  // clock. Empty for incoming rows and rows sent before this field existed.
+  // Every wire timestamp this message was HEARD or SENT with: our own
+  // send + retries (retries MUST re-stamp or mesh dedup drops them), and
+  // for incoming rows every re-stamped repeat that merged in. MeshCore One
+  // reaction hashes are computed over the wire clock of whichever COPY the
+  // reactor heard, so the matcher must be able to try all of them. Empty
+  // for rows stored before this field existed.
   final List<int> sentWireSecs;
   final int? pathLength;
   final Uint8List pathBytes;
@@ -52,6 +53,13 @@ class ChannelMessage {
   final String? replyToMessageId;
   final String? replyToSenderName;
   final String? replyToText;
+  // The ORIGINAL on-air text for rows whose display [text] was rewritten
+  // (replies: '@[Name]\n>snippet\nbody' stored as just the body). MeshCore
+  // One hashes reactions over THIS form — captured on-air 2026-08-12, hash
+  // 8p4kahn8 over the raw reply markup — so both reacting to such a row and
+  // matching reactions against it need the wire bytes, not the display text.
+  // Null when the display text IS the wire text.
+  final String? wireText;
   final Map<String, int> reactions;
   // Who reacted, per emoji. Rows written before attribution existed have
   // counts with no names, so this can be shorter than the count.
@@ -79,6 +87,7 @@ class ChannelMessage {
     this.replyToMessageId,
     this.replyToSenderName,
     this.replyToText,
+    this.wireText,
     Map<String, int>? reactions,
     Map<String, List<String>>? reactionSenders,
   }) : messageId =
@@ -115,7 +124,7 @@ class ChannelMessage {
     String? replyToMessageId,
     String? replyToSenderName,
     String? replyToText,
-
+    String? wireText,
     Map<String, int>? reactions,
     Map<String, List<String>>? reactionSenders,
   }) {
@@ -141,6 +150,7 @@ class ChannelMessage {
       replyToMessageId: replyToMessageId ?? this.replyToMessageId,
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToText: replyToText ?? this.replyToText,
+      wireText: wireText ?? this.wireText,
       reactions: reactions ?? this.reactions,
       reactionSenders: reactionSenders ?? this.reactionSenders,
     );
@@ -312,6 +322,22 @@ class ChannelMessage {
   /// existed; a 😂 displayed as a raw two-line message).
   static String stripLeadingMentions(String text) {
     final re = RegExp(r'^@\[[^\]]+\][ \n]?');
+    var out = text;
+    while (true) {
+      final m = re.firstMatch(out);
+      if (m == null || m.end == 0) return out;
+      out = out.substring(m.end);
+    }
+  }
+
+  /// MeshCore One's actual display rule, measured on the air (2026-08-12
+  /// #mtdebug capture): a leading `@[name] ` followed by a SPACE is
+  /// addressing and gets stripped before hashing; `@[name]\n` followed by a
+  /// newline is reply markup and stays. Use this — never
+  /// [stripLeadingMentions] — when producing the ONE text form a reaction
+  /// send commits to.
+  static String mc1DisplayText(String text) {
+    final re = RegExp(r'^@\[[^\]]+\] ');
     var out = text;
     while (true) {
       final m = re.firstMatch(out);

@@ -14,9 +14,10 @@ class DeviceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final device = scanResult.device;
     final rssi = scanResult.rssi;
-    final name = device.platformName.isNotEmpty
-        ? device.platformName
-        : scanResult.advertisementData.advName;
+    // advName comes from the advert we just heard; platformName is the OS's
+    // cached GATT name, which survives a rename on the device.
+    final advName = scanResult.advertisementData.advName;
+    final name = advName.isNotEmpty ? advName : device.platformName;
 
     return ListTile(
       leading: _buildSignalIcon(rssi),

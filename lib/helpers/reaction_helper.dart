@@ -3,8 +3,6 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' as crypto;
 
-import '../widgets/emoji_picker.dart';
-
 /// Which client dialect a reaction arrived in.
 /// [open] is our own `r:HASH:INDEX`; [one] is MeshCore One's
 /// `{emoji}@[{targetSender}]\n{hash}` (channel) / `{emoji}\n{hash}` (DM),
@@ -70,6 +68,44 @@ class ReactionHelper {
     List<int> Function(T)? getWireTimestampSecs,
     List<String> Function(T)? getMessageTextVariants,
   }) {
+    final foundIndex = findTargetIndex<T>(
+      messages: messages,
+      reactionInfo: reactionInfo,
+      getTimestampSecs: getTimestampSecs,
+      getSenderName: getSenderName,
+      getMessageText: getMessageText,
+      shouldSkip: shouldSkip,
+      getWireTimestampSecs: getWireTimestampSecs,
+      getMessageTextVariants: getMessageTextVariants,
+    );
+    if (foundIndex < 0) return false;
+
+    final msg = messages[foundIndex];
+    final merged = mergeReaction(
+      getReactions(msg),
+      getReactionSenders(msg),
+      reactionInfo.emoji,
+      reactorName,
+    );
+    if (merged == null) return true;
+    updateMessage(foundIndex, merged.reactions, merged.senders);
+    return true;
+  }
+
+  /// Locate the message a reaction targets, or -1. This is the single
+  /// hash-matching authority — every path that must find a reaction's target
+  /// (applying it, updating its send status, resolving a parked orphan) goes
+  /// through here so the formats can never drift apart.
+  static int findTargetIndex<T>({
+    required List<T> messages,
+    required ReactionInfo reactionInfo,
+    required int Function(T) getTimestampSecs,
+    required String? Function(T) getSenderName,
+    required String Function(T) getMessageText,
+    required bool Function(T) shouldSkip,
+    List<int> Function(T)? getWireTimestampSecs,
+    List<String> Function(T)? getMessageTextVariants,
+  }) {
     final targetHash = reactionInfo.targetHash;
 
     bool matches(T msg) {
@@ -92,7 +128,6 @@ class ReactionHelper {
           targetHash;
     }
 
-    int foundIndex = -1;
     // A MeshCore One channel reaction names the target's sender; prefer rows
     // from that sender so identical text+timestamp from two people resolves
     // to the right one, but fall back to any match (names can drift between
@@ -102,39 +137,37 @@ class ReactionHelper {
       for (int i = messages.length - 1; i >= 0; i--) {
         if (shouldSkip(messages[i])) continue;
         if (getSenderName(messages[i]) != targetSender) continue;
-        if (matches(messages[i])) {
-          foundIndex = i;
-          break;
-        }
+        if (matches(messages[i])) return i;
       }
     }
-    if (foundIndex < 0) {
-      for (int i = messages.length - 1; i >= 0; i--) {
-        if (shouldSkip(messages[i])) continue;
-        if (matches(messages[i])) {
-          foundIndex = i;
-          break;
-        }
-      }
+    for (int i = messages.length - 1; i >= 0; i--) {
+      if (shouldSkip(messages[i])) continue;
+      if (matches(messages[i])) return i;
     }
-    if (foundIndex < 0) return false;
+    return -1;
+  }
 
-    final msg = messages[foundIndex];
-    final emoji = reactionInfo.emoji;
-    final currentSenders = <String, List<String>>{
-      for (final e in getReactionSenders(msg).entries)
+  /// Add [reactorName]'s [emoji] to a reaction map pair, or null when this
+  /// person already reacted with this emoji — a repeat of the same packet
+  /// must not inflate the count. Inputs are never mutated.
+  static ({Map<String, int> reactions, Map<String, List<String>> senders})?
+      mergeReaction(
+    Map<String, int> reactions,
+    Map<String, List<String>> reactionSenders,
+    String emoji,
+    String reactorName,
+  ) {
+    final newSenders = <String, List<String>>{
+      for (final e in reactionSenders.entries)
         e.key: List<String>.from(e.value),
     };
-    final senders = currentSenders.putIfAbsent(emoji, () => []);
-    // One reaction per person per emoji: a repeat of the same packet
-    // must not inflate the count.
-    if (senders.contains(reactorName)) return true;
+    final senders = newSenders.putIfAbsent(emoji, () => []);
+    if (senders.contains(reactorName)) return null;
     senders.add(reactorName);
 
-    final currentReactions = Map<String, int>.from(getReactions(msg));
-    currentReactions[emoji] = (currentReactions[emoji] ?? 0) + 1;
-    updateMessage(foundIndex, currentReactions, currentSenders);
-    return true;
+    final newReactions = Map<String, int>.from(reactions);
+    newReactions[emoji] = (newReactions[emoji] ?? 0) + 1;
+    return (reactions: newReactions, senders: newSenders);
   }
 
   /// Reads the persisted per-emoji reactor names. Rows written before
@@ -150,21 +183,38 @@ class ReactionHelper {
     };
   }
 
-  static List<String>? _cachedEmojis;
-
-  /// Combined list of all reaction emojis in fixed order.
-  /// Order must stay stable for index compatibility.
-  static List<String> get reactionEmojis {
-    return _cachedEmojis ??= [
-      ...EmojiPicker.quickEmojis,
-      ...EmojiPicker.smileys,
-      ...EmojiPicker.gestures,
-      ...EmojiPicker.hearts,
-      ...EmojiPicker.objects,
-    ];
-  }
+  /// The legacy r: format's emoji table, FROZEN — it is the decode side of a
+  /// wire index, so its order and contents can never change. Sends stopped
+  /// using it when the app switched to the MeshCore One dialect; it exists
+  /// only so reactions from older meshtrax builds keep decoding.
+  static const List<String> reactionEmojis = [
+    // quick
+    '👍', '❤️', '😂', '🎉', '👏', '🔥',
+    // smileys
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉',
+    '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪',
+    '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟',
+    '😕', '🙁', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡',
+    '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔',
+    '🤭', '🤫', '🤥', '😶',
+    // gestures
+    '👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘', '👌', '🤌',
+    '🤏', '👈', '👉', '👆', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏',
+    '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪',
+    // hearts
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❤️‍🔥',
+    '❤️‍🩹', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💌', '💢',
+    '💥', '💫', '💦', '💨', '🕳️', '💬', '👁️‍🗨️', '🗨️', '🗯️', '💭',
+    // objects
+    '🎉', '🎊', '🎈', '🎁', '🎀', '🪅', '🪆', '🏆', '🥇', '🥈', '🥉', '⚽',
+    '⚾', '🥎', '🏀', '🏐', '🏈', '🏉', '🎾', '🥏', '🎳', '🏏', '🏑', '🏒',
+    '🥍', '🏓', '🏸', '🥊', '🥋', '🥅', '⛳', '🔥', '⭐', '🌟', '✨', '⚡',
+    '💡', '🔦', '🏮', '🪔', '📱', '💻', '⌚', '📷', '📺', '📻', '🎵', '🎶',
+    '🚀',
+  ];
 
   /// Convert emoji to 2-char hex index. Returns null if emoji not in list.
+  /// Legacy r: format only — no new call sites.
   static String? emojiToIndex(String emoji) {
     final idx = reactionEmojis.indexOf(emoji);
     if (idx < 0) return null;
@@ -295,7 +345,23 @@ class ReactionHelper {
   }
 
   /// Encode a reaction message that parseReaction() can parse.
+  /// Legacy r: format only — no new call sites; sends use
+  /// [encodeMeshCoreOne].
   static String encodeReaction(String hash, String emojiIndex) {
     return 'r:$hash:$emojiIndex';
+  }
+
+  /// Encode a MeshCore One reaction — the send format. Channel reactions
+  /// carry the target message's sender; DM reactions do not. The result is
+  /// human-readable on clients that don't speak the dialect, and
+  /// [parseMeshCoreOneReaction] round-trips it.
+  static String encodeMeshCoreOne(
+    String emoji,
+    String hash, {
+    String? targetSender,
+  }) {
+    return targetSender != null
+        ? '$emoji@[$targetSender]\n$hash'
+        : '$emoji\n$hash';
   }
 }

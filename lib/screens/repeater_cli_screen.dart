@@ -152,6 +152,11 @@ class _RepeaterCliScreenState extends State<RepeaterCliScreen> {
           listen: false,
         );
         final repeater = _resolveRepeater(connector);
+        // One attempt, deliberately. A repeater can defer its reply for
+        // an unbounded time while the channel is busy, so this will
+        // occasionally report a failure for a command that ran — but in
+        // a CLI the operator is driving and decides when to send again.
+        // Retrying behind their back would re-execute their command.
         final response = await _commandService!.sendCommand(
           repeater,
           command,

@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  emoji_picker_flutter
   file_saver
   file_selector_windows
   flutter_blue_plus_winrt

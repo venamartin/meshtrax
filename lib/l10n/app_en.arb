@@ -746,6 +746,14 @@
   "common_reset": "Reset",
   "chat_reactionsTitle": "Reactions",
   "chat_reactionUnknownSender": "Unknown",
+  "chat_reactionTargetMissing": "{sender} reacted to a message that isn't in this chat",
+  "@chat_reactionTargetMissing": {
+    "placeholders": {
+      "sender": {
+        "type": "String"
+      }
+    }
+  },
   "chat_me": "Me",
   "emojiCategorySmileys": "Smileys",
   "emojiCategoryGestures": "Gestures",
