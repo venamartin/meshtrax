@@ -107,6 +107,32 @@ void main() {
     });
   });
 
+  test('a once-heard doorstep never shows near-certain delivery', () {
+    // Live find (AA77, 2026-08-14): hearing a repeater's transmission
+    // once makes it an inferred egress candidate — fine — but the
+    // 1-hop route to it displayed est 100% because the estimate only
+    // multiplied between-hop edges and a direct route has none. The
+    // doorstep-confidence term must be in the estimate.
+    graph.setRadioIdentity('ab' * 32, 2);
+    graph.observePath(Uint8List.fromList([0xAA, 0x77]), 2,
+        const ObservationOrigin.anonymous());
+    final result = graph.findPathToRepeater('AA77');
+    expect(result, isA<RouteResult>());
+    final est = (result as RouteResult).estDelivery;
+    expect(est, lessThan(0.5),
+        reason: 'one overheard transmission is not near-certainty');
+
+    // Proven, SNR-measured evidence raises it — the estimate tracks
+    // the evidence, not the hop count.
+    graph.observeDiscoverResults(
+        [const DiscoverResponse(repeaterHash: 'AA77', uplinkSnr: 8, rxSnr: 8)],
+        failureEpisode: false);
+    final proven = graph.findPathToRepeater('AA77') as RouteResult;
+    expect(proven.estDelivery, greaterThan(est));
+    expect(proven.estDelivery, greaterThan(0.8),
+        reason: 'measured 8 dB uplink is near-full quality');
+  });
+
   test('wide hops truncate into 2-byte buckets — never a second identity',
       () {
     // Found live (2026-08-14): a stride-3 path minted 'A27782' beside

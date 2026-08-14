@@ -130,8 +130,17 @@ class PathFinder {
       cur = prev[cur];
     }
 
-    // est. delivery: product of forward-edge p along the route.
-    var delivery = 1.0;
+    // est. delivery: doorstep confidence × forward-edge p × far-side
+    // confidence. Without the candidate terms a 1-hop route has no
+    // edges at all and reads 100% — a repeater merely HEARD once
+    // (inferred, unproven in the sending direction) must not display
+    // certainty the cost function never believed.
+    final source =
+        sources.where((s) => s.repeaterHash == hops.first).firstOrNull;
+    final target =
+        targets.where((t) => t.repeaterHash == hops.last).firstOrNull;
+    var delivery = (source == null ? 1.0 : _candidateConfidence(source)) *
+        (target == null ? 1.0 : _candidateConfidence(target));
     for (var i = 0; i < hops.length - 1; i++) {
       final e = edges[(hops[i], hops[i + 1])];
       if (e != null) {

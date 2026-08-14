@@ -481,7 +481,9 @@ class PathGraph {
 
     final route = PathFinder(estimator.config, estimator).search(
       egress: egress,
-      ingress: [Candidate(repeaterHash.toUpperCase(), 4.0, EvidenceTier.proven)],
+      // The repeater IS the destination — full-confidence virtual
+      // target, no far-side doorstep uncertainty to price in.
+      ingress: [_selfTarget(repeaterHash)],
       edges: _store.edges,
       nowMillis: now,
     );
@@ -490,6 +492,9 @@ class PathGraph {
     }
     return PathResult.path(_hopsToBytes(route.hops), route.estDelivery);
   }
+
+  static Candidate _selfTarget(String repeaterHash) =>
+      Candidate(repeaterHash.toUpperCase(), 1e9, EvidenceTier.proven);
 
   Uint8List _hopsToBytes(List<String> hops) {
     final bytes = Uint8List(hops.length * hashWidthBytes);
@@ -513,12 +518,7 @@ class PathGraph {
   /// Alternatives with a repeater itself as the destination.
   List<RouteResult> findAlternativesToRepeater(String repeaterHash,
           {int count = 3}) =>
-      _alternatives(
-          (_) => [
-                Candidate(
-                    repeaterHash.toUpperCase(), 4.0, EvidenceTier.proven)
-              ],
-          count);
+      _alternatives((_) => [_selfTarget(repeaterHash)], count);
 
   List<RouteResult> _alternatives(
       List<Candidate> Function(int now) ingressFor, int count) {
