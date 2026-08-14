@@ -1150,14 +1150,13 @@ Rules that keep it honest:
   collectors in different regions could hold different repeaters under
   one hash. Settle when merge is built.
 
-**Corescope's remaining role, if any**: its *node* data (pubkey, name,
-position) is not directional and is therefore not wrong — it could
-survive as an optional gazetteer for map labels. But adverts supply the
-same thing, self-authenticated, within ~47 h. Recommendation: retire
-`tools/generate_graph.py` from the routing path entirely; if we keep a
-Corescope tool at all it emits **nodes only, no links**, and is clearly
-labelled as labels-not-topology. `tools/analyze.py` stays — as a
-*viewer*, now pointed at our own exported graph.
+**Corescope's remaining role: none — DECIDED 2026-08-14.** The
+gazetteer idea considered here is closed: we stay clear of Corescope
+entirely. Its node data wasn't wrong, but adverts supply the same
+thing self-authenticated within ~47 h, and the first live-mesh
+harness session confirmed names and positions arrive on their own.
+`tools/generate_graph.py` is retired; `tools/analyze.py` stays — as a
+*viewer*, pointed at our own exported graph.
 
 **Code consequences to implement**: `importGraph` must stop seeding
 both directions from one symmetric link (that path exists today);
