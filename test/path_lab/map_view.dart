@@ -10,6 +10,7 @@
 // because they are separate measurements: the colour of an arrow is how
 // well the node it points AT heard the node it points FROM.
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -126,6 +127,24 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   String? _selected;
   bool _gridAll = false;
+  Timer? _refresh;
+
+  @override
+  void initState() {
+    super.initState();
+    // The graph mutates as frames arrive but has no change stream by
+    // design (push-in, never read-out) — poll the snapshot instead so
+    // new adverts and edges appear while the map is open.
+    _refresh = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _refresh?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
