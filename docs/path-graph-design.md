@@ -329,6 +329,19 @@ own view. Consequences:
   the user sends to a 1-byte target, the app truncates each hop of the
   returned path to its first byte. Lossless in that direction, always
   correct.
+
+  **RE-CONFIRMED 2026-08-14 by the user, after seeing the live numbers:
+  "we need to stay clear of 1-byte path. It messes everything up. So so
+  so many overlaps."** This is settled — do not revisit admitting
+  1-byte paths as edge-only or ambiguity-discounted evidence. First
+  live-mesh corpus (15 min, one position): **55 of 86 packets (64%)
+  carried 1-byte paths and were dropped**. That is the environment
+  metric, not a defect: the region-wide census found 88% of 1-byte
+  prefixes colliding, so those 55 packets carry hop identities that
+  cannot be resolved to a node — feeding them in would fabricate edges
+  between whichever unrelated repeaters happen to share a first byte.
+  A third of the traffic, honestly identified, beats all of it wrongly
+  identified.
 * At 2-byte width the geo radius on Corescope import is just
   belt-and-suspenders (at 1-byte it would be essential — collapsing a whole
   region into 256 buckets would create false edges between far-apart
