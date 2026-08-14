@@ -16,6 +16,7 @@ import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/path_history_service.dart';
 import 'package:meshtrax/services/storage_service.dart';
+import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:path_graph/path_graph.dart';
 
 import 'adapter/frame_adapter.dart';
@@ -27,6 +28,7 @@ late final PathLabAdapter adapter;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PrefsManager.initialize();
 
   final storage = StorageService();
   connector = MeshCoreConnector();
@@ -161,6 +163,33 @@ class _PathLabScreenState extends State<PathLabScreen> {
       encodeTraceFlags(stride),
       payload: roundTrip,
     ));
+  }
+
+  static const _benchKhz = 920000;
+  static const _liveKhz = 910525; // US/Canada preset
+
+  /// Retune keeping the radio's own BW/SF/CR (same rule as the bench
+  /// harness). CMD_SET_RADIO_PARAMS applies live — no reboot.
+  Future<void> _setFrequency(int khz) async {
+    final c = connector;
+    if (c.currentFreqHz == null ||
+        c.currentBwHz == null ||
+        c.currentSf == null ||
+        c.currentCr == null) {
+      setState(() => _status = 'radio params not known yet — wait a moment');
+      return;
+    }
+    final mhz = (khz / 1000).toStringAsFixed(3);
+    final cr = c.currentCr! >= 5 ? c.currentCr! : c.currentCr! + 4;
+    setState(() => _status = 'retuning to $mhz MHz…');
+    await c.sendFrame(
+        buildSetRadioParamsFrame(khz, c.currentBwHz!, c.currentSf!, cr));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    await c.refreshDeviceInfo();
+    if (!mounted) return;
+    setState(() => _status = c.currentFreqHz == khz
+        ? 'radio on $mhz MHz'
+        : 'retune NOT confirmed — freq reads ${c.currentFreqHz}');
   }
 
   Future<void> _listPorts() async {
@@ -375,6 +404,31 @@ class _PathLabScreenState extends State<PathLabScreen> {
                     }
                   },
                 ),
+              // ── frequency (bench 920 ↔ live US mesh) ──────────────
+              Row(children: [
+                Text(
+                  'freq: ${connector.currentFreqHz != null ? '${(connector.currentFreqHz! / 1000).toStringAsFixed(3)} MHz' : '—'}',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: connector.currentFreqHz == _liveKhz
+                          ? Colors.red
+                          : null),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                    onPressed:
+                        connector.state == MeshCoreConnectionState.connected
+                            ? () => _setFrequency(_benchKhz)
+                            : null,
+                    child: const Text('920 bench')),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                    onPressed:
+                        connector.state == MeshCoreConnectionState.connected
+                            ? () => _setFrequency(_liveKhz)
+                            : null,
+                    child: const Text('910.525 LIVE')),
+              ]),
               const Divider(),
               // ── live feed ─────────────────────────────────────────
               Text('frames: ${adapter.framesSeen} · '
