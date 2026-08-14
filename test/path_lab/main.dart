@@ -3,6 +3,7 @@
 // Zero lib/ modifications: the connector is used as-is; all parsing
 // lives in adapter/frame_adapter.dart.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -13,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/path_helper.dart';
+import 'package:meshtrax/models/channel.dart';
+import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/path_history_service.dart';
 import 'package:meshtrax/services/storage_service.dart';
@@ -171,6 +174,97 @@ class _PathLabScreenState extends State<PathLabScreen> {
       encodeTraceFlags(stride),
       payload: roundTrip,
     ));
+  }
+
+  // ── flood-echo egress proof (#mtdebug) ──────────────────────────
+  // Sending a channel message and hearing it rebroadcast is PROVEN
+  // send-direction evidence: the echo's path[0] heard ME. The connector
+  // already merges echoes onto the outgoing row (_mergeChannelRepeat,
+  // status → delivered, path variants collected); we watch the row and
+  // feed every echoed path to reportSendResult.
+  static const _echoChannelName = '#mtdebug';
+  Channel? _echoChannel;
+  StreamSubscription<List<ChannelMessage>>? _echoSub;
+  final Set<String> _echoFed = {};
+  final DateTime _launchTime = DateTime.now();
+  final _pingText = TextEditingController(text: 'pathlab ping');
+  int _pingSeq = 1;
+  int _echoProven = 0;
+
+  Channel? _liveEchoChannel(String idKey) {
+    for (final c in connector.channels) {
+      if (c.idKey == idKey) return c;
+    }
+    return null;
+  }
+
+  Future<void> _joinEchoChannel() async {
+    final psk = Channel.derivePskFromHashtag(_echoChannelName);
+    final idKey = Channel.formatPskHex(psk);
+    var live = _liveEchoChannel(idKey);
+    if (live == null) {
+      final occupied = connector.channels.map((c) => c.index).toSet();
+      int? slot;
+      for (var i = 1; i < connector.maxChannels; i++) {
+        if (!occupied.contains(i)) {
+          slot = i;
+          break;
+        }
+      }
+      if (slot == null) {
+        setState(() => _status = 'no free channel slot on the radio');
+        return;
+      }
+      setState(() => _status = 'creating $_echoChannelName in slot $slot…');
+      await connector.setChannel(slot, _echoChannelName, psk);
+      for (var i = 0; i < 60 && _liveEchoChannel(idKey) == null; i++) {
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+      live = _liveEchoChannel(idKey);
+      if (live == null) {
+        setState(() => _status = '$_echoChannelName never appeared — resync?');
+        return;
+      }
+    }
+    _echoChannel = live;
+    _echoSub?.cancel();
+    _echoSub = connector.watchChannelMessages(live).listen(_harvestEchoes);
+    setState(
+        () => _status = '$_echoChannelName live in slot ${live!.index}');
+  }
+
+  /// Every echoed path on an outgoing row from THIS session is proven:
+  /// path[0] heard me, each forward pair heard each other.
+  void _harvestEchoes(List<ChannelMessage> messages) {
+    var newProofs = 0;
+    String? lastPath;
+    for (final m in messages) {
+      if (!m.isOutgoing || m.timestamp.isBefore(_launchTime)) continue;
+      if (m.pathHashSize != graph.selfStride) continue;
+      for (final variant in [m.pathBytes, ...m.pathVariants]) {
+        if (variant.isEmpty) continue;
+        final key = '${m.messageId}|${_fmtPath(variant)}';
+        if (!_echoFed.add(key)) continue;
+        graph.reportSendResult(variant, true);
+        newProofs++;
+        lastPath = _fmtPath(variant);
+      }
+    }
+    if (newProofs > 0 && mounted) {
+      setState(() {
+        _echoProven += newProofs;
+        _status = 'echo proven: $lastPath heard us '
+            '($_echoProven path(s) total)';
+      });
+    }
+  }
+
+  Future<void> _sendPing() async {
+    final ch = _echoChannel;
+    if (ch == null) return;
+    final text = '${_pingText.text.trim()} ${_pingSeq++}';
+    setState(() => _status = 'sending "$text" — listening for the echo…');
+    await connector.sendChannelMessage(ch, text);
   }
 
   static const _benchKhz = 920000;
@@ -694,10 +788,47 @@ class _PathLabScreenState extends State<PathLabScreen> {
                       style: const TextStyle(
                           fontFamily: 'monospace', color: Colors.teal)),
                 ),
+              const Divider(),
+              // ── flood-echo proof: send on #mtdebug, harvest the echo ─
+              Row(children: [
+                OutlinedButton(
+                    onPressed: connector.state ==
+                                MeshCoreConnectionState.connected &&
+                            _echoChannel == null
+                        ? _joinEchoChannel
+                        : null,
+                    child: Text(_echoChannel == null
+                        ? 'Join $_echoChannelName'
+                        : '$_echoChannelName ✓ slot ${_echoChannel!.index}')),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: TextField(
+                        controller: _pingText,
+                        decoration: const InputDecoration(
+                            labelText: 'channel ping text', isDense: true))),
+                const SizedBox(width: 8),
+                FilledButton.tonal(
+                    onPressed: _echoChannel != null &&
+                            connector.state ==
+                                MeshCoreConnectionState.connected
+                        ? _sendPing
+                        : null,
+                    child: const Text('Send')),
+              ]),
+              Text(
+                  'each echo heard = proven egress: its path[0] heard US '
+                  '($_echoProven proven so far)',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
             ],
           );
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _echoSub?.cancel();
+    super.dispose();
   }
 }
