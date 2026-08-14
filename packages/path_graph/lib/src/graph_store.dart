@@ -168,6 +168,57 @@ class GraphStore {
     _dirtyEdges.addAll(edges.keys);
   }
 
+  /// Folds rows keyed by a wider-than-2-byte hash into their 2-byte
+  /// bucket (hashes are pubkey prefixes, so truncation is the identity
+  /// the rest of the graph already uses). Runs after load: heals
+  /// databases and session files written before the mint was fixed.
+  void normalizeKeys() {
+    for (final hash in nodes.keys.where((k) => k.length > 4).toList()) {
+      final ghost = nodes.remove(hash)!;
+      _deletedNodes.add(hash);
+      final bucket = hash.substring(0, 4);
+      final target = nodes[bucket];
+      if (target == null) {
+        nodes[bucket] = ghost;
+      } else {
+        target
+          ..name ??= ghost.name
+          ..role ??= ghost.role
+          ..lat ??= ghost.lat
+          ..lon ??= ghost.lon
+          ..pubkey ??= ghost.pubkey
+          ..region ??= ghost.region;
+        if ((ghost.lastHeard ?? 0) > (target.lastHeard ?? 0)) {
+          target.lastHeard = ghost.lastHeard;
+        }
+      }
+      _dirtyNodes.add(bucket);
+    }
+
+    for (final key in edges.keys
+        .where((k) => k.$1.length > 4 || k.$2.length > 4)
+        .toList()) {
+      final ghost = edges.remove(key)!;
+      _deletedEdges.add(key);
+      final bucket = (key.$1.substring(0, 4), key.$2.substring(0, 4));
+      final target = edges[bucket];
+      if (target == null) {
+        edges[bucket] = ghost;
+      } else {
+        target
+          ..s += ghost.s
+          ..n += ghost.n
+          ..trafficWeight += ghost.trafficWeight
+          ..obsCount += ghost.obsCount
+          ..measuredSnr ??= ghost.measuredSnr;
+        if ((ghost.lastObserved ?? 0) > (target.lastObserved ?? 0)) {
+          target.lastObserved = ghost.lastObserved;
+        }
+      }
+      _dirtyEdges.add(bucket);
+    }
+  }
+
   Future<void> load() async {
     for (final row in await _db.select(_db.graphNodes).get()) {
       nodes[row.hashBytes] = NodeState(

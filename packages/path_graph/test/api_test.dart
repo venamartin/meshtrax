@@ -45,4 +45,23 @@ void main() {
     expect(graph.selfPubkey, 'ab' * 32);
     expect(graph.selfStride, 2);
   });
+
+  test('wide hops truncate into 2-byte buckets — never a second identity',
+      () {
+    // Found live (2026-08-14): a stride-3 path minted 'A27782' beside
+    // 'A277' — the same repeater (pubkey a27782…) counted twice, and a
+    // 6-hex node id would violate the v2 export format besides.
+    graph.setRadioIdentity('ab' * 32, 2);
+    graph.observePath(
+      Uint8List.fromList([0xA2, 0x77, 0x82, 0x13, 0x12, 0x99]),
+      3,
+      ObservationOrigin.pubkeyConfirmed('b0' * 32),
+    );
+    final snap = graph.snapshot();
+    expect(snap.nodes.keys, unorderedEquals(['A277', '1312']));
+    expect(snap.edges.keys, [('A277', '1312')]);
+    expect(graph.egressCandidates().map((c) => c.repeaterHash),
+        everyElement(hasLength(4)));
+    expect(graph.ingressCandidates('b0' * 32).single.repeaterHash, 'A277');
+  });
 }

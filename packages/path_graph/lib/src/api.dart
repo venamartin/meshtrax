@@ -156,6 +156,9 @@ class PathGraph {
   Future<void> init() async {
     await _store.load();
     await _evidence.load();
+    // Heal rows minted before wide hops truncated into 2-byte buckets.
+    _store.normalizeKeys();
+    _evidence.normalizeKeys();
   }
 
   Future<void> dispose() async {
@@ -182,10 +185,15 @@ class PathGraph {
 
   int get _arrivalMillis => _now().millisecondsSinceEpoch;
 
+  /// Hash-native 2-byte identity: a hop is always its first 2 bytes,
+  /// whatever width the sender used. Hashes are pubkey prefixes, so a
+  /// 3-byte hop truncates losslessly into the bucket the rest of the
+  /// graph knows — found live: a stride-3 path minted 'A27782' beside
+  /// 'A277', the same repeater counted twice.
   static String _hopHex(Uint8List path, int stride, int hopIndex) {
     final start = hopIndex * stride;
     final b = StringBuffer();
-    for (var i = start; i < start + stride; i++) {
+    for (var i = start; i < start + 2; i++) {
       b.write(path[i].toRadixString(16).padLeft(2, '0').toUpperCase());
     }
     return b.toString();
@@ -909,6 +917,8 @@ class PathGraph {
 
     _store.markAllDirty();
     _evidence.markAllDirty();
+    _store.normalizeKeys();
+    _evidence.normalizeKeys();
     await flush();
   }
 

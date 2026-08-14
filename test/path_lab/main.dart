@@ -294,7 +294,18 @@ class _PathLabScreenState extends State<PathLabScreen> {
 
   void _findPath() {
     final pk = _contactPk.text.trim();
-    if (pk.isEmpty) return;
+    if (pk.length != 4 && pk.length != 64) {
+      setState(() {
+        _pathResult = '';
+        _routes = const [];
+        _status = pk.isEmpty
+            ? 'findPath needs a target — repeater hash (4 hex) or contact '
+                'pubkey (64 hex). Tap a node on the map to get its hash.'
+            : 'not a target: "$pk" is ${pk.length} chars — need 4 (repeater '
+                'hash) or 64 (contact pubkey)';
+      });
+      return;
+    }
     // 4 hex chars = repeater 2-byte hash; otherwise a contact pubkey.
     final isRepeater = pk.length == 4;
     final result =
@@ -543,7 +554,8 @@ class _PathLabScreenState extends State<PathLabScreen> {
                         decoration: const InputDecoration(
                             labelText:
                                 'contact pubkey (64 hex) or repeater hash (4 hex)'))),
-                TextButton(onPressed: _findPath, child: const Text('findPath')),
+                FilledButton.tonal(
+                    onPressed: _findPath, child: const Text('Find Path')),
               ]),
               Row(children: [
                 FilledButton.tonal(

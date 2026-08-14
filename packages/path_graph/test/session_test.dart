@@ -150,6 +150,57 @@ void main() {
     await second.dispose();
   });
 
+  test('a checkpoint carrying 6-hex ghosts loads healed and merged', () async {
+    // Sessions saved before wide hops truncated into 2-byte buckets hold
+    // the same repeater twice ('A277' and 'A27782' — live find,
+    // 2026-08-14). Loading folds the ghost into its bucket.
+    final source = await populated();
+    final doc = source.saveSession();
+    await source.dispose();
+
+    final bucketWeight = ((doc['ingress'] as List).cast<Map>().singleWhere(
+            (r) => r['owner'] == selfPk && r['repeater'] == 'A277'))['weight']
+        as num;
+    (doc['nodes'] as List).add({'hash': 'A27782', 'source': 'observed'});
+    (doc['edges'] as List).add({
+      'from': 'A27782',
+      'to': '1312',
+      'source': 'observed',
+      's': 1,
+      'n': 2,
+      'traffic_weight': 3.0,
+      'obs_count': 3,
+    });
+    (doc['ingress'] as List).add({
+      'owner': selfPk,
+      'repeater': 'A27782',
+      'weight': 2.0,
+      'last_seen': DateTime.now().millisecondsSinceEpoch,
+      'tier': 'inferred',
+    });
+
+    final g = PathGraph(NativeDatabase.memory());
+    await g.init();
+    await g.loadSession(doc);
+
+    final snap = g.snapshot();
+    expect(snap.nodes.keys.where((k) => k.length > 4), isEmpty);
+    expect(snap.edges.keys.where((k) => k.$1.length > 4 || k.$2.length > 4),
+        isEmpty);
+    final merged = snap.edges[('A277', '1312')]!;
+    expect(merged.n, greaterThanOrEqualTo(2), reason: 'ghost counters folded');
+    expect(merged.measuredSnr, 6.5, reason: 'bucket row keeps its own SNR');
+    g.setRadioIdentity(selfPk, 2);
+    final egress = g.egressCandidates();
+    expect(egress.map((c) => c.repeaterHash),
+        isNot(contains('A27782')));
+    expect(
+        egress.singleWhere((c) => c.repeaterHash == 'A277').weight,
+        greaterThan(bucketWeight * 0.5),
+        reason: 'ghost weight folded in, not dropped');
+    await g.dispose();
+  });
+
   test('non-session documents are rejected', () async {
     final g = PathGraph(NativeDatabase.memory());
     await g.init();

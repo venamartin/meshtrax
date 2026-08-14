@@ -257,6 +257,37 @@ class EvidenceStore {
     _dirtyContacts.addAll(knownContacts.keys);
   }
 
+  /// Folds ingress rows keyed by a wider-than-2-byte repeater hash into
+  /// their 2-byte bucket (same healing rule as the graph store; DIRECT
+  /// is the one legitimate long key).
+  void normalizeKeys() {
+    for (final key in entries.keys
+        .where((k) => k.$2.length > 4 && k.$2 != directHash)
+        .toList()) {
+      final ghost = entries.remove(key)!;
+      _deleted.add(key);
+      final bucket = (key.$1, key.$2.substring(0, 4));
+      final target = entries[bucket];
+      if (target == null) {
+        entries[bucket] = ghost;
+      } else {
+        target
+          ..weight += ghost.weight
+          ..finalCount += ghost.finalCount
+          ..penultimateCount += ghost.penultimateCount
+          ..uplinkSnr ??= ghost.uplinkSnr
+          ..downlinkSnr ??= ghost.downlinkSnr;
+        if (ghost.lastSeen > target.lastSeen) {
+          target.lastSeen = ghost.lastSeen;
+          target.observedLat = ghost.observedLat ?? target.observedLat;
+          target.observedLon = ghost.observedLon ?? target.observedLon;
+        }
+        if (ghost.tier.index > target.tier.index) target.tier = ghost.tier;
+      }
+      _dirty.add(bucket);
+    }
+  }
+
   Future<void> load() async {
     for (final row in await _db.select(_db.contactIngress).get()) {
       entries[(row.ownerPubkey, row.repeaterHash)] = IngressEntry(
