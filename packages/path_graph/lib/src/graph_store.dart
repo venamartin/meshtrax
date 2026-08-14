@@ -53,9 +53,11 @@ class EdgeState {
 /// In-memory working set over the Drift durability layer. All hot
 /// operations run here; dirty rows flush in one transaction.
 class GraphStore {
-  GraphStore(this._db);
+  GraphStore(this._db, {this.hashWidthBytes = 2});
 
   final PathGraphDatabase _db;
+  final int hashWidthBytes;
+  int get _hexWidth => hashWidthBytes * 2;
 
   final Map<String, NodeState> nodes = {};
   final Map<(String, String), EdgeState> edges = {};
@@ -168,15 +170,16 @@ class GraphStore {
     _dirtyEdges.addAll(edges.keys);
   }
 
-  /// Folds rows keyed by a wider-than-2-byte hash into their 2-byte
-  /// bucket (hashes are pubkey prefixes, so truncation is the identity
-  /// the rest of the graph already uses). Runs after load: heals
-  /// databases and session files written before the mint was fixed.
+  /// Folds rows keyed by a wider-than-bucket hash into their bucket
+  /// (hashes are pubkey prefixes, so truncation is the identity the
+  /// rest of the graph already uses). Runs after load: heals databases
+  /// and session files written before the mint was fixed.
   void normalizeKeys() {
-    for (final hash in nodes.keys.where((k) => k.length > 4).toList()) {
+    for (final hash
+        in nodes.keys.where((k) => k.length > _hexWidth).toList()) {
       final ghost = nodes.remove(hash)!;
       _deletedNodes.add(hash);
-      final bucket = hash.substring(0, 4);
+      final bucket = hash.substring(0, _hexWidth);
       final target = nodes[bucket];
       if (target == null) {
         nodes[bucket] = ghost;
@@ -196,11 +199,14 @@ class GraphStore {
     }
 
     for (final key in edges.keys
-        .where((k) => k.$1.length > 4 || k.$2.length > 4)
+        .where((k) => k.$1.length > _hexWidth || k.$2.length > _hexWidth)
         .toList()) {
       final ghost = edges.remove(key)!;
       _deletedEdges.add(key);
-      final bucket = (key.$1.substring(0, 4), key.$2.substring(0, 4));
+      final bucket = (
+        key.$1.substring(0, _hexWidth),
+        key.$2.substring(0, _hexWidth)
+      );
       final target = edges[bucket];
       if (target == null) {
         edges[bucket] = ghost;

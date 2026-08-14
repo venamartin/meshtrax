@@ -54,10 +54,11 @@ class Candidate {
 /// keyed by radio pubkey) lists, with decay, hub demotion, and the
 /// discover supersede/slash discipline.
 class EvidenceStore {
-  EvidenceStore(this._db, this.config);
+  EvidenceStore(this._db, this.config, {this.hashWidthBytes = 2});
 
   final PathGraphDatabase _db;
   PathGraphConfig config;
+  final int hashWidthBytes;
 
   /// (ownerPubkey, repeaterHash) → entry.
   final Map<(String, String), IngressEntry> entries = {};
@@ -257,16 +258,17 @@ class EvidenceStore {
     _dirtyContacts.addAll(knownContacts.keys);
   }
 
-  /// Folds ingress rows keyed by a wider-than-2-byte repeater hash into
-  /// their 2-byte bucket (same healing rule as the graph store; DIRECT
-  /// is the one legitimate long key).
+  /// Folds ingress rows keyed by a wider-than-bucket repeater hash into
+  /// their bucket (same healing rule as the graph store; DIRECT is the
+  /// one legitimate non-hash key).
   void normalizeKeys() {
+    final hexWidth = hashWidthBytes * 2;
     for (final key in entries.keys
-        .where((k) => k.$2.length > 4 && k.$2 != directHash)
+        .where((k) => k.$2.length > hexWidth && k.$2 != directHash)
         .toList()) {
       final ghost = entries.remove(key)!;
       _deleted.add(key);
-      final bucket = (key.$1, key.$2.substring(0, 4));
+      final bucket = (key.$1, key.$2.substring(0, hexWidth));
       final target = entries[bucket];
       if (target == null) {
         entries[bucket] = ghost;

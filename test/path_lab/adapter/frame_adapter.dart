@@ -126,15 +126,15 @@ ParsedAdvert? parseAdvert(Uint8List payload) {
 /// Each SNR byte is signed, quarter-dB: the level at which that hop
 /// heard the *previous* transmission (snr[0] = hop 1 heard us).
 ({List<String> hops, List<double> snrs})? parseTraceResponse(
-    Uint8List frame, int stride) {
-  if (frame.length < 12) return null;
+    Uint8List frame, int stride, int bucketBytes) {
+  if (frame.length < 12 || stride < bucketBytes) return null;
   final pathLen = frame[2];
   const headerLen = 12;
   if (headerLen + pathLen > frame.length) return null;
   final pathBytes = frame.sublist(headerLen, headerLen + pathLen);
   final hops = <String>[];
   for (var i = 0; i + stride <= pathBytes.length; i += stride) {
-    hops.add(_hex(pathBytes.sublist(i, i + 2))); // 2-byte bucket
+    hops.add(_hex(pathBytes.sublist(i, i + bucketBytes)));
   }
   final snrs = frame
       .sublist(headerLen + pathLen)
@@ -269,7 +269,11 @@ class PathLabAdapter {
         ? '(direct)'
         : [
             for (var i = 0; i + stride <= p.length; i += stride)
-              _hex(p.sublist(i, i + 2))
+              _hex(p.sublist(
+                  i,
+                  i + (stride < graph.hashWidthBytes
+                      ? stride
+                      : graph.hashWidthBytes)))
           ].join(',');
 
     lastPathDiscovery = 'to ${parsed.pubkeyPrefix}: '
@@ -282,7 +286,8 @@ class PathLabAdapter {
   /// Trace results are top-grade evidence: per-hop SNR in the traversal
   /// direction (round-trip paths fill both directions naturally).
   void _handleTraceData(Uint8List frame) {
-    final parsed = parseTraceResponse(frame, graph.selfStride);
+    final parsed =
+        parseTraceResponse(frame, graph.selfStride, graph.hashWidthBytes);
     if (parsed == null || parsed.hops.isEmpty) return;
     lastTrace = parsed;
     graph.observeTrace(parsed.hops, parsed.snrs);
@@ -306,7 +311,8 @@ class PathLabAdapter {
       final advert = parseAdvert(packet.payload);
       if (advert != null) {
         if (advert.type == _advTypeRepeater || advert.type == _advTypeRoom) {
-          graph.ingestNode(advert.pubkeyHex.substring(0, 4),
+          graph.ingestNode(
+              advert.pubkeyHex.substring(0, graph.hashWidthBytes * 2),
               name: advert.name,
               pubkey: advert.pubkeyHex,
               lat: advert.lat,
@@ -346,9 +352,9 @@ class PathLabAdapter {
     final uplinkSnr = ctl[1].toSigned(8) / 4.0;
     final rxSnr = frame[1].toSigned(8) / 4.0; // how well WE heard them
     final pubkey = ctl.sublist(6);
-    if (pubkey.length < 2) return;
+    if (pubkey.length < graph.hashWidthBytes) return;
     pendingDiscover.add(DiscoverResponse(
-        repeaterHash: _hex(pubkey.sublist(0, 2)),
+        repeaterHash: _hex(pubkey.sublist(0, graph.hashWidthBytes)),
         uplinkSnr: uplinkSnr,
         rxSnr: rxSnr));
   }

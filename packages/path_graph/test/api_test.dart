@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -26,7 +27,7 @@ void main() {
       1,
       const ObservationOrigin.anonymous(),
     );
-    expect(graph.counters.dropped1Byte, 1);
+    expect(graph.counters.droppedNarrow, 1);
     expect(graph.counters.observationsApplied, 0);
   });
 
@@ -37,13 +38,73 @@ void main() {
       const ObservationOrigin.anonymous(),
     );
     expect(graph.counters.observationsApplied, 1);
-    expect(graph.counters.dropped1Byte, 0);
+    expect(graph.counters.droppedNarrow, 0);
   });
 
   test('radio identity is stored', () {
     graph.setRadioIdentity('ab' * 32, 2);
     expect(graph.selfPubkey, 'ab' * 32);
     expect(graph.selfStride, 2);
+  });
+
+  group('hashWidthBytes: 3', () {
+    test('the whole pipeline speaks 6-hex identities', () async {
+      final g = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3);
+      await g.init();
+      g.setRadioIdentity('ab' * 32, 3);
+
+      // A stride-2 path cannot be widened — dropped, counted.
+      g.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous());
+      expect(g.counters.droppedNarrow, 1);
+
+      // Stride-3 is native; stride-4 truncates into 3-byte buckets.
+      g.observePath(
+          Uint8List.fromList([0xA2, 0x77, 0x82, 0x13, 0x12, 0x99]),
+          3,
+          ObservationOrigin.pubkeyConfirmed('b0' * 32));
+      g.observePath(
+          Uint8List.fromList([0xA2, 0x77, 0x82, 0x0B, 0x13, 0x12, 0x99, 0x0C]),
+          4,
+          const ObservationOrigin.anonymous());
+      final snap = g.snapshot();
+      expect(snap.nodes.keys, unorderedEquals(['A27782', '131299']));
+      expect(snap.edges.keys, [('A27782', '131299')]);
+      expect(g.ingressCandidates('b0' * 32).single.repeaterHash, 'A27782');
+
+      // Export stamps the width; the exported ids are 6-hex.
+      final doc = g.exportGraph();
+      expect((doc['graph'] as Map)['hash_width'], 3);
+      expect(((doc['nodes'] as List).first as Map)['id'], hasLength(6));
+      await g.dispose();
+    });
+
+    test('width-2 documents and databases are refused at width 3', () async {
+      final g2 = PathGraph(NativeDatabase.memory());
+      await g2.init();
+      g2.ingestNode('A277', name: 'Alpha');
+      final export = g2.exportGraph();
+      final session = g2.saveSession();
+
+      final g3 = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3);
+      await g3.init();
+      expect(g3.importGraph(export), throwsFormatException);
+      expect(g3.loadSession(session), throwsFormatException);
+      await g3.dispose();
+
+      // And the database itself is stamped: reopening g2's executor at
+      // width 3 must refuse rather than mangle.
+      await g2.flush();
+      final file = File(
+          '${Directory.systemTemp.createTempSync('pg_width').path}/w.db');
+      final w2 = PathGraph(NativeDatabase(file));
+      await w2.init();
+      w2.ingestNode('A277', name: 'Alpha');
+      await w2.dispose();
+      final w3 = PathGraph(NativeDatabase(file), hashWidthBytes: 3);
+      await expectLater(w3.init(), throwsStateError);
+      await g2.dispose();
+    });
   });
 
   test('wide hops truncate into 2-byte buckets — never a second identity',

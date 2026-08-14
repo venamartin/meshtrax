@@ -294,20 +294,22 @@ class _PathLabScreenState extends State<PathLabScreen> {
 
   void _findPath() {
     final pk = _contactPk.text.trim();
-    if (pk.length != 4 && pk.length != 64) {
+    final hashLen = graph.hashWidthBytes * 2;
+    if (pk.length != hashLen && pk.length != 64) {
       setState(() {
         _pathResult = '';
         _routes = const [];
         _status = pk.isEmpty
-            ? 'findPath needs a target — repeater hash (4 hex) or contact '
-                'pubkey (64 hex). Tap a node on the map to get its hash.'
-            : 'not a target: "$pk" is ${pk.length} chars — need 4 (repeater '
-                'hash) or 64 (contact pubkey)';
+            ? 'findPath needs a target — repeater hash ($hashLen hex) or '
+                'contact pubkey (64 hex). Tap a node on the map to get its '
+                'hash.'
+            : 'not a target: "$pk" is ${pk.length} chars — need $hashLen '
+                '(repeater hash) or 64 (contact pubkey)';
       });
       return;
     }
-    // 4 hex chars = repeater 2-byte hash; otherwise a contact pubkey.
-    final isRepeater = pk.length == 4;
+    // Bucket-width hex = repeater hash; otherwise a contact pubkey.
+    final isRepeater = pk.length == hashLen;
     final result =
         isRepeater ? graph.findPathToRepeater(pk) : graph.findPath(pk);
     final alternatives = isRepeater
@@ -444,7 +446,7 @@ class _PathLabScreenState extends State<PathLabScreen> {
               // ── live feed ─────────────────────────────────────────
               Text('frames: ${adapter.framesSeen} · '
                   'observed: ${counters.observationsApplied} · '
-                  'dropped 1-byte: ${counters.dropped1Byte} · '
+                  'dropped narrow: ${counters.droppedNarrow} · '
                   'traces skipped: ${adapter.tracesSkipped}'),
               Text('graph: ${snap.nodes.length} nodes · '
                   '${snap.edges.length} edges'),
@@ -551,9 +553,9 @@ class _PathLabScreenState extends State<PathLabScreen> {
                 Expanded(
                     child: TextField(
                         controller: _contactPk,
-                        decoration: const InputDecoration(
-                            labelText:
-                                'contact pubkey (64 hex) or repeater hash (4 hex)'))),
+                        decoration: InputDecoration(
+                            labelText: 'contact pubkey (64 hex) or repeater '
+                                'hash (${graph.hashWidthBytes * 2} hex)'))),
                 FilledButton.tonal(
                     onPressed: _findPath, child: const Text('Find Path')),
               ]),

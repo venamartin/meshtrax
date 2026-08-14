@@ -51,7 +51,7 @@ class DiscoverResponse {
   const DiscoverResponse(
       {required this.repeaterHash, this.uplinkSnr, this.rxSnr});
 
-  /// 4-hex 2-byte hash bucket.
+  /// Hash bucket in hex, at the graph's identity width.
   final String repeaterHash;
 
   /// dB at which the repeater heard OUR request (control payload byte
@@ -89,8 +89,8 @@ class DirectResult extends PathResult {
 }
 
 /// A route over links proven in both directions. [pathBytes] is wire
-/// format (2-byte hops); truncate each hop to its first byte for
-/// 1-byte-mode targets.
+/// format (hops at the graph's identity width); truncate each hop to
+/// its first byte for 1-byte-mode targets.
 class RouteResult extends PathResult {
   const RouteResult(this.pathBytes, this.estDelivery);
   final Uint8List pathBytes;
@@ -106,26 +106,42 @@ class FloodResult extends PathResult {
 class PathGraphCounters {
   const PathGraphCounters({
     required this.observationsApplied,
-    required this.dropped1Byte,
+    required this.droppedNarrow,
   });
 
   final int observationsApplied;
-  final int dropped1Byte;
+
+  /// Paths whose stride was narrower than the graph's bucket width —
+  /// unusable for identity (a 1-byte hash can't be widened to 2).
+  final int droppedNarrow;
 }
 
 /// The module. Push-in, never read-out: this API is the complete
 /// inventory of everything the module will ever know.
 class PathGraph {
+  /// [hashWidthBytes] is the graph's identity width — every node, edge
+  /// and ingress key is the first N bytes of a pubkey. 2 is right for
+  /// today's meshes; the knob exists so a regional mesh outgrowing 2
+  /// bytes moves to 3 or 4 by re-collecting (or re-collapsing stored
+  /// pubkeys), not by hunting hardcoded 2s. The width is stamped into
+  /// the database, exports, and session checkpoints — mixing widths is
+  /// refused rather than silently mangled.
   PathGraph(
     QueryExecutor executor, {
     DateTime Function()? now,
     PathGraphConfig config = const PathGraphConfig(),
-  })  : _db = PathGraphDatabase(executor),
+    this.hashWidthBytes = 2,
+  })  : assert(hashWidthBytes >= 2 && hashWidthBytes <= 4,
+            'wire path hops are 1–4 bytes; buckets below 2 are useless'),
+        _db = PathGraphDatabase(executor),
         _now = now ?? DateTime.now,
         _estimator = Estimator(config) {
-    _store = GraphStore(_db);
-    _evidence = EvidenceStore(_db, config);
+    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes);
+    _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
   }
+
+  final int hashWidthBytes;
+  int get _hexWidth => hashWidthBytes * 2;
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
@@ -150,13 +166,37 @@ class PathGraph {
   int _selfStride = 2;
 
   int _observationsApplied = 0;
-  int _dropped1Byte = 0;
+  int _droppedNarrow = 0;
 
   /// Loads persisted state into the in-memory working set.
   Future<void> init() async {
+    // The identity width is a property of the collected data, not of
+    // the code — refuse a database collected at another width rather
+    // than silently mangling its keys. (Databases from before the
+    // stamp were all width-2.)
+    final stamp = await (_db.select(_db.graphMeta)
+          ..where((t) => t.key.equals('hash_width')))
+        .getSingleOrNull();
+    // No stamp + existing rows = a database from before the stamp,
+    // which was always collected at width 2.
+    final dbWidth = stamp != null
+        ? int.tryParse(stamp.value) ?? 2
+        : (await (_db.select(_db.graphNodes)..limit(1)).get()).isEmpty
+            ? hashWidthBytes
+            : 2;
+    if (dbWidth != hashWidthBytes) {
+      throw StateError(
+          'database was collected at hash width $dbWidth, this PathGraph '
+          'runs at $hashWidthBytes — re-collect or re-collapse; widths '
+          'cannot mix');
+    }
+    await _db.into(_db.graphMeta).insertOnConflictUpdate(
+        GraphMetaCompanion.insert(
+            key: 'hash_width', value: '$hashWidthBytes'));
+
     await _store.load();
     await _evidence.load();
-    // Heal rows minted before wide hops truncated into 2-byte buckets.
+    // Heal rows minted before wide hops truncated into buckets.
     _store.normalizeKeys();
     _evidence.normalizeKeys();
   }
@@ -185,15 +225,15 @@ class PathGraph {
 
   int get _arrivalMillis => _now().millisecondsSinceEpoch;
 
-  /// Hash-native 2-byte identity: a hop is always its first 2 bytes,
-  /// whatever width the sender used. Hashes are pubkey prefixes, so a
-  /// 3-byte hop truncates losslessly into the bucket the rest of the
-  /// graph knows — found live: a stride-3 path minted 'A27782' beside
-  /// 'A277', the same repeater counted twice.
-  static String _hopHex(Uint8List path, int stride, int hopIndex) {
+  /// Hash-native identity: a hop is always its first [hashWidthBytes]
+  /// bytes, whatever width the sender used. Hashes are pubkey prefixes,
+  /// so a wider hop truncates losslessly into the bucket the rest of
+  /// the graph knows — found live: a stride-3 path minted 'A27782'
+  /// beside 'A277', the same repeater counted twice.
+  String _hopHex(Uint8List path, int stride, int hopIndex) {
     final start = hopIndex * stride;
     final b = StringBuffer();
-    for (var i = start; i < start + 2; i++) {
+    for (var i = start; i < start + hashWidthBytes; i++) {
       b.write(path[i].toRadixString(16).padLeft(2, '0').toUpperCase());
     }
     return b.toString();
@@ -210,8 +250,9 @@ class PathGraph {
   int get selfStride => _selfStride;
 
   /// Any received path (already parsed by the caller — the module never
-  /// touches wire frames). Rejects stride < 2 (counted, not silent).
-  /// Hops wider than 2 bytes truncate losslessly into 2-byte buckets.
+  /// touches wire frames). Rejects strides narrower than the bucket
+  /// width (counted, not silent). Wider hops truncate losslessly into
+  /// buckets.
   /// [messageId] enables union-per-message dedup across flood variants.
   /// [lastHopHeard]: true for paths physically received over RF (their
   /// final hop is a repeater *I heard* → feeds the last-hop prior);
@@ -243,8 +284,8 @@ class PathGraph {
       return;
     }
 
-    if (stride < 2) {
-      _dropped1Byte++;
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
       return;
     }
     if (pathBytes.length % stride != 0) return;
@@ -349,7 +390,7 @@ class PathGraph {
   }
 
   /// Trace result: top-grade evidence — the only source of middle-hop
-  /// SNR. [hops] are 2-byte hash hex in traversal order; [snrs][i] is
+  /// SNR. [hops] are bucket-width hash hex in traversal order; [snrs][i] is
   /// the level at which hops[i] heard the *previous* transmission (so
   /// snrs[0] is my first hop hearing ME → proven egress). Each hop pair
   /// gets measuredSnr plus an attempt-counted success. Round-trip paths
@@ -450,11 +491,13 @@ class PathGraph {
     return PathResult.path(_hopsToBytes(route.hops), route.estDelivery);
   }
 
-  static Uint8List _hopsToBytes(List<String> hops) {
-    final bytes = Uint8List(hops.length * 2);
+  Uint8List _hopsToBytes(List<String> hops) {
+    final bytes = Uint8List(hops.length * hashWidthBytes);
     for (var i = 0; i < hops.length; i++) {
-      bytes[i * 2] = int.parse(hops[i].substring(0, 2), radix: 16);
-      bytes[i * 2 + 1] = int.parse(hops[i].substring(2, 4), radix: 16);
+      for (var b = 0; b < hashWidthBytes; b++) {
+        bytes[i * hashWidthBytes + b] =
+            int.parse(hops[i].substring(b * 2, b * 2 + 2), radix: 16);
+      }
     }
     return bytes;
   }
@@ -501,14 +544,7 @@ class PathGraph {
       if (route == null) break;
       final key = route.hops.join('>');
       if (seen.add(key)) {
-        final bytes = Uint8List(route.hops.length * 2);
-        for (var h = 0; h < route.hops.length; h++) {
-          bytes[h * 2] =
-              int.parse(route.hops[h].substring(0, 2), radix: 16);
-          bytes[h * 2 + 1] =
-              int.parse(route.hops[h].substring(2, 4), radix: 16);
-        }
-        results.add(RouteResult(bytes, route.estDelivery));
+        results.add(RouteResult(_hopsToBytes(route.hops), route.estDelivery));
       }
       for (var h = 0; h < route.hops.length - 1; h++) {
         final k = (route.hops[h], route.hops[h + 1]);
@@ -561,7 +597,7 @@ class PathGraph {
   Future<void> clearLearnedData() async {
     Retention(_store, _evidence, _estimator).clearLearnedData();
     _observationsApplied = 0;
-    _dropped1Byte = 0;
+    _droppedNarrow = 0;
     await flush();
   }
 
@@ -577,7 +613,7 @@ class PathGraph {
     return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
   }
 
-  static final _hashPattern = RegExp(r'^[0-9A-F]{4}$');
+  late final _hashPattern = RegExp('^[0-9A-F]{$_hexWidth}\$');
 
   static int? _millisFromIso(Object? value) =>
       value is String ? DateTime.tryParse(value)?.millisecondsSinceEpoch : null;
@@ -618,6 +654,12 @@ class PathGraph {
       throw const FormatException('import exceeds size caps');
     }
     final meta = (document['graph'] as Map?) ?? const {};
+    final docWidth = (meta['hash_width'] as num?)?.toInt() ?? 2;
+    if (docWidth != hashWidthBytes) {
+      throw FormatException(
+          'document uses hash width $docWidth, this graph runs at '
+          '$hashWidthBytes — widths cannot mix');
+    }
     final region = meta['region_hint'] as String?;
 
     final kept = <String>{}; // hash buckets that survived the geo filter
@@ -738,7 +780,7 @@ class PathGraph {
         'generated_at': _isoFromMillis(_arrivalMillis),
         'collector': collector,
         if (regionHint != null) 'region_hint': regionHint,
-        'hash_width': 2,
+        'hash_width': hashWidthBytes,
       },
       'nodes': nodes,
       'links': links,
@@ -767,10 +809,11 @@ class PathGraph {
       'format': _sessionFormat,
       'private': true,
       'saved_at': _isoFromMillis(_arrivalMillis),
+      'hash_width': hashWidthBytes,
       'self': {'pubkey': _selfPubkey, 'stride': _selfStride},
       'counters': {
         'observations_applied': _observationsApplied,
-        'dropped_1byte': _dropped1Byte,
+        'dropped_narrow': _droppedNarrow,
       },
       'nodes': [
         for (final e in _store.nodes.entries)
@@ -845,6 +888,13 @@ class PathGraph {
       throw FormatException(
           'not a $_sessionFormat document (got ${document['format']})');
     }
+    // Checkpoints from before the stamp existed were all width-2.
+    final docWidth = (document['hash_width'] as num?)?.toInt() ?? 2;
+    if (docWidth != hashWidthBytes) {
+      throw FormatException(
+          'checkpoint was saved at hash width $docWidth, this graph runs '
+          'at $hashWidthBytes — widths cannot mix');
+    }
     _flushTimer?.cancel();
     _flushTimer = null;
     await _store.clear();
@@ -913,7 +963,9 @@ class PathGraph {
     final counters = (document['counters'] as Map?) ?? const {};
     _observationsApplied =
         (counters['observations_applied'] as num?)?.toInt() ?? 0;
-    _dropped1Byte = (counters['dropped_1byte'] as num?)?.toInt() ?? 0;
+    _droppedNarrow = (counters['dropped_narrow'] as num?)?.toInt() ??
+        (counters['dropped_1byte'] as num?)?.toInt() ??
+        0;
 
     _store.markAllDirty();
     _evidence.markAllDirty();
@@ -950,17 +1002,11 @@ class PathGraph {
     if (route == null) {
       return const PathResult.flood(FloodReason.noBidirectionalRoute);
     }
-
-    final bytes = Uint8List(route.hops.length * 2);
-    for (var i = 0; i < route.hops.length; i++) {
-      bytes[i * 2] = int.parse(route.hops[i].substring(0, 2), radix: 16);
-      bytes[i * 2 + 1] = int.parse(route.hops[i].substring(2, 4), radix: 16);
-    }
-    return PathResult.path(bytes, route.estDelivery);
+    return PathResult.path(_hopsToBytes(route.hops), route.estDelivery);
   }
 
   PathGraphCounters get counters => PathGraphCounters(
         observationsApplied: _observationsApplied,
-        dropped1Byte: _dropped1Byte,
+        droppedNarrow: _droppedNarrow,
       );
 }

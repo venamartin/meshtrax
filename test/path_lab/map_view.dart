@@ -37,13 +37,15 @@ Color snrColor(double? db) {
 double? _edgeSnr(EdgeState e) => e.measuredSnr ?? e.importedSnr;
 
 /// Screen placement for every node: geographic where known, a grid
-/// strip where not.
+/// strip where not. [gridAll] ignores positions and grids everything —
+/// the pure-topology view.
 class GraphLayout {
-  GraphLayout(Map<String, NodeState> nodes, this.size) {
+  GraphLayout(Map<String, NodeState> nodes, this.size,
+      {this.gridAll = false}) {
     final geo = <String, NodeState>{};
     final loose = <String>[];
     nodes.forEach((hash, n) {
-      if (_hasPosition(n)) {
+      if (!gridAll && _hasPosition(n)) {
         geo[hash] = n;
       } else {
         loose.add(hash);
@@ -69,6 +71,7 @@ class GraphLayout {
   }
 
   final Size size;
+  final bool gridAll;
   final Map<String, Offset> positions = {};
   final Set<String> unplaced = {};
   late final double stripTop;
@@ -122,6 +125,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   String? _selected;
+  bool _gridAll = false;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +137,13 @@ class _MapScreenState extends State<MapScreen> {
             '($placed placed) · ${snap.edges.length} directed links'),
         centerTitle: true,
         actions: [
+          IconButton(
+            onPressed: () => setState(() => _gridAll = !_gridAll),
+            icon: Icon(_gridAll ? Icons.public : Icons.grid_view),
+            tooltip: _gridAll
+                ? 'GPS layout (place positioned nodes)'
+                : 'grid layout (everything in the grid)',
+          ),
           IconButton(
             onPressed: () => setState(() => _selected = null),
             icon: const Icon(Icons.clear),
@@ -146,7 +157,8 @@ class _MapScreenState extends State<MapScreen> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final size = Size(constraints.maxWidth, constraints.maxHeight);
-                final layout = GraphLayout(snap.nodes, size);
+                final layout =
+                    GraphLayout(snap.nodes, size, gridAll: _gridAll);
                 return InteractiveViewer(
                   minScale: 0.5,
                   maxScale: 10,
@@ -308,7 +320,10 @@ class _TopologyPainter extends CustomPainter {
 
     layout.positions.forEach((hash, at) {
       final isSelected = hash == selected;
-      final placed = !layout.unplaced.contains(hash);
+      // Fill = has a GPS position, in both layouts — in grid view the
+      // filled circles are the ones that would place on the GPS map.
+      final n = nodes[hash];
+      final placed = n != null && _hasPosition(n);
       canvas.drawCircle(
           at,
           isSelected ? _nodeRadius + 3 : _nodeRadius,

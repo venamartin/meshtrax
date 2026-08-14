@@ -100,7 +100,7 @@ void main() {
   test('1-byte paths are dropped and counted', () {
     adapter.handleFrame(rxFrame(
         payloadType: 0x05, path: [0xA2, 0x13], payload: [1], stride: 1));
-    expect(graph.counters.dropped1Byte, 1);
+    expect(graph.counters.droppedNarrow, 1);
   });
 
   test('TRACE frames are skipped entirely', () {
