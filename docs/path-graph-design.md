@@ -1070,9 +1070,24 @@ open; the sections after this one are rationale and history.
    heard this node) from *hears* (this node heard them) and flags
    ONE-WAY links. Remaining informational surfaces for the campaign
    still to come.
-4. **Staleness GC + growth caps** (§ Staleness), **replay-corpus
-   recorder**, **package CI lines**.
-5. **Verification campaign** → the go/no-go gate.
+4. ~~**Staleness GC + growth caps**, **replay-corpus recorder**,
+   **package CI lines**~~ — DONE 2026-08-14. `sweepStale()` +
+   `clearLearnedData()` per § Staleness (infrastructure protected,
+   position tags on their own clock, caps evict hearsay first); REC in
+   the harness records JSONL corpora that `replayCorpus()` reproduces
+   byte-for-byte on the recorded clock; CI runs `dart analyze` +
+   `dart test` in the package. Same day: **hash width became a
+   constructor knob** (`hashWidthBytes` 2..4, stamped in DB/exports/
+   sessions, mismatches refused) after the first live-mesh session
+   found stride-3 hops minting 6-hex ghost identities ('A27782' beside
+   'A277' — truncation was documented but unimplemented; stores heal
+   ghosts on load). Corescope is fully out (user directive): not the
+   edges, not the gazetteer, nothing.
+5. **Verification campaign** → the go/no-go gate. Live-mesh harness
+   sessions on 910.525 are running (user-directed, user controls TX,
+   companion parks on 920 after); first session surfaced the
+   stride-3 bug within hours — the campaign is already earning its
+   keep.
 
 **Session checkpoints (done 2026-08-07).** `saveSession()` /
 `loadSession()` write and restore a complete private snapshot —
