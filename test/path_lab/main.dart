@@ -19,12 +19,17 @@ import 'package:meshtrax/services/storage_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:path_graph/path_graph.dart';
 
+import 'adapter/corpus.dart';
 import 'adapter/frame_adapter.dart';
 import 'map_view.dart';
 
 late final MeshCoreConnector connector;
 late final PathGraph graph;
 late final PathLabAdapter adapter;
+
+/// Session recorder, when armed (REC in the UI). Lives here so the
+/// frame subscription in [main] can see it.
+CorpusRecorder? recorder;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +45,10 @@ Future<void> main() async {
   graph = PathGraph(NativeDatabase(File('path_lab.db')));
   await graph.init();
   adapter = PathLabAdapter(graph);
-  connector.receivedFrames.listen(adapter.handleFrame);
+  connector.receivedFrames.listen((frame) {
+    recorder?.record(frame);
+    adapter.handleFrame(frame);
+  });
 
   // Push radio identity into the module once device info arrives.
   connector.addListener(() {
@@ -190,6 +198,28 @@ class _PathLabScreenState extends State<PathLabScreen> {
     setState(() => _status = c.currentFreqHz == khz
         ? 'radio on $mhz MHz'
         : 'retune NOT confirmed — freq reads ${c.currentFreqHz}');
+  }
+
+  /// Corpus recording: every raw frame with its arrival time, JSONL.
+  /// A recorded session replays deterministically (replayCorpus) — the
+  /// campaign's regression suite is made of these.
+  Future<void> _toggleRecord() async {
+    final active = recorder;
+    if (active != null) {
+      recorder = null;
+      await active.close();
+      setState(() =>
+          _status = 'REC stopped — ${active.frames} frames in the corpus');
+      return;
+    }
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .substring(0, 19)
+        .replaceAll(':', '-');
+    recorder = CorpusRecorder(File('path_lab_corpus_$stamp.jsonl'),
+        selfPubkey: connector.selfPublicKeyHex,
+        stride: connector.pathHashByteWidth);
+    setState(() => _status = 'REC → path_lab_corpus_$stamp.jsonl');
   }
 
   Future<void> _listPorts() async {
@@ -520,6 +550,18 @@ class _PathLabScreenState extends State<PathLabScreen> {
                             ? _enableAutoAdd
                             : null,
                     child: const Text('Auto-add ON')),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                    onPressed: _toggleRecord,
+                    icon: Icon(
+                        recorder != null
+                            ? Icons.stop_circle
+                            : Icons.fiber_manual_record,
+                        size: 16,
+                        color: recorder != null ? Colors.red : null),
+                    label: Text(recorder != null
+                        ? 'REC ${recorder!.frames}'
+                        : 'REC')),
                 const SizedBox(width: 8),
                 Expanded(child: Text(_status)),
               ]),

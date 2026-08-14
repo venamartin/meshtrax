@@ -109,3 +109,8 @@ notes.md
 # Local bench artifacts (path_lab harness SQLite store)
 *.db
 path_lab.db*
+
+# Recorded frame corpora and session checkpoints: raw RF / private
+# graph state — review before deliberately committing one as a fixture.
+path_lab_corpus_*.jsonl
+path_lab_session.json
