@@ -7,11 +7,13 @@ import 'db/database.dart';
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'retention.dart';
 import 'search.dart';
 
 export 'estimator.dart' show Estimator, PathGraphConfig;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
 export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
+export 'retention.dart' show RetentionPolicy, RetentionReport;
 
 /// Attribution quality of an observed path's originator.
 sealed class ObservationOrigin {
@@ -529,6 +531,31 @@ class PathGraph {
   /// Ranked ingress candidates for a contact (UI/debug).
   List<Candidate> ingressCandidates(String contactPubkey) =>
       _evidence.candidatesFor(contactPubkey, _arrivalMillis, isSelf: false);
+
+  /// Staleness sweep: forget idle unconfirmed hearsay past the policy's
+  /// age gate, drop stale position tags (row survives, coordinate goes),
+  /// and enforce the growth caps. Infrastructure — attempt-counted or
+  /// imported edges — is never aged out by idleness. Cheap; run on
+  /// connect and daily. The report is for the UI: silent deletion of a
+  /// user's learned map would be the wrong kind of surprise.
+  RetentionReport sweepStale(
+      {RetentionPolicy policy = const RetentionPolicy()}) {
+    final report = Retention(_store, _evidence, _estimator)
+        .sweep(_arrivalMillis, policy);
+    if (!report.isEmpty) _scheduleFlush();
+    return report;
+  }
+
+  /// The privacy escape hatch ("Clear learned data"): wipes everything
+  /// this radio learned — observed nodes/edges, local counters, contact
+  /// ingress, position tags. Imported priors survive; they are removed
+  /// separately by region. Flushes immediately.
+  Future<void> clearLearnedData() async {
+    Retention(_store, _evidence, _estimator).clearLearnedData();
+    _observationsApplied = 0;
+    _dropped1Byte = 0;
+    await flush();
+  }
 
   static const _maxImportNodes = 20000;
   static const _maxImportLinks = 100000;

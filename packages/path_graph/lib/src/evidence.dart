@@ -62,6 +62,7 @@ class EvidenceStore {
   /// (ownerPubkey, repeaterHash) → entry.
   final Map<(String, String), IngressEntry> entries = {};
   final Set<(String, String)> _dirty = {};
+  final Set<(String, String)> _deleted = {};
 
   /// Contact mirror (isolation invariant: fed only by ingestContact).
   final Map<String, ({String name, int lastRefreshed})> knownContacts = {};
@@ -212,6 +213,16 @@ class EvidenceStore {
     return now - e.lastSeen <= config.directFreshMinutes * 60 * 1000;
   }
 
+  void markDirty((String, String) key) => _dirty.add(key);
+
+  /// Retention removal. The row leaves memory now and the database on
+  /// the next flush.
+  void removeEntry((String, String) key) {
+    if (entries.remove(key) == null) return;
+    _dirty.remove(key);
+    _deleted.add(key);
+  }
+
   void ingestContact(String pubkey, String name, int arrival) {
     knownContacts[pubkey] = (name: name, lastRefreshed: arrival);
     _dirtyContacts.add(pubkey);
@@ -234,6 +245,7 @@ class EvidenceStore {
     entries.clear();
     knownContacts.clear();
     _dirty.clear();
+    _deleted.clear();
     _dirtyContacts.clear();
     _lastSlashMillis.clear();
     await _db.delete(_db.contactIngress).go();
@@ -266,13 +278,24 @@ class EvidenceStore {
   }
 
   Future<void> flush() async {
-    if (_dirty.isEmpty && _dirtyContacts.isEmpty) return;
+    if (_dirty.isEmpty && _dirtyContacts.isEmpty && _deleted.isEmpty) return;
     final dirty = _dirty.toList();
     final dirtyContacts = _dirtyContacts.toList();
+    final deleted = _deleted.toList();
     _dirty.clear();
     _dirtyContacts.clear();
+    _deleted.clear();
 
     await _db.batch((batch) {
+      // Deletes first: a row removed by a sweep and re-recorded before
+      // the flush must end up inserted, not dropped.
+      for (final key in deleted) {
+        batch.deleteWhere(
+            _db.contactIngress,
+            (t) =>
+                t.ownerPubkey.equals(key.$1) &
+                t.repeaterHash.equals(key.$2));
+      }
       for (final key in dirty) {
         final e = entries[key];
         if (e == null) continue;

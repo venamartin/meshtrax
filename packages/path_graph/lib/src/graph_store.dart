@@ -62,6 +62,8 @@ class GraphStore {
 
   final Set<String> _dirtyNodes = {};
   final Set<(String, String)> _dirtyEdges = {};
+  final Set<String> _deletedNodes = {};
+  final Set<(String, String)> _deletedEdges = {};
 
   /// Recently applied (messageId, edge) pairs — union-per-message dedup
   /// across flood variants. Bounded FIFO.
@@ -130,12 +132,31 @@ class GraphStore {
 
   void markEdgeDirty(String from, String to) => _dirtyEdges.add((from, to));
 
+  void markNodeDirty(String hash) => _dirtyNodes.add(hash);
+
+  /// Retention removal. The row leaves memory now and the database on
+  /// the next flush.
+  void removeEdge(String from, String to) {
+    final key = (from, to);
+    if (edges.remove(key) == null) return;
+    _dirtyEdges.remove(key);
+    _deletedEdges.add(key);
+  }
+
+  void removeNode(String hash) {
+    if (nodes.remove(hash) == null) return;
+    _dirtyNodes.remove(hash);
+    _deletedNodes.add(hash);
+  }
+
   /// Session restore: drop everything, in memory and on disk.
   Future<void> clear() async {
     nodes.clear();
     edges.clear();
     _dirtyNodes.clear();
     _dirtyEdges.clear();
+    _deletedNodes.clear();
+    _deletedEdges.clear();
     _seenMessageEdges.clear();
     _seenOrder.clear();
     await _db.delete(_db.graphEdges).go();
@@ -177,13 +198,33 @@ class GraphStore {
   }
 
   Future<void> flush() async {
-    if (_dirtyNodes.isEmpty && _dirtyEdges.isEmpty) return;
+    if (_dirtyNodes.isEmpty &&
+        _dirtyEdges.isEmpty &&
+        _deletedNodes.isEmpty &&
+        _deletedEdges.isEmpty) {
+      return;
+    }
     final dirtyNodes = _dirtyNodes.toList();
     final dirtyEdges = _dirtyEdges.toList();
+    final deletedNodes = _deletedNodes.toList();
+    final deletedEdges = _deletedEdges.toList();
     _dirtyNodes.clear();
     _dirtyEdges.clear();
+    _deletedNodes.clear();
+    _deletedEdges.clear();
 
     await _db.batch((batch) {
+      // Deletes first: a hash removed by a sweep and re-observed before
+      // the flush must end up inserted, not dropped.
+      for (final key in deletedEdges) {
+        batch.deleteWhere(
+            _db.graphEdges,
+            (t) =>
+                t.fromHash.equals(key.$1) & t.toHash.equals(key.$2));
+      }
+      for (final hash in deletedNodes) {
+        batch.deleteWhere(_db.graphNodes, (t) => t.hashBytes.equals(hash));
+      }
       for (final hash in dirtyNodes) {
         final n = nodes[hash];
         if (n == null) continue;
