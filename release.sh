@@ -69,6 +69,14 @@ zip_directory() {
     fi
 }
 
+# Flutter emits the Linux bundle - and caches its engine - under the host
+# architecture, so nothing Linux-related can be hardcoded to x64.
+case "$(uname -m)" in
+    x86_64)        LINUX_ARCH="x64" ;;
+    aarch64|arm64) LINUX_ARCH="arm64" ;;
+    *)             LINUX_ARCH="" ;;
+esac
+
 # Guard: a desktop bundle must ship the RELEASE Flutter engine. A debug or
 # profile engine cannot load the AOT snapshot, so the app exits immediately
 # with no window. This shipped broken for Windows in v1.7.7.
@@ -86,7 +94,7 @@ verify_release_engine() {
         linux)
             engine_rel="lib/libflutter_linux_gtk.so"
             aot_rel="lib/libapp.so"
-            artifact_base="linux-x64"
+            artifact_base="linux-$LINUX_ARCH"
             ;;
         *)
             echo "ERROR: verify_release_engine: unsupported platform '$platform'."
@@ -334,15 +342,20 @@ if [ "$BUILD_WINDOWS" = true ]; then
 fi
 
 if [ "$BUILD_LINUX" = true ]; then
-    echo "BUILD: Starting Linux Production Build..."
+    if [ -z "$LINUX_ARCH" ]; then
+        echo "ERROR: Unsupported Linux architecture '$(uname -m)'."
+        exit 1
+    fi
+
+    echo "BUILD: Starting Linux Production Build ($LINUX_ARCH)..."
     flutter build linux --release
     
     if [ $? -eq 0 ]; then
         mkdir -p "$DIST_DIR"
         
         # Define paths
-        SOURCE_PATH="build/linux/x64/release/bundle"
-        BASE_NAME="meshtrax-linux-v$VERSION.zip"
+        SOURCE_PATH="build/linux/$LINUX_ARCH/release/bundle"
+        BASE_NAME="meshtrax-linux-$LINUX_ARCH-v$VERSION.zip"
         LINUX_DEST_ZIP="$DIST_DIR/$BASE_NAME"
         LINUX_DEST_SHA1="$DIST_DIR/$BASE_NAME.sha1"
         
