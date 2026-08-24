@@ -15,7 +15,8 @@ class ObservedPath {
 
   const ObservedPath({required this.pathBytes, required this.isPrimary});
 
-  int getHopCount(int stride) => PathHelper.getHopCount(pathBytes, stride: stride);
+  int getHopCount(int stride) =>
+      PathHelper.getHopCount(pathBytes, stride: stride);
 }
 
 class _MeasuredPath {
@@ -28,7 +29,7 @@ class _MeasuredPath {
     required this.hops,
     required this.length,
     required this.path,
-    required this.previousLocation
+    required this.previousLocation,
   });
 
   static final distance = Distance();
@@ -41,18 +42,18 @@ class _MeasuredPath {
     if (currentLocation == null || previousLocation == null) {
       // Count the hop in the path, but don't factor it into the average
       return _MeasuredPath(
-          hops: hops,
-          length: length,
-          path: path + [current],
-          previousLocation: currentLocation ?? previousLocation
+        hops: hops,
+        length: length,
+        path: path + [current],
+        previousLocation: currentLocation ?? previousLocation,
       );
     } else {
       // Count the hop in the path and factor it into the average
       return _MeasuredPath(
-          hops: hops + 1,
-          length: length + distance(currentLocation, previousLocation!),
-          path: path + [current],
-          previousLocation: currentLocation
+        hops: hops + 1,
+        length: length + distance(currentLocation, previousLocation!),
+        path: path + [current],
+        previousLocation: currentLocation,
       );
     }
   }
@@ -64,10 +65,10 @@ class _MeasuredPath {
       return this;
     } else {
       return _MeasuredPath(
-          hops: hops + 1,
-          length: length + distance(endLocation, previousLocation!),
-          path: path,
-          previousLocation: endLocation
+        hops: hops + 1,
+        length: length + distance(endLocation, previousLocation!),
+        path: path,
+        previousLocation: endLocation,
       );
     }
   }
@@ -107,7 +108,8 @@ class PathResolver {
 
     void recurse(int depth, _MeasuredPath path) {
       // Abort early when the graph would take ages to search completely
-      if (++iterations >= pathBytes.length * pathBytes.length && shortestPath != null) {
+      if (++iterations >= pathBytes.length * pathBytes.length &&
+          shortestPath != null) {
         return;
       }
 
@@ -116,7 +118,9 @@ class PathResolver {
       if (slotStart >= pathBytes.length || pathBytes[slotStart] == 0x00) {
         // We've hit the end of our path or have encountered a padding sentinel
         final endPath = path.toEnd(endLocation);
-        final average = endPath.hops == 0 ? double.infinity : endPath.length / endPath.hops;
+        final average = endPath.hops == 0
+            ? double.infinity
+            : endPath.length / endPath.hops;
 
         if (average < shortestAverage || shortestPath == null) {
           shortestAverage = average;
@@ -134,16 +138,18 @@ class PathResolver {
           for (int i = 0; i < candidates.length; i++) {
             final candidate = candidates[i];
 
-            if (path.path.any((hop) => hop.contact?.publicKey == candidate.publicKey)) {
+            if (path.path.any(
+              (hop) => hop.contact?.publicKey == candidate.publicKey,
+            )) {
               // Don't reuse any hops
               continue;
             }
 
             final hop = ResolvedHop(
-                index: depth,
-                fullPrefixLabel: fullPrefix,
-                contact: candidate,
-                position: _resolvePosition(candidate)
+              index: depth,
+              fullPrefixLabel: fullPrefix,
+              contact: candidate,
+              position: _resolvePosition(candidate),
             );
 
             recurse(depth + 1, path + hop);
@@ -152,7 +158,15 @@ class PathResolver {
       }
     }
 
-    recurse(0, _MeasuredPath(hops: 0, length: 0, path: [], previousLocation: startLocation));
+    recurse(
+      0,
+      _MeasuredPath(
+        hops: 0,
+        length: 0,
+        path: [],
+        previousLocation: startLocation,
+      ),
+    );
 
     return shortestPath?.path ?? List.empty();
   }
