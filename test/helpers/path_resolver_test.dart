@@ -56,47 +56,9 @@ void main() {
     // The path I saw, from the Bay to the Central Coast
     final pathBytes = [0xc5, 0xbe, 0x10, 0x69, 0xbb, 0x3c, 0x68];
 
-    test('greedy algorithm picks exact path I saw with all repeaters', () {
-      expect(
-        PathResolver.buildPathHops(
-            Uint8List.fromList(pathBytes),
-            repeatersBoth + repeatersNorth + repeatersSouth
-        )
-          .map((hop) => hop.contact!.name),
-        [
-          'Solar Heltec v4 Test',
-          'Pythia',
-          '1000 G2 1W V1.16',
-          'AE6BS Home Repeater',
-          'KO6JOT Observer',
-          'San Benito Repeater',
-          'N9DK Room Server'
-        ]
-      );
-    });
-
-    test('greedy algorithm picks better path with south repeaters', () {
-      expect(
-          PathResolver.buildPathHops(
-              Uint8List.fromList(pathBytes),
-              repeatersBoth + repeatersSouth
-          )
-            .map((hop) => hop.contact!.name),
-          [
-            'Solar Heltec v4 Test',
-            'Pythia',
-            '1000 G2 1W V1.16',
-            'PL@W Williams Hill',
-            'SLOCORE',
-            'SLOLOWE',
-            'wspr-trees'
-          ]
-      );
-    });
-
     test('average length algorithm picks better path than greedy algorithm with all repeaters', () {
       expect(
-          PathResolver.buildPathHopsNew(
+          PathResolver.buildPathHops(
               Uint8List.fromList(pathBytes),
               repeatersBoth + repeatersNorth + repeatersSouth
           )
@@ -115,7 +77,7 @@ void main() {
 
     test('average length algorithm considers end location', () {
       expect(
-          PathResolver.buildPathHopsNew(
+          PathResolver.buildPathHops(
               Uint8List.fromList([0xc5, 0xbe, 0x10, 0x69]),
               repeatersBoth + repeatersNorth + repeatersSouth,
               endLocation: myLocation
@@ -132,7 +94,7 @@ void main() {
 
     test('average length algorithm considers start location', () {
       expect(
-          PathResolver.buildPathHopsNew(
+          PathResolver.buildPathHops(
               Uint8List.fromList([0x69, 0x10, 0xbe, 0xc5]),
               repeatersBoth + repeatersNorth + repeatersSouth,
               startLocation: myLocation
@@ -152,7 +114,7 @@ void main() {
       final repeaters = List.generate(256, (i) => repeater(0xaa, i, "Repeater $i", 31.0 + i, -120.0 + i));
 
       await Isolate.run(
-        () => PathResolver.buildPathHopsNew(
+        () => PathResolver.buildPathHops(
           Uint8List.fromList(pathBytes),
           repeaters
         )
