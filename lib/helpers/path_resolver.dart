@@ -18,6 +18,61 @@ class ObservedPath {
   int getHopCount(int stride) => PathHelper.getHopCount(pathBytes, stride: stride);
 }
 
+class _MeasuredPath {
+  final int hops;
+  final double length;
+  final List<ResolvedHop> path;
+  final LatLng? previousLocation;
+
+  const _MeasuredPath({
+    required this.hops,
+    required this.length,
+    required this.path,
+    required this.previousLocation
+  });
+
+  static final distance = Distance();
+
+  /// Returns a copy of this instance that includes the given [current] hop in
+  /// its distance figures and path.
+  _MeasuredPath operator +(ResolvedHop current) {
+    final currentLocation = current.position;
+
+    if (currentLocation == null || previousLocation == null) {
+      // Count the hop in the path, but don't factor it into the average
+      return _MeasuredPath(
+          hops: hops,
+          length: length,
+          path: path + [current],
+          previousLocation: currentLocation ?? previousLocation
+      );
+    } else {
+      // Count the hop in the path and factor it into the average
+      return _MeasuredPath(
+          hops: hops + 1,
+          length: length + distance(currentLocation, previousLocation!),
+          path: path + [current],
+          previousLocation: currentLocation
+      );
+    }
+  }
+
+  /// Returns a copy of this instance that includes the distance to the given
+  /// [endLocation], if possible.
+  _MeasuredPath toEnd(LatLng? endLocation) {
+    if (endLocation == null || previousLocation == null) {
+      return this;
+    } else {
+      return _MeasuredPath(
+          hops: hops + 1,
+          length: length + distance(endLocation, previousLocation!),
+          path: path,
+          previousLocation: endLocation
+      );
+    }
+  }
+}
+
 class PathResolver {
   /// Maximum distance in meters a repeater can be from the previous hop
   /// before we consider it an implausible match (~310 miles).
@@ -126,6 +181,83 @@ class PathResolver {
       hopIndex++;
     }
     return hops;
+  }
+
+  /// Builds a list of resolved hops given a raw path buffer.
+  /// Performs a depth-first search to find the path with the smallest average
+  /// distance between hops, when prefixes collide.
+  static List<ResolvedHop> buildPathHopsNew(
+    Uint8List pathBytes,
+    List<Contact> allContacts, {
+    LatLng? startLocation,
+    LatLng? endLocation,
+    int stride = 1,
+  }) {
+      if (pathBytes.isEmpty) return const [];
+
+      // Group contacts by their full hex prefix
+      final candidatesByPrefix = <String, List<Contact>>{};
+      for (final contact in allContacts) {
+        if (contact.publicKey.isEmpty) continue;
+        if (contact.type != advTypeRepeater && contact.type != advTypeRoom) {
+          continue;
+        }
+        final prefix = contact.hashPrefixWithStride(stride);
+        candidatesByPrefix.putIfAbsent(prefix, () => <Contact>[]).add(contact);
+      }
+
+      for (final candidates in candidatesByPrefix.values) {
+        candidates.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+      }
+
+      var iterations = 0;
+      var shortestAverage = double.infinity;
+      _MeasuredPath? shortestPath;
+
+      void recurse(int depth, _MeasuredPath path) {
+        // Abort early when the graph would take ages to search completely
+        if (++iterations >= pathBytes.length * pathBytes.length && shortestPath != null) {
+          return;
+        }
+
+        final slotStart = depth * stride;
+
+        if (slotStart >= pathBytes.length || pathBytes[slotStart] == 0x00) {
+          // We've hit the end of our path or have encountered a padding sentinel
+          final endPath = path.toEnd(endLocation);
+          final average = endPath.hops == 0 ? double.infinity : endPath.length / endPath.hops;
+
+          if (average < shortestAverage || shortestPath == null) {
+            shortestAverage = average;
+            shortestPath = endPath;
+          }
+        } else {
+          final slotEnd = (slotStart + stride).clamp(0, pathBytes.length);
+          final slotBytes = pathBytes.sublist(slotStart, slotEnd);
+          final fullPrefix = slotBytes
+              .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
+              .join();
+          final candidates = candidatesByPrefix[fullPrefix];
+
+          if (candidates != null) {
+            for (int i = 0; i < candidates.length; i++) {
+              final candidate = candidates[i];
+              final hop = ResolvedHop(
+                  index: depth,
+                  fullPrefixLabel: fullPrefix,
+                  contact: candidate,
+                  position: _resolvePosition(candidate)
+              );
+
+              recurse(depth + 1, path + hop);
+            }
+          }
+        }
+      }
+
+      recurse(0, _MeasuredPath(hops: 0, length: 0, path: [], previousLocation: startLocation));
+
+      return shortestPath!.path;
   }
 
   static LatLng? _resolvePosition(Contact? contact) {
