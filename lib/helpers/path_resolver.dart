@@ -133,6 +133,12 @@ class PathResolver {
         if (candidates != null) {
           for (int i = 0; i < candidates.length; i++) {
             final candidate = candidates[i];
+
+            if (path.path.any((hop) => hop.contact?.publicKey == candidate.publicKey)) {
+              // Don't reuse any hops
+              continue;
+            }
+
             final hop = ResolvedHop(
                 index: depth,
                 fullPrefixLabel: fullPrefix,
@@ -148,7 +154,7 @@ class PathResolver {
 
     recurse(0, _MeasuredPath(hops: 0, length: 0, path: [], previousLocation: startLocation));
 
-    return shortestPath!.path;
+    return shortestPath?.path ?? List.empty();
   }
 
   static LatLng? _resolvePosition(Contact? contact) {

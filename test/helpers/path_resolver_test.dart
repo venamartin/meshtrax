@@ -120,5 +120,51 @@ void main() {
         )
       ).timeout(Duration(seconds: 2));
     });
+
+    test('path cannot reuse repeaters in massively clashing network', () {
+      final pathBytes = [0xaa, 0xbb, 0xbb, 0xbb, 0xcc];
+      final repeaters = [
+        repeater(0xaa, 0x00, "Repeater A", 30.0, -120.0),
+        repeater(0xbb, 0x01, "Repeater B1", 31.0, -120.0),
+        repeater(0xbb, 0x02, "Repeater B2", 32.0, -120.0),
+        repeater(0xbb, 0x03, "Repeater B3", 33.0, -120.0),
+        repeater(0xcc, 0x00, "Repeater C", 34.0, -120.0),
+      ];
+
+      expect(
+        PathResolver.buildPathHops(
+          Uint8List.fromList(pathBytes),
+          repeaters,
+          startLocation: myLocation
+        )
+          .map((hop) => hop.contact!.name),
+        [
+          'Repeater A',
+          'Repeater B1',
+          'Repeater B2',
+          'Repeater B3',
+          'Repeater C',
+        ]
+      );
+    });
+
+    test('empty path returned when no repeaters match the path', () {
+      final pathBytes = [0x01, 0x02, 0x03];
+      final repeaters = [
+        repeater(0xaa, 0x00, "Repeater A", 30.0, -120.0),
+        repeater(0xbb, 0x00, "Repeater B", 31.0, -120.0),
+        repeater(0xcc, 0x00, "Repeater C", 34.0, -120.0),
+      ];
+
+      expect(
+          PathResolver.buildPathHops(
+              Uint8List.fromList(pathBytes),
+              repeaters,
+              startLocation: myLocation
+          )
+              .map((hop) => hop.contact!.name),
+          []
+      );
+    });
   });
 }
