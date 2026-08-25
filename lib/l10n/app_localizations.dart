@@ -5702,6 +5702,24 @@ abstract class AppLocalizations {
   /// **'Filters'**
   String get listFilter_filters;
 
+  /// No description provided for @listFilter_source.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get listFilter_source;
+
+  /// No description provided for @listFilter_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get listFilter_saved;
+
+  /// No description provided for @listFilter_discovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered'**
+  String get listFilter_discovered;
+
   /// No description provided for @listFilter_all.
   ///
   /// In en, this message translates to:

@@ -3262,6 +3262,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get listFilter_filters => 'Filtros';
 
   @override
+  String get listFilter_source => 'Source';
+
+  @override
+  String get listFilter_saved => 'Saved';
+
+  @override
+  String get listFilter_discovered => 'Discovered';
+
+  @override
   String get listFilter_all => 'Tudo';
 
   @override

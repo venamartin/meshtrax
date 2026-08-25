@@ -3275,6 +3275,15 @@ class AppLocalizationsHu extends AppLocalizations {
   String get listFilter_filters => 'Szűrők';
 
   @override
+  String get listFilter_source => 'Source';
+
+  @override
+  String get listFilter_saved => 'Saved';
+
+  @override
+  String get listFilter_discovered => 'Discovered';
+
+  @override
   String get listFilter_all => 'Mind';
 
   @override
