@@ -1201,7 +1201,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
+                              color: _getColorForName(message.senderName),
                             ),
                           ),
                         ),
@@ -1632,9 +1632,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               style: TextStyle(
                 fontSize: 11 * textScale,
                 fontWeight: FontWeight.bold,
+                // Quoted sender wears their identity color too; own node
+                // keeps the theme accent, like the composer reply banner.
                 color: isOwnNode
                     ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.onSecondaryContainer,
+                    : _getColorForName(message.replyToSenderName ?? ''),
               ),
             ),
             const SizedBox(height: 2),
@@ -1811,22 +1813,32 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Color _getColorForName(String name) {
-    // Generate a consistent color based on the name hash
-    final hash = name.hashCode;
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
+    // Hue from the name hash — stable across sessions and devices — with
+    // brightness matched to the theme: vivid on dark bubbles, deep enough
+    // to read on light ones. Shared by the avatar, the sender name, and
+    // reply quotes so one person is one color everywhere. Two senders in a
+    // big channel can share a hue; accepted (WhatsApp behaves the same).
+    const swatches = [
+      Colors.red,
       Colors.pink,
-      Colors.teal,
+      Colors.purple,
+      Colors.deepPurple,
       Colors.indigo,
+      Colors.blue,
+      Colors.lightBlue,
       Colors.cyan,
+      Colors.teal,
+      Colors.green,
+      Colors.lightGreen,
+      Colors.lime,
       Colors.amber,
+      Colors.orange,
       Colors.deepOrange,
+      Colors.brown,
+      Colors.blueGrey,
     ];
-
-    return colors[hash.abs() % colors.length];
+    final swatch = swatches[name.hashCode.abs() % swatches.length];
+    return ChatColors.isLight(context) ? swatch.shade700 : swatch.shade300;
   }
 
   Widget _buildReplyBanner(double textScale) {
