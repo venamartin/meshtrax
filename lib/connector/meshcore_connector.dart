@@ -7494,6 +7494,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathBytes: mergedPathBytes,
         pathHashSize: mergedHashSize,
         pathVariants: mergedPathVariants,
+        // Latch, never clear: any zero-hop copy means they were in range,
+        // even though the display path adopts the longest observed route.
+        heardDirect: m.heardDirect || incoming.heardDirect,
         packetHash: m.packetHash ?? incoming.packetHash,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
         sentWireSecs: m.sentWireSecs.contains(incomingSecs)

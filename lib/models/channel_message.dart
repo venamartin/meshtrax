@@ -47,6 +47,11 @@ class ChannelMessage {
   final Uint8List pathBytes;
   final int pathHashSize;
   final List<Uint8List> pathVariants;
+  // Latched true when ANY copy of this message arrived with zero hops —
+  // we heard the sender's own transmitter. Survives repeat merges, which
+  // deliberately adopt the longest observed path for display: pathLength
+  // says how the KEPT copy looks, this says "they were in range".
+  final bool heardDirect;
   final int? channelIndex;
   final String messageId;
   final String? packetHash;
@@ -81,6 +86,7 @@ class ChannelMessage {
     Uint8List? pathBytes,
     this.pathHashSize = 1,
     List<Uint8List>? pathVariants,
+    this.heardDirect = false,
     this.channelIndex,
     String? messageId,
     this.packetHash,
@@ -120,6 +126,7 @@ class ChannelMessage {
     Uint8List? pathBytes,
     int? pathHashSize,
     List<Uint8List>? pathVariants,
+    bool? heardDirect,
     String? packetHash,
     String? replyToMessageId,
     String? replyToSenderName,
@@ -144,6 +151,7 @@ class ChannelMessage {
       pathBytes: pathBytes ?? this.pathBytes,
       pathHashSize: pathHashSize ?? this.pathHashSize,
       pathVariants: pathVariants ?? this.pathVariants,
+      heardDirect: heardDirect ?? this.heardDirect,
       channelIndex: channelIndex,
       messageId: messageId,
       packetHash: packetHash ?? this.packetHash,
@@ -232,6 +240,7 @@ class ChannelMessage {
         pathLength: actualHopCount,
         pathBytes: pathBytes,
         pathHashSize: hashSize,
+        heardDirect: actualHopCount == 0,
         channelIndex: channelIdx,
       );
     } catch (e) {

@@ -652,6 +652,7 @@ class ChannelMessageStore {
       'pathBytes': base64Encode(msg.pathBytes),
       'pathHashSize': msg.pathHashSize,
       'pathVariants': msg.pathVariants.map(base64Encode).toList(),
+      'heardDirect': msg.heardDirect,
       'repeats': msg.repeats.map(_repeatToJson).toList(),
       'messageId': msg.messageId,
       'packetHash': msg.packetHash,
@@ -703,6 +704,7 @@ class ChannelMessageStore {
       pathVariants: (json['pathVariants'] as List<dynamic>?)
           ?.map((entry) => Uint8List.fromList(base64Decode(entry as String)))
           .toList(),
+      heardDirect: json['heardDirect'] as bool? ?? false,
       repeats:
           (json['repeats'] as List<dynamic>?)
               ?.map((entry) => _repeatFromJson(entry as Map<String, dynamic>))
