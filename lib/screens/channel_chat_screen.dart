@@ -2389,9 +2389,12 @@ class _SwipeReplyBubble extends StatefulWidget {
 class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   Offset? _swipeStartPosition;
   double _swipeOffset = 0;
-  double _maxSwipeDistance = 0;
   int? _swipePointerId;
   bool _swipeLockedToHorizontal = false;
+  // A vertical-dominant start is a scroll: ignore this touch entirely.
+  bool _swipeRejected = false;
+  // Finger is past the trigger threshold RIGHT NOW (release would commit).
+  bool _swipeArmed = false;
   // Which way this gesture is going: -1 left (reply), +1 right (mention).
   int _swipeDirection = 0;
 
@@ -2399,7 +2402,6 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
 
   void _handleSwipeStart(Offset position) {
     _swipeStartPosition = position;
-    _maxSwipeDistance = 0;
     if (_swipeOffset != 0) {
       setState(() => _swipeOffset = 0);
     }
@@ -2408,24 +2410,41 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   void _handleSwipePointerDown(PointerDownEvent event) {
     _swipePointerId = event.pointer;
     _swipeLockedToHorizontal = false;
+    _swipeRejected = false;
+    _swipeArmed = false;
     _swipeDirection = 0;
     _handleSwipeStart(event.position);
   }
 
   void _handleSwipePointerMove(PointerMoveEvent event) {
-    if (_swipePointerId != event.pointer || _swipeStartPosition == null) {
+    if (_swipePointerId != event.pointer ||
+        _swipeStartPosition == null ||
+        _swipeRejected) {
       return;
     }
 
     final dx = event.position.dx - _swipeStartPosition!.dx;
+    final dy = event.position.dy - _swipeStartPosition!.dy;
 
     const axisLockThreshold = 12.0;
     if (!_swipeLockedToHorizontal) {
-      if (-dx >= axisLockThreshold) {
+      // Native feel: the swipe only claims the touch when horizontal
+      // movement clearly dominates. A vertical-dominant start is the list
+      // scrolling — reject the touch for good so a mid-scroll thumb arc
+      // can never turn into a reply.
+      if (dy.abs() >= axisLockThreshold && dy.abs() >= dx.abs()) {
+        _swipeRejected = true;
+        return;
+      }
+      if (dx.abs() < axisLockThreshold || dx.abs() < dy.abs() * 1.5) {
+        return;
+      }
+      if (dx < 0) {
         _swipeDirection = -1;
-      } else if (_mentionEnabled && dx >= axisLockThreshold) {
+      } else if (_mentionEnabled) {
         _swipeDirection = 1;
       } else {
+        _swipeRejected = true;
         return;
       }
       _swipeLockedToHorizontal = true;
@@ -2442,9 +2461,13 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
         (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
     final travel = dx < 6 ? 0.0 : dx;
 
-    if (travel > _maxSwipeDistance) {
-      _maxSwipeDistance = travel;
+    // Armed = releasing now would commit. Crossing the line gives the
+    // little haptic tick native apps use; sliding back disarms silently.
+    final armed = travel >= widget.replySwipeThreshold;
+    if (armed && !_swipeArmed) {
+      HapticFeedback.lightImpact();
     }
+    _swipeArmed = armed;
 
     final clamped = travel.clamp(0.0, widget.maxSwipeOffset);
     final adjusted =
@@ -2456,11 +2479,12 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   }
 
   void _handleSwipePointerUp(Offset position) {
+    // Commit on where the finger IS at release, never on how far it once
+    // got: overshooting and pulling back means "never mind".
     if (_swipeLockedToHorizontal && _swipeStartPosition != null) {
       final dx =
           (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
-      final peak = math.max(_maxSwipeDistance, dx.clamp(0.0, double.infinity));
-      if (peak >= widget.replySwipeThreshold) {
+      if (dx >= widget.replySwipeThreshold) {
         if (_swipeDirection < 0) {
           widget.onReplyTriggered();
         } else {
@@ -2477,9 +2501,10 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
       setState(() => _swipeOffset = 0);
     }
     _swipeStartPosition = null;
-    _maxSwipeDistance = 0;
     _swipePointerId = null;
     _swipeLockedToHorizontal = false;
+    _swipeRejected = false;
+    _swipeArmed = false;
     _swipeDirection = 0;
   }
 
