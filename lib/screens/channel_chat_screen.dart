@@ -1128,16 +1128,18 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 ? '@[${orphanReaction.targetSender}]'
                 : '')
         : message.text.replaceAll(gifPattern, '').trim();
-    // A zero-hop incoming message wears the Direct pill; letting the
-    // variant fallback print "via <echo route>" under it would contradict
-    // the pill. Echo routes stay on the tap-through path screen.
-    final displayPathString = (!isOutgoing && message.pathLength == 0)
-        ? ""
-        : message.pathBytes.isNotEmpty
-            ? message.displayPathString
-            : (message.pathVariants.isNotEmpty
-                  ? message.displayPathVariants.first
-                  : "");
+    final displayPathString = message.pathBytes.isNotEmpty
+        ? message.displayPathString
+        : (message.pathVariants.isNotEmpty
+              ? message.displayPathVariants.first
+              : "");
+    // The full delivery story on the bubble: a zero-hop kept copy wears the
+    // Direct pill and lists EVERY echo route beneath it; other messages
+    // show the single kept path as before.
+    final directIncoming = !isOutgoing && message.pathLength == 0;
+    final viaPaths = directIncoming
+        ? message.displayPathVariants.where((p) => p.isNotEmpty).toList()
+        : [if (displayPathString.isNotEmpty) displayPathString];
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(message.text);
     final warmLight = ChatColors.isLight(context);
@@ -1401,18 +1403,24 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ],
                       ],
                       if (enableTracing) ...[
-                        if (displayPathString.isNotEmpty) ...[
+                        if (viaPaths.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
                                 ? const EdgeInsets.symmetric(horizontal: 8)
                                 : EdgeInsets.zero,
-                            child: Text(
-                              'via $displayPathString',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (final path in viaPaths)
+                                  Text(
+                                    'via $path',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ],
