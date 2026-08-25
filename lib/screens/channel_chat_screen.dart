@@ -1859,7 +1859,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       Color(0xFF9D8CFF), // indigo
       Color(0xFFC77DFF), // purple
       Color(0xFFF368E0), // magenta
-      Color(0xFFFF7EB6), // pink
+      // No pink: field-vetoed (2026-08-25) — reads as bubblegum on dark.
     ];
     final base = palette[name.hashCode.abs() % palette.length];
     if (!ChatColors.isLight(context)) return base;
