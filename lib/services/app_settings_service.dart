@@ -240,6 +240,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(autoConnectLastDevice: value));
   }
 
+  Future<void> dismissDmIdentityWarning() async {
+    await updateSettings(_settings.copyWith(dmIdentityWarningDismissed: true));
+  }
+
   // --- Blocking (user-generated content moderation) -------------------------
 
   bool isContactBlocked(String publicKeyHex) =>

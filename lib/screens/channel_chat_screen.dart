@@ -29,6 +29,7 @@ import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
+import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
@@ -37,6 +38,7 @@ import '../widgets/radio_stats_entry.dart';
 import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
+import 'chat_screen.dart';
 import 'map_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
@@ -76,6 +78,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   bool _isLoadingOlder = false;
 
   MeshCoreConnector? _connector;
+
+  // DM-from-channel advert watch: armed by the no-match dialog, disarmed on
+  // hit, timeout, or screen dispose. Names only — a channel message carries
+  // no sender key, so a fresh advert is detected by candidates appearing
+  // where there were none (clock-immune: no timestamp comparison).
+  String? _awaitedAdvertName;
+  Timer? _awaitedAdvertTimer;
+  MeshCoreConnector? _advertWatchConnector;
+
   ChannelMessage? _firstUnreadMessage;
   int _initialScrollIndex = 0;
   bool _isAtBottom = true;
@@ -367,6 +378,304 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _textFieldFocusNode.requestFocus();
   }
 
+  // --- DM from a channel message --------------------------------------------
+  // A channel message carries only a self-reported display name, so opening
+  // a DM means matching that name against saved + discovered contacts and
+  // letting the user verify the key. Every branch keeps the user in charge:
+  // no advert is ever sent, and no contact imported, without a tap.
+
+  /// Saved and discovered chat contacts whose name matches [senderName]
+  /// (trimmed, case-insensitive — other apps let names be typed by hand).
+  /// Deduped by key with the saved entry winning; newest heard first.
+  List<({Contact contact, bool saved})> _dmCandidatesFor(
+    MeshCoreConnector connector,
+    String senderName,
+  ) {
+    final wanted = senderName.trim().toLowerCase();
+    bool matches(Contact c) =>
+        c.type == advTypeChat &&
+        c.publicKeyHex != connector.selfPublicKeyHex &&
+        c.name.trim().toLowerCase() == wanted;
+
+    final byKey = <String, ({Contact contact, bool saved})>{};
+    for (final c in connector.contacts) {
+      if (matches(c)) byKey[c.publicKeyHex] = (contact: c, saved: true);
+    }
+    for (final c in connector.discoveredContacts) {
+      if (matches(c)) {
+        byKey.putIfAbsent(c.publicKeyHex, () => (contact: c, saved: false));
+      }
+    }
+    return byKey.values.toList()
+      ..sort((a, b) => b.contact.lastSeen.compareTo(a.contact.lastSeen));
+  }
+
+  void _startDmTo(String senderName) {
+    final connector = context.read<MeshCoreConnector>();
+    final candidates = _dmCandidatesFor(connector, senderName);
+    if (candidates.isEmpty) {
+      _showDmNoMatch(connector, senderName);
+      return;
+    }
+    // Unambiguous and already in conversation: jump straight in. The
+    // identity decision was made when that conversation started; picker
+    // and warning would be pure friction.
+    if (candidates.length == 1) {
+      final only = candidates.single;
+      if (only.saved && connector.latestContactArrivalUs(only.contact) > 0) {
+        _openDmWith(connector, only.contact, saved: true);
+        return;
+      }
+    }
+    _showDmCandidatePicker(connector, senderName, candidates);
+  }
+
+  /// Always shown, even for a single match: seeing the key and last-seen
+  /// time IS the identity check — names are not unique and can be imitated.
+  void _showDmCandidatePicker(
+    MeshCoreConnector connector,
+    String senderName,
+    List<({Contact contact, bool saved})> candidates,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.dmChannel_pickerTitle(senderName),
+                    style: Theme.of(sheetContext).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.l10n.dmChannel_pickerHint,
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: candidates.length,
+                itemBuilder: (context, index) {
+                  final candidate = candidates[index];
+                  return ContactTile(
+                    contact: candidate.contact,
+                    lastSeen: candidate.contact.lastSeen,
+                    unreadCount: 0,
+                    isFavorite: candidate.contact.isFavorite,
+                    isDiscovered: !candidate.saved,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _openDmWith(
+                        connector,
+                        candidate.contact,
+                        saved: candidate.saved,
+                      );
+                    },
+                    onLongPress: () {},
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// One-time informed-consent dialog; "don't show again" persists.
+  Future<bool> _confirmDmIdentity() async {
+    final settingsService = context.read<AppSettingsService>();
+    if (settingsService.settings.dmIdentityWarningDismissed) return true;
+    var dontShowAgain = false;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(dialogContext.l10n.dmChannel_warningTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(dialogContext.l10n.dmChannel_warningBody),
+              CheckboxListTile(
+                title: Text(dialogContext.l10n.dmChannel_dontShowAgain),
+                value: dontShowAgain,
+                onChanged: (value) =>
+                    setDialogState(() => dontShowAgain = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dialogContext.l10n.common_cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dialogContext.l10n.common_continue),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok == true && dontShowAgain) {
+      await settingsService.dismissDmIdentityWarning();
+    }
+    return ok == true;
+  }
+
+  Future<void> _openDmWith(
+    MeshCoreConnector connector,
+    Contact contact, {
+    required bool saved,
+  }) async {
+    // An existing conversation is an already-accepted identity — only
+    // warn when this DM would be a new link from channel name to contact.
+    final hasConversation =
+        saved && connector.latestContactArrivalUs(contact) > 0;
+    if (!hasConversation && !await _confirmDmIdentity()) return;
+    if (!mounted) return;
+    if (!saved) {
+      final success = await connector.importDiscoveredContact(contact);
+      if (!mounted) return;
+      if (!success) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_contactImportFailed),
+        );
+        return;
+      }
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(contact: contact, unreadCount: 0),
+      ),
+    );
+  }
+
+  void _showDmNoMatch(MeshCoreConnector connector, String senderName) {
+    // The two actions are both halves of one key exchange — they need OUR
+    // advert to reply, we need THEIRS to send — so taking one must not
+    // close the door on the other. Sending stays in the dialog (the button
+    // flips to a done-state); asking closes it only because it hands off
+    // to the composer.
+    var advertSent = false;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(dialogContext.l10n.dmChannel_noMatchTitle(senderName)),
+          content: Text(dialogContext.l10n.dmChannel_noMatchBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.common_close),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _insertAskInChannel(senderName);
+                _armAdvertWatch(connector, senderName);
+              },
+              child: Text(dialogContext.l10n.dmChannel_askInChannel),
+            ),
+            FilledButton(
+              onPressed: advertSent
+                  ? null
+                  : () {
+                      setDialogState(() => advertSent = true);
+                      unawaited(connector.sendSelfAdvert(flood: true));
+                      _armAdvertWatch(connector, senderName);
+                    },
+              child: Text(
+                advertSent
+                    ? dialogContext.l10n.settings_advertisementSent
+                    : dialogContext.l10n.dmChannel_sendMyAdvert,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Prefills the composer with a plain-language advert request — the user
+  /// sends it themselves. Readable by any app; the @[mention] pings
+  /// MeshTrax users.
+  void _insertAskInChannel(String senderName) {
+    _insertMentionOf(senderName);
+    final ask = context.l10n.dmChannel_askText;
+    final text = _textController.text;
+    final sel = _textController.selection;
+    final start = sel.isValid ? sel.start : text.length;
+    _textController.value = TextEditingValue(
+      text: text.replaceRange(start, start, ask),
+      selection: TextSelection.collapsed(offset: start + ask.length),
+    );
+  }
+
+  void _armAdvertWatch(MeshCoreConnector connector, String senderName) {
+    // Taking both dialog actions arms twice for the same name — the watch
+    // is already running, keep it (and don't repeat the snackbar).
+    if (_awaitedAdvertName == senderName && _awaitedAdvertTimer != null) {
+      return;
+    }
+    _disarmAdvertWatch();
+    _awaitedAdvertName = senderName;
+    _advertWatchConnector = connector;
+    _awaitedAdvertTimer =
+        Timer(const Duration(minutes: 15), _disarmAdvertWatch);
+    connector.addListener(_checkAwaitedAdvert);
+    showDismissibleSnackBar(
+      context,
+      content: Text(context.l10n.dmChannel_watching),
+    );
+  }
+
+  void _disarmAdvertWatch() {
+    _awaitedAdvertTimer?.cancel();
+    _awaitedAdvertTimer = null;
+    _advertWatchConnector?.removeListener(_checkAwaitedAdvert);
+    _advertWatchConnector = null;
+    _awaitedAdvertName = null;
+  }
+
+  /// Armed only when the name had zero candidates, so any candidate
+  /// appearing means their advert arrived.
+  void _checkAwaitedAdvert() {
+    final name = _awaitedAdvertName;
+    final connector = _advertWatchConnector;
+    if (name == null || connector == null || !mounted) return;
+    final candidates = _dmCandidatesFor(connector, name);
+    if (candidates.isEmpty) return;
+    _disarmAdvertWatch();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.dmChannel_advertHeard(name)),
+        duration: const Duration(seconds: 10),
+        action: SnackBarAction(
+          label: context.l10n.dmChannel_openDm,
+          onPressed: () =>
+              _showDmCandidatePicker(connector, name, candidates),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMentionsOverlay() {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -454,6 +763,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   @override
   void dispose() {
+    _disarmAdvertWatch();
     _messagesSub?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveChannel(null);
@@ -1923,6 +2233,17 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   _insertMentionOf(message.senderName);
                 },
               ),
+              // No DM for unparsed senders: 'Unknown' is the parse fallback,
+              // not a name anyone chose.
+              if (message.senderName != 'Unknown')
+                ListTile(
+                  leading: const Icon(Icons.chat_bubble_outline),
+                  title: Text(context.l10n.dmChannel_menuLabel),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _startDmTo(message.senderName);
+                  },
+                ),
             ],
             ListTile(
               leading: const Icon(Icons.copy),

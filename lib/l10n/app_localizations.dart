@@ -2662,6 +2662,90 @@ abstract class AppLocalizations {
   /// **'Mention'**
   String get chat_mention;
 
+  /// No description provided for @dmChannel_menuLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Message'**
+  String get dmChannel_menuLabel;
+
+  /// No description provided for @dmChannel_pickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send DM to {name}'**
+  String dmChannel_pickerTitle(String name);
+
+  /// No description provided for @dmChannel_pickerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the key and last-seen time — names are not unique.'**
+  String get dmChannel_pickerHint;
+
+  /// No description provided for @dmChannel_warningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this really them?'**
+  String get dmChannel_warningTitle;
+
+  /// No description provided for @dmChannel_warningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.'**
+  String get dmChannel_warningBody;
+
+  /// No description provided for @dmChannel_dontShowAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show this again'**
+  String get dmChannel_dontShowAgain;
+
+  /// No description provided for @dmChannel_noMatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t DM {name} yet'**
+  String dmChannel_noMatchTitle(String name);
+
+  /// No description provided for @dmChannel_noMatchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.'**
+  String get dmChannel_noMatchBody;
+
+  /// No description provided for @dmChannel_askInChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask in channel'**
+  String get dmChannel_askInChannel;
+
+  /// No description provided for @dmChannel_sendMyAdvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Send my advert'**
+  String get dmChannel_sendMyAdvert;
+
+  /// No description provided for @dmChannel_askText.
+  ///
+  /// In en, this message translates to:
+  /// **'please send an advert so I can DM you'**
+  String get dmChannel_askText;
+
+  /// No description provided for @dmChannel_watching.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching for their advert — you\'ll be asked here when it arrives.'**
+  String get dmChannel_watching;
+
+  /// No description provided for @dmChannel_advertHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is now reachable'**
+  String dmChannel_advertHeard(String name);
+
+  /// No description provided for @dmChannel_openDm.
+  ///
+  /// In en, this message translates to:
+  /// **'DM'**
+  String get dmChannel_openDm;
+
   /// No description provided for @appSettings_zoomLevel.
   ///
   /// In en, this message translates to:
