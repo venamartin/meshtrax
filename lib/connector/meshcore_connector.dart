@@ -215,6 +215,9 @@ class MeshCoreConnector extends ChangeNotifier {
   /// longer owns the connector and bow out instead of tearing down its successor.
   int _bleConnectAttempt = 0;
   static const String _lastBleDeviceIdKey = 'last_ble_device_id';
+  static const String _lastTransportKey = 'last_transport';
+  static const String _lastTcpHostKey = 'last_tcp_host';
+  static const String _lastTcpPortKey = 'last_tcp_port';
   static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
   final MeshCoreUsbManager _usbManager = MeshCoreUsbManager();
@@ -299,6 +302,11 @@ class MeshCoreConnector extends ChangeNotifier {
   String? _lastTcpHost;
   int? _lastTcpPort;
   bool _tcpSessionEstablished = false;
+
+  /// 'ble' | 'usb' | 'tcp' — the transport of the last successful
+  /// connection, persisted so launch auto-connect targets what the user
+  /// actually uses instead of unconditionally hunting the last BLE radio.
+  String? _lastTransport;
   bool _notifyListenersDirty = false;
   static const Duration _notifyListenersDebounce = Duration(milliseconds: 50);
 
@@ -1394,6 +1402,7 @@ class MeshCoreConnector extends ChangeNotifier {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      unawaited(_persistLastTransportUsb());
       _pendingInitialChannelSync = true;
       _appDebugLogService?.info(
         'connectUsb: requesting device info…',
@@ -1530,6 +1539,7 @@ class MeshCoreConnector extends ChangeNotifier {
       _lastTcpHost = host;
       _lastTcpPort = port;
       _tcpSessionEstablished = true;
+      unawaited(_persistLastTcpEndpoint(host, port));
       _pendingInitialChannelSync = true;
       await _requestDeviceInfo();
       _startBatteryPolling();
@@ -2348,16 +2358,42 @@ class MeshCoreConnector extends ChangeNotifier {
       final prefs = PrefsManager.instance;
       _lastDeviceId ??= prefs.getString(_lastBleDeviceIdKey);
       _lastDeviceDisplayName ??= prefs.getString(_lastBleDeviceNameKey);
+      _lastTransport ??= prefs.getString(_lastTransportKey);
+      _lastTcpHost ??= prefs.getString(_lastTcpHostKey);
+      _lastTcpPort ??= prefs.getInt(_lastTcpPortKey);
     } catch (_) {
       // Prefs unavailable (e.g. in tests) — nothing to restore.
+    }
+  }
+
+  Future<void> _persistLastTcpEndpoint(String host, int port) async {
+    _lastTransport = 'tcp';
+    try {
+      final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'tcp');
+      await prefs.setString(_lastTcpHostKey, host);
+      await prefs.setInt(_lastTcpPortKey, port);
+    } catch (_) {
+      // Best effort — a failed persist just means no auto-connect next launch.
+    }
+  }
+
+  Future<void> _persistLastTransportUsb() async {
+    _lastTransport = 'usb';
+    try {
+      await PrefsManager.instance.setString(_lastTransportKey, 'usb');
+    } catch (_) {
+      // Best effort.
     }
   }
 
   Future<void> _persistLastBleDevice() async {
     final id = _lastDeviceId;
     if (id == null) return;
+    _lastTransport = 'ble';
     try {
       final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'ble');
       await prefs.setString(_lastBleDeviceIdKey, id);
       final name = _lastDeviceDisplayName;
       if (name != null && name.isNotEmpty) {
@@ -2370,17 +2406,47 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
-  /// Attempts a one-shot connection to the last remembered Bluetooth device on
-  /// app launch. No-op if the setting is disabled, on web, when nothing is
-  /// remembered, or once an attempt has already been made this process.
-  /// Callers must ensure the Bluetooth adapter is on before invoking.
+  /// Attempts a one-shot connection on app launch to whatever the user last
+  /// connected to — the last TCP endpoint, or the last Bluetooth device.
+  /// USB is never auto-connected: port names shift between boots and the
+  /// user plugs in and picks. No-op if the setting is disabled, on web, when
+  /// nothing is remembered, or once an attempt has already been made this
+  /// process. Callers must ensure the Bluetooth adapter is on before
+  /// invoking.
   Future<void> autoConnectToLastDevice() async {
     if (_launchAutoConnectAttempted) return;
     if (PlatformInfo.isWeb) return;
     if (_appSettingsService?.settings.autoConnectLastDevice != true) return;
+    if (_state != MeshCoreConnectionState.disconnected) return;
+
+    if (_lastTransport == 'tcp') {
+      final host = _lastTcpHost;
+      final port = _lastTcpPort;
+      if (host == null || port == null) return;
+      _launchAutoConnectAttempted = true;
+      _appDebugLogService?.info(
+        'Auto-connecting to last TCP endpoint $host:$port',
+        tag: 'TCP',
+      );
+      try {
+        await connectTcp(host: host, port: port);
+      } catch (e) {
+        _appDebugLogService?.info(
+          'Auto-connect to last TCP endpoint failed: $e',
+          tag: 'TCP',
+        );
+      }
+      return;
+    }
+    if (_lastTransport == 'usb') {
+      _launchAutoConnectAttempted = true;
+      return;
+    }
+
+    // 'ble', or no transport recorded (legacy install with a remembered
+    // BLE device).
     final id = _lastDeviceId;
     if (id == null) return;
-    if (_state != MeshCoreConnectionState.disconnected) return;
     _launchAutoConnectAttempted = true;
     _appDebugLogService?.info(
       'Auto-connecting to last device $id',
@@ -2480,9 +2546,14 @@ class MeshCoreConnector extends ChangeNotifier {
               : BluetoothDevice.fromId(_lastDeviceId!));
       if (device == null) return;
 
+      // connect() zeroes the backoff counter (it treats itself as a fresh
+      // user attempt) — remember it so failed retries keep backing off
+      // toward the 30s cap instead of hammering at the floor delay.
+      final priorAttempts = _reconnectAttempts;
       try {
         await connect(device, displayName: _lastDeviceDisplayName);
       } catch (_) {
+        _reconnectAttempts = priorAttempts;
         _scheduleReconnect();
       }
     });

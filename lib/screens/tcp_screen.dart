@@ -244,10 +244,19 @@ class _TcpScreenState extends State<TcpScreen> {
   }
 
   Future<void> _connectTcp() async {
-    if (_connector.state == MeshCoreConnectionState.connecting ||
-        _connector.state == MeshCoreConnectionState.connected ||
+    if (_connector.state == MeshCoreConnectionState.connected ||
         _connector.state == MeshCoreConnectionState.disconnecting) {
       return;
+    }
+    if (_connector.state == MeshCoreConnectionState.connecting) {
+      // A BLE attempt in flight (usually the launch auto-connect hunting
+      // an absent radio) must not eat this press: connecting over TCP is
+      // explicit intent, so abort the BLE attempt and proceed.
+      if (_connector.activeTransport != MeshCoreTransportType.bluetooth) {
+        return;
+      }
+      await _connector.suspendBleAutoReconnect();
+      if (!mounted) return;
     }
 
     final host = _hostController.text.trim();
