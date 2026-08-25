@@ -1128,11 +1128,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 ? '@[${orphanReaction.targetSender}]'
                 : '')
         : message.text.replaceAll(gifPattern, '').trim();
-    final displayPathString = message.pathBytes.isNotEmpty
-        ? message.displayPathString
-        : (message.pathVariants.isNotEmpty
-              ? message.displayPathVariants.first
-              : "");
+    // A zero-hop incoming message wears the Direct pill; letting the
+    // variant fallback print "via <echo route>" under it would contradict
+    // the pill. Echo routes stay on the tap-through path screen.
+    final displayPathString = (!isOutgoing && message.pathLength == 0)
+        ? ""
+        : message.pathBytes.isNotEmpty
+            ? message.displayPathString
+            : (message.pathVariants.isNotEmpty
+                  ? message.displayPathVariants.first
+                  : "");
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(message.text);
     final warmLight = ChatColors.isLight(context);
