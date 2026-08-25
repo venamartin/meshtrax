@@ -38,6 +38,13 @@ class _TcpScreenState extends State<TcpScreen> {
           : '',
     );
     _connector = context.read<MeshCoreConnector>();
+    // Opening the TCP screen is explicit intent to use TCP, same as the
+    // USB picker: stop BLE auto-reconnect (its retry loop pins state to
+    // `connecting`, which makes connectTcp silently refuse) and abort any
+    // in-flight BLE attempt. Leave an actual live connection alone.
+    if (_connector.state != MeshCoreConnectionState.connected) {
+      _connector.suspendBleAutoReconnect();
+    }
 
     _connectionListener = () {
       if (!mounted) return;
