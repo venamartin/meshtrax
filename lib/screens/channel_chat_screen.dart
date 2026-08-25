@@ -568,38 +568,47 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   void _showDmNoMatch(MeshCoreConnector connector, String senderName) {
+    // The two actions are both halves of one key exchange — they need OUR
+    // advert to reply, we need THEIRS to send — so taking one must not
+    // close the door on the other. Sending stays in the dialog (the button
+    // flips to a done-state); asking closes it only because it hands off
+    // to the composer.
+    var advertSent = false;
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.l10n.dmChannel_noMatchTitle(senderName)),
-        content: Text(dialogContext.l10n.dmChannel_noMatchBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(dialogContext.l10n.common_cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _insertAskInChannel(senderName);
-              _armAdvertWatch(connector, senderName);
-            },
-            child: Text(dialogContext.l10n.dmChannel_askInChannel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              await connector.sendSelfAdvert(flood: true);
-              if (!mounted) return;
-              showDismissibleSnackBar(
-                context,
-                content: Text(context.l10n.settings_advertisementSent),
-              );
-              _armAdvertWatch(connector, senderName);
-            },
-            child: Text(dialogContext.l10n.dmChannel_sendMyAdvert),
-          ),
-        ],
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(dialogContext.l10n.dmChannel_noMatchTitle(senderName)),
+          content: Text(dialogContext.l10n.dmChannel_noMatchBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.common_close),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _insertAskInChannel(senderName);
+                _armAdvertWatch(connector, senderName);
+              },
+              child: Text(dialogContext.l10n.dmChannel_askInChannel),
+            ),
+            FilledButton(
+              onPressed: advertSent
+                  ? null
+                  : () {
+                      setDialogState(() => advertSent = true);
+                      unawaited(connector.sendSelfAdvert(flood: true));
+                      _armAdvertWatch(connector, senderName);
+                    },
+              child: Text(
+                advertSent
+                    ? dialogContext.l10n.settings_advertisementSent
+                    : dialogContext.l10n.dmChannel_sendMyAdvert,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -620,6 +629,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   void _armAdvertWatch(MeshCoreConnector connector, String senderName) {
+    // Taking both dialog actions arms twice for the same name — the watch
+    // is already running, keep it (and don't repeat the snackbar).
+    if (_awaitedAdvertName == senderName && _awaitedAdvertTimer != null) {
+      return;
+    }
     _disarmAdvertWatch();
     _awaitedAdvertName = senderName;
     _advertWatchConnector = connector;
