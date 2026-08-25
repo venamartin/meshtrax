@@ -215,6 +215,9 @@ class MeshCoreConnector extends ChangeNotifier {
   /// longer owns the connector and bow out instead of tearing down its successor.
   int _bleConnectAttempt = 0;
   static const String _lastBleDeviceIdKey = 'last_ble_device_id';
+  static const String _lastTransportKey = 'last_transport';
+  static const String _lastTcpHostKey = 'last_tcp_host';
+  static const String _lastTcpPortKey = 'last_tcp_port';
   static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
   final MeshCoreUsbManager _usbManager = MeshCoreUsbManager();
@@ -291,6 +294,19 @@ class MeshCoreConnector extends ChangeNotifier {
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
   int _reconnectAttempts = 0;
+
+  // TCP auto-reconnect: endpoint of the last session that completed a
+  // handshake, and whether the current session got that far. Only an
+  // established session arms reconnection — a failed first attempt to a
+  // wrong address must not start a retry loop.
+  String? _lastTcpHost;
+  int? _lastTcpPort;
+  bool _tcpSessionEstablished = false;
+
+  /// 'ble' | 'usb' | 'tcp' — the transport of the last successful
+  /// connection, persisted so launch auto-connect targets what the user
+  /// actually uses instead of unconditionally hunting the last BLE radio.
+  String? _lastTransport;
   bool _notifyListenersDirty = false;
   static const Duration _notifyListenersDebounce = Duration(milliseconds: 50);
 
@@ -459,11 +475,12 @@ class MeshCoreConnector extends ChangeNotifier {
       _state == MeshCoreConnectionState.connected &&
       _activeTransport == MeshCoreTransportType.usb;
   bool get isAutoReconnectScheduled =>
-      _shouldAutoReconnect && (_reconnectTimer?.isActive ?? false);
+      (_shouldAutoReconnect || _shouldAutoReconnectTcp) &&
+      (_reconnectTimer?.isActive ?? false);
   /// True as soon as a non-manual disconnect occurs, even before the reconnect
   /// timer fires. Use this in build() checks to avoid the race where the timer
   /// hasn't been set yet when notifyListeners() triggers the first rebuild.
-  bool get willAutoReconnect => _shouldAutoReconnect;
+  bool get willAutoReconnect => _shouldAutoReconnect || _shouldAutoReconnectTcp;
   String? get activeTcpEndpoint => _tcpConnector.activeEndpoint;
   bool get isTcpTransportConnected =>
       _state == MeshCoreConnectionState.connected &&
@@ -1166,6 +1183,11 @@ class MeshCoreConnector extends ChangeNotifier {
   }) async {
     if (_state == MeshCoreConnectionState.scanning) return;
 
+    // Scanning is explicit user intent to pick a device — it outranks any
+    // pending auto-reconnect (BLE or TCP), which would otherwise fire
+    // mid-scan and yank the connection state out from under the picker.
+    _cancelReconnectTimer();
+
     _scanResults.clear();
     _linuxSystemScanResults.clear();
     _setState(MeshCoreConnectionState.scanning);
@@ -1380,6 +1402,7 @@ class MeshCoreConnector extends ChangeNotifier {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      unawaited(_persistLastTransportUsb());
       _pendingInitialChannelSync = true;
       _appDebugLogService?.info(
         'connectUsb: requesting device info…',
@@ -1510,6 +1533,13 @@ class MeshCoreConnector extends ChangeNotifier {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      // Arm auto-reconnect for this endpoint. Set before the SELF_INFO wait
+      // on purpose: on a lossy link the handshake frames are exactly what
+      // gets eaten, and a drop there must retry like any other drop.
+      _lastTcpHost = host;
+      _lastTcpPort = port;
+      _tcpSessionEstablished = true;
+      unawaited(_persistLastTcpEndpoint(host, port));
       _pendingInitialChannelSync = true;
       await _requestDeviceInfo();
       _startBatteryPolling();
@@ -2316,6 +2346,9 @@ class MeshCoreConnector extends ChangeNotifier {
       _lastDeviceId != null &&
       _activeTransport == MeshCoreTransportType.bluetooth;
 
+  bool get _shouldAutoReconnectTcp =>
+      !_manualDisconnect && _lastTcpHost != null && _lastTcpPort != null;
+
   /// True when a previously connected Bluetooth device is remembered and can be
   /// auto-connected on the next launch.
   bool get hasRememberedBleDevice => _lastDeviceId != null;
@@ -2325,16 +2358,42 @@ class MeshCoreConnector extends ChangeNotifier {
       final prefs = PrefsManager.instance;
       _lastDeviceId ??= prefs.getString(_lastBleDeviceIdKey);
       _lastDeviceDisplayName ??= prefs.getString(_lastBleDeviceNameKey);
+      _lastTransport ??= prefs.getString(_lastTransportKey);
+      _lastTcpHost ??= prefs.getString(_lastTcpHostKey);
+      _lastTcpPort ??= prefs.getInt(_lastTcpPortKey);
     } catch (_) {
       // Prefs unavailable (e.g. in tests) — nothing to restore.
+    }
+  }
+
+  Future<void> _persistLastTcpEndpoint(String host, int port) async {
+    _lastTransport = 'tcp';
+    try {
+      final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'tcp');
+      await prefs.setString(_lastTcpHostKey, host);
+      await prefs.setInt(_lastTcpPortKey, port);
+    } catch (_) {
+      // Best effort — a failed persist just means no auto-connect next launch.
+    }
+  }
+
+  Future<void> _persistLastTransportUsb() async {
+    _lastTransport = 'usb';
+    try {
+      await PrefsManager.instance.setString(_lastTransportKey, 'usb');
+    } catch (_) {
+      // Best effort.
     }
   }
 
   Future<void> _persistLastBleDevice() async {
     final id = _lastDeviceId;
     if (id == null) return;
+    _lastTransport = 'ble';
     try {
       final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'ble');
       await prefs.setString(_lastBleDeviceIdKey, id);
       final name = _lastDeviceDisplayName;
       if (name != null && name.isNotEmpty) {
@@ -2347,17 +2406,47 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
-  /// Attempts a one-shot connection to the last remembered Bluetooth device on
-  /// app launch. No-op if the setting is disabled, on web, when nothing is
-  /// remembered, or once an attempt has already been made this process.
-  /// Callers must ensure the Bluetooth adapter is on before invoking.
+  /// Attempts a one-shot connection on app launch to whatever the user last
+  /// connected to — the last TCP endpoint, or the last Bluetooth device.
+  /// USB is never auto-connected: port names shift between boots and the
+  /// user plugs in and picks. No-op if the setting is disabled, on web, when
+  /// nothing is remembered, or once an attempt has already been made this
+  /// process. Callers must ensure the Bluetooth adapter is on before
+  /// invoking.
   Future<void> autoConnectToLastDevice() async {
     if (_launchAutoConnectAttempted) return;
     if (PlatformInfo.isWeb) return;
     if (_appSettingsService?.settings.autoConnectLastDevice != true) return;
+    if (_state != MeshCoreConnectionState.disconnected) return;
+
+    if (_lastTransport == 'tcp') {
+      final host = _lastTcpHost;
+      final port = _lastTcpPort;
+      if (host == null || port == null) return;
+      _launchAutoConnectAttempted = true;
+      _appDebugLogService?.info(
+        'Auto-connecting to last TCP endpoint $host:$port',
+        tag: 'TCP',
+      );
+      try {
+        await connectTcp(host: host, port: port);
+      } catch (e) {
+        _appDebugLogService?.info(
+          'Auto-connect to last TCP endpoint failed: $e',
+          tag: 'TCP',
+        );
+      }
+      return;
+    }
+    if (_lastTransport == 'usb') {
+      _launchAutoConnectAttempted = true;
+      return;
+    }
+
+    // 'ble', or no transport recorded (legacy install with a remembered
+    // BLE device).
     final id = _lastDeviceId;
     if (id == null) return;
-    if (_state != MeshCoreConnectionState.disconnected) return;
     _launchAutoConnectAttempted = true;
     _appDebugLogService?.info(
       'Auto-connecting to last device $id',
@@ -2457,10 +2546,58 @@ class MeshCoreConnector extends ChangeNotifier {
               : BluetoothDevice.fromId(_lastDeviceId!));
       if (device == null) return;
 
+      // connect() zeroes the backoff counter (it treats itself as a fresh
+      // user attempt) — remember it so failed retries keep backing off
+      // toward the 30s cap instead of hammering at the floor delay.
+      final priorAttempts = _reconnectAttempts;
       try {
         await connect(device, displayName: _lastDeviceDisplayName);
       } catch (_) {
+        _reconnectAttempts = priorAttempts;
         _scheduleReconnect();
+      }
+    });
+  }
+
+  /// Mirror of [_scheduleReconnect] for the TCP transport. Lossy WiFi links
+  /// (ESP32 modem power-save) stall long enough for Windows to kill the
+  /// connection after ~20-30s of unACKed retransmits (errno 121) while
+  /// Android's kernel silently retries for minutes — this evens that out:
+  /// non-manual drops retry the last established endpoint with the shared
+  /// backoff (1s doubling to a 30s cap) until reconnected or the user
+  /// expresses other intent (manual disconnect, scan, USB, another connect).
+  void _scheduleTcpReconnect() {
+    if (!_shouldAutoReconnectTcp) return;
+    if (_reconnectTimer?.isActive == true) return;
+    final host = _lastTcpHost;
+    final port = _lastTcpPort;
+    if (host == null || port == null) return;
+
+    final delayMs = _nextReconnectDelayMs();
+    _appDebugLogService?.info(
+      'Auto-reconnect in ${delayMs}ms endpoint=$host:$port',
+      tag: 'TCP',
+    );
+    _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
+      if (!_shouldAutoReconnectTcp) return;
+      if (_state == MeshCoreConnectionState.connecting ||
+          _state == MeshCoreConnectionState.connected) {
+        return;
+      }
+
+      // connectTcp treats itself as a fresh user attempt and zeroes the
+      // backoff counter — remember it so a failed retry keeps backing off
+      // instead of hammering at the floor delay.
+      final priorAttempts = _reconnectAttempts;
+      try {
+        await connectTcp(host: host, port: port);
+      } catch (_) {
+        // Already logged by connectTcp; rescheduling handled below.
+      }
+      if (_state != MeshCoreConnectionState.connected &&
+          _reconnectTimer?.isActive != true) {
+        _reconnectAttempts = priorAttempts;
+        _scheduleTcpReconnect();
       }
     });
   }
@@ -2476,6 +2613,8 @@ class MeshCoreConnector extends ChangeNotifier {
     _pendingDiscoverTag = null;
 
     final transportAtDisconnect = _activeTransport;
+    final tcpSessionWasEstablished = _tcpSessionEstablished;
+    _tcpSessionEstablished = false;
     final transportLabel = switch (transportAtDisconnect) {
       MeshCoreTransportType.bluetooth => 'BLE',
       MeshCoreTransportType.usb => 'USB',
@@ -2593,7 +2732,27 @@ class MeshCoreConnector extends ChangeNotifier {
     );
     if (!manual && transportAtDisconnect == MeshCoreTransportType.bluetooth) {
       _scheduleReconnect();
+    } else if (shouldScheduleTcpReconnect(
+      manual: manual,
+      transportAtDisconnect: transportAtDisconnect,
+      sessionWasEstablished: tcpSessionWasEstablished,
+    )) {
+      _scheduleTcpReconnect();
     }
+  }
+
+  /// A TCP drop retries only when it killed an established session (the
+  /// handshake had completed a connect): a failed first attempt to a wrong
+  /// address must not start a retry loop.
+  @visibleForTesting
+  static bool shouldScheduleTcpReconnect({
+    required bool manual,
+    required MeshCoreTransportType transportAtDisconnect,
+    required bool sessionWasEstablished,
+  }) {
+    return !manual &&
+        transportAtDisconnect == MeshCoreTransportType.tcp &&
+        sessionWasEstablished;
   }
 
   Future<void> sendFrame(
