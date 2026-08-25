@@ -7,6 +7,11 @@ import '../helpers/path_helper.dart';
 import 'app_database.dart';
 import 'prefs_manager.dart';
 
+/// Discovered-but-not-saved contacts. Unlike the saved-contact cache this is
+/// NOT a mirror of anything — the radio cannot regenerate it — so the write
+/// API is deliberately upsert-per-key plus targeted deletes. There is no
+/// whole-list replacement: a caller holding a stale or empty in-memory list
+/// must never be able to erase rows it didn't load.
 class ContactDiscoveryStore {
   static const String _keyPrefix = 'discovered_contacts';
 
@@ -33,26 +38,31 @@ class ContactDiscoveryStore {
     return contacts;
   }
 
-  Future<void> saveContacts(List<Contact> contacts) async {
-    await _db.transaction(() async {
-      await (_db.delete(_db.discoveredContactRows)
-            ..where((r) => r.nodeScope.equals(_scope)))
-          .go();
-      await _db.batch((b) {
-        b.insertAll(
-          _db.discoveredContactRows,
-          [
-            for (final contact in contacts)
-              DiscoveredContactRowsCompanion.insert(
-                nodeScope: _scope,
-                publicKeyHex: contact.publicKeyHex,
-                payload: jsonEncode(_toJson(contact)),
-              ),
-          ],
-          mode: InsertMode.insertOrReplace,
-        );
-      });
+  Future<void> upsertContacts(List<Contact> contacts) async {
+    if (contacts.isEmpty) return;
+    final rows = [
+      for (final contact in contacts)
+        DiscoveredContactRowsCompanion.insert(
+          nodeScope: _scope,
+          publicKeyHex: contact.publicKeyHex,
+          payload: jsonEncode(_toJson(contact)),
+        ),
+    ];
+    await _db.batch((b) {
+      b.insertAll(
+        _db.discoveredContactRows,
+        rows,
+        mode: InsertMode.insertOrReplace,
+      );
     });
+  }
+
+  Future<void> removeContacts(Iterable<String> publicKeyHexes) async {
+    final keys = publicKeyHexes.toList();
+    if (keys.isEmpty) return;
+    await (_db.delete(_db.discoveredContactRows)
+          ..where((r) => r.nodeScope.equals(_scope) & r.publicKeyHex.isIn(keys)))
+        .go();
   }
 
   /// One-time import of the legacy prefs blob.
