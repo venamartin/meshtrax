@@ -965,7 +965,11 @@ class _NewChatScreenState extends State<NewChatScreen> {
                           final isDiscovered = !contact.isActive;
                           return ContactTile(
                             contact: contact,
-                            lastSeen: contact.lastSeen,
+                            // Same value the sort uses: when WE last heard
+                            // the node. contact.lastSeen is sender-claimed
+                            // advert time — a node with a broken clock sits
+                            // at the top labeled "~9 days" otherwise.
+                            lastSeen: _resolveLastSeen(contact, connector),
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: isDiscovered,
