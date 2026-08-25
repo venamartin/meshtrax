@@ -1133,13 +1133,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         : (message.pathVariants.isNotEmpty
               ? message.displayPathVariants.first
               : "");
-    // The full delivery story on the bubble: a zero-hop kept copy wears the
-    // Direct pill and lists EVERY echo route beneath it; other messages
-    // show the single kept path as before.
-    final directIncoming = !isOutgoing && message.pathLength == 0;
-    final viaPaths = directIncoming
-        ? message.displayPathVariants.where((p) => p.isNotEmpty).toList()
-        : [if (displayPathString.isNotEmpty) displayPathString];
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(message.text);
     final warmLight = ChatColors.isLight(context);
@@ -1216,9 +1209,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                   ),
                                 ),
                               ),
-                              // Zero-hop copy: our radio heard THEIR radio,
-                              // no repeater in between — worth celebrating.
-                              if (message.pathLength == 0) ...[
+                              // Some copy of this message was heard with
+                              // zero hops: our radio heard THEIR radio, no
+                              // repeater in between — worth celebrating.
+                              // Latched, so the pill survives echo merges
+                              // that adopt the longest path for display.
+                              if (message.heardDirect) ...[
                                 const SizedBox(width: 6),
                                 _buildDirectPill(),
                               ],
@@ -1403,24 +1399,18 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ],
                       ],
                       if (enableTracing) ...[
-                        if (viaPaths.isNotEmpty) ...[
+                        if (displayPathString.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
                                 ? const EdgeInsets.symmetric(horizontal: 8)
                                 : EdgeInsets.zero,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final path in viaPaths)
-                                  Text(
-                                    'via $path',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                              ],
+                            child: Text(
+                              'via $displayPathString',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],

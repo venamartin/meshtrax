@@ -7460,18 +7460,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage existing,
     ChannelMessage incoming,
   ) async {
-    // An EXPLICIT zero-hop copy is not "missing its path" — the empty path
-    // IS the path (we heard the sender's own transmitter). Echoes still
-    // merge into the variants and bump the repeat count below, but they
-    // must not rewrite how the kept copy arrived, or the Direct badge
-    // vanishes the moment the first repeater echo lands.
-    final keepDirect = existing.pathLength == 0;
-    final mergedPathBytes = keepDirect
-        ? existing.pathBytes
-        : _selectPreferredPathBytes(
-            existing.pathBytes,
-            incoming.pathBytes,
-          );
+    final mergedPathBytes = _selectPreferredPathBytes(
+      existing.pathBytes,
+      incoming.pathBytes,
+    );
     // The hash size must travel WITH the bytes it describes: a queue-first
     // insert stores hashSize 1 with no bytes, and keeping it while the
     // RX-log copy's 2-byte-hash path merges in would render every hop as
@@ -7483,14 +7475,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       existing.pathVariants,
       incoming.pathVariants,
     );
-    final mergedPathLength = keepDirect
-        ? 0
-        : _mergePathLength(
-            existing.pathLength,
-            incoming.pathLength,
-            mergedPathBytes,
-            mergedHashSize,
-          );
+    final mergedPathLength = _mergePathLength(
+      existing.pathLength,
+      incoming.pathLength,
+      mergedPathBytes,
+      mergedHashSize,
+    );
     // A repeat can be the sender's re-stamped RETRY: harvest its wire
     // timestamp so reaction hashes computed against THAT copy still match
     // this row (#mtdebug capture: a reaction 31 s off the first-heard stamp).
@@ -7504,6 +7494,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathBytes: mergedPathBytes,
         pathHashSize: mergedHashSize,
         pathVariants: mergedPathVariants,
+        // Latch, never clear: any zero-hop copy means they were in range,
+        // even though the display path adopts the longest observed route.
+        heardDirect: m.heardDirect || incoming.heardDirect,
         packetHash: m.packetHash ?? incoming.packetHash,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
         sentWireSecs: m.sentWireSecs.contains(incomingSecs)
