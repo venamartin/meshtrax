@@ -934,9 +934,12 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> _loadDiscoveredContactCache() async {
     final cached = await _discoveryContactStore.loadContacts();
-    _discoveredContacts
-      ..clear()
-      ..addAll(cached);
+    // Merge, never clobber: anything discovered while this load was in
+    // flight is newer than its cached row and must survive.
+    final live = {for (final c in _discoveredContacts) c.publicKeyHex};
+    _discoveredContacts.addAll(
+      cached.where((c) => !live.contains(c.publicKeyHex)),
+    );
   }
 
   Future<void> loadChannelSettings({int? maxChannels}) async {
@@ -3577,6 +3580,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _messageStore.clearMessages(contact.publicKeyHex);
     notifyListeners();
     unawaited(_persistContacts());
+    unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
   }
 
   /// Removes all contacts that are not favorites (or all contacts if [includesFavorites] is true).
@@ -3600,6 +3604,8 @@ class MeshCoreConnector extends ChangeNotifier {
     }
     notifyListeners();
     unawaited(_persistContacts());
+    unawaited(_discoveryContactStore
+        .removeContacts(toRemove.map((c) => c.publicKeyHex)));
   }
 
   Future<void> updateKnownDiscovered() async {
@@ -3611,7 +3617,9 @@ class MeshCoreConnector extends ChangeNotifier {
         ),
       );
     }
-    unawaited(_persistDiscoveredContacts());
+    unawaited(
+      _discoveryContactStore.upsertContacts(List.of(_discoveredContacts)),
+    );
     notifyListeners();
   }
 
@@ -3620,7 +3628,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _discoveredContacts.removeWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
-    unawaited(_persistDiscoveredContacts());
+    unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
     notifyListeners();
   }
 
@@ -5222,9 +5230,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await _contactStore.saveContacts(_contacts);
   }
 
-  Future<void> _persistDiscoveredContacts() async {
-    await _discoveryContactStore.saveContacts(_discoveredContacts);
-  }
+  // Discovered contacts have no radio backstop, so the store is append-only
+  // per key: upserts and targeted removes, never a whole-list rewrite. A
+  // stale or still-loading in-memory list can therefore never erase rows.
 
   int _latestContactLastmod() {
     if (_contacts.isEmpty) return 0;
@@ -8277,21 +8285,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     // Update existing contact
     if (existingIndex >= 0) {
-      _discoveredContacts[existingIndex] = _discoveredContacts[existingIndex]
-          .copyWith(
-            rawPacket: rawPacket,
-            name: contact.name,
-            type: contact.type,
-            pathLength: contact.pathLength,
-            path: contact.path,
-            latitude: contact.latitude,
-            longitude: contact.longitude,
-            lastSeen: contact.lastSeen,
-            flags: strippedFlags,
-            isActive: addActive,
-          );
+      final updated = _discoveredContacts[existingIndex].copyWith(
+        rawPacket: rawPacket,
+        name: contact.name,
+        type: contact.type,
+        pathLength: contact.pathLength,
+        path: contact.path,
+        latitude: contact.latitude,
+        longitude: contact.longitude,
+        lastSeen: contact.lastSeen,
+        flags: strippedFlags,
+        isActive: addActive,
+      );
+      _discoveredContacts[existingIndex] = updated;
       notifyListeners();
-      unawaited(_persistDiscoveredContacts());
+      unawaited(_discoveryContactStore.upsertContacts([updated]));
       return;
     }
 
@@ -8311,7 +8319,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
     _discoveredContacts.add(disContact);
 
-    unawaited(_persistDiscoveredContacts());
+    unawaited(_discoveryContactStore.upsertContacts([disContact]));
 
     // Show notification for new contact (advertisement)
     if (_appSettingsService != null && !noNotify) {
@@ -8327,22 +8335,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void removeAllDiscoveredContacts({bool includeRepeaters = false}) {
-    if (!includeRepeaters) {
-      _discoveredContacts.removeWhere((c) => c.type != advTypeRepeater);
-    } else {
-      _discoveredContacts.clear();
-    }
-    unawaited(_persistDiscoveredContacts());
+    final removed = [
+      for (final c in _discoveredContacts)
+        if (includeRepeaters || c.type != advTypeRepeater) c.publicKeyHex,
+    ];
+    _discoveredContacts.removeWhere((c) => removed.contains(c.publicKeyHex));
+    unawaited(_discoveryContactStore.removeContacts(removed));
     notifyListeners();
   }
 
   void removeDiscoveredContactsOlderThan(Duration maxAge, {bool includeRepeaters = false}) {
     final cutoff = DateTime.now().subtract(maxAge);
-    _discoveredContacts.removeWhere((c) {
-      if (!includeRepeaters && c.type == advTypeRepeater) return false;
-      return c.lastSeen.isBefore(cutoff);
-    });
-    unawaited(_persistDiscoveredContacts());
+    final removed = [
+      for (final c in _discoveredContacts)
+        if ((includeRepeaters || c.type != advTypeRepeater) &&
+            c.lastSeen.isBefore(cutoff))
+          c.publicKeyHex,
+    ];
+    _discoveredContacts.removeWhere((c) => removed.contains(c.publicKeyHex));
+    unawaited(_discoveryContactStore.removeContacts(removed));
     notifyListeners();
   }
 
@@ -8367,13 +8378,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _messageStore.clearMessages(contact.publicKeyHex);
     }
 
-    _discoveredContacts.removeWhere((c) =>
-        c.type == advTypeRepeater &&
-        !c.isFavorite &&
-        (cutoff == null || c.lastSeen.isBefore(cutoff)));
+    final removedDiscovered = [
+      for (final c in _discoveredContacts)
+        if (c.type == advTypeRepeater &&
+            !c.isFavorite &&
+            (cutoff == null || c.lastSeen.isBefore(cutoff)))
+          c.publicKeyHex,
+    ];
+    _discoveredContacts.removeWhere(
+        (c) => removedDiscovered.contains(c.publicKeyHex));
 
     unawaited(_persistContacts());
-    unawaited(_persistDiscoveredContacts());
+    unawaited(_discoveryContactStore.removeContacts(removedDiscovered));
     notifyListeners();
   }
 
