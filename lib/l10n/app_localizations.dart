@@ -2707,7 +2707,7 @@ abstract class AppLocalizations {
   /// No description provided for @dmChannel_noMatchBody.
   ///
   /// In en, this message translates to:
-  /// **'A DM needs their full public key, which only arrives in an advert. Ask them to send one — and send yours too, since they need your key to reply.'**
+  /// **'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.'**
   String get dmChannel_noMatchBody;
 
   /// No description provided for @dmChannel_askInChannel.

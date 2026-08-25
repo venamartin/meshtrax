@@ -763,7 +763,7 @@
       }
     }
   },
-  "dmChannel_noMatchBody": "A DM needs their full public key, which only arrives in an advert. Ask them to send one — and send yours too, since they need your key to reply.",
+  "dmChannel_noMatchBody": "You don't have their key yet, and they'll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.",
   "dmChannel_askInChannel": "Ask in channel",
   "dmChannel_sendMyAdvert": "Send my advert",
   "dmChannel_askText": "please send an advert so I can DM you",
