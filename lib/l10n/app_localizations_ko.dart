@@ -695,6 +695,13 @@ class AppLocalizationsKo extends AppLocalizations {
       '메시지에 대한 상세한 경로 및 시간 정보를 표시';
 
   @override
+  String get appSettings_senderNameColors => 'Colorful sender names';
+
+  @override
+  String get appSettings_senderNameColorsSubtitle =>
+      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+
+  @override
   String get appSettings_notifications => '알림';
 
   @override

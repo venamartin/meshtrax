@@ -1432,6 +1432,18 @@ abstract class AppLocalizations {
   /// **'Show detailed routing and timing metadata for messages'**
   String get appSettings_enableMessageTracingSubtitle;
 
+  /// No description provided for @appSettings_senderNameColors.
+  ///
+  /// In en, this message translates to:
+  /// **'Colorful sender names'**
+  String get appSettings_senderNameColors;
+
+  /// No description provided for @appSettings_senderNameColorsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Give each channel sender their own name color. Off uses the theme color for everyone.'**
+  String get appSettings_senderNameColorsSubtitle;
+
   /// No description provided for @appSettings_notifications.
   ///
   /// In en, this message translates to:

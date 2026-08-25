@@ -288,6 +288,8 @@
   "appSettings_languageUk": "Українська",
   "appSettings_enableMessageTracing": "Enable Message Tracing",
   "appSettings_enableMessageTracingSubtitle": "Show detailed routing and timing metadata for messages",
+  "appSettings_senderNameColors": "Colorful sender names",
+  "appSettings_senderNameColorsSubtitle": "Give each channel sender their own name color. Off uses the theme color for everyone.",
   "appSettings_notifications": "Notifications",
   "appSettings_enableNotifications": "Enable Notifications",
   "appSettings_enableNotificationsSubtitle": "Receive notifications for messages and adverts",

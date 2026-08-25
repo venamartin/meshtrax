@@ -1116,6 +1116,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final uiState = context.read<UiViewStateService>();
     final connector = context.read<MeshCoreConnector>();
     final enableTracing = settingsService.settings.enableMessageTracing;
+    final senderNameColors = settingsService.settings.senderNameColors;
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
     final poi = _parsePoiMessage(message.text);
@@ -1205,7 +1206,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: _getColorForName(message.senderName),
+                                    color: senderNameColors
+                                        ? _getColorForName(message.senderName)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                   ),
                                 ),
                               ),
@@ -1652,7 +1657,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 // keeps the theme accent, like the composer reply banner.
                 color: isOwnNode
                     ? Theme.of(context).colorScheme.secondary
-                    : _getColorForName(message.replyToSenderName ?? ''),
+                    : (context
+                            .read<AppSettingsService>()
+                            .settings
+                            .senderNameColors
+                        ? _getColorForName(message.replyToSenderName ?? '')
+                        : Theme.of(context).colorScheme.onSecondaryContainer),
               ),
             ),
             const SizedBox(height: 2),
@@ -1829,32 +1839,34 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Color _getColorForName(String name) {
-    // Hue from the name hash — stable across sessions and devices — with
-    // brightness matched to the theme: vivid on dark bubbles, deep enough
-    // to read on light ones. Shared by the avatar, the sender name, and
-    // reply quotes so one person is one color everywhere. Two senders in a
-    // big channel can share a hue; accepted (WhatsApp behaves the same).
-    const swatches = [
-      Colors.red,
-      Colors.pink,
-      Colors.purple,
-      Colors.deepPurple,
-      Colors.indigo,
-      Colors.blue,
-      Colors.lightBlue,
-      Colors.cyan,
-      Colors.teal,
-      Colors.green,
-      Colors.lightGreen,
-      Colors.lime,
-      Colors.amber,
-      Colors.orange,
-      Colors.deepOrange,
-      Colors.brown,
-      Colors.blueGrey,
+    // Hue from the name hash — stable across sessions and devices. Shared
+    // by the avatar, the sender name, and reply quotes so one person is one
+    // color everywhere. Hand-curated, perceptually spaced hues: the
+    // Material-swatch version put three near-identical purples and two
+    // muddy neutrals in rotation, which read as constant collisions, and
+    // its 300-shades were pastel where WhatsApp is vivid. Dark mode gets
+    // the saturated tone; light mode re-derives the same hue at reading
+    // depth. Two senders in a big channel can still share a hue; accepted.
+    const palette = [
+      Color(0xFFFF6B6B), // red
+      Color(0xFFFF9F45), // orange
+      Color(0xFFFFD166), // yellow
+      Color(0xFFB5E361), // lime
+      Color(0xFF5FD068), // green
+      Color(0xFF2ED9C3), // teal
+      Color(0xFF4DC9F0), // sky
+      Color(0xFF5B9BFF), // blue
+      Color(0xFF9D8CFF), // indigo
+      Color(0xFFC77DFF), // purple
+      Color(0xFFF368E0), // magenta
+      Color(0xFFFF7EB6), // pink
     ];
-    final swatch = swatches[name.hashCode.abs() % swatches.length];
-    return ChatColors.isLight(context) ? swatch.shade700 : swatch.shade300;
+    final base = palette[name.hashCode.abs() % palette.length];
+    if (!ChatColors.isLight(context)) return base;
+    final hsl = HSLColor.fromColor(base);
+    return hsl
+        .withLightness((hsl.lightness - 0.28).clamp(0.30, 0.42))
+        .toColor();
   }
 
   /// Tiny "Direct" pill for zero-hop messages — the packet's path is empty,
