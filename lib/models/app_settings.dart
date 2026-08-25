@@ -56,6 +56,10 @@ class AppSettings {
   final bool autoFavoriteOnChat;
   final bool autoConnectLastDevice;
 
+  /// Per-sender name colors in channel chats (WhatsApp-style). Off paints
+  /// every sender name in the theme color, as before.
+  final bool senderNameColors;
+
   /// One-time "channel names can be imitated" warning on DM-from-channel;
   /// set when the user checks "don't show again".
   final bool dmIdentityWarningDismissed;
@@ -107,6 +111,7 @@ class AppSettings {
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
     this.autoConnectLastDevice = true,
+    this.senderNameColors = true,
     this.dmIdentityWarningDismissed = false,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
@@ -157,6 +162,7 @@ class AppSettings {
       'jump_to_oldest_unread': jumpToOldestUnread,
       'auto_favorite_on_chat': autoFavoriteOnChat,
       'auto_connect_last_device': autoConnectLastDevice,
+      'sender_name_colors': senderNameColors,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
@@ -233,6 +239,7 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
+      senderNameColors: json['sender_name_colors'] as bool? ?? true,
       dmIdentityWarningDismissed:
           json['dm_identity_warning_dismissed'] as bool? ?? false,
       blockedContactKeys:
@@ -288,6 +295,7 @@ class AppSettings {
     bool? jumpToOldestUnread,
     bool? autoFavoriteOnChat,
     bool? autoConnectLastDevice,
+    bool? senderNameColors,
     bool? dmIdentityWarningDismissed,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
@@ -345,6 +353,7 @@ class AppSettings {
       autoFavoriteOnChat: autoFavoriteOnChat ?? this.autoFavoriteOnChat,
       autoConnectLastDevice:
           autoConnectLastDevice ?? this.autoConnectLastDevice,
+      senderNameColors: senderNameColors ?? this.senderNameColors,
       dmIdentityWarningDismissed:
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,

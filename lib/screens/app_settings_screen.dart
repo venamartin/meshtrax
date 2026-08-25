@@ -236,6 +236,18 @@ class AppSettingsScreen extends StatelessWidget {
               settingsService.setEnableMessageTracing(value);
             },
           ),
+          const Divider(height: 1),
+          SwitchListTile(
+            secondary: const Icon(Icons.palette_outlined),
+            title: Text(context.l10n.appSettings_senderNameColors),
+            subtitle: Text(
+              context.l10n.appSettings_senderNameColorsSubtitle,
+            ),
+            value: settingsService.settings.senderNameColors,
+            onChanged: (value) {
+              settingsService.setSenderNameColors(value);
+            },
+          ),
         ],
       ),
     );

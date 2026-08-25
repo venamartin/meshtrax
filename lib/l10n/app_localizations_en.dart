@@ -710,6 +710,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show detailed routing and timing metadata for messages';
 
   @override
+  String get appSettings_senderNameColors => 'Colorful sender names';
+
+  @override
+  String get appSettings_senderNameColorsSubtitle =>
+      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+
+  @override
   String get appSettings_notifications => 'Notifications';
 
   @override

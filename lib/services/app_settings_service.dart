@@ -244,6 +244,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(dmIdentityWarningDismissed: true));
   }
 
+  Future<void> setSenderNameColors(bool value) async {
+    await updateSettings(_settings.copyWith(senderNameColors: value));
+  }
+
   // --- Blocking (user-generated content moderation) -------------------------
 
   bool isContactBlocked(String publicKeyHex) =>
