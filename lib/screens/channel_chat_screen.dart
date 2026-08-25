@@ -415,9 +415,19 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final candidates = _dmCandidatesFor(connector, senderName);
     if (candidates.isEmpty) {
       _showDmNoMatch(connector, senderName);
-    } else {
-      _showDmCandidatePicker(connector, senderName, candidates);
+      return;
     }
+    // Unambiguous and already in conversation: jump straight in. The
+    // identity decision was made when that conversation started; picker
+    // and warning would be pure friction.
+    if (candidates.length == 1) {
+      final only = candidates.single;
+      if (only.saved && connector.latestContactArrivalUs(only.contact) > 0) {
+        _openDmWith(connector, only.contact, saved: true);
+        return;
+      }
+    }
+    _showDmCandidatePicker(connector, senderName, candidates);
   }
 
   /// Always shown, even for a single match: seeing the key and last-seen
@@ -532,7 +542,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     Contact contact, {
     required bool saved,
   }) async {
-    if (!await _confirmDmIdentity()) return;
+    // An existing conversation is an already-accepted identity — only
+    // warn when this DM would be a new link from channel name to contact.
+    final hasConversation =
+        saved && connector.latestContactArrivalUs(contact) > 0;
+    if (!hasConversation && !await _confirmDmIdentity()) return;
     if (!mounted) return;
     if (!saved) {
       final success = await connector.importDiscoveredContact(contact);
