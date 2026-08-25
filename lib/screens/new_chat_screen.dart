@@ -32,23 +32,17 @@ class NewChatScreen extends StatefulWidget {
 }
 
 class _NewChatScreenState extends State<NewChatScreen> {
-  final TextEditingController _contactsSearchController = TextEditingController();
-  final TextEditingController _discoveredSearchController = TextEditingController();
-  
-  String contactsSearchQuery = '';
-  String discoveredSearchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
-  ContactSortOption contactsSortOption = ContactSortOption.name;
-  ContactTypeFilter contactsTypeFilter = ContactTypeFilter.all;
-  bool contactsShowUnreadOnly = false;
-
-  ContactSortOption discoveredSortOption = ContactSortOption.lastSeen;
-  ContactTypeFilter discoveredTypeFilter = ContactTypeFilter.all;
+  String searchQuery = '';
+  ContactSortOption sortOption = ContactSortOption.lastSeen;
+  ContactTypeFilter typeFilter = ContactTypeFilter.all;
+  ContactSourceFilter sourceFilter = ContactSourceFilter.all;
+  bool showUnreadOnly = false;
 
   @override
   void dispose() {
-    _contactsSearchController.dispose();
-    _discoveredSearchController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -807,30 +801,30 @@ class _NewChatScreenState extends State<NewChatScreen> {
   Widget build(BuildContext context) {
     return Consumer<MeshCoreConnector>(
       builder: (context, connector, child) {
-        final allDeviceContacts = connector.contacts
-            .where((c) => c.type != advTypeRepeater)
-            .toList();
-            
-        final allDiscoveredContacts = connector.discoveredContacts
+        // One merged list, exactly like Manage Repeaters: saved contacts
+        // plus discovered-but-unsaved ones, deduped by allContacts.
+        final contacts = connector.allContacts
             .where((c) => c.type != advTypeRepeater)
             .toList();
 
-        // --- Filter Device Contacts ---
-        var filteredDeviceContacts = allDeviceContacts.where((contact) {
-          if (contactsSearchQuery.isNotEmpty && !matchesContactQuery(contact, contactsSearchQuery)) return false;
-          if (contactsTypeFilter != ContactTypeFilter.all && !_matchesTypeFilter(contact, contactsTypeFilter)) return false;
-          if (contactsShowUnreadOnly && connector.getUnreadCountForContact(contact) == 0) return false;
-          // Filter out own node
-          if (connector.selfPublicKey != null) {
-            final selfPubKeyHex = pubKeyToHex(connector.selfPublicKey!);
-            if (contact.publicKeyHex == selfPubKeyHex) return false;
-          }
+        final selfPubKeyHex = connector.selfPublicKey != null
+            ? pubKeyToHex(connector.selfPublicKey!)
+            : null;
+
+        final filtered = contacts.where((contact) {
+          final isDiscovered = !contact.isActive;
+          if (sourceFilter == ContactSourceFilter.saved && isDiscovered) return false;
+          if (sourceFilter == ContactSourceFilter.discovered && !isDiscovered) return false;
+          if (searchQuery.isNotEmpty && !matchesContactQuery(contact, searchQuery)) return false;
+          if (typeFilter != ContactTypeFilter.all && !_matchesTypeFilter(contact, typeFilter)) return false;
+          if (showUnreadOnly && connector.getUnreadCountForContact(contact) == 0) return false;
+          if (contact.publicKeyHex == selfPubKeyHex) return false;
           return true;
         }).toList();
 
-        switch (contactsSortOption) {
+        switch (sortOption) {
           case ContactSortOption.lastSeen:
-            filteredDeviceContacts.sort((a, b) {
+            filtered.sort((a, b) {
               int cmp = _resolveLastSeen(b, connector).compareTo(_resolveLastSeen(a, connector));
               if (cmp != 0) return cmp;
               return a.name.toLowerCase().compareTo(b.name.toLowerCase());
@@ -839,246 +833,168 @@ class _NewChatScreenState extends State<NewChatScreen> {
           case ContactSortOption.recentMessages:
             // Arrival order, matching the chats screen — the claimed send
             // time is display-only (v6).
-            filteredDeviceContacts.sort((a, b) => connector
+            filtered.sort((a, b) => connector
                 .latestContactArrivalUs(b)
                 .compareTo(connector.latestContactArrivalUs(a)));
             break;
           case ContactSortOption.name:
-            filteredDeviceContacts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
             break;
         }
 
-        // --- Filter Discovered Contacts ---
-        var filteredDiscoveredContacts = allDiscoveredContacts.where((contact) {
-          if (discoveredSearchQuery.isNotEmpty && !matchesDiscoveryContactQuery(contact, discoveredSearchQuery)) return false;
-          if (discoveredTypeFilter != ContactTypeFilter.all && !_matchesTypeFilter(contact, discoveredTypeFilter)) return false;
-          return true;
-        }).toList();
+        final totalCount =
+            contacts.where((c) => c.publicKeyHex != selfPubKeyHex).length;
 
-        if (discoveredSortOption == ContactSortOption.lastSeen) {
-          filteredDiscoveredContacts.sort((a, b) {
-            int cmp = _resolveLastSeen(b, connector).compareTo(_resolveLastSeen(a, connector));
-            if (cmp != 0) return cmp;
-            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          });
-        } else {
-          filteredDiscoveredContacts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-        }
-
-        final totalCount = allDeviceContacts.length + allDiscoveredContacts.length;
-
-        return DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(context.l10n.newChat_title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(
-                    context.l10n.newChat_contactCount(totalCount),
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
-                  ),
-                ],
-              ),
-              // Tab bar moved out of AppBar to place buttons above it
-            ),
-            body: Column(
+        return Scaffold(
+          appBar: AppBar(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Global Actions (Above Tabs)
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.green,
-                    child: Icon(Icons.person_add, color: Colors.white),
-                  ),
-                  title: Text(context.l10n.newChat_newContact, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.qr_code_scanner),
-                    onPressed: () => _navigateToQrScanner(context),
-                  ),
-                  onTap: () => _showAddContactDialog(context),
+                Text(context.l10n.newChat_title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  context.l10n.newChat_contactCount(totalCount),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
                 ),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.green,
-                    child: Icon(Icons.tag, color: Colors.white),
-                  ),
-                  title: Text(context.l10n.newChat_newChannel, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.qr_code_scanner),
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ChannelQrScannerScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  onTap: () => _showAddChannelDialog(context),
+              ],
+            ),
+          ),
+          body: Column(
+            children: [
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.person_add, color: Colors.white),
                 ),
-                // The Tab Bar
-                TabBar(
-                  tabs: [
-                    Tab(text: context.l10n.newChat_myContacts.toUpperCase()),
-                    Tab(text: context.l10n.newChat_discovered.toUpperCase()),
-                  ],
+                title: Text(context.l10n.newChat_newContact, style: const TextStyle(fontWeight: FontWeight.bold)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () => _navigateToQrScanner(context),
                 ),
-                // The Tab Content
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      // TAB 1: My Contacts
-                      Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _contactsSearchController,
-                                    decoration: InputDecoration(
-                                      hintText: context.l10n.listFilter_searchHint,
-                                      prefixIcon: const Icon(Icons.search),
-                                      suffixIcon: contactsSearchQuery.isNotEmpty
-                                          ? IconButton(
-                                              icon: const Icon(Icons.clear),
-                                              onPressed: () {
-                                                _contactsSearchController.clear();
-                                                setState(() => contactsSearchQuery = '');
-                                              },
-                                            )
-                                          : null,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                                    ),
-                                    onChanged: (val) => setState(() => contactsSearchQuery = val),
-                                  ),
-                                ),
-                                ContactsFilterMenu(
-                                  sortOption: contactsSortOption,
-                                  typeFilter: contactsTypeFilter,
-                                  showUnreadOnly: contactsShowUnreadOnly,
-                                  onSortChanged: (val) => setState(() => contactsSortOption = val),
-                                  onTypeFilterChanged: (val) => setState(() => contactsTypeFilter = val),
-                                  onUnreadOnlyChanged: (val) => setState(() => contactsShowUnreadOnly = val),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: ListView(
-                              children: [
-                                const Divider(height: 1),
-                          ...filteredDeviceContacts.map((contact) => ContactTile(
-                            contact: contact,
-                            lastSeen: contact.lastSeen,
-                            unreadCount: connector.getUnreadCountForContact(contact),
-                            isFavorite: contact.isFavorite,
-                            isDiscovered: false,
-                            onTap: () => _openChat(contact),
-                            onLongPress: () => _showContactOptions(context, contact),
-                          )),
-                        ],
+                onTap: () => _showAddContactDialog(context),
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.tag, color: Colors.white),
+                ),
+                title: Text(context.l10n.newChat_newChannel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChannelQrScannerScreen(),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-
-                // TAB 2: Discovered Contacts
-                Column(
+                onTap: () => _showAddChannelDialog(context),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _discoveredSearchController,
-                              decoration: InputDecoration(
-                                hintText: context.l10n.listFilter_searchHint,
-                                prefixIcon: const Icon(Icons.search),
-                                suffixIcon: discoveredSearchQuery.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        onPressed: () {
-                                          _discoveredSearchController.clear();
-                                          setState(() => discoveredSearchQuery = '');
-                                        },
-                                      )
-                                    : null,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                              ),
-                              onChanged: (val) => setState(() => discoveredSearchQuery = val),
-                            ),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: context.l10n.listFilter_searchHint,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => searchQuery = '');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          DiscoveryContactsFilterMenu(
-                            sortOption: discoveredSortOption,
-                            typeFilter: discoveredTypeFilter,
-                            onSortChanged: (val) => setState(() => discoveredSortOption = val),
-                            onTypeFilterChanged: (val) => setState(() => discoveredTypeFilter = val),
-                          ),
-                          PopupMenuButton(
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.delete, color: Colors.red),
-                                    const SizedBox(width: 8),
-                                    Text(context.l10n.discoveredContacts_deleteContactAll),
-                                  ],
-                                ),
-                                onTap: () {
-                                  _deleteContacts(context, connector);
-                                },
-                              ),
-                            ],
-                            icon: const Icon(Icons.more_vert),
-                          ),
-                        ],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        onChanged: (val) => setState(() => searchQuery = val),
                       ),
                     ),
-                    Expanded(
-                      child: ListView(
-                        children: [
-                          ...filteredDiscoveredContacts.map((contact) => ContactTile(
+                    ContactsFilterMenu(
+                      sortOption: sortOption,
+                      typeFilter: typeFilter,
+                      sourceFilter: sourceFilter,
+                      showUnreadOnly: showUnreadOnly,
+                      onSortChanged: (val) => setState(() => sortOption = val),
+                      onTypeFilterChanged: (val) => setState(() => typeFilter = val),
+                      onSourceFilterChanged: (val) => setState(() => sourceFilter = val),
+                      onUnreadOnlyChanged: (val) => setState(() => showUnreadOnly = val),
+                    ),
+                    PopupMenuButton(
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.delete, color: Colors.red),
+                              const SizedBox(width: 8),
+                              Text(context.l10n.discoveredContacts_deleteContactAll),
+                            ],
+                          ),
+                          onTap: () {
+                            _deleteContacts(context, connector);
+                          },
+                        ),
+                      ],
+                      icon: const Icon(Icons.more_vert),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text(
+                          searchQuery.isEmpty
+                              ? context.l10n.contacts_noContacts
+                              : context.l10n.contacts_noMatchingContacts,
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final contact = filtered[index];
+                          final isDiscovered = !contact.isActive;
+                          return ContactTile(
                             contact: contact,
                             lastSeen: contact.lastSeen,
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
-                            isDiscovered: true,
+                            isDiscovered: isDiscovered,
                             onTap: () async {
+                              if (!isDiscovered) {
+                                _openChat(contact);
+                                return;
+                              }
                               final success = await connector.importDiscoveredContact(contact);
                               if (success && context.mounted) {
                                 _openChat(contact);
                               } else if (!success && context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(context.l10n.contacts_contactImportFailed)),
+                                showDismissibleSnackBar(
+                                  context,
+                                  content: Text(context.l10n.contacts_contactImportFailed),
                                 );
                               }
                             },
-                            onLongPress: () => _showDiscoveredContactOptions(contact, connector),
-                          )),
-                        ],
+                            onLongPress: () => isDiscovered
+                                ? _showDiscoveredContactOptions(contact, connector)
+                                : _showContactOptions(context, contact),
+                          );
+                        },
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ), // TabBarView
-          ), // Expanded
-        ],
-      ), // Column
-    ), // Scaffold
-  ); // DefaultTabController
-},
-);
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
-
 }

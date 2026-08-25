@@ -3280,6 +3280,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get listFilter_filters => 'Filtres';
 
   @override
+  String get listFilter_source => 'Source';
+
+  @override
+  String get listFilter_saved => 'Saved';
+
+  @override
+  String get listFilter_discovered => 'Discovered';
+
+  @override
   String get listFilter_all => 'Tout';
 
   @override

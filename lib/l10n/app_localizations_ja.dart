@@ -3123,6 +3123,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get listFilter_filters => 'フィルター';
 
   @override
+  String get listFilter_source => 'Source';
+
+  @override
+  String get listFilter_saved => 'Saved';
+
+  @override
+  String get listFilter_discovered => 'Discovered';
+
+  @override
   String get listFilter_all => 'すべて';
 
   @override
