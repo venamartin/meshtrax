@@ -1459,6 +1459,58 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_mention => 'Wspomnij';
 
   @override
+  String get dmChannel_menuLabel => 'Direct Message';
+
+  @override
+  String dmChannel_pickerTitle(String name) {
+    return 'Send DM to $name';
+  }
+
+  @override
+  String get dmChannel_pickerHint =>
+      'Check the key and last-seen time — names are not unique.';
+
+  @override
+  String get dmChannel_warningTitle => 'Is this really them?';
+
+  @override
+  String get dmChannel_warningBody =>
+      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+
+  @override
+  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String dmChannel_noMatchTitle(String name) {
+    return 'Can\'t DM $name yet';
+  }
+
+  @override
+  String get dmChannel_noMatchBody =>
+      'A DM needs their full public key, which only arrives in an advert. Ask them to send one — and send yours too, since they need your key to reply.';
+
+  @override
+  String get dmChannel_askInChannel => 'Ask in channel';
+
+  @override
+  String get dmChannel_sendMyAdvert => 'Send my advert';
+
+  @override
+  String get dmChannel_askText => 'please send an advert so I can DM you';
+
+  @override
+  String get dmChannel_watching =>
+      'Watching for their advert — you\'ll be asked here when it arrives.';
+
+  @override
+  String dmChannel_advertHeard(String name) {
+    return '$name is now reachable';
+  }
+
+  @override
+  String get dmChannel_openDm => 'DM';
+
+  @override
   String get appSettings_zoomLevel => 'Poziom powiększenia';
 
   @override

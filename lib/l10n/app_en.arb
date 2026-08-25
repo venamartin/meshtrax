@@ -742,6 +742,41 @@
   "chat_newMessages": "NEW MESSAGES",
   "chat_addReaction": "Add Reaction",
   "chat_mention": "Mention",
+  "dmChannel_menuLabel": "Direct Message",
+  "dmChannel_pickerTitle": "Send DM to {name}",
+  "@dmChannel_pickerTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dmChannel_pickerHint": "Check the key and last-seen time — names are not unique.",
+  "dmChannel_warningTitle": "Is this really them?",
+  "dmChannel_warningBody": "Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact's public key another way first.",
+  "dmChannel_dontShowAgain": "Don't show this again",
+  "dmChannel_noMatchTitle": "Can't DM {name} yet",
+  "@dmChannel_noMatchTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dmChannel_noMatchBody": "A DM needs their full public key, which only arrives in an advert. Ask them to send one — and send yours too, since they need your key to reply.",
+  "dmChannel_askInChannel": "Ask in channel",
+  "dmChannel_sendMyAdvert": "Send my advert",
+  "dmChannel_askText": "please send an advert so I can DM you",
+  "dmChannel_watching": "Watching for their advert — you'll be asked here when it arrives.",
+  "dmChannel_advertHeard": "{name} is now reachable",
+  "@dmChannel_advertHeard": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dmChannel_openDm": "DM",
   "appSettings_zoomLevel": "Zoom level",
   "common_reset": "Reset",
   "chat_reactionsTitle": "Reactions",

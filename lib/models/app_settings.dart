@@ -56,6 +56,10 @@ class AppSettings {
   final bool autoFavoriteOnChat;
   final bool autoConnectLastDevice;
 
+  /// One-time "channel names can be imitated" warning on DM-from-channel;
+  /// set when the user checks "don't show again".
+  final bool dmIdentityWarningDismissed;
+
   /// Public-key hexes of blocked direct-message contacts.
   final Set<String> blockedContactKeys;
 
@@ -103,6 +107,7 @@ class AppSettings {
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
     this.autoConnectLastDevice = true,
+    this.dmIdentityWarningDismissed = false,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
@@ -152,6 +157,7 @@ class AppSettings {
       'jump_to_oldest_unread': jumpToOldestUnread,
       'auto_favorite_on_chat': autoFavoriteOnChat,
       'auto_connect_last_device': autoConnectLastDevice,
+      'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
     };
@@ -227,6 +233,8 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
+      dmIdentityWarningDismissed:
+          json['dm_identity_warning_dismissed'] as bool? ?? false,
       blockedContactKeys:
           ((json['blocked_contact_keys'] as List?)
               ?.map((e) => e.toString())
@@ -280,6 +288,7 @@ class AppSettings {
     bool? jumpToOldestUnread,
     bool? autoFavoriteOnChat,
     bool? autoConnectLastDevice,
+    bool? dmIdentityWarningDismissed,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) {
@@ -336,6 +345,8 @@ class AppSettings {
       autoFavoriteOnChat: autoFavoriteOnChat ?? this.autoFavoriteOnChat,
       autoConnectLastDevice:
           autoConnectLastDevice ?? this.autoConnectLastDevice,
+      dmIdentityWarningDismissed:
+          dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
     );
