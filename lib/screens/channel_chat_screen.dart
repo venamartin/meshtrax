@@ -1196,13 +1196,26 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                   bottom: 4,
                                 )
                               : EdgeInsets.zero,
-                          child: Text(
-                            message.senderName,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: _getColorForName(message.senderName),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  message.senderName,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: _getColorForName(message.senderName),
+                                  ),
+                                ),
+                              ),
+                              // Zero-hop copy: our radio heard THEIR radio,
+                              // no repeater in between — worth celebrating.
+                              if (message.pathLength == 0) ...[
+                                const SizedBox(width: 6),
+                                _buildDirectPill(),
+                              ],
+                            ],
                           ),
                         ),
                         if (gifId == null) const SizedBox(height: 4),
@@ -1839,6 +1852,33 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     ];
     final swatch = swatches[name.hashCode.abs() % swatches.length];
     return ChatColors.isLight(context) ? swatch.shade700 : swatch.shade300;
+  }
+
+  /// Tiny "Direct" pill for zero-hop messages — the packet's path is empty,
+  /// so the RF we demodulated came straight from the sender's transmitter.
+  /// Echo copies heard later merge into repeatCount/pathVariants and never
+  /// overwrite the kept copy, so this stays honest alongside the ↻ counter.
+  Widget _buildDirectPill() {
+    final green = ChatColors.isLight(context)
+        ? Colors.green.shade700
+        : Colors.green.shade300;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: green.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: green.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Text(
+        context.l10n.chat_direct,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: green,
+          height: 1.2,
+        ),
+      ),
+    );
   }
 
   Widget _buildReplyBanner(double textScale) {
