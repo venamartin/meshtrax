@@ -1,6 +1,16 @@
 # Weighted Graph Path Determination Module for DMs
 
-Status: **design complete** — all open questions resolved; no code yet.
+Status: **implementation underway.** Start at **§ TODO — active work**
+for what happens next; everything after it is rationale, history, and
+the record of how each decision was reached.
+
+Design complete; Phase 0 (the
+`packages/path_graph` module) and most of Phase 1 (the `test/path_lab`
+harness) are built and running against real hardware on branch
+`feat/path-graph-package` (draft PR #71, held unmerged through the
+verification campaign). See `docs/path-graph-implementation.md` for the
+phase plan and "Implementation status" below for what exists and what
+the bench has already corrected.
 Last updated: 2026-08-05.
 
 ## In plain language
@@ -152,6 +162,17 @@ me and who hears my contact, what path bytes should this DM use?*
   and dropped. Advert parsing is the priority `_parseRawPacket`
   extension. Cleartext path bytes on undecryptable packets harvest edges
   at `anonymous` grade.
+* **2026-08-05 (implementation)** — Phase 0 package + Phase 1 harness
+  **built** (branch `feat/path-graph-package`, draft PR #71 held
+  unmerged; 50 tests). Bench-driven corrections: egress half-life
+  45 min with proven-tier 4× slower decay; Discover stores measured dB
+  both directions (uplink = ctl payload byte 1, downlink = frame byte 1;
+  30 s response window) and first-hop cost blends measured quality
+  70/tally 30; trace needs random uint32 tags (packet dedup) and has no
+  firmware rate limiter; `observeTrace` + `findPathToRepeater` +
+  `findAlternatives` + `updateConfig` added to the API; `lastHopHeard`
+  flag on `observePath`. Separate app fix PR #72 (USB picker suspends
+  BLE auto-reconnect).
 * **2026-08-05 (position policy)** — position is **optional, opt-in, and
   three-sourced**: Off/manual (default — zero permissions, home position
   by map tap), radio position (companion GPS/user-set node position when
@@ -308,6 +329,19 @@ own view. Consequences:
   the user sends to a 1-byte target, the app truncates each hop of the
   returned path to its first byte. Lossless in that direction, always
   correct.
+
+  **RE-CONFIRMED 2026-08-14 by the user, after seeing the live numbers:
+  "we need to stay clear of 1-byte path. It messes everything up. So so
+  so many overlaps."** This is settled — do not revisit admitting
+  1-byte paths as edge-only or ambiguity-discounted evidence. First
+  live-mesh corpus (15 min, one position): **55 of 86 packets (64%)
+  carried 1-byte paths and were dropped**. That is the environment
+  metric, not a defect: the region-wide census found 88% of 1-byte
+  prefixes colliding, so those 55 packets carry hop identities that
+  cannot be resolved to a node — feeding them in would fabricate edges
+  between whichever unrelated repeaters happen to share a first byte.
+  A third of the traffic, honestly identified, beats all of it wrongly
+  identified.
 * At 2-byte width the geo radius on Corescope import is just
   belt-and-suspenders (at 1-byte it would be essential — collapsing a whole
   region into 256 buckets would create false edges between far-apart
@@ -387,9 +421,9 @@ independent review 2026-08-05):
 
 | Probe | Reach | Network cost | What it teaches |
 |---|---|---|---|
-| **Discover** | direct RF range only | ~free on air — zero-hop CONTROL, never retransmitted (`Mesh.cpp:69-75`). **But responses are rate-limited: 4 per 2 min per repeater, shared across ALL requesters** (`discover_limiter`) | "who hears me right now". Response **byte 1 is the uplink SNR** — the level at which the repeater heard *our request* (the ideal ranking signal; the app currently skips this byte). No response ≠ absent — may be limiter-exhausted. |
+| **Discover** | direct RF range only | ~free on air — zero-hop CONTROL, never retransmitted (`Mesh.cpp:69-75`). **But responses are rate-limited: 4 per 2 min per repeater, shared across ALL requesters** (`discover_limiter`), and arrive over a **~30 s window** (randomized anti-collision delay, `getRetransmitDelay×4`) | **Measures the first hop in BOTH directions** (bench-corrected layout: the 0x8E frame is `[code][our RX snr][rssi][path_len][ctl payload…]`; **uplink SNR = ctl payload byte 1** — how well they heard US; **downlink = frame byte 1** — how well we heard them). Both dB values are stored on the egress entry (EWMA over repeat probes). No response ≠ absent — may be limiter-exhausted. |
 | **Path discovery** (`CMD_SEND_PATH_DISCOVERY_REQ`) | network (one flood REQ + flooded response) | ~2 floods | **The remote probe we thought didn't exist.** Firmware pushes 0x8D with BOTH proven paths: out_path (us→them) *and* in_path (them→us — its `path[0]` is their doorstep). MeshTrax doesn't send the command or handle 0x8D yet — small connector work. |
-| **Trace** | the named path only | ~2×hops packets, rest of mesh silent | whether one specific route works end-to-end + per-hop SNR. **TRACE path bytes are SNRs, not hashes — never feed them to `observePath`.** |
+| **Trace** | the named path only | ~2×hops packets, rest of mesh silent. **No rate limiter** (firmware-verified — unlike Discover); the only gates are `disable_fwd`, next-hop match, and packet dedup — so every trace needs a **random uint32 tag** (same tag + path = byte-identical packet, silently dropped by `hasSeen`; a seconds-timestamp tag breaks rapid re-traces — bug found on the bench, also present in `path_trace_map.dart`) | whether one specific route works end-to-end + per-hop SNR (snr[i] = how well hop i heard the *previous* transmission, so snr[0] proves my first hop heard ME). A **round-trip trace fills both directions of every link with the same rule** — the fastest way to mint a bidirectional corridor. **TRACE path bytes are SNRs, not hashes — never feed them to `observePath`; feed `observeTrace` instead.** |
 | **Flood DM** | network *as configured* | every forwarding repeater retransmits once. **Scoped flooding is real**: with a transport/region code set, only matching repeaters forward; repeaters may deny unscoped floods (`REGION_DENY_FLOOD`); advert floods default-cap at 8 hops | full route both ways via the flooded path-return — and delivers the message. "Flood always works" is configuration-dependent; the module must know whether sends were scoped. |
 
 Escalation ladder for a DM send (flood is the last resort, and the cheap
@@ -458,9 +492,15 @@ infrastructure (stable), the contact's ingress moves at *their* pace — only
 my own egress list has a minutes-scale shelf life. Conveniently it's the
 smallest table and pairs with the cheapest probe. Adjustments:
 
-* **Asymmetric decay**: egress entries decay in minutes and weight
-  recency-dominant (latest last-hop beats an hour of tally); contact
-  ingress keeps slow decay.
+* **Asymmetric decay (bench-corrected 2026-08-05)**: egress ages on a
+  minutes scale, contact ingress on hours — but the original 10-minute
+  egress half-life **evaporated bench evidence between tests** (a
+  repeater that routed fine returned FLOOD(noEvidence) 40 quiet minutes
+  later). Corrected: **45-minute half-life**, and **proven egress
+  (Discover / delivered send / trace) decays 4× slower than an inferred
+  last-hop guess** — a measurement outlives a guess. Movement, not the
+  clock, is the real invalidator; position gating covers that when a
+  position source exists.
 * **Position-tag egress entries** (phone GPS already in scope): each
   observation stamped with where it was made; weight collapses with
   distance from the recording position — staleness becomes a measured
@@ -594,6 +634,7 @@ remembering when judging firmware-chosen out_paths.
   value), genuinely two-way traffic on busy corridors, and our own
   handshakes/probes. Adverts supply freshness and coverage, never
   bidirectionality by themselves.
+* **Fabrication defense — dropped for v1 (decided 2026-08-05)**: path
   bytes are technically unauthenticated, but on a cooperative hobbyist
   mesh the chance of deliberate path fabrication is near zero — no
   rate-capping machinery. What stays is cheap hygiene against
@@ -680,10 +721,24 @@ The whole public surface — everything else is internal:
   reverse-proven). `origin` carries attribution quality:
   `pubkeyConfirmed(contact)` | `uniqueName(contact)` | `anonymous`.
   **Rejects stride < 2** (2-byte-only ingest rule) — dropped observations
-  are counted, not silently ignored.
-* `observeDiscoverResults([(repeaterHash, snr)...], position?,
-  failureEpisode)` — proven egress refresh; acts as the supersede/slash
-  event only when `failureEpisode` is true.
+  are counted, not silently ignored. `lastHopHeard` flag (implementation
+  refinement, 2026-08-05): true only for paths physically received over
+  RF — their final hop is a repeater *I heard* and feeds the last-hop
+  egress prior; payload-embedded paths (path-return contents, firmware
+  out_paths) pass false, since their final hop proves nothing about my
+  RX.
+* `observeDiscoverResults([(repeaterHash, uplinkSnr, rxSnr)...],
+  position?, failureEpisode)` — proven egress refresh carrying the
+  measured dB in **both directions** (uplink = they heard us, rx = we
+  heard them; stored per entry, EWMA over repeat probes, and the
+  first-hop candidate cost blends measured quality 70% with the tally
+  30% — a strong new responder outranks a weak favourite). Acts as the
+  supersede/slash event only when `failureEpisode` is true.
+* `observeTrace(hops, snrs)` — trace results as a first-class input
+  (implemented 2026-08-05): snr[i] is how well hop i heard the previous
+  transmission, so snr[0] upgrades my first hop to proven egress, each
+  hop pair gets `measuredSnr` (EWMA) plus an attempt-counted success,
+  and a round-trip path fills both directions with no special case.
 * `reportSendResult(pathBytes, success, {tripTimeMs?})` — drives the
   escalation ladder and the failure penalty; success upgrades the first
   hop to proven egress; trip time kept as tiebreaker and forwarded signal
@@ -697,7 +752,19 @@ The whole public surface — everything else is internal:
   egress rows and observation stride to the connected radio.
 * `importGraph(json, homePosition, radiusKm)` — region seed.
 * `findPath(contactPubkey)` → `PathResult.direct()` (zero-hop) |
-  `PathResult(bidirectional bytes)` | `PathResult.flood()`.
+  `PathResult(bytes, estDelivery)` | `PathResult.flood(reason)` — the
+  flood reason (`noEvidence` / `noBidirectionalRoute` / …) feeds the
+  why-this-path UI.
+* `findPathToRepeater(repeaterHash)` — added 2026-08-05: the target is
+  the node itself (repeater/room login, map tap); a repeater that is
+  also my doorstep yields a single-hop path.
+* `findAlternatives(contactPubkey)` / `findAlternativesToRepeater(hash)`
+  — up to k genuinely divergent routes via edge penalties (the retry
+  ladder's alternative step and the UI's route picker).
+* `updateConfig(config)` — live retune (the β slider); affects routing
+  immediately, never touches stored evidence.
+* `snapshot()` / `egressCandidates()` / `ingressCandidates(pk)` /
+  `counters` — read-only views for UI, debug, and the harness.
 
 App-side hooks required (connector/service level — corrected by review):
 
@@ -809,9 +876,11 @@ explicit buttons.
 
 Contact ingress lists are per-contact facts but live in the *module's* DB
 as their own table — `contact_ingress(contactPubkey, repeaterHash, weight,
-lastSeen, evidence, observedLat?, observedLon?)`, self as just another row
-keyed by my pubkey; the nullable position stamp (phone GPS at observation
-time, mainly for self rows) powers the mobility distance-gating.
+lastSeen, evidence, observedLat?, observedLon?, uplinkSnr?, downlinkSnr?)`,
+self as just another row keyed by my pubkey; the nullable position stamp
+(phone GPS at observation time, mainly for self rows) powers the mobility
+distance-gating, and the SNR pair (added 2026-08-05) holds the
+Discover-measured first-hop link in both directions.
 `evidence` is `proven` (Discover response, repeat-echo, observed reverse
 path, successful direct send through it) or `inferred` (last-hop prior) —
 inferred rows weight candidate selection but never feed the graph.
@@ -831,7 +900,14 @@ only enrich nodes with name/position metadata. "Independent" means *own
 storage, no reads from the contacts/discovered DB*, not *ignores local
 adverts*.
 
-## Corescope source data (empirical, 2026-08-03 snapshot)
+## HISTORICAL — Corescope source data (2026-08-03 snapshot)
+
+> **Superseded 2026-08-07.** Corescope's *edge* data is no longer used
+> (see TODO § "drop Corescope edges"): it is undirected, its SNR is a
+> single symmetric number, and its `bidirectional` flag is `true` on
+> every edge. Kept below because the measurements it records — the
+> 1-byte collision rate, the mixed-width prefix evidence — are what
+> justified hash-native 2-byte identity, and those findings stand.
 
 From a saved `neighbor-graph.json` (753 nodes, 2,867 edges):
 
@@ -858,7 +934,14 @@ From a saved `neighbor-graph.json` (753 nodes, 2,867 edges):
   2- and 3-byte prefix edges (a hash *is* our node key, they map cleanly),
   drop the 1-byte ones as too ambiguous.
 
-## Corescope export utility
+## HISTORICAL — Corescope export utility (`meshtrax-graph-v1`)
+
+> **Superseded 2026-08-07 by `meshtrax-graph-v2`** (TODO § "drop
+> Corescope edges"), which the *module* exports from its own directed
+> observations. `tools/generate_graph.py` is retired from the routing
+> path; `tools/analyze.py` survives as a viewer, to be pointed at our
+> own exported graph. The v1 notes below remain useful for the format
+> lineage (node-link JSON, NetworkX/D3 compatibility) which v2 keeps.
 
 **Built: `tools/generate_graph.py`** (2026-08-05; `tools/analyze.py` lives
 beside it). Known Corescope instances are a `SOURCES` list in the file —
@@ -882,11 +965,29 @@ bits ride along without breaking anything. Full pubkey is the node `id`
 (the lossless-file rule). A GeoJSON companion export can be a later
 analyze.py flag for GIS tooling.
 
+**The source data is UNDIRECTED — verified 2026-08-07.** Corescope
+publishes exactly one entry per node pair with a single `avg_snr`; a
+scan of the live feed found **zero** edges appearing in both directions,
+and the per-edge `bidirectional` flag is `true` on all 2,866 of them
+(i.e. it carries no information). So there is **no per-direction SNR**
+in the import: A→B and B→A necessarily receive the *same* number.
+Declaring `directed: true` and duplicating that value would misrepresent
+one measurement as two, so the export declares **`directed: false`**
+plus `snr_directionality: "symmetric"`, and the app expands each link
+into two directed priors at import while treating the SNR as a
+*symmetric estimate*. This is exactly why locally measured SNR (trace
+per-hop, Discover uplink/downlink) outranks the imported value in
+`priorQuality` — local measurement is the only true per-direction dB
+the module ever gets. Import accepts both shapes: `directed: false`
+seeds both ways; `directed: true` seeds source→target only and expects
+a reverse entry of its own.
+
 ```json
 { "format": "meshtrax-graph-v1",
-  "directed": true, "multigraph": false,
+  "directed": false, "multigraph": false,
   "graph": { "generated_at": "...", "region": "socal",
-             "source": "corescope", "hash_width": 2 },
+             "source": "corescope", "hash_width": 2,
+             "snr_directionality": "symmetric" },
   "nodes": [ { "id": "<64-hex pubkey>", "name": "...",
                "lat": 0, "lon": 0, "last_heard": 0 } ],
   "links": [ { "source": "<pubkey>", "target": "<pubkey>",
@@ -894,11 +995,298 @@ analyze.py flag for GIS tooling.
                "bidirectional": true, "weight": 3791 } ] }
 ```
 
-Edges carry the analyzer's `bidirectional` flag: `true` expands to two
-directed prior-edges at import, `false` to from→to only. `weight`
-(observation count) scales prior confidence. Published as a raw file on a GitHub
+`weight` (observation count) scales prior confidence. The legacy
+per-edge `bidirectional` flag is still honoured when a document
+declares `directed: true`, but Corescope sets it unconditionally, so
+`directed: false` is the accurate declaration for its data. Published as a raw file on a GitHub
 branch/gist/release asset, app fetches by URL — which also naturally enables
 multiple region files.
+
+## Implementation status (2026-08-05)
+
+Branch `feat/path-graph-package`, draft **PR #71 — held unmerged**
+through the verification campaign (user directive). Phases per
+`docs/path-graph-implementation.md`.
+
+**Phase 0 — the package: BUILT.** `packages/path_graph/` — pure Dart,
+`drift` only, injected `QueryExecutor`, compiler-enforced isolation
+(cannot import the app), 50 tests under bare `dart test`. Everything in
+the Module API section above is implemented: graph store with
+load/debounced-flush, two-layer estimator, evidence tiers with hub
+demotion and slash discipline, bidirectional multi-source Dijkstra,
+alternatives, trace ingestion, layered idempotent import, live config.
+
+**Phase 1 — path_lab harness: BUILT, in active bench use.**
+`test/path_lab/` (`flutter run -d windows -t test/path_lab/main.dart`,
+zero `lib/` changes) — frame adapter owning ALL wire parsing (adverts →
+`ingestNode`/`ingestContact` + attributed path; anonymous edge harvest
+with payload-fingerprint variant dedup; discover responses; trace
+responses), USB serial connect, live counters, seed import, Discover
+with 30 s window, findPath for contacts AND repeaters with selectable
+alternatives, β slider, round-trip Trace, self-diagnosing flood
+verdicts.
+
+**Bench findings so far** (each one corrected the design or code — the
+verification phase doing its job):
+1. **Egress decay too aggressive** — 10-min half-life evaporated
+   evidence between tests; now 45 min with proven-tier decaying 4×
+   slower (§ Mobility).
+2. **Discover response layout** — my first parse read the RX-SNR byte
+   as the message type (0 responders next to a live repeater); corrected
+   against the connector's own handler, and the exchange now stores
+   measured dB in BOTH directions (§ Probe toolset).
+3. **Trace tags must be random** — repeater packet dedup silently drops
+   byte-identical re-traces; seconds-resolution tags break rapid
+   re-tracing (same latent bug exists in `path_trace_map.dart` —
+   deferred app fix, noted in memory).
+4. **`lastHopHeard` API flag** — payload-embedded paths must not feed
+   the last-hop egress prior (§ Module API).
+5. **Windows main-app finding** (separate branch, PR #72): BLE
+   auto-reconnect pins state to `connecting` and silently blocks
+   `connectUsb`; opening the USB picker now suspends it.
+
+**Remaining before the Phase 2 gate**: staleness GC + growth caps,
+replay-corpus recorder (harness observation log → offline regression
+suite), package CI lines, `CMD_SEND_PATH_DISCOVERY_REQ`/0x8D path
+discovery, then the verification campaign itself (coverage / ACK-rate /
+freshness / trace-honesty / 1-byte-share metrics with the go/no-go
+gate). Details in TODO below.
+
+## TODO — active work
+
+Ordered by what blocks what. Everything below is decided unless marked
+open; the sections after this one are rationale and history.
+
+1. ~~**Cut Corescope out of `path_graph`**~~ — DONE 2026-08-07
+   (`06497c5`). `importGraph` takes `meshtrax-graph-v2` and nothing
+   else; undirected documents are rejected outright rather than
+   expanded; a link seeds its own direction alone. The prior layer
+   changed shape with it — `importedScore`/`avgSnr` (one symmetric
+   guess) became `importedSnr` / `importedObservations` /
+   `importedDelivered` / `importedAttempts` / `importedLastObserved`,
+   mirroring the local columns so the two layers stay separable at
+   read. Schema v3 rebuilds `graph_edges`: local evidence rides
+   through, the Corescope prior is dropped rather than migrated.
+2. ~~**`exportGraph()`**~~ — DONE 2026-08-07 (`7b76844`). Emits v2 under
+   two filters: repeater topology only (links between forwarding nodes
+   plus the advert metadata of nodes a link references — a test asserts
+   the encoded document holds no contact pubkey, contact name, self
+   identity or position tag), and locally observed edges only, so an
+   imported prior is never laundered through our file and a two-way
+   exchange cannot feed each side its own data back.
+3. ~~**path_lab map view**~~ — DONE 2026-08-07. Advert positions place a
+   node; everything else lands in a "no position" strip, because a hash
+   bucket seen only as a path hop is still a real node. Tapping draws
+   its links as arrows, one per direction, offset so A→B and B→A sit
+   side by side; arrow colour is the estimator's own SNR→quality curve,
+   grey when never measured. The detail panel splits *reaches* (they
+   heard this node) from *hears* (this node heard them) and flags
+   ONE-WAY links. Remaining informational surfaces for the campaign
+   still to come.
+4. ~~**Staleness GC + growth caps**, **replay-corpus recorder**,
+   **package CI lines**~~ — DONE 2026-08-14. `sweepStale()` +
+   `clearLearnedData()` per § Staleness (infrastructure protected,
+   position tags on their own clock, caps evict hearsay first); REC in
+   the harness records JSONL corpora that `replayCorpus()` reproduces
+   byte-for-byte on the recorded clock; CI runs `dart analyze` +
+   `dart test` in the package. Same day: **hash width became a
+   constructor knob** (`hashWidthBytes` 2..4, stamped in DB/exports/
+   sessions, mismatches refused) after the first live-mesh session
+   found stride-3 hops minting 6-hex ghost identities ('A27782' beside
+   'A277' — truncation was documented but unimplemented; stores heal
+   ghosts on load). Corescope is fully out (user directive): not the
+   edges, not the gazetteer, nothing.
+5. **Verification campaign** → the go/no-go gate. Live-mesh harness
+   sessions on 910.525 are running (user-directed, user controls TX,
+   companion parks on 920 after); first session surfaced the
+   stride-3 bug within hours — the campaign is already earning its
+   keep.
+
+**Session checkpoints (done 2026-08-07).** `saveSession()` /
+`loadSession()` write and restore a complete private snapshot —
+everything `exportGraph` withholds by design (contact ingress, the
+contact mirror, my identity and doorstep) plus imported priors and the
+in-memory hub counters. Restoring **replaces** all state, memory and
+database both. Ordinary restarts never need it (state already persists
+in Drift); it exists to checkpoint before an experiment and roll back
+after one, which the campaign will lean on. Never share one — it is a
+position-tagged log of who this radio talks to.
+
+**Gap found while building it, fixed the same day (schema v4).**
+`IngressEntry.finalCount` and `penultimateCount` were in-memory only, so
+every restart reset the hub-signature demotion to zero: a repeater I
+merely hear *through* looked like a doorstep I can reach until the
+counts rebuilt. They are now columns on `contact_ingress`, and a
+migration test pins that a demoted candidate keeps its demotion across a
+close and reopen.
+
+Deferred: merge of multi-collector files (needs real single-collector
+data first); Python/Pi always-on collector (optional, not a second
+implementation).
+
+### DECIDED 2026-08-07: drop Corescope edges; the file becomes a TRUE directed graph
+
+Verified on the live export: 1,388 links, **zero** with a reverse
+entry, one `avg_snr` per pair. Reporting the same number for A→B and
+B→A does not merely omit information — on a medium that is genuinely
+asymmetric (different TX power, antenna, and noise floor at each end)
+it **asserts something false**, and it then clears our bidirectional
+routing threshold on the strength of that assertion. That is the worst
+possible combination: bad data with routing authority. Scrapped.
+
+**What replaces it**: the module's own observations, exported. Every
+received path proves one direction and only that direction; every
+trace hop measures one direction; a round-trip trace measures both,
+separately. That is a real weighted directed graph, collected by the
+radio that will route on it.
+
+**Format `meshtrax-graph-v2` — one entry per direction, no symmetry
+anywhere:**
+
+```json
+{ "format": "meshtrax-graph-v2",
+  "directed": true, "multigraph": false,
+  "graph": { "generated_at": "...", "collector": "meshtrax 1.7.x",
+             "region_hint": "bayarea", "hash_width": 2 },
+  "nodes": [ { "id": "A277", "pubkey": "<64-hex, when known>",
+               "name": "...", "lat": 0, "lon": 0, "last_heard": "..." } ],
+  "links": [ { "source": "A277", "target": "1312",
+               "observations": 47,
+               "measured_snr": 6.5,
+               "trace_confirmed": true,
+               "delivered": 3, "attempts": 4,
+               "last_observed": "..." } ] }
+```
+
+Rules that keep it honest:
+
+* **A→B and B→A are separate entries** with independent values. If we
+  have only measured one direction, only that entry carries
+  `measured_snr`; the other is absent or null. **Never** copy a value
+  across directions.
+* **`measured_snr` means measured** — from a trace hop (or Discover,
+  for a first hop), in that direction. No inferred, averaged, or
+  imported values in this field.
+* **No `score`** — that was Corescope's opaque metric. Confidence comes
+  from `observations` plus `delivered`/`attempts`, which are things we
+  actually counted.
+* **No `bidirectional` flag.** Bidirectionality is derivable: both
+  entries exist. A flag would just be another chance to lie.
+* Node `id` is the 2-byte routing hash; `pubkey` rides along when known
+  (adverts and imports supply it). Open tension for merge: hash is the
+  routing identity but pubkey is the safer *merge* identity, since two
+  collectors in different regions could hold different repeaters under
+  one hash. Settle when merge is built.
+
+**Corescope's remaining role: none — DECIDED 2026-08-14.** The
+gazetteer idea considered here is closed: we stay clear of Corescope
+entirely. Its node data wasn't wrong, but adverts supply the same
+thing self-authenticated within ~47 h, and the first live-mesh
+harness session confirmed names and positions arrive on their own.
+`tools/generate_graph.py` is retired; `tools/analyze.py` stays — as a
+*viewer*, pointed at our own exported graph.
+
+**Code consequences to implement**: `importGraph` must stop seeding
+both directions from one symmetric link (that path exists today);
+imported edges must not clear the bidirectional threshold on symmetric
+evidence; add `exportGraph()` emitting v2 under the
+repeater-topology-only privacy filter.
+
+### Export & the app as primary collector (decided 2026-08-07)
+
+**The app is the observer.** It is already connected and running, and —
+unlike a fixed collector — it *travels*, which is an advantage: a
+stationary listener samples one neighborhood deeply, a phone samples
+many. Travelling to a region with no Corescope instance (Europe,
+hypothetically) is the no-import bootstrap case working as designed:
+listen → adverts fill names/positions → Discover finds the doorstep →
+first flood handshakes mint corridors. A dedicated always-on Python/Pi
+collector keeps one real advantage (24/7 uptime without a phone
+battery) and stays a possible later addition, but it is **not** the
+plan — no second implementation of the observation pipeline.
+
+**Export filter — FIRM RULE: repeater topology only.** An exported
+graph contains `graph_nodes` + `graph_edges` and nothing else:
+
+* **Exported** — repeater hashes, names, positions, directed edges with
+  their observation counts, trace-measured per-direction SNR, and
+  whether a link is trace-confirmed. This is public infrastructure;
+  sharing it is the point.
+* **NEVER exported** — `contact_ingress` (which includes
+  position-tagged records of where *I* was when a repeater heard me: a
+  drive log), `known_contacts` (an address book), and any per-contact
+  ingress list (who talks to whom, and through where). None of this
+  belongs in a file that gets emailed or handed over on a USB stick.
+
+The rule is simple to state and simple to audit: **if a row is about a
+person, it does not leave the device; if it is about a repeater, it
+may.** Convenient consequence — repeater topology is also exactly what
+a future merge wants, so the privacy filter and the merge payload are
+the same set.
+
+**Merge deferred (2026-08-07)** until real single-collector data
+exists: how many edges one listener accumulates, what fraction become
+bidirectional without probing, and how skewed observation counts are
+all decide the merge rules (notably whether *distinct-observer count*
+must replace summed counts, since counts are observer-relative).
+Nothing is wasted by waiting — a directed graph with trace-filled SNR
+is what a merge would consume either way; merge only adds provenance.
+
+### Staleness / retention — manual + automatic (decided 2026-08-05)
+
+Nothing is ever deleted today: decay makes old evidence weigh nothing,
+but the rows persist forever, so months of driving accrete nodes and
+edges (including junk minted from corrupt frames), and position-tagged
+egress rows are effectively a drive log. Retention is therefore a
+**user-facing setting with two halves**:
+
+* **Manual — "Clear learned data"** button. Wipes the *local evidence
+  layer* only: observed nodes/edges, ingress/egress rows, position
+  tags, counters. Imported priors survive (they are removed separately
+  by "remove imported region"), so a user can reset what the radio
+  learned without losing the community starter map. Confirm-on-tap; it
+  is the privacy escape hatch as much as a debugging tool.
+**What decays and what does NOT (clarified 2026-08-05).** Repeaters are
+fixed infrastructure — a link between two towers does not get worse
+because nobody used it this week. So **repeater↔repeater link quality
+never decays** in the implementation, and must not: `calibratedP` is
+built from attempt counts and the SNR/import prior, none of which are
+time-scaled. The only time-decayed quantities are (a) the passive
+**traffic** term, which merely scales prior *confidence* (n₀) and
+breaks ties — a quiet link keeps its quality, it just stops
+accumulating extra trust — and (b) the **ingress/egress doorstep
+lists**, which are genuinely perishable because *people* move even
+though repeaters don't. That asymmetry is the whole point of the
+design's "movement invalidates exactly one hop" observation.
+
+* **Automatic — a retention policy setting**, default on. Simplest
+  shape that covers the real needs: *"forget unused data older than
+  N days"* (default ~30, with an Off option for people who want a
+  permanent map). A periodic sweep — cheap, run on connect and daily —
+  deletes:
+  * edges with **no attempt counts and no import provenance** whose
+    traffic has decayed to ε and whose `lastObserved` is older than
+    N days — i.e. hearsay we never confirmed and haven't seen since.
+    **Infrastructure is protected**: an edge with `s/n` attempt counts
+    (we sent through it, traced it, or a handshake proved it) or an
+    imported prior is *never* aged out by idleness alone; a tower link
+    you last used in spring is still a tower link. Those only go via
+    an explicit "clear learned data" / "remove imported region", or a
+    much longer safety horizon (≥1 year) if one is wanted at all;
+  * nodes left with no edges and no advert/import metadata (hashes
+    minted once by a corrupt frame);
+  * ingress/egress rows past the same age gate;
+  * **position tags on a shorter, separate clock** (default ~7 days) —
+    the coordinate is only useful for recent distance-gating, and it is
+    the most sensitive thing stored. Ageing out the tag must NOT delete
+    the evidence row itself; it just drops the position column.
+* **Growth caps as a backstop**: max nodes/edges per region; when
+  exceeded, evict the lowest decayed-weight `source: observed` rows
+  first. Imported rows and rows with attempt counts are evicted last.
+* **Surface the numbers**: the settings screen shows current row counts
+  and what the last sweep removed — the same counters the harness
+  already displays. Silent deletion of a user's learned map would be
+  the wrong kind of surprise.
 
 ## Independent review outcomes (2026-08-05)
 
@@ -999,7 +1387,7 @@ hooks). Accepted findings still to fold in at implementation planning:
   live `proven` evidence for that repeater — a doorstep that is *also* a
   transit hub must not be punished for its transit traffic.
 
-## Open questions — ALL RESOLVED (2026-08-05)
+## Resolved questions (2026-08-05) — kept for rationale
 
 1. **Trace policy — DECIDED: manual only, from the map tab.** The module
    never fires traces on its own. The map tab integrates with the module

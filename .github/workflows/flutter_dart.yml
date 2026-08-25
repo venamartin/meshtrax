@@ -32,3 +32,15 @@ jobs:
 
       - name: Run tests
         run: flutter test -r github
+
+      # The path_graph package is pure Dart with its own pubspec — the
+      # app's analyze/test above never touch it.
+      - name: Analyze path_graph package
+        working-directory: packages/path_graph
+        run: |
+          dart pub get
+          dart analyze --fatal-infos --fatal-warnings
+
+      - name: Test path_graph package
+        working-directory: packages/path_graph
+        run: dart test -r github
