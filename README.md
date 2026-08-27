@@ -2,7 +2,7 @@
 
 **MeshTrax** is a free, open-source client for **[MeshCore](https://meshcore.io/)** LoRa mesh-networking radios. Chat across long-range, off-grid mesh networks, without needing towers, internet, or accounts.
 
-<a href="https://play.google.com/store/apps/details?id=com.vena.meshtrax"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60"></a>
+<a href="https://play.google.com/store/apps/details?id=com.vena.meshtrax"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60"></a>&nbsp;&nbsp;<a href="https://apps.apple.com/us/app/meshtrax/id6799214428"><img alt="Download on the App Store" src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" height="41"></a>
 
 
 > **MeshTrax is UNOFFICIAL.**
