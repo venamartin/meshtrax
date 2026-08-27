@@ -325,8 +325,11 @@ class NotificationService {
   static const _groupKey = 'com.meshtrax.MESSAGES';
   static const _groupSummaryId = 0x4D54; // 'MT'
 
+  /// Android-only: a notification with [setAsGroupSummary] renders as the
+  /// collapsed group header there. Other platforms have no summary concept
+  /// and would show it as a plain extra notification.
   Future<void> _showGroupSummary() async {
-    if (Platform.isWindows || Platform.isLinux) return;
+    if (!Platform.isAndroid) return;
     final summaryDetails = AndroidNotificationDetails(
       'meshtrax_messages',
       _l10n.appSettings_messageNotifications,
