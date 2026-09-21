@@ -133,7 +133,17 @@ void main() {
     });
 
     group('parseMeshCoreOneReaction', () {
-      test('parses channel shape {emoji}@[{sender}]\\n{hash}', () {
+      test('parses channel shape @[{sender}]{emoji}\\n{hash}', () {
+        final info =
+            ReactionHelper.parseMeshCoreOneReaction('@[AlphaNode]👍\nb45pc4ek');
+        expect(info, isNotNull);
+        expect(info!.emoji, '👍');
+        expect(info.targetSender, 'AlphaNode');
+        expect(info.targetHash, 'b45pc4ek');
+        expect(info.format, ReactionFormat.one);
+      });
+
+      test('parses the older channel order {emoji}@[{sender}]\\n{hash}', () {
         final info =
             ReactionHelper.parseMeshCoreOneReaction('👍@[AlphaNode]\n66nf5k51');
         expect(info, isNotNull);
@@ -183,6 +193,12 @@ void main() {
           ReactionHelper.parseMeshCoreOneReaction('Hello\n66nf5k51'),
           isNull,
         );
+        // A reply whose body happens to normalize to valid Crockford must
+        // not be eaten as a reaction ("tomorrow" → "t0m0rr0w").
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('@[Bob]\n>❤️ok\ntomorrow'),
+          isNull,
+        );
       });
 
       test('rejects malformed input', () {
@@ -196,6 +212,15 @@ void main() {
         expect(
           ReactionHelper.parseMeshCoreOneReaction('👍@[]\n66nf5k51'),
           isNull,
+        );
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('@[]👍\n66nf5k51'),
+          isNull,
+        );
+        expect(
+          ReactionHelper.parseMeshCoreOneReaction('@[AlphaNode]\n66nf5k51'),
+          isNull,
+          reason: 'mention with no emoji is a reply/mention, not a reaction',
         );
         expect(ReactionHelper.parseMeshCoreOneReaction(''), isNull);
       });
@@ -977,6 +1002,8 @@ void main() {
       final hash = ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
       final wire =
           ReactionHelper.encodeMeshCoreOne('😂', hash, targetSender: 'GWQ∆🍓');
+      // Emoji-first by decision (2026-09-21): pre-1.4.1 MC1 builds parse
+      // only this order; 1.4.1+ accepts both. See encodeMeshCoreOne.
       expect(wire, '😂@[GWQ∆🍓]\n$hash');
       final info = ReactionHelper.parseMeshCoreOneReaction(wire)!;
       expect(info.emoji, '😂');

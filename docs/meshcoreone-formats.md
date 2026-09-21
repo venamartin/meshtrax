@@ -30,11 +30,14 @@ doesn't still shows a readable reply.
 ## Reaction format
 
 ```
-{emoji}@[{target sender}]     <- channel form; DMs omit "@[...]"
+@[{target sender}]{emoji}     <- channel form; DMs are just "{emoji}"
 {hash}
 ```
 
-Example: `👍@[GWQ∆🍓]` + newline + `kryv4zmp`
+Example: `@[GWQ∆🍓]👍` + newline + `kryv4zmp`
+
+Older MeshCore One builds sent the emoji first (`👍@[GWQ∆🍓]`); receivers
+should accept both orders.
 
 **Hash:** first 5 bytes of `SHA-256(UTF-8 text + uint32-LE sender timestamp)`,
 encoded as 8 chars of Crockford Base32 (lowercase, no i/l/o/u).
@@ -54,6 +57,6 @@ Spec: https://github.com/Avi0n/MeshCoreOne/blob/main/docs/Reactions.md
 ## Why this format
 
 On any client that supports neither meshcore-open nor MeshCore One, a
-reaction arrives as `👍@[GWQ∆🍓]` — readable, obvious. An index-based
+reaction arrives as `@[GWQ∆🍓]👍` — readable, obvious. An index-based
 encoding arrives as line noise. For a mesh where clients update slowly and
 unevenly, the format that fails readable is the better wire format.

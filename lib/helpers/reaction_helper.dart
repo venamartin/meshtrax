@@ -5,7 +5,8 @@ import 'package:crypto/crypto.dart' as crypto;
 
 /// Which client dialect a reaction arrived in.
 /// [open] is our own `r:HASH:INDEX`; [one] is MeshCore One's
-/// `{emoji}@[{targetSender}]\n{hash}` (channel) / `{emoji}\n{hash}` (DM),
+/// `@[{targetSender}]{emoji}\n{hash}` (channel; older builds sent
+/// `{emoji}@[{targetSender}]\n{hash}` — both decode) / `{emoji}\n{hash}` (DM),
 /// spec: https://github.com/Avi0n/MeshCoreOne/blob/main/docs/Reactions.md
 enum ReactionFormat { open, one }
 
@@ -288,8 +289,9 @@ class ReactionHelper {
     return out.toString();
   }
 
-  /// Parse a MeshCore One reaction:
-  /// channel `{emoji}@[{targetSender}]\n{hash}`, DM `{emoji}\n{hash}`.
+  /// Parse a MeshCore One reaction: channel `@[{targetSender}]{emoji}\n{hash}`
+  /// (or the older `{emoji}@[{targetSender}]\n{hash}` order), DM
+  /// `{emoji}\n{hash}`.
   ///
   /// This shape can collide with a genuine two-line message, so callers must
   /// only consume the text as a reaction when the hash actually resolves to a
@@ -301,13 +303,27 @@ class ReactionHelper {
     if (hash == null) return null;
 
     var emojiPart = text.substring(0, nl);
+    // The wire format is exactly two lines; a longer text is a reply or
+    // prose whose last line merely resembles a hash.
+    if (emojiPart.contains('\n')) return null;
     String? targetSender;
-    final at = emojiPart.indexOf('@[');
-    if (at >= 0) {
-      if (!emojiPart.endsWith(']')) return null;
-      targetSender = emojiPart.substring(at + 2, emojiPart.length - 1);
+    if (emojiPart.startsWith('@[')) {
+      // Current order: @[{targetSender}]{emoji}. The emoji can't contain
+      // ']', so the last one closes the mention even if the name has one.
+      final close = emojiPart.lastIndexOf(']');
+      if (close < 0) return null;
+      targetSender = emojiPart.substring(2, close);
       if (targetSender.isEmpty) return null;
-      emojiPart = emojiPart.substring(0, at);
+      emojiPart = emojiPart.substring(close + 1);
+    } else {
+      // Older order: {emoji}@[{targetSender}].
+      final at = emojiPart.indexOf('@[');
+      if (at >= 0) {
+        if (!emojiPart.endsWith(']')) return null;
+        targetSender = emojiPart.substring(at + 2, emojiPart.length - 1);
+        if (targetSender.isEmpty) return null;
+        emojiPart = emojiPart.substring(0, at);
+      }
     }
     if (emojiPart.isEmpty || emojiPart.runes.length > 8) return null;
     // Emoji, not prose: nearly all emoji start at U+2000 or above; the
@@ -355,6 +371,12 @@ class ReactionHelper {
   /// carry the target message's sender; DM reactions do not. The result is
   /// human-readable on clients that don't speak the dialect, and
   /// [parseMeshCoreOneReaction] round-trips it.
+  ///
+  /// Deliberately the OLD emoji-first order (owner decision 2026-09-21):
+  /// MC1 1.4.1 switched sends to mention-first but accepts both, while
+  /// pre-1.4.1 builds — still what's deployed on the mesh — parse only
+  /// emoji-first and would render mention-first as raw text. Flip to
+  /// `@[$targetSender]$emoji\n$hash` once 1.4.1+ is widespread.
   static String encodeMeshCoreOne(
     String emoji,
     String hash, {
