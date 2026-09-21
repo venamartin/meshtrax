@@ -1410,6 +1410,12 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_typeMessage => 'Napište správu...';
 
   @override
+  String get chat_searchMessages => 'Hľadať správy';
+
+  @override
+  String get chat_searchNoMatches => 'Žiadne zhody';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Správa je príliš dlhá (max $maxBytes bytov).';
   }

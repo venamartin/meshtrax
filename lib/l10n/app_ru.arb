@@ -279,6 +279,8 @@
   "chat_location": "Местоположение",
   "chat_sendMessageTo": "Отправить сообщение {contactName}",
   "chat_typeMessage": "Напишите сообщение...",
+  "chat_searchMessages": "Поиск сообщений",
+  "chat_searchNoMatches": "Нет совпадений",
   "chat_messageTooLong": "Сообщение слишком длинное (макс. {maxBytes} байт).",
   "chat_messageCopied": "Сообщение скопировано",
   "chat_messageDeleted": "Сообщение удалено",

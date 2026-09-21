@@ -603,6 +603,8 @@
     }
   },
   "chat_typeMessage": "Írjon üzenetet...",
+  "chat_searchMessages": "Üzenetek keresése",
+  "chat_searchNoMatches": "Nincs találat",
   "chat_messageTooLong": "A üzenet túl hosszú (a maximális {maxBytes} bájt).",
   "@chat_messageTooLong": {
     "placeholders": {

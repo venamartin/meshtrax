@@ -1409,6 +1409,12 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_typeMessage => 'Vnesi sporočilo...';
 
   @override
+  String get chat_searchMessages => 'Iskanje sporočil';
+
+  @override
+  String get chat_searchNoMatches => 'Ni zadetkov';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Pošiljanje sporočila je onemogočeno, saj je preveliko (maksimalno $maxBytes byte-ov).';
   }

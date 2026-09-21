@@ -1358,6 +1358,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_typeMessage => '메시지를 입력하세요...';
 
   @override
+  String get chat_searchMessages => '메시지 검색';
+
+  @override
+  String get chat_searchNoMatches => '일치 항목 없음';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return '메시지가 너무 길어서 (최대 $maxBytes 바이트).';
   }

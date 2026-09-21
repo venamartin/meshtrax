@@ -1403,6 +1403,12 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_typeMessage => 'Skriv ett meddelande...';
 
   @override
+  String get chat_searchMessages => 'Sök meddelanden';
+
+  @override
+  String get chat_searchNoMatches => 'Inga träffar';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Meddelandet är för långt (max $maxBytes byte).';
   }

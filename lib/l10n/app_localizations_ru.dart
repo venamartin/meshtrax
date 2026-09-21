@@ -1422,6 +1422,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chat_typeMessage => 'Напишите сообщение...';
 
   @override
+  String get chat_searchMessages => 'Поиск сообщений';
+
+  @override
+  String get chat_searchNoMatches => 'Нет совпадений';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Сообщение слишком длинное (макс. $maxBytes байт).';
   }

@@ -1430,6 +1430,12 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_typeMessage => 'Írjon üzenetet...';
 
   @override
+  String get chat_searchMessages => 'Üzenetek keresése';
+
+  @override
+  String get chat_searchNoMatches => 'Nincs találat';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'A üzenet túl hosszú (a maximális $maxBytes bájt).';
   }

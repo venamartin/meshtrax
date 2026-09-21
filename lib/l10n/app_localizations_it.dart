@@ -1423,6 +1423,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chat_typeMessage => 'Digita un messaggio...';
 
   @override
+  String get chat_searchMessages => 'Cerca messaggi';
+
+  @override
+  String get chat_searchNoMatches => 'Nessun risultato';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Messaggio troppo lungo (massimo $maxBytes byte).';
   }

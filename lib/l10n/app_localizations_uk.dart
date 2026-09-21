@@ -1415,6 +1415,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_typeMessage => 'Введіть повідомлення...';
 
   @override
+  String get chat_searchMessages => 'Пошук повідомлень';
+
+  @override
+  String get chat_searchNoMatches => 'Немає збігів';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Повідомлення занадто довге (макс. $maxBytes байт).';
   }

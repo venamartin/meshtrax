@@ -431,6 +431,8 @@
     }
   },
   "chat_typeMessage": "Napište správu...",
+  "chat_searchMessages": "Hľadať správy",
+  "chat_searchNoMatches": "Žiadne zhody",
   "chat_messageTooLong": "Správa je príliš dlhá (max {maxBytes} bytov).",
   "@chat_messageTooLong": {
     "placeholders": {

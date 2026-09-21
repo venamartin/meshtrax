@@ -717,6 +717,8 @@
   "common_copyToClipboard": "Copy to clipboard",
   "contacts_copyContactToClipboard": "Copy My Contact to Clipboard",
   "chat_typeMessage": "Type a message...",
+  "chat_searchMessages": "Search messages",
+  "chat_searchNoMatches": "No matches",
   "chat_messageTooLong": "Message too long (max {maxBytes} bytes).",
   "@chat_messageTooLong": {
     "placeholders": {

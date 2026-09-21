@@ -1422,6 +1422,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chat_typeMessage => 'Digite uma mensagem...';
 
   @override
+  String get chat_searchMessages => 'Pesquisar mensagens';
+
+  @override
+  String get chat_searchNoMatches => 'Sem resultados';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Mensagem muito longa (máximo $maxBytes bytes).';
   }

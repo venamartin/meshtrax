@@ -1345,6 +1345,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_typeMessage => '输入消息...';
 
   @override
+  String get chat_searchMessages => '搜索消息';
+
+  @override
+  String get chat_searchNoMatches => '无匹配项';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return '消息过长（最多 $maxBytes 字节）';
   }

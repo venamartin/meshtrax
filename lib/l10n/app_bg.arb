@@ -431,6 +431,8 @@
     }
   },
   "chat_typeMessage": "Въведете съобщение...",
+  "chat_searchMessages": "Търсене на съобщения",
+  "chat_searchNoMatches": "Няма съвпадения",
   "chat_messageTooLong": "Съобщението е твърде дълго (макс {maxBytes} байта).",
   "@chat_messageTooLong": {
     "placeholders": {

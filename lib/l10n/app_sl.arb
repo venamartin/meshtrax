@@ -431,6 +431,8 @@
     }
   },
   "chat_typeMessage": "Vnesi sporočilo...",
+  "chat_searchMessages": "Iskanje sporočil",
+  "chat_searchNoMatches": "Ni zadetkov",
   "chat_messageTooLong": "Pošiljanje sporočila je onemogočeno, saj je preveliko (maksimalno {maxBytes} byte-ov).",
   "@chat_messageTooLong": {
     "placeholders": {

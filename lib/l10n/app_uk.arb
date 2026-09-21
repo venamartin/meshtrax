@@ -432,6 +432,8 @@
     }
   },
   "chat_typeMessage": "Введіть повідомлення...",
+  "chat_searchMessages": "Пошук повідомлень",
+  "chat_searchNoMatches": "Немає збігів",
   "chat_messageTooLong": "Повідомлення занадто довге (макс. {maxBytes} байт).",
   "@chat_messageTooLong": {
     "placeholders": {
