@@ -202,6 +202,16 @@ class RadioSettings {
       ),
     ),
     (
+      'USA Southern California',
+      RadioSettings(
+        frequencyMHz: 927.875,
+        bandwidth: LoRaBandwidth.bw62_5,
+        spreadingFactor: LoRaSpreadingFactor.sf7,
+        codingRate: LoRaCodingRate.cr4_8,
+        txPowerDbm: 20,
+      ),
+    ),
+    (
       'USA/Canada',
       RadioSettings(
         frequencyMHz: 910.525,
