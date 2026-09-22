@@ -828,15 +828,17 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   void _onSearchChanged(String query) {
     _searchDebounce?.cancel();
+    // The RAW query goes through: a space at either edge means "word
+    // boundary" to the store's matcher, so trimming here would erase it.
     _searchDebounce = Timer(
       const Duration(milliseconds: 250),
-      () => _runSearch(query.trim()),
+      () => _runSearch(query),
     );
   }
 
   Future<void> _runSearch(String query) async {
     if (!mounted) return;
-    if (query.isEmpty) {
+    if (query.trim().isEmpty) {
       setState(() {
         _searchMatches = const [];
         _searchPos = -1;
@@ -848,7 +850,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     // SQL does the heavy lifting (text + sender names, newest first) —
     // the full history is never loaded here.
     final found = await connector.searchChannelMessages(widget.channel, query);
-    if (!mounted || query != _searchController.text.trim()) return;
+    if (!mounted || query != _searchController.text) return;
     final matches = <({ChannelMessage message, int fromNewest})>[
       for (final f in found)
         if (f.message.isOutgoing ||

@@ -138,6 +138,37 @@ void main() {
       final hits = await store.searchChannelMessages(idKeyA, 'senderName');
       expect(hits, isEmpty);
     });
+
+    test('a space at the query edge means word boundary', () async {
+      await store.upsertMessage(idKeyA, msg('Yo GWQ!', id: 'b1'));
+      await store.upsertMessage(idKeyA, msg('hey yo', id: 'b2'));
+      await store.upsertMessage(idKeyA, msg('yo, dude', id: 'b3'));
+      await store.upsertMessage(idKeyA, msg('you there?', id: 'b4'));
+      await store.upsertMessage(idKeyA, msg('mayo sandwich', id: 'b5'));
+
+      // Trailing space: "yo" must END a word.
+      final trailing = await store.searchChannelMessages(idKeyA, 'yo ');
+      expect(trailing.map((h) => h.message.messageId).toSet(),
+          {'b1', 'b2', 'b3', 'b5'},
+          reason: '"mayo" ends a word too; "you" must not match');
+
+      // Leading space too: "yo" must START the word — drops "mayo".
+      final both = await store.searchChannelMessages(idKeyA, ' yo ');
+      expect(both.map((h) => h.message.messageId).toSet(), {'b1', 'b2', 'b3'});
+
+      // No edge spaces: plain substring — even "everYOne" (the seeded s1)
+      // matches, which is exactly the noise the boundary form eliminates.
+      final plain = await store.searchChannelMessages(idKeyA, 'yo');
+      expect(plain.map((h) => h.message.messageId).toSet(),
+          {'b1', 'b2', 'b3', 'b4', 'b5', 's1'});
+    });
+
+    test('interior spaces stay literal', () async {
+      await store.upsertMessage(idKeyA, msg('go inside to pay', id: 'i1'));
+      await store.upsertMessage(idKeyA, msg('go outside', id: 'i2'));
+      final hits = await store.searchChannelMessages(idKeyA, 'go inside');
+      expect(hits.single.message.messageId, 'i1');
+    });
   });
 
   test('loadPossibleReactionRows prefilters the reaction shape in SQL',
