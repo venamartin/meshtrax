@@ -207,7 +207,7 @@ class RadioSettings {
         frequencyMHz: 927.875,
         bandwidth: LoRaBandwidth.bw62_5,
         spreadingFactor: LoRaSpreadingFactor.sf7,
-        codingRate: LoRaCodingRate.cr4_8,
+        codingRate: LoRaCodingRate.cr4_5,
         txPowerDbm: 20,
       ),
     ),
