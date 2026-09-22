@@ -819,6 +819,9 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeContactKey = contactKeyHex;
     if (contactKeyHex != null) {
       markContactRead(contactKeyHex);
+      // First open this session: scan for parked reactions and land any
+      // whose target is already stored (see the retroactive pass).
+      unawaited(_contactOrphans(contactKeyHex));
     }
   }
 
@@ -826,6 +829,10 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeChannelIndex = channelIndex;
     if (channelIndex != null) {
       markChannelRead(channelIndex);
+      final idKey = _findChannelByIndex(channelIndex)?.idKey;
+      if (idKey != null) {
+        unawaited(_channelOrphans(idKey));
+      }
     }
   }
 
@@ -3656,6 +3663,27 @@ class MeshCoreConnector extends ChangeNotifier {
     );
   }
 
+  /// The exact on-air text a stored outgoing row is (re)sent with — replies
+  /// rebuild their `@[Name]\n><snippet>..\n<body>` wire markup from metadata
+  /// (the row's text only stores the stripped body); everything else goes
+  /// out as stored.
+  String _rebuildOutboundWireText(int channelIndex, ChannelMessage message) {
+    if (message.replyToSenderName == null) return message.text;
+    final maxBytes = maxChannelMessageBytes(_selfName);
+    return ChannelMessage.buildReplyWireText(
+          targetName: message.replyToSenderName!,
+          quoteText: message.replyToText ?? '',
+          body: message.text,
+          selfName: _selfName ?? '',
+          fits: (candidate) =>
+              utf8
+                  .encode(prepareChannelOutboundText(channelIndex, candidate))
+                  .length <=
+              maxBytes,
+        ) ??
+        message.text;
+  }
+
   Future<void> resendChannelMessageById(int channelIndex, String messageId) async {
     // Same live-slot rule as sendChannelMessage: retrying with a slot index
     // whose key changed (mid-sync, or slot reshuffled) would encrypt the
@@ -3693,27 +3721,10 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    // Rebuild the full "@[Name]\n><snippet>..\n<body>" reply on resend, since
-    // message.text only stores the stripped body. Falls back to the body alone.
-    var wireText = message.text;
-    if (message.replyToSenderName != null) {
-      final maxBytes = maxChannelMessageBytes(_selfName);
-      wireText =
-          ChannelMessage.buildReplyWireText(
-            targetName: message.replyToSenderName!,
-            quoteText: message.replyToText ?? '',
-            body: message.text,
-            selfName: _selfName ?? '',
-            fits: (candidate) =>
-                utf8
-                    .encode(prepareChannelOutboundText(channelIndex, candidate))
-                    .length <=
-                maxBytes,
-          ) ??
-          message.text;
-    }
-
-    final outboundText = prepareChannelOutboundText(channelIndex, wireText);
+    final outboundText = prepareChannelOutboundText(
+      channelIndex,
+      _rebuildOutboundWireText(channelIndex, message),
+    );
     await _waitForRadioQuiet(
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
@@ -6250,16 +6261,43 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // The send queue only ever holds our own pending ids, so consuming the
     // entry answers the caller synchronously; the row update is async.
     unawaited(() async {
+      ChannelMessage? sentRow;
       final (updated, idKey) = await _channelMessageStore.updateAnyByMessageId(
         messageId,
-        (m) => (m.isOutgoing && m.status == ChannelMessageStatus.pending)
-            ? m.copyWith(status: ChannelMessageStatus.sent)
-            : m,
+        (m) {
+          if (m.isOutgoing && m.status == ChannelMessageStatus.pending) {
+            sentRow = m.copyWith(status: ChannelMessageStatus.sent);
+            return sentRow!;
+          }
+          return m;
+        },
       );
       if (!updated || idKey == null) return;
       final liveIndex = _liveChannelByIdKey(idKey)?.index;
       if (liveIndex != null) {
-        _startWaitForRepeatTimer(liveIndex, messageId);
+        // Only wait for a repeat echo that can physically reach us: the
+        // firmware's RX-log push drops packets that don't fit the serial
+        // frame, so an oversize send's echo is unobservable — waiting
+        // would just burn a pointless retry and end in a false amber.
+        final row = sentRow;
+        final observable = row == null ||
+            isChannelEchoObservable(
+              _selfName,
+              prepareChannelOutboundText(
+                liveIndex,
+                _rebuildOutboundWireText(liveIndex, row),
+              ),
+              _pathHashByteWidth,
+            );
+        if (observable) {
+          _startWaitForRepeatTimer(liveIndex, messageId);
+        } else {
+          appLogger.info(
+            'Echo unobservable for $messageId (repeated packet exceeds the '
+            'RX-log frame) — settling as sent',
+            tag: 'Connector',
+          );
+        }
       }
       notifyListeners();
     }());
@@ -6885,19 +6923,94 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   Future<List<ChannelMessage>> _channelOrphans(String idKey) async {
     if (_channelOrphansScanned.add(idKey)) {
-      final history = await _channelMessageStore.loadChannelMessages(idKey);
+      // SQL prefilters the reaction shape — a huge channel's plain
+      // messages are never decoded here.
+      final candidates =
+          await _channelMessageStore.loadPossibleReactionRows(idKey);
       _channelOrphanRows[idKey] = [
-        for (final m in history)
+        for (final m in candidates)
           if (!m.isOutgoing &&
               ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
             m,
       ];
+      // Retroactive pass: rows this build can parse as reactions but an
+      // older build ingested as plain messages (e.g. mention-first MC1
+      // reactions from before the dialect landed) never went through
+      // ingest-time resolution — their targets are already stored, so the
+      // arrival-driven re-match can never fire. Land them now.
+      await _resolveChannelOrphansAgainstHistory(idKey);
     }
     return _channelOrphanRows.putIfAbsent(idKey, () => []);
   }
 
+  /// A reaction lands close in time to its target, so the retroactive scan
+  /// fetches and hashes only rows inside this window around the orphan's
+  /// own wire time — never the full history. (The arrival-driven paths
+  /// stay unbounded: they check exactly one new target.)
+  static const _retroactiveOrphanWindow = Duration(days: 2);
+
+  /// Lands every parked orphan in [idKey] whose target is already stored
+  /// (the arrival-driven [_resolveChannelOrphansFor] only covers targets
+  /// stored AFTER their reaction).
+  Future<void> _resolveChannelOrphansAgainstHistory(String idKey) async {
+    final orphans = _channelOrphanRows[idKey];
+    if (orphans == null || orphans.isEmpty) return;
+    final windowMs = _retroactiveOrphanWindow.inMilliseconds;
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null) continue;
+      final orphanMs = wireTimestampMs(orphan);
+      final nearby = await _channelMessageStore.loadChannelMessagesByWireWindow(
+        idKey,
+        fromMs: orphanMs - windowMs,
+        toMs: orphanMs + windowMs,
+      );
+      final index = ReactionHelper.findTargetIndex<ChannelMessage>(
+        messages: nearby,
+        reactionInfo: info,
+        shouldSkip: (m) =>
+            m.messageId == orphan.messageId ||
+            ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: _channelWireSecsCandidates,
+        getMessageTextVariants: (m) => _mc1TextVariants(m.text, m.wireText),
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+      );
+      if (index < 0) continue;
+      final target = nearby[index];
+      await _channelMessageStore.updateMessage(idKey, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          orphan.senderName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _channelMessageStore.deleteMessage(idKey, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+      appLogger.info(
+        'Retroactively landed parked reaction ${info.emoji} by '
+        '${orphan.senderName} on ${target.messageId}',
+        tag: 'Connector',
+      );
+    }
+    if (landed) notifyListeners();
+  }
+
   Future<List<Message>> _contactOrphans(String pubKeyHex) async {
     if (_contactOrphansScanned.add(pubKeyHex)) {
+      // DM histories are per-contact and orders of magnitude smaller than
+      // a busy channel, so the in-memory scan is fine here; the channel
+      // side pushes both filters into SQL.
       final history = await _messageStore.loadMessages(pubKeyHex);
       _contactOrphanRows[pubKeyHex] = [
         for (final m in history)
@@ -6905,8 +7018,74 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
             m,
       ];
+      await _resolveContactOrphansAgainstHistory(pubKeyHex, history);
     }
     return _contactOrphanRows.putIfAbsent(pubKeyHex, () => []);
+  }
+
+  /// DM mirror of [_resolveChannelOrphansAgainstHistory].
+  Future<void> _resolveContactOrphansAgainstHistory(
+    String pubKeyHex,
+    List<Message> history,
+  ) async {
+    final orphans = _contactOrphanRows[pubKeyHex];
+    if (orphans == null || orphans.isEmpty) return;
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => c?.publicKeyHex == pubKeyHex,
+      orElse: () => null,
+    );
+    final isRoomServer = contact?.type == advTypeRoom;
+    final windowSecs = _retroactiveOrphanWindow.inSeconds;
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null) continue;
+      final orphanSecs = _messageWireSecs(orphan);
+      final nearby = [
+        for (final m in history)
+          if ((orphanSecs - _messageWireSecs(m)).abs() <= windowSecs) m,
+      ];
+      final index = ReactionHelper.findTargetIndex<Message>(
+        messages: nearby,
+        reactionInfo: info,
+        shouldSkip: (m) =>
+            m.messageId == orphan.messageId ||
+            ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: _contactWireSecsCandidates,
+        getMessageTextVariants: (m) => _mc1TextVariants(m.text),
+        getSenderName: (m) => contact == null
+            ? null
+            : _resolveContactSenderName(m, contact, isRoomServer),
+        getMessageText: (m) => m.text,
+      );
+      if (index < 0) continue;
+      final target = nearby[index];
+      final reactorName = _resolveReactorName(pubKeyHex, orphan);
+      await _messageStore.updateMessage(pubKeyHex, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          reactorName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _messageStore.deleteMessage(pubKeyHex, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+      appLogger.info(
+        'Retroactively landed parked DM reaction ${info.emoji} by '
+        '$reactorName on ${target.messageId}',
+        tag: 'Connector',
+      );
+    }
+    if (landed) notifyListeners();
   }
 
   Future<void> _registerChannelOrphan(String idKey, ChannelMessage row) async {

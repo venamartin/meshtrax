@@ -140,6 +140,43 @@ void main() {
     });
   });
 
+  test('loadPossibleReactionRows prefilters the reaction shape in SQL',
+      () async {
+    await store.upsertMessage(idKeyA, msg('plain chatter', id: 'p1'));
+    await store.upsertMessage(
+        idKeyA, msg('👍@[Bob]\nhvejtq3z', id: 'r1')); // old order
+    await store.upsertMessage(
+        idKeyA, msg('@[Bob]👍\nhvejtq3z', id: 'r2')); // mention-first
+    await store.upsertMessage(
+        idKeyA, msg('@[Bob]\n>quote..\na longer reply body', id: 'q1'));
+
+    final rows = await store.loadPossibleReactionRows(idKeyA);
+    final ids = rows.map((m) => m.messageId).toSet();
+    expect(ids, containsAll(['r1', 'r2']),
+        reason: 'both reaction orders must survive the SQL prefilter');
+    expect(ids, isNot(contains('p1')),
+        reason: 'plain messages must never be decoded');
+    expect(ids, isNot(contains('q1')),
+        reason: 'a reply whose last line is not 8 chars is filtered in SQL');
+  });
+
+  test('loadChannelMessagesByWireWindow slices by the messageId wire prefix',
+      () async {
+    await store.upsertMessage(
+        idKeyA, msg('old', id: '1000000000000_a_b', ts: 1000000000000));
+    await store.upsertMessage(
+        idKeyA, msg('near', id: '1000100000000_a_b', ts: 1000100000000));
+    await store.upsertMessage(
+        idKeyA, msg('far', id: '2000000000000_a_b', ts: 2000000000000));
+
+    final rows = await store.loadChannelMessagesByWireWindow(
+      idKeyA,
+      fromMs: 999900000000,
+      toMs: 1000200000000,
+    );
+    expect(rows.map((m) => m.text).toSet(), {'old', 'near'});
+  });
+
   test('legacy index blob imports into identity rows once', () async {
     final prefs = PrefsManager.instance;
     await prefs.setString('${store.keyFor}2', legacyBlob([msg('seed')]));

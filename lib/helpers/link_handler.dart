@@ -427,7 +427,7 @@ class StrikethroughLinkifier extends Linkifier {
     final list = <LinkifyElement>[];
     for (var element in elements) {
       if (element is TextElement) {
-        final matches = RegExp(r'~(.+?)~').allMatches(element.text);
+        final matches = RegExp(r'~~(.+?)~~').allMatches(element.text);
         if (matches.isEmpty) {
           list.add(element);
           continue;

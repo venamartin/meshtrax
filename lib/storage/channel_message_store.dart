@@ -610,6 +610,66 @@ class ChannelMessageStore {
                 (r) => OrderingTerm.asc(r.id),
               ]))
             .get();
+    return _decodeRows(rows);
+  }
+
+  /// Rows that can POSSIBLY be parked MeshCore One reactions: the wire
+  /// shape ends in a newline plus an 8-char hash, which the JSON payload
+  /// stores as the literal two-character sequence `\n`, eight characters,
+  /// then the string's closing quote. The LIKE runs entirely in SQL, so a
+  /// huge channel's plain messages are never decoded in Dart. Callers
+  /// re-parse to confirm (a multi-line message whose last line happens to
+  /// be 8 chars matches too — rare and harmless).
+  Future<List<ChannelMessage>> loadPossibleReactionRows(String idKey) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyIdentityBlob(idKey);
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey) &
+                    r.payload.like(r'%\n________"%'),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    return _decodeRows(rows);
+  }
+
+  /// Rows whose ORIGINAL wire timestamp (the messageId's leading field,
+  /// the same rule as the connector's wireTimestampMs) falls inside
+  /// [fromMs, toMs]. The candidate fetch for the retroactive orphan pass —
+  /// SQL casts the prefix so out-of-window JSON payloads are never decoded.
+  Future<List<ChannelMessage>> loadChannelMessagesByWireWindow(
+    String idKey, {
+    required int fromMs,
+    required int toMs,
+  }) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyIdentityBlob(idKey);
+    const wireMs = CustomExpression<int>(
+      "CAST(substr(message_id, 1, instr(message_id, '_') - 1) AS INTEGER)",
+    );
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey) &
+                    wireMs.isBetweenValues(fromMs, toMs),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    return _decodeRows(rows);
+  }
+
+  List<ChannelMessage> _decodeRows(List<ChannelMessageRow> rows) {
     final messages = <ChannelMessage>[];
     for (final row in rows) {
       try {

@@ -21,10 +21,23 @@ class Utf8LengthLimitingTextInputFormatter extends TextInputFormatter {
     if (maxBytes <= 0) return oldValue;
     if (_effectiveByteLength(newValue.text) <= maxBytes) return newValue;
 
+    // Android IMEs (Gboard, Samsung) glitch when the framework rewrites the
+    // text out from under an active composing region — the word being typed
+    // flashes selected/highlighted, duplicates, or the cursor teleports.
+    // Mirror MaxLengthEnforcement.truncateAfterCompositionEnds: let the
+    // value exceed the limit while composition is active and truncate once
+    // it ends. Send paths re-validate the byte budget independently, so an
+    // over-limit draft can never go on the air.
+    if (newValue.composing.isValid) return newValue;
+
     final truncated = _truncateToMaxBytes(newValue.text, maxBytes);
     return TextEditingValue(
       text: truncated,
-      selection: TextSelection.collapsed(offset: truncated.length),
+      // Keep the cursor where the user is editing (clamped), instead of
+      // teleporting it to the end of the field.
+      selection: TextSelection.collapsed(
+        offset: newValue.selection.extentOffset.clamp(0, truncated.length),
+      ),
       composing: TextRange.empty,
     );
   }
