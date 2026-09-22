@@ -845,19 +845,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
     final connector = context.read<MeshCoreConnector>();
     final settingsService = context.read<AppSettingsService>();
-    // Full stored history — the watched window only pages the visible list.
-    final all = await connector.loadChannelMessagesFor(widget.channel);
+    // SQL does the heavy lifting (text + sender names, newest first) —
+    // the full history is never loaded here.
+    final found = await connector.searchChannelMessages(widget.channel, query);
     if (!mounted || query != _searchController.text.trim()) return;
-    final q = query.toLowerCase();
-    // Sender names count as matches too: searching a person's name must
-    // find everything they posted, not just messages that mention them.
     final matches = <({ChannelMessage message, int fromNewest})>[
-      for (var i = all.length - 1; i >= 0; i--)
-        if ((all[i].isOutgoing ||
-                !settingsService.isSenderBlocked(all[i].senderName)) &&
-            (all[i].text.toLowerCase().contains(q) ||
-                all[i].senderName.toLowerCase().contains(q)))
-          (message: all[i], fromNewest: all.length - 1 - i),
+      for (final f in found)
+        if (f.message.isOutgoing ||
+            !settingsService.isSenderBlocked(f.message.senderName))
+          f,
     ];
     setState(() {
       _searchMatches = matches;

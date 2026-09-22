@@ -24,10 +24,11 @@ void main() {
     String? hash,
     Uint8List? sender,
     bool outgoing = false,
+    String name = 'Tester',
   }) {
     return ChannelMessage(
       senderKey: sender,
-      senderName: 'Tester',
+      senderName: name,
       text: text,
       timestamp: DateTime.fromMillisecondsSinceEpoch(ts ?? 1753000000000),
       isOutgoing: outgoing,
@@ -94,6 +95,49 @@ void main() {
 
     final loaded = await store.loadChannelMessages(idKeyA);
     expect(loaded.map((m) => m.text), ['arrived first', 'arrived second']);
+  });
+
+  group('searchChannelMessages — SQL-side full-history search', () {
+    setUp(() async {
+      await store.upsertMessage(
+          idKeyA, msg('Morning everyone', id: 's1', name: 'PIBER 📼'));
+      await store.upsertMessage(
+          idKeyA, msg('mentioning piber here', id: 's2', name: 'Vacasity'));
+      await store.upsertMessage(
+          idKeyA, msg('unrelated chatter', id: 's3', name: 'Vacasity'));
+    });
+
+    test('matches sender names AND text, case-insensitively', () async {
+      final hits = await store.searchChannelMessages(idKeyA, 'piber');
+      expect(hits.map((h) => h.message.messageId), ['s2', 's1'],
+          reason: 'newest first: the mention, then the sender-name match');
+    });
+
+    test('fromNewest counts distance over ALL rows, not just matches',
+        () async {
+      final hits = await store.searchChannelMessages(idKeyA, 'morning');
+      expect(hits.single.message.messageId, 's1');
+      expect(hits.single.fromNewest, 2,
+          reason: 's1 is the oldest of three rows');
+    });
+
+    test('queries the SQL prefilter cannot fold fall back to a full scan',
+        () async {
+      await store.upsertMessage(
+          idKeyA, msg('Привет мир', id: 's4', name: 'Юра'));
+      // Cased non-ASCII: SQLite lower() cannot fold, Dart can.
+      final hits = await store.searchChannelMessages(idKeyA, 'привет');
+      expect(hits.single.message.messageId, 's4');
+      // JSON-escaped characters route to the fallback too.
+      final quoted = await store.searchChannelMessages(idKeyA, '"');
+      expect(quoted, isEmpty);
+    });
+
+    test('never matches JSON structure, only real fields', () async {
+      // "senderName" appears in every payload as a JSON key.
+      final hits = await store.searchChannelMessages(idKeyA, 'senderName');
+      expect(hits, isEmpty);
+    });
   });
 
   test('legacy index blob imports into identity rows once', () async {
