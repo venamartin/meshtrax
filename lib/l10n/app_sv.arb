@@ -431,6 +431,8 @@
     }
   },
   "chat_typeMessage": "Skriv ett meddelande...",
+  "chat_searchMessages": "Sök meddelanden",
+  "chat_searchNoMatches": "Inga träffar",
   "chat_messageTooLong": "Meddelandet är för långt (max {maxBytes} byte).",
   "@chat_messageTooLong": {
     "placeholders": {

@@ -1411,6 +1411,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chat_typeMessage => 'Type een bericht...';
 
   @override
+  String get chat_searchMessages => 'Berichten zoeken';
+
+  @override
+  String get chat_searchNoMatches => 'Geen resultaten';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Bericht is te lang (max $maxBytes bytes).';
   }

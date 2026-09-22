@@ -603,6 +603,8 @@
     }
   },
   "chat_typeMessage": "メッセージを入力してください…",
+  "chat_searchMessages": "メッセージを検索",
+  "chat_searchNoMatches": "一致なし",
   "chat_messageTooLong": "メッセージが長すぎる（{maxBytes} バイトを超える）。",
   "@chat_messageTooLong": {
     "placeholders": {

@@ -1363,6 +1363,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_typeMessage => 'メッセージを入力してください…';
 
   @override
+  String get chat_searchMessages => 'メッセージを検索';
+
+  @override
+  String get chat_searchNoMatches => '一致なし';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'メッセージが長すぎる（$maxBytes バイトを超える）。';
   }

@@ -603,6 +603,8 @@
     }
   },
   "chat_typeMessage": "메시지를 입력하세요...",
+  "chat_searchMessages": "메시지 검색",
+  "chat_searchNoMatches": "일치 항목 없음",
   "chat_messageTooLong": "메시지가 너무 길어서 (최대 {maxBytes} 바이트).",
   "@chat_messageTooLong": {
     "placeholders": {

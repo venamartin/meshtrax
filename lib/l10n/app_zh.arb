@@ -458,6 +458,8 @@
     }
   },
   "chat_typeMessage": "输入消息...",
+  "chat_searchMessages": "搜索消息",
+  "chat_searchNoMatches": "无匹配项",
   "chat_messageTooLong": "消息过长（最多 {maxBytes} 字节）",
   "@chat_messageTooLong": {
     "placeholders": {

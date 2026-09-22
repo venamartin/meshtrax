@@ -2614,6 +2614,18 @@ abstract class AppLocalizations {
   /// **'Type a message...'**
   String get chat_typeMessage;
 
+  /// No description provided for @chat_searchMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get chat_searchMessages;
+
+  /// No description provided for @chat_searchNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get chat_searchNoMatches;
+
   /// No description provided for @chat_messageTooLong.
   ///
   /// In en, this message translates to:

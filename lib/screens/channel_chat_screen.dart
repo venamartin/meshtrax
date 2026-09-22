@@ -100,12 +100,33 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   int _watchLimit = 200;
   bool _didInitialAnchor = false;
 
+  // In-channel search. Matches come from the FULL stored history (the
+  // watched window only pages the visible list); jumping to a match
+  // outside the window grows _watchLimit until the row is loaded.
+  bool _searchActive = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  Timer? _searchDebounce;
+  List<({ChannelMessage message, int fromNewest})> _searchMatches = const [];
+  int _searchPos = -1;
+  String? _pendingSearchJumpId;
+
   void _subscribeMessages(MeshCoreConnector connector) {
     _messagesSub?.cancel();
     _messagesSub = connector
         .watchChannelMessages(widget.channel, limit: _watchLimit)
         .listen((messages) {
       if (!mounted) return;
+      // A search jump whose target was outside the watched window waits
+      // here for the grown window to deliver the row.
+      final pendingJump = _pendingSearchJumpId;
+      if (pendingJump != null &&
+          messages.any((m) => m.messageId == pendingJump)) {
+        _pendingSearchJumpId = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scrollToMessage(pendingJump);
+        });
+      }
       setState(() {
         _messages = messages;
         if (!_didInitialAnchor) {
@@ -765,6 +786,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   void dispose() {
     _disarmAdvertWatch();
     _messagesSub?.cancel();
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
@@ -784,6 +808,87 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     setState(() {
       _replyingToMessage = null;
     });
+  }
+
+  void _openSearch() {
+    setState(() => _searchActive = true);
+    _searchFocusNode.requestFocus();
+  }
+
+  void _closeSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    setState(() {
+      _searchActive = false;
+      _searchMatches = const [];
+      _searchPos = -1;
+      _pendingSearchJumpId = null;
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    // The RAW query goes through: a space at either edge means "word
+    // boundary" to the store's matcher, so trimming here would erase it.
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 250),
+      () => _runSearch(query),
+    );
+  }
+
+  Future<void> _runSearch(String query) async {
+    if (!mounted) return;
+    if (query.trim().isEmpty) {
+      setState(() {
+        _searchMatches = const [];
+        _searchPos = -1;
+      });
+      return;
+    }
+    final connector = context.read<MeshCoreConnector>();
+    final settingsService = context.read<AppSettingsService>();
+    // SQL does the heavy lifting (text + sender names, newest first) —
+    // the full history is never loaded here.
+    final found = await connector.searchChannelMessages(widget.channel, query);
+    if (!mounted || query != _searchController.text) return;
+    final matches = <({ChannelMessage message, int fromNewest})>[
+      for (final f in found)
+        if (f.message.isOutgoing ||
+            !settingsService.isSenderBlocked(f.message.senderName))
+          f,
+    ];
+    setState(() {
+      _searchMatches = matches;
+      _searchPos = matches.isEmpty ? -1 : 0;
+    });
+    if (matches.isNotEmpty) _jumpToMatch(0);
+  }
+
+  /// [delta] +1 steps to an older match, -1 to a newer one. Clamps at the
+  /// ends — wrapping around made the arrows feel reversed (UP at the
+  /// oldest match visually jumped DOWN to the newest).
+  void _searchStep(int delta) {
+    final next = _searchPos + delta;
+    if (next < 0 || next >= _searchMatches.length) return;
+    _jumpToMatch(next);
+  }
+
+  bool get _searchHasOlder => _searchPos >= 0 && _searchPos < _searchMatches.length - 1;
+  bool get _searchHasNewer => _searchPos > 0;
+
+  void _jumpToMatch(int pos) {
+    final match = _searchMatches[pos];
+    setState(() => _searchPos = pos);
+    if (_messages.any((m) => m.messageId == match.message.messageId)) {
+      _scrollToMessage(match.message.messageId);
+      return;
+    }
+    // Outside the watched window: grow it past the target and jump when
+    // the subscription delivers the row (see _subscribeMessages).
+    final needed = ((match.fromNewest + 51) ~/ 200 + 1) * 200;
+    if (needed > _watchLimit) _watchLimit = needed;
+    _pendingSearchJumpId = match.message.messageId;
+    _subscribeMessages(context.read<MeshCoreConnector>());
   }
 
   Future<void> _scrollToMessage(String messageId) async {
@@ -810,10 +915,30 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_searchActive,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: Scaffold(
       backgroundColor: ChatColors.isLight(context) ? ChatColors.background : null,
       appBar: AppBar(
-        title: Row(
+        title: _searchActive
+            ? TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: _onSearchChanged,
+                onSubmitted: (_) {
+                  _searchStep(1);
+                  _searchFocusNode.requestFocus();
+                },
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: context.l10n.chat_searchMessages,
+                  border: InputBorder.none,
+                ),
+              )
+            : Row(
           children: [
             Icon(
               widget.channel.isPublicChannel
@@ -831,7 +956,36 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ],
         ),
         centerTitle: false,
-        actions: [
+        actions: _searchActive
+            ? [
+                if (_searchController.text.trim().isNotEmpty)
+                  Center(
+                    child: Text(
+                      _searchMatches.isEmpty
+                          ? context.l10n.chat_searchNoMatches
+                          : '${_searchPos + 1}/${_searchMatches.length}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_up),
+                  onPressed: _searchHasOlder ? () => _searchStep(1) : null,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  onPressed: _searchHasNewer ? () => _searchStep(-1) : null,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: _closeSearch,
+                ),
+              ]
+            : [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: context.l10n.chat_searchMessages,
+            onPressed: _openSearch,
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code),
             tooltip: context.l10n.channels_shareChannel,
@@ -1002,6 +1156,25 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
                               Widget currentWidget = bubble;
 
+                              final focusedMatchId =
+                                  _searchActive && _searchPos >= 0
+                                      ? _searchMatches[_searchPos]
+                                          .message
+                                          .messageId
+                                      : null;
+                              if (message.messageId == focusedMatchId) {
+                                currentWidget = Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: currentWidget,
+                                );
+                              }
+
                               if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
                                 currentWidget = Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -1089,6 +1262,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             _buildMessageComposer(),
           ],
         ),
+      ),
       ),
     );
   }

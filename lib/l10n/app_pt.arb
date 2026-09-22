@@ -431,6 +431,8 @@
     }
   },
   "chat_typeMessage": "Digite uma mensagem...",
+  "chat_searchMessages": "Pesquisar mensagens",
+  "chat_searchNoMatches": "Sem resultados",
   "chat_messageTooLong": "Mensagem muito longa (máximo {maxBytes} bytes).",
   "@chat_messageTooLong": {
     "placeholders": {

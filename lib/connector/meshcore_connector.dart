@@ -699,6 +699,12 @@ class MeshCoreConnector extends ChangeNotifier {
   Future<List<ChannelMessage>> loadChannelMessagesFor(Channel channel) =>
       _channelMessageStore.loadChannelMessages(channel.idKey);
 
+  /// SQL-backed full-history search (the channel search UI): matches text
+  /// and sender names case-insensitively without loading the history.
+  Future<List<({ChannelMessage message, int fromNewest})>>
+      searchChannelMessages(Channel channel, String query) =>
+          _channelMessageStore.searchChannelMessages(channel.idKey, query);
+
   /// Watched unread counts per channel identity (chats-screen badges).
   Stream<Map<String, int>> watchChannelUnreadCounts() =>
       _channelMessageStore.watchUnreadCounts();

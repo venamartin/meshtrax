@@ -441,6 +441,8 @@
     }
   },
   "chat_typeMessage": "Wpisz wiadomość...",
+  "chat_searchMessages": "Szukaj wiadomości",
+  "chat_searchNoMatches": "Brak wyników",
   "chat_messageTooLong": "Wiadomość jest za długa (maksymalnie {maxBytes} bajtów).",
   "@chat_messageTooLong": {
     "placeholders": {

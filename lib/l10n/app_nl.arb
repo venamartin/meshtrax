@@ -431,6 +431,8 @@
     }
   },
   "chat_typeMessage": "Type een bericht...",
+  "chat_searchMessages": "Berichten zoeken",
+  "chat_searchNoMatches": "Geen resultaten",
   "chat_messageTooLong": "Bericht is te lang (max {maxBytes} bytes).",
   "@chat_messageTooLong": {
     "placeholders": {
