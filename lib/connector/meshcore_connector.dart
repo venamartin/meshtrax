@@ -4695,9 +4695,27 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
         break;
       case pushCodeAdvert:
-        // Known contact was seen again - just a pub key, update live timestamp
-        final pubKeyHex = pubKeyToHex(frame.sublist(1, 33));
+        // Just a pub key. The radio sends this for any advert it AUTO-ADDED
+        // to its own contact table (the full record only rides
+        // PUSH_CODE_NEW_ADVERT when the radio does NOT add it). So for a
+        // pubkey we don't hold, the contact exists on the radio but the app
+        // would never learn it until some future full sync — the
+        // coffee-shop flow: "send me an advert" and nothing appears. Fetch
+        // the record surgically instead; the RESP_CODE_CONTACT reply lands
+        // it in the contact list within a moment of the advert.
+        final pubKey = frame.sublist(1, 33);
+        final pubKeyHex = pubKeyToHex(pubKey);
         _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        final known =
+            _contacts.any((c) => c.publicKeyHex == pubKeyHex) ||
+            _discoveredContacts.any((c) => c.publicKeyHex == pubKeyHex);
+        if (!known) {
+          appLogger.info(
+            'Advert from unknown contact $pubKeyHex — fetching record',
+            tag: 'Connector',
+          );
+          unawaited(getContactByKey(pubKey));
+        }
         notifyListeners();
         break;
       case pushCodeNewAdvert:
