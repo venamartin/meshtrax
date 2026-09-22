@@ -3650,6 +3650,27 @@ class MeshCoreConnector extends ChangeNotifier {
     );
   }
 
+  /// The exact on-air text a stored outgoing row is (re)sent with — replies
+  /// rebuild their `@[Name]\n><snippet>..\n<body>` wire markup from metadata
+  /// (the row's text only stores the stripped body); everything else goes
+  /// out as stored.
+  String _rebuildOutboundWireText(int channelIndex, ChannelMessage message) {
+    if (message.replyToSenderName == null) return message.text;
+    final maxBytes = maxChannelMessageBytes(_selfName);
+    return ChannelMessage.buildReplyWireText(
+          targetName: message.replyToSenderName!,
+          quoteText: message.replyToText ?? '',
+          body: message.text,
+          selfName: _selfName ?? '',
+          fits: (candidate) =>
+              utf8
+                  .encode(prepareChannelOutboundText(channelIndex, candidate))
+                  .length <=
+              maxBytes,
+        ) ??
+        message.text;
+  }
+
   Future<void> resendChannelMessageById(int channelIndex, String messageId) async {
     // Same live-slot rule as sendChannelMessage: retrying with a slot index
     // whose key changed (mid-sync, or slot reshuffled) would encrypt the
@@ -3687,27 +3708,10 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    // Rebuild the full "@[Name]\n><snippet>..\n<body>" reply on resend, since
-    // message.text only stores the stripped body. Falls back to the body alone.
-    var wireText = message.text;
-    if (message.replyToSenderName != null) {
-      final maxBytes = maxChannelMessageBytes(_selfName);
-      wireText =
-          ChannelMessage.buildReplyWireText(
-            targetName: message.replyToSenderName!,
-            quoteText: message.replyToText ?? '',
-            body: message.text,
-            selfName: _selfName ?? '',
-            fits: (candidate) =>
-                utf8
-                    .encode(prepareChannelOutboundText(channelIndex, candidate))
-                    .length <=
-                maxBytes,
-          ) ??
-          message.text;
-    }
-
-    final outboundText = prepareChannelOutboundText(channelIndex, wireText);
+    final outboundText = prepareChannelOutboundText(
+      channelIndex,
+      _rebuildOutboundWireText(channelIndex, message),
+    );
     await _waitForRadioQuiet(
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
@@ -6244,16 +6248,43 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // The send queue only ever holds our own pending ids, so consuming the
     // entry answers the caller synchronously; the row update is async.
     unawaited(() async {
+      ChannelMessage? sentRow;
       final (updated, idKey) = await _channelMessageStore.updateAnyByMessageId(
         messageId,
-        (m) => (m.isOutgoing && m.status == ChannelMessageStatus.pending)
-            ? m.copyWith(status: ChannelMessageStatus.sent)
-            : m,
+        (m) {
+          if (m.isOutgoing && m.status == ChannelMessageStatus.pending) {
+            sentRow = m.copyWith(status: ChannelMessageStatus.sent);
+            return sentRow!;
+          }
+          return m;
+        },
       );
       if (!updated || idKey == null) return;
       final liveIndex = _liveChannelByIdKey(idKey)?.index;
       if (liveIndex != null) {
-        _startWaitForRepeatTimer(liveIndex, messageId);
+        // Only wait for a repeat echo that can physically reach us: the
+        // firmware's RX-log push drops packets that don't fit the serial
+        // frame, so an oversize send's echo is unobservable — waiting
+        // would just burn a pointless retry and end in a false amber.
+        final row = sentRow;
+        final observable = row == null ||
+            isChannelEchoObservable(
+              _selfName,
+              prepareChannelOutboundText(
+                liveIndex,
+                _rebuildOutboundWireText(liveIndex, row),
+              ),
+              _pathHashByteWidth,
+            );
+        if (observable) {
+          _startWaitForRepeatTimer(liveIndex, messageId);
+        } else {
+          appLogger.info(
+            'Echo unobservable for $messageId (repeated packet exceeds the '
+            'RX-log frame) — settling as sent',
+            tag: 'Connector',
+          );
+        }
       }
       notifyListeners();
     }());
