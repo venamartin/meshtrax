@@ -849,11 +849,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final all = await connector.loadChannelMessagesFor(widget.channel);
     if (!mounted || query != _searchController.text.trim()) return;
     final q = query.toLowerCase();
+    // Sender names count as matches too: searching a person's name must
+    // find everything they posted, not just messages that mention them.
     final matches = <({ChannelMessage message, int fromNewest})>[
       for (var i = all.length - 1; i >= 0; i--)
         if ((all[i].isOutgoing ||
                 !settingsService.isSenderBlocked(all[i].senderName)) &&
-            all[i].text.toLowerCase().contains(q))
+            (all[i].text.toLowerCase().contains(q) ||
+                all[i].senderName.toLowerCase().contains(q)))
           (message: all[i], fromNewest: all.length - 1 - i),
     ];
     setState(() {
@@ -863,12 +866,17 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     if (matches.isNotEmpty) _jumpToMatch(0);
   }
 
-  /// [delta] +1 steps to an older match, -1 to a newer one (wraps around).
+  /// [delta] +1 steps to an older match, -1 to a newer one. Clamps at the
+  /// ends — wrapping around made the arrows feel reversed (UP at the
+  /// oldest match visually jumped DOWN to the newest).
   void _searchStep(int delta) {
-    final n = _searchMatches.length;
-    if (n == 0) return;
-    _jumpToMatch((_searchPos + delta + n) % n);
+    final next = _searchPos + delta;
+    if (next < 0 || next >= _searchMatches.length) return;
+    _jumpToMatch(next);
   }
+
+  bool get _searchHasOlder => _searchPos >= 0 && _searchPos < _searchMatches.length - 1;
+  bool get _searchHasNewer => _searchPos > 0;
 
   void _jumpToMatch(int pos) {
     final match = _searchMatches[pos];
@@ -963,13 +971,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   ),
                 IconButton(
                   icon: const Icon(Icons.keyboard_arrow_up),
-                  onPressed:
-                      _searchMatches.isEmpty ? null : () => _searchStep(1),
+                  onPressed: _searchHasOlder ? () => _searchStep(1) : null,
                 ),
                 IconButton(
                   icon: const Icon(Icons.keyboard_arrow_down),
-                  onPressed:
-                      _searchMatches.isEmpty ? null : () => _searchStep(-1),
+                  onPressed: _searchHasNewer ? () => _searchStep(-1) : null,
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
