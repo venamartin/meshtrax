@@ -813,6 +813,9 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeContactKey = contactKeyHex;
     if (contactKeyHex != null) {
       markContactRead(contactKeyHex);
+      // First open this session: scan for parked reactions and land any
+      // whose target is already stored (see the retroactive pass).
+      unawaited(_contactOrphans(contactKeyHex));
     }
   }
 
@@ -820,6 +823,10 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeChannelIndex = channelIndex;
     if (channelIndex != null) {
       markChannelRead(channelIndex);
+      final idKey = _findChannelByIndex(channelIndex)?.idKey;
+      if (idKey != null) {
+        unawaited(_channelOrphans(idKey));
+      }
     }
   }
 
@@ -6910,19 +6917,94 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   Future<List<ChannelMessage>> _channelOrphans(String idKey) async {
     if (_channelOrphansScanned.add(idKey)) {
-      final history = await _channelMessageStore.loadChannelMessages(idKey);
+      // SQL prefilters the reaction shape — a huge channel's plain
+      // messages are never decoded here.
+      final candidates =
+          await _channelMessageStore.loadPossibleReactionRows(idKey);
       _channelOrphanRows[idKey] = [
-        for (final m in history)
+        for (final m in candidates)
           if (!m.isOutgoing &&
               ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
             m,
       ];
+      // Retroactive pass: rows this build can parse as reactions but an
+      // older build ingested as plain messages (e.g. mention-first MC1
+      // reactions from before the dialect landed) never went through
+      // ingest-time resolution — their targets are already stored, so the
+      // arrival-driven re-match can never fire. Land them now.
+      await _resolveChannelOrphansAgainstHistory(idKey);
     }
     return _channelOrphanRows.putIfAbsent(idKey, () => []);
   }
 
+  /// A reaction lands close in time to its target, so the retroactive scan
+  /// fetches and hashes only rows inside this window around the orphan's
+  /// own wire time — never the full history. (The arrival-driven paths
+  /// stay unbounded: they check exactly one new target.)
+  static const _retroactiveOrphanWindow = Duration(days: 2);
+
+  /// Lands every parked orphan in [idKey] whose target is already stored
+  /// (the arrival-driven [_resolveChannelOrphansFor] only covers targets
+  /// stored AFTER their reaction).
+  Future<void> _resolveChannelOrphansAgainstHistory(String idKey) async {
+    final orphans = _channelOrphanRows[idKey];
+    if (orphans == null || orphans.isEmpty) return;
+    final windowMs = _retroactiveOrphanWindow.inMilliseconds;
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null) continue;
+      final orphanMs = wireTimestampMs(orphan);
+      final nearby = await _channelMessageStore.loadChannelMessagesByWireWindow(
+        idKey,
+        fromMs: orphanMs - windowMs,
+        toMs: orphanMs + windowMs,
+      );
+      final index = ReactionHelper.findTargetIndex<ChannelMessage>(
+        messages: nearby,
+        reactionInfo: info,
+        shouldSkip: (m) =>
+            m.messageId == orphan.messageId ||
+            ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: _channelWireSecsCandidates,
+        getMessageTextVariants: (m) => _mc1TextVariants(m.text, m.wireText),
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+      );
+      if (index < 0) continue;
+      final target = nearby[index];
+      await _channelMessageStore.updateMessage(idKey, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          orphan.senderName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _channelMessageStore.deleteMessage(idKey, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+      appLogger.info(
+        'Retroactively landed parked reaction ${info.emoji} by '
+        '${orphan.senderName} on ${target.messageId}',
+        tag: 'Connector',
+      );
+    }
+    if (landed) notifyListeners();
+  }
+
   Future<List<Message>> _contactOrphans(String pubKeyHex) async {
     if (_contactOrphansScanned.add(pubKeyHex)) {
+      // DM histories are per-contact and orders of magnitude smaller than
+      // a busy channel, so the in-memory scan is fine here; the channel
+      // side pushes both filters into SQL.
       final history = await _messageStore.loadMessages(pubKeyHex);
       _contactOrphanRows[pubKeyHex] = [
         for (final m in history)
@@ -6930,8 +7012,74 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
             m,
       ];
+      await _resolveContactOrphansAgainstHistory(pubKeyHex, history);
     }
     return _contactOrphanRows.putIfAbsent(pubKeyHex, () => []);
+  }
+
+  /// DM mirror of [_resolveChannelOrphansAgainstHistory].
+  Future<void> _resolveContactOrphansAgainstHistory(
+    String pubKeyHex,
+    List<Message> history,
+  ) async {
+    final orphans = _contactOrphanRows[pubKeyHex];
+    if (orphans == null || orphans.isEmpty) return;
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => c?.publicKeyHex == pubKeyHex,
+      orElse: () => null,
+    );
+    final isRoomServer = contact?.type == advTypeRoom;
+    final windowSecs = _retroactiveOrphanWindow.inSeconds;
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null) continue;
+      final orphanSecs = _messageWireSecs(orphan);
+      final nearby = [
+        for (final m in history)
+          if ((orphanSecs - _messageWireSecs(m)).abs() <= windowSecs) m,
+      ];
+      final index = ReactionHelper.findTargetIndex<Message>(
+        messages: nearby,
+        reactionInfo: info,
+        shouldSkip: (m) =>
+            m.messageId == orphan.messageId ||
+            ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: _contactWireSecsCandidates,
+        getMessageTextVariants: (m) => _mc1TextVariants(m.text),
+        getSenderName: (m) => contact == null
+            ? null
+            : _resolveContactSenderName(m, contact, isRoomServer),
+        getMessageText: (m) => m.text,
+      );
+      if (index < 0) continue;
+      final target = nearby[index];
+      final reactorName = _resolveReactorName(pubKeyHex, orphan);
+      await _messageStore.updateMessage(pubKeyHex, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          reactorName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _messageStore.deleteMessage(pubKeyHex, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+      appLogger.info(
+        'Retroactively landed parked DM reaction ${info.emoji} by '
+        '$reactorName on ${target.messageId}',
+        tag: 'Connector',
+      );
+    }
+    if (landed) notifyListeners();
   }
 
   Future<void> _registerChannelOrphan(String idKey, ChannelMessage row) async {
