@@ -2644,26 +2644,46 @@ class MentionTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    final List<TextSpan> spans = [];
-    int start = 0;
+    // The IME's composing region must stay visible (the framework default
+    // underlines it) — dropping it desyncs Android keyboards from what the
+    // user sees while a word is being composed.
+    final TextRange? composing =
+        withComposing && value.isComposingRangeValid ? value.composing : null;
+    const underline = TextStyle(decoration: TextDecoration.underline);
 
-    for (final Match match in _mentionRegex.allMatches(text)) {
-      if (match.start > start) {
-        spans.add(TextSpan(text: text.substring(start, match.start), style: style));
+    final List<TextSpan> spans = [];
+    void addSegment(int from, int to, TextStyle? segmentStyle) {
+      if (from >= to) return;
+      if (composing == null || to <= composing.start || from >= composing.end) {
+        spans.add(TextSpan(text: text.substring(from, to), style: segmentStyle));
+        return;
+      }
+      final int cs = composing.start.clamp(from, to);
+      final int ce = composing.end.clamp(from, to);
+      if (from < cs) {
+        spans.add(TextSpan(text: text.substring(from, cs), style: segmentStyle));
       }
       spans.add(TextSpan(
-        text: '@[${match.group(1)}]', // Keep brackets visible for the user
-        style: style?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
+        text: text.substring(cs, ce),
+        style: (segmentStyle ?? const TextStyle()).merge(underline),
       ));
-      start = match.end;
+      if (ce < to) {
+        spans.add(TextSpan(text: text.substring(ce, to), style: segmentStyle));
+      }
     }
 
-    if (start < text.length) {
-      spans.add(TextSpan(text: text.substring(start), style: style));
+    final mentionStyle = style?.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+      fontWeight: FontWeight.bold,
+    );
+
+    int start = 0;
+    for (final Match match in _mentionRegex.allMatches(text)) {
+      addSegment(start, match.start, style);
+      addSegment(match.start, match.end, mentionStyle);
+      start = match.end;
     }
+    addSegment(start, text.length, style);
 
     return TextSpan(children: spans, style: style);
   }
