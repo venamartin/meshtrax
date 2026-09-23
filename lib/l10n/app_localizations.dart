@@ -2542,18 +2542,6 @@ abstract class AppLocalizations {
   /// **'Message deleted'**
   String get chat_messageDeleted;
 
-  /// No description provided for @chat_retryingMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrying message'**
-  String get chat_retryingMessage;
-
-  /// No description provided for @chat_retryCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry {current}/{max}'**
-  String chat_retryCount(int current, int max);
-
   /// No description provided for @chat_sendGif.
   ///
   /// In en, this message translates to:
@@ -6718,6 +6706,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only when the contact can hear this radio itself'**
   String get path_directSubtitle;
+
+  /// No description provided for @chat_kindFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'flood'**
+  String get chat_kindFlood;
+
+  /// No description provided for @chat_kindDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'direct'**
+  String get chat_kindDirect;
+
+  /// No description provided for @chat_kindRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'route ({count} {count, plural, =1{hop} other{hops}})'**
+  String chat_kindRoute(int count);
+
+  /// No description provided for @chat_statusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get chat_statusQueued;
+
+  /// No description provided for @chat_statusSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending · {kind}'**
+  String chat_statusSending(String kind);
+
+  /// No description provided for @chat_statusRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying · {kind} · attempt {attempt} of {max}'**
+  String chat_statusRetrying(int attempt, int max, String kind);
+
+  /// No description provided for @chat_statusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered · {kind} · {secs} s'**
+  String chat_statusDelivered(String kind, String secs);
+
+  /// No description provided for @chat_statusDeliveredAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered on attempt {attempt} · {kind} · {secs} s'**
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs);
+
+  /// No description provided for @chat_statusDeliveredLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered late · {kind} · {secs} s'**
+  String chat_statusDeliveredLate(String kind, String secs);
+
+  /// No description provided for @chat_statusDeliveredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered · {secs} s'**
+  String chat_statusDeliveredShort(String secs);
+
+  /// No description provided for @chat_statusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed after {attempts} {attempts, plural, =1{attempt} other{attempts}} · tap to resend'**
+  String chat_statusFailed(int attempts);
+
+  /// No description provided for @chat_statusFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed · tap to resend'**
+  String get chat_statusFailedShort;
+
+  /// No description provided for @chat_resendingByFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'Resending by flood'**
+  String get chat_resendingByFlood;
 }
 
 class _AppLocalizationsDelegate

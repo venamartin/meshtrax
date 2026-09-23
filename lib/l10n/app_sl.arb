@@ -435,18 +435,6 @@
   },
   "chat_messageCopied": "Sporočilo poslano",
   "chat_messageDeleted": "Sporočilo izbrisano",
-  "chat_retryingMessage": "Ponovni poskus.",
-  "chat_retryCount": "Ponovit {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Pošlji GIF",
   "chat_reply": "Odgovori",
   "chat_addReaction": "Dodaj reakcijo",

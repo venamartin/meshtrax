@@ -435,18 +435,6 @@
   },
   "chat_messageCopied": "Meddelandet kopierades",
   "chat_messageDeleted": "Meddelandet raderat",
-  "chat_retryingMessage": "Försöker igen",
-  "chat_retryCount": "Försök igen {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Skicka GIF",
   "chat_reply": "Svara",
   "chat_addReaction": "Lägg till reaktion",

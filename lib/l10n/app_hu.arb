@@ -588,18 +588,6 @@
   },
   "chat_messageCopied": "Üzenet másolva",
   "chat_messageDeleted": "Üzenet törölve",
-  "chat_retryingMessage": "Újrapróbálási üzenet",
-  "chat_retryCount": "Újrapróbál {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Küldj GIF-ot",
   "chat_reply": "Válasz",
   "chat_addReaction": "Hozzon létre reakciót",

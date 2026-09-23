@@ -1363,14 +1363,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_messageDeleted => 'Posolstvo odstránené';
 
   @override
-  String get chat_retryingMessage => 'Pokus o obnovenie';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return 'Skúsiť $current/$max';
-  }
-
-  @override
   String get chat_sendGif => 'Odoslať GIF';
 
   @override
@@ -3843,4 +3835,71 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get path_directSubtitle =>
       'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

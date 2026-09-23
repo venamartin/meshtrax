@@ -435,18 +435,6 @@
   },
   "chat_messageCopied": "Bericht gekopieerd",
   "chat_messageDeleted": "Bericht verwijderd",
-  "chat_retryingMessage": "Poging opnieuw.",
-  "chat_retryCount": "Poging opnieuw {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "GIF verzenden",
   "chat_reply": "Reageren",
   "chat_addReaction": "Reactie toevoegen",

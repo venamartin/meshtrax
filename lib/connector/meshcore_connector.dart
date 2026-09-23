@@ -2961,8 +2961,9 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> sendMessage(
     Contact contact,
-    String text,
-  ) async {
+    String text, {
+    bool floodFirst = false,
+  }) async {
     if (!isConnected || text.isEmpty) return;
 
     // Check if this is a reaction - apply locally with pending status and route through retry service
@@ -2994,6 +2995,7 @@ class MeshCoreConnector extends ChangeNotifier {
       await _retryService!.sendMessageWithRetry(
         contact: contact,
         text: text,
+        floodFirst: floodFirst,
       );
     } else {
       // Fallback to old behavior if retry service not initialized

@@ -435,18 +435,6 @@
   },
   "chat_messageCopied": "Správa skopírovaná",
   "chat_messageDeleted": "Posolstvo odstránené",
-  "chat_retryingMessage": "Pokus o obnovenie",
-  "chat_retryCount": "Skúsiť {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Odoslať GIF",
   "chat_reply": "Odpovedať",
   "chat_addReaction": "Pridať Reakciu",

@@ -276,8 +276,6 @@
   "chat_messageTooLong": "Сообщение слишком длинное (макс. {maxBytes} байт).",
   "chat_messageCopied": "Сообщение скопировано",
   "chat_messageDeleted": "Сообщение удалено",
-  "chat_retryingMessage": "Повтор отправки сообщения",
-  "chat_retryCount": "Попытка {current}/{max}",
   "chat_sendGif": "Отправить GIF",
   "chat_reply": "Ответить",
   "chat_addReaction": "Добавить реакцию",

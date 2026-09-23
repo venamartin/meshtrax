@@ -436,18 +436,6 @@
   },
   "chat_messageCopied": "Повідомлення скопійовано",
   "chat_messageDeleted": "Повідомлення видалено",
-  "chat_retryingMessage": "Спроба відновлення.",
-  "chat_retryCount": "Повторна спроба {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Надіслати GIF",
   "chat_reply": "Відповісти",
   "chat_addReaction": "Додати реакцію",

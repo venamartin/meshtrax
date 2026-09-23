@@ -588,18 +588,6 @@
   },
   "chat_messageCopied": "메시지가 복사되었습니다",
   "chat_messageDeleted": "메시지가 삭제되었습니다.",
-  "chat_retryingMessage": "재시도 메시지",
-  "chat_retryCount": "{current}/{max} 시도",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "GIF 보내기",
   "chat_reply": "답변",
   "chat_addReaction": "댓글 추가",

@@ -462,18 +462,6 @@
   },
   "chat_messageCopied": "消息已复制",
   "chat_messageDeleted": "消息已删除",
-  "chat_retryingMessage": "正在重试消息",
-  "chat_retryCount": "重试 {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "发送 GIF",
   "chat_reply": "回复",
   "chat_addReaction": "添加表情",

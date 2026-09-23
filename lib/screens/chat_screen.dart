@@ -24,6 +24,7 @@ import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
 import '../services/app_settings_service.dart';
+import '../services/message_retry_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/storage_service.dart';
 import '../services/ui_view_state_service.dart';
@@ -562,7 +563,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     : contact.name,
                 isRoomServer: resolvedContact.type == advTypeRoom,
                 textScale: textScale,
-                onTap: () => _openMessagePath(message, contact),
+                onTap: () => message.isOutgoing &&
+                        message.status == MessageStatus.failed
+                    ? _retryMessage(message)
+                    : _openMessagePath(message, contact),
                 onLongPress: () => _showMessageActions(message, contact),
                 onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
@@ -1303,13 +1307,20 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _retryMessage(Message message) {
+  Future<void> _retryMessage(Message message) async {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    // Retry using the contact's current path override setting
-    connector.sendMessage(_resolveContact(connector), message.text);
+    // The failed bubble is replaced by the new send, which starts with a
+    // flood: whatever route the last attempt had just failed.
+    await connector.deleteMessage(message);
+    await connector.sendMessage(
+      _resolveContact(connector),
+      message.text,
+      floodFirst: true,
+    );
+    if (!mounted) return;
     showDismissibleSnackBar(
       context,
-      content: Text(context.l10n.chat_retryingMessage),
+      content: Text(context.l10n.chat_resendingByFlood),
     );
   }
 
@@ -1482,9 +1493,7 @@ class _MessageBubble extends StatelessWidget {
                                     padding: const EdgeInsets.only(bottom: 2),
                                     child: MessageStatusIcon(
                                       isAcked:
-                                          message.status ==
-                                              MessageStatus.delivered &&
-                                          message.pathBytes.isNotEmpty,
+                                          message.status == MessageStatus.delivered,
                                       isFailed:
                                           message.status ==
                                           MessageStatus.failed,
@@ -1541,9 +1550,7 @@ class _MessageBubble extends StatelessWidget {
                                     ),
                                     child: MessageStatusIcon(
                                       isAcked:
-                                          message.status ==
-                                              MessageStatus.delivered &&
-                                          message.pathBytes.isNotEmpty,
+                                          message.status == MessageStatus.delivered,
                                       isFailed:
                                           message.status ==
                                           MessageStatus.failed,
@@ -1593,9 +1600,7 @@ class _MessageBubble extends StatelessWidget {
                                   padding: const EdgeInsets.only(bottom: 2),
                                   child: MessageStatusIcon(
                                     isAcked:
-                                        message.status ==
-                                            MessageStatus.delivered &&
-                                        message.pathBytes.isNotEmpty,
+                                        message.status == MessageStatus.delivered,
                                     isFailed:
                                         message.status == MessageStatus.failed,
                                   ),
@@ -1603,29 +1608,33 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                           ),
+                        if (isOutgoing) ...[
+                          Builder(
+                            builder: (context) {
+                              final line = _deliveryStatus(
+                                context,
+                                detailed: enableTracing,
+                              );
+                              if (line == null) return const SizedBox.shrink();
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  top: 4,
+                                  left: gifId != null ? 8 : 0,
+                                  right: gifId != null ? 8 : 0,
+                                ),
+                                child: Text(
+                                  line,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: displayMetaColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                         if (enableTracing) ...[
-                          if (isOutgoing && message.retryCount > 0) ...[
-                            const SizedBox(height: 4),
-                            Padding(
-                              padding: gifId != null
-                                  ? const EdgeInsets.symmetric(horizontal: 8)
-                                  : EdgeInsets.zero,
-                              child: Text(
-                                context.l10n.chat_retryCount(
-                                  message.retryCount + 1,
-                                  context
-                                      .read<AppSettingsService>()
-                                      .settings
-                                      .maxMessageRetries,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: displayMetaColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -1650,7 +1659,8 @@ class _MessageBubble extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   _buildStatusIcon(displayMetaColor),
                                 ],
-                                if (message.tripTimeMs != null &&
+                                if (!isOutgoing &&
+                                    message.tripTimeMs != null &&
                                     message.status ==
                                         MessageStatus.delivered) ...[
                                   const SizedBox(width: 4),
@@ -1889,6 +1899,45 @@ class _MessageBubble extends StatelessWidget {
     ];
 
     return colors[hash.abs() % colors.length];
+  }
+
+  /// One line that says where the send is in the attempt ladder. Delivered
+  /// and failed always show; the in-flight detail only with tracing on.
+  String? _deliveryStatus(BuildContext context, {required bool detailed}) {
+    final l10n = context.l10n;
+    final m = message;
+    String kind() {
+      final hops = m.pathLength;
+      if (hops == null || hops < 0) return l10n.chat_kindFlood;
+      if (hops == 0) return l10n.chat_kindDirect;
+      return l10n.chat_kindRoute(hops);
+    }
+
+    final secs = ((m.tripTimeMs ?? 0) / 1000).toStringAsFixed(1);
+    switch (m.status) {
+      case MessageStatus.delivered:
+        if (!detailed) return l10n.chat_statusDeliveredShort(secs);
+        if (m.deliveredLate) return l10n.chat_statusDeliveredLate(kind(), secs);
+        if (m.retryCount > 0) {
+          return l10n.chat_statusDeliveredAttempt(m.retryCount + 1, kind(), secs);
+        }
+        return l10n.chat_statusDelivered(kind(), secs);
+      case MessageStatus.failed:
+        return detailed
+            ? l10n.chat_statusFailed(m.retryCount + 1)
+            : l10n.chat_statusFailedShort;
+      case MessageStatus.pending:
+      case MessageStatus.sent:
+        if (!detailed) return null;
+        if (context.read<MessageRetryService>().isQueued(m.messageId)) {
+          return l10n.chat_statusQueued;
+        }
+        if (m.retryCount > 0) {
+          final max = context.read<AppSettingsService>().settings.maxMessageRetries;
+          return l10n.chat_statusRetrying(m.retryCount + 1, max, kind());
+        }
+        return l10n.chat_statusSending(kind());
+    }
   }
 
   Widget _buildStatusIcon(Color color) {

@@ -435,18 +435,6 @@
   },
   "chat_messageCopied": "Mensaje copiado",
   "chat_messageDeleted": "Mensaje borrado",
-  "chat_retryingMessage": "Reintentando…",
-  "chat_retryCount": "Reintentar {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Enviar GIF",
   "chat_reply": "Responder",
   "chat_addReaction": "Añadir Reacción",

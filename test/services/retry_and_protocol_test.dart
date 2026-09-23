@@ -777,6 +777,31 @@ void main() {
 
         expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
         expect(h.lastUpdate!.tripTimeMs, equals(61000));
+        expect(h.lastUpdate!.deliveredLate, isTrue);
+        expect(h.lastUpdate!.retryCount, equals(1),
+            reason: 'credited to the attempt that was acknowledged');
+      });
+    });
+
+    test('floodFirst floods attempt 0 even with a known route', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+        );
+
+        h.retryService.sendMessageWithRetry(
+          contact: contact,
+          text: text,
+          floodFirst: true,
+        );
+        async.flushMicrotasks();
+
+        expect(h.sends.length, equals(1));
+        expect(h.pathResets, equals(1));
+        expect(h.lastUpdate!.pathLength, equals(-1));
       });
     });
 
@@ -796,6 +821,8 @@ void main() {
         h.retryService.handleAckReceived(h.ackHashFor(0, text), 9000);
 
         expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
+        expect(h.lastUpdate!.retryCount, equals(0));
+        expect(h.lastUpdate!.deliveredLate, isFalse);
         async.elapse(const Duration(minutes: 10));
         expect(h.sends.length, equals(2), reason: 'no further attempts');
         expect(h.retryService.hasPendingMessages, isFalse);

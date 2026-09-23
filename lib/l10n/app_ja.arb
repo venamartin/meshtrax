@@ -588,18 +588,6 @@
   },
   "chat_messageCopied": "メッセージがコピーされました",
   "chat_messageDeleted": "メッセージは削除されました",
-  "chat_retryingMessage": "再試行メッセージ",
-  "chat_retryCount": "{current} / {max} 回目",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "GIFを送信する",
   "chat_reply": "返信",
   "chat_addReaction": "反応を追加",

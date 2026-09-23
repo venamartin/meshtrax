@@ -22,13 +22,14 @@ class _AckHistoryEntry {
   });
 }
 
-/// (messageId, timestamp, attemptIndex) — stored per ACK hash for O(1)
-/// lookup, so a late PUSH_CODE_SEND_CONFIRMED credits the attempt it
-/// belongs to.
+/// (messageId, timestamp, attemptIndex, pathLength) — stored per ACK hash
+/// for O(1) lookup, so a late PUSH_CODE_SEND_CONFIRMED credits the attempt
+/// it belongs to and the route kind (-1 flood) that attempt used.
 typedef AckHashMapping = ({
   String messageId,
   DateTime timestamp,
   int attemptIndex,
+  int? pathLength,
 });
 
 class RetryServiceConfig {
@@ -85,6 +86,7 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, List<String>> _sendQueue = {};
   final Set<String> _activeMessages = {};
   final Set<String> _resolvedMessages = {};
+  final Set<String> _floodFirst = {};
   final Map<String, String> _expectedHashToMessageId = {};
 
   RetryServiceConfig? _config;
@@ -133,15 +135,23 @@ class MessageRetryService extends ChangeNotifier {
     return (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
   }
 
+  /// Whether [messageId] is waiting behind another message to its contact.
+  bool isQueued(String messageId) =>
+      _pendingMessages.containsKey(messageId) &&
+      !_activeMessages.contains(messageId);
+
+  /// [floodFirst] makes attempt 0 flood regardless of the contact's route,
+  /// for resending a message whose route just failed.
   Future<void> sendMessageWithRetry({
     required Contact contact,
     required String text,
-
     Uint8List? pathBytes,
     int? pathLength,
+    bool floodFirst = false,
   }) async {
     final messageId = const Uuid().v4();
-    final resolved = resolvePathSelection(contact);
+    if (floodFirst) _floodFirst.add(messageId);
+    final resolved = resolvePathSelection(contact, forceFlood: floodFirst);
     final messagePathBytes =
         pathBytes ?? Uint8List.fromList(resolved.pathBytes);
     final messagePathLength =
@@ -217,7 +227,8 @@ class MessageRetryService extends ChangeNotifier {
 
     // A retry floods: the route just failed, and a flood is what makes the
     // firmware learn a fresh one.
-    final selection = message.retryCount == 0
+    final selection =
+        message.retryCount == 0 && !_floodFirst.contains(messageId)
         ? resolvePathSelection(contact)
         : const PathSelection(pathBytes: [], hopCount: -1, useFlood: true);
     _pendingMessages[messageId] = message.copyWith(
@@ -364,6 +375,7 @@ class MessageRetryService extends ChangeNotifier {
       messageId: messageId,
       timestamp: DateTime.now(),
       attemptIndex: message.retryCount,
+      pathLength: message.pathLength,
     );
 
     // Add this ACK hash to the list of expected ACKs for this message (for history)
@@ -434,6 +446,7 @@ class MessageRetryService extends ChangeNotifier {
     _pendingContacts.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
+    _floodFirst.remove(messageId);
   }
 
   void _handleTimeout(String messageId) {
@@ -530,6 +543,7 @@ class MessageRetryService extends ChangeNotifier {
     final config = _config;
     String? matchedMessageId;
     int? matchedAttemptIndex;
+    int? matchedPathLength;
     final ackHashHex = ackHash.toRadixString(16).padLeft(8, '0');
 
     // Clean up old ACK hash mappings (older than 15 minutes)
@@ -549,6 +563,7 @@ class MessageRetryService extends ChangeNotifier {
     if (mapping != null) {
       matchedMessageId = mapping.messageId;
       matchedAttemptIndex = mapping.attemptIndex;
+      matchedPathLength = mapping.pathLength;
     } else {
       config?.debugLogService?.warn(
         'PUSH_CODE_SEND_CONFIRMED: ACK hash $ackHashHex not found in direct mapping, trying fallback',
@@ -590,10 +605,15 @@ class MessageRetryService extends ChangeNotifier {
 
       _timeoutTimers[matchedMessageId]?.cancel();
 
+      // Record the attempt that was actually acknowledged, not the one
+      // that happened to be in flight.
       final deliveredMessage = message.copyWith(
         status: MessageStatus.delivered,
         deliveredAt: DateTime.now(),
         tripTimeMs: tripTimeMs,
+        retryCount: ackedAttempt,
+        pathLength: matchedPathLength ?? message.pathLength,
+        deliveredLate: message.status == MessageStatus.failed,
       );
 
       final wasAlreadyResolved = _resolvedMessages.contains(matchedMessageId);

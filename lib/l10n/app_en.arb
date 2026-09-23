@@ -693,18 +693,6 @@
   },
   "chat_messageCopied": "Message copied",
   "chat_messageDeleted": "Message deleted",
-  "chat_retryingMessage": "Retrying message",
-  "chat_retryCount": "Retry {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Send GIF",
   "chat_reply": "Reply",
   "chat_newMessages": "NEW MESSAGES",
@@ -2195,5 +2183,92 @@
   "routing_forget": "Forget route",
   "routing_forgetDone": "Route forgotten. The next message floods and learns a fresh one.",
   "path_direct": "Direct — no repeaters",
-  "path_directSubtitle": "Only when the contact can hear this radio itself"
+  "path_directSubtitle": "Only when the contact can hear this radio itself",
+  "chat_kindFlood": "flood",
+  "chat_kindDirect": "direct",
+  "chat_kindRoute": "route ({count} {count, plural, =1{hop} other{hops}})",
+  "@chat_kindRoute": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chat_statusQueued": "Queued",
+  "chat_statusSending": "Sending · {kind}",
+  "@chat_statusSending": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "chat_statusRetrying": "Retrying · {kind} · attempt {attempt} of {max}",
+  "@chat_statusRetrying": {
+    "placeholders": {
+      "attempt": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "chat_statusDelivered": "Delivered · {kind} · {secs} s",
+  "@chat_statusDelivered": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "chat_statusDeliveredAttempt": "Delivered on attempt {attempt} · {kind} · {secs} s",
+  "@chat_statusDeliveredAttempt": {
+    "placeholders": {
+      "attempt": {
+        "type": "int"
+      },
+      "kind": {
+        "type": "String"
+      },
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "chat_statusDeliveredLate": "Delivered late · {kind} · {secs} s",
+  "@chat_statusDeliveredLate": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "chat_statusDeliveredShort": "Delivered · {secs} s",
+  "@chat_statusDeliveredShort": {
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "chat_statusFailed": "Failed after {attempts} {attempts, plural, =1{attempt} other{attempts}} · tap to resend",
+  "@chat_statusFailed": {
+    "placeholders": {
+      "attempts": {
+        "type": "int"
+      }
+    }
+  },
+  "chat_statusFailedShort": "Failed · tap to resend",
+  "chat_resendingByFlood": "Resending by flood"
 }
