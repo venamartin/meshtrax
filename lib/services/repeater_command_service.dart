@@ -121,11 +121,8 @@ class RepeaterCommandService {
     final completer = Completer<String>();
     _pendingCommands[commandId] = completer;
 
-    // Kept for the round-trip observation below, which needs the same
-    // features the prediction was made from.
     final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
     var responseBytes = maxFrameSize;
-    final sentAt = DateTime.now();
 
     try {
       final prefix = _nextPrefixToken();
@@ -147,13 +144,10 @@ class RepeaterCommandService {
         timestampSeconds: timestampSeconds,
       );
       responseBytes = frame.length > maxFrameSize ? frame.length : maxFrameSize;
-      // contactKey lets the model blend in what THIS repeater actually costs
-      // once it has enough round trips; without it every repeater is budgeted
-      // from the worst-case physics bound forever.
       final baseTimeoutMs = _connector.calculateTimeout(
         pathLength: pathLengthValue,
         messageBytes: responseBytes,
-        contactKey: repeaterKey,
+        contact: repeater,
       );
       final timeoutMs = attemptTimeoutMs(baseTimeoutMs, attempt, attemptCount);
       final timeoutSeconds = (timeoutMs / 1000).ceil();
@@ -177,18 +171,7 @@ class RepeaterCommandService {
     }
 
     try {
-      final response = await completer.future;
-      // The only place a repeater round trip can be observed. The firmware
-      // does not ack TXT_TYPE_CLI_DATA and _handleMessageSent returns early
-      // for CLI sends, so _handleRepeaterCommandAck — which trains the model
-      // for ordinary messages — never fires for these commands.
-      _connector.recordRepeaterCommandRoundTrip(
-        contactKey: repeaterKey,
-        pathLength: pathLengthValue,
-        messageBytes: responseBytes,
-        tripTimeMs: DateTime.now().difference(sentAt).inMilliseconds,
-      );
-      return response;
+      return await completer.future;
     } finally {
       _cleanup(commandId);
     }
@@ -329,15 +312,11 @@ class RepeaterCommandService {
           attempt: attempt,
           attemptCount: attemptCount,
         );
-        // Success trains the rotation stats too — these screens used to
-        // record only failures, so they could only ever hurt a path's score.
-        _connector.recordRepeaterPathResult(repeater, resolved, true, null);
         return response;
       } on TimeoutException {
         // fall through to the next attempt
       }
     }
-    _connector.recordRepeaterPathResult(repeater, resolved, false, null);
     throw TimeoutException('No response after $attemptCount attempts');
   }
 
@@ -359,7 +338,7 @@ class RepeaterCommandService {
     final baseTimeoutMs = _connector.calculateTimeout(
       pathLength: pathLengthValue,
       messageBytes: messageBytes,
-      contactKey: repeater.publicKeyHex,
+      contact: repeater,
     );
     final timeoutMs = attemptTimeoutMs(baseTimeoutMs, attempt, attemptCount);
 
@@ -378,18 +357,10 @@ class RepeaterCommandService {
         completer.complete(payload);
       }
     });
-    final sentAt = DateTime.now();
     try {
       await _connector.sendFrame(frame);
-      final response = await completer.future
+      return await completer.future
           .timeout(Duration(milliseconds: timeoutMs));
-      _connector.recordRepeaterCommandRoundTrip(
-        contactKey: repeater.publicKeyHex,
-        pathLength: pathLengthValue,
-        messageBytes: messageBytes,
-        tripTimeMs: DateTime.now().difference(sentAt).inMilliseconds,
-      );
-      return response;
     } finally {
       await sub.cancel();
     }

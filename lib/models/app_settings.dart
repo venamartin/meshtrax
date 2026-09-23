@@ -14,7 +14,6 @@ extension UnitSystemValue on UnitSystem {
 class AppSettings {
   static const Object _unset = Object();
 
-  final bool clearPathOnMaxRetry;
   final bool mapShowRepeaters;
   final bool mapShowChatNodes;
   final bool mapShowOtherNodes;
@@ -35,11 +34,6 @@ class AppSettings {
   // toggle; only the master notifications switch outranks them.
   final bool notifyOnMention;
   final bool notifyOnNewAdvert;
-  final bool autoRouteRotationEnabled;
-  final double maxRouteWeight;
-  final double initialRouteWeight;
-  final double routeWeightSuccessIncrement;
-  final double routeWeightFailureDecrement;
   final int maxMessageRetries;
   final int maxChannelMessageRetries;
   final String themeMode;
@@ -72,7 +66,6 @@ class AppSettings {
   final Set<String> blockedSenderNames;
 
   AppSettings({
-    this.clearPathOnMaxRetry = true,
     this.mapShowRepeaters = true,
     this.mapShowChatNodes = true,
     this.mapShowOtherNodes = true,
@@ -91,12 +84,7 @@ class AppSettings {
     this.notifyOnNewChannelMessage = true,
     this.notifyOnMention = true,
     this.notifyOnNewAdvert = false,
-    this.autoRouteRotationEnabled = true,
-    this.maxRouteWeight = 5.0,
-    this.initialRouteWeight = 3.0,
-    this.routeWeightSuccessIncrement = 0.5,
-    this.routeWeightFailureDecrement = 0.2,
-    this.maxMessageRetries = 5,
+    this.maxMessageRetries = 3,
     this.maxChannelMessageRetries = 1,
     this.themeMode = 'dark',
     this.languageOverride,
@@ -123,7 +111,6 @@ class AppSettings {
 
   Map<String, dynamic> toJson() {
     return {
-      'clear_path_on_max_retry': clearPathOnMaxRetry,
       'map_show_repeaters': mapShowRepeaters,
       'map_show_chat_nodes': mapShowChatNodes,
       'map_show_other_nodes': mapShowOtherNodes,
@@ -142,11 +129,6 @@ class AppSettings {
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
       'notify_on_mention': notifyOnMention,
       'notify_on_new_advert': notifyOnNewAdvert,
-      'auto_route_rotation_enabled': autoRouteRotationEnabled,
-      'max_route_weight': maxRouteWeight,
-      'initial_route_weight': initialRouteWeight,
-      'route_weight_success_increment': routeWeightSuccessIncrement,
-      'route_weight_failure_decrement': routeWeightFailureDecrement,
       'max_message_retries': maxMessageRetries,
       'max_channel_message_retries': maxChannelMessageRetries,
       'theme_mode': themeMode,
@@ -178,7 +160,6 @@ class AppSettings {
     }
 
     return AppSettings(
-      clearPathOnMaxRetry: json['clear_path_on_max_retry'] as bool? ?? false,
       mapShowRepeaters: json['map_show_repeaters'] as bool? ?? true,
       mapShowChatNodes: json['map_show_chat_nodes'] as bool? ?? true,
       mapShowOtherNodes: json['map_show_other_nodes'] as bool? ?? true,
@@ -202,16 +183,7 @@ class AppSettings {
           json['notify_on_new_channel_message'] as bool? ?? true,
       notifyOnMention: json['notify_on_mention'] as bool? ?? true,
       notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
-      autoRouteRotationEnabled:
-          json['auto_route_rotation_enabled'] as bool? ?? false,
-      maxRouteWeight: (json['max_route_weight'] as num?)?.toDouble() ?? 5.0,
-      initialRouteWeight:
-          (json['initial_route_weight'] as num?)?.toDouble() ?? 3.0,
-      routeWeightSuccessIncrement:
-          (json['route_weight_success_increment'] as num?)?.toDouble() ?? 0.5,
-      routeWeightFailureDecrement:
-          (json['route_weight_failure_decrement'] as num?)?.toDouble() ?? 0.2,
-      maxMessageRetries: json['max_message_retries'] as int? ?? 5,
+      maxMessageRetries: json['max_message_retries'] as int? ?? 3,
       maxChannelMessageRetries: json['max_channel_message_retries'] as int? ?? 1,
       themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
@@ -256,7 +228,6 @@ class AppSettings {
   }
 
   AppSettings copyWith({
-    bool? clearPathOnMaxRetry,
     bool? mapShowRepeaters,
     bool? mapShowChatNodes,
     bool? mapShowOtherNodes,
@@ -275,11 +246,6 @@ class AppSettings {
     bool? notifyOnNewChannelMessage,
     bool? notifyOnMention,
     bool? notifyOnNewAdvert,
-    bool? autoRouteRotationEnabled,
-    double? maxRouteWeight,
-    double? initialRouteWeight,
-    double? routeWeightSuccessIncrement,
-    double? routeWeightFailureDecrement,
     int? maxMessageRetries,
     int? maxChannelMessageRetries,
     String? themeMode,
@@ -301,7 +267,6 @@ class AppSettings {
     Set<String>? blockedSenderNames,
   }) {
     return AppSettings(
-      clearPathOnMaxRetry: clearPathOnMaxRetry ?? this.clearPathOnMaxRetry,
       mapShowRepeaters: mapShowRepeaters ?? this.mapShowRepeaters,
       mapShowChatNodes: mapShowChatNodes ?? this.mapShowChatNodes,
       mapShowOtherNodes: mapShowOtherNodes ?? this.mapShowOtherNodes,
@@ -324,14 +289,6 @@ class AppSettings {
           notifyOnNewChannelMessage ?? this.notifyOnNewChannelMessage,
       notifyOnMention: notifyOnMention ?? this.notifyOnMention,
       notifyOnNewAdvert: notifyOnNewAdvert ?? this.notifyOnNewAdvert,
-      autoRouteRotationEnabled:
-          autoRouteRotationEnabled ?? this.autoRouteRotationEnabled,
-      maxRouteWeight: maxRouteWeight ?? this.maxRouteWeight,
-      initialRouteWeight: initialRouteWeight ?? this.initialRouteWeight,
-      routeWeightSuccessIncrement:
-          routeWeightSuccessIncrement ?? this.routeWeightSuccessIncrement,
-      routeWeightFailureDecrement:
-          routeWeightFailureDecrement ?? this.routeWeightFailureDecrement,
       maxMessageRetries: maxMessageRetries ?? this.maxMessageRetries,
       maxChannelMessageRetries: maxChannelMessageRetries ?? this.maxChannelMessageRetries,
       themeMode: themeMode ?? this.themeMode,

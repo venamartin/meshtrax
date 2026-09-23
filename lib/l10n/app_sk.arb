@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Upozornenia na reklamy",
   "appSettings_advertisementNotificationsSubtitle": "Zobraziť upozornenie, keď sa objavia nové uzly.",
   "appSettings_messaging": "Správy",
-  "appSettings_clearPathOnMaxRetry": "Vyčisti cestu na Max Retry",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Resetovať kontaktný priebeh po 5 neúspešných pokusoch o doručenie",
-  "appSettings_pathsWillBeCleared": "Cesty budú vymazané po 5 neúspešných pokusoch.",
-  "appSettings_pathsWillNotBeCleared": "Cesty sa automaticky nevymazávajú.",
-  "appSettings_autoRouteRotation": "Automatické prechodové trasy",
-  "appSettings_autoRouteRotationSubtitle": "Striedajte sa medzi najlepšími trasami a režimom povodňovej analýzy.",
-  "appSettings_autoRouteRotationEnabled": "Automatické otáčanie trasy povolené",
-  "appSettings_autoRouteRotationDisabled": "Automatické prekladanie trás pozastavené",
   "appSettings_battery": "Batéria",
   "appSettings_batteryChemistry": "Chemická zloženie batérie",
   "appSettings_batteryChemistryPerDevice": "Nastavenie pre {deviceName}",
@@ -443,18 +435,6 @@
   },
   "chat_messageCopied": "Správa skopírovaná",
   "chat_messageDeleted": "Posolstvo odstránené",
-  "chat_retryingMessage": "Pokus o obnovenie",
-  "chat_retryCount": "Skúsiť {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Odoslať GIF",
   "chat_reply": "Odpovedať",
   "chat_addReaction": "Pridať Reakciu",
@@ -547,12 +527,6 @@
     }
   },
   "debugFrame_hexDump": "Hex Dump:",
-  "chat_pathManagement": "Správa ciest",
-  "chat_routingMode": "Režim trasy",
-  "chat_autoUseSavedPath": "Použiť uloženú cestu",
-  "chat_forceFloodMode": "Zavrieť režim núdzového povodňového režimu",
-  "chat_recentAckPaths": "Nedávne cesty ACK (klepni na použitie):",
-  "chat_pathHistoryFull": "História ciest je plná. Odstráňte záznamy, aby ste mohli pridať nové.",
   "chat_hopSingular": "Skok",
   "chat_hopPlural": "Skákať",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -563,33 +537,9 @@
       }
     }
   },
-  "chat_successes": "Úspechy",
-  "chat_removePath": "Odstrániť cestu",
-  "chat_noPathHistoryYet": "Zatiaľ žiadna história trás.\nPošlite správu a objavte trasy.",
-  "chat_pathActions": "Cesty:",
   "chat_setCustomPath": "Nastaviť vlastnú cestu",
-  "chat_setCustomPathSubtitle": "Ručne zadajte trasu.",
-  "chat_clearPath": "Vyčistiš cestu",
-  "chat_clearPathSubtitle": "Znovu nájsť vynútene pri nasledujúcej pošlite",
-  "chat_pathCleared": "Cesta vyčistená. Nasledujúce prepočetné získa trasu znova.",
-  "chat_floodModeSubtitle": "Použite prepínanie trasy v navigačnom paneli.",
-  "chat_floodModeEnabled": "Odosporňovacia prevádzka je zapnutá. Vypnite ju znova cez ikonu routovania v navigačnom páse.",
   "chat_fullPath": "Celá cesta",
   "chat_pathDetailsNotAvailable": "Podrobnosti o ceste zatiaľ dostupné nie sú. Skúste poslať správu na obnovenie.",
-  "chat_pathSetHops": "Cesta nastavená: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Uložené lokálne. Spojte sa na synchronizáciu.",
-  "chat_pathDeviceConfirmed": "Zariadenie potvrdené.",
-  "chat_pathDeviceNotConfirmed": "Zariadenie zatiaľ nebolo potvrdené.",
   "chat_type": "Napište",
   "chat_path": "Cesta",
   "chat_publicKey": "Verejný kľúč",
@@ -819,11 +769,6 @@
   "login_savePasswordSubtitle": "Heslo bude bezpečne uložené na tomto zariadení.",
   "login_repeaterDescription": "Zadajte heslo opakovača, aby ste získali prístup k nastaveniam a stavu.",
   "login_roomDescription": "Zadajte heslo do miestnosti na prístup k nastaveniam a stavu.",
-  "login_routing": "Rútiace",
-  "login_routingMode": "Režim trasy",
-  "login_autoUseSavedPath": "Použiť uloženú cestu",
-  "login_forceFloodMode": "Zavrieť režim núdzového povodňového režimu",
-  "login_managePaths": "Spravovať Cesty",
   "login_login": "Prihlásiť",
   "login_attempt": "Skúšaj {current}/{max}",
   "@login_attempt": {
@@ -847,22 +792,6 @@
   "login_failedMessage": "Prihlásenie zlyhalo. Heslo je nesprávne alebo je opakovač nedostupný.",
   "common_reload": "Načítať",
   "common_clear": "Zmazať",
-  "path_currentPath": "Aktívna cesta: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Používa {count} {count, plural, =1{hop} other{hops}} cestu",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Zadajte vlastný priebeh",
   "path_currentPathLabel": "Aktuálny priebeh",
   "path_hexPrefixInstructions": "Zadajte 2-miestne hexové predpony pre každú fázu, oddelené čiarkami.",
@@ -1616,7 +1545,6 @@
   "scanner_enableBluetooth": "Povolte Bluetooth",
   "snrIndicator_lastSeen": "Naposledy videný",
   "snrIndicator_nearByRepeaters": "Miestne opakovače",
-  "chat_ShowAllPaths": "Zobraziť všetky cesty",
   "settings_clientRepeat": "Opätovné použitie bez elektrickej siete",
   "settings_clientRepeatFreqWarning": "Použitie off-grid systému vyžaduje frekvencie 433, 869 alebo 918 MHz.",
   "settings_clientRepeatSubtitle": "Umožnite, aby toto zariadenie opakovávalo siete pre ostatných.",
@@ -1895,16 +1823,6 @@
   "tcpConnectionFailed": "Neúspešné vytvorenie TCP spojenia: {error}",
   "map_showDiscoveryContacts": "Zobraziť kontakty objavov",
   "map_setAsMyLocation": "Nastavte ako moju polohu",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacy": "Nastavenia súkromia",
   "settings_privacySubtitle": "Ovládni, aké informácie sa zdieľajú.",
   "settings_telemetryLocationMode": "Režim umiestnenia telemetrie",
@@ -1927,17 +1845,8 @@
   "contact_lastSeen": "Naposledy videný",
   "contact_teleBase": "Báza telemetrie",
   "contact_teleEnvSubtitle": "Povoliť zdieľanie údajov senzorov prostredia",
-  "appSettings_maxRouteWeightSubtitle": "Maximálna hmotnosť, ktorú môže trás prenášať vďaka úspešným zásielkam.",
-  "appSettings_initialRouteWeightSubtitle": "Počiatočná váha pre nové, objavené cesty",
-  "appSettings_initialRouteWeight": "Počiatočná váha trasy",
-  "appSettings_maxRouteWeight": "Maximálna hmotnosť trasy",
-  "appSettings_routeWeightSuccessIncrement": "Zvyšenie váhy úspechu",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Hmotnosť pridaná k trase po úspešnej doručení",
-  "appSettings_routeWeightFailureDecrement": "Sníženie váhy, ktorá sa používa na odhad rizika.",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Hmotnosť odstránená z cesty po neúspešnej doručenie",
   "appSettings_maxMessageRetries": "Maximalný počet pokusov o doručenie správ",
   "appSettings_maxMessageRetriesSubtitle": "Počet pokusov o odošleť pred označením správy ako neúspešnej",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Režim telemetrie bol aktualizovaný",
   "settings_multiAck": "Viaceré ACK",
   "map_showOverlaps": "Prekrývanie opakovača kľúča",

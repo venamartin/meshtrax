@@ -8,7 +8,7 @@ import '../models/app_settings.dart';
 import '../connector/meshcore_connector.dart';
 import '../services/app_settings_service.dart';
 import '../services/repeater_command_service.dart';
-import '../widgets/path_management_dialog.dart';
+import '../widgets/routing_dialog.dart';
 import '../helpers/cayenne_lpp.dart';
 import '../utils/battery_utils.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -261,7 +261,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             icon: const Icon(Icons.timeline),
             tooltip: l10n.repeater_pathManagement,
             onPressed: () =>
-                PathManagementDialog.show(context, contact: widget.contact),
+                RoutingDialog.show(context, contact: widget.contact),
           ),
           IconButton(
             icon: _isLoading

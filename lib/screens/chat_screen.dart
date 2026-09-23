@@ -23,14 +23,13 @@ import '../helpers/link_handler.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
-import '../models/path_history.dart';
 import '../services/app_settings_service.dart';
+import '../services/message_retry_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/storage_service.dart';
-import '../services/path_history_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
-import '../widgets/elements_ui.dart';
+import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'map_screen.dart';
@@ -41,9 +40,7 @@ import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/room_login_dialog.dart';
-import '../widgets/path_selection_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
-import '../utils/app_logger.dart';
 import '../l10n/l10n.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -228,8 +225,8 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: ChatColors.isLight(context) ? ChatColors.background : null,
       appBar: AppBar(
         automaticallyImplyLeading: true,
-        title: Consumer2<PathHistoryService, MeshCoreConnector>(
-          builder: (context, pathService, connector, _) {
+        title: Consumer<MeshCoreConnector>(
+          builder: (context, connector, _) {
             final contact = _resolveContact(connector);
             final unreadCount = connector.getUnreadCountForContactKey(
               widget.contact.publicKeyHex,
@@ -277,109 +274,12 @@ class _ChatScreenState extends State<ChatScreen> {
           Consumer<MeshCoreConnector>(
             builder: (context, connector, _) {
               final contact = _resolveContact(connector);
-              final isFloodMode = contact.pathOverride == -1;
-
-              final isDirectMode = contact.pathOverride == 0;
-              final activeMode = isFloodMode
-                  ? 'flood'
-                  : isDirectMode
-                  ? 'direct'
-                  : 'auto';
-
-              return PopupMenuButton<String>(
-                icon: Icon(isFloodMode ? Icons.waves : Icons.route),
-                tooltip: context.l10n.chat_routingMode,
-                onSelected: (mode) async {
-                  if (mode == 'flood') {
-                    await connector.setPathOverride(contact, pathLen: -1);
-                  } else if (mode == 'direct') {
-                    await connector.setPathOverride(
-                      contact,
-                      pathLen: 0,
-                      pathBytes: Uint8List(0),
-                    );
-                  } else {
-                    await connector.setPathOverride(contact, pathLen: null);
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'auto',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.auto_mode,
-                          size: 20,
-                          color: activeMode == 'auto'
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.chat_autoUseSavedPath,
-                          style: TextStyle(
-                            fontWeight: activeMode == 'auto'
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'direct',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.near_me,
-                          size: 20,
-                          color: activeMode == 'direct'
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.chat_direct,
-                          style: TextStyle(
-                            fontWeight: activeMode == 'direct'
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'flood',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.waves,
-                          size: 20,
-                          color: activeMode == 'flood'
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.chat_forceFloodMode,
-                          style: TextStyle(
-                            fontWeight: activeMode == 'flood'
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              return IconButton(
+                icon: Icon(routingIconOf(contact)),
+                tooltip: context.l10n.routing_title,
+                onPressed: () => RoutingDialog.show(context, contact: contact),
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.timeline),
-            tooltip: context.l10n.chat_pathManagement,
-            onPressed: () => _showPathHistory(context),
           ),
           if (widget.contact.type == advTypeRoom)
             Consumer<MeshCoreConnector>(
@@ -663,7 +563,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     : contact.name,
                 isRoomServer: resolvedContact.type == advTypeRoom,
                 textScale: textScale,
-                onTap: () => _openMessagePath(message, contact),
+                onTap: () => message.isOutgoing &&
+                        message.status == MessageStatus.failed
+                    ? _retryMessage(message)
+                    : _openMessagePath(message, contact),
                 onLongPress: () => _showMessageActions(message, contact),
                 onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
@@ -953,331 +856,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _showPathHistory(BuildContext context) {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    bool showAllPaths = false;
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Consumer<PathHistoryService>(
-          builder: (context, pathService, _) {
-            final paths = pathService.getRecentPaths(
-              widget.contact.publicKeyHex,
-            );
-
-            final repeatersList = List.of(connector.directRepeaters)
-              ..sort(DirectRepeater.compare);
-
-            if (repeatersList.isEmpty) {
-              showAllPaths = true;
-            }
-
-            final directRepeater = repeatersList.isEmpty
-                ? null
-                : repeatersList.first;
-            final secondDirectRepeater = repeatersList.length < 2
-                ? null
-                : repeatersList.elementAt(1);
-            final thirdDirectRepeater = repeatersList.length < 3
-                ? null
-                : repeatersList.elementAt(2);
-
-            final hashWidth = connector.pathHashByteWidth;
-            List<MapEntry<int, MapEntry<Color, PathRecord>>>
-            pathsWithRepeaters = paths.map((path) {
-              final isDirectRepeater =
-                  directRepeater != null &&
-                  directRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
-              final isSecondDirectRepeater =
-                  secondDirectRepeater != null &&
-                  secondDirectRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
-              final isThirdDirectRepeater =
-                  thirdDirectRepeater != null &&
-                  thirdDirectRepeater.matchesFirstHopOf(path.pathBytes, stride: hashWidth);
-
-              int ranking = -1;
-              Color color = Colors.grey;
-              if (isDirectRepeater) {
-                color = Colors.green;
-                ranking = 3;
-              } else if (isSecondDirectRepeater) {
-                color = Colors.yellow;
-                ranking = 2;
-              } else if (isThirdDirectRepeater) {
-                color = Colors.red;
-                ranking = 1;
-              } else if (path.wasFloodDiscovery) {
-                color = Colors.blue;
-                ranking = 0;
-              }
-
-              return MapEntry(ranking, MapEntry(color, path));
-            }).toList();
-
-            pathsWithRepeaters.sort((a, b) => b.key.compareTo(a.key));
-
-            return AlertDialog(
-              title: Row(
-                children: [
-                  const Icon(Icons.timeline),
-                  const SizedBox(width: 8),
-                  Text(context.l10n.chat_pathManagement),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (pathsWithRepeaters.isNotEmpty) ...[
-                      if (repeatersList.isNotEmpty)
-                        FeatureToggleRow(
-                          title: context.l10n.chat_ShowAllPaths,
-                          subtitle: "",
-                          value: showAllPaths,
-                          onChanged: (val) {
-                            setDialogState(() {
-                              showAllPaths = val;
-                            });
-                          },
-                        ),
-                      Text(
-                        context.l10n.chat_recentAckPaths,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                      if (pathsWithRepeaters.length >= 100) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber[100],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            context.l10n.chat_pathHistoryFull,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      ...pathsWithRepeaters.map((entry) {
-                        final path = entry.value.value;
-                        final color = entry.value.key;
-                        if (!showAllPaths && entry.key < 1) {
-                          return const SizedBox.shrink();
-                        } else {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            child: ListTile(
-                              dense: true,
-                              leading: CircleAvatar(
-                                radius: 16,
-                                backgroundColor: color,
-                                child: Text(
-                                  '${path.hopCount}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                              title: Text(
-                                '${path.hopCount} ${path.hopCount == 1 ? context.l10n.chat_hopSingular : context.l10n.chat_hopPlural}',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              subtitle: Text(
-                                '${(path.tripTimeMs / 1000).toStringAsFixed(2)}s • ${_formatRelativeTime(path.timestamp)} • ${path.successCount} ${context.l10n.chat_successes}',
-                                //textAlign: TextAlign.right,
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.close, size: 16),
-                                    tooltip: context.l10n.chat_removePath,
-                                    onPressed: () async {
-                                      await pathService.removePathRecord(
-                                        widget.contact.publicKeyHex,
-                                        path.pathBytes,
-                                      );
-                                    },
-                                  ),
-                                  path.wasFloodDiscovery
-                                      ? const Icon(
-                                          Icons.waves,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        )
-                                      : const Icon(
-                                          Icons.route,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                ],
-                              ),
-                              onLongPress: () =>
-                                  _showFullPathDialog(
-                                    context,
-                                    path.pathBytes,
-                                    connector.pathHashByteWidth,
-                                  ),
-                              onTap: () async {
-                                if (path.pathBytes.isEmpty) {
-                                  showDismissibleSnackBar(
-                                    context,
-                                    content: Text(
-                                      context.l10n.chat_pathDetailsNotAvailable,
-                                    ),
-                                    duration: const Duration(seconds: 2),
-                                  );
-                                  return;
-                                }
-
-                                final pathBytes = Uint8List.fromList(
-                                  path.pathBytes,
-                                );
-
-                                // Set the path override to persist user's choice
-                                await connector.setPathOverride(
-                                  _resolveContact(connector),
-                                  pathBytes: pathBytes,
-                                );
-
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
-                                await _notifyPathSet(
-                                  connector,
-                                  _resolveContact(connector),
-                                  pathBytes,
-                                );
-                              },
-                            ),
-                          );
-                        }
-                      }),
-                      const Divider(),
-                    ] else ...[
-                      Text(context.l10n.chat_noPathHistoryYet),
-                      const Divider(),
-                    ],
-                    const SizedBox(height: 8),
-                    Text(
-                      context.l10n.chat_pathActions,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      dense: true,
-                      leading: const CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.purple,
-                        child: Icon(Icons.edit_road, size: 16),
-                      ),
-                      title: Text(
-                        context.l10n.chat_setCustomPath,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        context.l10n.chat_setCustomPathSubtitle,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showCustomPathDialog(context);
-                      },
-                    ),
-                    ListTile(
-                      dense: true,
-                      leading: const CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.orange,
-                        child: Icon(Icons.clear_all, size: 16),
-                      ),
-                      title: Text(
-                        context.l10n.chat_clearPath,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        context.l10n.chat_clearPathSubtitle,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      onTap: () async {
-                        await connector.clearContactPath(
-                          _resolveContact(connector),
-                        );
-                        if (!context.mounted) return;
-                        showDismissibleSnackBar(
-                          context,
-                          content: Text(context.l10n.chat_pathCleared),
-                          duration: const Duration(seconds: 2),
-                        );
-                        Navigator.pop(context);
-                      },
-                    ),
-                    ListTile(
-                      dense: true,
-                      leading: const CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.blue,
-                        child: Icon(Icons.waves, size: 16),
-                      ),
-                      title: Text(
-                        context.l10n.chat_forceFloodMode,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        context.l10n.chat_floodModeSubtitle,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      onTap: () async {
-                        await connector.setPathOverride(
-                          _resolveContact(connector),
-                          pathLen: -1,
-                        );
-                        if (!context.mounted) return;
-                        showDismissibleSnackBar(
-                          context,
-                          content: Text(context.l10n.chat_floodModeEnabled),
-                          duration: const Duration(seconds: 2),
-                        );
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(context.l10n.common_close),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  String _formatRelativeTime(DateTime? time) {
-    if (time == null) return '—';
-    final diff = DateTime.now().difference(time);
-    if (diff.inSeconds < 60) return context.l10n.time_justNow;
-    if (diff.inMinutes < 60) {
-      return context.l10n.time_minutesAgo(diff.inMinutes);
-    }
-    if (diff.inHours < 24) return context.l10n.time_hoursAgo(diff.inHours);
-    return context.l10n.time_daysAgo(diff.inDays);
-  }
-
   void _showFullPathDialog(BuildContext context, List<int> pathBytes, int hashSize) {
     if (pathBytes.isEmpty) {
       showDismissibleSnackBar(
@@ -1401,29 +979,6 @@ class _ChatScreenState extends State<ChatScreen> {
     if (contact.pathLength < 0) return context.l10n.chat_floodAuto;
     if (contact.pathLength == 0) return context.l10n.chat_direct;
     return context.l10n.chat_hopsCount(contact.pathLength);
-  }
-
-  Future<void> _notifyPathSet(
-    MeshCoreConnector connector,
-    Contact contact,
-    Uint8List pathBytes,
-  ) async {
-    final hopCount = PathHelper.getHopCount(pathBytes, stride: connector.pathHashByteWidth);
-    final verified = connector.isConnected
-        ? await connector.verifyContactPathOnDevice(contact, pathBytes)
-        : false;
-    if (!mounted) return;
-
-    final status = !connector.isConnected
-        ? context.l10n.chat_pathSavedLocally
-        : (verified
-              ? context.l10n.chat_pathDeviceConfirmed
-              : context.l10n.chat_pathDeviceNotConfirmed);
-    showDismissibleSnackBar(
-      context,
-      content: Text(context.l10n.chat_pathSetHops(hopCount, status)),
-      duration: const Duration(seconds: 3),
-    );
   }
 
   void _showContactInfo(BuildContext context) {
@@ -1598,71 +1153,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Future<void> _showCustomPathDialog(BuildContext context) async {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-
-    final currentContact = _resolveContact(connector);
-    if (currentContact.pathLength > 0 &&
-        currentContact.path.isEmpty &&
-        connector.isConnected) {
-      connector.getContacts();
-    }
-
-    final pathForInput = currentContact.pathFormattedIdList(
-      connector.pathHashByteWidth,
-    );
-    final currentPathLabel = _currentPathLabel(currentContact, connector);
-
-    // Filter out the current contact from available contacts
-    final availableContacts = connector.allContacts
-        .where((c) => c != widget.contact)
-        .toList();
-
-    final result = await PathSelectionDialog.show(
-      context,
-      availableContacts: availableContacts,
-      initialPath: pathForInput.isEmpty ? null : pathForInput,
-      title: context.l10n.chat_setCustomPath,
-      currentPathLabel: currentPathLabel,
-      onRefresh: connector.isConnected ? connector.getContacts : null,
-      pathHashByteWidth: connector.pathHashByteWidth,
-    );
-
-    appLogger.info(
-      'PathSelectionDialog returned: ${result?.length ?? 0} bytes, mounted: $mounted',
-      tag: 'ChatScreen',
-    );
-
-    if (result == null) {
-      return; // Cancelled — keep existing path
-    }
-
-    if (!mounted) {
-      appLogger.warn(
-        'Widget not mounted after dialog, cannot set path',
-        tag: 'ChatScreen',
-      );
-      return;
-    }
-
-    appLogger.info(
-      'Calling setPathOverride for ${widget.contact.name}',
-      tag: 'ChatScreen',
-    );
-    await connector.setPathOverride(
-      currentContact,
-      pathBytes: result,
-    );
-    appLogger.info('setPathOverride completed', tag: 'ChatScreen');
-
-    if (!mounted) return;
-    await _notifyPathSet(
-      connector,
-      _resolveContact(connector),
-      result,
-    );
-  }
-
   void _openMessagePath(Message message, Contact contact) {
     final connector = context.read<MeshCoreConnector>();
     final fourByteHex = pubKeyToHex(message.fourByteRoomContactKey).toUpperCase();
@@ -1817,13 +1307,20 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _retryMessage(Message message) {
+  Future<void> _retryMessage(Message message) async {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    // Retry using the contact's current path override setting
-    connector.sendMessage(_resolveContact(connector), message.text);
+    // The failed bubble is replaced by the new send, which starts with a
+    // flood: whatever route the last attempt had just failed.
+    await connector.deleteMessage(message);
+    await connector.sendMessage(
+      _resolveContact(connector),
+      message.text,
+      floodFirst: true,
+    );
+    if (!mounted) return;
     showDismissibleSnackBar(
       context,
-      content: Text(context.l10n.chat_retryingMessage),
+      content: Text(context.l10n.chat_resendingByFlood),
     );
   }
 
@@ -1996,9 +1493,7 @@ class _MessageBubble extends StatelessWidget {
                                     padding: const EdgeInsets.only(bottom: 2),
                                     child: MessageStatusIcon(
                                       isAcked:
-                                          message.status ==
-                                              MessageStatus.delivered &&
-                                          message.pathBytes.isNotEmpty,
+                                          message.status == MessageStatus.delivered,
                                       isFailed:
                                           message.status ==
                                           MessageStatus.failed,
@@ -2055,9 +1550,7 @@ class _MessageBubble extends StatelessWidget {
                                     ),
                                     child: MessageStatusIcon(
                                       isAcked:
-                                          message.status ==
-                                              MessageStatus.delivered &&
-                                          message.pathBytes.isNotEmpty,
+                                          message.status == MessageStatus.delivered,
                                       isFailed:
                                           message.status ==
                                           MessageStatus.failed,
@@ -2107,9 +1600,7 @@ class _MessageBubble extends StatelessWidget {
                                   padding: const EdgeInsets.only(bottom: 2),
                                   child: MessageStatusIcon(
                                     isAcked:
-                                        message.status ==
-                                            MessageStatus.delivered &&
-                                        message.pathBytes.isNotEmpty,
+                                        message.status == MessageStatus.delivered,
                                     isFailed:
                                         message.status == MessageStatus.failed,
                                   ),
@@ -2117,29 +1608,33 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                           ),
+                        if (isOutgoing) ...[
+                          Builder(
+                            builder: (context) {
+                              final line = _deliveryStatus(
+                                context,
+                                detailed: enableTracing,
+                              );
+                              if (line == null) return const SizedBox.shrink();
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  top: 4,
+                                  left: gifId != null ? 8 : 0,
+                                  right: gifId != null ? 8 : 0,
+                                ),
+                                child: Text(
+                                  line,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: displayMetaColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                         if (enableTracing) ...[
-                          if (isOutgoing && message.retryCount > 0) ...[
-                            const SizedBox(height: 4),
-                            Padding(
-                              padding: gifId != null
-                                  ? const EdgeInsets.symmetric(horizontal: 8)
-                                  : EdgeInsets.zero,
-                              child: Text(
-                                context.l10n.chat_retryCount(
-                                  message.retryCount + 1,
-                                  context
-                                      .read<AppSettingsService>()
-                                      .settings
-                                      .maxMessageRetries,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: displayMetaColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -2164,7 +1659,8 @@ class _MessageBubble extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   _buildStatusIcon(displayMetaColor),
                                 ],
-                                if (message.tripTimeMs != null &&
+                                if (!isOutgoing &&
+                                    message.tripTimeMs != null &&
                                     message.status ==
                                         MessageStatus.delivered) ...[
                                   const SizedBox(width: 4),
@@ -2403,6 +1899,45 @@ class _MessageBubble extends StatelessWidget {
     ];
 
     return colors[hash.abs() % colors.length];
+  }
+
+  /// One line that says where the send is in the attempt ladder. Delivered
+  /// and failed always show; the in-flight detail only with tracing on.
+  String? _deliveryStatus(BuildContext context, {required bool detailed}) {
+    final l10n = context.l10n;
+    final m = message;
+    String kind() {
+      final hops = m.pathLength;
+      if (hops == null || hops < 0) return l10n.chat_kindFlood;
+      if (hops == 0) return l10n.chat_kindDirect;
+      return l10n.chat_kindRoute(hops);
+    }
+
+    final secs = ((m.tripTimeMs ?? 0) / 1000).toStringAsFixed(1);
+    switch (m.status) {
+      case MessageStatus.delivered:
+        if (!detailed) return l10n.chat_statusDeliveredShort(secs);
+        if (m.deliveredLate) return l10n.chat_statusDeliveredLate(kind(), secs);
+        if (m.retryCount > 0) {
+          return l10n.chat_statusDeliveredAttempt(m.retryCount + 1, kind(), secs);
+        }
+        return l10n.chat_statusDelivered(kind(), secs);
+      case MessageStatus.failed:
+        return detailed
+            ? l10n.chat_statusFailed(m.retryCount + 1)
+            : l10n.chat_statusFailedShort;
+      case MessageStatus.pending:
+      case MessageStatus.sent:
+        if (!detailed) return null;
+        if (context.read<MessageRetryService>().isQueued(m.messageId)) {
+          return l10n.chat_statusQueued;
+        }
+        if (m.retryCount > 0) {
+          final max = context.read<AppSettingsService>().settings.maxMessageRetries;
+          return l10n.chat_statusRetrying(m.retryCount + 1, max, kind());
+        }
+        return l10n.chat_statusSending(kind());
+    }
   }
 
   Widget _buildStatusIcon(Color color) {

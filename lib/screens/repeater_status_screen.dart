@@ -10,7 +10,7 @@ import '../connector/meshcore_protocol.dart';
 import '../services/app_settings_service.dart';
 import '../services/repeater_command_service.dart';
 import '../utils/battery_utils.dart';
-import '../widgets/path_management_dialog.dart';
+import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
 
 class RepeaterStatusScreen extends StatefulWidget {
@@ -429,7 +429,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
             icon: const Icon(Icons.timeline),
             tooltip: l10n.repeater_pathManagement,
             onPressed: () =>
-                PathManagementDialog.show(context, contact: repeater),
+                RoutingDialog.show(context, contact: repeater),
           ),
           IconButton(
             icon: _isLoading

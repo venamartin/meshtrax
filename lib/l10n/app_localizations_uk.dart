@@ -772,67 +772,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appSettings_messaging => 'Обмін повідомленнями';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Очищати шлях після макс. спроб';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Скидати шлях до контакту після 5 невдалих спроб надсилання';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Шляхи будуть очищені після 5 невдалих спроб.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Шляхи не будуть очищатися автоматично.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Авторотація маршруту';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Чергувати найкращі шляхи та режим «на всю мережу» (flood)';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Авторотація маршрутизації увімкнена';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Авторотація маршрутизації вимкнена';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Максимальна вага маршруту';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Максимальна вага, яку може накопичити маршрут завдяки успішним доставкам.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Початкова вартість маршруту';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Початкова вага для нових відкритих шляхів';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Збільшення ваги успіху';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Вага, додана до маршруту після успішної доставки';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Зменшення ваги помилки';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Вага, яка була знята з маршруту після невдалої доставки';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Максимальна кількість повторних спроб надсилання повідомлення';
 
@@ -847,11 +786,6 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Батарея';
@@ -1432,14 +1366,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_messageDeleted => 'Повідомлення видалено';
 
   @override
-  String get chat_retryingMessage => 'Спроба відновлення.';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return 'Повторна спроба $current/$max';
-  }
-
-  @override
   String get chat_sendGif => 'Надіслати GIF';
 
   @override
@@ -1660,29 +1586,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get debugFrame_hexDump => 'Дамп Hex:';
 
   @override
-  String get chat_pathManagement => 'Керування шляхами';
-
-  @override
-  String get chat_ShowAllPaths => 'Показати всі шляхи';
-
-  @override
-  String get chat_routingMode => 'Режим маршрутизації';
-
-  @override
-  String get chat_autoUseSavedPath => 'Авто (використовувати збережений шлях)';
-
-  @override
-  String get chat_forceFloodMode => 'Примусово на всю мережу';
-
-  @override
-  String get chat_recentAckPaths =>
-      'Недавні шляхи ACK (натисніть, щоб використати):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Історія шляхів заповнена. Видаліть записи, щоб додати нові.';
-
-  @override
   String get chat_hopSingular => 'Стрибок';
 
   @override
@@ -1702,42 +1605,7 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => 'Успішно';
-
-  @override
-  String get chat_removePath => 'Видалити шлях';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Історія шляхів недоступна.\nНадішліть повідомлення, щоб виявити шляхи.';
-
-  @override
-  String get chat_pathActions => 'Дії зі шляхом:';
-
-  @override
   String get chat_setCustomPath => 'Встановити власний шлях';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Вказати шлях маршрутизації вручну';
-
-  @override
-  String get chat_clearPath => 'Очистити шлях';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Примусово повторити пошук при наступному надсиланні';
-
-  @override
-  String get chat_pathCleared =>
-      'Шлях очищено. Наступне повідомлення оновить маршрут.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Використовувати перемикач маршрутизації в панелі програми';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Увімкнено режим «на всю мережу». Перемикайте через іконку маршрутизації на панелі інструментів.';
 
   @override
   String get chat_fullPath => 'Повний шлях';
@@ -1745,29 +1613,6 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Деталі шляху ще недоступні. Спробуйте надіслати повідомлення для оновлення.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'стрибків',
-      many: 'стрибків',
-      few: 'стрибки',
-      one: 'стрибок',
-    );
-    return 'Шлях встановлено: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Збережено локально. Підключіться для синхронізації.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Пристрій підтверджено.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Пристрій ще не підтверджено.';
 
   @override
   String get chat_type => 'Ввід';
@@ -2162,21 +2007,6 @@ class AppLocalizationsUk extends AppLocalizations {
       'Введіть пароль кімнати для доступу до налаштувань та статусу.';
 
   @override
-  String get login_routing => 'Маршрутизація';
-
-  @override
-  String get login_routingMode => 'Режим маршрутизації';
-
-  @override
-  String get login_autoUseSavedPath => 'Авто (використовувати збережений шлях)';
-
-  @override
-  String get login_forceFloodMode => 'Примусово на всю мережу';
-
-  @override
-  String get login_managePaths => 'Керувати шляхами';
-
-  @override
   String get login_login => 'Вхід';
 
   @override
@@ -2198,24 +2028,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get common_clear => 'Очистити';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Поточний шлях: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'стрибками',
-      many: 'стрибками',
-      few: 'стрибками',
-      one: 'стрибком',
-    );
-    return 'Використання шляху з $count $_temp0';
-  }
 
   @override
   String get path_enterCustomPath => 'Ввести власний шлях';
@@ -4012,4 +3824,116 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Мова системи';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

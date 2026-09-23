@@ -1522,102 +1522,6 @@ abstract class AppLocalizations {
   /// **'Messaging'**
   String get appSettings_messaging;
 
-  /// No description provided for @appSettings_clearPathOnMaxRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Path on Max Retry'**
-  String get appSettings_clearPathOnMaxRetry;
-
-  /// No description provided for @appSettings_clearPathOnMaxRetrySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset contact path after 5 failed send attempts'**
-  String get appSettings_clearPathOnMaxRetrySubtitle;
-
-  /// No description provided for @appSettings_pathsWillBeCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Paths will be cleared after 5 failed retries'**
-  String get appSettings_pathsWillBeCleared;
-
-  /// No description provided for @appSettings_pathsWillNotBeCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Paths will not be auto-cleared'**
-  String get appSettings_pathsWillNotBeCleared;
-
-  /// No description provided for @appSettings_autoRouteRotation.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto Route Rotation'**
-  String get appSettings_autoRouteRotation;
-
-  /// No description provided for @appSettings_autoRouteRotationSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Cycle between best paths and flood mode'**
-  String get appSettings_autoRouteRotationSubtitle;
-
-  /// No description provided for @appSettings_autoRouteRotationEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto route rotation enabled'**
-  String get appSettings_autoRouteRotationEnabled;
-
-  /// No description provided for @appSettings_autoRouteRotationDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto route rotation disabled'**
-  String get appSettings_autoRouteRotationDisabled;
-
-  /// No description provided for @appSettings_maxRouteWeight.
-  ///
-  /// In en, this message translates to:
-  /// **'Max Route Weight'**
-  String get appSettings_maxRouteWeight;
-
-  /// No description provided for @appSettings_maxRouteWeightSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Maximum weight a path can accumulate from successful deliveries'**
-  String get appSettings_maxRouteWeightSubtitle;
-
-  /// No description provided for @appSettings_initialRouteWeight.
-  ///
-  /// In en, this message translates to:
-  /// **'Initial Route Weight'**
-  String get appSettings_initialRouteWeight;
-
-  /// No description provided for @appSettings_initialRouteWeightSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting weight for newly discovered paths'**
-  String get appSettings_initialRouteWeightSubtitle;
-
-  /// No description provided for @appSettings_routeWeightSuccessIncrement.
-  ///
-  /// In en, this message translates to:
-  /// **'Success Weight Increment'**
-  String get appSettings_routeWeightSuccessIncrement;
-
-  /// No description provided for @appSettings_routeWeightSuccessIncrementSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Weight added to a path after successful delivery'**
-  String get appSettings_routeWeightSuccessIncrementSubtitle;
-
-  /// No description provided for @appSettings_routeWeightFailureDecrement.
-  ///
-  /// In en, this message translates to:
-  /// **'Failure Weight Decrement'**
-  String get appSettings_routeWeightFailureDecrement;
-
-  /// No description provided for @appSettings_routeWeightFailureDecrementSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Weight removed from a path after failed delivery'**
-  String get appSettings_routeWeightFailureDecrementSubtitle;
-
   /// No description provided for @appSettings_maxMessageRetries.
   ///
   /// In en, this message translates to:
@@ -1627,7 +1531,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_maxMessageRetriesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Number of retry attempts before marking a message as failed'**
+  /// **'Send attempts before a message is marked failed. The known route gets one try (two at 4 or more); the rest flood.'**
   String get appSettings_maxMessageRetriesSubtitle;
 
   /// No description provided for @appSettings_maxChannelMessageRetries.
@@ -1641,12 +1545,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It will retry this many times until it hears at least one repeat'**
   String get appSettings_maxChannelMessageRetriesSubtitle;
-
-  /// No description provided for @path_routeWeight.
-  ///
-  /// In en, this message translates to:
-  /// **'{weight}/{max}'**
-  String path_routeWeight(String weight, String max);
 
   /// No description provided for @appSettings_battery.
   ///
@@ -2644,18 +2542,6 @@ abstract class AppLocalizations {
   /// **'Message deleted'**
   String get chat_messageDeleted;
 
-  /// No description provided for @chat_retryingMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrying message'**
-  String get chat_retryingMessage;
-
-  /// No description provided for @chat_retryCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry {current}/{max}'**
-  String chat_retryCount(int current, int max);
-
   /// No description provided for @chat_sendGif.
   ///
   /// In en, this message translates to:
@@ -3040,48 +2926,6 @@ abstract class AppLocalizations {
   /// **'Hex Dump:'**
   String get debugFrame_hexDump;
 
-  /// No description provided for @chat_pathManagement.
-  ///
-  /// In en, this message translates to:
-  /// **'Path Management'**
-  String get chat_pathManagement;
-
-  /// No description provided for @chat_ShowAllPaths.
-  ///
-  /// In en, this message translates to:
-  /// **'Show all paths'**
-  String get chat_ShowAllPaths;
-
-  /// No description provided for @chat_routingMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing mode'**
-  String get chat_routingMode;
-
-  /// No description provided for @chat_autoUseSavedPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto (use saved path)'**
-  String get chat_autoUseSavedPath;
-
-  /// No description provided for @chat_forceFloodMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Force Flood Mode'**
-  String get chat_forceFloodMode;
-
-  /// No description provided for @chat_recentAckPaths.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent ACK Paths (tap to use):'**
-  String get chat_recentAckPaths;
-
-  /// No description provided for @chat_pathHistoryFull.
-  ///
-  /// In en, this message translates to:
-  /// **'Path history is full. Remove entries to add new ones.'**
-  String get chat_pathHistoryFull;
-
   /// No description provided for @chat_hopSingular.
   ///
   /// In en, this message translates to:
@@ -3100,71 +2944,11 @@ abstract class AppLocalizations {
   /// **'{count} {count, plural, =1{hop} other{hops}}'**
   String chat_hopsCount(int count);
 
-  /// No description provided for @chat_successes.
-  ///
-  /// In en, this message translates to:
-  /// **'successes'**
-  String get chat_successes;
-
-  /// No description provided for @chat_removePath.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove path'**
-  String get chat_removePath;
-
-  /// No description provided for @chat_noPathHistoryYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No path history yet.\nSend a message to discover paths.'**
-  String get chat_noPathHistoryYet;
-
-  /// No description provided for @chat_pathActions.
-  ///
-  /// In en, this message translates to:
-  /// **'Path Actions:'**
-  String get chat_pathActions;
-
   /// No description provided for @chat_setCustomPath.
   ///
   /// In en, this message translates to:
   /// **'Set Custom Path'**
   String get chat_setCustomPath;
-
-  /// No description provided for @chat_setCustomPathSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manually specify routing path'**
-  String get chat_setCustomPathSubtitle;
-
-  /// No description provided for @chat_clearPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Path'**
-  String get chat_clearPath;
-
-  /// No description provided for @chat_clearPathSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Force rediscovery on next send'**
-  String get chat_clearPathSubtitle;
-
-  /// No description provided for @chat_pathCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Path cleared. Next message will rediscover route.'**
-  String get chat_pathCleared;
-
-  /// No description provided for @chat_floodModeSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Use routing toggle in app bar'**
-  String get chat_floodModeSubtitle;
-
-  /// No description provided for @chat_floodModeEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Flood mode enabled. Toggle back via routing icon in app bar.'**
-  String get chat_floodModeEnabled;
 
   /// No description provided for @chat_fullPath.
   ///
@@ -3177,30 +2961,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Path details not available yet. Try sending a message to refresh.'**
   String get chat_pathDetailsNotAvailable;
-
-  /// No description provided for @chat_pathSetHops.
-  ///
-  /// In en, this message translates to:
-  /// **'Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}'**
-  String chat_pathSetHops(int hopCount, String status);
-
-  /// No description provided for @chat_pathSavedLocally.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved locally. Connect to sync.'**
-  String get chat_pathSavedLocally;
-
-  /// No description provided for @chat_pathDeviceConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'Device confirmed.'**
-  String get chat_pathDeviceConfirmed;
-
-  /// No description provided for @chat_pathDeviceNotConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'Device not confirmed yet.'**
-  String get chat_pathDeviceNotConfirmed;
 
   /// No description provided for @chat_type.
   ///
@@ -3891,36 +3651,6 @@ abstract class AppLocalizations {
   /// **'Enter the room password for guest or admin access.'**
   String get login_roomDescription;
 
-  /// No description provided for @login_routing.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing'**
-  String get login_routing;
-
-  /// No description provided for @login_routingMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing mode'**
-  String get login_routingMode;
-
-  /// No description provided for @login_autoUseSavedPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto (use saved path)'**
-  String get login_autoUseSavedPath;
-
-  /// No description provided for @login_forceFloodMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Force Flood Mode'**
-  String get login_forceFloodMode;
-
-  /// No description provided for @login_managePaths.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage Paths'**
-  String get login_managePaths;
-
   /// No description provided for @login_login.
   ///
   /// In en, this message translates to:
@@ -3956,18 +3686,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get common_clear;
-
-  /// No description provided for @path_currentPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Current path: {path}'**
-  String path_currentPath(String path);
-
-  /// No description provided for @path_usingHopsPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Using {count} {count, plural, =1{hop} other{hops}} path'**
-  String path_usingHopsPath(int count);
 
   /// No description provided for @path_enterCustomPath.
   ///
@@ -6910,6 +6628,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System language'**
   String get translation_systemLanguage;
+
+  /// No description provided for @routing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing'**
+  String get routing_title;
+
+  /// No description provided for @routing_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Route: {route}'**
+  String routing_route(String route);
+
+  /// No description provided for @routing_noRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'none yet — the next message floods and learns one'**
+  String get routing_noRoute;
+
+  /// No description provided for @routing_auto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get routing_auto;
+
+  /// No description provided for @routing_autoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the route the radio learned. Recommended.'**
+  String get routing_autoSubtitle;
+
+  /// No description provided for @routing_flood.
+  ///
+  /// In en, this message translates to:
+  /// **'Always flood'**
+  String get routing_flood;
+
+  /// No description provided for @routing_floodSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every message goes to the whole mesh'**
+  String get routing_floodSubtitle;
+
+  /// No description provided for @routing_custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom path'**
+  String get routing_custom;
+
+  /// No description provided for @routing_customSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the repeaters yourself'**
+  String get routing_customSubtitle;
+
+  /// No description provided for @routing_forget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget route'**
+  String get routing_forget;
+
+  /// No description provided for @routing_forgetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Route forgotten. The next message floods and learns a fresh one.'**
+  String get routing_forgetDone;
+
+  /// No description provided for @path_direct.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct — no repeaters'**
+  String get path_direct;
+
+  /// No description provided for @path_directSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only when the contact can hear this radio itself'**
+  String get path_directSubtitle;
+
+  /// No description provided for @chat_kindFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'flood'**
+  String get chat_kindFlood;
+
+  /// No description provided for @chat_kindDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'direct'**
+  String get chat_kindDirect;
+
+  /// No description provided for @chat_kindRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'route ({count} {count, plural, =1{hop} other{hops}})'**
+  String chat_kindRoute(int count);
+
+  /// No description provided for @chat_statusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get chat_statusQueued;
+
+  /// No description provided for @chat_statusSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending · {kind}'**
+  String chat_statusSending(String kind);
+
+  /// No description provided for @chat_statusRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying · {kind} · attempt {attempt} of {max}'**
+  String chat_statusRetrying(int attempt, int max, String kind);
+
+  /// No description provided for @chat_statusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered · {kind} · {secs} s'**
+  String chat_statusDelivered(String kind, String secs);
+
+  /// No description provided for @chat_statusDeliveredAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered on attempt {attempt} · {kind} · {secs} s'**
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs);
+
+  /// No description provided for @chat_statusDeliveredLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered late · {kind} · {secs} s'**
+  String chat_statusDeliveredLate(String kind, String secs);
+
+  /// No description provided for @chat_statusDeliveredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered · {secs} s'**
+  String chat_statusDeliveredShort(String secs);
+
+  /// No description provided for @chat_statusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed after {attempts} {attempts, plural, =1{attempt} other{attempts}} · tap to resend'**
+  String chat_statusFailed(int attempts);
+
+  /// No description provided for @chat_statusFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed · tap to resend'**
+  String get chat_statusFailedShort;
+
+  /// No description provided for @chat_resendingByFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'Resending by flood'**
+  String get chat_resendingByFlood;
 }
 
 class _AppLocalizationsDelegate

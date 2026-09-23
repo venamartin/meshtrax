@@ -732,56 +732,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_messaging => '消息';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => '达到最大重试次数时清除路径';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle => '在5次发送失败后重置联系路径。';
-
-  @override
-  String get appSettings_pathsWillBeCleared => '5次失败后将重新路由';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared => '路径不会自动清除';
-
-  @override
-  String get appSettings_autoRouteRotation => '自动路径轮换';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle => '在最佳路径和泛洪模式之间切换';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled => '自动路径轮换已启用';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled => '自动路径轮换已禁用';
-
-  @override
-  String get appSettings_maxRouteWeight => '最大路径重量';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle => '一条路径可以累积的最大重量，取决于成功交付的数量。';
-
-  @override
-  String get appSettings_initialRouteWeight => '初始路线权重';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle => '新发现路径的初始重量';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement => '成功权重增加';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      '在成功交付后，将重量添加到路径中';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement => '失败权重降低';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      '从一条路径上移除的货物，由于无法成功交付而移除。';
-
-  @override
   String get appSettings_maxMessageRetries => '最大消息重试次数';
 
   @override
@@ -794,11 +744,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => '电池';
@@ -1362,14 +1307,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_messageDeleted => '消息已删除';
 
   @override
-  String get chat_retryingMessage => '正在重试消息';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return '重试 $current/$max';
-  }
-
-  @override
   String get chat_sendGif => '发送 GIF';
 
   @override
@@ -1588,27 +1525,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get debugFrame_hexDump => '十六进制数据：';
 
   @override
-  String get chat_pathManagement => '路径管理';
-
-  @override
-  String get chat_ShowAllPaths => '显示所有路径';
-
-  @override
-  String get chat_routingMode => '路由模式';
-
-  @override
-  String get chat_autoUseSavedPath => '自动（使用保存的路径）';
-
-  @override
-  String get chat_forceFloodMode => '强制泛洪模式';
-
-  @override
-  String get chat_recentAckPaths => '最近使用的 ACK 路径（点击使用）：';
-
-  @override
-  String get chat_pathHistoryFull => '路径历史已满，请删除后再添加。';
-
-  @override
   String get chat_hopSingular => '跳';
 
   @override
@@ -1620,57 +1536,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => '成功';
-
-  @override
-  String get chat_removePath => '移除路径';
-
-  @override
-  String get chat_noPathHistoryYet => '暂无路径历史。\n发送消息以探索路径。';
-
-  @override
-  String get chat_pathActions => '路径操作：';
-
-  @override
   String get chat_setCustomPath => '设置自定义路径';
-
-  @override
-  String get chat_setCustomPathSubtitle => '手动指定路由路径';
-
-  @override
-  String get chat_clearPath => '清除路径';
-
-  @override
-  String get chat_clearPathSubtitle => '清除当前路径，下次发送将重新尝试。';
-
-  @override
-  String get chat_pathCleared => '路径已清除。下一条消息将重新路由。';
-
-  @override
-  String get chat_floodModeSubtitle => '在应用栏中切换路由模式。';
-
-  @override
-  String get chat_floodModeEnabled => '泛洪模式已启用。可通过应用栏的路由图标切换。';
 
   @override
   String get chat_fullPath => '完整路径';
 
   @override
   String get chat_pathDetailsNotAvailable => '路径信息暂不可用，请尝试发送消息刷新。';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    return '路径设置：$hopCount 跳 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally => '已本地保存，连接设备后可同步。';
-
-  @override
-  String get chat_pathDeviceConfirmed => '设备已确认。';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => '设备尚未确认。';
 
   @override
   String get chat_type => '类型';
@@ -2052,21 +1924,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get login_roomDescription => '输入房间服务器密码以访问设置和状态。';
 
   @override
-  String get login_routing => '路由';
-
-  @override
-  String get login_routingMode => '路由模式';
-
-  @override
-  String get login_autoUseSavedPath => '自动（使用保存的路径）';
-
-  @override
-  String get login_forceFloodMode => '强制泛洪模式';
-
-  @override
-  String get login_managePaths => '管理路径';
-
-  @override
   String get login_login => '登录';
 
   @override
@@ -2087,16 +1944,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get common_clear => '清除';
-
-  @override
-  String path_currentPath(String path) {
-    return '当前路径：$path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    return '使用 $count 跳路径';
-  }
 
   @override
   String get path_enterCustomPath => '输入自定义路径';
@@ -3718,4 +3565,116 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => '系统语言';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

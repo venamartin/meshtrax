@@ -780,66 +780,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get appSettings_messaging => 'Üzenetek küldése';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Egyértelmű út a Max Retry funkció használatával';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'A kapcsolat visszaállítás 5 sikertelen továbbítás után';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Ha 5-szer sikertelenül próbálunk, a útvonalat automatikusan tisztítjuk.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'A utak automatikusan nem tisztítódnak.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Autóútok forgása';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Válasszon a legjobb útvonalak között, vagy válassza a vízözön-módot.';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Az automatikus útvonalváltás engedélyezve';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Az automatikus útvonal-választás funkció kikapcsolva.';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Maximális útvonal súly';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'A lehető legnagyobb súly, amit egy útvonal sikeres szállítmányok során összegyűjthet.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'A kezdeti útvonal súlya';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Az új, felfedezett útvonalakhoz tartozó kezdeti súly';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Sikerhez vezető növelés';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'A sikeresen teljesített útvonalhoz hozzáadott súly.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement => 'Hibás súly csökkenése';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'A jártatásból eltávolított súly, ami a sikertelen szállítás következménye.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Maximális üzenetek újraküldési próbálkozások';
 
@@ -854,11 +794,6 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Akku';
@@ -1447,14 +1382,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_messageDeleted => 'Üzenet törölve';
 
   @override
-  String get chat_retryingMessage => 'Újrapróbálási üzenet';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return 'Újrapróbál $current/$max';
-  }
-
-  @override
   String get chat_sendGif => 'Küldj GIF-ot';
 
   @override
@@ -1676,30 +1603,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex-dump:';
 
   @override
-  String get chat_pathManagement => 'Útvonal-kezelés';
-
-  @override
-  String get chat_ShowAllPaths => 'Mutasson meg minden útvonalat';
-
-  @override
-  String get chat_routingMode => 'Útvonal-kezelési mód';
-
-  @override
-  String get chat_autoUseSavedPath =>
-      'Automatikus (az eddigi útvonal használata)';
-
-  @override
-  String get chat_forceFloodMode => 'Erőforrás-alapú áramlás mód';
-
-  @override
-  String get chat_recentAckPaths =>
-      'Legutóbbi használt útvonalak (gombra kattintva):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Az előző lépések listája teljes. Törölj ki a bejegyzéseket, hogy újokat hozzáadhatsd.';
-
-  @override
   String get chat_hopSingular => 'ugor';
 
   @override
@@ -1717,42 +1620,7 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => 'sikerek';
-
-  @override
-  String get chat_removePath => 'Törölje a elérési útvonalat';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Még nincs útvonal-történet.\nKüldjön egy üzenetet, hogy megtudja a lehetséges útvonalakat.';
-
-  @override
-  String get chat_pathActions => 'Céltúrások:';
-
-  @override
   String get chat_setCustomPath => 'Beállítsd a saját útvonalat';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Kézzel megadott útvonal';
-
-  @override
-  String get chat_clearPath => 'Egyértelmű út';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'A parancs új küldéskor újra kell aktivizálnia.';
-
-  @override
-  String get chat_pathCleared =>
-      'Útvonal cleared. A következő üzenet újból feltérképezheti az útvonalat.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Használja a \"útvonal\" kapcsolót az alkalmazás sávjában.';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Árvízvédelmi mód bekapcsolva. A visszaállítás a alkalmazásban található útvonal ikon segítségével.';
 
   @override
   String get chat_fullPath => 'Teljes elérési út';
@@ -1760,27 +1628,6 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Az útvonal részletei még nem elérhetők. Próbálja meg küldeni egy üzenetet, hogy frissítse az információkat.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Path set: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Helyileg mentve. Kapcsolódjon a szinkronizáláshoz.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'A készülék megvan.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'A készülék még nem bizonyított.';
 
   @override
   String get chat_type => 'Típus';
@@ -2177,22 +2024,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Adja meg a belépési kódot, hogy hozzáférhessen a beállításokhoz és az állapot információkhoz.';
 
   @override
-  String get login_routing => 'Útvonal meghatározás';
-
-  @override
-  String get login_routingMode => 'Útvonal-kezelési mód';
-
-  @override
-  String get login_autoUseSavedPath =>
-      'Automatikus (az eddigi útvonal használata)';
-
-  @override
-  String get login_forceFloodMode => 'Erőforrás-alapú áramlás mód';
-
-  @override
-  String get login_managePaths => 'Útvonalak kezelése';
-
-  @override
   String get login_login => 'Bejelentkezés';
 
   @override
@@ -2214,22 +2045,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get common_clear => 'Egyértelmű';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Jelenlegi útvonal: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'ugrások',
-      one: 'ugrás',
-    );
-    return '$count $_temp0 útvonal használata';
-  }
 
   @override
   String get path_enterCustomPath => 'Adja meg a saját elérési útvonalat';
@@ -4016,4 +3831,116 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Rendszer nyelvé';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

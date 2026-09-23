@@ -770,66 +770,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appSettings_messaging => 'Berichten';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'Wis Pad op Max Retry';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Reset contactpad na 5 mislukte verzendpogingen';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'De paden worden na 5 mislukte pogingen leeggehaald.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Padoms worden niet automatisch verwijderd';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Route Automatisch Roteren';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Verwissel tussen beste pad en floodmodus.';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Automatische route rotatie ingeschakeld';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Automatische route rotatie is uitgeschakeld';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Maximale gewicht voor de route';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Het maximale gewicht dat een route kan bereiken door succesvolle leveringen.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'เริ่มต้น gewicht van de route';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Startgewicht voor nieuwe, ontdekte routes';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Toename in het gewicht van het succes';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Gewicht wordt toegevoegd aan een route na een succesvolle levering.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Vermindering van het gewicht van fouten';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Gewicht verwijderd van een pad na een mislukte levering';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Aantal pogingen om berichten te versturen';
 
@@ -844,11 +784,6 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Batterij';
@@ -1428,14 +1363,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chat_messageDeleted => 'Bericht verwijderd';
 
   @override
-  String get chat_retryingMessage => 'Poging opnieuw.';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return 'Poging opnieuw $current/$max';
-  }
-
-  @override
   String get chat_sendGif => 'GIF verzenden';
 
   @override
@@ -1655,28 +1582,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex Dump:';
 
   @override
-  String get chat_pathManagement => 'Beheer van Paden';
-
-  @override
-  String get chat_ShowAllPaths => 'Toon alle paden';
-
-  @override
-  String get chat_routingMode => 'Routeerwijze';
-
-  @override
-  String get chat_autoUseSavedPath => 'Automatisch (gebruik opgeslagen pad)';
-
-  @override
-  String get chat_forceFloodMode => 'Dwing Floodsmodus';
-
-  @override
-  String get chat_recentAckPaths => 'Recente ACK Paden (tik om te gebruiken):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'De voorgeschiedenis is vol. Verwijder vermeldingen om er nieuwe aan toe te voegen.';
-
-  @override
   String get chat_hopSingular => 'Hop';
 
   @override
@@ -1694,42 +1599,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => 'Succesvol';
-
-  @override
-  String get chat_removePath => 'Pad verwijderen';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Geen geschiedenis van paden nog beschikbaar.\nVerzend een bericht om paden te ontdekken.';
-
-  @override
-  String get chat_pathActions => 'Padacties:';
-
-  @override
   String get chat_setCustomPath => 'Stel aangepaste pad in';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Handmatig routepad specificeren';
-
-  @override
-  String get chat_clearPath => 'Duidelijke Pad';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Dwing herontdekking bij volgende verzending';
-
-  @override
-  String get chat_pathCleared =>
-      'Pad is vrijgegeven. Volgende bericht herontdekt route.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Gebruik de route-schakelaar in de app-balk';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Floodmodus is ingeschakeld. Schakel dit uit via het route-icoon in de app-balk.';
 
   @override
   String get chat_fullPath => 'Volledige Pad';
@@ -1737,27 +1607,6 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'De paddetails zijn nog niet beschikbaar. Probeer een bericht te sturen om te vernieuwen.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Pad ingesteld: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Opgeslagen lokaal. Verbinden om te synchroniseren.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Apparaat bevestigd.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Apparaat nog niet bevestigd.';
 
   @override
   String get chat_type => 'Typen';
@@ -2153,21 +2002,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'Voer het wachtwoord van de kamer in om toegang te krijgen tot instellingen en status.';
 
   @override
-  String get login_routing => 'Routing';
-
-  @override
-  String get login_routingMode => 'Routeerwijze';
-
-  @override
-  String get login_autoUseSavedPath => 'Automatisch (gebruik opgeslagen pad)';
-
-  @override
-  String get login_forceFloodMode => 'Dwing Floodmodus Af';
-
-  @override
-  String get login_managePaths => 'Padbeheer';
-
-  @override
   String get login_login => 'Inloggen';
 
   @override
@@ -2189,22 +2023,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get common_clear => 'Schoonmaken';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Huidige pad: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Gebruik $count $_temp0 pad';
-  }
 
   @override
   String get path_enterCustomPath => 'Voer aangepaste pad in';
@@ -3980,4 +3798,116 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Taal van het systeem';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

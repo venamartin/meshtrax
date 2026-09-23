@@ -24,10 +24,8 @@ import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
     if (dart.library.io) '../services/linux_ble_pairing_service.dart';
 import '../services/message_retry_service.dart';
-import '../services/path_history_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
-import '../services/timeout_prediction_service.dart';
 import '../services/notification_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
@@ -343,10 +341,6 @@ class MeshCoreConnector extends ChangeNotifier {
   int _loadedContactsCount = 0;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
-  TimeoutPredictionService? _timeoutPredictionService;
-  // Intentionally global (not per-contact): tracks overall network activity.
-  // Frequent RX from any source indicates a busy network with more collisions.
-  DateTime _lastRxTime = DateTime.now();
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastContactMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastChannelMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -433,7 +427,6 @@ class MeshCoreConnector extends ChangeNotifier {
 
   // Services
   MessageRetryService? _retryService;
-  PathHistoryService? _pathHistoryService;
   AppSettingsService? _appSettingsService;
   BackgroundService? _backgroundService;
   final NotificationService _notificationService = NotificationService();
@@ -884,20 +877,16 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void initialize({
     required MessageRetryService retryService,
-    required PathHistoryService pathHistoryService,
     AppSettingsService? appSettingsService,
     BleDebugLogService? bleDebugLogService,
     AppDebugLogService? appDebugLogService,
     BackgroundService? backgroundService,
-    TimeoutPredictionService? timeoutPredictionService,
   }) {
     _retryService = retryService;
-    _pathHistoryService = pathHistoryService;
     _appSettingsService = appSettingsService;
     _bleDebugLogService = bleDebugLogService;
     _appDebugLogService = appDebugLogService;
     _backgroundService = backgroundService;
-    _timeoutPredictionService = timeoutPredictionService;
     _usbManager.setDebugLogService(_appDebugLogService);
     _tcpConnector.setDebugLogService(_appDebugLogService);
 
@@ -914,39 +903,18 @@ class MeshCoreConnector extends ChangeNotifier {
         updateMessage: _updateMessage,
         clearContactPath: clearContactPath,
         setContactPath: setContactPath,
-        calculateTimeout: (pathLength, messageBytes, {String? contactKey}) =>
+        calculateTimeout: (pathLength, messageBytes, {Contact? contact}) =>
             calculateTimeout(
               pathLength: pathLength,
               messageBytes: messageBytes,
-              contactKey: contactKey,
+              contact: contact,
             ),
         getSelfPublicKey: () => _selfPublicKey,
         prepareContactOutboundText: prepareContactOutboundText,
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
-        recordPathResult: _recordPathResult,
-        selectRetryPath:
-            (contactKey, attemptIndex, maxRetries, recentSelections) =>
-                _selectAutoPathForAttempt(
-                  contactKey,
-                  attemptIndex: attemptIndex,
-                  maxRetries: maxRetries,
-                  recentSelections: recentSelections,
-                ),
-        onDeliveryObserved: (contactKey, pathLength, messageBytes, tripTimeMs) {
-          final secSinceRx = DateTime.now().difference(_lastRxTime).inSeconds;
-          _timeoutPredictionService?.recordObservation(
-            contactKey: contactKey,
-            pathLength: pathLength,
-            messageBytes: messageBytes,
-            tripTimeMs: tripTimeMs,
-            secondsSinceLastRx: secSinceRx,
-          );
-        },
       ),
     );
-    final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
-    _retryService?.setMaxRetries(maxRetries);
   }
 
   Future<void> loadContactCache() async {
@@ -1118,78 +1086,6 @@ class MeshCoreConnector extends ChangeNotifier {
     }());
   }
 
-
-  void _recordPathResult(
-    String contactPubKeyHex,
-    PathSelection selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    if (_pathHistoryService == null) return;
-    final settings = _appSettingsService?.settings;
-    _pathHistoryService!.recordPathResult(
-      contactPubKeyHex,
-      selection,
-      success: success,
-      tripTimeMs: tripTimeMs,
-      successIncrement: settings?.routeWeightSuccessIncrement ?? 0.2,
-      failureDecrement: settings?.routeWeightFailureDecrement ?? 0.2,
-      maxWeight: settings?.maxRouteWeight ?? 5.0,
-    );
-
-    // Flood path attribution: when a flood delivery succeeds, credit the
-    // contact's current device path so the route the ACK traveled back
-    // through gets a weight boost in the path history.
-    if (selection.useFlood && success) {
-      final contact = _contacts.cast<Contact?>().firstWhere(
-        (c) => c?.publicKeyHex == contactPubKeyHex,
-        orElse: () => null,
-      );
-      if (contact != null &&
-          contact.pathLength >= 0 &&
-          contact.path.isNotEmpty) {
-        _pathHistoryService!.recordFloodPathAttribution(
-          contactPubKeyHex: contactPubKeyHex,
-          pathBytes: contact.path,
-          hopCount: contact.pathLength,
-          tripTimeMs: tripTimeMs,
-          successIncrement: settings?.routeWeightSuccessIncrement ?? 0.2,
-          maxWeight: settings?.maxRouteWeight ?? 5.0,
-        );
-      }
-
-      // Request a fresh contact from the device so the next flood
-      // attribution uses the most up-to-date path.
-      if (contact != null) {
-        unawaited(getContactByKey(contact.publicKey));
-      }
-    }
-  }
-
-  PathSelection? _selectAutoPathForAttempt(
-    String contactPubKeyHex, {
-    required int attemptIndex,
-    required int maxRetries,
-    List<PathSelection> recentSelections = const [],
-  }) {
-    final hasKnownPaths =
-        _pathHistoryService?.getRecentPaths(contactPubKeyHex).isNotEmpty ??
-        false;
-    if (!hasKnownPaths) {
-      return null;
-    }
-
-    final selection = _pathHistoryService?.selectPathForAttempt(
-      contactPubKeyHex,
-      attemptIndex: attemptIndex,
-      maxRetries: maxRetries,
-      recentSelections: recentSelections,
-    );
-    if (selection != null) {
-      _pathHistoryService?.recordPathAttempt(contactPubKeyHex, selection);
-    }
-    return selection;
-  }
 
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
@@ -3032,6 +2928,8 @@ class MeshCoreConnector extends ChangeNotifier {
       rawPacket: tmp.rawPacket,
       latitude: tmp.latitude,
       longitude: tmp.longitude,
+      inboundPath: tmp.inboundPath,
+      inboundHopCount: tmp.inboundHopCount,
     );
   }
 
@@ -3063,8 +2961,9 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> sendMessage(
     Contact contact,
-    String text,
-  ) async {
+    String text, {
+    bool floodFirst = false,
+  }) async {
     if (!isConnected || text.isEmpty) return;
 
     // Check if this is a reaction - apply locally with pending status and route through retry service
@@ -3096,6 +2995,7 @@ class MeshCoreConnector extends ChangeNotifier {
       await _retryService!.sendMessageWithRetry(
         contact: contact,
         text: text,
+        floodFirst: floodFirst,
       );
     } else {
       // Fallback to old behavior if retry service not initialized
@@ -3320,36 +3220,12 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resolves how the next send to [contact] will route. Only a user path
+  /// override is pushed to the radio; otherwise the firmware's own route is
+  /// left alone and simply reported.
   Future<PathSelection> preparePathForContactSend(Contact contact) async {
-    PathSelection? autoSelection;
-    final autoRotationEnabled =
-        _appSettingsService?.settings.autoRouteRotationEnabled == true;
-
-    // A zero-hop contact is already on the best route that exists, so route
-    // rotation has nothing to explore for it.
-    //
-    // Letting it pick flood here does not just slow one send. The flood
-    // branch below calls clearContactPath, which erases the direct path from
-    // the contact itself — and resolvePathSelection returns flood for any
-    // contact whose pathLength is negative. So one rotation experiment
-    // permanently demotes a neighbour to flood, with nothing to restore it
-    // but a fresh path discovery.
-    //
-    // Measured on the bench against a repeater in the same room at -46 dBm,
-    // reporting "Direct": it came back as "Flood" and stayed there, which
-    // also more than doubled the command give-up budget (12.4s -> 28.6s).
-    final isDirect = contact.pathLength == 0;
-
-    if (autoRotationEnabled && contact.pathOverride == null && !isDirect) {
-      final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
-      autoSelection = _selectAutoPathForAttempt(
-        contact.publicKeyHex,
-        attemptIndex: 0,
-        maxRetries: maxRetries,
-      );
-    }
-
-    final resolved = resolvePathSelection(contact, selection: autoSelection);
+    final resolved = resolvePathSelection(contact);
+    if (contact.pathOverride == null) return resolved;
 
     if (resolved.useFlood) {
       await clearContactPath(contact);
@@ -3360,7 +3236,6 @@ class MeshCoreConnector extends ChangeNotifier {
         resolved.hopCount,
       );
     }
-
     return resolved;
   }
 
@@ -3390,39 +3265,6 @@ class MeshCoreConnector extends ChangeNotifier {
       pathLength: selection.useFlood ? -1 : selection.hopCount,
       messageBytes: messageBytes,
     );
-  }
-
-  /// Feeds one repeater CLI round trip into the timeout model.
-  ///
-  /// Repeater commands never reach [_handleRepeaterCommandAck]: the firmware
-  /// sends no ack for TXT_TYPE_CLI_DATA, and _handleMessageSent returns early
-  /// on CLI sends, so the ack plumbing that trains the model for ordinary
-  /// messages is dead on this path. Without this the model never learns what
-  /// a repeater command actually costs and every one is budgeted from the
-  /// worst-case physics bound — 4.1 s on a link measured at 955 ms.
-  void recordRepeaterCommandRoundTrip({
-    required String contactKey,
-    required int pathLength,
-    required int messageBytes,
-    required int tripTimeMs,
-  }) {
-    if (tripTimeMs <= 0) return;
-    _timeoutPredictionService?.recordObservation(
-      contactKey: contactKey,
-      pathLength: pathLength,
-      messageBytes: messageBytes,
-      tripTimeMs: tripTimeMs,
-      secondsSinceLastRx: DateTime.now().difference(_lastRxTime).inSeconds,
-    );
-  }
-
-  void recordRepeaterPathResult(
-    Contact contact,
-    PathSelection selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    _recordPathResult(contact.publicKeyHex, selection, success, tripTimeMs);
   }
 
   Future<bool> verifyContactPathOnDevice(
@@ -3848,6 +3690,8 @@ class MeshCoreConnector extends ChangeNotifier {
         pathLength: contact.pathLength,
         path: contact.path,
         pathHashSize: contact.pathHashSize, // preserve hash size
+        inboundPath: contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
@@ -4664,7 +4508,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handleFrame(List<int> data) {
     if (data.isEmpty) return;
-    _lastRxTime = DateTime.now();
 
     final frame = Uint8List.fromList(data);
     _receivedFramesController.add(frame);
@@ -4856,15 +4699,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handlePathUpdated(Uint8List frame) {
     // Frame format: [0]=code, [1-32]=pub_key
-    if (frame.length >= 33 && _pathHistoryService != null) {
+    if (frame.length >= 33) {
       final pubKey = Uint8List.fromList(frame.sublist(1, 33));
-      final contact = _contacts.cast<Contact?>().firstWhere(
-        (c) => c != null && listEquals(c.publicKey, pubKey),
-        orElse: () => null,
-      );
+      final known = _contacts.any((c) => listEquals(c.publicKey, pubKey));
 
-      if (contact != null) {
-        _pathHistoryService!.handlePathUpdated(contact);
+      if (known) {
         // Refresh just this specific contact instead of all contacts.
         // This avoids race conditions with _preserveContactsOnRefresh flag
         // that can occur when using refreshContactsSinceLastmod().
@@ -5191,60 +5030,44 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return 50; // fallback: ~SF7/BW125 for 100 bytes
   }
 
-  /// Physics-based worst-case timeout (ceiling).
-  int _physicsMaxTimeout(int pathLength, int airtime) {
-    if (pathLength < 0) {
-      // Match firmware: SEND_TIMEOUT_BASE_MILLIS + (FLOOD_SEND_TIMEOUT_FACTOR * airtime)
-      return 500 + (16 * airtime);
-    } else {
-      return 500 + ((airtime * 6 + 250) * (pathLength + 1));
-    }
-  }
+  /// Companion firmware budget for a direct send: SEND_TIMEOUT_BASE_MILLIS +
+  /// (airtime × DIRECT_SEND_PERHOP_FACTOR + DIRECT_SEND_PERHOP_EXTRA_MILLIS)
+  /// × (hops + 1).
+  int _directTimeoutMs(int hops, int airtime) =>
+      500 + ((airtime * 6 + 250) * (hops + 1));
 
-  int _physicsMinTimeout(int pathLength, int airtime) {
-    if (pathLength < 0) {
-      // Same as max for flood — firmware uses a single formula
-      return 500 + (16 * airtime);
-    } else {
-      return airtime * (pathLength + 1);
-    }
-  }
+  /// Hops assumed for a flood to a contact whose distance is unknown.
+  static const int defaultFloodHops = 8;
+  static const int _minFloodTimeoutMs = 10000;
+  static const int _maxTimeoutMs = 60000;
 
-  /// Maximum timeout cap per retry attempt — prevents long-hop or slow-SF
-  /// paths from making a message appear to be "waiting" for minutes per attempt.
-  static const int _maxTimeoutMs = 60000; // 60 seconds
+  /// Best known distance to [contact] in hops: the firmware's route, else
+  /// how far the contact's last advert travelled, else null.
+  int? estimatedHopsTo(Contact contact) =>
+      contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount;
 
-  /// Calculate timeout for a message based on radio settings and path length.
-  /// Returns timeout in milliseconds, considering number of hops.
+  /// Timeout for one send attempt.
+  ///
+  /// Direct sends use the firmware's own formula. A flood needs a distance:
+  /// the firmware's flood formula (500 + 16 × airtime) has no hop term, so on
+  /// a multi-hop mesh it expires long before the reply can return. The reply
+  /// to a flood is itself a flood and every repeater adds a random delay, so
+  /// the direct budget over the estimated distance is doubled.
   int calculateTimeout({
     required int pathLength,
     int messageBytes = 100,
-    String? contactKey,
+    Contact? contact,
   }) {
     final airtime = _estimateAirtimeMs(messageBytes);
-    final physicsMin = _physicsMinTimeout(pathLength, airtime);
-    final physicsMax = _physicsMaxTimeout(pathLength, airtime);
-
-    // Try ML-based prediction
-    final secSinceRx = DateTime.now().difference(_lastRxTime).inSeconds;
-    final mlTimeout = _timeoutPredictionService?.predictTimeout(
-      contactKey: contactKey,
-      pathLength: pathLength,
-      messageBytes: messageBytes,
-      secondsSinceLastRx: secSinceRx,
-    );
-    if (mlTimeout != null) {
-      if (pathLength < 0) {
-        // Flood: trust ML, only enforce firmware formula as floor
-        if (mlTimeout < physicsMin) {
-          return physicsMin;
-        }
-      }
-      return mlTimeout.clamp(physicsMin, physicsMax).clamp(0, _maxTimeoutMs);
+    if (pathLength >= 0) {
+      return _directTimeoutMs(pathLength, airtime).clamp(0, _maxTimeoutMs);
     }
-
-    // No ML data — use firmware formula, capped
-    return physicsMax.clamp(0, _maxTimeoutMs);
+    final hops =
+        (contact == null ? null : estimatedHopsTo(contact)) ?? defaultFloodHops;
+    return (_directTimeoutMs(hops, airtime) * 2).clamp(
+      _minFloodTimeoutMs,
+      _maxTimeoutMs,
+    );
   }
 
   void _handleContact(Uint8List frame, {bool isContact = true}) {
@@ -5297,6 +5120,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device DB rows can be legitimately old, so skew is only assessed
           // on live adverts; carry the last assessment through syncs.
           clockCorrected: existing.clockCorrected,
+          // Device frames carry no inbound advert path.
+          inboundPath: existing.inboundPath,
+          inboundHopCount: existing.inboundHopCount,
         );
 
         appLogger.info(
@@ -5324,11 +5150,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       _knownContactKeys.add(contact.publicKeyHex);
       _loadMessagesForContact(contact.publicKeyHex);
-
-      // Add path to history if we have a valid path
-      if (_pathHistoryService != null && contact.pathLength >= 0) {
-        _pathHistoryService!.handlePathUpdated(contact);
-      }
 
       notifyListeners();
 
@@ -5380,6 +5201,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        inboundPath: contact.inboundHopCount == null
+            ? existing.inboundPath
+            : contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
       );
 
       appLogger.info(
@@ -5395,11 +5220,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _knownContactKeys.add(contact.publicKeyHex);
     _loadMessagesForContact(contact.publicKeyHex);
-
-    // Add path to history if we have a valid path
-    if (_pathHistoryService != null && contact.pathLength >= 0) {
-      _pathHistoryService!.handlePathUpdated(contact);
-    }
 
     notifyListeners();
 
@@ -6389,7 +6209,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             messageBytes: entry.messageBytes,
           );
     entry.timeout = Timer(Duration(milliseconds: effectiveTimeoutMs), () {
-      _recordPathResult(entry.contactKeyHex, entry.selection, false, null);
       _pendingRepeaterAcks.remove(ackHashHex);
     });
     return true;
@@ -6400,7 +6219,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final entry = _pendingRepeaterAcks.remove(ackHashHex);
     if (entry == null) return false;
     entry.timeout?.cancel();
-    _recordPathResult(entry.contactKeyHex, entry.selection, true, tripTimeMs);
     return true;
   }
 
@@ -8338,11 +8156,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: pathBytes.isEmpty ? -1 : hopCount,
+        // No route until the firmware learns one; the advert's path only
+        // proves the inbound direction.
+        pathLength: -1,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(pathBytes, stride: hashSize).reversed.expand((h) => h).toList(),
-        ), // Store path in reverse for easier use in outgoing messages
+        path: Uint8List(0),
+        inboundPath: pathBytes,
+        inboundHopCount: hopCount,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -8454,11 +8274,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: path.isEmpty ? -1 : hopCount,
+        pathLength: -1,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
-        ), // Store path in reverse for easier use in outgoing messages
+        path: Uint8List(0),
+        inboundPath: path,
+        inboundHopCount: hopCount,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -8497,28 +8317,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         tag: 'Connector',
       );
 
-      // CRITICAL: Preserve user's path override when contact is refreshed from device
+      // The firmware's route (path/pathLength) is untouched: an advert only
+      // tells us how the contact reaches us.
       _contacts[existingIndex] = existing.copyWith(
         latitude: hasLocation ? latitude : existing.latitude,
         longitude: hasLocation ? longitude : existing.longitude,
         name: hasName ? name : existing.name,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
-        ),
-        pathLength: path.isEmpty ? -1 : hopCount,
+        inboundPath: path,
+        inboundHopCount: hopCount,
         lastMessageAt: mergedLastMessageAt,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
       );
-
-      // Add path to history if we have a valid path
-      if (_pathHistoryService != null &&
-          _contacts[existingIndex].pathLength >= 0) {
-        _pathHistoryService!.handlePathUpdated(_contacts[existingIndex]);
-      }
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
 
@@ -8656,6 +8469,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         type: contact.type,
         pathLength: contact.pathLength,
         path: contact.path,
+        inboundPath: contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: contact.lastSeen,
@@ -8675,6 +8490,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       type: contact.type,
       pathLength: contact.pathLength,
       path: contact.path,
+      inboundPath: contact.inboundPath,
+      inboundHopCount: contact.inboundHopCount,
       latitude: contact.latitude,
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,
@@ -8782,10 +8599,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
     notifyListeners();
-  }
-
-  void deleteAllPaths() {
-    _pathHistoryService?.clearAllHistories();
   }
 
   Future<void> enableOverwriteOldest() async {

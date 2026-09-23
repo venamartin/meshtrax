@@ -557,6 +557,13 @@ Uint8List buildSendStatusRequestFrame(Uint8List recipientPubKey) {
   return writer.toBytes();
 }
 
+// On-air size of a TXT_MSG packet: header + path length byte + one hash per
+// hop + dest/src hashes + MAC + the AES-padded (timestamp, flags, text).
+int txtMsgPacketBytes(int textBytes, {int hops = 0}) {
+  final cipherBytes = ((5 + textBytes + 15) ~/ 16) * 16;
+  return 2 + hops + 2 + 2 + cipherBytes;
+}
+
 // Build CMD_SEND_TXT_MSG frame (companion_radio format)
 // Format: [cmd][txt_type][attempt][timestamp x4][pub_key_prefix x6][text...]\0
 Uint8List buildSendTextMsgFrame(

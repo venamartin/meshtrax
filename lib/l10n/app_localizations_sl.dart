@@ -766,68 +766,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get appSettings_messaging => 'Komuniciranje';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Ponovite pot do cilja na največjem štetju';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Ponovi pot zimske obveščevalne poti po 5 neuspešnih poskusih pošiljanja';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Počisti pot po 5 neuspešnih poskusih.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Poti ne bodo samodejno čiščene.';
-
-  @override
-  String get appSettings_autoRouteRotation =>
-      'Avtomatsko rotacija prenosne poti';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Menjaj med boljšo potjo in flood načinom';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Samodejno krmilno rotiranje omogočeno';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Samodejno krmilno rotiranje je onemogočeno';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Največja dovoljena teža poti';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Največja teža, ki jo lahko pot doseže s uspešnimi dostavnami.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Izvirna teža poti';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Izguba teže za nove, odkriti poti';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Učinkovitost: povečanje';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Težava, dodana poti po uspešni dostavi';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Zmanjšanje teže, ki je povezana s pomanjkanjem';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Težo, ki ni bila uspešno dostavljena, odstranili s poti.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Najve število poskusov pošiljanja sporočil';
 
@@ -842,11 +780,6 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Baterija';
@@ -1426,14 +1359,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_messageDeleted => 'Sporočilo izbrisano';
 
   @override
-  String get chat_retryingMessage => 'Ponovni poskus.';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return 'Ponovit $current/$max';
-  }
-
-  @override
   String get chat_sendGif => 'Pošlji GIF';
 
   @override
@@ -1653,28 +1578,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex Dump:';
 
   @override
-  String get chat_pathManagement => 'Upravljanje poti';
-
-  @override
-  String get chat_ShowAllPaths => 'Prikaži vse poti';
-
-  @override
-  String get chat_routingMode => 'Navodilo za usmerjevalni način';
-
-  @override
-  String get chat_autoUseSavedPath => 'Avto (uporabi shranjeno pot)';
-
-  @override
-  String get chat_forceFloodMode => 'Nasilje obvezati v način';
-
-  @override
-  String get chat_recentAckPaths => 'Nedavni poti ACK (tap za uporabo):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Zapiske o poti so popolni. Izbriši vnose, da dodaš nove.';
-
-  @override
   String get chat_hopSingular => 'skok';
 
   @override
@@ -1692,41 +1595,7 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => 'Uspešni';
-
-  @override
-  String get chat_removePath => 'Izbriši pot';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Ni shranjenih poti.\nPošlji sporočilo za odkrivanje poti.';
-
-  @override
-  String get chat_pathActions => 'Potni ukazi:';
-
-  @override
   String get chat_setCustomPath => 'Nastavi Prilozeno Pot';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Ročno določite potniško pot.';
-
-  @override
-  String get chat_clearPath => 'Počisti pot';
-
-  @override
-  String get chat_clearPathSubtitle => 'Ob naslednji pošiljanju znova zbrati.';
-
-  @override
-  String get chat_pathCleared =>
-      'Pot je očiščena. Naslednje sporočilo bo ponovno odkril pot.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Uporabi tipko usmerjevanja v meniju aplikacije.';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Narejena je bila omrežna modaliteta. Vklopi jo znova preko ikone v meniju aplikacije.';
 
   @override
   String get chat_fullPath => 'Polna pot';
@@ -1734,27 +1603,6 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Podrobnosti poti zaenkrat niso na voljo. Poskusite poslati sporočilo za osvežitev.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Pot nastavljen: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Shrano lokalno. Povežite se za sinhronizacijo.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Naprave potrjeno.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Naprave še niso potrdile.';
 
   @override
   String get chat_type => 'Vnesite';
@@ -2151,21 +1999,6 @@ class AppLocalizationsSl extends AppLocalizations {
       'Vnesite geslo v sobo za dostop do nastavitev in statusa.';
 
   @override
-  String get login_routing => 'Usmerjanje';
-
-  @override
-  String get login_routingMode => 'Navodilo za usmerjevalni način';
-
-  @override
-  String get login_autoUseSavedPath => 'Avto (uporabi shranjeno pot)';
-
-  @override
-  String get login_forceFloodMode => 'Nasilje obvezati v način';
-
-  @override
-  String get login_managePaths => 'Upravljajte Potniške Proti';
-
-  @override
   String get login_login => 'Prijava';
 
   @override
@@ -2187,22 +2020,6 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get common_clear => 'Ponoviti';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Trenutna pot: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Uporablja $count $_temp0 pot';
-  }
 
   @override
   String get path_enterCustomPath => 'Vnesite prilagojeno pot';
@@ -3978,4 +3795,116 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Jezik sistema';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

@@ -191,14 +191,6 @@
   "appSettings_advertisementNotifications": "Сповіщення про оголошення",
   "appSettings_advertisementNotificationsSubtitle": "Показувати сповіщення при виявленні нових вузлів",
   "appSettings_messaging": "Обмін повідомленнями",
-  "appSettings_clearPathOnMaxRetry": "Очищати шлях після макс. спроб",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Скидати шлях до контакту після 5 невдалих спроб надсилання",
-  "appSettings_pathsWillBeCleared": "Шляхи будуть очищені після 5 невдалих спроб.",
-  "appSettings_pathsWillNotBeCleared": "Шляхи не будуть очищатися автоматично.",
-  "appSettings_autoRouteRotation": "Авторотація маршруту",
-  "appSettings_autoRouteRotationSubtitle": "Чергувати найкращі шляхи та режим «на всю мережу» (flood)",
-  "appSettings_autoRouteRotationEnabled": "Авторотація маршрутизації увімкнена",
-  "appSettings_autoRouteRotationDisabled": "Авторотація маршрутизації вимкнена",
   "appSettings_battery": "Батарея",
   "appSettings_batteryChemistry": "Хімія батареї",
   "appSettings_batteryChemistryPerDevice": "Встановити для пристрою ({deviceName})",
@@ -444,18 +436,6 @@
   },
   "chat_messageCopied": "Повідомлення скопійовано",
   "chat_messageDeleted": "Повідомлення видалено",
-  "chat_retryingMessage": "Спроба відновлення.",
-  "chat_retryCount": "Повторна спроба {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Надіслати GIF",
   "chat_reply": "Відповісти",
   "chat_addReaction": "Додати реакцію",
@@ -548,12 +528,6 @@
     }
   },
   "debugFrame_hexDump": "Дамп Hex:",
-  "chat_pathManagement": "Керування шляхами",
-  "chat_routingMode": "Режим маршрутизації",
-  "chat_autoUseSavedPath": "Авто (використовувати збережений шлях)",
-  "chat_forceFloodMode": "Примусово на всю мережу",
-  "chat_recentAckPaths": "Недавні шляхи ACK (натисніть, щоб використати):",
-  "chat_pathHistoryFull": "Історія шляхів заповнена. Видаліть записи, щоб додати нові.",
   "chat_hopSingular": "Стрибок",
   "chat_hopPlural": "стрибків",
   "chat_hopsCount": "{count} {count, plural, =1{стрибок} few{стрибки} many{стрибків} other{стрибків}}",
@@ -564,33 +538,9 @@
       }
     }
   },
-  "chat_successes": "Успішно",
-  "chat_removePath": "Видалити шлях",
-  "chat_noPathHistoryYet": "Історія шляхів недоступна.\nНадішліть повідомлення, щоб виявити шляхи.",
-  "chat_pathActions": "Дії зі шляхом:",
   "chat_setCustomPath": "Встановити власний шлях",
-  "chat_setCustomPathSubtitle": "Вказати шлях маршрутизації вручну",
-  "chat_clearPath": "Очистити шлях",
-  "chat_clearPathSubtitle": "Примусово повторити пошук при наступному надсиланні",
-  "chat_pathCleared": "Шлях очищено. Наступне повідомлення оновить маршрут.",
-  "chat_floodModeSubtitle": "Використовувати перемикач маршрутизації в панелі програми",
-  "chat_floodModeEnabled": "Увімкнено режим «на всю мережу». Перемикайте через іконку маршрутизації на панелі інструментів.",
   "chat_fullPath": "Повний шлях",
   "chat_pathDetailsNotAvailable": "Деталі шляху ще недоступні. Спробуйте надіслати повідомлення для оновлення.",
-  "chat_pathSetHops": "Шлях встановлено: {hopCount} {hopCount, plural, =1{стрибок} few{стрибки} many{стрибків} other{стрибків}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Збережено локально. Підключіться для синхронізації.",
-  "chat_pathDeviceConfirmed": "Пристрій підтверджено.",
-  "chat_pathDeviceNotConfirmed": "Пристрій ще не підтверджено.",
   "chat_type": "Ввід",
   "chat_path": "Шлях",
   "chat_publicKey": "Відкритий ключ",
@@ -820,11 +770,6 @@
   "login_savePasswordSubtitle": "Пароль буде надійно збережено на цьому пристрої.",
   "login_repeaterDescription": "Введіть пароль ретранслятора для доступу до налаштувань та статусу.",
   "login_roomDescription": "Введіть пароль кімнати для доступу до налаштувань та статусу.",
-  "login_routing": "Маршрутизація",
-  "login_routingMode": "Режим маршрутизації",
-  "login_autoUseSavedPath": "Авто (використовувати збережений шлях)",
-  "login_forceFloodMode": "Примусово на всю мережу",
-  "login_managePaths": "Керувати шляхами",
   "login_login": "Вхід",
   "login_attempt": "Спроба {current}/{max}",
   "@login_attempt": {
@@ -848,22 +793,6 @@
   "login_failedMessage": "Вхід не вдався. Або пароль неправильний, або ретранслятор недосяжний.",
   "common_reload": "Перезавантажити",
   "common_clear": "Очистити",
-  "path_currentPath": "Поточний шлях: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Використання шляху з {count} {count, plural, =1{стрибком} few{стрибками} many{стрибками} other{стрибками}}",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Ввести власний шлях",
   "path_currentPathLabel": "Поточний шлях",
   "path_hexPrefixInstructions": "Введіть 2-символьні hex-префікси для кожного стрибка, розділені комами.",
@@ -1616,7 +1545,6 @@
   "scanner_bluetoothOff": "Bluetooth вимкнено",
   "snrIndicator_lastSeen": "Останній раз бачили",
   "snrIndicator_nearByRepeaters": "Ближні ретранслятори",
-  "chat_ShowAllPaths": "Показати всі шляхи",
   "settings_clientRepeatFreqWarning": "Повтор без підключення до мережі вимагає частоти 433, 869 або 918 МГц.",
   "settings_clientRepeatSubtitle": "Дозвольте цьому пристрою повторювати пакети даних для інших пристроїв.",
   "settings_clientRepeat": "Автономна система",
@@ -1895,16 +1823,6 @@
   "tcpConnectionFailed": "Не вдалося встановити з'єднання TCP: {error}",
   "map_showDiscoveryContacts": "Показати контакти Відкриття",
   "map_setAsMyLocation": "Встановити моє місцезнаходження",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacySubtitle": "Керуйте інформацією, яку буде спільно використовуватися",
   "settings_privacy": "Налаштування приватності",
   "settings_telemetryBaseMode": "Режим базової телеметрії",
@@ -1927,17 +1845,8 @@
   "contact_lastSeen": "Останній раз бачили",
   "contact_teleEnv": "Середовище телеметрії",
   "contact_teleEnvSubtitle": "Дозволити спільний доступ до даних датчиків середовища",
-  "appSettings_initialRouteWeight": "Початкова вартість маршруту",
-  "appSettings_initialRouteWeightSubtitle": "Початкова вага для нових відкритих шляхів",
-  "appSettings_maxRouteWeight": "Максимальна вага маршруту",
-  "appSettings_maxRouteWeightSubtitle": "Максимальна вага, яку може накопичити маршрут завдяки успішним доставкам.",
-  "appSettings_routeWeightSuccessIncrement": "Збільшення ваги успіху",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Вага, додана до маршруту після успішної доставки",
-  "appSettings_routeWeightFailureDecrement": "Зменшення ваги помилки",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Вага, яка була знята з маршруту після невдалої доставки",
   "appSettings_maxMessageRetries": "Максимальна кількість повторних спроб надсилання повідомлення",
   "appSettings_maxMessageRetriesSubtitle": "Кількість спроб повторного відправлення повідомлення перед тим, як позначити його як невдале",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Режим телеметрії оновлено",
   "map_showOverlaps": "Перекриття ключа повторювача",
   "map_runTraceWithReturnPath": "Повернутися назад тим же шляхом",

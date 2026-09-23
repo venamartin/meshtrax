@@ -236,6 +236,24 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                 ],
               ),
               const SizedBox(height: 8),
+              // An empty path is a real choice: send with no repeaters.
+              ListTile(
+                dense: true,
+                leading: const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+                ),
+                title: Text(
+                  l10n.path_direct,
+                  style: const TextStyle(fontSize: 14),
+                ),
+                subtitle: Text(
+                  l10n.path_directSubtitle,
+                  style: const TextStyle(fontSize: 10),
+                ),
+                onTap: () => Navigator.pop(context, Uint8List(0)),
+              ),
               if (_validContacts.isEmpty) ...[
                 Center(
                   child: Padding(
