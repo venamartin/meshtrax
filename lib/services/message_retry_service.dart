@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
+import '../connector/meshcore_protocol.dart';
 import '../helpers/path_helper.dart';
 import 'app_settings_service.dart';
 import 'app_debug_log_service.dart';
@@ -40,14 +41,13 @@ class RetryServiceConfig {
   final void Function(Message) updateMessage;
   final Function(Contact)? clearContactPath;
   final Function(Contact, Uint8List, int)? setContactPath;
-  final int Function(int pathLength, int messageBytes, {String? contactKey})?
+  final int Function(int pathLength, int messageBytes, {Contact? contact})?
   calculateTimeout;
   final Uint8List? Function()? getSelfPublicKey;
   final String Function(Contact, String)? prepareContactOutboundText;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
   final void Function(String, PathSelection, bool, int?)? recordPathResult;
-  final void Function(String, int, int, int)? onDeliveryObserved;
   final PathSelection? Function(
     String contactKey,
     int attemptIndex,
@@ -68,7 +68,6 @@ class RetryServiceConfig {
     this.appSettingsService,
     this.debugLogService,
     this.recordPathResult,
-    this.onDeliveryObserved,
     this.selectRetryPath,
   });
 }
@@ -439,15 +438,20 @@ class MessageRetryService extends ChangeNotifier {
       _expectedAckHashes[messageId]!.add(ackHash);
     }
 
-    // Calculate timeout: prefer ML prediction, then device-provided, then physics fallback
     final pathLengthValue = message.pathLength ?? contact.pathLength;
 
     int actualTimeout = timeoutMs;
     if (config.calculateTimeout != null) {
+      final outboundText =
+          config.prepareContactOutboundText?.call(contact, message.text) ??
+          message.text;
       actualTimeout = config.calculateTimeout!(
         pathLengthValue,
-        message.text.length,
-        contactKey: contact.publicKeyHex,
+        txtMsgPacketBytes(
+          utf8.encode(outboundText).length,
+          hops: pathLengthValue < 0 ? 0 : pathLengthValue,
+        ),
+        contact: contact,
       );
     }
 
@@ -698,16 +702,6 @@ class MessageRetryService extends ChangeNotifier {
           true,
           tripTimeMs,
         );
-        if (config?.onDeliveryObserved != null &&
-            tripTimeMs > 0 &&
-            message.pathLength != null) {
-          config!.onDeliveryObserved!(
-            contact.publicKeyHex,
-            message.pathLength!,
-            message.text.length,
-            tripTimeMs,
-          );
-        }
         if (!wasAlreadyResolved) {
           _onMessageResolved(matchedMessageId, contact.publicKeyHex);
         }

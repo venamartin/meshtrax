@@ -67,8 +67,6 @@ dependencies:
   web: ^1.1.1
   flutter_svg: ^2.0.10+1
   flutter_blue_plus_platform_interface: ^8.2.1
-  ml_algo: ^16.0.0
-  ml_dataframe: ^1.0.0
 
   file_selector: ^1.1.0
   file_saver: ^0.3.1

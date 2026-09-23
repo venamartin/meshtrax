@@ -1,5 +1,4 @@
 import 'dart:convert';
-import '../models/delivery_observation.dart';
 import '../models/path_history.dart';
 import '../storage/prefs_manager.dart';
 
@@ -8,7 +7,6 @@ class StorageService {
   static const String _repeaterPasswordsKey = 'repeater_passwords';
   static const String _repeaterAutoClockSyncAfterLoginKey =
       'repeater_auto_clock_sync_after_login';
-  static const String _deliveryObservationsKey = 'delivery_observations';
   static const String _roomAdminFlagsKey = 'room_admin_flags';
 
   Future<Map<String, bool>> _loadRepeaterAutoClockSyncAfterLogin() async {
@@ -161,32 +159,4 @@ class StorageService {
     return (await _loadRoomAdminFlags()).contains(pubKeyHex);
   }
 
-  Future<void> saveDeliveryObservations(
-    List<DeliveryObservation> observations,
-  ) async {
-    final prefs = PrefsManager.instance;
-    final jsonStr = jsonEncode(observations.map((o) => o.toJson()).toList());
-    await prefs.setString(_deliveryObservationsKey, jsonStr);
-  }
-
-  Future<List<DeliveryObservation>> loadDeliveryObservations() async {
-    final prefs = PrefsManager.instance;
-    final jsonStr = prefs.getString(_deliveryObservationsKey);
-
-    if (jsonStr == null) return [];
-
-    try {
-      final list = jsonDecode(jsonStr) as List;
-      return list
-          .map((e) => DeliveryObservation.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<void> clearDeliveryObservations() async {
-    final prefs = PrefsManager.instance;
-    await prefs.remove(_deliveryObservationsKey);
-  }
 }

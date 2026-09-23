@@ -25,7 +25,6 @@ import 'services/background_service.dart';
 import 'services/map_tile_cache_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
-import 'services/timeout_prediction_service.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 
@@ -47,7 +46,6 @@ void main() async {
   final mapTileCacheService = MapTileCacheService();
   final chatTextScaleService = ChatTextScaleService();
   final uiViewStateService = UiViewStateService();
-  final timeoutPredictionService = TimeoutPredictionService(storage);
 
   // Load settings
   await appSettingsService.loadSettings();
@@ -68,7 +66,6 @@ void main() async {
 
   await chatTextScaleService.initialize();
   await uiViewStateService.initialize();
-  await timeoutPredictionService.initialize();
 
   // Wire up connector with services
   connector.initialize(
@@ -78,7 +75,6 @@ void main() async {
     bleDebugLogService: bleDebugLogService,
     appDebugLogService: appDebugLogService,
     backgroundService: backgroundService,
-    timeoutPredictionService: timeoutPredictionService,
   );
 
   await connector.loadContactCache();
@@ -102,7 +98,6 @@ void main() async {
       mapTileCacheService: mapTileCacheService,
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
-      timeoutPredictionService: timeoutPredictionService,
     ),
   );
 }
@@ -139,7 +134,6 @@ class MeshTraxApp extends StatefulWidget {
   final MapTileCacheService mapTileCacheService;
   final ChatTextScaleService chatTextScaleService;
   final UiViewStateService uiViewStateService;
-  final TimeoutPredictionService timeoutPredictionService;
 
   const MeshTraxApp({
     super.key,
@@ -153,7 +147,6 @@ class MeshTraxApp extends StatefulWidget {
     required this.mapTileCacheService,
     required this.chatTextScaleService,
     required this.uiViewStateService,
-    required this.timeoutPredictionService,
   });
 
   @override
@@ -259,7 +252,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         Provider.value(value: widget.storage),
         Provider.value(value: widget.mapTileCacheService),
-        ChangeNotifierProvider.value(value: widget.timeoutPredictionService),
       ],
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {

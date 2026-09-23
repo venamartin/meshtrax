@@ -27,7 +27,6 @@ import '../services/message_retry_service.dart';
 import '../services/path_history_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
-import '../services/timeout_prediction_service.dart';
 import '../services/notification_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
@@ -343,10 +342,6 @@ class MeshCoreConnector extends ChangeNotifier {
   int _loadedContactsCount = 0;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
-  TimeoutPredictionService? _timeoutPredictionService;
-  // Intentionally global (not per-contact): tracks overall network activity.
-  // Frequent RX from any source indicates a busy network with more collisions.
-  DateTime _lastRxTime = DateTime.now();
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastContactMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastChannelMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -889,7 +884,6 @@ class MeshCoreConnector extends ChangeNotifier {
     BleDebugLogService? bleDebugLogService,
     AppDebugLogService? appDebugLogService,
     BackgroundService? backgroundService,
-    TimeoutPredictionService? timeoutPredictionService,
   }) {
     _retryService = retryService;
     _pathHistoryService = pathHistoryService;
@@ -897,7 +891,6 @@ class MeshCoreConnector extends ChangeNotifier {
     _bleDebugLogService = bleDebugLogService;
     _appDebugLogService = appDebugLogService;
     _backgroundService = backgroundService;
-    _timeoutPredictionService = timeoutPredictionService;
     _usbManager.setDebugLogService(_appDebugLogService);
     _tcpConnector.setDebugLogService(_appDebugLogService);
 
@@ -914,11 +907,11 @@ class MeshCoreConnector extends ChangeNotifier {
         updateMessage: _updateMessage,
         clearContactPath: clearContactPath,
         setContactPath: setContactPath,
-        calculateTimeout: (pathLength, messageBytes, {String? contactKey}) =>
+        calculateTimeout: (pathLength, messageBytes, {Contact? contact}) =>
             calculateTimeout(
               pathLength: pathLength,
               messageBytes: messageBytes,
-              contactKey: contactKey,
+              contact: contact,
             ),
         getSelfPublicKey: () => _selfPublicKey,
         prepareContactOutboundText: prepareContactOutboundText,
@@ -933,16 +926,6 @@ class MeshCoreConnector extends ChangeNotifier {
                   maxRetries: maxRetries,
                   recentSelections: recentSelections,
                 ),
-        onDeliveryObserved: (contactKey, pathLength, messageBytes, tripTimeMs) {
-          final secSinceRx = DateTime.now().difference(_lastRxTime).inSeconds;
-          _timeoutPredictionService?.recordObservation(
-            contactKey: contactKey,
-            pathLength: pathLength,
-            messageBytes: messageBytes,
-            tripTimeMs: tripTimeMs,
-            secondsSinceLastRx: secSinceRx,
-          );
-        },
       ),
     );
     final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
@@ -3392,30 +3375,6 @@ class MeshCoreConnector extends ChangeNotifier {
     );
   }
 
-  /// Feeds one repeater CLI round trip into the timeout model.
-  ///
-  /// Repeater commands never reach [_handleRepeaterCommandAck]: the firmware
-  /// sends no ack for TXT_TYPE_CLI_DATA, and _handleMessageSent returns early
-  /// on CLI sends, so the ack plumbing that trains the model for ordinary
-  /// messages is dead on this path. Without this the model never learns what
-  /// a repeater command actually costs and every one is budgeted from the
-  /// worst-case physics bound — 4.1 s on a link measured at 955 ms.
-  void recordRepeaterCommandRoundTrip({
-    required String contactKey,
-    required int pathLength,
-    required int messageBytes,
-    required int tripTimeMs,
-  }) {
-    if (tripTimeMs <= 0) return;
-    _timeoutPredictionService?.recordObservation(
-      contactKey: contactKey,
-      pathLength: pathLength,
-      messageBytes: messageBytes,
-      tripTimeMs: tripTimeMs,
-      secondsSinceLastRx: DateTime.now().difference(_lastRxTime).inSeconds,
-    );
-  }
-
   void recordRepeaterPathResult(
     Contact contact,
     PathSelection selection,
@@ -4664,7 +4623,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handleFrame(List<int> data) {
     if (data.isEmpty) return;
-    _lastRxTime = DateTime.now();
 
     final frame = Uint8List.fromList(data);
     _receivedFramesController.add(frame);
@@ -5191,60 +5149,43 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return 50; // fallback: ~SF7/BW125 for 100 bytes
   }
 
-  /// Physics-based worst-case timeout (ceiling).
-  int _physicsMaxTimeout(int pathLength, int airtime) {
-    if (pathLength < 0) {
-      // Match firmware: SEND_TIMEOUT_BASE_MILLIS + (FLOOD_SEND_TIMEOUT_FACTOR * airtime)
-      return 500 + (16 * airtime);
-    } else {
-      return 500 + ((airtime * 6 + 250) * (pathLength + 1));
-    }
-  }
+  /// Companion firmware budget for a direct send: SEND_TIMEOUT_BASE_MILLIS +
+  /// (airtime × DIRECT_SEND_PERHOP_FACTOR + DIRECT_SEND_PERHOP_EXTRA_MILLIS)
+  /// × (hops + 1).
+  int _directTimeoutMs(int hops, int airtime) =>
+      500 + ((airtime * 6 + 250) * (hops + 1));
 
-  int _physicsMinTimeout(int pathLength, int airtime) {
-    if (pathLength < 0) {
-      // Same as max for flood — firmware uses a single formula
-      return 500 + (16 * airtime);
-    } else {
-      return airtime * (pathLength + 1);
-    }
-  }
+  /// Hops assumed for a flood to a contact whose distance is unknown.
+  static const int defaultFloodHops = 8;
+  static const int _minFloodTimeoutMs = 10000;
+  static const int _maxTimeoutMs = 60000;
 
-  /// Maximum timeout cap per retry attempt — prevents long-hop or slow-SF
-  /// paths from making a message appear to be "waiting" for minutes per attempt.
-  static const int _maxTimeoutMs = 60000; // 60 seconds
+  /// Best known distance to [contact] in hops, or null when nothing is known.
+  int? estimatedHopsTo(Contact contact) =>
+      contact.pathLength >= 0 ? contact.pathLength : null;
 
-  /// Calculate timeout for a message based on radio settings and path length.
-  /// Returns timeout in milliseconds, considering number of hops.
+  /// Timeout for one send attempt.
+  ///
+  /// Direct sends use the firmware's own formula. A flood needs a distance:
+  /// the firmware's flood formula (500 + 16 × airtime) has no hop term, so on
+  /// a multi-hop mesh it expires long before the reply can return. The reply
+  /// to a flood is itself a flood and every repeater adds a random delay, so
+  /// the direct budget over the estimated distance is doubled.
   int calculateTimeout({
     required int pathLength,
     int messageBytes = 100,
-    String? contactKey,
+    Contact? contact,
   }) {
     final airtime = _estimateAirtimeMs(messageBytes);
-    final physicsMin = _physicsMinTimeout(pathLength, airtime);
-    final physicsMax = _physicsMaxTimeout(pathLength, airtime);
-
-    // Try ML-based prediction
-    final secSinceRx = DateTime.now().difference(_lastRxTime).inSeconds;
-    final mlTimeout = _timeoutPredictionService?.predictTimeout(
-      contactKey: contactKey,
-      pathLength: pathLength,
-      messageBytes: messageBytes,
-      secondsSinceLastRx: secSinceRx,
-    );
-    if (mlTimeout != null) {
-      if (pathLength < 0) {
-        // Flood: trust ML, only enforce firmware formula as floor
-        if (mlTimeout < physicsMin) {
-          return physicsMin;
-        }
-      }
-      return mlTimeout.clamp(physicsMin, physicsMax).clamp(0, _maxTimeoutMs);
+    if (pathLength >= 0) {
+      return _directTimeoutMs(pathLength, airtime).clamp(0, _maxTimeoutMs);
     }
-
-    // No ML data — use firmware formula, capped
-    return physicsMax.clamp(0, _maxTimeoutMs);
+    final hops =
+        (contact == null ? null : estimatedHopsTo(contact)) ?? defaultFloodHops;
+    return (_directTimeoutMs(hops, airtime) * 2).clamp(
+      _minFloodTimeoutMs,
+      _maxTimeoutMs,
+    );
   }
 
   void _handleContact(Uint8List frame, {bool isContact = true}) {

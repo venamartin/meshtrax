@@ -26,9 +26,8 @@ import 'harness/ble_nus_tcp_bridge.dart';
 /// the timer SHOULD have been:
 ///
 ///   N2  12 neighbors round trips, each recorded against three predictions:
-///       what the screen uses today (messageBytes<=60, no contactKey), the
-///       same with the repeater's contactKey, and one sized for the real
-///       response — plus the companion's own est_timeout from the SENT frame
+///       what the screen uses today (messageBytes<=60) and one sized for the
+///       real response — plus the companion's own est_timeout from the SENT frame
 ///   N3  CLI round trips for comparison (the path PR #81 already fixed)
 ///
 /// FREQUENCY DISCIPLINE: measurements happen on 920.000 MHz. N0 moves F857
@@ -270,7 +269,6 @@ void main() {
     requireReady();
 
     final rep = live();
-    final key = rep.publicKeyHex;
     final rtts = <int>[];
     var losses = 0;
     var screenWouldTimeout = 0;
@@ -289,16 +287,10 @@ void main() {
         pathLength: pathLen,
         messageBytes: math.max(reqFrame.length, 60),
       );
-      // The two obvious improvements, measured alongside.
-      final predWithKey = ble.connector.calculateTimeout(
-        pathLength: pathLen,
-        messageBytes: math.max(reqFrame.length, 60),
-        contactKey: key,
-      );
+      // Sized for the real response, measured alongside.
       final predRespSized = ble.connector.calculateTimeout(
         pathLength: pathLen,
         messageBytes: 150,
-        contactKey: key,
       );
 
       final r = await neighborsOnce();
@@ -316,7 +308,7 @@ void main() {
         if (timedOut) screenWouldTimeout++;
         blog('#$i: ${r.rttMs}ms  path=$pathLen  screen=${predScreen}ms'
             '${timedOut ? '  << SCREEN TIMES OUT' : ''}  '
-            'withKey=${predWithKey}ms  respSized=${predRespSized}ms  '
+            'respSized=${predRespSized}ms  '
             'companion=${r.companionEstMs}ms');
       }
       await Future<void>.delayed(const Duration(seconds: 2));
