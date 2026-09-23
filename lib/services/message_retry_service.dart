@@ -7,7 +7,6 @@ import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../connector/meshcore_protocol.dart';
-import '../helpers/path_helper.dart';
 import 'app_settings_service.dart';
 import 'app_debug_log_service.dart';
 
@@ -23,16 +22,13 @@ class _AckHistoryEntry {
   });
 }
 
-/// (messageId, timestamp, attemptIndex, pathSelection) — stored per ACK hash
-/// for O(1) lookup.  [pathSelection] snapshots the route used for this
-/// specific attempt so that a late PUSH_CODE_SEND_CONFIRMED credits the
-/// correct path even when the message has since been retried on a different
-/// route.
+/// (messageId, timestamp, attemptIndex) — stored per ACK hash for O(1)
+/// lookup, so a late PUSH_CODE_SEND_CONFIRMED credits the attempt it
+/// belongs to.
 typedef AckHashMapping = ({
   String messageId,
   DateTime timestamp,
   int attemptIndex,
-  PathSelection? pathSelection,
 });
 
 class RetryServiceConfig {
@@ -47,14 +43,6 @@ class RetryServiceConfig {
   final String Function(Contact, String)? prepareContactOutboundText;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
-  final void Function(String, PathSelection, bool, int?)? recordPathResult;
-  final PathSelection? Function(
-    String contactKey,
-    int attemptIndex,
-    int maxRetries,
-    List<PathSelection> recentSelections,
-  )?
-  selectRetryPath;
 
   const RetryServiceConfig({
     required this.sendMessage,
@@ -67,8 +55,6 @@ class RetryServiceConfig {
     this.prepareContactOutboundText,
     this.appSettingsService,
     this.debugLogService,
-    this.recordPathResult,
-    this.selectRetryPath,
   });
 }
 
@@ -80,7 +66,6 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Timer> _timeoutTimers = {};
   final Map<String, Message> _pendingMessages = {};
   final Map<String, Contact> _pendingContacts = {};
-  final Map<String, List<PathSelection>> _attemptPathHistory = {};
   final Map<String, AckHashMapping> _ackHashToMessageId = {};
   final Map<String, List<int>> _expectedAckHashes = {};
   final List<_AckHistoryEntry> _ackHistory = [];
@@ -210,37 +195,6 @@ class MessageRetryService extends ChangeNotifier {
     _sendNextForContact(contactKey);
   }
 
-  PathSelection? _selectPathForAttempt(Message message, Contact contact) {
-    final config = _config;
-    if (config == null) return null;
-    final autoRotationEnabled =
-        config.appSettingsService?.settings.autoRouteRotationEnabled == true;
-    if (!autoRotationEnabled ||
-        contact.pathOverride != null ||
-        config.selectRetryPath == null) {
-      return null;
-    }
-
-    final recentSelections = List<PathSelection>.from(
-      _attemptPathHistory[message.messageId] ?? const <PathSelection>[],
-    );
-    return config.selectRetryPath!(
-      contact.publicKeyHex,
-      message.retryCount,
-      maxRetries,
-      recentSelections,
-    );
-  }
-
-  void _recordAttemptPathHistory(String messageId, PathSelection selection) {
-    if (selection.useFlood) return;
-    final history = _attemptPathHistory.putIfAbsent(messageId, () => []);
-    history.add(selection);
-    if (history.length > recentAttemptDiversityWindow) {
-      history.removeAt(0);
-    }
-  }
-
   Future<void> _attemptSend(String messageId) async {
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
@@ -248,50 +202,28 @@ class MessageRetryService extends ChangeNotifier {
 
     if (message == null || contact == null || config == null) return;
 
-    final currentSelection = _selectPathForAttempt(message, contact);
-
-    if (currentSelection != null) {
-      final updatedMessage = message.copyWith(
-        pathLength: currentSelection.useFlood ? -1 : currentSelection.hopCount,
-        pathBytes: currentSelection.useFlood
-            ? Uint8List(0)
-            : Uint8List.fromList(currentSelection.pathBytes),
-      );
-      _pendingMessages[messageId] = updatedMessage;
-    } else if (message.retryCount > 0) {
-      // No schedule entry for this retry — re-resolve path from current contact
-      // state so user's path override changes are picked up between retries.
+    if (message.retryCount > 0) {
+      // Re-resolve from current contact state so a path override changed
+      // between retries is picked up.
       final resolved = resolvePathSelection(contact);
-      final updatedMessage = message.copyWith(
+      _pendingMessages[messageId] = message.copyWith(
         pathLength: resolved.useFlood ? -1 : resolved.hopCount,
         pathBytes: Uint8List.fromList(resolved.pathBytes),
       );
-      _pendingMessages[messageId] = updatedMessage;
     }
 
-    // Re-read after potential schedule update
     final effectiveMessage = _pendingMessages[messageId] ?? message;
 
     // Sync path settings with device before sending
     if (config.setContactPath != null && config.clearContactPath != null) {
-      final bool useFlood = currentSelection != null
-          ? currentSelection.useFlood
-          : (effectiveMessage.pathLength != null &&
-                effectiveMessage.pathLength! < 0);
-      final List<int> pathBytes = currentSelection != null
-          ? currentSelection.pathBytes
-          : effectiveMessage.pathBytes;
-      final int hopCount = currentSelection != null
-          ? currentSelection.hopCount
-          : (effectiveMessage.pathLength ?? 0);
-
-      if (useFlood) {
+      final pathLength = effectiveMessage.pathLength;
+      if (pathLength != null && pathLength < 0) {
         await config.clearContactPath!(contact);
-      } else if (effectiveMessage.pathLength != null) {
+      } else if (pathLength != null) {
         await config.setContactPath!(
           contact,
-          Uint8List.fromList(pathBytes),
-          hopCount,
+          Uint8List.fromList(effectiveMessage.pathBytes),
+          pathLength,
         );
       }
     }
@@ -310,10 +242,6 @@ class MessageRetryService extends ChangeNotifier {
         '_attemptSend: message $messageId retryCount changed during path sync, aborting',
       );
       return;
-    }
-
-    if (currentSelection != null) {
-      _recordAttemptPathHistory(messageId, currentSelection);
     }
 
     final attempt = message.retryCount;
@@ -429,7 +357,6 @@ class MessageRetryService extends ChangeNotifier {
       messageId: messageId,
       timestamp: DateTime.now(),
       attemptIndex: message.retryCount,
-      pathSelection: _selectionFromMessage(message, contact),
     );
 
     // Add this ACK hash to the list of expected ACKs for this message (for history)
@@ -498,7 +425,6 @@ class MessageRetryService extends ChangeNotifier {
     _expectedHashToMessageId.removeWhere((_, msgId) => msgId == messageId);
     _pendingMessages.remove(messageId);
     _pendingContacts.remove(messageId);
-    _attemptPathHistory.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -507,7 +433,6 @@ class MessageRetryService extends ChangeNotifier {
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
     final config = _config;
-    final selection = message != null ? _selectionFromMessage(message, contact) : null;
 
     if (message == null || contact == null) {
       debugPrint(
@@ -526,16 +451,6 @@ class MessageRetryService extends ChangeNotifier {
 
     if (message.retryCount < maxRetries - 1) {
       final backoffMs = 1000 * (1 << message.retryCount);
-
-      if (selection != null) {
-        _recordPathResultFromMessage(
-          contact.publicKeyHex,
-          message,
-          selection,
-          false,
-          null,
-        );
-      }
 
       final updatedMessage = message.copyWith(
         retryCount: message.retryCount + 1,
@@ -560,18 +475,7 @@ class MessageRetryService extends ChangeNotifier {
       final failedMessage = message.copyWith(status: MessageStatus.failed);
       _pendingMessages[messageId] = failedMessage;
 
-      if (config?.appSettingsService?.settings.clearPathOnMaxRetry == true &&
-          config?.clearContactPath != null) {
-        config!.clearContactPath!(contact);
-      }
-
-      _recordPathResultFromMessage(
-        contact.publicKeyHex,
-        message,
-        selection,
-        false,
-        null,
-      );
+      config?.clearContactPath?.call(contact);
 
       config?.updateMessage(failedMessage);
 
@@ -619,7 +523,6 @@ class MessageRetryService extends ChangeNotifier {
     final config = _config;
     String? matchedMessageId;
     int? matchedAttemptIndex;
-    PathSelection? matchedPathSelection;
     final ackHashHex = ackHash.toRadixString(16).padLeft(8, '0');
 
     // Clean up old ACK hash mappings (older than 15 minutes)
@@ -639,7 +542,6 @@ class MessageRetryService extends ChangeNotifier {
     if (mapping != null) {
       matchedMessageId = mapping.messageId;
       matchedAttemptIndex = mapping.attemptIndex;
-      matchedPathSelection = mapping.pathSelection;
     } else {
       config?.debugLogService?.warn(
         'PUSH_CODE_SEND_CONFIRMED: ACK hash $ackHashHex not found in direct mapping, trying fallback',
@@ -670,7 +572,6 @@ class MessageRetryService extends ChangeNotifier {
       }
       final contact = _pendingContacts[matchedMessageId];
       final ackedAttempt = matchedAttemptIndex ?? message.retryCount;
-      final selection = matchedPathSelection ?? _selectionFromMessage(message, contact);
 
       final shortText = message.text.length > 20
           ? '${message.text.substring(0, 20)}...'
@@ -694,17 +595,8 @@ class MessageRetryService extends ChangeNotifier {
 
       config?.updateMessage(deliveredMessage);
 
-      if (contact != null) {
-        _recordPathResultFromMessage(
-          contact.publicKeyHex,
-          message,
-          selection,
-          true,
-          tripTimeMs,
-        );
-        if (!wasAlreadyResolved) {
-          _onMessageResolved(matchedMessageId, contact.publicKeyHex);
-        }
+      if (contact != null && !wasAlreadyResolved) {
+        _onMessageResolved(matchedMessageId, contact.publicKeyHex);
       }
 
       notifyListeners();
@@ -744,35 +636,6 @@ class MessageRetryService extends ChangeNotifier {
     }
   }
 
-  void _recordPathResultFromMessage(
-    String contactKey,
-    Message message,
-    PathSelection? selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    final callback = _config?.recordPathResult;
-    if (callback == null) return;
-    final contact = _pendingContacts[message.messageId];
-    final recordSelection = selection ?? _selectionFromMessage(message, contact);
-    if (recordSelection == null) return;
-    callback(contactKey, recordSelection, success, tripTimeMs);
-  }
-
-  PathSelection? _selectionFromMessage(Message message, [Contact? contact]) {
-    if (message.pathLength != null && message.pathLength! < 0) {
-      return const PathSelection(pathBytes: [], hopCount: -1, useFlood: true);
-    }
-    if (message.pathBytes.isEmpty && message.pathLength == null) {
-      return null;
-    }
-    return PathSelection(
-      pathBytes: message.pathBytes,
-      hopCount: message.pathLength ?? PathHelper.getHopCount(message.pathBytes, stride: contact?.pathHashSize ?? 1),
-      useFlood: false,
-    );
-  }
-
   @override
   void dispose() {
     for (var timer in _timeoutTimers.values) {
@@ -781,7 +644,6 @@ class MessageRetryService extends ChangeNotifier {
     _timeoutTimers.clear();
     _pendingMessages.clear();
     _pendingContacts.clear();
-    _attemptPathHistory.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();

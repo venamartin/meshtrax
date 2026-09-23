@@ -312,15 +312,11 @@ class RepeaterCommandService {
           attempt: attempt,
           attemptCount: attemptCount,
         );
-        // Success trains the rotation stats too — these screens used to
-        // record only failures, so they could only ever hurt a path's score.
-        _connector.recordRepeaterPathResult(repeater, resolved, true, null);
         return response;
       } on TimeoutException {
         // fall through to the next attempt
       }
     }
-    _connector.recordRepeaterPathResult(repeater, resolved, false, null);
     throw TimeoutException('No response after $attemptCount attempts');
   }
 

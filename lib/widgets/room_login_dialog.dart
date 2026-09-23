@@ -147,12 +147,6 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
         appLogger.warn('Login timed out for ${room.name}', tag: 'RoomLogin');
       }
 
-      if (loginResult == true) {
-        _connector.recordRepeaterPathResult(room, selection, true, null);
-      } else {
-        _connector.recordRepeaterPathResult(room, selection, false, null);
-      }
-
       if (loginResult != true) {
         throw Exception('Wrong password or node is unreachable');
       }

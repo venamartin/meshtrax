@@ -17,7 +17,6 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
-import '../services/path_history_service.dart';
 import '../helpers/path_helper.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_tile_cache_service.dart';
@@ -137,8 +136,8 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<MeshCoreConnector, AppSettingsService, PathHistoryService>(
-      builder: (context, connector, settingsService, pathHistory, child) {
+    return Consumer2<MeshCoreConnector, AppSettingsService>(
+      builder: (context, connector, settingsService, child) {
         final tileCache = context.read<MapTileCacheService>();
         final settings = settingsService.settings;
         final allContacts = connector.allContacts;
@@ -201,14 +200,13 @@ class _MapScreenState extends State<MapScreen> {
             )
             .join(',');
         final cacheKey =
-            '$filteredKeys|$anchorKeys|${pathHistory.version}:${connector.currentSf}:${connector.currentBwHz}:${connector.currentTxPower}:${settings.mapShowGuessedLocations}';
+            '$filteredKeys|$anchorKeys|${connector.currentSf}:${connector.currentBwHz}:${connector.currentTxPower}:${settings.mapShowGuessedLocations}';
         if (cacheKey != _guessedLocationsCacheKey) {
           _guessedLocationsCacheKey = cacheKey;
           _cachedGuessedLocations = settings.mapShowGuessedLocations
               ? _computeGuessedLocations(
                   filteredByKeyPrefix,
                   allContactsWithLocation,
-                  pathHistory,
                   maxRangeKm,
                 )
               : [];
@@ -596,7 +594,6 @@ class _MapScreenState extends State<MapScreen> {
   List<_GuessedLocation> _computeGuessedLocations(
     List<Contact> allContacts,
     List<Contact> withLocation,
-    PathHistoryService pathHistory,
     double? maxRangeKm,
   ) {
     // Index known-location repeaters by their hash prefix per stride.
@@ -640,18 +637,13 @@ class _MapScreenState extends State<MapScreen> {
       // earlier bytes would anchor against our own side of the network.
       final repeaterByHash = getRepeaterMapForStride(contact.pathHashSize);
 
-      final pathSets = <List<int>>[
-        contact.path.toList(),
-        ...pathHistory
-            .getRecentPaths(contact.publicKeyHex)
-            .map((r) => r.pathBytes),
-      ];
       final lastHopBytes = <String>{};
-      for (final pathBytes in pathSets) {
-        final hops = PathHelper.getHops(pathBytes, stride: contact.pathHashSize);
-        if (hops.isEmpty) continue;
-        final lastHop = hops.last;
-        final prefix = PathHelper.hopHex(lastHop);
+      final hops = PathHelper.getHops(
+        contact.path,
+        stride: contact.pathHashSize,
+      );
+      if (hops.isNotEmpty) {
+        final prefix = PathHelper.hopHex(hops.last);
         lastHopBytes.add(prefix);
         final r = repeaterByHash[prefix];
         if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));

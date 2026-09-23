@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/models/contact.dart';
-import 'package:meshtrax/models/path_history.dart';
 import 'package:meshtrax/models/app_settings.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 
@@ -182,180 +181,19 @@ void main() {
     );
   });
 
-  group('PathRecord — routeWeight field', () {
-    test('default routeWeight is 1.0', () {
-      final record = PathRecord(
-        hopCount: 2,
-        tripTimeMs: 500,
-        timestamp: DateTime(2024),
-        wasFloodDiscovery: false,
-        pathBytes: [0x01, 0x02],
-        successCount: 1,
-        failureCount: 0,
-      );
-      expect(record.routeWeight, equals(1.0));
+  group('AppSettings — maxMessageRetries', () {
+    test('defaults to 3', () {
+      expect(AppSettings().maxMessageRetries, equals(3));
     });
 
-    test('custom routeWeight is preserved', () {
-      final record = PathRecord(
-        hopCount: 3,
-        tripTimeMs: 800,
-        timestamp: DateTime(2024),
-        wasFloodDiscovery: false,
-        pathBytes: [0x01],
-        successCount: 5,
-        failureCount: 2,
-        routeWeight: 3.5,
-      );
-      expect(record.routeWeight, equals(3.5));
-    });
-
-    test('toJson includes route_weight', () {
-      final record = PathRecord(
-        hopCount: 1,
-        tripTimeMs: 200,
-        timestamp: DateTime(2024),
-        wasFloodDiscovery: true,
-        pathBytes: [],
-        successCount: 0,
-        failureCount: 0,
-        routeWeight: 2.25,
-      );
-      final json = record.toJson();
-      expect(json.containsKey('route_weight'), isTrue);
-      expect(json['route_weight'], equals(2.25));
-    });
-
-    test('fromJson reads route_weight', () {
-      final json = {
-        'hop_count': 2,
-        'trip_time_ms': 400,
-        'timestamp': DateTime(2024).toIso8601String(),
-        'was_flood': false,
-        'path_bytes': [1, 2, 3],
-        'success_count': 3,
-        'failure_count': 1,
-        'route_weight': 4.0,
-      };
-      final record = PathRecord.fromJson(json);
-      expect(record.routeWeight, equals(4.0));
-    });
-
-    test(
-      'fromJson with missing route_weight defaults to 1.0 (backward compat)',
-      () {
-        final json = {
-          'hop_count': 1,
-          'trip_time_ms': 100,
-          'timestamp': DateTime(2024).toIso8601String(),
-          'was_flood': false,
-          'path_bytes': [],
-          'success_count': 0,
-          'failure_count': 0,
-          // 'route_weight' intentionally omitted
-        };
-        final record = PathRecord.fromJson(json);
-        expect(record.routeWeight, equals(1.0));
-      },
-    );
-  });
-
-  group('AppSettings — new fields', () {
-    test('default values are correct', () {
-      final settings = AppSettings();
-      expect(settings.maxRouteWeight, equals(5.0));
-      expect(settings.initialRouteWeight, equals(3.0));
-      expect(settings.routeWeightSuccessIncrement, equals(0.5));
-      expect(settings.routeWeightFailureDecrement, equals(0.2));
-      expect(settings.maxMessageRetries, equals(5));
-    });
-
-    test('toJson includes all new fields', () {
-      final settings = AppSettings();
-      final json = settings.toJson();
-      expect(json.containsKey('max_route_weight'), isTrue);
-      expect(json.containsKey('initial_route_weight'), isTrue);
-      expect(json.containsKey('route_weight_success_increment'), isTrue);
-      expect(json.containsKey('route_weight_failure_decrement'), isTrue);
-      expect(json.containsKey('max_message_retries'), isTrue);
-      expect(json['max_route_weight'], equals(5.0));
-      expect(json['initial_route_weight'], equals(3.0));
-      expect(json['route_weight_success_increment'], equals(0.5));
-      expect(json['route_weight_failure_decrement'], equals(0.2));
+    test('round-trips through JSON', () {
+      final json = AppSettings().copyWith(maxMessageRetries: 5).toJson();
       expect(json['max_message_retries'], equals(5));
+      expect(AppSettings.fromJson(json).maxMessageRetries, equals(5));
     });
 
-    test('fromJson reads all new fields', () {
-      final json = {
-        'max_route_weight': 10.0,
-        'initial_route_weight': 2.0,
-        'route_weight_success_increment': 1.0,
-        'route_weight_failure_decrement': 1.5,
-        'max_message_retries': 8,
-      };
-      final settings = AppSettings.fromJson(json);
-      expect(settings.maxRouteWeight, equals(10.0));
-      expect(settings.initialRouteWeight, equals(2.0));
-      expect(settings.routeWeightSuccessIncrement, equals(1.0));
-      expect(settings.routeWeightFailureDecrement, equals(1.5));
-      expect(settings.maxMessageRetries, equals(8));
-    });
-
-    test(
-      'fromJson with missing new fields uses defaults (backward compat)',
-      () {
-        // Simulate an old settings JSON with none of the new fields
-        final json = <String, dynamic>{};
-        final settings = AppSettings.fromJson(json);
-        expect(settings.maxRouteWeight, equals(5.0));
-        expect(settings.initialRouteWeight, equals(3.0));
-        expect(settings.routeWeightSuccessIncrement, equals(0.5));
-        expect(settings.routeWeightFailureDecrement, equals(0.2));
-        expect(settings.maxMessageRetries, equals(5));
-      },
-    );
-
-    test('copyWith works for maxRouteWeight', () {
-      final settings = AppSettings();
-      final updated = settings.copyWith(maxRouteWeight: 8.0);
-      expect(updated.maxRouteWeight, equals(8.0));
-      // Other fields should be unchanged
-      expect(updated.initialRouteWeight, equals(settings.initialRouteWeight));
-      expect(updated.maxMessageRetries, equals(settings.maxMessageRetries));
-    });
-
-    test('copyWith works for initialRouteWeight', () {
-      final settings = AppSettings();
-      final updated = settings.copyWith(initialRouteWeight: 3.0);
-      expect(updated.initialRouteWeight, equals(3.0));
-      expect(updated.maxRouteWeight, equals(settings.maxRouteWeight));
-    });
-
-    test('copyWith works for routeWeightSuccessIncrement', () {
-      final settings = AppSettings();
-      final updated = settings.copyWith(routeWeightSuccessIncrement: 0.25);
-      expect(updated.routeWeightSuccessIncrement, equals(0.25));
-      expect(
-        updated.routeWeightFailureDecrement,
-        equals(settings.routeWeightFailureDecrement),
-      );
-    });
-
-    test('copyWith works for routeWeightFailureDecrement', () {
-      final settings = AppSettings();
-      final updated = settings.copyWith(routeWeightFailureDecrement: 0.75);
-      expect(updated.routeWeightFailureDecrement, equals(0.75));
-      expect(
-        updated.routeWeightSuccessIncrement,
-        equals(settings.routeWeightSuccessIncrement),
-      );
-    });
-
-    test('copyWith works for maxMessageRetries', () {
-      final settings = AppSettings();
-      final updated = settings.copyWith(maxMessageRetries: 10);
-      expect(updated.maxMessageRetries, equals(10));
-      expect(updated.maxRouteWeight, equals(settings.maxRouteWeight));
+    test('fromJson without the key uses the default', () {
+      expect(AppSettings.fromJson({}).maxMessageRetries, equals(3));
     });
   });
 }

@@ -553,9 +553,9 @@ void main() {
     );
   });
 
-  group('sendMessageWithRetry — auto path fallback', () {
+  group('sendMessageWithRetry — path resolution', () {
     test(
-      'preserves the contact path when auto-selection returns null',
+      'uses the contact path when no override is set',
       () async {
         final retryService = MessageRetryService();
         Message? addedMessage;
@@ -572,7 +572,6 @@ void main() {
             updateMessage: (_) {},
             clearContactPath: (_) {},
             setContactPath: (_, _, _) {},
-            selectRetryPath: (_, _, _, _) => null,
           ),
         );
 

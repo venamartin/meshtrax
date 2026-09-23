@@ -16,7 +16,6 @@ import 'screens/channel_chat_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'services/storage_service.dart';
 import 'services/message_retry_service.dart';
-import 'services/path_history_service.dart';
 import 'services/app_settings_service.dart';
 import 'services/notification_service.dart';
 import 'services/ble_debug_log_service.dart';
@@ -37,7 +36,6 @@ void main() async {
   // Initialize services
   final storage = StorageService();
   final connector = MeshCoreConnector();
-  final pathHistoryService = PathHistoryService(storage);
   final retryService = MessageRetryService();
   final appSettingsService = AppSettingsService();
   final bleDebugLogService = BleDebugLogService();
@@ -70,7 +68,6 @@ void main() async {
   // Wire up connector with services
   connector.initialize(
     retryService: retryService,
-    pathHistoryService: pathHistoryService,
     appSettingsService: appSettingsService,
     bleDebugLogService: bleDebugLogService,
     appDebugLogService: appDebugLogService,
@@ -90,7 +87,6 @@ void main() async {
     MeshTraxApp(
       connector: connector,
       retryService: retryService,
-      pathHistoryService: pathHistoryService,
       storage: storage,
       appSettingsService: appSettingsService,
       bleDebugLogService: bleDebugLogService,
@@ -126,7 +122,6 @@ https://creativecommons.org/licenses/by/4.0/
 class MeshTraxApp extends StatefulWidget {
   final MeshCoreConnector connector;
   final MessageRetryService retryService;
-  final PathHistoryService pathHistoryService;
   final StorageService storage;
   final AppSettingsService appSettingsService;
   final BleDebugLogService bleDebugLogService;
@@ -139,7 +134,6 @@ class MeshTraxApp extends StatefulWidget {
     super.key,
     required this.connector,
     required this.retryService,
-    required this.pathHistoryService,
     required this.storage,
     required this.appSettingsService,
     required this.bleDebugLogService,
@@ -244,7 +238,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       providers: [
         ChangeNotifierProvider.value(value: widget.connector),
         ChangeNotifierProvider.value(value: widget.retryService),
-        ChangeNotifierProvider.value(value: widget.pathHistoryService),
         ChangeNotifierProvider.value(value: widget.appSettingsService),
         ChangeNotifierProvider.value(value: widget.bleDebugLogService),
         ChangeNotifierProvider.value(value: widget.appDebugLogService),

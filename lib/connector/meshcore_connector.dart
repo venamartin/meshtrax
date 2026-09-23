@@ -24,7 +24,6 @@ import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
     if (dart.library.io) '../services/linux_ble_pairing_service.dart';
 import '../services/message_retry_service.dart';
-import '../services/path_history_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
 import '../services/notification_service.dart';
@@ -428,7 +427,6 @@ class MeshCoreConnector extends ChangeNotifier {
 
   // Services
   MessageRetryService? _retryService;
-  PathHistoryService? _pathHistoryService;
   AppSettingsService? _appSettingsService;
   BackgroundService? _backgroundService;
   final NotificationService _notificationService = NotificationService();
@@ -879,14 +877,12 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void initialize({
     required MessageRetryService retryService,
-    required PathHistoryService pathHistoryService,
     AppSettingsService? appSettingsService,
     BleDebugLogService? bleDebugLogService,
     AppDebugLogService? appDebugLogService,
     BackgroundService? backgroundService,
   }) {
     _retryService = retryService;
-    _pathHistoryService = pathHistoryService;
     _appSettingsService = appSettingsService;
     _bleDebugLogService = bleDebugLogService;
     _appDebugLogService = appDebugLogService;
@@ -917,18 +913,9 @@ class MeshCoreConnector extends ChangeNotifier {
         prepareContactOutboundText: prepareContactOutboundText,
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
-        recordPathResult: _recordPathResult,
-        selectRetryPath:
-            (contactKey, attemptIndex, maxRetries, recentSelections) =>
-                _selectAutoPathForAttempt(
-                  contactKey,
-                  attemptIndex: attemptIndex,
-                  maxRetries: maxRetries,
-                  recentSelections: recentSelections,
-                ),
       ),
     );
-    final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
+    final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 3;
     _retryService?.setMaxRetries(maxRetries);
   }
 
@@ -1101,78 +1088,6 @@ class MeshCoreConnector extends ChangeNotifier {
     }());
   }
 
-
-  void _recordPathResult(
-    String contactPubKeyHex,
-    PathSelection selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    if (_pathHistoryService == null) return;
-    final settings = _appSettingsService?.settings;
-    _pathHistoryService!.recordPathResult(
-      contactPubKeyHex,
-      selection,
-      success: success,
-      tripTimeMs: tripTimeMs,
-      successIncrement: settings?.routeWeightSuccessIncrement ?? 0.2,
-      failureDecrement: settings?.routeWeightFailureDecrement ?? 0.2,
-      maxWeight: settings?.maxRouteWeight ?? 5.0,
-    );
-
-    // Flood path attribution: when a flood delivery succeeds, credit the
-    // contact's current device path so the route the ACK traveled back
-    // through gets a weight boost in the path history.
-    if (selection.useFlood && success) {
-      final contact = _contacts.cast<Contact?>().firstWhere(
-        (c) => c?.publicKeyHex == contactPubKeyHex,
-        orElse: () => null,
-      );
-      if (contact != null &&
-          contact.pathLength >= 0 &&
-          contact.path.isNotEmpty) {
-        _pathHistoryService!.recordFloodPathAttribution(
-          contactPubKeyHex: contactPubKeyHex,
-          pathBytes: contact.path,
-          hopCount: contact.pathLength,
-          tripTimeMs: tripTimeMs,
-          successIncrement: settings?.routeWeightSuccessIncrement ?? 0.2,
-          maxWeight: settings?.maxRouteWeight ?? 5.0,
-        );
-      }
-
-      // Request a fresh contact from the device so the next flood
-      // attribution uses the most up-to-date path.
-      if (contact != null) {
-        unawaited(getContactByKey(contact.publicKey));
-      }
-    }
-  }
-
-  PathSelection? _selectAutoPathForAttempt(
-    String contactPubKeyHex, {
-    required int attemptIndex,
-    required int maxRetries,
-    List<PathSelection> recentSelections = const [],
-  }) {
-    final hasKnownPaths =
-        _pathHistoryService?.getRecentPaths(contactPubKeyHex).isNotEmpty ??
-        false;
-    if (!hasKnownPaths) {
-      return null;
-    }
-
-    final selection = _pathHistoryService?.selectPathForAttempt(
-      contactPubKeyHex,
-      attemptIndex: attemptIndex,
-      maxRetries: maxRetries,
-      recentSelections: recentSelections,
-    );
-    if (selection != null) {
-      _pathHistoryService?.recordPathAttempt(contactPubKeyHex, selection);
-    }
-    return selection;
-  }
 
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
@@ -3303,36 +3218,12 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resolves how the next send to [contact] will route. Only a user path
+  /// override is pushed to the radio; otherwise the firmware's own route is
+  /// left alone and simply reported.
   Future<PathSelection> preparePathForContactSend(Contact contact) async {
-    PathSelection? autoSelection;
-    final autoRotationEnabled =
-        _appSettingsService?.settings.autoRouteRotationEnabled == true;
-
-    // A zero-hop contact is already on the best route that exists, so route
-    // rotation has nothing to explore for it.
-    //
-    // Letting it pick flood here does not just slow one send. The flood
-    // branch below calls clearContactPath, which erases the direct path from
-    // the contact itself — and resolvePathSelection returns flood for any
-    // contact whose pathLength is negative. So one rotation experiment
-    // permanently demotes a neighbour to flood, with nothing to restore it
-    // but a fresh path discovery.
-    //
-    // Measured on the bench against a repeater in the same room at -46 dBm,
-    // reporting "Direct": it came back as "Flood" and stayed there, which
-    // also more than doubled the command give-up budget (12.4s -> 28.6s).
-    final isDirect = contact.pathLength == 0;
-
-    if (autoRotationEnabled && contact.pathOverride == null && !isDirect) {
-      final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
-      autoSelection = _selectAutoPathForAttempt(
-        contact.publicKeyHex,
-        attemptIndex: 0,
-        maxRetries: maxRetries,
-      );
-    }
-
-    final resolved = resolvePathSelection(contact, selection: autoSelection);
+    final resolved = resolvePathSelection(contact);
+    if (contact.pathOverride == null) return resolved;
 
     if (resolved.useFlood) {
       await clearContactPath(contact);
@@ -3343,7 +3234,6 @@ class MeshCoreConnector extends ChangeNotifier {
         resolved.hopCount,
       );
     }
-
     return resolved;
   }
 
@@ -3373,15 +3263,6 @@ class MeshCoreConnector extends ChangeNotifier {
       pathLength: selection.useFlood ? -1 : selection.hopCount,
       messageBytes: messageBytes,
     );
-  }
-
-  void recordRepeaterPathResult(
-    Contact contact,
-    PathSelection selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    _recordPathResult(contact.publicKeyHex, selection, success, tripTimeMs);
   }
 
   Future<bool> verifyContactPathOnDevice(
@@ -4814,15 +4695,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handlePathUpdated(Uint8List frame) {
     // Frame format: [0]=code, [1-32]=pub_key
-    if (frame.length >= 33 && _pathHistoryService != null) {
+    if (frame.length >= 33) {
       final pubKey = Uint8List.fromList(frame.sublist(1, 33));
-      final contact = _contacts.cast<Contact?>().firstWhere(
-        (c) => c != null && listEquals(c.publicKey, pubKey),
-        orElse: () => null,
-      );
+      final known = _contacts.any((c) => listEquals(c.publicKey, pubKey));
 
-      if (contact != null) {
-        _pathHistoryService!.handlePathUpdated(contact);
+      if (known) {
         // Refresh just this specific contact instead of all contacts.
         // This avoids race conditions with _preserveContactsOnRefresh flag
         // that can occur when using refreshContactsSinceLastmod().
@@ -5266,11 +5143,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _knownContactKeys.add(contact.publicKeyHex);
       _loadMessagesForContact(contact.publicKeyHex);
 
-      // Add path to history if we have a valid path
-      if (_pathHistoryService != null && contact.pathLength >= 0) {
-        _pathHistoryService!.handlePathUpdated(contact);
-      }
-
       notifyListeners();
 
       // Show notification for new contact (advertisement)
@@ -5336,11 +5208,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _knownContactKeys.add(contact.publicKeyHex);
     _loadMessagesForContact(contact.publicKeyHex);
-
-    // Add path to history if we have a valid path
-    if (_pathHistoryService != null && contact.pathLength >= 0) {
-      _pathHistoryService!.handlePathUpdated(contact);
-    }
 
     notifyListeners();
 
@@ -6330,7 +6197,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             messageBytes: entry.messageBytes,
           );
     entry.timeout = Timer(Duration(milliseconds: effectiveTimeoutMs), () {
-      _recordPathResult(entry.contactKeyHex, entry.selection, false, null);
       _pendingRepeaterAcks.remove(ackHashHex);
     });
     return true;
@@ -6341,7 +6207,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final entry = _pendingRepeaterAcks.remove(ackHashHex);
     if (entry == null) return false;
     entry.timeout?.cancel();
-    _recordPathResult(entry.contactKeyHex, entry.selection, true, tripTimeMs);
     return true;
   }
 
@@ -8455,12 +8320,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathOverrideBytes: existing.pathOverrideBytes,
       );
 
-      // Add path to history if we have a valid path
-      if (_pathHistoryService != null &&
-          _contacts[existingIndex].pathLength >= 0) {
-        _pathHistoryService!.handlePathUpdated(_contacts[existingIndex]);
-      }
-
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
 
       appLogger.info(
@@ -8723,10 +8582,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
     notifyListeners();
-  }
-
-  void deleteAllPaths() {
-    _pathHistoryService?.clearAllHistories();
   }
 
   Future<void> enableOverwriteOldest() async {

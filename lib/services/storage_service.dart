@@ -1,9 +1,7 @@
 import 'dart:convert';
-import '../models/path_history.dart';
 import '../storage/prefs_manager.dart';
 
 class StorageService {
-  static const String _pathHistoryPrefix = 'path_history_';
   static const String _repeaterPasswordsKey = 'repeater_passwords';
   static const String _repeaterAutoClockSyncAfterLoginKey =
       'repeater_auto_clock_sync_after_login';
@@ -39,49 +37,6 @@ class StorageService {
     settings[repeaterPubKeyHex] = enabled;
     final jsonStr = jsonEncode(settings);
     await prefs.setString(_repeaterAutoClockSyncAfterLoginKey, jsonStr);
-  }
-
-  Future<void> savePathHistory(
-    String contactPubKeyHex,
-    ContactPathHistory history,
-  ) async {
-    final prefs = PrefsManager.instance;
-    final key = '$_pathHistoryPrefix$contactPubKeyHex';
-    final jsonStr = jsonEncode(history.toJson());
-    await prefs.setString(key, jsonStr);
-  }
-
-  Future<ContactPathHistory?> loadPathHistory(String contactPubKeyHex) async {
-    final prefs = PrefsManager.instance;
-    final key = '$_pathHistoryPrefix$contactPubKeyHex';
-    final jsonStr = prefs.getString(key);
-
-    if (jsonStr == null) return null;
-
-    try {
-      final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      return ContactPathHistory.fromJson(contactPubKeyHex, json);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> clearPathHistory(String contactPubKeyHex) async {
-    final prefs = PrefsManager.instance;
-    final key = '$_pathHistoryPrefix$contactPubKeyHex';
-    await prefs.remove(key);
-  }
-
-  Future<void> clearAllPathHistories() async {
-    final prefs = PrefsManager.instance;
-    final keys = prefs.getKeys();
-    final pathHistoryKeys = keys.where(
-      (key) => key.startsWith(_pathHistoryPrefix),
-    );
-
-    for (final key in pathHistoryKeys) {
-      await prefs.remove(key);
-    }
   }
 
   /// Save a repeater password by public key hex

@@ -185,12 +185,6 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
         );
       }
 
-      if (loginResult == true) {
-        _connector.recordRepeaterPathResult(repeater, selection, true, null);
-      } else {
-        _connector.recordRepeaterPathResult(repeater, selection, false, null);
-      }
-
       if (loginResult != true) {
         if (mounted) {
           setState(() {
