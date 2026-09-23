@@ -1627,7 +1627,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_maxMessageRetriesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Number of retry attempts before marking a message as failed'**
+  /// **'Send attempts before a message is marked failed. The first uses the known route; the rest flood.'**
   String get appSettings_maxMessageRetriesSubtitle;
 
   /// No description provided for @appSettings_maxChannelMessageRetries.

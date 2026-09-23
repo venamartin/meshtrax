@@ -827,7 +827,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appSettings_maxMessageRetriesSubtitle =>
-      'Number of retry attempts before marking a message as failed';
+      'Send attempts before a message is marked failed. The first uses the known route; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

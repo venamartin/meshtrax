@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/contact.dart';
@@ -59,6 +60,8 @@ Contact _makeContact({
   required Uint8List publicKey,
   int pathLength = -1,
   List<int> path = const [],
+  int? pathOverride,
+  List<int>? pathOverrideBytes,
 }) {
   return Contact(
     publicKey: publicKey,
@@ -66,8 +69,53 @@ Contact _makeContact({
     type: 1,
     pathLength: pathLength,
     path: Uint8List.fromList(path),
+    pathOverride: pathOverride,
+    pathOverrideBytes: pathOverrideBytes == null
+        ? null
+        : Uint8List.fromList(pathOverrideBytes),
     lastSeen: DateTime.now(),
   );
+}
+
+/// A retry service wired to fakes that record what reached the radio.
+class _Harness {
+  final retryService = MessageRetryService();
+  final selfKey = _makeKey(0x42);
+  final sends = <({int attempt, int timestamp})>[];
+  final pathPushes = <List<int>>[];
+  int pathResets = 0;
+  Message? lastUpdate;
+  static const timeoutMs = 2000;
+
+  _Harness() {
+    retryService.initialize(
+      RetryServiceConfig(
+        sendMessage: (_, _, attempt, ts) =>
+            sends.add((attempt: attempt, timestamp: ts)),
+        addMessage: (_, message) => lastUpdate = message,
+        updateMessage: (message) => lastUpdate = message,
+        clearContactPath: (_) => pathResets++,
+        setContactPath: (_, bytes, _) => pathPushes.add(bytes.toList()),
+        calculateTimeout: (_, _, {contact}) => timeoutMs,
+        getSelfPublicKey: () => selfKey,
+      ),
+    );
+  }
+
+  int ackHashFor(int sendIndex, String text) {
+    final s = sends[sendIndex];
+    return MessageRetryService.computeExpectedAckHash(
+      s.timestamp,
+      s.attempt,
+      text,
+      selfKey,
+    );
+  }
+
+  /// Simulates RESP_CODE_SENT for the most recent send.
+  void sent(String text) {
+    retryService.updateMessageFromSent(ackHashFor(sends.length - 1, text), 0);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -613,6 +661,145 @@ void main() {
       expect(addedMessage, isNotNull);
       expect(addedMessage!.pathLength, equals(-1));
       expect(addedMessage!.pathBytes, isEmpty);
+    });
+  });
+
+  group('attempt ladder — firmware owns the route', () {
+    const text = 'hello';
+    const retryGap = _Harness.timeoutMs + MessageRetryService.retryBackoffMs;
+
+    test('a known route is used as-is, then a retry resets it and floods', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+        );
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+
+        expect(h.sends.map((s) => s.attempt), equals([0]));
+        expect(h.pathPushes, isEmpty, reason: 'never writes a firmware route');
+        expect(h.pathResets, equals(0));
+        expect(h.lastUpdate!.pathLength, equals(2));
+
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+
+        expect(h.sends.map((s) => s.attempt), equals([0, 1]));
+        expect(h.pathResets, equals(1));
+        expect(h.lastUpdate!.pathLength, equals(-1));
+        expect(h.lastUpdate!.status, equals(MessageStatus.sent));
+      });
+    });
+
+    test('no route floods from the first attempt', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+
+        expect(h.sends.length, equals(1));
+        expect(h.pathResets, equals(1));
+        expect(h.lastUpdate!.pathLength, equals(-1));
+      });
+    });
+
+    test('forced flood floods on every attempt', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+          pathOverride: -1,
+        );
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+
+        expect(h.sends.length, equals(2));
+        expect(h.pathResets, equals(2));
+        expect(h.pathPushes, isEmpty);
+      });
+    });
+
+    test('a custom path is pushed on the first attempt only', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathOverride: 1,
+          pathOverrideBytes: const [0x33],
+        );
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+
+        expect(h.pathPushes, equals([[0x33]]));
+        expect(h.pathResets, equals(0));
+
+        async.elapse(const Duration(milliseconds: retryGap));
+
+        expect(h.sends.length, equals(2));
+        expect(h.pathPushes.length, equals(1));
+        expect(h.pathResets, equals(1));
+      });
+    });
+
+    test('fails after maxRetries, and a late ACK still delivers', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        h.retryService.setMaxRetries(3);
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        for (var i = 0; i < 3; i++) {
+          h.sent(text);
+          async.elapse(const Duration(milliseconds: retryGap));
+        }
+
+        expect(h.sends.length, equals(3));
+        expect(h.lastUpdate!.status, equals(MessageStatus.failed));
+
+        async.elapse(const Duration(minutes: 1));
+        h.retryService.handleAckReceived(h.ackHashFor(1, text), 61000);
+
+        expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
+        expect(h.lastUpdate!.tripTimeMs, equals(61000));
+      });
+    });
+
+    test('an ACK for an earlier attempt delivers while a retry is pending',
+        () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        expect(h.sends.length, equals(2));
+
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 9000);
+
+        expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
+        async.elapse(const Duration(minutes: 10));
+        expect(h.sends.length, equals(2), reason: 'no further attempts');
+        expect(h.retryService.hasPendingMessages, isFalse);
+      });
     });
   });
 }

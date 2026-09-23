@@ -58,9 +58,18 @@ class RetryServiceConfig {
   });
 }
 
+/// Sends a contact message and retries it until an ACK arrives.
+///
+/// Attempt 0 goes however the contact resolves: a user override, else the
+/// firmware's own route, else flood. Every later attempt resets the path and
+/// floods, which is also how the firmware re-learns the route (the reply to
+/// a flood carries the path back). The app never writes a route to the radio
+/// on its own; only a user override is pushed.
 class MessageRetryService extends ChangeNotifier {
   static const int maxAckHistorySize = 100;
-  int _maxRetries = 5;
+  static const int retryBackoffMs = 5000;
+  static const Duration lateAckGrace = Duration(minutes: 5);
+  int _maxRetries = 3;
   int get maxRetries => _maxRetries;
 
   final Map<String, Timer> _timeoutTimers = {};
@@ -83,7 +92,7 @@ class MessageRetryService extends ChangeNotifier {
   }
 
   void setMaxRetries(int value) {
-    _maxRetries = value.clamp(2, 10);
+    _maxRetries = value.clamp(1, 5);
   }
 
   /// Compute expected ACK hash using same algorithm as firmware:
@@ -202,30 +211,24 @@ class MessageRetryService extends ChangeNotifier {
 
     if (message == null || contact == null || config == null) return;
 
-    if (message.retryCount > 0) {
-      // Re-resolve from current contact state so a path override changed
-      // between retries is picked up.
-      final resolved = resolvePathSelection(contact);
-      _pendingMessages[messageId] = message.copyWith(
-        pathLength: resolved.useFlood ? -1 : resolved.hopCount,
-        pathBytes: Uint8List.fromList(resolved.pathBytes),
+    // A retry floods: the route just failed, and a flood is what makes the
+    // firmware learn a fresh one.
+    final selection = message.retryCount == 0
+        ? resolvePathSelection(contact)
+        : const PathSelection(pathBytes: [], hopCount: -1, useFlood: true);
+    _pendingMessages[messageId] = message.copyWith(
+      pathLength: selection.useFlood ? -1 : selection.hopCount,
+      pathBytes: Uint8List.fromList(selection.pathBytes),
+    );
+
+    if (selection.useFlood) {
+      await config.clearContactPath?.call(contact);
+    } else if (contact.pathOverride != null) {
+      await config.setContactPath?.call(
+        contact,
+        Uint8List.fromList(selection.pathBytes),
+        selection.hopCount,
       );
-    }
-
-    final effectiveMessage = _pendingMessages[messageId] ?? message;
-
-    // Sync path settings with device before sending
-    if (config.setContactPath != null && config.clearContactPath != null) {
-      final pathLength = effectiveMessage.pathLength;
-      if (pathLength != null && pathLength < 0) {
-        await config.clearContactPath!(contact);
-      } else if (pathLength != null) {
-        await config.setContactPath!(
-          contact,
-          Uint8List.fromList(effectiveMessage.pathBytes),
-          pathLength,
-        );
-      }
     }
 
     // Re-validate after async gap — a timer or ACK could have resolved/retried
@@ -450,7 +453,7 @@ class MessageRetryService extends ChangeNotifier {
     );
 
     if (message.retryCount < maxRetries - 1) {
-      final backoffMs = 1000 * (1 << message.retryCount);
+      const backoffMs = retryBackoffMs;
 
       final updatedMessage = message.copyWith(
         retryCount: message.retryCount + 1,
@@ -483,9 +486,9 @@ class MessageRetryService extends ChangeNotifier {
 
       _onMessageResolved(messageId, contact.publicKeyHex);
 
-      // Keep message in pending maps for 30s grace period so late ACKs
-      // can still match and update the message to delivered.
-      _timeoutTimers[messageId] = Timer(const Duration(seconds: 30), () {
+      // Keep the message matchable so a late ACK from any attempt still
+      // flips it to delivered; the firmware holds 8 expected ACKs itself.
+      _timeoutTimers[messageId] = Timer(lateAckGrace, () {
         _cleanupMessage(messageId);
       });
     }
@@ -626,14 +629,6 @@ class MessageRetryService extends ChangeNotifier {
       }
     }
     return null;
-  }
-
-  int calculateDefaultTimeout(Contact contact) {
-    if (contact.pathLength < 0) {
-      return 15000;
-    } else {
-      return 3000 + (3000 * contact.pathLength);
-    }
   }
 
   @override
