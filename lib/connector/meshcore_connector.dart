@@ -915,8 +915,6 @@ class MeshCoreConnector extends ChangeNotifier {
         debugLogService: _appDebugLogService,
       ),
     );
-    final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 3;
-    _retryService?.setMaxRetries(maxRetries);
   }
 
   Future<void> loadContactCache() async {

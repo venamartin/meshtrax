@@ -70,7 +70,11 @@ class MessageRetryService extends ChangeNotifier {
   static const int retryBackoffMs = 5000;
   static const Duration lateAckGrace = Duration(minutes: 5);
   int _maxRetries = 3;
-  int get maxRetries => _maxRetries;
+
+  /// Read live from settings so a slider change applies to the next send.
+  int get maxRetries =>
+      (_config?.appSettingsService?.settings.maxMessageRetries ?? _maxRetries)
+          .clamp(1, 5);
 
   final Map<String, Timer> _timeoutTimers = {};
   final Map<String, Message> _pendingMessages = {};
