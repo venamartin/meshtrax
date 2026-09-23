@@ -783,6 +783,35 @@ void main() {
       });
     });
 
+    test('with 4 attempts the route gets a second try before flooding', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        h.retryService.setMaxRetries(4);
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+        );
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+
+        expect(h.sends.map((s) => s.attempt), equals([0, 1]));
+        expect(h.pathResets, equals(0), reason: 'attempt 1 stays on the route');
+        expect(h.lastUpdate!.pathLength, equals(2));
+
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+
+        expect(h.sends.length, equals(3));
+        expect(h.pathResets, equals(1), reason: 'attempt 2 floods');
+        expect(h.lastUpdate!.pathLength, equals(-1));
+      });
+    });
+
     test('floodFirst floods attempt 0 even with a known route', () {
       fakeAsync((async) {
         final h = _Harness();

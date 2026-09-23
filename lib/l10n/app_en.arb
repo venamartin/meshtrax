@@ -303,7 +303,7 @@
   "appSettings_advertisementNotificationsSubtitle": "Show notification when new nodes are discovered",
   "appSettings_messaging": "Messaging",
   "appSettings_maxMessageRetries": "Max Message Retries",
-  "appSettings_maxMessageRetriesSubtitle": "Send attempts before a message is marked failed. The first uses the known route; the rest flood.",
+  "appSettings_maxMessageRetriesSubtitle": "Send attempts before a message is marked failed. The known route gets one try (two at 4 or more); the rest flood.",
   "appSettings_maxChannelMessageRetries": "Max Channel Message Retries",
   "appSettings_maxChannelMessageRetriesSubtitle": "It will retry this many times until it hears at least one repeat",
   "appSettings_battery": "Battery",

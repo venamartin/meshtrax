@@ -61,11 +61,14 @@ class RetryServiceConfig {
 
 /// Sends a contact message and retries it until an ACK arrives.
 ///
-/// Attempt 0 goes however the contact resolves: a user override, else the
-/// firmware's own route, else flood. Every later attempt resets the path and
-/// floods, which is also how the firmware re-learns the route (the reply to
-/// a flood carries the path back). The app never writes a route to the radio
-/// on its own; only a user override is pushed.
+/// The first attempts go however the contact resolves: a user override,
+/// else the firmware's own route, else flood. The rest reset the path and
+/// flood, which is also how the firmware re-learns the route (the reply to
+/// a flood carries the path back). With up to 3 attempts the route gets one
+/// try; with 4 or more it gets two, since one lost ACK on a good route is
+/// common and a route retry costs only that route's repeaters. Two floods
+/// always remain at the end. The app never writes a route to the radio on
+/// its own; only a user override is pushed.
 class MessageRetryService extends ChangeNotifier {
   static const int maxAckHistorySize = 100;
   static const int retryBackoffMs = 5000;
@@ -76,6 +79,9 @@ class MessageRetryService extends ChangeNotifier {
   int get maxRetries =>
       (_config?.appSettingsService?.settings.maxMessageRetries ?? _maxRetries)
           .clamp(1, 5);
+
+  /// Attempts that use the contact's route before the ladder floods.
+  int get routeAttempts => maxRetries >= 4 ? 2 : 1;
 
   final Map<String, Timer> _timeoutTimers = {};
   final Map<String, Message> _pendingMessages = {};
@@ -225,10 +231,9 @@ class MessageRetryService extends ChangeNotifier {
 
     if (message == null || contact == null || config == null) return;
 
-    // A retry floods: the route just failed, and a flood is what makes the
-    // firmware learn a fresh one.
-    final selection =
-        message.retryCount == 0 && !_floodFirst.contains(messageId)
+    final useRoute =
+        message.retryCount < routeAttempts && !_floodFirst.contains(messageId);
+    final selection = useRoute
         ? resolvePathSelection(contact)
         : const PathSelection(pathBytes: [], hopCount: -1, useFlood: true);
     _pendingMessages[messageId] = message.copyWith(

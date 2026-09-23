@@ -1531,7 +1531,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_maxMessageRetriesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Send attempts before a message is marked failed. The first uses the known route; the rest flood.'**
+  /// **'Send attempts before a message is marked failed. The known route gets one try (two at 4 or more); the rest flood.'**
   String get appSettings_maxMessageRetriesSubtitle;
 
   /// No description provided for @appSettings_maxChannelMessageRetries.
