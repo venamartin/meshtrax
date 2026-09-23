@@ -24,10 +24,11 @@ void main() {
     String? hash,
     Uint8List? sender,
     bool outgoing = false,
+    String name = 'Tester',
   }) {
     return ChannelMessage(
       senderKey: sender,
-      senderName: 'Tester',
+      senderName: name,
       text: text,
       timestamp: DateTime.fromMillisecondsSinceEpoch(ts ?? 1753000000000),
       isOutgoing: outgoing,
@@ -94,6 +95,117 @@ void main() {
 
     final loaded = await store.loadChannelMessages(idKeyA);
     expect(loaded.map((m) => m.text), ['arrived first', 'arrived second']);
+  });
+
+  group('searchChannelMessages — SQL-side full-history search', () {
+    setUp(() async {
+      await store.upsertMessage(
+          idKeyA, msg('Morning everyone', id: 's1', name: 'PIBER 📼'));
+      await store.upsertMessage(
+          idKeyA, msg('mentioning piber here', id: 's2', name: 'Vacasity'));
+      await store.upsertMessage(
+          idKeyA, msg('unrelated chatter', id: 's3', name: 'Vacasity'));
+    });
+
+    test('matches sender names AND text, case-insensitively', () async {
+      final hits = await store.searchChannelMessages(idKeyA, 'piber');
+      expect(hits.map((h) => h.message.messageId), ['s2', 's1'],
+          reason: 'newest first: the mention, then the sender-name match');
+    });
+
+    test('fromNewest counts distance over ALL rows, not just matches',
+        () async {
+      final hits = await store.searchChannelMessages(idKeyA, 'morning');
+      expect(hits.single.message.messageId, 's1');
+      expect(hits.single.fromNewest, 2,
+          reason: 's1 is the oldest of three rows');
+    });
+
+    test('queries the SQL prefilter cannot fold fall back to a full scan',
+        () async {
+      await store.upsertMessage(
+          idKeyA, msg('Привет мир', id: 's4', name: 'Юра'));
+      // Cased non-ASCII: SQLite lower() cannot fold, Dart can.
+      final hits = await store.searchChannelMessages(idKeyA, 'привет');
+      expect(hits.single.message.messageId, 's4');
+      // JSON-escaped characters route to the fallback too.
+      final quoted = await store.searchChannelMessages(idKeyA, '"');
+      expect(quoted, isEmpty);
+    });
+
+    test('never matches JSON structure, only real fields', () async {
+      // "senderName" appears in every payload as a JSON key.
+      final hits = await store.searchChannelMessages(idKeyA, 'senderName');
+      expect(hits, isEmpty);
+    });
+
+    test('a space at the query edge means word boundary', () async {
+      await store.upsertMessage(idKeyA, msg('Yo GWQ!', id: 'b1'));
+      await store.upsertMessage(idKeyA, msg('hey yo', id: 'b2'));
+      await store.upsertMessage(idKeyA, msg('yo, dude', id: 'b3'));
+      await store.upsertMessage(idKeyA, msg('you there?', id: 'b4'));
+      await store.upsertMessage(idKeyA, msg('mayo sandwich', id: 'b5'));
+
+      // Trailing space: "yo" must END a word.
+      final trailing = await store.searchChannelMessages(idKeyA, 'yo ');
+      expect(trailing.map((h) => h.message.messageId).toSet(),
+          {'b1', 'b2', 'b3', 'b5'},
+          reason: '"mayo" ends a word too; "you" must not match');
+
+      // Leading space too: "yo" must START the word — drops "mayo".
+      final both = await store.searchChannelMessages(idKeyA, ' yo ');
+      expect(both.map((h) => h.message.messageId).toSet(), {'b1', 'b2', 'b3'});
+
+      // No edge spaces: plain substring — even "everYOne" (the seeded s1)
+      // matches, which is exactly the noise the boundary form eliminates.
+      final plain = await store.searchChannelMessages(idKeyA, 'yo');
+      expect(plain.map((h) => h.message.messageId).toSet(),
+          {'b1', 'b2', 'b3', 'b4', 'b5', 's1'});
+    });
+
+    test('interior spaces stay literal', () async {
+      await store.upsertMessage(idKeyA, msg('go inside to pay', id: 'i1'));
+      await store.upsertMessage(idKeyA, msg('go outside', id: 'i2'));
+      final hits = await store.searchChannelMessages(idKeyA, 'go inside');
+      expect(hits.single.message.messageId, 'i1');
+    });
+  });
+
+  test('loadPossibleReactionRows prefilters the reaction shape in SQL',
+      () async {
+    await store.upsertMessage(idKeyA, msg('plain chatter', id: 'p1'));
+    await store.upsertMessage(
+        idKeyA, msg('👍@[Bob]\nhvejtq3z', id: 'r1')); // old order
+    await store.upsertMessage(
+        idKeyA, msg('@[Bob]👍\nhvejtq3z', id: 'r2')); // mention-first
+    await store.upsertMessage(
+        idKeyA, msg('@[Bob]\n>quote..\na longer reply body', id: 'q1'));
+
+    final rows = await store.loadPossibleReactionRows(idKeyA);
+    final ids = rows.map((m) => m.messageId).toSet();
+    expect(ids, containsAll(['r1', 'r2']),
+        reason: 'both reaction orders must survive the SQL prefilter');
+    expect(ids, isNot(contains('p1')),
+        reason: 'plain messages must never be decoded');
+    expect(ids, isNot(contains('q1')),
+        reason: 'a reply whose last line is not 8 chars is filtered in SQL');
+  });
+
+  test('loadChannelMessagesByWireWindow slices by the messageId wire prefix',
+      () async {
+    await store.upsertMessage(
+        idKeyA, msg('old', id: '1000000000000_a_b', ts: 1000000000000));
+    await store.upsertMessage(
+        idKeyA, msg('near', id: '1000100000000_a_b', ts: 1000100000000));
+    await store.upsertMessage(
+        idKeyA, msg('far', id: '2000000000000_a_b', ts: 2000000000000));
+
+    final rows = await store.loadChannelMessagesByWireWindow(
+      idKeyA,
+      fromMs: 999900000000,
+      toMs: 1000200000000,
+    );
+    expect(rows.map((m) => m.text).toSet(), {'old', 'near'});
   });
 
   test('legacy index blob imports into identity rows once', () async {

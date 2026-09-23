@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Notifiche Pubblicitarie",
   "appSettings_advertisementNotificationsSubtitle": "Mostra notifica quando vengono scoperti nuovi nodi",
   "appSettings_messaging": "Messaggi",
-  "appSettings_clearPathOnMaxRetry": "Cancella Percorso su Massimo Riprovo",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Reimposta il percorso di contatto dopo 5 tentativi di invio falliti",
-  "appSettings_pathsWillBeCleared": "I percorsi verranno puliti dopo 5 tentativi falliti.",
-  "appSettings_pathsWillNotBeCleared": "I percorsi non verranno eliminati automaticamente.",
-  "appSettings_autoRouteRotation": "Rotazione Percorso Automatico",
-  "appSettings_autoRouteRotationSubtitle": "Alterna tra i percorsi migliori e la modalità alluvione",
-  "appSettings_autoRouteRotationEnabled": "Rotazione percorso automatico abilitata",
-  "appSettings_autoRouteRotationDisabled": "Rotazione del percorso automatico disabilitata",
   "appSettings_battery": "Batteria",
   "appSettings_batteryChemistry": "Chimica della batteria",
   "appSettings_batteryChemistryPerDevice": "Impostazione per dispositivo ({deviceName})",
@@ -431,6 +423,8 @@
     }
   },
   "chat_typeMessage": "Digita un messaggio...",
+  "chat_searchMessages": "Cerca messaggi",
+  "chat_searchNoMatches": "Nessun risultato",
   "chat_messageTooLong": "Messaggio troppo lungo (massimo {maxBytes} byte).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -441,18 +435,6 @@
   },
   "chat_messageCopied": "Messaggio copiato",
   "chat_messageDeleted": "Messaggio eliminato",
-  "chat_retryingMessage": "Riprovo",
-  "chat_retryCount": "Riprova {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Invia GIF",
   "chat_reply": "Rispondi",
   "chat_addReaction": "Aggiungi Reazione",
@@ -545,12 +527,6 @@
     }
   },
   "debugFrame_hexDump": "Dumpa Esadecimale:",
-  "chat_pathManagement": "Gestione Percorsi",
-  "chat_routingMode": "Modalità di routing",
-  "chat_autoUseSavedPath": "Utilizza il percorso salvato",
-  "chat_forceFloodMode": "Modalità Inondamento Forzato",
-  "chat_recentAckPaths": "Percorsi ACK Recenti (tocca per usare):",
-  "chat_pathHistoryFull": "La cronologia del percorso è piena. Rimuovi gli elementi per aggiungere nuovi.",
   "chat_hopSingular": "salta",
   "chat_hopPlural": "salta",
   "chat_hopsCount": "{count} {count, plural, =1{salto} other{salti}}",
@@ -561,33 +537,9 @@
       }
     }
   },
-  "chat_successes": "successi",
-  "chat_removePath": "Rimuovi percorso",
-  "chat_noPathHistoryYet": "Non c'è ancora una cronologia del percorso.\nInvia un messaggio per scoprire i percorsi.",
-  "chat_pathActions": "Azioni Percorso:",
   "chat_setCustomPath": "Imposta Percorso Personalizzato",
-  "chat_setCustomPathSubtitle": "Specifica manualmente il percorso di routing",
-  "chat_clearPath": "Cancella Percorso",
-  "chat_clearPathSubtitle": "Riprova la scoperta alla prossima invio",
-  "chat_pathCleared": "Percorso sgomberato. Il prossimo messaggio riidentifierà il percorso.",
-  "chat_floodModeSubtitle": "Utilizza l'interruttore di routing nella barra delle applicazioni",
-  "chat_floodModeEnabled": "Modalità alluvione abilitata. Disattivala tramite l'icona di routing nella barra in alto.",
   "chat_fullPath": "Percorso Completo",
   "chat_pathDetailsNotAvailable": "I dettagli del percorso non sono ancora disponibili. Prova a inviare un messaggio per ricaricare.",
-  "chat_pathSetHops": "Percorso impostato: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Salvatato localmente. Connetti per sincronizzare.",
-  "chat_pathDeviceConfirmed": "Dispositivo confermato.",
-  "chat_pathDeviceNotConfirmed": "Dispositivo non confermato ancora.",
   "chat_type": "Digita",
   "chat_path": "Percorso",
   "chat_publicKey": "Chiave Pubblica",
@@ -817,11 +769,6 @@
   "login_savePasswordSubtitle": "La password verrà memorizzata in modo sicuro su questo dispositivo.",
   "login_repeaterDescription": "Inserisci la password del ripetitore per accedere alle impostazioni e allo stato.",
   "login_roomDescription": "Inserisci la password della stanza per accedere alle impostazioni e allo stato.",
-  "login_routing": "Instradamento",
-  "login_routingMode": "Modalità di routing",
-  "login_autoUseSavedPath": "Utilizza il percorso salvato",
-  "login_forceFloodMode": "Modalità Inondamento Forzato",
-  "login_managePaths": "Gestisci Percorsi",
   "login_login": "Accedi",
   "login_attempt": "Prova {current}/{max}",
   "@login_attempt": {
@@ -845,22 +792,6 @@
   "login_failedMessage": "Accesso fallito. La password non è corretta oppure il ripetitore non è raggiungibile.",
   "common_reload": "Ricaricare",
   "common_clear": "Cancella",
-  "path_currentPath": "Percorso corrente: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Utilizzare {count} {count, plural, =1{hop} other{hops}} percorso",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Inserisci percorso personalizzato",
   "path_currentPathLabel": "Percorso corrente",
   "path_hexPrefixInstructions": "Inserire i prefissi esadecimali a 2 caratteri per ogni salto, separati da virgole.",
@@ -1614,7 +1545,6 @@
   "scanner_enableBluetooth": "Abilita il Bluetooth",
   "snrIndicator_nearByRepeaters": "Ripetitori vicini",
   "snrIndicator_lastSeen": "Ultimo accesso",
-  "chat_ShowAllPaths": "Mostra tutti i percorsi",
   "settings_clientRepeat": "Ripetizione \"fuori dalla rete\"",
   "settings_clientRepeatFreqWarning": "Per la comunicazione fuori rete, è necessario utilizzare frequenze di 433, 869 o 918 MHz.",
   "settings_clientRepeatSubtitle": "Permetti a questo dispositivo di ripetere i pacchetti di rete per gli altri.",
@@ -1893,16 +1823,6 @@
   "tcpConnectionFailed": "Impossibile stabilire la connessione TCP: {error}",
   "map_showDiscoveryContacts": "Mostra Contatti di Discovery",
   "map_setAsMyLocation": "Imposta come la mia posizione",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacySettingsDescription": "Scegli le informazioni che il tuo dispositivo condivide con gli altri.",
   "settings_allowByContact": "Consenti in base ai flag di contatto",
   "settings_telemetryLocationMode": "Modalità di posizionamento telemetrico",
@@ -1925,17 +1845,8 @@
   "contact_teleBaseSubtitle": "Consenti la condivisione del livello della batteria e della telemetria di base",
   "contact_teleEnvSubtitle": "Consenti la condivisione dei dati del sensore ambientale",
   "contact_teleEnv": "Ambiente di telemetria",
-  "appSettings_initialRouteWeight": "Peso iniziale del percorso",
-  "appSettings_initialRouteWeightSubtitle": "Peso di partenza per nuovi percorsi",
-  "appSettings_maxRouteWeightSubtitle": "Il peso massimo che un percorso può accumulare grazie a consegne di successo.",
-  "appSettings_maxRouteWeight": "Massimo peso consentito per il percorso",
-  "appSettings_routeWeightSuccessIncrement": "Aumento del peso del successo",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Peso aggiunto a un percorso dopo una consegna riuscita.",
-  "appSettings_routeWeightFailureDecrement": "Riduzione del peso associato al fallimento",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Peso rimosso da un percorso dopo un tentativo di consegna fallito.",
   "appSettings_maxMessageRetries": "Numero massimo di tentativi di invio del messaggio",
   "appSettings_maxMessageRetriesSubtitle": "Numero di tentativi di riprova prima di considerare un messaggio come fallito.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Modalità telemetria aggiornata",
   "map_showOverlaps": "Sovrapposizioni della chiave ripetitore",
   "map_runTraceWithReturnPath": "Tornare indietro sullo stesso percorso",

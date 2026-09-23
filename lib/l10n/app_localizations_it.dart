@@ -724,6 +724,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'Mostra metadati dettagliati su instradamento e tempi per i messaggi';
 
   @override
+  String get appSettings_senderNameColors => 'Colorful sender names';
+
+  @override
+  String get appSettings_senderNameColorsSubtitle =>
+      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+
+  @override
   String get appSettings_notifications => 'Notifiche';
 
   @override
@@ -770,68 +777,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get appSettings_messaging => 'Messaggi';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Cancella Percorso su Massimo Riprovo';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Reimposta il percorso di contatto dopo 5 tentativi di invio falliti';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'I percorsi verranno puliti dopo 5 tentativi falliti.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'I percorsi non verranno eliminati automaticamente.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Rotazione Percorso Automatico';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Alterna tra i percorsi migliori e la modalità alluvione';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Rotazione percorso automatico abilitata';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Rotazione del percorso automatico disabilitata';
-
-  @override
-  String get appSettings_maxRouteWeight =>
-      'Massimo peso consentito per il percorso';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Il peso massimo che un percorso può accumulare grazie a consegne di successo.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Peso iniziale del percorso';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Peso di partenza per nuovi percorsi';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Aumento del peso del successo';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Peso aggiunto a un percorso dopo una consegna riuscita.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Riduzione del peso associato al fallimento';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Peso rimosso da un percorso dopo un tentativo di consegna fallito.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Numero massimo di tentativi di invio del messaggio';
 
@@ -846,11 +791,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Batteria';
@@ -1416,6 +1356,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chat_typeMessage => 'Digita un messaggio...';
 
   @override
+  String get chat_searchMessages => 'Cerca messaggi';
+
+  @override
+  String get chat_searchNoMatches => 'Nessun risultato';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return 'Messaggio troppo lungo (massimo $maxBytes byte).';
   }
@@ -1425,14 +1371,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chat_messageDeleted => 'Messaggio eliminato';
-
-  @override
-  String get chat_retryingMessage => 'Riprovo';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return 'Riprova $current/$max';
-  }
 
   @override
   String get chat_sendGif => 'Invia GIF';
@@ -1448,6 +1386,58 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chat_mention => 'Menziona';
+
+  @override
+  String get dmChannel_menuLabel => 'Direct Message';
+
+  @override
+  String dmChannel_pickerTitle(String name) {
+    return 'Send DM to $name';
+  }
+
+  @override
+  String get dmChannel_pickerHint =>
+      'Check the key and last-seen time — names are not unique.';
+
+  @override
+  String get dmChannel_warningTitle => 'Is this really them?';
+
+  @override
+  String get dmChannel_warningBody =>
+      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+
+  @override
+  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String dmChannel_noMatchTitle(String name) {
+    return 'Can\'t DM $name yet';
+  }
+
+  @override
+  String get dmChannel_noMatchBody =>
+      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+
+  @override
+  String get dmChannel_askInChannel => 'Ask in channel';
+
+  @override
+  String get dmChannel_sendMyAdvert => 'Send my advert';
+
+  @override
+  String get dmChannel_askText => 'please send an advert so I can DM you';
+
+  @override
+  String get dmChannel_watching =>
+      'Watching for their advert — you\'ll be asked here when it arrives.';
+
+  @override
+  String dmChannel_advertHeard(String name) {
+    return '$name is now reachable';
+  }
+
+  @override
+  String get dmChannel_openDm => 'DM';
 
   @override
   String get appSettings_zoomLevel => 'Livello di zoom';
@@ -1602,28 +1592,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get debugFrame_hexDump => 'Dumpa Esadecimale:';
 
   @override
-  String get chat_pathManagement => 'Gestione Percorsi';
-
-  @override
-  String get chat_ShowAllPaths => 'Mostra tutti i percorsi';
-
-  @override
-  String get chat_routingMode => 'Modalità di routing';
-
-  @override
-  String get chat_autoUseSavedPath => 'Utilizza il percorso salvato';
-
-  @override
-  String get chat_forceFloodMode => 'Modalità Inondamento Forzato';
-
-  @override
-  String get chat_recentAckPaths => 'Percorsi ACK Recenti (tocca per usare):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'La cronologia del percorso è piena. Rimuovi gli elementi per aggiungere nuovi.';
-
-  @override
   String get chat_hopSingular => 'salta';
 
   @override
@@ -1641,43 +1609,7 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => 'successi';
-
-  @override
-  String get chat_removePath => 'Rimuovi percorso';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Non c\'è ancora una cronologia del percorso.\nInvia un messaggio per scoprire i percorsi.';
-
-  @override
-  String get chat_pathActions => 'Azioni Percorso:';
-
-  @override
   String get chat_setCustomPath => 'Imposta Percorso Personalizzato';
-
-  @override
-  String get chat_setCustomPathSubtitle =>
-      'Specifica manualmente il percorso di routing';
-
-  @override
-  String get chat_clearPath => 'Cancella Percorso';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Riprova la scoperta alla prossima invio';
-
-  @override
-  String get chat_pathCleared =>
-      'Percorso sgomberato. Il prossimo messaggio riidentifierà il percorso.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Utilizza l\'interruttore di routing nella barra delle applicazioni';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Modalità alluvione abilitata. Disattivala tramite l\'icona di routing nella barra in alto.';
 
   @override
   String get chat_fullPath => 'Percorso Completo';
@@ -1685,28 +1617,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'I dettagli del percorso non sono ancora disponibili. Prova a inviare un messaggio per ricaricare.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Percorso impostato: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Salvatato localmente. Connetti per sincronizzare.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Dispositivo confermato.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed =>
-      'Dispositivo non confermato ancora.';
 
   @override
   String get chat_type => 'Digita';
@@ -2100,21 +2010,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'Inserisci la password della stanza per accedere alle impostazioni e allo stato.';
 
   @override
-  String get login_routing => 'Instradamento';
-
-  @override
-  String get login_routingMode => 'Modalità di routing';
-
-  @override
-  String get login_autoUseSavedPath => 'Utilizza il percorso salvato';
-
-  @override
-  String get login_forceFloodMode => 'Modalità Inondamento Forzato';
-
-  @override
-  String get login_managePaths => 'Gestisci Percorsi';
-
-  @override
   String get login_login => 'Accedi';
 
   @override
@@ -2136,22 +2031,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get common_clear => 'Cancella';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Percorso corrente: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Utilizzare $count $_temp0 percorso';
-  }
 
   @override
   String get path_enterCustomPath => 'Inserisci percorso personalizzato';
@@ -3264,6 +3143,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get listFilter_filters => 'Filtri';
 
   @override
+  String get listFilter_source => 'Source';
+
+  @override
+  String get listFilter_saved => 'Saved';
+
+  @override
+  String get listFilter_discovered => 'Discovered';
+
+  @override
   String get listFilter_all => 'Tutti';
 
   @override
@@ -3929,4 +3817,116 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Lingua del sistema';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

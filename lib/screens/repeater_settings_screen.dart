@@ -9,7 +9,7 @@ import '../connector/meshcore_protocol.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/repeater_command_service.dart';
 import '../services/storage_service.dart';
-import '../widgets/path_management_dialog.dart';
+import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
 
 class RepeaterSettingsScreen extends StatefulWidget {
@@ -902,7 +902,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
             icon: const Icon(Icons.timeline),
             tooltip: l10n.repeater_pathManagement,
             onPressed: () =>
-                PathManagementDialog.show(context, contact: repeater),
+                RoutingDialog.show(context, contact: repeater),
           ),
           // Saving is a sequence of slow round trips; show which one is
           // in flight so a 3-command save does not look like a hang.

@@ -1,11 +1,11 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** July 19, 2026
-**Applies to:** MeshTrax Android application (package `com.vena.meshtrax`), version 1.5.7 and later
+**Last updated:** August 13, 2026
+**Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, and MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later
 
 ## Introduction
 
-MeshTrax ("the App", "we", "us") is a free, open-source client application for communicating with [MeshCore](https://meshcore.co.uk/) LoRa mesh-networking devices ("companion devices"). This Privacy Policy explains what data the App accesses, stores, and shares, and why. It is written to comply with the [Google Play Developer Program Policies](https://support.google.com/googleplay/android-developer/answer/10144311) and the Google Play Data safety requirements.
+MeshTrax ("the App", "we", "us") is a free, open-source client application for communicating with [MeshCore](https://meshcore.co.uk/) LoRa mesh-networking devices ("companion devices"). This Privacy Policy explains what data the App accesses, stores, and shares, and why. It is written to comply with the [Google Play Developer Program Policies](https://support.google.com/googleplay/android-developer/answer/10144311) and the Google Play Data safety requirements, and with Apple's [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#privacy) and App Privacy disclosure requirements. The App behaves the same way on both platforms; where a detail is platform-specific it is called out below.
 
 The App is developed by an independent, open-source developer. You can review the complete source code to verify every statement in this policy at **https://github.com/venamartin/meshtrax**.
 
@@ -19,7 +19,7 @@ The App is developed by an independent, open-source developer. You can review th
 
 ## Data the App collects and stores on your device
 
-All of the following is stored locally on your device using the operating system's standard app storage (Android `SharedPreferences`). None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
+All of the following is stored locally on your device using the operating system's standard app storage (`SharedPreferences` on Android, `UserDefaults` on iOS). None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
 
 | Category | What it includes | Purpose |
 |---|---|---|
@@ -53,7 +53,7 @@ The App shares data with exactly three third-party services, and only when you u
 - **What is sent:** Only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. The App has no GIF search feature and sends no search terms.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
 
-The App also uses the Android system share sheet (for exporting GPX track files that you explicitly choose to share) and the system browser (to open a web link contained in a received message, after you confirm). In both cases you choose the destination; the App does not upload anything on its own.
+The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share) and the system browser (to open a web link contained in a received message, after you confirm). In both cases you choose the destination; the App does not upload anything on its own.
 
 ## Content reporting
 
@@ -71,7 +71,21 @@ You can also **block** a sender from any message; blocked senders and their mess
 
 ## Permissions
 
-The App requests only the permissions needed for its stated functions:
+The App requests only the permissions needed for its stated functions.
+
+### iOS
+
+| Permission | Why it is needed |
+|---|---|
+| Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
+| Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
+| Photo Library | Pick an existing image to scan a QR code from it. Images are analyzed on your device and never uploaded |
+| Notifications | Show notifications for incoming mesh messages |
+| Background mode: `bluetooth-central` | Keep the connection to your companion device alive while the App runs in the background |
+
+iOS does not require location permission for BLE scanning; the App never requests it.
+
+### Android
 
 | Permission | Why it is needed |
 |---|---|
@@ -101,7 +115,7 @@ Locally stored data is protected by your device's operating-system storage sandb
 ## Data retention and deletion
 
 - All App data is retained on your device until you delete it.
-- You can delete data at any time by using the App's in-app controls (for example, clearing contacts, channels, or debug logs), by clearing the App's storage in Android Settings, or by uninstalling the App, which removes all locally stored data.
+- You can delete data at any time by using the App's in-app controls (for example, clearing contacts, channels, or debug logs), by clearing the App's storage in Android Settings, or by uninstalling the App (either platform), which removes all locally stored data.
 - Because we hold none of your data on any server, there is nothing for you to request that we delete on our side.
 
 ## Children's privacy

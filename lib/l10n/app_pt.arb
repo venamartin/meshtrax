@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Notificações de Anúncios",
   "appSettings_advertisementNotificationsSubtitle": "Mostrar notificação quando novos nós forem descobertos",
   "appSettings_messaging": "Mensagens",
-  "appSettings_clearPathOnMaxRetry": "Limpar Caminho em Tentativas Máximas",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Redefinir o caminho de contato após 5 tentativas de envio falhas",
-  "appSettings_pathsWillBeCleared": "Os caminhos serão limpos após 5 tentativas falhas.",
-  "appSettings_pathsWillNotBeCleared": "Os caminhos não serão limpos automaticamente.",
-  "appSettings_autoRouteRotation": "Rotação de Rota Automática",
-  "appSettings_autoRouteRotationSubtitle": "Alternar entre os melhores caminhos e o modo inundação",
-  "appSettings_autoRouteRotationEnabled": "Rotação de roteamento automático habilitada",
-  "appSettings_autoRouteRotationDisabled": "Rotação de roteamento automático desativada",
   "appSettings_battery": "Bateria",
   "appSettings_batteryChemistry": "Química da Bateria",
   "appSettings_batteryChemistryPerDevice": "Definir por dispositivo ({deviceName})",
@@ -431,6 +423,8 @@
     }
   },
   "chat_typeMessage": "Digite uma mensagem...",
+  "chat_searchMessages": "Pesquisar mensagens",
+  "chat_searchNoMatches": "Sem resultados",
   "chat_messageTooLong": "Mensagem muito longa (máximo {maxBytes} bytes).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -441,18 +435,6 @@
   },
   "chat_messageCopied": "Mensagem copiada",
   "chat_messageDeleted": "Mensagem excluída",
-  "chat_retryingMessage": "Tentando novamente",
-  "chat_retryCount": "Tentar {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Enviar GIF",
   "chat_reply": "Responder",
   "chat_addReaction": "Adicionar Reação",
@@ -545,12 +527,6 @@
     }
   },
   "debugFrame_hexDump": "Espaço Hexadecimal:",
-  "chat_pathManagement": "Gerenciamento de Caminhos",
-  "chat_routingMode": "Modo de roteamento",
-  "chat_autoUseSavedPath": "Auto (usar caminho salvo)",
-  "chat_forceFloodMode": "Modo de Inundação Forçado",
-  "chat_recentAckPaths": "Rotas de ACK Recentes (toque para usar):",
-  "chat_pathHistoryFull": "O histórico está cheio. Remova entradas para adicionar novas.",
   "chat_hopSingular": "pule",
   "chat_hopPlural": "salta",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -561,33 +537,9 @@
       }
     }
   },
-  "chat_successes": "Sucessos",
-  "chat_removePath": "Remover caminho",
-  "chat_noPathHistoryYet": "Ainda não há histórico de caminhos.\nEnvie uma mensagem para descobrir caminhos.",
-  "chat_pathActions": "Ações do Caminho:",
   "chat_setCustomPath": "Definir Caminho Personalizado",
-  "chat_setCustomPathSubtitle": "Especifique manualmente o caminho de roteamento",
-  "chat_clearPath": "Limpar Caminho",
-  "chat_clearPathSubtitle": "Forçar a descoberta na próxima transmissão",
-  "chat_pathCleared": "Caminho limpo. A próxima mensagem redescobrirá a rota.",
-  "chat_floodModeSubtitle": "Use a chave de roteamento na barra de ferramentas",
-  "chat_floodModeEnabled": "Modo de inundação ativado. Desative-o novamente através do ícone de roteamento na barra de ferramentas.",
   "chat_fullPath": "Caminho Completo",
   "chat_pathDetailsNotAvailable": "Os detalhes do caminho ainda não estão disponíveis. Tente enviar uma mensagem para atualizar.",
-  "chat_pathSetHops": "Caminho definido: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Salvo localmente. Conectar para sincronizar.",
-  "chat_pathDeviceConfirmed": "Dispositivo confirmado.",
-  "chat_pathDeviceNotConfirmed": "Dispositivo ainda não confirmado.",
   "chat_type": "Digite",
   "chat_path": "Caminho",
   "chat_publicKey": "Chave Pública",
@@ -817,11 +769,6 @@
   "login_savePasswordSubtitle": "A senha será armazenada com segurança neste dispositivo.",
   "login_repeaterDescription": "Insira a senha do repetidor para acessar as configurações e o status.",
   "login_roomDescription": "Insira a senha da sala para acessar as configurações e o status.",
-  "login_routing": "Rotas",
-  "login_routingMode": "Modo de roteamento",
-  "login_autoUseSavedPath": "Auto (usar caminho salvo)",
-  "login_forceFloodMode": "Modo de Inundação Forçado",
-  "login_managePaths": "Gerenciar Caminhos",
   "login_login": "Login",
   "login_attempt": "Tentar {current}/{max}",
   "@login_attempt": {
@@ -845,22 +792,6 @@
   "login_failedMessage": "Falha no login. A senha está incorreta ou o repetidor está inacessível.",
   "common_reload": "Recarregar",
   "common_clear": "Limpar",
-  "path_currentPath": "Caminho atual: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Usando {count} {count, plural, =1{hop} other{hops}} caminho",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Insira Caminho Personalizado",
   "path_currentPathLabel": "Caminho atual",
   "path_hexPrefixInstructions": "Insira os prefixos hexadecimais de 2 caracteres para cada salto, separados por vírgulas.",
@@ -1614,7 +1545,6 @@
   "scanner_chromeRequiredMessage": "Esta aplicação web requer o Google Chrome ou um navegador baseado no Chromium para suporte de Bluetooth.",
   "snrIndicator_nearByRepeaters": "Repetidores Próximos",
   "snrIndicator_lastSeen": "Visto pela última vez",
-  "chat_ShowAllPaths": "Mostrar todos os caminhos",
   "settings_clientRepeatFreqWarning": "A repetição fora da rede requer frequências de 433, 869 ou 918 MHz.",
   "settings_clientRepeat": "Repetição sem rede",
   "settings_clientRepeatSubtitle": "Permita que este dispositivo repita pacotes de rede para outros dispositivos.",
@@ -1893,16 +1823,6 @@
   "tcpConnectionFailed": "Falha na conexão TCP: {error}",
   "map_showDiscoveryContacts": "Mostrar Contatos de Descoberta",
   "map_setAsMyLocation": "Defina minha localização",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacySettingsDescription": "Escolha quais informações o seu dispositivo compartilha com os outros.",
   "settings_allowByContact": "Permitir por bandeiras de contato",
   "settings_telemetryLocationMode": "Modo de Localização de Telemetria",
@@ -1925,17 +1845,8 @@
   "contact_telemetry": "Telemetria",
   "contact_settings": "Configurações de Contato",
   "contact_teleBaseSubtitle": "Permitir compartilhamento do nível da bateria e telemetria básica",
-  "appSettings_initialRouteWeight": "Peso Inicial da Rota",
-  "appSettings_maxRouteWeight": "Peso Máximo da Rota",
-  "appSettings_maxRouteWeightSubtitle": "Peso máximo que um determinado percurso pode acumular com entregas bem-sucedidas.",
-  "appSettings_initialRouteWeightSubtitle": "Peso inicial para novos caminhos descobertos",
-  "appSettings_routeWeightSuccessIncrement": "Aumento do peso para indicar sucesso",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Peso adicionado a um caminho após a entrega bem-sucedida.",
-  "appSettings_routeWeightFailureDecrement": "Redução do peso da falha",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Peso removido de um caminho após uma tentativa de entrega malsucedida.",
   "appSettings_maxMessageRetries": "Número máximo de tentativas de envio de mensagens",
   "appSettings_maxMessageRetriesSubtitle": "Número de tentativas de reenvio antes de classificar uma mensagem como falha.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Modo de telemetria atualizado",
   "settings_multiAck": "Multi-ACKs",
   "map_showOverlaps": "Sobreposições da Chave Repeater",

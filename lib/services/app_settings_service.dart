@@ -49,10 +49,6 @@ class AppSettingsService extends ChangeNotifier {
     await prefs.setString(_settingsKey, jsonStr);
   }
 
-  Future<void> setClearPathOnMaxRetry(bool value) async {
-    await updateSettings(_settings.copyWith(clearPathOnMaxRetry: value));
-  }
-
   Future<void> setMapShowRepeaters(bool value) async {
     await updateSettings(_settings.copyWith(mapShowRepeaters: value));
   }
@@ -123,30 +119,6 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setNotifyOnNewAdvert(bool value) async {
     await updateSettings(_settings.copyWith(notifyOnNewAdvert: value));
-  }
-
-  Future<void> setAutoRouteRotationEnabled(bool value) async {
-    await updateSettings(_settings.copyWith(autoRouteRotationEnabled: value));
-  }
-
-  Future<void> setMaxRouteWeight(double value) async {
-    await updateSettings(_settings.copyWith(maxRouteWeight: value));
-  }
-
-  Future<void> setInitialRouteWeight(double value) async {
-    await updateSettings(_settings.copyWith(initialRouteWeight: value));
-  }
-
-  Future<void> setRouteWeightSuccessIncrement(double value) async {
-    await updateSettings(
-      _settings.copyWith(routeWeightSuccessIncrement: value),
-    );
-  }
-
-  Future<void> setRouteWeightFailureDecrement(double value) async {
-    await updateSettings(
-      _settings.copyWith(routeWeightFailureDecrement: value),
-    );
   }
 
   Future<void> setMaxMessageRetries(int value) async {
@@ -238,6 +210,14 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setAutoConnectLastDevice(bool value) async {
     await updateSettings(_settings.copyWith(autoConnectLastDevice: value));
+  }
+
+  Future<void> dismissDmIdentityWarning() async {
+    await updateSettings(_settings.copyWith(dmIdentityWarningDismissed: true));
+  }
+
+  Future<void> setSenderNameColors(bool value) async {
+    await updateSettings(_settings.copyWith(senderNameColors: value));
   }
 
   // --- Blocking (user-generated content moderation) -------------------------

@@ -17,8 +17,6 @@ import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
-import 'package:meshtrax/services/path_history_service.dart';
-import 'package:meshtrax/services/storage_service.dart';
 
 import 'bench_config.dart';
 
@@ -220,13 +218,11 @@ Future<void> verifyUserChannelsIntact(BenchRadio radio) async {
 
 /// Builds a connector wired exactly like main.dart does, minus UI services.
 Future<MeshCoreConnector> buildConnector() async {
-  final storage = StorageService();
   final connector = MeshCoreConnector();
   final appSettings = AppSettingsService();
   await appSettings.loadSettings();
   connector.initialize(
     retryService: MessageRetryService(),
-    pathHistoryService: PathHistoryService(storage),
     appSettingsService: appSettings,
   );
   await connector.loadContactCache();

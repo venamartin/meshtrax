@@ -6,22 +6,22 @@ Open-source Flutter client for MeshCore LoRa mesh networking devices.
 
 ```bash
 # Install dependencies
-~/flutter/bin/flutter pub get
+flutter pub get
 
 # Run in debug mode
-~/flutter/bin/flutter run
+flutter run
 
 # Build Android APK
-~/flutter/bin/flutter build apk
+flutter build apk
 
 # Build iOS
-~/flutter/bin/flutter build ios
+flutter build ios
 
 # Run static analysis
-~/flutter/bin/flutter analyze
+flutter analyze
 
 # Run tests
-~/flutter/bin/flutter test
+flutter test
 ```
 
 ## Project Structure

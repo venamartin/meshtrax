@@ -16,7 +16,6 @@ import 'screens/channel_chat_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'services/storage_service.dart';
 import 'services/message_retry_service.dart';
-import 'services/path_history_service.dart';
 import 'services/app_settings_service.dart';
 import 'services/notification_service.dart';
 import 'services/ble_debug_log_service.dart';
@@ -25,7 +24,6 @@ import 'services/background_service.dart';
 import 'services/map_tile_cache_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
-import 'services/timeout_prediction_service.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 
@@ -38,7 +36,6 @@ void main() async {
   // Initialize services
   final storage = StorageService();
   final connector = MeshCoreConnector();
-  final pathHistoryService = PathHistoryService(storage);
   final retryService = MessageRetryService();
   final appSettingsService = AppSettingsService();
   final bleDebugLogService = BleDebugLogService();
@@ -47,7 +44,6 @@ void main() async {
   final mapTileCacheService = MapTileCacheService();
   final chatTextScaleService = ChatTextScaleService();
   final uiViewStateService = UiViewStateService();
-  final timeoutPredictionService = TimeoutPredictionService(storage);
 
   // Load settings
   await appSettingsService.loadSettings();
@@ -68,17 +64,14 @@ void main() async {
 
   await chatTextScaleService.initialize();
   await uiViewStateService.initialize();
-  await timeoutPredictionService.initialize();
 
   // Wire up connector with services
   connector.initialize(
     retryService: retryService,
-    pathHistoryService: pathHistoryService,
     appSettingsService: appSettingsService,
     bleDebugLogService: bleDebugLogService,
     appDebugLogService: appDebugLogService,
     backgroundService: backgroundService,
-    timeoutPredictionService: timeoutPredictionService,
   );
 
   await connector.loadContactCache();
@@ -94,7 +87,6 @@ void main() async {
     MeshTraxApp(
       connector: connector,
       retryService: retryService,
-      pathHistoryService: pathHistoryService,
       storage: storage,
       appSettingsService: appSettingsService,
       bleDebugLogService: bleDebugLogService,
@@ -102,7 +94,6 @@ void main() async {
       mapTileCacheService: mapTileCacheService,
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
-      timeoutPredictionService: timeoutPredictionService,
     ),
   );
 }
@@ -131,7 +122,6 @@ https://creativecommons.org/licenses/by/4.0/
 class MeshTraxApp extends StatefulWidget {
   final MeshCoreConnector connector;
   final MessageRetryService retryService;
-  final PathHistoryService pathHistoryService;
   final StorageService storage;
   final AppSettingsService appSettingsService;
   final BleDebugLogService bleDebugLogService;
@@ -139,13 +129,11 @@ class MeshTraxApp extends StatefulWidget {
   final MapTileCacheService mapTileCacheService;
   final ChatTextScaleService chatTextScaleService;
   final UiViewStateService uiViewStateService;
-  final TimeoutPredictionService timeoutPredictionService;
 
   const MeshTraxApp({
     super.key,
     required this.connector,
     required this.retryService,
-    required this.pathHistoryService,
     required this.storage,
     required this.appSettingsService,
     required this.bleDebugLogService,
@@ -153,7 +141,6 @@ class MeshTraxApp extends StatefulWidget {
     required this.mapTileCacheService,
     required this.chatTextScaleService,
     required this.uiViewStateService,
-    required this.timeoutPredictionService,
   });
 
   @override
@@ -251,7 +238,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       providers: [
         ChangeNotifierProvider.value(value: widget.connector),
         ChangeNotifierProvider.value(value: widget.retryService),
-        ChangeNotifierProvider.value(value: widget.pathHistoryService),
         ChangeNotifierProvider.value(value: widget.appSettingsService),
         ChangeNotifierProvider.value(value: widget.bleDebugLogService),
         ChangeNotifierProvider.value(value: widget.appDebugLogService),
@@ -259,7 +245,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         Provider.value(value: widget.storage),
         Provider.value(value: widget.mapTileCacheService),
-        ChangeNotifierProvider.value(value: widget.timeoutPredictionService),
       ],
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {

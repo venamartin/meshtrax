@@ -8,7 +8,7 @@ import '../models/contact.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../services/repeater_command_service.dart';
-import '../widgets/path_management_dialog.dart';
+import '../widgets/routing_dialog.dart';
 import '../widgets/snr_indicator.dart';
 import '../helpers/snack_bar_builder.dart';
 
@@ -336,7 +336,7 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
             icon: const Icon(Icons.timeline),
             tooltip: l10n.repeater_pathManagement,
             onPressed: () =>
-                PathManagementDialog.show(context, contact: repeater),
+                RoutingDialog.show(context, contact: repeater),
           ),
           IconButton(
             icon: _isLoading

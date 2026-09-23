@@ -400,16 +400,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.delete_outline, color: Colors.red),
-            title: Text("Delete All Paths"),
-            subtitle: Text(
-              "Clear all path data from contacts.",
-              style: TextStyle(color: Colors.red[700]),
-            ),
-            onTap: () => connector.deleteAllPaths(),
-          ),
-          const Divider(height: 1),
-          ListTile(
             leading: const Icon(Icons.sync),
             title: Text(l10n.settings_syncTime),
             subtitle: Text(l10n.settings_syncTimeSubtitle),

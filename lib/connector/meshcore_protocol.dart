@@ -396,6 +396,32 @@ int maxChannelMessageBytes(String? senderName) {
   return _minPositive(byPayload, byFrame);
 }
 
+/// Whether a repeated copy of an outgoing channel message can EVER be
+/// observed by the app. Echoes and repeats reach the app only through the
+/// firmware's raw RX-log push (the sender's own floods are marked seen at
+/// TX, so the normal channel-message frame never carries them back), and
+/// that push silently drops any packet that doesn't fit the serial frame
+/// (`logRxRaw`: raw + 3 <= [maxFrameSize]). A 1-hop repeated scoped flood
+/// is header(1) + transport codes(4) + path_len(1) + [pathHashByteWidth]
+/// path bytes + payload, where payload = channelHash(1) + MAC(2) +
+/// zero-padded AES blocks of timestamp(4) + txtType(1) + `<name>: <text>`.
+///
+/// Verified on the air 2026-09-22: with a 10-byte sender name and 2-byte
+/// path hashes, 140-char sends echo (repeated raw 171) and 144-char sends
+/// never do (repeated raw 187).
+bool isChannelEchoObservable(
+  String? senderName,
+  String outboundText,
+  int pathHashByteWidth,
+) {
+  final prefixBytes = _senderNameBytes(senderName) + 2; // "<name>: "
+  final plaintext = 5 + prefixBytes + utf8.encode(outboundText).length;
+  final ciphertext = ((plaintext + 15) ~/ 16) * 16;
+  final payload = 1 + 2 + ciphertext;
+  final repeatedRaw = 1 + 4 + 1 + pathHashByteWidth + payload;
+  return repeatedRaw + 3 <= maxFrameSize;
+}
+
 int _senderNameBytes(String? senderName) {
   if (senderName == null || senderName.isEmpty) return maxNameSize - 1;
   final bytes = utf8.encode(senderName);
@@ -529,6 +555,13 @@ Uint8List buildSendStatusRequestFrame(Uint8List recipientPubKey) {
   writer.writeByte(cmdSendStatusReq);
   writer.writeBytes(recipientPubKey);
   return writer.toBytes();
+}
+
+// On-air size of a TXT_MSG packet: header + path length byte + one hash per
+// hop + dest/src hashes + MAC + the AES-padded (timestamp, flags, text).
+int txtMsgPacketBytes(int textBytes, {int hops = 0}) {
+  final cipherBytes = ((5 + textBytes + 15) ~/ 16) * 16;
+  return 2 + hops + 2 + 2 + cipherBytes;
 }
 
 // Build CMD_SEND_TXT_MSG frame (companion_radio format)

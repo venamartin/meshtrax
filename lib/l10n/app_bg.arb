@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Уведомления за реклами",
   "appSettings_advertisementNotificationsSubtitle": "Покажи известие, когато бъдат открити нови възли.",
   "appSettings_messaging": "Съобщения",
-  "appSettings_clearPathOnMaxRetry": "Изчисти Път на Макс Опит",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Възстанови контактния път след 5 неуспешни опита за изпращане",
-  "appSettings_pathsWillBeCleared": "Пътищата ще бъдат почистени след 5 неуспешни опита.",
-  "appSettings_pathsWillNotBeCleared": "Пътищата няма да бъдат автоматично изчистени.",
-  "appSettings_autoRouteRotation": "Автоматично маршрутизиране на завъртания",
-  "appSettings_autoRouteRotationSubtitle": "Превключете между най-добрите пътища и режим на наводняване",
-  "appSettings_autoRouteRotationEnabled": "Автоматично маршрутизиране вкл.",
-  "appSettings_autoRouteRotationDisabled": "Автоматично маршрутизирането е деактивирано",
   "appSettings_battery": "Батерия",
   "appSettings_batteryChemistry": "Химия на батерията",
   "appSettings_batteryChemistryPerDevice": "Зададено за устройство ({deviceName})",
@@ -431,6 +423,8 @@
     }
   },
   "chat_typeMessage": "Въведете съобщение...",
+  "chat_searchMessages": "Търсене на съобщения",
+  "chat_searchNoMatches": "Няма съвпадения",
   "chat_messageTooLong": "Съобщението е твърде дълго (макс {maxBytes} байта).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -441,18 +435,6 @@
   },
   "chat_messageCopied": "Съобщението е копирано",
   "chat_messageDeleted": "Съобщението е изтрито",
-  "chat_retryingMessage": "Опитваме се отново.",
-  "chat_retryCount": "Опитай отново {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Изпрати GIF",
   "chat_reply": "Отговори",
   "chat_addReaction": "Добави Реакция",
@@ -545,12 +527,6 @@
     }
   },
   "debugFrame_hexDump": "Хексадесетичен Dump:",
-  "chat_pathManagement": "Управление на пътища",
-  "chat_routingMode": "Режим на маршрутизиране",
-  "chat_autoUseSavedPath": "Автоматично (използвай запазения път)",
-  "chat_forceFloodMode": "Принуди режим на наводняване",
-  "chat_recentAckPaths": "Неотдавни ACK пътища (докоснете, за да използвате):",
-  "chat_pathHistoryFull": "Историята на пътя е пълна. Премахнете записи, за да добавите нови.",
   "chat_hopSingular": "скочи",
   "chat_hopPlural": "скоци",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -561,33 +537,9 @@
       }
     }
   },
-  "chat_successes": "Успехи",
-  "chat_removePath": "Премахни пътя",
-  "chat_noPathHistoryYet": "Няма история на пътищата още.\nИзпратете съобщение, за да откриете пътища.",
-  "chat_pathActions": "Действия по пътя:",
   "chat_setCustomPath": "Задайте персонализиран път",
-  "chat_setCustomPathSubtitle": "Ръчно укажете маршрутен път",
-  "chat_clearPath": "Почисти Път",
-  "chat_clearPathSubtitle": "Принуди преоткриване при следващо изпращане",
-  "chat_pathCleared": "Пътят е почистен. Следващото съобщение ще открие маршрута отново.",
-  "chat_floodModeSubtitle": "Използвайте превключвателя за маршрутизиране в лентата на приложението.",
-  "chat_floodModeEnabled": "Режим на наводнение е активиран. Включете го отново чрез иконката за маршрутизиране в лентата на приложението.",
   "chat_fullPath": "Пълен път",
   "chat_pathDetailsNotAvailable": "Детайлите за пътя все още не са налични. Опитайте да изпратите съобщение, за да освежите.",
-  "chat_pathSetHops": "Пътят е зададен: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Запазено локално. Свържете се за синхронизиране.",
-  "chat_pathDeviceConfirmed": "Устройство потвърдено.",
-  "chat_pathDeviceNotConfirmed": "Устройството все още не е потвърдено.",
   "chat_type": "Въведете",
   "chat_path": "Пътекино",
   "chat_publicKey": "Публичен ключ",
@@ -817,11 +769,6 @@
   "login_savePasswordSubtitle": "Паролата ще бъде съхранена сигурно на това устройство.",
   "login_repeaterDescription": "Въведете паролата на репитера, за да получите достъп до настройките и статуса.",
   "login_roomDescription": "Въведете паролата на стаята, за да получите достъп до настройките и статуса.",
-  "login_routing": "Маршрутизиране",
-  "login_routingMode": "Режим на маршрутизиране",
-  "login_autoUseSavedPath": "Автоматично (използвай запазения път)",
-  "login_forceFloodMode": "Принуди режим на наводняване",
-  "login_managePaths": "Управление на пътища",
   "login_login": "Вход",
   "login_attempt": "Опитвате {current}/{max}",
   "@login_attempt": {
@@ -845,22 +792,6 @@
   "login_failedMessage": "Входът не беше успешен. Или паролата е грешна, или повторителят е недостъпен.",
   "common_reload": "Презареди",
   "common_clear": "Изчисти",
-  "path_currentPath": "Текущ път: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Използване на {count} {count, plural, =1{hop} other{hops}} път",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Въведете персонализиран път",
   "path_currentPathLabel": "Текущ път",
   "path_hexPrefixInstructions": "Въведете 2-символни шестнадесетични префикси за всеки хоп, разделени с кама.",
@@ -1614,7 +1545,6 @@
   "scanner_chromeRequiredMessage": "Това уеб приложение изисква Google Chrome или браузър, базиран на Chromium, за поддръжка на Bluetooth.",
   "snrIndicator_lastSeen": "Последно видян",
   "snrIndicator_nearByRepeaters": "Близки повтарящи се устройства",
-  "chat_ShowAllPaths": "Покажи всички пътища",
   "settings_clientRepeatSubtitle": "Позволете на това устройство да предава пакети към мрежата за други устройства.",
   "settings_clientRepeatFreqWarning": "За повторение извън мрежата са необходими честоти от 433, 869 или 918 MHz.",
   "settings_clientRepeat": "Без електричество – повторение",
@@ -1893,16 +1823,6 @@
   "tcpConnectionFailed": "Неуспешно е установено TCP връзката: {error}",
   "map_showDiscoveryContacts": "Покажи контакти за откриване",
   "map_setAsMyLocation": "Задайте като моя местоположение",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_denyAll": "Откажи всичко",
   "settings_allowAll": "Позволи всичко",
   "settings_allowByContact": "Позволи по флагове за контакт",
@@ -1925,17 +1845,8 @@
   "contact_teleLocSubtitle": "Позволи споделяне на данни за местоположение",
   "contact_teleLoc": "Местоположение на телеметрията",
   "contact_teleEnvSubtitle": "Позволи споделяне на данни от средносферните датчици",
-  "appSettings_initialRouteWeight": "Първоначална тежест на маршрута",
-  "appSettings_maxRouteWeight": "Максимално допустимо тегло на маршрута",
-  "appSettings_initialRouteWeightSubtitle": "Начално тегло за новооткрити маршрути",
-  "appSettings_maxRouteWeightSubtitle": "Максималното тегло, което един маршрут може да събере от успешни доставки.",
-  "appSettings_routeWeightSuccessIncrement": "Увеличение на теглото за успех",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Тегло, добавено към път след успешно доставяне.",
-  "appSettings_routeWeightFailureDecrement": "Намаляване на теглото, свързано с неуспех",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Тегло, което е било премахнато от пътя след неуспешен опит за доставка.",
   "appSettings_maxMessageRetries": "Максимален брой опити за изпращане на съобщение",
   "appSettings_maxMessageRetriesSubtitle": "Брой опити за повторно изпращане, преди съобщението да бъде маркирано като неуспешно.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Режим на телеметрията е обновен",
   "map_showOverlaps": "Покриване на ключа на повтаряча",
   "map_runTraceWithReturnPath": "Върни се по същия път.",

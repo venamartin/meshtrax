@@ -101,6 +101,11 @@ class _TypeFilterAction extends _ContactsFilterAction {
   const _TypeFilterAction(this.filter);
 }
 
+class _SourceFilterAction extends _ContactsFilterAction {
+  final ContactSourceFilter filter;
+  const _SourceFilterAction(this.filter);
+}
+
 class _ToggleUnreadAction extends _ContactsFilterAction {
   const _ToggleUnreadAction();
 }
@@ -108,18 +113,22 @@ class _ToggleUnreadAction extends _ContactsFilterAction {
 class ContactsFilterMenu extends StatelessWidget {
   final ContactSortOption sortOption;
   final ContactTypeFilter typeFilter;
+  final ContactSourceFilter sourceFilter;
   final bool showUnreadOnly;
   final ValueChanged<ContactSortOption> onSortChanged;
   final ValueChanged<ContactTypeFilter> onTypeFilterChanged;
+  final ValueChanged<ContactSourceFilter> onSourceFilterChanged;
   final ValueChanged<bool> onUnreadOnlyChanged;
 
   const ContactsFilterMenu({
     super.key,
     required this.sortOption,
     required this.typeFilter,
+    required this.sourceFilter,
     required this.showUnreadOnly,
     required this.onSortChanged,
     required this.onTypeFilterChanged,
+    required this.onSourceFilterChanged,
     required this.onUnreadOnlyChanged,
   });
 
@@ -146,6 +155,26 @@ class ContactsFilterMenu extends StatelessWidget {
               value: _SortAction(ContactSortOption.name),
               label: l10n.listFilter_az,
               checked: sortOption == ContactSortOption.name,
+            ),
+          ],
+        ),
+        SortFilterMenuSection(
+          title: l10n.listFilter_source,
+          options: [
+            SortFilterMenuOption(
+              value: _SourceFilterAction(ContactSourceFilter.all),
+              label: l10n.listFilter_all,
+              checked: sourceFilter == ContactSourceFilter.all,
+            ),
+            SortFilterMenuOption(
+              value: _SourceFilterAction(ContactSourceFilter.saved),
+              label: l10n.listFilter_saved,
+              checked: sourceFilter == ContactSourceFilter.saved,
+            ),
+            SortFilterMenuOption(
+              value: _SourceFilterAction(ContactSourceFilter.discovered),
+              label: l10n.listFilter_discovered,
+              checked: sourceFilter == ContactSourceFilter.discovered,
             ),
           ],
         ),
@@ -186,90 +215,10 @@ class ContactsFilterMenu extends StatelessWidget {
             onSortChanged(option);
           case _TypeFilterAction(:final filter):
             onTypeFilterChanged(filter);
+          case _SourceFilterAction(:final filter):
+            onSourceFilterChanged(filter);
           case _ToggleUnreadAction():
             onUnreadOnlyChanged(!showUnreadOnly);
-        }
-      },
-    );
-  }
-}
-
-sealed class _DiscoveryFilterAction {
-  const _DiscoveryFilterAction();
-}
-
-class _DiscoverySortAction extends _DiscoveryFilterAction {
-  final ContactSortOption option;
-  const _DiscoverySortAction(this.option);
-}
-
-class _DiscoveryTypeFilterAction extends _DiscoveryFilterAction {
-  final ContactTypeFilter filter;
-  const _DiscoveryTypeFilterAction(this.filter);
-}
-
-class DiscoveryContactsFilterMenu extends StatelessWidget {
-  final ContactSortOption sortOption;
-  final ContactTypeFilter typeFilter;
-  final ValueChanged<ContactSortOption> onSortChanged;
-  final ValueChanged<ContactTypeFilter> onTypeFilterChanged;
-
-  const DiscoveryContactsFilterMenu({
-    super.key,
-    required this.sortOption,
-    required this.typeFilter,
-    required this.onSortChanged,
-    required this.onTypeFilterChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return SortFilterMenu<_DiscoveryFilterAction>(
-      tooltip: l10n.listFilter_tooltip,
-      sections: [
-        SortFilterMenuSection(
-          title: l10n.listFilter_sortBy,
-          options: [
-            SortFilterMenuOption(
-              value: _DiscoverySortAction(ContactSortOption.lastSeen),
-              label: l10n.listFilter_heardRecently,
-              checked: sortOption == ContactSortOption.lastSeen,
-            ),
-            SortFilterMenuOption(
-              value: _DiscoverySortAction(ContactSortOption.name),
-              label: l10n.listFilter_az,
-              checked: sortOption == ContactSortOption.name,
-            ),
-          ],
-        ),
-        SortFilterMenuSection(
-          title: l10n.listFilter_filters,
-          options: [
-            SortFilterMenuOption(
-              value: _DiscoveryTypeFilterAction(ContactTypeFilter.all),
-              label: l10n.listFilter_all,
-              checked: typeFilter == ContactTypeFilter.all,
-            ),
-            SortFilterMenuOption(
-              value: _DiscoveryTypeFilterAction(ContactTypeFilter.users),
-              label: l10n.listFilter_users,
-              checked: typeFilter == ContactTypeFilter.users,
-            ),
-            SortFilterMenuOption(
-              value: _DiscoveryTypeFilterAction(ContactTypeFilter.rooms),
-              label: l10n.listFilter_roomServers,
-              checked: typeFilter == ContactTypeFilter.rooms,
-            ),
-          ],
-        ),
-      ],
-      onSelected: (action) {
-        switch (action) {
-          case _DiscoverySortAction(:final option):
-            onSortChanged(option);
-          case _DiscoveryTypeFilterAction(:final filter):
-            onTypeFilterChanged(filter);
         }
       },
     );

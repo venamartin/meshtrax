@@ -569,6 +569,7 @@ class MessageStore {
       'deliveredAt': msg.deliveredAt?.millisecondsSinceEpoch,
       'tripTimeMs': msg.tripTimeMs,
       'pathLength': msg.pathLength,
+      'deliveredLate': msg.deliveredLate,
       'pathBytes': msg.pathBytes.isNotEmpty
           ? base64Encode(msg.pathBytes)
           : null,
@@ -606,6 +607,7 @@ class MessageStore {
           ? DateTime.fromMillisecondsSinceEpoch(json['deliveredAt'] as int)
           : null,
       tripTimeMs: json['tripTimeMs'] as int?,
+      deliveredLate: json['deliveredLate'] as bool? ?? false,
       pathLength: () {
         int? pLen = json['pathLength'] as int?;
         if (pLen != null && pLen > 0) {

@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Powiadomienia o rozgłoszeniach",
   "appSettings_advertisementNotificationsSubtitle": "Wyświetl powiadomienie, gdy zostaną wykryte nowe węzły.",
   "appSettings_messaging": "Wiadomości",
-  "appSettings_clearPathOnMaxRetry": "Wyczyść ścieżkę po maks. liczbie prób",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Resetuj ścieżkę kontaktu po 5 nieudanych próbach wysłania",
-  "appSettings_pathsWillBeCleared": "Ścieżka zostanie wyczyszczona po 5 nieudanych próbach.",
-  "appSettings_pathsWillNotBeCleared": "Ścieżka nie zostanie automatycznie wyczyszczona.",
-  "appSettings_autoRouteRotation": "Automatyczna rotacja trasy",
-  "appSettings_autoRouteRotationSubtitle": "Przełączaj się między najlepszymi ścieżkami a trybem zalewowym.",
-  "appSettings_autoRouteRotationEnabled": "Automatyczne obracanie tras włączone",
-  "appSettings_autoRouteRotationDisabled": "Automatyczne obracanie tras wyłączone",
   "appSettings_battery": "Bateria",
   "appSettings_batteryChemistry": "Chemia Baterii",
   "appSettings_batteryChemistryPerDevice": "Ustaw dla urządzenia ({deviceName})",
@@ -441,6 +433,8 @@
     }
   },
   "chat_typeMessage": "Wpisz wiadomość...",
+  "chat_searchMessages": "Szukaj wiadomości",
+  "chat_searchNoMatches": "Brak wyników",
   "chat_messageTooLong": "Wiadomość jest za długa (maksymalnie {maxBytes} bajtów).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -451,18 +445,6 @@
   },
   "chat_messageCopied": "Wiadomość skopiowana",
   "chat_messageDeleted": "Wiadomość usunięta",
-  "chat_retryingMessage": "Ponawianie wiadomości",
-  "chat_retryCount": "Próba {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Wyślij GIF",
   "chat_reply": "Odpowiedz",
   "chat_addReaction": "Dodaj Reakcję",
@@ -555,12 +537,6 @@
     }
   },
   "debugFrame_hexDump": "Zrzut hex:",
-  "chat_pathManagement": "Zarządzanie ścieżkami",
-  "chat_routingMode": "Tryb routingu",
-  "chat_autoUseSavedPath": "Automatyczne (użyj zapisanej ścieżki)",
-  "chat_forceFloodMode": "Wymuś tryb zalewowy",
-  "chat_recentAckPaths": "Ostatnie ścieżki ACK (naciśnij, aby użyć):",
-  "chat_pathHistoryFull": "Historia ścieżek jest pełna. Usuń wpisy, aby dodać nowe.",
   "chat_hopSingular": "skok",
   "chat_hopPlural": "skoki",
   "chat_hopsCount": "{count} {count, plural, one{skok} few{skoki} many{skoków} other{skoków}}",
@@ -571,33 +547,9 @@
       }
     }
   },
-  "chat_successes": "Sukcesy",
-  "chat_removePath": "Usuń ścieżkę",
-  "chat_noPathHistoryYet": "Brak historii ścieżek.\nWyślij wiadomość, aby odkryć ścieżki.",
-  "chat_pathActions": "Działania ścieżki:",
   "chat_setCustomPath": "Ustaw ścieżkę niestandardową",
-  "chat_setCustomPathSubtitle": "Ręcznie określ trasę.",
-  "chat_clearPath": "Wyczyść Ścieżkę",
-  "chat_clearPathSubtitle": "Wymuś ponowne wyznaczenie trasy przy następnym wysłaniu",
-  "chat_pathCleared": "Ścieżka wyczyszczona. Następna wiadomość odnajdzie trasę.",
-  "chat_floodModeSubtitle": "Użyj przełącznika routingu w pasku narzędzi.",
-  "chat_floodModeEnabled": "Tryb zalewowy włączony. Przełącz z powrotem ikoną routingu w pasku aplikacji.",
   "chat_fullPath": "Pełna ścieżka",
   "chat_pathDetailsNotAvailable": "Szczegóły ścieżki jeszcze niedostępne. Spróbuj wysłać wiadomość, aby odświeżyć.",
-  "chat_pathSetHops": "Ścieżka ustawiona: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Zapisano lokalnie. Połącz się, aby zsynchronizować.",
-  "chat_pathDeviceConfirmed": "Urządzenie potwierdzone.",
-  "chat_pathDeviceNotConfirmed": "Urządzenie nie zostało jeszcze potwierdzone.",
   "chat_type": "Typ",
   "chat_path": "Ścieżka",
   "chat_publicKey": "Klucz Publiczny",
@@ -827,11 +779,6 @@
   "login_savePasswordSubtitle": "Hasło będzie bezpiecznie przechowywane na tym urządzeniu.",
   "login_repeaterDescription": "Wprowadź hasło do przekaźnika, aby uzyskać dostęp do ustawień i stanu.",
   "login_roomDescription": "Wprowadź hasło do pokoju, aby uzyskać dostęp do ustawień i statusu.",
-  "login_routing": "Trasowanie",
-  "login_routingMode": "Tryb routingu",
-  "login_autoUseSavedPath": "Automatycznie (użyj zapisanej ścieżki)",
-  "login_forceFloodMode": "Wymuś tryb zalewowy",
-  "login_managePaths": "Zarządzaj Ścieżkami",
   "login_login": "Zaloguj się",
   "login_attempt": "Próba {current}/{max}",
   "@login_attempt": {
@@ -855,22 +802,6 @@
   "login_failedMessage": "Logowanie nie powiodło się. Hasło jest nieprawidłowe albo przekaźnik jest nieosiągalny.",
   "common_reload": "Odśwież",
   "common_clear": "Wyczyść",
-  "path_currentPath": "Aktualna ścieżka: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Użyj ścieżki {count} {count, plural, one{skok} few{skoki} many{skoków} other{skoków}}.",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Wprowadź własną ścieżkę",
   "path_currentPathLabel": "Aktualna ścieżka",
   "path_hexPrefixInstructions": "Wprowadź 2-znakowe prefiksy szesnastkowe dla każdego skoku, oddzielone przecinkami.",
@@ -1652,7 +1583,6 @@
   "scanner_enableBluetooth": "Włącz Bluetooth",
   "snrIndicator_lastSeen": "Ostatnio widziany",
   "snrIndicator_nearByRepeaters": "Pobliskie przekaźniki",
-  "chat_ShowAllPaths": "Pokaż wszystkie ścieżki",
   "settings_clientRepeatSubtitle": "Pozwól temu urządzeniu powtarzać pakiety danych dla innych urządzeń.",
   "settings_clientRepeat": "Powtórzenie: Niezależne od sieci",
   "settings_clientRepeatFreqWarning": "Powtórka poza siecią wymaga częstotliwości 433, 869 lub 918 MHz.",
@@ -1931,16 +1861,6 @@
   "tcpConnectionFailed": "Błąd połączenia TCP: {error}",
   "map_showDiscoveryContacts": "Pokaż odkryte kontakty",
   "map_setAsMyLocation": "Ustaw jako moją lokalizację",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_allowByContact": "Zezwalaj według flag kontaktowych",
   "settings_allowAll": "Zezwalaj na wszystko",
   "settings_telemetryLocationMode": "Tryb położenia telemetrycznego",
@@ -1963,17 +1883,8 @@
   "contact_settings": "Ustawienia kontaktowe",
   "contact_lastSeen": "Ostatnio widziany",
   "contact_teleBaseSubtitle": "Pozwól na udostępnianie poziomu naładowania baterii i podstawowych danych telemetrycznych",
-  "appSettings_initialRouteWeight": "Początkowa waga trasy",
-  "appSettings_maxRouteWeight": "Maksymalny dopuszczalny ciężar pojazdu",
-  "appSettings_initialRouteWeightSubtitle": "Początkowa waga dla nowych, odkrytych ścieżek",
-  "appSettings_maxRouteWeightSubtitle": "Maksymalna waga, jaką ścieżka może zgromadzić dzięki udanym dostawom.",
-  "appSettings_routeWeightSuccessIncrement": "Wzrost wagi sukcesu",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Waga dodana do ścieżki po pomyślnym dostarczeniu",
-  "appSettings_routeWeightFailureDecrement": "Zmniejszenie wagi kary",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Waga usunięta z trasy po nieudanej dostawie",
   "appSettings_maxMessageRetries": "Maksymalna liczba prób wysłania wiadomości",
   "appSettings_maxMessageRetriesSubtitle": "Liczba prób ponownego wysłania wiadomości przed oznaczaniem jej jako nieudanej",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Tryb telemetryczny zaktualizowany",
   "map_showOverlaps": "Nakładające się klucze przekaźników",
   "map_runTraceWithReturnPath": "Wróć tą samą ścieżką",

@@ -29,6 +29,7 @@ import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
+import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
@@ -37,6 +38,7 @@ import '../widgets/radio_stats_entry.dart';
 import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
+import 'chat_screen.dart';
 import 'map_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
@@ -76,6 +78,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   bool _isLoadingOlder = false;
 
   MeshCoreConnector? _connector;
+
+  // DM-from-channel advert watch: armed by the no-match dialog, disarmed on
+  // hit, timeout, or screen dispose. Names only — a channel message carries
+  // no sender key, so a fresh advert is detected by candidates appearing
+  // where there were none (clock-immune: no timestamp comparison).
+  String? _awaitedAdvertName;
+  Timer? _awaitedAdvertTimer;
+  MeshCoreConnector? _advertWatchConnector;
+
   ChannelMessage? _firstUnreadMessage;
   int _initialScrollIndex = 0;
   bool _isAtBottom = true;
@@ -89,12 +100,33 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   int _watchLimit = 200;
   bool _didInitialAnchor = false;
 
+  // In-channel search. Matches come from the FULL stored history (the
+  // watched window only pages the visible list); jumping to a match
+  // outside the window grows _watchLimit until the row is loaded.
+  bool _searchActive = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  Timer? _searchDebounce;
+  List<({ChannelMessage message, int fromNewest})> _searchMatches = const [];
+  int _searchPos = -1;
+  String? _pendingSearchJumpId;
+
   void _subscribeMessages(MeshCoreConnector connector) {
     _messagesSub?.cancel();
     _messagesSub = connector
         .watchChannelMessages(widget.channel, limit: _watchLimit)
         .listen((messages) {
       if (!mounted) return;
+      // A search jump whose target was outside the watched window waits
+      // here for the grown window to deliver the row.
+      final pendingJump = _pendingSearchJumpId;
+      if (pendingJump != null &&
+          messages.any((m) => m.messageId == pendingJump)) {
+        _pendingSearchJumpId = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scrollToMessage(pendingJump);
+        });
+      }
       setState(() {
         _messages = messages;
         if (!_didInitialAnchor) {
@@ -367,6 +399,304 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _textFieldFocusNode.requestFocus();
   }
 
+  // --- DM from a channel message --------------------------------------------
+  // A channel message carries only a self-reported display name, so opening
+  // a DM means matching that name against saved + discovered contacts and
+  // letting the user verify the key. Every branch keeps the user in charge:
+  // no advert is ever sent, and no contact imported, without a tap.
+
+  /// Saved and discovered chat contacts whose name matches [senderName]
+  /// (trimmed, case-insensitive — other apps let names be typed by hand).
+  /// Deduped by key with the saved entry winning; newest heard first.
+  List<({Contact contact, bool saved})> _dmCandidatesFor(
+    MeshCoreConnector connector,
+    String senderName,
+  ) {
+    final wanted = senderName.trim().toLowerCase();
+    bool matches(Contact c) =>
+        c.type == advTypeChat &&
+        c.publicKeyHex != connector.selfPublicKeyHex &&
+        c.name.trim().toLowerCase() == wanted;
+
+    final byKey = <String, ({Contact contact, bool saved})>{};
+    for (final c in connector.contacts) {
+      if (matches(c)) byKey[c.publicKeyHex] = (contact: c, saved: true);
+    }
+    for (final c in connector.discoveredContacts) {
+      if (matches(c)) {
+        byKey.putIfAbsent(c.publicKeyHex, () => (contact: c, saved: false));
+      }
+    }
+    return byKey.values.toList()
+      ..sort((a, b) => b.contact.lastSeen.compareTo(a.contact.lastSeen));
+  }
+
+  void _startDmTo(String senderName) {
+    final connector = context.read<MeshCoreConnector>();
+    final candidates = _dmCandidatesFor(connector, senderName);
+    if (candidates.isEmpty) {
+      _showDmNoMatch(connector, senderName);
+      return;
+    }
+    // Unambiguous and already in conversation: jump straight in. The
+    // identity decision was made when that conversation started; picker
+    // and warning would be pure friction.
+    if (candidates.length == 1) {
+      final only = candidates.single;
+      if (only.saved && connector.latestContactArrivalUs(only.contact) > 0) {
+        _openDmWith(connector, only.contact, saved: true);
+        return;
+      }
+    }
+    _showDmCandidatePicker(connector, senderName, candidates);
+  }
+
+  /// Always shown, even for a single match: seeing the key and last-seen
+  /// time IS the identity check — names are not unique and can be imitated.
+  void _showDmCandidatePicker(
+    MeshCoreConnector connector,
+    String senderName,
+    List<({Contact contact, bool saved})> candidates,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.dmChannel_pickerTitle(senderName),
+                    style: Theme.of(sheetContext).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.l10n.dmChannel_pickerHint,
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: candidates.length,
+                itemBuilder: (context, index) {
+                  final candidate = candidates[index];
+                  return ContactTile(
+                    contact: candidate.contact,
+                    lastSeen: candidate.contact.lastSeen,
+                    unreadCount: 0,
+                    isFavorite: candidate.contact.isFavorite,
+                    isDiscovered: !candidate.saved,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _openDmWith(
+                        connector,
+                        candidate.contact,
+                        saved: candidate.saved,
+                      );
+                    },
+                    onLongPress: () {},
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// One-time informed-consent dialog; "don't show again" persists.
+  Future<bool> _confirmDmIdentity() async {
+    final settingsService = context.read<AppSettingsService>();
+    if (settingsService.settings.dmIdentityWarningDismissed) return true;
+    var dontShowAgain = false;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(dialogContext.l10n.dmChannel_warningTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(dialogContext.l10n.dmChannel_warningBody),
+              CheckboxListTile(
+                title: Text(dialogContext.l10n.dmChannel_dontShowAgain),
+                value: dontShowAgain,
+                onChanged: (value) =>
+                    setDialogState(() => dontShowAgain = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dialogContext.l10n.common_cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dialogContext.l10n.common_continue),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok == true && dontShowAgain) {
+      await settingsService.dismissDmIdentityWarning();
+    }
+    return ok == true;
+  }
+
+  Future<void> _openDmWith(
+    MeshCoreConnector connector,
+    Contact contact, {
+    required bool saved,
+  }) async {
+    // An existing conversation is an already-accepted identity — only
+    // warn when this DM would be a new link from channel name to contact.
+    final hasConversation =
+        saved && connector.latestContactArrivalUs(contact) > 0;
+    if (!hasConversation && !await _confirmDmIdentity()) return;
+    if (!mounted) return;
+    if (!saved) {
+      final success = await connector.importDiscoveredContact(contact);
+      if (!mounted) return;
+      if (!success) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_contactImportFailed),
+        );
+        return;
+      }
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(contact: contact, unreadCount: 0),
+      ),
+    );
+  }
+
+  void _showDmNoMatch(MeshCoreConnector connector, String senderName) {
+    // The two actions are both halves of one key exchange — they need OUR
+    // advert to reply, we need THEIRS to send — so taking one must not
+    // close the door on the other. Sending stays in the dialog (the button
+    // flips to a done-state); asking closes it only because it hands off
+    // to the composer.
+    var advertSent = false;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(dialogContext.l10n.dmChannel_noMatchTitle(senderName)),
+          content: Text(dialogContext.l10n.dmChannel_noMatchBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.common_close),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _insertAskInChannel(senderName);
+                _armAdvertWatch(connector, senderName);
+              },
+              child: Text(dialogContext.l10n.dmChannel_askInChannel),
+            ),
+            FilledButton(
+              onPressed: advertSent
+                  ? null
+                  : () {
+                      setDialogState(() => advertSent = true);
+                      unawaited(connector.sendSelfAdvert(flood: true));
+                      _armAdvertWatch(connector, senderName);
+                    },
+              child: Text(
+                advertSent
+                    ? dialogContext.l10n.settings_advertisementSent
+                    : dialogContext.l10n.dmChannel_sendMyAdvert,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Prefills the composer with a plain-language advert request — the user
+  /// sends it themselves. Readable by any app; the @[mention] pings
+  /// MeshTrax users.
+  void _insertAskInChannel(String senderName) {
+    _insertMentionOf(senderName);
+    final ask = context.l10n.dmChannel_askText;
+    final text = _textController.text;
+    final sel = _textController.selection;
+    final start = sel.isValid ? sel.start : text.length;
+    _textController.value = TextEditingValue(
+      text: text.replaceRange(start, start, ask),
+      selection: TextSelection.collapsed(offset: start + ask.length),
+    );
+  }
+
+  void _armAdvertWatch(MeshCoreConnector connector, String senderName) {
+    // Taking both dialog actions arms twice for the same name — the watch
+    // is already running, keep it (and don't repeat the snackbar).
+    if (_awaitedAdvertName == senderName && _awaitedAdvertTimer != null) {
+      return;
+    }
+    _disarmAdvertWatch();
+    _awaitedAdvertName = senderName;
+    _advertWatchConnector = connector;
+    _awaitedAdvertTimer =
+        Timer(const Duration(minutes: 15), _disarmAdvertWatch);
+    connector.addListener(_checkAwaitedAdvert);
+    showDismissibleSnackBar(
+      context,
+      content: Text(context.l10n.dmChannel_watching),
+    );
+  }
+
+  void _disarmAdvertWatch() {
+    _awaitedAdvertTimer?.cancel();
+    _awaitedAdvertTimer = null;
+    _advertWatchConnector?.removeListener(_checkAwaitedAdvert);
+    _advertWatchConnector = null;
+    _awaitedAdvertName = null;
+  }
+
+  /// Armed only when the name had zero candidates, so any candidate
+  /// appearing means their advert arrived.
+  void _checkAwaitedAdvert() {
+    final name = _awaitedAdvertName;
+    final connector = _advertWatchConnector;
+    if (name == null || connector == null || !mounted) return;
+    final candidates = _dmCandidatesFor(connector, name);
+    if (candidates.isEmpty) return;
+    _disarmAdvertWatch();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.dmChannel_advertHeard(name)),
+        duration: const Duration(seconds: 10),
+        action: SnackBarAction(
+          label: context.l10n.dmChannel_openDm,
+          onPressed: () =>
+              _showDmCandidatePicker(connector, name, candidates),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMentionsOverlay() {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -454,7 +784,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   @override
   void dispose() {
+    _disarmAdvertWatch();
     _messagesSub?.cancel();
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
@@ -474,6 +808,87 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     setState(() {
       _replyingToMessage = null;
     });
+  }
+
+  void _openSearch() {
+    setState(() => _searchActive = true);
+    _searchFocusNode.requestFocus();
+  }
+
+  void _closeSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    setState(() {
+      _searchActive = false;
+      _searchMatches = const [];
+      _searchPos = -1;
+      _pendingSearchJumpId = null;
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    // The RAW query goes through: a space at either edge means "word
+    // boundary" to the store's matcher, so trimming here would erase it.
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 250),
+      () => _runSearch(query),
+    );
+  }
+
+  Future<void> _runSearch(String query) async {
+    if (!mounted) return;
+    if (query.trim().isEmpty) {
+      setState(() {
+        _searchMatches = const [];
+        _searchPos = -1;
+      });
+      return;
+    }
+    final connector = context.read<MeshCoreConnector>();
+    final settingsService = context.read<AppSettingsService>();
+    // SQL does the heavy lifting (text + sender names, newest first) —
+    // the full history is never loaded here.
+    final found = await connector.searchChannelMessages(widget.channel, query);
+    if (!mounted || query != _searchController.text) return;
+    final matches = <({ChannelMessage message, int fromNewest})>[
+      for (final f in found)
+        if (f.message.isOutgoing ||
+            !settingsService.isSenderBlocked(f.message.senderName))
+          f,
+    ];
+    setState(() {
+      _searchMatches = matches;
+      _searchPos = matches.isEmpty ? -1 : 0;
+    });
+    if (matches.isNotEmpty) _jumpToMatch(0);
+  }
+
+  /// [delta] +1 steps to an older match, -1 to a newer one. Clamps at the
+  /// ends — wrapping around made the arrows feel reversed (UP at the
+  /// oldest match visually jumped DOWN to the newest).
+  void _searchStep(int delta) {
+    final next = _searchPos + delta;
+    if (next < 0 || next >= _searchMatches.length) return;
+    _jumpToMatch(next);
+  }
+
+  bool get _searchHasOlder => _searchPos >= 0 && _searchPos < _searchMatches.length - 1;
+  bool get _searchHasNewer => _searchPos > 0;
+
+  void _jumpToMatch(int pos) {
+    final match = _searchMatches[pos];
+    setState(() => _searchPos = pos);
+    if (_messages.any((m) => m.messageId == match.message.messageId)) {
+      _scrollToMessage(match.message.messageId);
+      return;
+    }
+    // Outside the watched window: grow it past the target and jump when
+    // the subscription delivers the row (see _subscribeMessages).
+    final needed = ((match.fromNewest + 51) ~/ 200 + 1) * 200;
+    if (needed > _watchLimit) _watchLimit = needed;
+    _pendingSearchJumpId = match.message.messageId;
+    _subscribeMessages(context.read<MeshCoreConnector>());
   }
 
   Future<void> _scrollToMessage(String messageId) async {
@@ -500,10 +915,30 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_searchActive,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: Scaffold(
       backgroundColor: ChatColors.isLight(context) ? ChatColors.background : null,
       appBar: AppBar(
-        title: Row(
+        title: _searchActive
+            ? TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: _onSearchChanged,
+                onSubmitted: (_) {
+                  _searchStep(1);
+                  _searchFocusNode.requestFocus();
+                },
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: context.l10n.chat_searchMessages,
+                  border: InputBorder.none,
+                ),
+              )
+            : Row(
           children: [
             Icon(
               widget.channel.isPublicChannel
@@ -521,7 +956,36 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ],
         ),
         centerTitle: false,
-        actions: [
+        actions: _searchActive
+            ? [
+                if (_searchController.text.trim().isNotEmpty)
+                  Center(
+                    child: Text(
+                      _searchMatches.isEmpty
+                          ? context.l10n.chat_searchNoMatches
+                          : '${_searchPos + 1}/${_searchMatches.length}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_up),
+                  onPressed: _searchHasOlder ? () => _searchStep(1) : null,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  onPressed: _searchHasNewer ? () => _searchStep(-1) : null,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: _closeSearch,
+                ),
+              ]
+            : [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: context.l10n.chat_searchMessages,
+            onPressed: _openSearch,
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code),
             tooltip: context.l10n.channels_shareChannel,
@@ -692,6 +1156,25 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
                               Widget currentWidget = bubble;
 
+                              final focusedMatchId =
+                                  _searchActive && _searchPos >= 0
+                                      ? _searchMatches[_searchPos]
+                                          .message
+                                          .messageId
+                                      : null;
+                              if (message.messageId == focusedMatchId) {
+                                currentWidget = Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: currentWidget,
+                                );
+                              }
+
                               if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
                                 currentWidget = Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -780,6 +1263,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -806,6 +1290,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final uiState = context.read<UiViewStateService>();
     final connector = context.read<MeshCoreConnector>();
     final enableTracing = settingsService.settings.enableMessageTracing;
+    final senderNameColors = settingsService.settings.senderNameColors;
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
     final poi = _parsePoiMessage(message.text);
@@ -886,13 +1371,33 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                   bottom: 4,
                                 )
                               : EdgeInsets.zero,
-                          child: Text(
-                            message.senderName,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  message.senderName,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: senderNameColors
+                                        ? _getColorForName(message.senderName)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                  ),
+                                ),
+                              ),
+                              // Some copy of this message was heard with
+                              // zero hops: our radio heard THEIR radio, no
+                              // repeater in between — worth celebrating.
+                              // Latched, so the pill survives echo merges
+                              // that adopt the longest path for display.
+                              if (message.heardDirect) ...[
+                                const SizedBox(width: 6),
+                                _buildDirectPill(),
+                              ],
+                            ],
                           ),
                         ),
                         if (gifId == null) const SizedBox(height: 4),
@@ -1322,9 +1827,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               style: TextStyle(
                 fontSize: 11 * textScale,
                 fontWeight: FontWeight.bold,
+                // Quoted sender wears their identity color too; own node
+                // keeps the theme accent, like the composer reply banner.
                 color: isOwnNode
                     ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.onSecondaryContainer,
+                    : (context
+                            .read<AppSettingsService>()
+                            .settings
+                            .senderNameColors
+                        ? _getColorForName(message.replyToSenderName ?? '')
+                        : Theme.of(context).colorScheme.onSecondaryContainer),
               ),
             ),
             const SizedBox(height: 2),
@@ -1501,22 +2013,61 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   Color _getColorForName(String name) {
-    // Generate a consistent color based on the name hash
-    final hash = name.hashCode;
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.pink,
-      Colors.teal,
-      Colors.indigo,
-      Colors.cyan,
-      Colors.amber,
-      Colors.deepOrange,
+    // Hue from the name hash — stable across sessions and devices. Shared
+    // by the avatar, the sender name, and reply quotes so one person is one
+    // color everywhere. Hand-curated, perceptually spaced hues: the
+    // Material-swatch version put three near-identical purples and two
+    // muddy neutrals in rotation, which read as constant collisions, and
+    // its 300-shades were pastel where WhatsApp is vivid. Dark mode gets
+    // the saturated tone; light mode re-derives the same hue at reading
+    // depth. Two senders in a big channel can still share a hue; accepted.
+    const palette = [
+      Color(0xFFFF6B6B), // red
+      Color(0xFFFF9F45), // orange
+      Color(0xFFFFD166), // yellow
+      Color(0xFFB5E361), // lime
+      Color(0xFF5FD068), // green
+      Color(0xFF2ED9C3), // teal
+      Color(0xFF4DC9F0), // sky
+      Color(0xFF5B9BFF), // blue
+      Color(0xFF9D8CFF), // indigo
+      Color(0xFFC77DFF), // purple
+      Color(0xFFF368E0), // magenta
+      // No pink: field-vetoed (2026-08-25) — reads as bubblegum on dark.
     ];
+    final base = palette[name.hashCode.abs() % palette.length];
+    if (!ChatColors.isLight(context)) return base;
+    final hsl = HSLColor.fromColor(base);
+    return hsl
+        .withLightness((hsl.lightness - 0.28).clamp(0.30, 0.42))
+        .toColor();
+  }
 
-    return colors[hash.abs() % colors.length];
+  /// Tiny "Direct" pill for zero-hop messages — the packet's path is empty,
+  /// so the RF we demodulated came straight from the sender's transmitter.
+  /// Echo copies heard later merge into repeatCount/pathVariants and never
+  /// overwrite the kept copy, so this stays honest alongside the ↻ counter.
+  Widget _buildDirectPill() {
+    final green = ChatColors.isLight(context)
+        ? Colors.green.shade700
+        : Colors.green.shade300;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: green.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: green.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Text(
+        context.l10n.chat_direct,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: green,
+          height: 1.2,
+        ),
+      ),
+    );
   }
 
   Widget _buildReplyBanner(double textScale) {
@@ -1923,6 +2474,17 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   _insertMentionOf(message.senderName);
                 },
               ),
+              // No DM for unparsed senders: 'Unknown' is the parse fallback,
+              // not a name anyone chose.
+              if (message.senderName != 'Unknown')
+                ListTile(
+                  leading: const Icon(Icons.chat_bubble_outline),
+                  title: Text(context.l10n.dmChannel_menuLabel),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _startDmTo(message.senderName);
+                  },
+                ),
             ],
             ListTile(
               leading: const Icon(Icons.copy),
@@ -2068,9 +2630,12 @@ class _SwipeReplyBubble extends StatefulWidget {
 class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   Offset? _swipeStartPosition;
   double _swipeOffset = 0;
-  double _maxSwipeDistance = 0;
   int? _swipePointerId;
   bool _swipeLockedToHorizontal = false;
+  // A vertical-dominant start is a scroll: ignore this touch entirely.
+  bool _swipeRejected = false;
+  // Finger is past the trigger threshold RIGHT NOW (release would commit).
+  bool _swipeArmed = false;
   // Which way this gesture is going: -1 left (reply), +1 right (mention).
   int _swipeDirection = 0;
 
@@ -2078,7 +2643,6 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
 
   void _handleSwipeStart(Offset position) {
     _swipeStartPosition = position;
-    _maxSwipeDistance = 0;
     if (_swipeOffset != 0) {
       setState(() => _swipeOffset = 0);
     }
@@ -2087,24 +2651,41 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   void _handleSwipePointerDown(PointerDownEvent event) {
     _swipePointerId = event.pointer;
     _swipeLockedToHorizontal = false;
+    _swipeRejected = false;
+    _swipeArmed = false;
     _swipeDirection = 0;
     _handleSwipeStart(event.position);
   }
 
   void _handleSwipePointerMove(PointerMoveEvent event) {
-    if (_swipePointerId != event.pointer || _swipeStartPosition == null) {
+    if (_swipePointerId != event.pointer ||
+        _swipeStartPosition == null ||
+        _swipeRejected) {
       return;
     }
 
     final dx = event.position.dx - _swipeStartPosition!.dx;
+    final dy = event.position.dy - _swipeStartPosition!.dy;
 
     const axisLockThreshold = 12.0;
     if (!_swipeLockedToHorizontal) {
-      if (-dx >= axisLockThreshold) {
+      // Native feel: the swipe only claims the touch when horizontal
+      // movement clearly dominates. A vertical-dominant start is the list
+      // scrolling — reject the touch for good so a mid-scroll thumb arc
+      // can never turn into a reply.
+      if (dy.abs() >= axisLockThreshold && dy.abs() >= dx.abs()) {
+        _swipeRejected = true;
+        return;
+      }
+      if (dx.abs() < axisLockThreshold || dx.abs() < dy.abs() * 1.5) {
+        return;
+      }
+      if (dx < 0) {
         _swipeDirection = -1;
-      } else if (_mentionEnabled && dx >= axisLockThreshold) {
+      } else if (_mentionEnabled) {
         _swipeDirection = 1;
       } else {
+        _swipeRejected = true;
         return;
       }
       _swipeLockedToHorizontal = true;
@@ -2121,9 +2702,13 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
         (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
     final travel = dx < 6 ? 0.0 : dx;
 
-    if (travel > _maxSwipeDistance) {
-      _maxSwipeDistance = travel;
+    // Armed = releasing now would commit. Crossing the line gives the
+    // little haptic tick native apps use; sliding back disarms silently.
+    final armed = travel >= widget.replySwipeThreshold;
+    if (armed && !_swipeArmed) {
+      HapticFeedback.lightImpact();
     }
+    _swipeArmed = armed;
 
     final clamped = travel.clamp(0.0, widget.maxSwipeOffset);
     final adjusted =
@@ -2135,11 +2720,12 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
   }
 
   void _handleSwipePointerUp(Offset position) {
+    // Commit on where the finger IS at release, never on how far it once
+    // got: overshooting and pulling back means "never mind".
     if (_swipeLockedToHorizontal && _swipeStartPosition != null) {
       final dx =
           (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
-      final peak = math.max(_maxSwipeDistance, dx.clamp(0.0, double.infinity));
-      if (peak >= widget.replySwipeThreshold) {
+      if (dx >= widget.replySwipeThreshold) {
         if (_swipeDirection < 0) {
           widget.onReplyTriggered();
         } else {
@@ -2156,9 +2742,10 @@ class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
       setState(() => _swipeOffset = 0);
     }
     _swipeStartPosition = null;
-    _maxSwipeDistance = 0;
     _swipePointerId = null;
     _swipeLockedToHorizontal = false;
+    _swipeRejected = false;
+    _swipeArmed = false;
     _swipeDirection = 0;
   }
 
@@ -2231,26 +2818,46 @@ class MentionTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    final List<TextSpan> spans = [];
-    int start = 0;
+    // The IME's composing region must stay visible (the framework default
+    // underlines it) — dropping it desyncs Android keyboards from what the
+    // user sees while a word is being composed.
+    final TextRange? composing =
+        withComposing && value.isComposingRangeValid ? value.composing : null;
+    const underline = TextStyle(decoration: TextDecoration.underline);
 
-    for (final Match match in _mentionRegex.allMatches(text)) {
-      if (match.start > start) {
-        spans.add(TextSpan(text: text.substring(start, match.start), style: style));
+    final List<TextSpan> spans = [];
+    void addSegment(int from, int to, TextStyle? segmentStyle) {
+      if (from >= to) return;
+      if (composing == null || to <= composing.start || from >= composing.end) {
+        spans.add(TextSpan(text: text.substring(from, to), style: segmentStyle));
+        return;
+      }
+      final int cs = composing.start.clamp(from, to);
+      final int ce = composing.end.clamp(from, to);
+      if (from < cs) {
+        spans.add(TextSpan(text: text.substring(from, cs), style: segmentStyle));
       }
       spans.add(TextSpan(
-        text: '@[${match.group(1)}]', // Keep brackets visible for the user
-        style: style?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
+        text: text.substring(cs, ce),
+        style: (segmentStyle ?? const TextStyle()).merge(underline),
       ));
-      start = match.end;
+      if (ce < to) {
+        spans.add(TextSpan(text: text.substring(ce, to), style: segmentStyle));
+      }
     }
 
-    if (start < text.length) {
-      spans.add(TextSpan(text: text.substring(start), style: style));
+    final mentionStyle = style?.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+      fontWeight: FontWeight.bold,
+    );
+
+    int start = 0;
+    for (final Match match in _mentionRegex.allMatches(text)) {
+      addSegment(start, match.start, style);
+      addSegment(match.start, match.end, mentionStyle);
+      start = match.end;
     }
+    addSegment(start, text.length, style);
 
     return TextSpan(children: spans, style: style);
   }

@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Notifications d'annonces",
   "appSettings_advertisementNotificationsSubtitle": "Afficher une notification lors de la découverte de nouveaux nœuds",
   "appSettings_messaging": "Messagerie",
-  "appSettings_clearPathOnMaxRetry": "Effacer le chemin sur Max Retry",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Réinitialiser le chemin de contact après 5 tentatives d'envoi infructueuses",
-  "appSettings_pathsWillBeCleared": "Les chemins seront effacés après 5 tentatives infructueuses.",
-  "appSettings_pathsWillNotBeCleared": "Les chemins ne seront pas effacés automatiquement.",
-  "appSettings_autoRouteRotation": "Rotation de l'itinéraire automatique",
-  "appSettings_autoRouteRotationSubtitle": "Alterner entre les meilleurs chemins et le mode d'envoi sur tout le réseau (flood)",
-  "appSettings_autoRouteRotationEnabled": "Rotation du routage automatique activée",
-  "appSettings_autoRouteRotationDisabled": "Rotation de l'itinéraire automatique désactivée",
   "appSettings_battery": "Batterie",
   "appSettings_batteryChemistry": "Chimie de la batterie",
   "appSettings_batteryChemistryPerDevice": "Définir par appareil ({deviceName})",
@@ -431,6 +423,8 @@
     }
   },
   "chat_typeMessage": "Saisir un message...",
+  "chat_searchMessages": "Rechercher des messages",
+  "chat_searchNoMatches": "Aucun résultat",
   "chat_messageTooLong": "Message trop long (max {maxBytes} octets).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -441,18 +435,6 @@
   },
   "chat_messageCopied": "Message copié",
   "chat_messageDeleted": "Message supprimé",
-  "chat_retryingMessage": "Tentative de récupération.",
-  "chat_retryCount": "Essai {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Envoyer GIF",
   "chat_reply": "Répondre",
   "chat_addReaction": "Ajouter une Réaction",
@@ -545,12 +527,6 @@
     }
   },
   "debugFrame_hexDump": "Vidéo de Dump Hexadécimal :",
-  "chat_pathManagement": "Gestion des chemins",
-  "chat_routingMode": "Mode de routage",
-  "chat_autoUseSavedPath": "Auto (utiliser le chemin sauvegardé)",
-  "chat_forceFloodMode": "Mode tout le réseau forcé",
-  "chat_recentAckPaths": "Chemins ACK récents (touchez pour utiliser) :",
-  "chat_pathHistoryFull": "L'historique du chemin est plein. Supprimez les entrées pour en ajouter de nouvelles.",
   "chat_hopSingular": "saut",
   "chat_hopPlural": "sauts",
   "chat_hopsCount": "{count} {count, plural, =1{saut} other{sauts}}",
@@ -561,33 +537,9 @@
       }
     }
   },
-  "chat_successes": "Succès",
-  "chat_removePath": "Supprimer le chemin",
-  "chat_noPathHistoryYet": "Aucune historique de parcours disponible.\nEnvoyez un message pour découvrir les parcours.",
-  "chat_pathActions": "Actions du chemin :",
   "chat_setCustomPath": "Définir un chemin personnalisé",
-  "chat_setCustomPathSubtitle": "Spécifier manuellement le chemin de routage",
-  "chat_clearPath": "Effacer le chemin",
-  "chat_clearPathSubtitle": "Forcer la redécouverte lors de la prochaine envoi",
-  "chat_pathCleared": "Le chemin est dégagé. Le prochain message redécouvrira le tracé.",
-  "chat_floodModeSubtitle": "Désactive l'apprentissage du chemin (à éviter). Utiliser le commutateur de routage dans la barre d'application pour rebasculer en mode auto par la suite.",
-  "chat_floodModeEnabled": "Le mode envoi à tout le réseau est activé. Changer via l'icône de routage dans la barre d'outils.",
   "chat_fullPath": "Chemin complet",
   "chat_pathDetailsNotAvailable": "Les détails du chemin ne sont pas encore disponibles. Essayez d'envoyer un message pour rafraîchir.",
-  "chat_pathSetHops": "Chemin défini : {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Sauvegardé localement. Connectez-vous pour synchroniser.",
-  "chat_pathDeviceConfirmed": "Appareil confirmé.",
-  "chat_pathDeviceNotConfirmed": "L'appareil n'a pas encore été confirmé.",
   "chat_type": "Saisir",
   "chat_path": "Chemin",
   "chat_publicKey": "Clé Publique",
@@ -817,11 +769,6 @@
   "login_savePasswordSubtitle": "Le mot de passe sera stocké en toute sécurité sur cet appareil.",
   "login_repeaterDescription": "Entrez le mot de passe du répéteur pour accéder aux paramètres et à l'état.",
   "login_roomDescription": "Entrez le mot de passe de la pièce pour accéder aux paramètres et à l'état.",
-  "login_routing": "Redirection",
-  "login_routingMode": "Mode de routage",
-  "login_autoUseSavedPath": "Auto (utiliser le chemin sauvegardé)",
-  "login_forceFloodMode": "Mode tout le réseau forcé",
-  "login_managePaths": "Gérer les chemins",
   "login_login": "Connexion",
   "login_attempt": "Essayer {current}/{max}",
   "@login_attempt": {
@@ -845,22 +792,6 @@
   "login_failedMessage": "Connexion échouée. Soit le mot de passe est incorrect, soit le relais est injoignable.",
   "common_reload": "Recharger",
   "common_clear": "Effacer",
-  "path_currentPath": "Chemin actuel : {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Utiliser {count} {count, plural, =1{hop} other{hops}} chemin",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Entrer un chemin personnalisé",
   "path_currentPathLabel": "Chemin actuel",
   "path_hexPrefixInstructions": "Entrez les préfixes hexadécimaux de 2 caractères pour chaque saut, séparés par des virgules.",
@@ -1614,7 +1545,6 @@
   "scanner_enableBluetooth": "Activer le Bluetooth",
   "snrIndicator_lastSeen": "Dernière fois vu",
   "snrIndicator_nearByRepeaters": "Répéteurs à proximité",
-  "chat_ShowAllPaths": "Afficher tous les chemins",
   "settings_clientRepeatFreqWarning": "Pour les transmissions hors réseau, il est nécessaire d'utiliser les fréquences de 433, 869 ou 918 MHz.",
   "settings_clientRepeatSubtitle": "Permettez à cet appareil de répéter les paquets de données pour les autres.",
   "settings_clientRepeat": "Répétition hors réseau",
@@ -1893,16 +1823,6 @@
   "tcpConnectionFailed": "Échec de la connexion TCP : {error}",
   "map_showDiscoveryContacts": "Afficher les contacts de découverte",
   "map_setAsMyLocation": "Définir comme ma localisation",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacy": "Paramètres de confidentialité",
   "settings_privacySubtitle": "Contrôlez les informations partagées",
   "settings_telemetryLocationMode": "Mode d'emplacement de télémétrie",
@@ -1925,17 +1845,8 @@
   "contact_lastSeen": "Dernière fois vu",
   "contact_clearChat": "Effacer la conversation",
   "contact_teleBaseSubtitle": "Autoriser le partage du niveau de batterie et de la télémétrie de base",
-  "appSettings_maxRouteWeightSubtitle": "Poids maximal qu'un itinéraire peut accumuler grâce à des livraisons réussies.",
-  "appSettings_initialRouteWeight": "Poids initial de l'itinéraire",
-  "appSettings_maxRouteWeight": "Poids maximal autorisé pour le trajet",
-  "appSettings_initialRouteWeightSubtitle": "Poids de départ pour les nouveaux chemins découverts",
-  "appSettings_routeWeightSuccessIncrement": "Augmentation du poids de réussite",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Poids ajouté à un itinéraire après une livraison réussie.",
-  "appSettings_routeWeightFailureDecrement": "Réduction du poids de pénalité",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Poids retiré d'un itinéraire après une tentative de livraison infructueuse.",
   "appSettings_maxMessageRetries": "Nombre maximal de tentatives de récupération de messages",
   "appSettings_maxMessageRetriesSubtitle": "Nombre de tentatives de relance avant de marquer un message comme ayant échoué.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Le mode télémétrie a été mis à jour",
   "map_showOverlaps": "Chevauchement de la touche répétitive",
   "map_runTraceWithReturnPath": "Revenir sur le même chemin.",

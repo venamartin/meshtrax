@@ -261,35 +261,8 @@
   "appSettings_advertisementNotifications": "Reklám értesítések",
   "appSettings_advertisementNotificationsSubtitle": "A figyelmeztetést megjelenítve, amikor új csomópontok kerülnek felfedezésre.",
   "appSettings_messaging": "Üzenetek küldése",
-  "appSettings_clearPathOnMaxRetry": "Egyértelmű út a Max Retry funkció használatával",
-  "appSettings_clearPathOnMaxRetrySubtitle": "A kapcsolat visszaállítás 5 sikertelen továbbítás után",
-  "appSettings_pathsWillBeCleared": "Ha 5-szer sikertelenül próbálunk, a útvonalat automatikusan tisztítjuk.",
-  "appSettings_pathsWillNotBeCleared": "A utak automatikusan nem tisztítódnak.",
-  "appSettings_autoRouteRotation": "Autóútok forgása",
-  "appSettings_autoRouteRotationSubtitle": "Válasszon a legjobb útvonalak között, vagy válassza a vízözön-módot.",
-  "appSettings_autoRouteRotationEnabled": "Az automatikus útvonalváltás engedélyezve",
-  "appSettings_autoRouteRotationDisabled": "Az automatikus útvonal-választás funkció kikapcsolva.",
-  "appSettings_maxRouteWeight": "Maximális útvonal súly",
-  "appSettings_maxRouteWeightSubtitle": "A lehető legnagyobb súly, amit egy útvonal sikeres szállítmányok során összegyűjthet.",
-  "appSettings_initialRouteWeight": "A kezdeti útvonal súlya",
-  "appSettings_initialRouteWeightSubtitle": "Az új, felfedezett útvonalakhoz tartozó kezdeti súly",
-  "appSettings_routeWeightSuccessIncrement": "Sikerhez vezető növelés",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "A sikeresen teljesített útvonalhoz hozzáadott súly.",
-  "appSettings_routeWeightFailureDecrement": "Hibás súly csökkenése",
-  "appSettings_routeWeightFailureDecrementSubtitle": "A jártatásból eltávolított súly, ami a sikertelen szállítás következménye.",
   "appSettings_maxMessageRetries": "Maximális üzenetek újraküldési próbálkozások",
   "appSettings_maxMessageRetriesSubtitle": "A próbálkozások száma, mielőtt egy üzenetet hibásnak jelölünk.",
-  "path_routeWeight": "{weight}/{max}",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "appSettings_battery": "Akku",
   "appSettings_batteryChemistry": "Aakkum töltés kémia",
   "appSettings_batteryChemistryPerDevice": "Beállítások {deviceName}-hez",
@@ -603,6 +576,8 @@
     }
   },
   "chat_typeMessage": "Írjon üzenetet...",
+  "chat_searchMessages": "Üzenetek keresése",
+  "chat_searchNoMatches": "Nincs találat",
   "chat_messageTooLong": "A üzenet túl hosszú (a maximális {maxBytes} bájt).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -613,18 +588,6 @@
   },
   "chat_messageCopied": "Üzenet másolva",
   "chat_messageDeleted": "Üzenet törölve",
-  "chat_retryingMessage": "Újrapróbálási üzenet",
-  "chat_retryCount": "Újrapróbál {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Küldj GIF-ot",
   "chat_reply": "Válasz",
   "chat_addReaction": "Hozzon létre reakciót",
@@ -717,13 +680,6 @@
     }
   },
   "debugFrame_hexDump": "Hex-dump:",
-  "chat_pathManagement": "Útvonal-kezelés",
-  "chat_ShowAllPaths": "Mutasson meg minden útvonalat",
-  "chat_routingMode": "Útvonal-kezelési mód",
-  "chat_autoUseSavedPath": "Automatikus (az eddigi útvonal használata)",
-  "chat_forceFloodMode": "Erőforrás-alapú áramlás mód",
-  "chat_recentAckPaths": "Legutóbbi használt útvonalak (gombra kattintva):",
-  "chat_pathHistoryFull": "Az előző lépések listája teljes. Törölj ki a bejegyzéseket, hogy újokat hozzáadhatsd.",
   "chat_hopSingular": "ugor",
   "chat_hopPlural": "babér",
   "chat_hopsCount": "{count} {count, plural, =1{ugrás} other{ugrások}}",
@@ -734,33 +690,9 @@
       }
     }
   },
-  "chat_successes": "sikerek",
-  "chat_removePath": "Törölje a elérési útvonalat",
-  "chat_noPathHistoryYet": "Még nincs útvonal-történet.\nKüldjön egy üzenetet, hogy megtudja a lehetséges útvonalakat.",
-  "chat_pathActions": "Céltúrások:",
   "chat_setCustomPath": "Beállítsd a saját útvonalat",
-  "chat_setCustomPathSubtitle": "Kézzel megadott útvonal",
-  "chat_clearPath": "Egyértelmű út",
-  "chat_clearPathSubtitle": "A parancs új küldéskor újra kell aktivizálnia.",
-  "chat_pathCleared": "Útvonal cleared. A következő üzenet újból feltérképezheti az útvonalat.",
-  "chat_floodModeSubtitle": "Használja a \"útvonal\" kapcsolót az alkalmazás sávjában.",
-  "chat_floodModeEnabled": "Árvízvédelmi mód bekapcsolva. A visszaállítás a alkalmazásban található útvonal ikon segítségével.",
   "chat_fullPath": "Teljes elérési út",
   "chat_pathDetailsNotAvailable": "Az útvonal részletei még nem elérhetők. Próbálja meg küldeni egy üzenetet, hogy frissítse az információkat.",
-  "chat_pathSetHops": "Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Helyileg mentve. Kapcsolódjon a szinkronizáláshoz.",
-  "chat_pathDeviceConfirmed": "A készülék megvan.",
-  "chat_pathDeviceNotConfirmed": "A készülék még nem bizonyított.",
   "chat_type": "Típus",
   "chat_path": "Út",
   "chat_publicKey": "Nyelvkönyv",
@@ -1000,11 +932,6 @@
   "login_savePasswordSubtitle": "A jelszó biztonságosan tárolódik ezen a készüléken.",
   "login_repeaterDescription": "Adja meg a repeater (ismétítő) jelszót, hogy hozzáférhessen a beállításokhoz és az állapot információkhoz.",
   "login_roomDescription": "Adja meg a belépési kódot, hogy hozzáférhessen a beállításokhoz és az állapot információkhoz.",
-  "login_routing": "Útvonal meghatározás",
-  "login_routingMode": "Útvonal-kezelési mód",
-  "login_autoUseSavedPath": "Automatikus (az eddigi útvonal használata)",
-  "login_forceFloodMode": "Erőforrás-alapú áramlás mód",
-  "login_managePaths": "Útvonalak kezelése",
   "login_login": "Bejelentkezés",
   "login_attempt": "Megpróbálás {current}/{max}-adik",
   "@login_attempt": {
@@ -1028,22 +955,6 @@
   "login_failedMessage": "Belépés sikertelen. Vagy a jelszó helytelen, vagy a hálózati kapcsolat nem létesül.",
   "common_reload": "Újra töltés",
   "common_clear": "Egyértelmű",
-  "path_currentPath": "Jelenlegi útvonal: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "{count} {count, plural, =1{ugrás} other{ugrások}} útvonal használata",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Adja meg a saját elérési útvonalat",
   "path_currentPathLabel": "Jelenlegi útvonal",
   "path_hexPrefixInstructions": "Adja meg a 2 karakteres hexadecimális előtagokat minden lépéshez, tagolva kommával.",

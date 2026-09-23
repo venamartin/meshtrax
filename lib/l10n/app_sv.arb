@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Annonsmeddelanden",
   "appSettings_advertisementNotificationsSubtitle": "Visa notis när nya noder upptäcks",
   "appSettings_messaging": "Meddelanden",
-  "appSettings_clearPathOnMaxRetry": "Rensa Vägen på Max Försök",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Återställ kontaktväg efter 5 misslyckade försök att skicka",
-  "appSettings_pathsWillBeCleared": "Sökvägar kommer att tömmas efter 5 misslyckade försök.",
-  "appSettings_pathsWillNotBeCleared": "Sökvägar kommer inte att rensas automatiskt.",
-  "appSettings_autoRouteRotation": "Automatisk Rutväxling",
-  "appSettings_autoRouteRotationSubtitle": "Blixtra mellan bästa vägar och flödesläge",
-  "appSettings_autoRouteRotationEnabled": "Automatisk ruttrotation är aktiverad",
-  "appSettings_autoRouteRotationDisabled": "Automatisk ruttrotation är avstängd",
   "appSettings_battery": "Batteri",
   "appSettings_batteryChemistry": "Batterikemi",
   "appSettings_batteryChemistryPerDevice": "Ställ in per enhet ({deviceName})",
@@ -431,6 +423,8 @@
     }
   },
   "chat_typeMessage": "Skriv ett meddelande...",
+  "chat_searchMessages": "Sök meddelanden",
+  "chat_searchNoMatches": "Inga träffar",
   "chat_messageTooLong": "Meddelandet är för långt (max {maxBytes} byte).",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -441,18 +435,6 @@
   },
   "chat_messageCopied": "Meddelandet kopierades",
   "chat_messageDeleted": "Meddelandet raderat",
-  "chat_retryingMessage": "Försöker igen",
-  "chat_retryCount": "Försök igen {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "Skicka GIF",
   "chat_reply": "Svara",
   "chat_addReaction": "Lägg till reaktion",
@@ -545,12 +527,6 @@
     }
   },
   "debugFrame_hexDump": "Hexdump:",
-  "chat_pathManagement": "Stigarhantering",
-  "chat_routingMode": "Ruttläge",
-  "chat_autoUseSavedPath": "Automatisk (använd sparad sökväg)",
-  "chat_forceFloodMode": "Tvinga Översvämningsläge",
-  "chat_recentAckPaths": "Nyligen Ack-vägar (tryck för att använda):",
-  "chat_pathHistoryFull": "Historisk sökväg är full. Ta bort poster för att lägga till nya.",
   "chat_hopSingular": "hoppa",
   "chat_hopPlural": "hoppar",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -561,33 +537,9 @@
       }
     }
   },
-  "chat_successes": "framgångar",
-  "chat_removePath": "Ta bort sökväg",
-  "chat_noPathHistoryYet": "Ingen historik ännu.\nSkicka ett meddelande för att upptäcka spår.",
-  "chat_pathActions": "Stigar:",
   "chat_setCustomPath": "Ange anpassad sökväg",
-  "chat_setCustomPathSubtitle": "Ange ruttväg manuellt",
-  "chat_clearPath": "Rensa Vägen",
-  "chat_clearPathSubtitle": "Tvinga fram omstart vid nästa sändning",
-  "chat_pathCleared": "Routen är nu fri. Nästa meddelande kommer att upptäcka rutten igen.",
-  "chat_floodModeSubtitle": "Använd routningsomkopplaren i appraden",
-  "chat_floodModeEnabled": "Översvämningsläge aktiverat. Stäng av via ruttikonen i appraden.",
   "chat_fullPath": "Fullständig sökväg",
   "chat_pathDetailsNotAvailable": "Stigaruppgifterna är ännu inte tillgängliga. Försök att skicka ett meddelande för att uppdatera.",
-  "chat_pathSetHops": "Sökväg inställd: {hopCount} {hopCount, plural, =1{hopp} other{hoppar}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Sparat lokalt. Anslut för att synkronisera.",
-  "chat_pathDeviceConfirmed": "Enheten bekräftad.",
-  "chat_pathDeviceNotConfirmed": "Enheten har inte bekräftats ännu.",
   "chat_type": "Skriv",
   "chat_path": "Sökväg",
   "chat_publicKey": "Allmänt nyckel",
@@ -817,11 +769,6 @@
   "login_savePasswordSubtitle": "Lösenord kommer att lagras säkert på enheten.",
   "login_repeaterDescription": "Ange återuppspelarens lösenord för att komma åt inställningar och status.",
   "login_roomDescription": "Ange rummets lösenord för att komma åt inställningar och status.",
-  "login_routing": "Ruttning",
-  "login_routingMode": "Ruttläge",
-  "login_autoUseSavedPath": "Automatisk (använd sparad sökväg)",
-  "login_forceFloodMode": "Tvinga Översvämningsläge",
-  "login_managePaths": "Hantera Sökvägar",
   "login_login": "Logga in",
   "login_attempt": "Försök {current}/{max}",
   "@login_attempt": {
@@ -845,22 +792,6 @@
   "login_failedMessage": "Inloggning misslyckades. Antingen är lösenordet fel eller så går det inte att nå repeatern.",
   "common_reload": "Ladda om",
   "common_clear": "Rensa",
-  "path_currentPath": "Nuvarande sökväg: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Använda {count} {count, plural, =1{hop} other{hops}} sökväg",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "Ange anpassad sökväg",
   "path_currentPathLabel": "Nuvarande sökväg",
   "path_hexPrefixInstructions": "Ange 2-tecknets hex-prefett för varje hopp, åtskilda med komma.",
@@ -1614,7 +1545,6 @@
   "scanner_bluetoothOff": "Bluetooth är avstängt",
   "snrIndicator_lastSeen": "Senast sedd",
   "snrIndicator_nearByRepeaters": "Närliggande uppreparstationer",
-  "chat_ShowAllPaths": "Visa alla vägar",
   "settings_clientRepeatSubtitle": "Låt enheten repetera nätpaket för andra användare.",
   "settings_clientRepeat": "Upprepa utan elnät",
   "settings_clientRepeatFreqWarning": "För att kunna kommunicera utanför elnätet krävs frekvenserna 433, 869 eller 918 MHz.",
@@ -1893,16 +1823,6 @@
   "tcpConnectionFailed": "Fel vid TCP-anslutning: {error}",
   "map_showDiscoveryContacts": "Visa Discovery-kontakter",
   "map_setAsMyLocation": "Ange som min plats",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacy": "Inställningar för sekretess",
   "settings_allowAll": "Tillåt alla",
   "settings_privacySubtitle": "Kontrollera vilken information som delas.",
@@ -1925,17 +1845,8 @@
   "contact_teleBaseSubtitle": "Tillåt delning av batterinivå och grundläggande telemetri",
   "contact_teleLoc": "Telemetridata plats",
   "contact_teleLocSubtitle": "Tillåt delning av platsdata",
-  "appSettings_initialRouteWeightSubtitle": "Initial vikt för nyligen upptäckta vägar",
-  "appSettings_maxRouteWeight": "Maximalt tillåtet vikt för rutten",
-  "appSettings_maxRouteWeightSubtitle": "Maximal vikt som en leveransväg kan ackumulera från framgångsrika leveranser.",
-  "appSettings_initialRouteWeight": "Initial vikt för rutt",
-  "appSettings_routeWeightSuccessIncrement": "Ökning av vikt för framgång",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Vikt läggs till en väg efter en lyckad leverans.",
-  "appSettings_routeWeightFailureDecrement": "Minskning av vikten för misslyckande",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Vikt som tagits bort från en väg efter ett misslyckat leveransförsök",
   "appSettings_maxMessageRetries": "Maximalt antal försök",
   "appSettings_maxMessageRetriesSubtitle": "Antal försök att skicka om ett meddelande innan det markeras som misslyckat.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Telemetri-läge uppdaterat",
   "map_showOverlaps": "Repeater-nyckelöverlappningar",
   "map_runTraceWithReturnPath": "Gå tillbaka på samma väg",

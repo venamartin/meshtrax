@@ -12,6 +12,12 @@ class Contact {
   final int pathLength; // -1 = flood, 0+ = direct hops (from device)
   final Uint8List path; // Path bytes from device
   final int pathHashSize; // The hash size (1, 2, or 3) used for this path
+  // Hops the contact's last advert passed on its way to us, contact side
+  // first. Proves only that each hop heard the one before it, so it is never
+  // used as an outbound route; it gives the contact's distance and the
+  // repeater nearest to it.
+  final Uint8List inboundPath;
+  final int? inboundHopCount; // null = no advert seen yet
   final int? pathOverride; // User's path override: -1 = force flood, null = auto
   final Uint8List? pathOverrideBytes; // User's path override bytes
   final double? latitude;
@@ -31,6 +37,8 @@ class Contact {
     required this.pathLength,
     required this.path,
     this.pathHashSize = 1,
+    Uint8List? inboundPath,
+    this.inboundHopCount,
     this.pathOverride,
     this.pathOverrideBytes,
     this.latitude,
@@ -41,7 +49,8 @@ class Contact {
     this.wasPulled = false,
     this.clockCorrected = false,
     this.rawPacket,
-  }) : lastMessageAt = lastMessageAt ?? lastSeen;
+  }) : inboundPath = inboundPath ?? Uint8List(0),
+       lastMessageAt = lastMessageAt ?? lastSeen;
 
   String get publicKeyHex => pubKeyToHex(publicKey);
 
@@ -99,6 +108,8 @@ class Contact {
     int? flags,
     int? pathLength,
     Uint8List? path,
+    Uint8List? inboundPath,
+    int? inboundHopCount,
     int? pathOverride,
     Uint8List? pathOverrideBytes,
     bool clearPathOverride = false,
@@ -119,6 +130,8 @@ class Contact {
       pathLength: pathLength ?? this.pathLength,
       path: path ?? this.path,
       pathHashSize: pathHashSize ?? this.pathHashSize,
+      inboundPath: inboundPath ?? this.inboundPath,
+      inboundHopCount: inboundHopCount ?? this.inboundHopCount,
       pathOverride: clearPathOverride
           ? null
           : (pathOverride ?? this.pathOverride),

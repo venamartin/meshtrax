@@ -204,14 +204,6 @@
   "appSettings_advertisementNotifications": "广播通知",
   "appSettings_advertisementNotificationsSubtitle": "发现新节点时显示通知",
   "appSettings_messaging": "消息",
-  "appSettings_clearPathOnMaxRetry": "达到最大重试次数时清除路径",
-  "appSettings_clearPathOnMaxRetrySubtitle": "在5次发送失败后重置联系路径。",
-  "appSettings_pathsWillBeCleared": "5次失败后将重新路由",
-  "appSettings_pathsWillNotBeCleared": "路径不会自动清除",
-  "appSettings_autoRouteRotation": "自动路径轮换",
-  "appSettings_autoRouteRotationSubtitle": "在最佳路径和泛洪模式之间切换",
-  "appSettings_autoRouteRotationEnabled": "自动路径轮换已启用",
-  "appSettings_autoRouteRotationDisabled": "自动路径轮换已禁用",
   "appSettings_battery": "电池",
   "appSettings_batteryChemistry": "电池类型",
   "appSettings_batteryChemistryPerDevice": "为每个设备设置 ({deviceName})",
@@ -458,6 +450,8 @@
     }
   },
   "chat_typeMessage": "输入消息...",
+  "chat_searchMessages": "搜索消息",
+  "chat_searchNoMatches": "无匹配项",
   "chat_messageTooLong": "消息过长（最多 {maxBytes} 字节）",
   "@chat_messageTooLong": {
     "placeholders": {
@@ -468,18 +462,6 @@
   },
   "chat_messageCopied": "消息已复制",
   "chat_messageDeleted": "消息已删除",
-  "chat_retryingMessage": "正在重试消息",
-  "chat_retryCount": "重试 {current}/{max}",
-  "@chat_retryCount": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chat_sendGif": "发送 GIF",
   "chat_reply": "回复",
   "chat_addReaction": "添加表情",
@@ -572,12 +554,6 @@
     }
   },
   "debugFrame_hexDump": "十六进制数据：",
-  "chat_pathManagement": "路径管理",
-  "chat_routingMode": "路由模式",
-  "chat_autoUseSavedPath": "自动（使用保存的路径）",
-  "chat_forceFloodMode": "强制泛洪模式",
-  "chat_recentAckPaths": "最近使用的 ACK 路径（点击使用）：",
-  "chat_pathHistoryFull": "路径历史已满，请删除后再添加。",
   "chat_hopSingular": "跳",
   "chat_hopPlural": "跳",
   "chat_hopsCount": "{count} 跳",
@@ -588,33 +564,9 @@
       }
     }
   },
-  "chat_successes": "成功",
-  "chat_removePath": "移除路径",
-  "chat_noPathHistoryYet": "暂无路径历史。\n发送消息以探索路径。",
-  "chat_pathActions": "路径操作：",
   "chat_setCustomPath": "设置自定义路径",
-  "chat_setCustomPathSubtitle": "手动指定路由路径",
-  "chat_clearPath": "清除路径",
-  "chat_clearPathSubtitle": "清除当前路径，下次发送将重新尝试。",
-  "chat_pathCleared": "路径已清除。下一条消息将重新路由。",
-  "chat_floodModeSubtitle": "在应用栏中切换路由模式。",
-  "chat_floodModeEnabled": "泛洪模式已启用。可通过应用栏的路由图标切换。",
   "chat_fullPath": "完整路径",
   "chat_pathDetailsNotAvailable": "路径信息暂不可用，请尝试发送消息刷新。",
-  "chat_pathSetHops": "路径设置：{hopCount} 跳 - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "已本地保存，连接设备后可同步。",
-  "chat_pathDeviceConfirmed": "设备已确认。",
-  "chat_pathDeviceNotConfirmed": "设备尚未确认。",
   "chat_type": "类型",
   "chat_path": "路径",
   "chat_publicKey": "公钥",
@@ -844,11 +796,6 @@
   "login_savePasswordSubtitle": "密码将安全地存储在此设备上",
   "login_repeaterDescription": "输入转发节点密码以访问设置和状态。",
   "login_roomDescription": "输入房间服务器密码以访问设置和状态。",
-  "login_routing": "路由",
-  "login_routingMode": "路由模式",
-  "login_autoUseSavedPath": "自动（使用保存的路径）",
-  "login_forceFloodMode": "强制泛洪模式",
-  "login_managePaths": "管理路径",
   "login_login": "登录",
   "login_attempt": "尝试 {current}/{max}",
   "@login_attempt": {
@@ -872,22 +819,6 @@
   "login_failedMessage": "登录失败。可能是密码错误或无法连接到服务器。",
   "common_reload": "重新加载",
   "common_clear": "清除",
-  "path_currentPath": "当前路径：{path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "使用 {count} 跳路径",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "path_enterCustomPath": "输入自定义路径",
   "path_currentPathLabel": "当前路径",
   "path_hexPrefixInstructions": "请输入每个中继节点的2字符十六进制前缀，用逗号分隔。",
@@ -1619,7 +1550,6 @@
   "scanner_enableBluetooth": "启用蓝牙",
   "snrIndicator_lastSeen": "最近访问",
   "snrIndicator_nearByRepeaters": "附近的重复器",
-  "chat_ShowAllPaths": "显示所有路径",
   "settings_clientRepeat": "离网重复",
   "settings_clientRepeatSubtitle": "允许此设备重复发送网状数据包给其他设备",
   "settings_clientRepeatFreqWarning": "离网重复通信需要使用 433、869 或 918 兆赫兹的频率。",
@@ -1898,16 +1828,6 @@
   "tcpConnectionFailed": "TCP 连接失败：{error}",
   "map_showDiscoveryContacts": "显示发现联系人",
   "map_setAsMyLocation": "设置为我的位置",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacySubtitle": "控制要共享的信息。",
   "settings_privacySettingsDescription": "选择您的设备与他人共享的信息。",
   "settings_telemetryBaseMode": "遥测基础模式",
@@ -1930,17 +1850,8 @@
   "contact_settings": "联系人设置",
   "contact_teleLocSubtitle": "允许共享位置数据",
   "contact_telemetry": "遥测数据",
-  "appSettings_maxRouteWeight": "最大路径重量",
-  "appSettings_initialRouteWeightSubtitle": "新发现路径的初始重量",
-  "appSettings_initialRouteWeight": "初始路线权重",
-  "appSettings_maxRouteWeightSubtitle": "一条路径可以累积的最大重量，取决于成功交付的数量。",
-  "appSettings_routeWeightSuccessIncrement": "成功权重增加",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "在成功交付后，将重量添加到路径中",
-  "appSettings_routeWeightFailureDecrement": "失败权重降低",
-  "appSettings_routeWeightFailureDecrementSubtitle": "从一条路径上移除的货物，由于无法成功交付而移除。",
   "appSettings_maxMessageRetries": "最大消息重试次数",
   "appSettings_maxMessageRetriesSubtitle": "在将消息标记为失败之前，允许尝试的次数",
-  "path_routeWeight": "{weight}/{max}",
   "settings_multiAck": "多重ACK",
   "settings_telemetryModeUpdated": "遥测模式已更新",
   "map_showOverlaps": "重复键重叠",

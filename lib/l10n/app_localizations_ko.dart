@@ -695,6 +695,13 @@ class AppLocalizationsKo extends AppLocalizations {
       '메시지에 대한 상세한 경로 및 시간 정보를 표시';
 
   @override
+  String get appSettings_senderNameColors => 'Colorful sender names';
+
+  @override
+  String get appSettings_senderNameColorsSubtitle =>
+      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+
+  @override
   String get appSettings_notifications => '알림';
 
   @override
@@ -736,58 +743,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_messaging => '메시징';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'Max 재시도 시 경로 명확하게 설정';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      '5번의 전송 시도가 실패하면 연락 경로를 재설정';
-
-  @override
-  String get appSettings_pathsWillBeCleared => '5번의 시도 실패 후, 해당 경로가 확보될 것입니다.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared => '경로는 자동으로 정리되지 않습니다.';
-
-  @override
-  String get appSettings_autoRouteRotation => '자동 경로 순환';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle => '최적 경로와 방수 모드 사이를 전환';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled => '자동 경로 순환 기능 활성화';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled => '자동 경로 순환 기능 비활성화';
-
-  @override
-  String get appSettings_maxRouteWeight => '최대 경로 무게';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      '한 경로가 성공적인 배송을 통해 누적할 수 있는 최대 무게';
-
-  @override
-  String get appSettings_initialRouteWeight => '초기 경로 가중치';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle => '새롭게 발견된 경로의 초기 무게';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement => '성공 횟수 증가';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      '성공적으로 배송된 경로에 추가된 무게';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement => '오류 가중치 감소';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      '배송 실패 후 경로에서 제거된 무게';
-
-  @override
   String get appSettings_maxMessageRetries => '최대 메시지 재시도 횟수';
 
   @override
@@ -800,11 +755,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => '배터리';
@@ -1351,6 +1301,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_typeMessage => '메시지를 입력하세요...';
 
   @override
+  String get chat_searchMessages => '메시지 검색';
+
+  @override
+  String get chat_searchNoMatches => '일치 항목 없음';
+
+  @override
   String chat_messageTooLong(int maxBytes) {
     return '메시지가 너무 길어서 (최대 $maxBytes 바이트).';
   }
@@ -1360,14 +1316,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chat_messageDeleted => '메시지가 삭제되었습니다.';
-
-  @override
-  String get chat_retryingMessage => '재시도 메시지';
-
-  @override
-  String chat_retryCount(int current, int max) {
-    return '$current/$max 시도';
-  }
 
   @override
   String get chat_sendGif => 'GIF 보내기';
@@ -1383,6 +1331,58 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chat_mention => '멘션';
+
+  @override
+  String get dmChannel_menuLabel => 'Direct Message';
+
+  @override
+  String dmChannel_pickerTitle(String name) {
+    return 'Send DM to $name';
+  }
+
+  @override
+  String get dmChannel_pickerHint =>
+      'Check the key and last-seen time — names are not unique.';
+
+  @override
+  String get dmChannel_warningTitle => 'Is this really them?';
+
+  @override
+  String get dmChannel_warningBody =>
+      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+
+  @override
+  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String dmChannel_noMatchTitle(String name) {
+    return 'Can\'t DM $name yet';
+  }
+
+  @override
+  String get dmChannel_noMatchBody =>
+      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+
+  @override
+  String get dmChannel_askInChannel => 'Ask in channel';
+
+  @override
+  String get dmChannel_sendMyAdvert => 'Send my advert';
+
+  @override
+  String get dmChannel_askText => 'please send an advert so I can DM you';
+
+  @override
+  String get dmChannel_watching =>
+      'Watching for their advert — you\'ll be asked here when it arrives.';
+
+  @override
+  String dmChannel_advertHeard(String name) {
+    return '$name is now reachable';
+  }
+
+  @override
+  String get dmChannel_openDm => 'DM';
 
   @override
   String get appSettings_zoomLevel => '확대/축소 수준';
@@ -1536,28 +1536,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get debugFrame_hexDump => '헥스 덤프:';
 
   @override
-  String get chat_pathManagement => '경로 관리';
-
-  @override
-  String get chat_ShowAllPaths => '모든 경로 표시';
-
-  @override
-  String get chat_routingMode => '라우팅 방식';
-
-  @override
-  String get chat_autoUseSavedPath => '자동 (저장된 경로 사용)';
-
-  @override
-  String get chat_forceFloodMode => '강수 모드 활성화';
-
-  @override
-  String get chat_recentAckPaths => '최근 사용한 ACK 경로 (사용하려면 탭):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      '이력 기록은 이미 가득 차 있습니다. 항목을 삭제하여 새로운 항목을 추가할 수 있습니다.';
-
-  @override
   String get chat_hopSingular => '점프';
 
   @override
@@ -1575,38 +1553,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chat_successes => '성공 사례';
-
-  @override
-  String get chat_removePath => '경로 제거';
-
-  @override
-  String get chat_noPathHistoryYet => '아직 경로 기록이 없습니다.\n경로를 찾기 위해 메시지를 보내세요.';
-
-  @override
-  String get chat_pathActions => '경로 작업:';
-
-  @override
   String get chat_setCustomPath => '사용자 지정 경로 설정';
-
-  @override
-  String get chat_setCustomPathSubtitle => '수동으로 경로를 지정';
-
-  @override
-  String get chat_clearPath => '명확한 길';
-
-  @override
-  String get chat_clearPathSubtitle => '다음 전송 시, 강제 재전송 설정';
-
-  @override
-  String get chat_pathCleared => '경로가 확보되었습니다. 다음 메시지는 경로를 다시 찾을 것입니다.';
-
-  @override
-  String get chat_floodModeSubtitle => '앱 바에서 라우팅 스위치를 사용';
-
-  @override
-  String get chat_floodModeEnabled =>
-      '홍수 모드 활성화됨. 앱 바의 경로 아이콘을 사용하여 다시 전환할 수 있습니다.';
 
   @override
   String get chat_fullPath => '전체 경로';
@@ -1614,26 +1561,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       '경로 정보는 아직 제공되지 않습니다. 메시지를 보내어 다시 시도해 보세요.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Path set: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally => '로컬에 저장. 동기화 연결';
-
-  @override
-  String get chat_pathDeviceConfirmed => '장치 확인 완료.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => '기기가 아직 확인되지 않았습니다.';
 
   @override
   String get chat_type => '종류';
@@ -2015,21 +1942,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get login_roomDescription => '설정 및 상태에 액세스하려면 방 비밀번호를 입력하세요.';
 
   @override
-  String get login_routing => '라우팅';
-
-  @override
-  String get login_routingMode => '라우팅 모드';
-
-  @override
-  String get login_autoUseSavedPath => '자동 (저장된 경로 사용)';
-
-  @override
-  String get login_forceFloodMode => '강수 모드 활성화';
-
-  @override
-  String get login_managePaths => '경로 관리';
-
-  @override
   String get login_login => '로그인';
 
   @override
@@ -2051,22 +1963,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get common_clear => '명확하게';
-
-  @override
-  String path_currentPath(String path) {
-    return '현재 경로: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Using $count $_temp0 path';
-  }
 
   @override
   String get path_enterCustomPath => '사용자 지정 경로 입력';
@@ -3123,6 +3019,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get listFilter_filters => '필터';
 
   @override
+  String get listFilter_source => 'Source';
+
+  @override
+  String get listFilter_saved => 'Saved';
+
+  @override
+  String get listFilter_discovered => 'Discovered';
+
+  @override
   String get listFilter_all => '모든';
 
   @override
@@ -3747,4 +3652,116 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => '시스템 언어';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
+
+  @override
+  String get chat_kindFlood => 'flood';
+
+  @override
+  String get chat_kindDirect => 'direct';
+
+  @override
+  String chat_kindRoute(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0)';
+  }
+
+  @override
+  String get chat_statusQueued => 'Queued';
+
+  @override
+  String chat_statusSending(String kind) {
+    return 'Sending · $kind';
+  }
+
+  @override
+  String chat_statusRetrying(int attempt, int max, String kind) {
+    return 'Retrying · $kind · attempt $attempt of $max';
+  }
+
+  @override
+  String chat_statusDelivered(String kind, String secs) {
+    return 'Delivered · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
+    return 'Delivered on attempt $attempt · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredLate(String kind, String secs) {
+    return 'Delivered late · $kind · $secs s';
+  }
+
+  @override
+  String chat_statusDeliveredShort(String secs) {
+    return 'Delivered · $secs s';
+  }
+
+  @override
+  String chat_statusFailed(int attempts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      attempts,
+      locale: localeName,
+      other: 'attempts',
+      one: 'attempt',
+    );
+    return 'Failed after $attempts $_temp0 · tap to resend';
+  }
+
+  @override
+  String get chat_statusFailedShort => 'Failed · tap to resend';
+
+  @override
+  String get chat_resendingByFlood => 'Resending by flood';
 }

@@ -90,4 +90,52 @@ void main() {
       expect(result, isFalse);
     });
   });
+
+  group('shouldScheduleTcpReconnect', () {
+    test('schedules for a non-manual drop of an established TCP session', () {
+      final result = MeshCoreConnector.shouldScheduleTcpReconnect(
+        manual: false,
+        transportAtDisconnect: MeshCoreTransportType.tcp,
+        sessionWasEstablished: true,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('never schedules for a manual disconnect', () {
+      final result = MeshCoreConnector.shouldScheduleTcpReconnect(
+        manual: true,
+        transportAtDisconnect: MeshCoreTransportType.tcp,
+        sessionWasEstablished: true,
+      );
+
+      expect(result, isFalse);
+    });
+
+    test('never schedules when the session was not established', () {
+      // A failed first attempt to a wrong address must not retry forever.
+      final result = MeshCoreConnector.shouldScheduleTcpReconnect(
+        manual: false,
+        transportAtDisconnect: MeshCoreTransportType.tcp,
+        sessionWasEstablished: false,
+      );
+
+      expect(result, isFalse);
+    });
+
+    test('never schedules for other transports', () {
+      for (final transport in [
+        MeshCoreTransportType.bluetooth,
+        MeshCoreTransportType.usb,
+      ]) {
+        final result = MeshCoreConnector.shouldScheduleTcpReconnect(
+          manual: false,
+          transportAtDisconnect: transport,
+          sessionWasEstablished: true,
+        );
+
+        expect(result, isFalse, reason: 'transport=$transport');
+      }
+    });
+  });
 }

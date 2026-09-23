@@ -129,6 +129,98 @@ class ChannelMessageStore {
     });
   }
 
+  /// Full-history search, SQL-side: ranks every row of the channel by
+  /// arrival (newest first), keeps rows whose JSON payload contains the
+  /// query's core, and returns each match with its distance from the
+  /// newest row — the full history is never loaded into Dart. The payload
+  /// prefilter sees sender names too and folds ASCII case; the precise
+  /// match runs in Dart on the prefiltered rows.
+  ///
+  /// A space at either edge of [query] means "word boundary": `'yo '`
+  /// matches "Yo GWQ!", "hey yo" and "yo, dude" but never "you"; `' yo'`
+  /// requires the match to start a word. Interior spaces stay literal.
+  /// Queries the prefilter cannot serve (cased non-ASCII letters,
+  /// characters JSON escapes) fall back to a full scan.
+  Future<List<({ChannelMessage message, int fromNewest})>>
+      searchChannelMessages(String idKey, String query) async {
+    final core = query.trim();
+    if (publicKeyHex.isEmpty || core.isEmpty) return const [];
+    await _importLegacyIdentityBlob(idKey);
+    final q = core.toLowerCase();
+
+    final boundStart = query.startsWith(' ');
+    final boundEnd = query.endsWith(' ');
+    final pattern = RegExp(
+      '${boundStart ? r'(?<![\p{L}\p{N}])' : ''}'
+      '${RegExp.escape(core)}'
+      '${boundEnd ? r'(?![\p{L}\p{N}])' : ''}',
+      caseSensitive: false,
+      unicode: true,
+    );
+    bool matches(ChannelMessage m) =>
+        pattern.hasMatch(m.text) || pattern.hasMatch(m.senderName);
+
+    if (!_sqlSearchable(core)) {
+      final all = await loadChannelMessages(idKey);
+      return [
+        for (var i = all.length - 1; i >= 0; i--)
+          if (matches(all[i]))
+            (message: all[i], fromNewest: all.length - 1 - i),
+      ];
+    }
+
+    final rows = await _db
+        .customSelect(
+          'SELECT payload, from_newest FROM ('
+          ' SELECT payload, ROW_NUMBER() OVER ('
+          '   ORDER BY received_at_us DESC, id DESC) - 1 AS from_newest'
+          ' FROM channel_message_rows'
+          ' WHERE node_scope = ? AND channel_id_key = ?'
+          ') WHERE instr(lower(payload), ?) > 0 '
+          'ORDER BY from_newest ASC',
+          variables: [
+            Variable.withString(publicKeyHex),
+            Variable.withString(idKey),
+            Variable.withString(q),
+          ],
+          readsFrom: {_db.channelMessageRows},
+        )
+        .get();
+
+    final results = <({ChannelMessage message, int fromNewest})>[];
+    for (final row in rows) {
+      try {
+        final m = _messageFromJson(
+          jsonDecode(row.read<String>('payload')) as Map<String, dynamic>,
+        );
+        // The prefilter sees the whole JSON blob (ids, status names…);
+        // confirm against the real fields.
+        if (matches(m)) {
+          results.add(
+            (message: m, fromNewest: row.read<int>('from_newest')),
+          );
+        }
+      } catch (e) {
+        appLogger.warn('Skipping unreadable channel message row: $e');
+      }
+    }
+    return results;
+  }
+
+  /// Whether the SQL payload prefilter can serve [query] without missing
+  /// rows: SQLite's lower() folds ASCII only, and the payload stores JSON,
+  /// which escapes quotes and backslashes.
+  bool _sqlSearchable(String query) {
+    for (final rune in query.runes) {
+      if (rune == 0x22 || rune == 0x5C) return false; // " and \
+      if (rune > 127) {
+        final ch = String.fromCharCode(rune);
+        if (ch.toLowerCase() != ch.toUpperCase()) return false;
+      }
+    }
+    return true;
+  }
+
   /// Atomic ingest: inserts and returns true ONLY if no row with this
   /// (scope, idKey, messageId) exists. The unique constraint is the dedup
   /// authority — replaces every in-memory "have I seen this?" scan.
@@ -532,6 +624,66 @@ class ChannelMessageStore {
                 (r) => OrderingTerm.asc(r.id),
               ]))
             .get();
+    return _decodeRows(rows);
+  }
+
+  /// Rows that can POSSIBLY be parked MeshCore One reactions: the wire
+  /// shape ends in a newline plus an 8-char hash, which the JSON payload
+  /// stores as the literal two-character sequence `\n`, eight characters,
+  /// then the string's closing quote. The LIKE runs entirely in SQL, so a
+  /// huge channel's plain messages are never decoded in Dart. Callers
+  /// re-parse to confirm (a multi-line message whose last line happens to
+  /// be 8 chars matches too — rare and harmless).
+  Future<List<ChannelMessage>> loadPossibleReactionRows(String idKey) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyIdentityBlob(idKey);
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey) &
+                    r.payload.like(r'%\n________"%'),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    return _decodeRows(rows);
+  }
+
+  /// Rows whose ORIGINAL wire timestamp (the messageId's leading field,
+  /// the same rule as the connector's wireTimestampMs) falls inside
+  /// [fromMs, toMs]. The candidate fetch for the retroactive orphan pass —
+  /// SQL casts the prefix so out-of-window JSON payloads are never decoded.
+  Future<List<ChannelMessage>> loadChannelMessagesByWireWindow(
+    String idKey, {
+    required int fromMs,
+    required int toMs,
+  }) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyIdentityBlob(idKey);
+    const wireMs = CustomExpression<int>(
+      "CAST(substr(message_id, 1, instr(message_id, '_') - 1) AS INTEGER)",
+    );
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey) &
+                    wireMs.isBetweenValues(fromMs, toMs),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    return _decodeRows(rows);
+  }
+
+  List<ChannelMessage> _decodeRows(List<ChannelMessageRow> rows) {
     final messages = <ChannelMessage>[];
     for (final row in rows) {
       try {
@@ -652,6 +804,7 @@ class ChannelMessageStore {
       'pathBytes': base64Encode(msg.pathBytes),
       'pathHashSize': msg.pathHashSize,
       'pathVariants': msg.pathVariants.map(base64Encode).toList(),
+      'heardDirect': msg.heardDirect,
       'repeats': msg.repeats.map(_repeatToJson).toList(),
       'messageId': msg.messageId,
       'packetHash': msg.packetHash,
@@ -703,6 +856,7 @@ class ChannelMessageStore {
       pathVariants: (json['pathVariants'] as List<dynamic>?)
           ?.map((entry) => Uint8List.fromList(base64Decode(entry as String)))
           .toList(),
+      heardDirect: json['heardDirect'] as bool? ?? false,
       repeats:
           (json['repeats'] as List<dynamic>?)
               ?.map((entry) => _repeatFromJson(entry as Map<String, dynamic>))

@@ -24,10 +24,8 @@ import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
     if (dart.library.io) '../services/linux_ble_pairing_service.dart';
 import '../services/message_retry_service.dart';
-import '../services/path_history_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
-import '../services/timeout_prediction_service.dart';
 import '../services/notification_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
@@ -215,6 +213,9 @@ class MeshCoreConnector extends ChangeNotifier {
   /// longer owns the connector and bow out instead of tearing down its successor.
   int _bleConnectAttempt = 0;
   static const String _lastBleDeviceIdKey = 'last_ble_device_id';
+  static const String _lastTransportKey = 'last_transport';
+  static const String _lastTcpHostKey = 'last_tcp_host';
+  static const String _lastTcpPortKey = 'last_tcp_port';
   static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
   final MeshCoreUsbManager _usbManager = MeshCoreUsbManager();
@@ -291,6 +292,19 @@ class MeshCoreConnector extends ChangeNotifier {
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
   int _reconnectAttempts = 0;
+
+  // TCP auto-reconnect: endpoint of the last session that completed a
+  // handshake, and whether the current session got that far. Only an
+  // established session arms reconnection — a failed first attempt to a
+  // wrong address must not start a retry loop.
+  String? _lastTcpHost;
+  int? _lastTcpPort;
+  bool _tcpSessionEstablished = false;
+
+  /// 'ble' | 'usb' | 'tcp' — the transport of the last successful
+  /// connection, persisted so launch auto-connect targets what the user
+  /// actually uses instead of unconditionally hunting the last BLE radio.
+  String? _lastTransport;
   bool _notifyListenersDirty = false;
   static const Duration _notifyListenersDebounce = Duration(milliseconds: 50);
 
@@ -327,10 +341,6 @@ class MeshCoreConnector extends ChangeNotifier {
   int _loadedContactsCount = 0;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
-  TimeoutPredictionService? _timeoutPredictionService;
-  // Intentionally global (not per-contact): tracks overall network activity.
-  // Frequent RX from any source indicates a busy network with more collisions.
-  DateTime _lastRxTime = DateTime.now();
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastContactMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastChannelMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -417,7 +427,6 @@ class MeshCoreConnector extends ChangeNotifier {
 
   // Services
   MessageRetryService? _retryService;
-  PathHistoryService? _pathHistoryService;
   AppSettingsService? _appSettingsService;
   BackgroundService? _backgroundService;
   final NotificationService _notificationService = NotificationService();
@@ -459,11 +468,12 @@ class MeshCoreConnector extends ChangeNotifier {
       _state == MeshCoreConnectionState.connected &&
       _activeTransport == MeshCoreTransportType.usb;
   bool get isAutoReconnectScheduled =>
-      _shouldAutoReconnect && (_reconnectTimer?.isActive ?? false);
+      (_shouldAutoReconnect || _shouldAutoReconnectTcp) &&
+      (_reconnectTimer?.isActive ?? false);
   /// True as soon as a non-manual disconnect occurs, even before the reconnect
   /// timer fires. Use this in build() checks to avoid the race where the timer
   /// hasn't been set yet when notifyListeners() triggers the first rebuild.
-  bool get willAutoReconnect => _shouldAutoReconnect;
+  bool get willAutoReconnect => _shouldAutoReconnect || _shouldAutoReconnectTcp;
   String? get activeTcpEndpoint => _tcpConnector.activeEndpoint;
   bool get isTcpTransportConnected =>
       _state == MeshCoreConnectionState.connected &&
@@ -682,6 +692,12 @@ class MeshCoreConnector extends ChangeNotifier {
   Future<List<ChannelMessage>> loadChannelMessagesFor(Channel channel) =>
       _channelMessageStore.loadChannelMessages(channel.idKey);
 
+  /// SQL-backed full-history search (the channel search UI): matches text
+  /// and sender names case-insensitively without loading the history.
+  Future<List<({ChannelMessage message, int fromNewest})>>
+      searchChannelMessages(Channel channel, String query) =>
+          _channelMessageStore.searchChannelMessages(channel.idKey, query);
+
   /// Watched unread counts per channel identity (chats-screen badges).
   Stream<Map<String, int>> watchChannelUnreadCounts() =>
       _channelMessageStore.watchUnreadCounts();
@@ -796,6 +812,9 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeContactKey = contactKeyHex;
     if (contactKeyHex != null) {
       markContactRead(contactKeyHex);
+      // First open this session: scan for parked reactions and land any
+      // whose target is already stored (see the retroactive pass).
+      unawaited(_contactOrphans(contactKeyHex));
     }
   }
 
@@ -803,6 +822,10 @@ class MeshCoreConnector extends ChangeNotifier {
     _activeChannelIndex = channelIndex;
     if (channelIndex != null) {
       markChannelRead(channelIndex);
+      final idKey = _findChannelByIndex(channelIndex)?.idKey;
+      if (idKey != null) {
+        unawaited(_channelOrphans(idKey));
+      }
     }
   }
 
@@ -854,20 +877,16 @@ class MeshCoreConnector extends ChangeNotifier {
 
   void initialize({
     required MessageRetryService retryService,
-    required PathHistoryService pathHistoryService,
     AppSettingsService? appSettingsService,
     BleDebugLogService? bleDebugLogService,
     AppDebugLogService? appDebugLogService,
     BackgroundService? backgroundService,
-    TimeoutPredictionService? timeoutPredictionService,
   }) {
     _retryService = retryService;
-    _pathHistoryService = pathHistoryService;
     _appSettingsService = appSettingsService;
     _bleDebugLogService = bleDebugLogService;
     _appDebugLogService = appDebugLogService;
     _backgroundService = backgroundService;
-    _timeoutPredictionService = timeoutPredictionService;
     _usbManager.setDebugLogService(_appDebugLogService);
     _tcpConnector.setDebugLogService(_appDebugLogService);
 
@@ -884,39 +903,18 @@ class MeshCoreConnector extends ChangeNotifier {
         updateMessage: _updateMessage,
         clearContactPath: clearContactPath,
         setContactPath: setContactPath,
-        calculateTimeout: (pathLength, messageBytes, {String? contactKey}) =>
+        calculateTimeout: (pathLength, messageBytes, {Contact? contact}) =>
             calculateTimeout(
               pathLength: pathLength,
               messageBytes: messageBytes,
-              contactKey: contactKey,
+              contact: contact,
             ),
         getSelfPublicKey: () => _selfPublicKey,
         prepareContactOutboundText: prepareContactOutboundText,
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
-        recordPathResult: _recordPathResult,
-        selectRetryPath:
-            (contactKey, attemptIndex, maxRetries, recentSelections) =>
-                _selectAutoPathForAttempt(
-                  contactKey,
-                  attemptIndex: attemptIndex,
-                  maxRetries: maxRetries,
-                  recentSelections: recentSelections,
-                ),
-        onDeliveryObserved: (contactKey, pathLength, messageBytes, tripTimeMs) {
-          final secSinceRx = DateTime.now().difference(_lastRxTime).inSeconds;
-          _timeoutPredictionService?.recordObservation(
-            contactKey: contactKey,
-            pathLength: pathLength,
-            messageBytes: messageBytes,
-            tripTimeMs: tripTimeMs,
-            secondsSinceLastRx: secSinceRx,
-          );
-        },
       ),
     );
-    final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
-    _retryService?.setMaxRetries(maxRetries);
   }
 
   Future<void> loadContactCache() async {
@@ -934,9 +932,12 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> _loadDiscoveredContactCache() async {
     final cached = await _discoveryContactStore.loadContacts();
-    _discoveredContacts
-      ..clear()
-      ..addAll(cached);
+    // Merge, never clobber: anything discovered while this load was in
+    // flight is newer than its cached row and must survive.
+    final live = {for (final c in _discoveredContacts) c.publicKeyHex};
+    _discoveredContacts.addAll(
+      cached.where((c) => !live.contains(c.publicKeyHex)),
+    );
   }
 
   Future<void> loadChannelSettings({int? maxChannels}) async {
@@ -1086,82 +1087,15 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
 
-  void _recordPathResult(
-    String contactPubKeyHex,
-    PathSelection selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    if (_pathHistoryService == null) return;
-    final settings = _appSettingsService?.settings;
-    _pathHistoryService!.recordPathResult(
-      contactPubKeyHex,
-      selection,
-      success: success,
-      tripTimeMs: tripTimeMs,
-      successIncrement: settings?.routeWeightSuccessIncrement ?? 0.2,
-      failureDecrement: settings?.routeWeightFailureDecrement ?? 0.2,
-      maxWeight: settings?.maxRouteWeight ?? 5.0,
-    );
-
-    // Flood path attribution: when a flood delivery succeeds, credit the
-    // contact's current device path so the route the ACK traveled back
-    // through gets a weight boost in the path history.
-    if (selection.useFlood && success) {
-      final contact = _contacts.cast<Contact?>().firstWhere(
-        (c) => c?.publicKeyHex == contactPubKeyHex,
-        orElse: () => null,
-      );
-      if (contact != null &&
-          contact.pathLength >= 0 &&
-          contact.path.isNotEmpty) {
-        _pathHistoryService!.recordFloodPathAttribution(
-          contactPubKeyHex: contactPubKeyHex,
-          pathBytes: contact.path,
-          hopCount: contact.pathLength,
-          tripTimeMs: tripTimeMs,
-          successIncrement: settings?.routeWeightSuccessIncrement ?? 0.2,
-          maxWeight: settings?.maxRouteWeight ?? 5.0,
-        );
-      }
-
-      // Request a fresh contact from the device so the next flood
-      // attribution uses the most up-to-date path.
-      if (contact != null) {
-        unawaited(getContactByKey(contact.publicKey));
-      }
-    }
-  }
-
-  PathSelection? _selectAutoPathForAttempt(
-    String contactPubKeyHex, {
-    required int attemptIndex,
-    required int maxRetries,
-    List<PathSelection> recentSelections = const [],
-  }) {
-    final hasKnownPaths =
-        _pathHistoryService?.getRecentPaths(contactPubKeyHex).isNotEmpty ??
-        false;
-    if (!hasKnownPaths) {
-      return null;
-    }
-
-    final selection = _pathHistoryService?.selectPathForAttempt(
-      contactPubKeyHex,
-      attemptIndex: attemptIndex,
-      maxRetries: maxRetries,
-      recentSelections: recentSelections,
-    );
-    if (selection != null) {
-      _pathHistoryService?.recordPathAttempt(contactPubKeyHex, selection);
-    }
-    return selection;
-  }
-
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
   }) async {
     if (_state == MeshCoreConnectionState.scanning) return;
+
+    // Scanning is explicit user intent to pick a device — it outranks any
+    // pending auto-reconnect (BLE or TCP), which would otherwise fire
+    // mid-scan and yank the connection state out from under the picker.
+    _cancelReconnectTimer();
 
     _scanResults.clear();
     _linuxSystemScanResults.clear();
@@ -1377,6 +1311,7 @@ class MeshCoreConnector extends ChangeNotifier {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      unawaited(_persistLastTransportUsb());
       _pendingInitialChannelSync = true;
       _appDebugLogService?.info(
         'connectUsb: requesting device info…',
@@ -1507,6 +1442,13 @@ class MeshCoreConnector extends ChangeNotifier {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      // Arm auto-reconnect for this endpoint. Set before the SELF_INFO wait
+      // on purpose: on a lossy link the handshake frames are exactly what
+      // gets eaten, and a drop there must retry like any other drop.
+      _lastTcpHost = host;
+      _lastTcpPort = port;
+      _tcpSessionEstablished = true;
+      unawaited(_persistLastTcpEndpoint(host, port));
       _pendingInitialChannelSync = true;
       await _requestDeviceInfo();
       _startBatteryPolling();
@@ -2313,6 +2255,9 @@ class MeshCoreConnector extends ChangeNotifier {
       _lastDeviceId != null &&
       _activeTransport == MeshCoreTransportType.bluetooth;
 
+  bool get _shouldAutoReconnectTcp =>
+      !_manualDisconnect && _lastTcpHost != null && _lastTcpPort != null;
+
   /// True when a previously connected Bluetooth device is remembered and can be
   /// auto-connected on the next launch.
   bool get hasRememberedBleDevice => _lastDeviceId != null;
@@ -2322,16 +2267,42 @@ class MeshCoreConnector extends ChangeNotifier {
       final prefs = PrefsManager.instance;
       _lastDeviceId ??= prefs.getString(_lastBleDeviceIdKey);
       _lastDeviceDisplayName ??= prefs.getString(_lastBleDeviceNameKey);
+      _lastTransport ??= prefs.getString(_lastTransportKey);
+      _lastTcpHost ??= prefs.getString(_lastTcpHostKey);
+      _lastTcpPort ??= prefs.getInt(_lastTcpPortKey);
     } catch (_) {
       // Prefs unavailable (e.g. in tests) — nothing to restore.
+    }
+  }
+
+  Future<void> _persistLastTcpEndpoint(String host, int port) async {
+    _lastTransport = 'tcp';
+    try {
+      final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'tcp');
+      await prefs.setString(_lastTcpHostKey, host);
+      await prefs.setInt(_lastTcpPortKey, port);
+    } catch (_) {
+      // Best effort — a failed persist just means no auto-connect next launch.
+    }
+  }
+
+  Future<void> _persistLastTransportUsb() async {
+    _lastTransport = 'usb';
+    try {
+      await PrefsManager.instance.setString(_lastTransportKey, 'usb');
+    } catch (_) {
+      // Best effort.
     }
   }
 
   Future<void> _persistLastBleDevice() async {
     final id = _lastDeviceId;
     if (id == null) return;
+    _lastTransport = 'ble';
     try {
       final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'ble');
       await prefs.setString(_lastBleDeviceIdKey, id);
       final name = _lastDeviceDisplayName;
       if (name != null && name.isNotEmpty) {
@@ -2344,17 +2315,47 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
-  /// Attempts a one-shot connection to the last remembered Bluetooth device on
-  /// app launch. No-op if the setting is disabled, on web, when nothing is
-  /// remembered, or once an attempt has already been made this process.
-  /// Callers must ensure the Bluetooth adapter is on before invoking.
+  /// Attempts a one-shot connection on app launch to whatever the user last
+  /// connected to — the last TCP endpoint, or the last Bluetooth device.
+  /// USB is never auto-connected: port names shift between boots and the
+  /// user plugs in and picks. No-op if the setting is disabled, on web, when
+  /// nothing is remembered, or once an attempt has already been made this
+  /// process. Callers must ensure the Bluetooth adapter is on before
+  /// invoking.
   Future<void> autoConnectToLastDevice() async {
     if (_launchAutoConnectAttempted) return;
     if (PlatformInfo.isWeb) return;
     if (_appSettingsService?.settings.autoConnectLastDevice != true) return;
+    if (_state != MeshCoreConnectionState.disconnected) return;
+
+    if (_lastTransport == 'tcp') {
+      final host = _lastTcpHost;
+      final port = _lastTcpPort;
+      if (host == null || port == null) return;
+      _launchAutoConnectAttempted = true;
+      _appDebugLogService?.info(
+        'Auto-connecting to last TCP endpoint $host:$port',
+        tag: 'TCP',
+      );
+      try {
+        await connectTcp(host: host, port: port);
+      } catch (e) {
+        _appDebugLogService?.info(
+          'Auto-connect to last TCP endpoint failed: $e',
+          tag: 'TCP',
+        );
+      }
+      return;
+    }
+    if (_lastTransport == 'usb') {
+      _launchAutoConnectAttempted = true;
+      return;
+    }
+
+    // 'ble', or no transport recorded (legacy install with a remembered
+    // BLE device).
     final id = _lastDeviceId;
     if (id == null) return;
-    if (_state != MeshCoreConnectionState.disconnected) return;
     _launchAutoConnectAttempted = true;
     _appDebugLogService?.info(
       'Auto-connecting to last device $id',
@@ -2454,10 +2455,58 @@ class MeshCoreConnector extends ChangeNotifier {
               : BluetoothDevice.fromId(_lastDeviceId!));
       if (device == null) return;
 
+      // connect() zeroes the backoff counter (it treats itself as a fresh
+      // user attempt) — remember it so failed retries keep backing off
+      // toward the 30s cap instead of hammering at the floor delay.
+      final priorAttempts = _reconnectAttempts;
       try {
         await connect(device, displayName: _lastDeviceDisplayName);
       } catch (_) {
+        _reconnectAttempts = priorAttempts;
         _scheduleReconnect();
+      }
+    });
+  }
+
+  /// Mirror of [_scheduleReconnect] for the TCP transport. Lossy WiFi links
+  /// (ESP32 modem power-save) stall long enough for Windows to kill the
+  /// connection after ~20-30s of unACKed retransmits (errno 121) while
+  /// Android's kernel silently retries for minutes — this evens that out:
+  /// non-manual drops retry the last established endpoint with the shared
+  /// backoff (1s doubling to a 30s cap) until reconnected or the user
+  /// expresses other intent (manual disconnect, scan, USB, another connect).
+  void _scheduleTcpReconnect() {
+    if (!_shouldAutoReconnectTcp) return;
+    if (_reconnectTimer?.isActive == true) return;
+    final host = _lastTcpHost;
+    final port = _lastTcpPort;
+    if (host == null || port == null) return;
+
+    final delayMs = _nextReconnectDelayMs();
+    _appDebugLogService?.info(
+      'Auto-reconnect in ${delayMs}ms endpoint=$host:$port',
+      tag: 'TCP',
+    );
+    _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
+      if (!_shouldAutoReconnectTcp) return;
+      if (_state == MeshCoreConnectionState.connecting ||
+          _state == MeshCoreConnectionState.connected) {
+        return;
+      }
+
+      // connectTcp treats itself as a fresh user attempt and zeroes the
+      // backoff counter — remember it so a failed retry keeps backing off
+      // instead of hammering at the floor delay.
+      final priorAttempts = _reconnectAttempts;
+      try {
+        await connectTcp(host: host, port: port);
+      } catch (_) {
+        // Already logged by connectTcp; rescheduling handled below.
+      }
+      if (_state != MeshCoreConnectionState.connected &&
+          _reconnectTimer?.isActive != true) {
+        _reconnectAttempts = priorAttempts;
+        _scheduleTcpReconnect();
       }
     });
   }
@@ -2473,6 +2522,8 @@ class MeshCoreConnector extends ChangeNotifier {
     _pendingDiscoverTag = null;
 
     final transportAtDisconnect = _activeTransport;
+    final tcpSessionWasEstablished = _tcpSessionEstablished;
+    _tcpSessionEstablished = false;
     final transportLabel = switch (transportAtDisconnect) {
       MeshCoreTransportType.bluetooth => 'BLE',
       MeshCoreTransportType.usb => 'USB',
@@ -2590,7 +2641,27 @@ class MeshCoreConnector extends ChangeNotifier {
     );
     if (!manual && transportAtDisconnect == MeshCoreTransportType.bluetooth) {
       _scheduleReconnect();
+    } else if (shouldScheduleTcpReconnect(
+      manual: manual,
+      transportAtDisconnect: transportAtDisconnect,
+      sessionWasEstablished: tcpSessionWasEstablished,
+    )) {
+      _scheduleTcpReconnect();
     }
+  }
+
+  /// A TCP drop retries only when it killed an established session (the
+  /// handshake had completed a connect): a failed first attempt to a wrong
+  /// address must not start a retry loop.
+  @visibleForTesting
+  static bool shouldScheduleTcpReconnect({
+    required bool manual,
+    required MeshCoreTransportType transportAtDisconnect,
+    required bool sessionWasEstablished,
+  }) {
+    return !manual &&
+        transportAtDisconnect == MeshCoreTransportType.tcp &&
+        sessionWasEstablished;
   }
 
   Future<void> sendFrame(
@@ -2857,6 +2928,8 @@ class MeshCoreConnector extends ChangeNotifier {
       rawPacket: tmp.rawPacket,
       latitude: tmp.latitude,
       longitude: tmp.longitude,
+      inboundPath: tmp.inboundPath,
+      inboundHopCount: tmp.inboundHopCount,
     );
   }
 
@@ -2888,8 +2961,9 @@ class MeshCoreConnector extends ChangeNotifier {
 
   Future<void> sendMessage(
     Contact contact,
-    String text,
-  ) async {
+    String text, {
+    bool floodFirst = false,
+  }) async {
     if (!isConnected || text.isEmpty) return;
 
     // Check if this is a reaction - apply locally with pending status and route through retry service
@@ -2921,6 +2995,7 @@ class MeshCoreConnector extends ChangeNotifier {
       await _retryService!.sendMessageWithRetry(
         contact: contact,
         text: text,
+        floodFirst: floodFirst,
       );
     } else {
       // Fallback to old behavior if retry service not initialized
@@ -3145,36 +3220,12 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resolves how the next send to [contact] will route. Only a user path
+  /// override is pushed to the radio; otherwise the firmware's own route is
+  /// left alone and simply reported.
   Future<PathSelection> preparePathForContactSend(Contact contact) async {
-    PathSelection? autoSelection;
-    final autoRotationEnabled =
-        _appSettingsService?.settings.autoRouteRotationEnabled == true;
-
-    // A zero-hop contact is already on the best route that exists, so route
-    // rotation has nothing to explore for it.
-    //
-    // Letting it pick flood here does not just slow one send. The flood
-    // branch below calls clearContactPath, which erases the direct path from
-    // the contact itself — and resolvePathSelection returns flood for any
-    // contact whose pathLength is negative. So one rotation experiment
-    // permanently demotes a neighbour to flood, with nothing to restore it
-    // but a fresh path discovery.
-    //
-    // Measured on the bench against a repeater in the same room at -46 dBm,
-    // reporting "Direct": it came back as "Flood" and stayed there, which
-    // also more than doubled the command give-up budget (12.4s -> 28.6s).
-    final isDirect = contact.pathLength == 0;
-
-    if (autoRotationEnabled && contact.pathOverride == null && !isDirect) {
-      final maxRetries = _appSettingsService?.settings.maxMessageRetries ?? 5;
-      autoSelection = _selectAutoPathForAttempt(
-        contact.publicKeyHex,
-        attemptIndex: 0,
-        maxRetries: maxRetries,
-      );
-    }
-
-    final resolved = resolvePathSelection(contact, selection: autoSelection);
+    final resolved = resolvePathSelection(contact);
+    if (contact.pathOverride == null) return resolved;
 
     if (resolved.useFlood) {
       await clearContactPath(contact);
@@ -3185,7 +3236,6 @@ class MeshCoreConnector extends ChangeNotifier {
         resolved.hopCount,
       );
     }
-
     return resolved;
   }
 
@@ -3215,39 +3265,6 @@ class MeshCoreConnector extends ChangeNotifier {
       pathLength: selection.useFlood ? -1 : selection.hopCount,
       messageBytes: messageBytes,
     );
-  }
-
-  /// Feeds one repeater CLI round trip into the timeout model.
-  ///
-  /// Repeater commands never reach [_handleRepeaterCommandAck]: the firmware
-  /// sends no ack for TXT_TYPE_CLI_DATA, and _handleMessageSent returns early
-  /// on CLI sends, so the ack plumbing that trains the model for ordinary
-  /// messages is dead on this path. Without this the model never learns what
-  /// a repeater command actually costs and every one is budgeted from the
-  /// worst-case physics bound — 4.1 s on a link measured at 955 ms.
-  void recordRepeaterCommandRoundTrip({
-    required String contactKey,
-    required int pathLength,
-    required int messageBytes,
-    required int tripTimeMs,
-  }) {
-    if (tripTimeMs <= 0) return;
-    _timeoutPredictionService?.recordObservation(
-      contactKey: contactKey,
-      pathLength: pathLength,
-      messageBytes: messageBytes,
-      tripTimeMs: tripTimeMs,
-      secondsSinceLastRx: DateTime.now().difference(_lastRxTime).inSeconds,
-    );
-  }
-
-  void recordRepeaterPathResult(
-    Contact contact,
-    PathSelection selection,
-    bool success,
-    int? tripTimeMs,
-  ) {
-    _recordPathResult(contact.publicKeyHex, selection, success, tripTimeMs);
   }
 
   Future<bool> verifyContactPathOnDevice(
@@ -3488,6 +3505,27 @@ class MeshCoreConnector extends ChangeNotifier {
     );
   }
 
+  /// The exact on-air text a stored outgoing row is (re)sent with — replies
+  /// rebuild their `@[Name]\n><snippet>..\n<body>` wire markup from metadata
+  /// (the row's text only stores the stripped body); everything else goes
+  /// out as stored.
+  String _rebuildOutboundWireText(int channelIndex, ChannelMessage message) {
+    if (message.replyToSenderName == null) return message.text;
+    final maxBytes = maxChannelMessageBytes(_selfName);
+    return ChannelMessage.buildReplyWireText(
+          targetName: message.replyToSenderName!,
+          quoteText: message.replyToText ?? '',
+          body: message.text,
+          selfName: _selfName ?? '',
+          fits: (candidate) =>
+              utf8
+                  .encode(prepareChannelOutboundText(channelIndex, candidate))
+                  .length <=
+              maxBytes,
+        ) ??
+        message.text;
+  }
+
   Future<void> resendChannelMessageById(int channelIndex, String messageId) async {
     // Same live-slot rule as sendChannelMessage: retrying with a slot index
     // whose key changed (mid-sync, or slot reshuffled) would encrypt the
@@ -3525,27 +3563,10 @@ class MeshCoreConnector extends ChangeNotifier {
       _handleChannelMessageTimeout(channelIndex, messageId);
     });
     
-    // Rebuild the full "@[Name]\n><snippet>..\n<body>" reply on resend, since
-    // message.text only stores the stripped body. Falls back to the body alone.
-    var wireText = message.text;
-    if (message.replyToSenderName != null) {
-      final maxBytes = maxChannelMessageBytes(_selfName);
-      wireText =
-          ChannelMessage.buildReplyWireText(
-            targetName: message.replyToSenderName!,
-            quoteText: message.replyToText ?? '',
-            body: message.text,
-            selfName: _selfName ?? '',
-            fits: (candidate) =>
-                utf8
-                    .encode(prepareChannelOutboundText(channelIndex, candidate))
-                    .length <=
-                maxBytes,
-          ) ??
-          message.text;
-    }
-
-    final outboundText = prepareChannelOutboundText(channelIndex, wireText);
+    final outboundText = prepareChannelOutboundText(
+      channelIndex,
+      _rebuildOutboundWireText(channelIndex, message),
+    );
     await _waitForRadioQuiet(
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
@@ -3577,6 +3598,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _messageStore.clearMessages(contact.publicKeyHex);
     notifyListeners();
     unawaited(_persistContacts());
+    unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
   }
 
   /// Removes all contacts that are not favorites (or all contacts if [includesFavorites] is true).
@@ -3600,6 +3622,8 @@ class MeshCoreConnector extends ChangeNotifier {
     }
     notifyListeners();
     unawaited(_persistContacts());
+    unawaited(_discoveryContactStore
+        .removeContacts(toRemove.map((c) => c.publicKeyHex)));
   }
 
   Future<void> updateKnownDiscovered() async {
@@ -3611,7 +3635,9 @@ class MeshCoreConnector extends ChangeNotifier {
         ),
       );
     }
-    unawaited(_persistDiscoveredContacts());
+    unawaited(
+      _discoveryContactStore.upsertContacts(List.of(_discoveredContacts)),
+    );
     notifyListeners();
   }
 
@@ -3620,7 +3646,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _discoveredContacts.removeWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
-    unawaited(_persistDiscoveredContacts());
+    unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
     notifyListeners();
   }
 
@@ -3664,6 +3690,8 @@ class MeshCoreConnector extends ChangeNotifier {
         pathLength: contact.pathLength,
         path: contact.path,
         pathHashSize: contact.pathHashSize, // preserve hash size
+        inboundPath: contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
@@ -4480,7 +4508,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handleFrame(List<int> data) {
     if (data.isEmpty) return;
-    _lastRxTime = DateTime.now();
 
     final frame = Uint8List.fromList(data);
     _receivedFramesController.add(frame);
@@ -4517,9 +4544,27 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
         break;
       case pushCodeAdvert:
-        // Known contact was seen again - just a pub key, update live timestamp
-        final pubKeyHex = pubKeyToHex(frame.sublist(1, 33));
+        // Just a pub key. The radio sends this for any advert it AUTO-ADDED
+        // to its own contact table (the full record only rides
+        // PUSH_CODE_NEW_ADVERT when the radio does NOT add it). So for a
+        // pubkey we don't hold, the contact exists on the radio but the app
+        // would never learn it until some future full sync — the
+        // coffee-shop flow: "send me an advert" and nothing appears. Fetch
+        // the record surgically instead; the RESP_CODE_CONTACT reply lands
+        // it in the contact list within a moment of the advert.
+        final pubKey = frame.sublist(1, 33);
+        final pubKeyHex = pubKeyToHex(pubKey);
         _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        final known =
+            _contacts.any((c) => c.publicKeyHex == pubKeyHex) ||
+            _discoveredContacts.any((c) => c.publicKeyHex == pubKeyHex);
+        if (!known) {
+          appLogger.info(
+            'Advert from unknown contact $pubKeyHex — fetching record',
+            tag: 'Connector',
+          );
+          unawaited(getContactByKey(pubKey));
+        }
         notifyListeners();
         break;
       case pushCodeNewAdvert:
@@ -4654,15 +4699,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _handlePathUpdated(Uint8List frame) {
     // Frame format: [0]=code, [1-32]=pub_key
-    if (frame.length >= 33 && _pathHistoryService != null) {
+    if (frame.length >= 33) {
       final pubKey = Uint8List.fromList(frame.sublist(1, 33));
-      final contact = _contacts.cast<Contact?>().firstWhere(
-        (c) => c != null && listEquals(c.publicKey, pubKey),
-        orElse: () => null,
-      );
+      final known = _contacts.any((c) => listEquals(c.publicKey, pubKey));
 
-      if (contact != null) {
-        _pathHistoryService!.handlePathUpdated(contact);
+      if (known) {
         // Refresh just this specific contact instead of all contacts.
         // This avoids race conditions with _preserveContactsOnRefresh flag
         // that can occur when using refreshContactsSinceLastmod().
@@ -4989,60 +5030,44 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return 50; // fallback: ~SF7/BW125 for 100 bytes
   }
 
-  /// Physics-based worst-case timeout (ceiling).
-  int _physicsMaxTimeout(int pathLength, int airtime) {
-    if (pathLength < 0) {
-      // Match firmware: SEND_TIMEOUT_BASE_MILLIS + (FLOOD_SEND_TIMEOUT_FACTOR * airtime)
-      return 500 + (16 * airtime);
-    } else {
-      return 500 + ((airtime * 6 + 250) * (pathLength + 1));
-    }
-  }
+  /// Companion firmware budget for a direct send: SEND_TIMEOUT_BASE_MILLIS +
+  /// (airtime × DIRECT_SEND_PERHOP_FACTOR + DIRECT_SEND_PERHOP_EXTRA_MILLIS)
+  /// × (hops + 1).
+  int _directTimeoutMs(int hops, int airtime) =>
+      500 + ((airtime * 6 + 250) * (hops + 1));
 
-  int _physicsMinTimeout(int pathLength, int airtime) {
-    if (pathLength < 0) {
-      // Same as max for flood — firmware uses a single formula
-      return 500 + (16 * airtime);
-    } else {
-      return airtime * (pathLength + 1);
-    }
-  }
+  /// Hops assumed for a flood to a contact whose distance is unknown.
+  static const int defaultFloodHops = 8;
+  static const int _minFloodTimeoutMs = 10000;
+  static const int _maxTimeoutMs = 60000;
 
-  /// Maximum timeout cap per retry attempt — prevents long-hop or slow-SF
-  /// paths from making a message appear to be "waiting" for minutes per attempt.
-  static const int _maxTimeoutMs = 60000; // 60 seconds
+  /// Best known distance to [contact] in hops: the firmware's route, else
+  /// how far the contact's last advert travelled, else null.
+  int? estimatedHopsTo(Contact contact) =>
+      contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount;
 
-  /// Calculate timeout for a message based on radio settings and path length.
-  /// Returns timeout in milliseconds, considering number of hops.
+  /// Timeout for one send attempt.
+  ///
+  /// Direct sends use the firmware's own formula. A flood needs a distance:
+  /// the firmware's flood formula (500 + 16 × airtime) has no hop term, so on
+  /// a multi-hop mesh it expires long before the reply can return. The reply
+  /// to a flood is itself a flood and every repeater adds a random delay, so
+  /// the direct budget over the estimated distance is doubled.
   int calculateTimeout({
     required int pathLength,
     int messageBytes = 100,
-    String? contactKey,
+    Contact? contact,
   }) {
     final airtime = _estimateAirtimeMs(messageBytes);
-    final physicsMin = _physicsMinTimeout(pathLength, airtime);
-    final physicsMax = _physicsMaxTimeout(pathLength, airtime);
-
-    // Try ML-based prediction
-    final secSinceRx = DateTime.now().difference(_lastRxTime).inSeconds;
-    final mlTimeout = _timeoutPredictionService?.predictTimeout(
-      contactKey: contactKey,
-      pathLength: pathLength,
-      messageBytes: messageBytes,
-      secondsSinceLastRx: secSinceRx,
-    );
-    if (mlTimeout != null) {
-      if (pathLength < 0) {
-        // Flood: trust ML, only enforce firmware formula as floor
-        if (mlTimeout < physicsMin) {
-          return physicsMin;
-        }
-      }
-      return mlTimeout.clamp(physicsMin, physicsMax).clamp(0, _maxTimeoutMs);
+    if (pathLength >= 0) {
+      return _directTimeoutMs(pathLength, airtime).clamp(0, _maxTimeoutMs);
     }
-
-    // No ML data — use firmware formula, capped
-    return physicsMax.clamp(0, _maxTimeoutMs);
+    final hops =
+        (contact == null ? null : estimatedHopsTo(contact)) ?? defaultFloodHops;
+    return (_directTimeoutMs(hops, airtime) * 2).clamp(
+      _minFloodTimeoutMs,
+      _maxTimeoutMs,
+    );
   }
 
   void _handleContact(Uint8List frame, {bool isContact = true}) {
@@ -5095,6 +5120,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device DB rows can be legitimately old, so skew is only assessed
           // on live adverts; carry the last assessment through syncs.
           clockCorrected: existing.clockCorrected,
+          // Device frames carry no inbound advert path.
+          inboundPath: existing.inboundPath,
+          inboundHopCount: existing.inboundHopCount,
         );
 
         appLogger.info(
@@ -5122,11 +5150,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       _knownContactKeys.add(contact.publicKeyHex);
       _loadMessagesForContact(contact.publicKeyHex);
-
-      // Add path to history if we have a valid path
-      if (_pathHistoryService != null && contact.pathLength >= 0) {
-        _pathHistoryService!.handlePathUpdated(contact);
-      }
 
       notifyListeners();
 
@@ -5178,6 +5201,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        inboundPath: contact.inboundHopCount == null
+            ? existing.inboundPath
+            : contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
       );
 
       appLogger.info(
@@ -5193,11 +5220,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _knownContactKeys.add(contact.publicKeyHex);
     _loadMessagesForContact(contact.publicKeyHex);
-
-    // Add path to history if we have a valid path
-    if (_pathHistoryService != null && contact.pathLength >= 0) {
-      _pathHistoryService!.handlePathUpdated(contact);
-    }
 
     notifyListeners();
 
@@ -5222,9 +5244,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await _contactStore.saveContacts(_contacts);
   }
 
-  Future<void> _persistDiscoveredContacts() async {
-    await _discoveryContactStore.saveContacts(_discoveredContacts);
-  }
+  // Discovered contacts have no radio backstop, so the store is append-only
+  // per key: upserts and targeted removes, never a whole-list rewrite. A
+  // stale or still-loading in-memory list can therefore never erase rows.
 
   int _latestContactLastmod() {
     if (_contacts.isEmpty) return 0;
@@ -6077,16 +6099,43 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // The send queue only ever holds our own pending ids, so consuming the
     // entry answers the caller synchronously; the row update is async.
     unawaited(() async {
+      ChannelMessage? sentRow;
       final (updated, idKey) = await _channelMessageStore.updateAnyByMessageId(
         messageId,
-        (m) => (m.isOutgoing && m.status == ChannelMessageStatus.pending)
-            ? m.copyWith(status: ChannelMessageStatus.sent)
-            : m,
+        (m) {
+          if (m.isOutgoing && m.status == ChannelMessageStatus.pending) {
+            sentRow = m.copyWith(status: ChannelMessageStatus.sent);
+            return sentRow!;
+          }
+          return m;
+        },
       );
       if (!updated || idKey == null) return;
       final liveIndex = _liveChannelByIdKey(idKey)?.index;
       if (liveIndex != null) {
-        _startWaitForRepeatTimer(liveIndex, messageId);
+        // Only wait for a repeat echo that can physically reach us: the
+        // firmware's RX-log push drops packets that don't fit the serial
+        // frame, so an oversize send's echo is unobservable — waiting
+        // would just burn a pointless retry and end in a false amber.
+        final row = sentRow;
+        final observable = row == null ||
+            isChannelEchoObservable(
+              _selfName,
+              prepareChannelOutboundText(
+                liveIndex,
+                _rebuildOutboundWireText(liveIndex, row),
+              ),
+              _pathHashByteWidth,
+            );
+        if (observable) {
+          _startWaitForRepeatTimer(liveIndex, messageId);
+        } else {
+          appLogger.info(
+            'Echo unobservable for $messageId (repeated packet exceeds the '
+            'RX-log frame) — settling as sent',
+            tag: 'Connector',
+          );
+        }
       }
       notifyListeners();
     }());
@@ -6160,7 +6209,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             messageBytes: entry.messageBytes,
           );
     entry.timeout = Timer(Duration(milliseconds: effectiveTimeoutMs), () {
-      _recordPathResult(entry.contactKeyHex, entry.selection, false, null);
       _pendingRepeaterAcks.remove(ackHashHex);
     });
     return true;
@@ -6171,7 +6219,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final entry = _pendingRepeaterAcks.remove(ackHashHex);
     if (entry == null) return false;
     entry.timeout?.cancel();
-    _recordPathResult(entry.contactKeyHex, entry.selection, true, tripTimeMs);
     return true;
   }
 
@@ -6712,19 +6759,94 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   Future<List<ChannelMessage>> _channelOrphans(String idKey) async {
     if (_channelOrphansScanned.add(idKey)) {
-      final history = await _channelMessageStore.loadChannelMessages(idKey);
+      // SQL prefilters the reaction shape — a huge channel's plain
+      // messages are never decoded here.
+      final candidates =
+          await _channelMessageStore.loadPossibleReactionRows(idKey);
       _channelOrphanRows[idKey] = [
-        for (final m in history)
+        for (final m in candidates)
           if (!m.isOutgoing &&
               ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
             m,
       ];
+      // Retroactive pass: rows this build can parse as reactions but an
+      // older build ingested as plain messages (e.g. mention-first MC1
+      // reactions from before the dialect landed) never went through
+      // ingest-time resolution — their targets are already stored, so the
+      // arrival-driven re-match can never fire. Land them now.
+      await _resolveChannelOrphansAgainstHistory(idKey);
     }
     return _channelOrphanRows.putIfAbsent(idKey, () => []);
   }
 
+  /// A reaction lands close in time to its target, so the retroactive scan
+  /// fetches and hashes only rows inside this window around the orphan's
+  /// own wire time — never the full history. (The arrival-driven paths
+  /// stay unbounded: they check exactly one new target.)
+  static const _retroactiveOrphanWindow = Duration(days: 2);
+
+  /// Lands every parked orphan in [idKey] whose target is already stored
+  /// (the arrival-driven [_resolveChannelOrphansFor] only covers targets
+  /// stored AFTER their reaction).
+  Future<void> _resolveChannelOrphansAgainstHistory(String idKey) async {
+    final orphans = _channelOrphanRows[idKey];
+    if (orphans == null || orphans.isEmpty) return;
+    final windowMs = _retroactiveOrphanWindow.inMilliseconds;
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null) continue;
+      final orphanMs = wireTimestampMs(orphan);
+      final nearby = await _channelMessageStore.loadChannelMessagesByWireWindow(
+        idKey,
+        fromMs: orphanMs - windowMs,
+        toMs: orphanMs + windowMs,
+      );
+      final index = ReactionHelper.findTargetIndex<ChannelMessage>(
+        messages: nearby,
+        reactionInfo: info,
+        shouldSkip: (m) =>
+            m.messageId == orphan.messageId ||
+            ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: _channelWireSecsCandidates,
+        getMessageTextVariants: (m) => _mc1TextVariants(m.text, m.wireText),
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+      );
+      if (index < 0) continue;
+      final target = nearby[index];
+      await _channelMessageStore.updateMessage(idKey, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          orphan.senderName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _channelMessageStore.deleteMessage(idKey, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+      appLogger.info(
+        'Retroactively landed parked reaction ${info.emoji} by '
+        '${orphan.senderName} on ${target.messageId}',
+        tag: 'Connector',
+      );
+    }
+    if (landed) notifyListeners();
+  }
+
   Future<List<Message>> _contactOrphans(String pubKeyHex) async {
     if (_contactOrphansScanned.add(pubKeyHex)) {
+      // DM histories are per-contact and orders of magnitude smaller than
+      // a busy channel, so the in-memory scan is fine here; the channel
+      // side pushes both filters into SQL.
       final history = await _messageStore.loadMessages(pubKeyHex);
       _contactOrphanRows[pubKeyHex] = [
         for (final m in history)
@@ -6732,8 +6854,74 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               ReactionHelper.parseMeshCoreOneReaction(m.text) != null)
             m,
       ];
+      await _resolveContactOrphansAgainstHistory(pubKeyHex, history);
     }
     return _contactOrphanRows.putIfAbsent(pubKeyHex, () => []);
+  }
+
+  /// DM mirror of [_resolveChannelOrphansAgainstHistory].
+  Future<void> _resolveContactOrphansAgainstHistory(
+    String pubKeyHex,
+    List<Message> history,
+  ) async {
+    final orphans = _contactOrphanRows[pubKeyHex];
+    if (orphans == null || orphans.isEmpty) return;
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => c?.publicKeyHex == pubKeyHex,
+      orElse: () => null,
+    );
+    final isRoomServer = contact?.type == advTypeRoom;
+    final windowSecs = _retroactiveOrphanWindow.inSeconds;
+    var landed = false;
+    for (final orphan in List.of(orphans)) {
+      final info = ReactionHelper.parseMeshCoreOneReaction(orphan.text);
+      if (info == null) continue;
+      final orphanSecs = _messageWireSecs(orphan);
+      final nearby = [
+        for (final m in history)
+          if ((orphanSecs - _messageWireSecs(m)).abs() <= windowSecs) m,
+      ];
+      final index = ReactionHelper.findTargetIndex<Message>(
+        messages: nearby,
+        reactionInfo: info,
+        shouldSkip: (m) =>
+            m.messageId == orphan.messageId ||
+            ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
+        getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
+        getWireTimestampSecs: _contactWireSecsCandidates,
+        getMessageTextVariants: (m) => _mc1TextVariants(m.text),
+        getSenderName: (m) => contact == null
+            ? null
+            : _resolveContactSenderName(m, contact, isRoomServer),
+        getMessageText: (m) => m.text,
+      );
+      if (index < 0) continue;
+      final target = nearby[index];
+      final reactorName = _resolveReactorName(pubKeyHex, orphan);
+      await _messageStore.updateMessage(pubKeyHex, target.messageId, (m) {
+        final merged = ReactionHelper.mergeReaction(
+          m.reactions,
+          m.reactionSenders,
+          info.emoji,
+          reactorName,
+        );
+        return merged == null
+            ? m
+            : m.copyWith(
+                reactions: merged.reactions,
+                reactionSenders: merged.senders,
+              );
+      });
+      await _messageStore.deleteMessage(pubKeyHex, orphan.messageId);
+      orphans.remove(orphan);
+      landed = true;
+      appLogger.info(
+        'Retroactively landed parked DM reaction ${info.emoji} by '
+        '$reactorName on ${target.messageId}',
+        tag: 'Connector',
+      );
+    }
+    if (landed) notifyListeners();
   }
 
   Future<void> _registerChannelOrphan(String idKey, ChannelMessage row) async {
@@ -7327,6 +7515,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathBytes: mergedPathBytes,
         pathHashSize: mergedHashSize,
         pathVariants: mergedPathVariants,
+        // Latch, never clear: any zero-hop copy means they were in range,
+        // even though the display path adopts the longest observed route.
+        heardDirect: m.heardDirect || incoming.heardDirect,
         packetHash: m.packetHash ?? incoming.packetHash,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
         sentWireSecs: m.sentWireSecs.contains(incomingSecs)
@@ -7965,11 +8156,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: pathBytes.isEmpty ? -1 : hopCount,
+        // No route until the firmware learns one; the advert's path only
+        // proves the inbound direction.
+        pathLength: -1,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(pathBytes, stride: hashSize).reversed.expand((h) => h).toList(),
-        ), // Store path in reverse for easier use in outgoing messages
+        path: Uint8List(0),
+        inboundPath: pathBytes,
+        inboundHopCount: hopCount,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -8081,11 +8274,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: path.isEmpty ? -1 : hopCount,
+        pathLength: -1,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
-        ), // Store path in reverse for easier use in outgoing messages
+        path: Uint8List(0),
+        inboundPath: path,
+        inboundHopCount: hopCount,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -8124,28 +8317,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         tag: 'Connector',
       );
 
-      // CRITICAL: Preserve user's path override when contact is refreshed from device
+      // The firmware's route (path/pathLength) is untouched: an advert only
+      // tells us how the contact reaches us.
       _contacts[existingIndex] = existing.copyWith(
         latitude: hasLocation ? latitude : existing.latitude,
         longitude: hasLocation ? longitude : existing.longitude,
         name: hasName ? name : existing.name,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
-        ),
-        pathLength: path.isEmpty ? -1 : hopCount,
+        inboundPath: path,
+        inboundHopCount: hopCount,
         lastMessageAt: mergedLastMessageAt,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
       );
-
-      // Add path to history if we have a valid path
-      if (_pathHistoryService != null &&
-          _contacts[existingIndex].pathLength >= 0) {
-        _pathHistoryService!.handlePathUpdated(_contacts[existingIndex]);
-      }
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
 
@@ -8277,21 +8463,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     // Update existing contact
     if (existingIndex >= 0) {
-      _discoveredContacts[existingIndex] = _discoveredContacts[existingIndex]
-          .copyWith(
-            rawPacket: rawPacket,
-            name: contact.name,
-            type: contact.type,
-            pathLength: contact.pathLength,
-            path: contact.path,
-            latitude: contact.latitude,
-            longitude: contact.longitude,
-            lastSeen: contact.lastSeen,
-            flags: strippedFlags,
-            isActive: addActive,
-          );
+      final updated = _discoveredContacts[existingIndex].copyWith(
+        rawPacket: rawPacket,
+        name: contact.name,
+        type: contact.type,
+        pathLength: contact.pathLength,
+        path: contact.path,
+        inboundPath: contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount,
+        latitude: contact.latitude,
+        longitude: contact.longitude,
+        lastSeen: contact.lastSeen,
+        flags: strippedFlags,
+        isActive: addActive,
+      );
+      _discoveredContacts[existingIndex] = updated;
       notifyListeners();
-      unawaited(_persistDiscoveredContacts());
+      unawaited(_discoveryContactStore.upsertContacts([updated]));
       return;
     }
 
@@ -8302,6 +8490,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       type: contact.type,
       pathLength: contact.pathLength,
       path: contact.path,
+      inboundPath: contact.inboundPath,
+      inboundHopCount: contact.inboundHopCount,
       latitude: contact.latitude,
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,
@@ -8311,7 +8501,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
     _discoveredContacts.add(disContact);
 
-    unawaited(_persistDiscoveredContacts());
+    unawaited(_discoveryContactStore.upsertContacts([disContact]));
 
     // Show notification for new contact (advertisement)
     if (_appSettingsService != null && !noNotify) {
@@ -8327,22 +8517,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void removeAllDiscoveredContacts({bool includeRepeaters = false}) {
-    if (!includeRepeaters) {
-      _discoveredContacts.removeWhere((c) => c.type != advTypeRepeater);
-    } else {
-      _discoveredContacts.clear();
-    }
-    unawaited(_persistDiscoveredContacts());
+    final removed = [
+      for (final c in _discoveredContacts)
+        if (includeRepeaters || c.type != advTypeRepeater) c.publicKeyHex,
+    ];
+    _discoveredContacts.removeWhere((c) => removed.contains(c.publicKeyHex));
+    unawaited(_discoveryContactStore.removeContacts(removed));
     notifyListeners();
   }
 
   void removeDiscoveredContactsOlderThan(Duration maxAge, {bool includeRepeaters = false}) {
     final cutoff = DateTime.now().subtract(maxAge);
-    _discoveredContacts.removeWhere((c) {
-      if (!includeRepeaters && c.type == advTypeRepeater) return false;
-      return c.lastSeen.isBefore(cutoff);
-    });
-    unawaited(_persistDiscoveredContacts());
+    final removed = [
+      for (final c in _discoveredContacts)
+        if ((includeRepeaters || c.type != advTypeRepeater) &&
+            c.lastSeen.isBefore(cutoff))
+          c.publicKeyHex,
+    ];
+    _discoveredContacts.removeWhere((c) => removed.contains(c.publicKeyHex));
+    unawaited(_discoveryContactStore.removeContacts(removed));
     notifyListeners();
   }
 
@@ -8367,13 +8560,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _messageStore.clearMessages(contact.publicKeyHex);
     }
 
-    _discoveredContacts.removeWhere((c) =>
-        c.type == advTypeRepeater &&
-        !c.isFavorite &&
-        (cutoff == null || c.lastSeen.isBefore(cutoff)));
+    final removedDiscovered = [
+      for (final c in _discoveredContacts)
+        if (c.type == advTypeRepeater &&
+            !c.isFavorite &&
+            (cutoff == null || c.lastSeen.isBefore(cutoff)))
+          c.publicKeyHex,
+    ];
+    _discoveredContacts.removeWhere(
+        (c) => removedDiscovered.contains(c.publicKeyHex));
 
     unawaited(_persistContacts());
-    unawaited(_persistDiscoveredContacts());
+    unawaited(_discoveryContactStore.removeContacts(removedDiscovered));
     notifyListeners();
   }
 
@@ -8401,10 +8599,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
     notifyListeners();
-  }
-
-  void deleteAllPaths() {
-    _pathHistoryService?.clearAllHistories();
   }
 
   Future<void> enableOverwriteOldest() async {

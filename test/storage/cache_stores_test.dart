@@ -11,10 +11,12 @@ import 'package:meshtrax/storage/contact_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// The cache stores (contacts, discovered contacts, cached channel slots)
-// mirror radio/app state where whole-list replacement is the correct write.
-// These tests pin the Drift conversion: roundtrip fidelity, node-scope
-// isolation, and one-time legacy prefs import with key removal.
+// The mirror stores (saved contacts, cached channel slots) reflect radio
+// state, so whole-list replacement is the correct write. The discovery store
+// is NOT a mirror — nothing can regenerate it — so its contract is
+// upsert-per-key plus targeted deletes, and no write may erase rows the
+// caller didn't name. These tests pin roundtrip fidelity, node-scope
+// isolation, those write semantics, and one-time legacy prefs import.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -160,7 +162,7 @@ void main() {
     });
 
     test('roundtrips discovered contacts', () async {
-      await store.saveContacts([contact(4), contact(5)]);
+      await store.upsertContacts([contact(4), contact(5)]);
 
       final loaded = await store.loadContacts();
 
@@ -168,16 +170,41 @@ void main() {
     });
 
     test('discovery results are shared across store instances', () async {
-      await store.saveContacts([contact(4)]);
+      await store.upsertContacts([contact(4)]);
 
       expect(await ContactDiscoveryStore().loadContacts(), hasLength(1));
     });
 
-    test('save replaces the whole list', () async {
-      await store.saveContacts([contact(4), contact(5)]);
-      await store.saveContacts([contact(5)]);
+    test('upsert updates named rows and touches nothing else', () async {
+      await store.upsertContacts([contact(4), contact(5)]);
+      await store.upsertContacts([contact(5, name: 'Renamed')]);
 
-      expect(await store.loadContacts(), hasLength(1));
+      final byKey = {
+        for (final c in await store.loadContacts()) c.publicKeyHex: c,
+      };
+      expect(byKey, hasLength(2));
+      expect(byKey[contact(4).publicKeyHex]!.name, 'Contact 4');
+      expect(byKey[contact(5).publicKeyHex]!.name, 'Renamed');
+    });
+
+    // Regression: an empty in-memory list (disconnect wipe racing the cache
+    // load) once translated into DELETE-everything. Persisting nothing must
+    // mean writing nothing.
+    test('upserting an empty list erases nothing', () async {
+      await store.upsertContacts([contact(4), contact(5)]);
+      await store.upsertContacts([]);
+
+      expect(await store.loadContacts(), hasLength(2));
+    });
+
+    test('remove deletes only the named keys', () async {
+      await store.upsertContacts([contact(4), contact(5), contact(6)]);
+      await store.removeContacts([contact(5).publicKeyHex]);
+      await store.removeContacts([]);
+
+      final loaded = await store.loadContacts();
+      expect(loaded.map((c) => c.name), containsAll(['Contact 4', 'Contact 6']));
+      expect(loaded, hasLength(2));
     });
 
     test('imports legacy blob once and removes the key', () async {
