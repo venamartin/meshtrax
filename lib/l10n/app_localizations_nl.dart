@@ -1590,18 +1590,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex Dump:';
 
   @override
-  String get chat_pathManagement => 'Beheer van Paden';
-
-  @override
-  String get chat_routingMode => 'Routeerwijze';
-
-  @override
-  String get chat_autoUseSavedPath => 'Automatisch (gebruik opgeslagen pad)';
-
-  @override
-  String get chat_forceFloodMode => 'Dwing Floodsmodus';
-
-  @override
   String get chat_hopSingular => 'Hop';
 
   @override
@@ -1620,28 +1608,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Stel aangepaste pad in';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Handmatig routepad specificeren';
-
-  @override
-  String get chat_clearPath => 'Duidelijke Pad';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Dwing herontdekking bij volgende verzending';
-
-  @override
-  String get chat_pathCleared =>
-      'Pad is vrijgegeven. Volgende bericht herontdekt route.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Gebruik de route-schakelaar in de app-balk';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Floodmodus is ingeschakeld. Schakel dit uit via het route-icoon in de app-balk.';
 
   @override
   String get chat_fullPath => 'Volledige Pad';
@@ -2044,21 +2010,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'Voer het wachtwoord van de kamer in om toegang te krijgen tot instellingen en status.';
 
   @override
-  String get login_routing => 'Routing';
-
-  @override
-  String get login_routingMode => 'Routeerwijze';
-
-  @override
-  String get login_autoUseSavedPath => 'Automatisch (gebruik opgeslagen pad)';
-
-  @override
-  String get login_forceFloodMode => 'Dwing Floodmodus Af';
-
-  @override
-  String get login_managePaths => 'Padbeheer';
-
-  @override
   String get login_login => 'Inloggen';
 
   @override
@@ -2080,11 +2031,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get common_clear => 'Schoonmaken';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Huidige pad: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Voer aangepaste pad in';
@@ -3860,4 +3806,49 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Taal van het systeem';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

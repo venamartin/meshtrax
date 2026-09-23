@@ -11,7 +11,7 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../utils/app_logger.dart';
 import '../helpers/snack_bar_builder.dart';
-import 'path_management_dialog.dart';
+import 'routing_dialog.dart';
 
 class RoomLoginDialog extends StatefulWidget {
   final Contact room;
@@ -227,7 +227,6 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
     final l10n = context.l10n;
     final connector = context.watch<MeshCoreConnector>();
     final repeater = _resolveRepeater(connector);
-    final isFloodMode = repeater.pathOverride == -1;
     return AlertDialog(
       title: Row(
         children: [
@@ -316,95 +315,20 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
                   const Divider(),
                   Row(
                     children: [
-                      Text(
-                        l10n.login_routing,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      Icon(routingIconOf(repeater), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          repeater.pathLabel,
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ),
-                      const Spacer(),
-                      PopupMenuButton<String>(
-                        icon: Icon(isFloodMode ? Icons.waves : Icons.route),
-                        tooltip: l10n.login_routingMode,
-                        onSelected: (mode) async {
-                          if (mode == 'flood') {
-                            await connector.setPathOverride(
-                              repeater,
-                              pathLen: -1,
-                            );
-                          } else {
-                            await connector.setPathOverride(
-                              repeater,
-                              pathLen: null,
-                            );
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'auto',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_mode,
-                                  size: 20,
-                                  color: !isFloodMode
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  l10n.login_autoUseSavedPath,
-                                  style: TextStyle(
-                                    fontWeight: !isFloodMode
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'flood',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.waves,
-                                  size: 20,
-                                  color: isFloodMode
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  l10n.login_forceFloodMode,
-                                  style: TextStyle(
-                                    fontWeight: isFloodMode
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      TextButton(
+                        onPressed: () =>
+                            RoutingDialog.show(context, contact: repeater),
+                        child: Text(l10n.routing_title),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    repeater.pathLabel,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () =>
-                          PathManagementDialog.show(context, contact: repeater),
-                      icon: const Icon(Icons.timeline, size: 18),
-                      label: Text(l10n.login_managePaths),
-                    ),
                   ),
                 ],
               ),

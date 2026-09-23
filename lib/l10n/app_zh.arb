@@ -566,10 +566,6 @@
     }
   },
   "debugFrame_hexDump": "十六进制数据：",
-  "chat_pathManagement": "路径管理",
-  "chat_routingMode": "路由模式",
-  "chat_autoUseSavedPath": "自动（使用保存的路径）",
-  "chat_forceFloodMode": "强制泛洪模式",
   "chat_hopSingular": "跳",
   "chat_hopPlural": "跳",
   "chat_hopsCount": "{count} 跳",
@@ -581,12 +577,6 @@
     }
   },
   "chat_setCustomPath": "设置自定义路径",
-  "chat_setCustomPathSubtitle": "手动指定路由路径",
-  "chat_clearPath": "清除路径",
-  "chat_clearPathSubtitle": "清除当前路径，下次发送将重新尝试。",
-  "chat_pathCleared": "路径已清除。下一条消息将重新路由。",
-  "chat_floodModeSubtitle": "在应用栏中切换路由模式。",
-  "chat_floodModeEnabled": "泛洪模式已启用。可通过应用栏的路由图标切换。",
   "chat_fullPath": "完整路径",
   "chat_pathDetailsNotAvailable": "路径信息暂不可用，请尝试发送消息刷新。",
   "chat_type": "类型",
@@ -818,11 +808,6 @@
   "login_savePasswordSubtitle": "密码将安全地存储在此设备上",
   "login_repeaterDescription": "输入转发节点密码以访问设置和状态。",
   "login_roomDescription": "输入房间服务器密码以访问设置和状态。",
-  "login_routing": "路由",
-  "login_routingMode": "路由模式",
-  "login_autoUseSavedPath": "自动（使用保存的路径）",
-  "login_forceFloodMode": "强制泛洪模式",
-  "login_managePaths": "管理路径",
   "login_login": "登录",
   "login_attempt": "尝试 {current}/{max}",
   "@login_attempt": {
@@ -846,14 +831,6 @@
   "login_failedMessage": "登录失败。可能是密码错误或无法连接到服务器。",
   "common_reload": "重新加载",
   "common_clear": "清除",
-  "path_currentPath": "当前路径：{path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "输入自定义路径",
   "path_currentPathLabel": "当前路径",
   "path_hexPrefixInstructions": "请输入每个中继节点的2字符十六进制前缀，用逗号分隔。",

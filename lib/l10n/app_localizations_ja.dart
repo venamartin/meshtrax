@@ -1549,18 +1549,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get debugFrame_hexDump => 'ヘックスダンプ：';
 
   @override
-  String get chat_pathManagement => '経路管理';
-
-  @override
-  String get chat_routingMode => 'ルーティングモード';
-
-  @override
-  String get chat_autoUseSavedPath => '自動 (保存されたパスを使用)';
-
-  @override
-  String get chat_forceFloodMode => '強制的に洪水モードを起動';
-
-  @override
   String get chat_hopSingular => 'ジャンプ';
 
   @override
@@ -1579,25 +1567,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'カスタムパスを設定';
-
-  @override
-  String get chat_setCustomPathSubtitle => '手動で経路を指定する';
-
-  @override
-  String get chat_clearPath => '明確な道';
-
-  @override
-  String get chat_clearPathSubtitle => '次回送信時に、以前の情報を再取得する';
-
-  @override
-  String get chat_pathCleared => '経路が確保されました。次のメッセージでルートを再確認します。';
-
-  @override
-  String get chat_floodModeSubtitle => 'アプリのバーにあるルーティング切り替え機能を使用する';
-
-  @override
-  String get chat_floodModeEnabled =>
-      '洪水モードが有効になっています。アプリのメニューバーにあるルートアイコンを使用して、モードを切り替えることができます。';
 
   @override
   String get chat_fullPath => 'フルパス';
@@ -1987,21 +1956,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get login_roomDescription => '設定やステータスへのアクセスには、部屋のパスワードを入力してください。';
 
   @override
-  String get login_routing => '経路設定';
-
-  @override
-  String get login_routingMode => 'ルーティングモード';
-
-  @override
-  String get login_autoUseSavedPath => '自動 (保存されたパスを使用)';
-
-  @override
-  String get login_forceFloodMode => '強制的に洪水モードを起動';
-
-  @override
-  String get login_managePaths => 'パスの管理';
-
-  @override
   String get login_login => 'ログイン';
 
   @override
@@ -2023,11 +1977,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get common_clear => '明確';
-
-  @override
-  String path_currentPath(String path) {
-    return '現在のパス: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'カスタムパスを入力';
@@ -3713,4 +3662,49 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'システム言語';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

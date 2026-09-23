@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Hex Dump:",
-  "chat_pathManagement": "Beheer van Paden",
-  "chat_routingMode": "Routeerwijze",
-  "chat_autoUseSavedPath": "Automatisch (gebruik opgeslagen pad)",
-  "chat_forceFloodMode": "Dwing Floodsmodus",
   "chat_hopSingular": "Hop",
   "chat_hopPlural": "hoppen",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Stel aangepaste pad in",
-  "chat_setCustomPathSubtitle": "Handmatig routepad specificeren",
-  "chat_clearPath": "Duidelijke Pad",
-  "chat_clearPathSubtitle": "Dwing herontdekking bij volgende verzending",
-  "chat_pathCleared": "Pad is vrijgegeven. Volgende bericht herontdekt route.",
-  "chat_floodModeSubtitle": "Gebruik de route-schakelaar in de app-balk",
-  "chat_floodModeEnabled": "Floodmodus is ingeschakeld. Schakel dit uit via het route-icoon in de app-balk.",
   "chat_fullPath": "Volledige Pad",
   "chat_pathDetailsNotAvailable": "De paddetails zijn nog niet beschikbaar. Probeer een bericht te sturen om te vernieuwen.",
   "chat_type": "Typen",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "Het wachtwoord wordt veilig op dit apparaat opgeslagen.",
   "login_repeaterDescription": "Voer het wachtwoord van de repeater in om instellingen en status te openen.",
   "login_roomDescription": "Voer het wachtwoord van de kamer in om toegang te krijgen tot instellingen en status.",
-  "login_routing": "Routing",
-  "login_routingMode": "Routeerwijze",
-  "login_autoUseSavedPath": "Automatisch (gebruik opgeslagen pad)",
-  "login_forceFloodMode": "Dwing Floodmodus Af",
-  "login_managePaths": "Padbeheer",
   "login_login": "Inloggen",
   "login_attempt": "Poging {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Inloggen mislukt. Het wachtwoord is onjuist of de repeater is niet bereikbaar.",
   "common_reload": "Opnieuw laden",
   "common_clear": "Schoonmaken",
-  "path_currentPath": "Huidige pad: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Voer aangepaste pad in",
   "path_currentPathLabel": "Huidige pad",
   "path_hexPrefixInstructions": "Voer 2-letter hex-voorgiffen voor elke hop in, gescheiden door komma's.",

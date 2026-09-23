@@ -8,7 +8,7 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../widgets/debug_frame_viewer.dart';
 import '../services/repeater_command_service.dart';
-import '../widgets/path_management_dialog.dart';
+import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
 
 class RepeaterCliScreen extends StatefulWidget {
@@ -363,7 +363,7 @@ class _RepeaterCliScreenState extends State<RepeaterCliScreen> {
             icon: const Icon(Icons.timeline),
             tooltip: l10n.repeater_pathManagement,
             onPressed: () =>
-                PathManagementDialog.show(context, contact: repeater),
+                RoutingDialog.show(context, contact: repeater),
           ),
           IconButton(
             icon: const Icon(Icons.bug_report),

@@ -540,10 +540,6 @@
     }
   },
   "debugFrame_hexDump": "Дамп Hex:",
-  "chat_pathManagement": "Керування шляхами",
-  "chat_routingMode": "Режим маршрутизації",
-  "chat_autoUseSavedPath": "Авто (використовувати збережений шлях)",
-  "chat_forceFloodMode": "Примусово на всю мережу",
   "chat_hopSingular": "Стрибок",
   "chat_hopPlural": "стрибків",
   "chat_hopsCount": "{count} {count, plural, =1{стрибок} few{стрибки} many{стрибків} other{стрибків}}",
@@ -555,12 +551,6 @@
     }
   },
   "chat_setCustomPath": "Встановити власний шлях",
-  "chat_setCustomPathSubtitle": "Вказати шлях маршрутизації вручну",
-  "chat_clearPath": "Очистити шлях",
-  "chat_clearPathSubtitle": "Примусово повторити пошук при наступному надсиланні",
-  "chat_pathCleared": "Шлях очищено. Наступне повідомлення оновить маршрут.",
-  "chat_floodModeSubtitle": "Використовувати перемикач маршрутизації в панелі програми",
-  "chat_floodModeEnabled": "Увімкнено режим «на всю мережу». Перемикайте через іконку маршрутизації на панелі інструментів.",
   "chat_fullPath": "Повний шлях",
   "chat_pathDetailsNotAvailable": "Деталі шляху ще недоступні. Спробуйте надіслати повідомлення для оновлення.",
   "chat_type": "Ввід",
@@ -792,11 +782,6 @@
   "login_savePasswordSubtitle": "Пароль буде надійно збережено на цьому пристрої.",
   "login_repeaterDescription": "Введіть пароль ретранслятора для доступу до налаштувань та статусу.",
   "login_roomDescription": "Введіть пароль кімнати для доступу до налаштувань та статусу.",
-  "login_routing": "Маршрутизація",
-  "login_routingMode": "Режим маршрутизації",
-  "login_autoUseSavedPath": "Авто (використовувати збережений шлях)",
-  "login_forceFloodMode": "Примусово на всю мережу",
-  "login_managePaths": "Керувати шляхами",
   "login_login": "Вхід",
   "login_attempt": "Спроба {current}/{max}",
   "@login_attempt": {
@@ -820,14 +805,6 @@
   "login_failedMessage": "Вхід не вдався. Або пароль неправильний, або ретранслятор недосяжний.",
   "common_reload": "Перезавантажити",
   "common_clear": "Очистити",
-  "path_currentPath": "Поточний шлях: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Ввести власний шлях",
   "path_currentPathLabel": "Поточний шлях",
   "path_hexPrefixInstructions": "Введіть 2-символьні hex-префікси для кожного стрибка, розділені комами.",

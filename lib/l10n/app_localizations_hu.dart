@@ -1611,19 +1611,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex-dump:';
 
   @override
-  String get chat_pathManagement => 'Útvonal-kezelés';
-
-  @override
-  String get chat_routingMode => 'Útvonal-kezelési mód';
-
-  @override
-  String get chat_autoUseSavedPath =>
-      'Automatikus (az eddigi útvonal használata)';
-
-  @override
-  String get chat_forceFloodMode => 'Erőforrás-alapú áramlás mód';
-
-  @override
   String get chat_hopSingular => 'ugor';
 
   @override
@@ -1642,28 +1629,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Beállítsd a saját útvonalat';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Kézzel megadott útvonal';
-
-  @override
-  String get chat_clearPath => 'Egyértelmű út';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'A parancs új küldéskor újra kell aktivizálnia.';
-
-  @override
-  String get chat_pathCleared =>
-      'Útvonal cleared. A következő üzenet újból feltérképezheti az útvonalat.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Használja a \"útvonal\" kapcsolót az alkalmazás sávjában.';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Árvízvédelmi mód bekapcsolva. A visszaállítás a alkalmazásban található útvonal ikon segítségével.';
 
   @override
   String get chat_fullPath => 'Teljes elérési út';
@@ -2067,22 +2032,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Adja meg a belépési kódot, hogy hozzáférhessen a beállításokhoz és az állapot információkhoz.';
 
   @override
-  String get login_routing => 'Útvonal meghatározás';
-
-  @override
-  String get login_routingMode => 'Útvonal-kezelési mód';
-
-  @override
-  String get login_autoUseSavedPath =>
-      'Automatikus (az eddigi útvonal használata)';
-
-  @override
-  String get login_forceFloodMode => 'Erőforrás-alapú áramlás mód';
-
-  @override
-  String get login_managePaths => 'Útvonalak kezelése';
-
-  @override
   String get login_login => 'Bejelentkezés';
 
   @override
@@ -2104,11 +2053,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get common_clear => 'Egyértelmű';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Jelenlegi útvonal: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Adja meg a saját elérési útvonalat';
@@ -3895,4 +3839,49 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Rendszer nyelvé';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

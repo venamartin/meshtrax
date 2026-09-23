@@ -1604,18 +1604,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get debugFrame_hexDump => 'Vidéo de Dump Hexadécimal :';
 
   @override
-  String get chat_pathManagement => 'Gestion des chemins';
-
-  @override
-  String get chat_routingMode => 'Mode de routage';
-
-  @override
-  String get chat_autoUseSavedPath => 'Auto (utiliser le chemin sauvegardé)';
-
-  @override
-  String get chat_forceFloodMode => 'Mode tout le réseau forcé';
-
-  @override
   String get chat_hopSingular => 'saut';
 
   @override
@@ -1634,29 +1622,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Définir un chemin personnalisé';
-
-  @override
-  String get chat_setCustomPathSubtitle =>
-      'Spécifier manuellement le chemin de routage';
-
-  @override
-  String get chat_clearPath => 'Effacer le chemin';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Forcer la redécouverte lors de la prochaine envoi';
-
-  @override
-  String get chat_pathCleared =>
-      'Le chemin est dégagé. Le prochain message redécouvrira le tracé.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Désactive l\'apprentissage du chemin (à éviter). Utiliser le commutateur de routage dans la barre d\'application pour rebasculer en mode auto par la suite.';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Le mode envoi à tout le réseau est activé. Changer via l\'icône de routage dans la barre d\'outils.';
 
   @override
   String get chat_fullPath => 'Chemin complet';
@@ -2061,21 +2026,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Entrez le mot de passe de la pièce pour accéder aux paramètres et à l\'état.';
 
   @override
-  String get login_routing => 'Redirection';
-
-  @override
-  String get login_routingMode => 'Mode de routage';
-
-  @override
-  String get login_autoUseSavedPath => 'Auto (utiliser le chemin sauvegardé)';
-
-  @override
-  String get login_forceFloodMode => 'Mode tout le réseau forcé';
-
-  @override
-  String get login_managePaths => 'Gérer les chemins';
-
-  @override
   String get login_login => 'Connexion';
 
   @override
@@ -2097,11 +2047,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get common_clear => 'Effacer';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Chemin actuel : $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Entrer un chemin personnalisé';
@@ -3899,4 +3844,49 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Langue du système';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

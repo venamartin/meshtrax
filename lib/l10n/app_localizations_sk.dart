@@ -1591,19 +1591,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex Dump:';
 
   @override
-  String get chat_pathManagement => 'Správa ciest';
-
-  @override
-  String get chat_routingMode => 'Režim trasy';
-
-  @override
-  String get chat_autoUseSavedPath => 'Použiť uloženú cestu';
-
-  @override
-  String get chat_forceFloodMode =>
-      'Zavrieť režim núdzového povodňového režimu';
-
-  @override
   String get chat_hopSingular => 'Skok';
 
   @override
@@ -1622,28 +1609,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Nastaviť vlastnú cestu';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Ručne zadajte trasu.';
-
-  @override
-  String get chat_clearPath => 'Vyčistiš cestu';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Znovu nájsť vynútene pri nasledujúcej pošlite';
-
-  @override
-  String get chat_pathCleared =>
-      'Cesta vyčistená. Nasledujúce prepočetné získa trasu znova.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Použite prepínanie trasy v navigačnom paneli.';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Odosporňovacia prevádzka je zapnutá. Vypnite ju znova cez ikonu routovania v navigačnom páse.';
 
   @override
   String get chat_fullPath => 'Celá cesta';
@@ -2043,22 +2008,6 @@ class AppLocalizationsSk extends AppLocalizations {
       'Zadajte heslo do miestnosti na prístup k nastaveniam a stavu.';
 
   @override
-  String get login_routing => 'Rútiace';
-
-  @override
-  String get login_routingMode => 'Režim trasy';
-
-  @override
-  String get login_autoUseSavedPath => 'Použiť uloženú cestu';
-
-  @override
-  String get login_forceFloodMode =>
-      'Zavrieť režim núdzového povodňového režimu';
-
-  @override
-  String get login_managePaths => 'Spravovať Cesty';
-
-  @override
   String get login_login => 'Prihlásiť';
 
   @override
@@ -2080,11 +2029,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get common_clear => 'Zmazať';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Aktívna cesta: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Zadajte vlastný priebeh';
@@ -3854,4 +3798,49 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Jazyk systému';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

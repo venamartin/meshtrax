@@ -549,10 +549,6 @@
     }
   },
   "debugFrame_hexDump": "Zrzut hex:",
-  "chat_pathManagement": "Zarządzanie ścieżkami",
-  "chat_routingMode": "Tryb routingu",
-  "chat_autoUseSavedPath": "Automatyczne (użyj zapisanej ścieżki)",
-  "chat_forceFloodMode": "Wymuś tryb zalewowy",
   "chat_hopSingular": "skok",
   "chat_hopPlural": "skoki",
   "chat_hopsCount": "{count} {count, plural, one{skok} few{skoki} many{skoków} other{skoków}}",
@@ -564,12 +560,6 @@
     }
   },
   "chat_setCustomPath": "Ustaw ścieżkę niestandardową",
-  "chat_setCustomPathSubtitle": "Ręcznie określ trasę.",
-  "chat_clearPath": "Wyczyść Ścieżkę",
-  "chat_clearPathSubtitle": "Wymuś ponowne wyznaczenie trasy przy następnym wysłaniu",
-  "chat_pathCleared": "Ścieżka wyczyszczona. Następna wiadomość odnajdzie trasę.",
-  "chat_floodModeSubtitle": "Użyj przełącznika routingu w pasku narzędzi.",
-  "chat_floodModeEnabled": "Tryb zalewowy włączony. Przełącz z powrotem ikoną routingu w pasku aplikacji.",
   "chat_fullPath": "Pełna ścieżka",
   "chat_pathDetailsNotAvailable": "Szczegóły ścieżki jeszcze niedostępne. Spróbuj wysłać wiadomość, aby odświeżyć.",
   "chat_type": "Typ",
@@ -801,11 +791,6 @@
   "login_savePasswordSubtitle": "Hasło będzie bezpiecznie przechowywane na tym urządzeniu.",
   "login_repeaterDescription": "Wprowadź hasło do przekaźnika, aby uzyskać dostęp do ustawień i stanu.",
   "login_roomDescription": "Wprowadź hasło do pokoju, aby uzyskać dostęp do ustawień i statusu.",
-  "login_routing": "Trasowanie",
-  "login_routingMode": "Tryb routingu",
-  "login_autoUseSavedPath": "Automatycznie (użyj zapisanej ścieżki)",
-  "login_forceFloodMode": "Wymuś tryb zalewowy",
-  "login_managePaths": "Zarządzaj Ścieżkami",
   "login_login": "Zaloguj się",
   "login_attempt": "Próba {current}/{max}",
   "@login_attempt": {
@@ -829,14 +814,6 @@
   "login_failedMessage": "Logowanie nie powiodło się. Hasło jest nieprawidłowe albo przekaźnik jest nieosiągalny.",
   "common_reload": "Odśwież",
   "common_clear": "Wyczyść",
-  "path_currentPath": "Aktualna ścieżka: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Wprowadź własną ścieżkę",
   "path_currentPathLabel": "Aktualna ścieżka",
   "path_hexPrefixInstructions": "Wprowadź 2-znakowe prefiksy szesnastkowe dla każdego skoku, oddzielone przecinkami.",

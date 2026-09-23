@@ -1600,18 +1600,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get debugFrame_hexDump => 'Espaço Hexadecimal:';
 
   @override
-  String get chat_pathManagement => 'Gerenciamento de Caminhos';
-
-  @override
-  String get chat_routingMode => 'Modo de roteamento';
-
-  @override
-  String get chat_autoUseSavedPath => 'Auto (usar caminho salvo)';
-
-  @override
-  String get chat_forceFloodMode => 'Modo de Inundação Forçado';
-
-  @override
   String get chat_hopSingular => 'pule';
 
   @override
@@ -1630,29 +1618,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Definir Caminho Personalizado';
-
-  @override
-  String get chat_setCustomPathSubtitle =>
-      'Especifique manualmente o caminho de roteamento';
-
-  @override
-  String get chat_clearPath => 'Limpar Caminho';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Forçar a descoberta na próxima transmissão';
-
-  @override
-  String get chat_pathCleared =>
-      'Caminho limpo. A próxima mensagem redescobrirá a rota.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Use a chave de roteamento na barra de ferramentas';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Modo de inundação ativado. Desative-o novamente através do ícone de roteamento na barra de ferramentas.';
 
   @override
   String get chat_fullPath => 'Caminho Completo';
@@ -2054,21 +2019,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Insira a senha da sala para acessar as configurações e o status.';
 
   @override
-  String get login_routing => 'Rotas';
-
-  @override
-  String get login_routingMode => 'Modo de roteamento';
-
-  @override
-  String get login_autoUseSavedPath => 'Auto (usar caminho salvo)';
-
-  @override
-  String get login_forceFloodMode => 'Modo de Inundação Forçado';
-
-  @override
-  String get login_managePaths => 'Gerenciar Caminhos';
-
-  @override
   String get login_login => 'Login';
 
   @override
@@ -2090,11 +2040,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get common_clear => 'Limpar';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Caminho atual: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Insira Caminho Personalizado';
@@ -3873,4 +3818,49 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Idioma do sistema';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

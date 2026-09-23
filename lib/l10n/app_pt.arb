@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Espaço Hexadecimal:",
-  "chat_pathManagement": "Gerenciamento de Caminhos",
-  "chat_routingMode": "Modo de roteamento",
-  "chat_autoUseSavedPath": "Auto (usar caminho salvo)",
-  "chat_forceFloodMode": "Modo de Inundação Forçado",
   "chat_hopSingular": "pule",
   "chat_hopPlural": "salta",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Definir Caminho Personalizado",
-  "chat_setCustomPathSubtitle": "Especifique manualmente o caminho de roteamento",
-  "chat_clearPath": "Limpar Caminho",
-  "chat_clearPathSubtitle": "Forçar a descoberta na próxima transmissão",
-  "chat_pathCleared": "Caminho limpo. A próxima mensagem redescobrirá a rota.",
-  "chat_floodModeSubtitle": "Use a chave de roteamento na barra de ferramentas",
-  "chat_floodModeEnabled": "Modo de inundação ativado. Desative-o novamente através do ícone de roteamento na barra de ferramentas.",
   "chat_fullPath": "Caminho Completo",
   "chat_pathDetailsNotAvailable": "Os detalhes do caminho ainda não estão disponíveis. Tente enviar uma mensagem para atualizar.",
   "chat_type": "Digite",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "A senha será armazenada com segurança neste dispositivo.",
   "login_repeaterDescription": "Insira a senha do repetidor para acessar as configurações e o status.",
   "login_roomDescription": "Insira a senha da sala para acessar as configurações e o status.",
-  "login_routing": "Rotas",
-  "login_routingMode": "Modo de roteamento",
-  "login_autoUseSavedPath": "Auto (usar caminho salvo)",
-  "login_forceFloodMode": "Modo de Inundação Forçado",
-  "login_managePaths": "Gerenciar Caminhos",
   "login_login": "Login",
   "login_attempt": "Tentar {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Falha no login. A senha está incorreta ou o repetidor está inacessível.",
   "common_reload": "Recarregar",
   "common_clear": "Limpar",
-  "path_currentPath": "Caminho atual: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Insira Caminho Personalizado",
   "path_currentPathLabel": "Caminho atual",
   "path_hexPrefixInstructions": "Insira os prefixos hexadecimais de 2 caracteres para cada salto, separados por vírgulas.",

@@ -1582,18 +1582,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get debugFrame_hexDump => 'Hexdump:';
 
   @override
-  String get chat_pathManagement => 'Stigarhantering';
-
-  @override
-  String get chat_routingMode => 'Ruttläge';
-
-  @override
-  String get chat_autoUseSavedPath => 'Automatisk (använd sparad sökväg)';
-
-  @override
-  String get chat_forceFloodMode => 'Tvinga Översvämningsläge';
-
-  @override
   String get chat_hopSingular => 'hoppa';
 
   @override
@@ -1612,26 +1600,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Ange anpassad sökväg';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Ange ruttväg manuellt';
-
-  @override
-  String get chat_clearPath => 'Rensa Vägen';
-
-  @override
-  String get chat_clearPathSubtitle => 'Tvinga fram omstart vid nästa sändning';
-
-  @override
-  String get chat_pathCleared =>
-      'Routen är nu fri. Nästa meddelande kommer att upptäcka rutten igen.';
-
-  @override
-  String get chat_floodModeSubtitle => 'Använd routningsomkopplaren i appraden';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Översvämningsläge aktiverat. Stäng av via ruttikonen i appraden.';
 
   @override
   String get chat_fullPath => 'Fullständig sökväg';
@@ -2030,21 +1998,6 @@ class AppLocalizationsSv extends AppLocalizations {
       'Ange rummets lösenord för att komma åt inställningar och status.';
 
   @override
-  String get login_routing => 'Ruttning';
-
-  @override
-  String get login_routingMode => 'Ruttläge';
-
-  @override
-  String get login_autoUseSavedPath => 'Automatisk (använd sparad sökväg)';
-
-  @override
-  String get login_forceFloodMode => 'Tvinga Översvämningsläge';
-
-  @override
-  String get login_managePaths => 'Hantera Sökvägar';
-
-  @override
   String get login_login => 'Logga in';
 
   @override
@@ -2066,11 +2019,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get common_clear => 'Rensa';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Nuvarande sökväg: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Ange anpassad sökväg';
@@ -3835,4 +3783,49 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Språk för systemet';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

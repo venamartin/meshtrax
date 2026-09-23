@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Hex-Dump:",
-  "chat_pathManagement": "Pfadverwaltung",
-  "chat_routingMode": "Routenmodus",
-  "chat_autoUseSavedPath": "Automatisch (gespeicherten Pfad verwenden)",
-  "chat_forceFloodMode": "Flut-Modus erzwingen",
   "chat_hopSingular": "Sprung",
   "chat_hopPlural": "Sprünge",
   "chat_hopsCount": "{count} {count, plural, =1{Sprung} other{Sprünge}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Lege benutzerdefinierten Pfad fest",
-  "chat_setCustomPathSubtitle": "Manuellen Routenpfad festlegen",
-  "chat_clearPath": "Pfad zurücksetzen",
-  "chat_clearPathSubtitle": "Setze Pfad zurück, erkenne neuen Pfad bei nächster Sendung.",
-  "chat_pathCleared": "Pfad zurückgesetzt. Nächste Nachricht wird Route neu entdecken.",
-  "chat_floodModeSubtitle": "Verwende den Routingschalter in der App-Leiste",
-  "chat_floodModeEnabled": "Flutmodus aktiviert.",
   "chat_fullPath": "Vollständiger Pfad",
   "chat_pathDetailsNotAvailable": "Die Pfaddetails sind noch nicht verfügbar. Versuchen Sie, eine Nachricht zu senden, um zu aktualisieren.",
   "chat_type": "Gebe ein",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "Das Passwort wird auf diesem Gerät sicher gespeichert.",
   "login_repeaterDescription": "Geben Sie das Repeater-Passwort ein, um auf Einstellungen und Status zuzugreifen.",
   "login_roomDescription": "Geben Sie das Raumkennwort ein, um auf die Einstellungen und den Status zuzugreifen.",
-  "login_routing": "Routen",
-  "login_routingMode": "Routenmodus",
-  "login_autoUseSavedPath": "Automatisch (gespeicherten Pfad verwenden)",
-  "login_forceFloodMode": "Flut-Modus erzwingen",
-  "login_managePaths": "Pfadverwaltung",
   "login_login": "Anmelden",
   "login_attempt": "Versuche {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Anmeldung fehlgeschlagen. Entweder ist das Passwort falsch oder der Repeater ist nicht erreichbar.",
   "common_reload": "Neu laden",
   "common_clear": "Löschen",
-  "path_currentPath": "Aktiver Pfad: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Gebe Pfad ein",
   "path_currentPathLabel": "Aktueller Pfad",
   "path_hexPrefixInstructions": "Gebe für jeden Zwischen-Hop das 2-stellige Hex-Präfix ein, getrennt durch Kommas.",

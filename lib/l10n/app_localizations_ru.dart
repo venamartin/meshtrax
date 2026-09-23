@@ -1598,18 +1598,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get debugFrame_hexDump => 'Шестнадцатеричный дамп:';
 
   @override
-  String get chat_pathManagement => 'Управление маршрутами';
-
-  @override
-  String get chat_routingMode => 'Режим маршрутизации';
-
-  @override
-  String get chat_autoUseSavedPath => 'Авто (использовать сохранённый маршрут)';
-
-  @override
-  String get chat_forceFloodMode => 'Принудительный режим рассылки';
-
-  @override
   String get chat_hopSingular => 'хоп';
 
   @override
@@ -1630,28 +1618,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Указать маршрут вручную';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Вручную задать маршрут передачи';
-
-  @override
-  String get chat_clearPath => 'Очистить маршрут';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Принудительно обновить маршрут при следующей отправке';
-
-  @override
-  String get chat_pathCleared =>
-      'Маршрут очищен. Следующее сообщение обновит маршрут.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Используйте переключатель маршрутизации в панели приложения';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Режим рассылки включён. Отключите через значок маршрутизации в панели приложения.';
 
   @override
   String get chat_fullPath => 'Полный маршрут';
@@ -2052,22 +2018,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Введите пароль комнаты для доступа к настройкам и статусу.';
 
   @override
-  String get login_routing => 'Маршрутизация';
-
-  @override
-  String get login_routingMode => 'Режим маршрутизации';
-
-  @override
-  String get login_autoUseSavedPath =>
-      'Авто (использовать сохранённый маршрут)';
-
-  @override
-  String get login_forceFloodMode => 'Принудительный режим рассылки';
-
-  @override
-  String get login_managePaths => 'Управление маршрутами';
-
-  @override
   String get login_login => 'Войти';
 
   @override
@@ -2089,11 +2039,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get common_clear => 'Очистить';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Текущий маршрут: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Введите маршрут вручную';
@@ -3880,4 +3825,49 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Язык системы';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

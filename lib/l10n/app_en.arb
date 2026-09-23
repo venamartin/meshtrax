@@ -849,10 +849,6 @@
     }
   },
   "debugFrame_hexDump": "Hex Dump:",
-  "chat_pathManagement": "Path Management",
-  "chat_routingMode": "Routing mode",
-  "chat_autoUseSavedPath": "Auto (use saved path)",
-  "chat_forceFloodMode": "Force Flood Mode",
   "chat_hopSingular": "hop",
   "chat_hopPlural": "hops",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -864,12 +860,6 @@
     }
   },
   "chat_setCustomPath": "Set Custom Path",
-  "chat_setCustomPathSubtitle": "Manually specify routing path",
-  "chat_clearPath": "Clear Path",
-  "chat_clearPathSubtitle": "Force rediscovery on next send",
-  "chat_pathCleared": "Path cleared. Next message will rediscover route.",
-  "chat_floodModeSubtitle": "Use routing toggle in app bar",
-  "chat_floodModeEnabled": "Flood mode enabled. Toggle back via routing icon in app bar.",
   "chat_fullPath": "Full Path",
   "chat_pathDetailsNotAvailable": "Path details not available yet. Try sending a message to refresh.",
   "chat_type": "Type",
@@ -1113,11 +1103,6 @@
   "login_savePasswordSubtitle": "Password will be stored securely on this device",
   "login_repeaterDescription": "Enter the repeater password for guest or admin access.",
   "login_roomDescription": "Enter the room password for guest or admin access.",
-  "login_routing": "Routing",
-  "login_routingMode": "Routing mode",
-  "login_autoUseSavedPath": "Auto (use saved path)",
-  "login_forceFloodMode": "Force Flood Mode",
-  "login_managePaths": "Manage Paths",
   "login_login": "Login",
   "login_attempt": "Attempt {current}/{max}",
   "@login_attempt": {
@@ -1141,14 +1126,6 @@
   "login_failedMessage": "Login failed. Either the password is incorrect or the repeater is unreachable.",
   "common_reload": "Reload",
   "common_clear": "Clear",
-  "path_currentPath": "Current path: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Enter Custom Path",
   "path_currentPathLabel": "Current path",
   "path_hexPrefixInstructions": "Enter 2-character hex prefixes for each hop, separated by commas.",
@@ -2198,5 +2175,25 @@
     }
   },
   "translation_translationOptions": "Translation options",
-  "translation_systemLanguage": "System language"
+  "translation_systemLanguage": "System language",
+  "routing_title": "Routing",
+  "routing_route": "Route: {route}",
+  "@routing_route": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routing_noRoute": "none yet — the next message floods and learns one",
+  "routing_auto": "Automatic",
+  "routing_autoSubtitle": "Use the route the radio learned. Recommended.",
+  "routing_flood": "Always flood",
+  "routing_floodSubtitle": "Every message goes to the whole mesh",
+  "routing_custom": "Custom path",
+  "routing_customSubtitle": "Choose the repeaters yourself",
+  "routing_forget": "Forget route",
+  "routing_forgetDone": "Route forgotten. The next message floods and learns a fresh one.",
+  "path_direct": "Direct — no repeaters",
+  "path_directSubtitle": "Only when the contact can hear this radio itself"
 }

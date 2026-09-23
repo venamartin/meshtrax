@@ -1576,18 +1576,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debugFrame_hexDump => 'Hex Dump:';
 
   @override
-  String get chat_pathManagement => 'Path Management';
-
-  @override
-  String get chat_routingMode => 'Routing mode';
-
-  @override
-  String get chat_autoUseSavedPath => 'Auto (use saved path)';
-
-  @override
-  String get chat_forceFloodMode => 'Force Flood Mode';
-
-  @override
   String get chat_hopSingular => 'hop';
 
   @override
@@ -1606,26 +1594,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Set Custom Path';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Manually specify routing path';
-
-  @override
-  String get chat_clearPath => 'Clear Path';
-
-  @override
-  String get chat_clearPathSubtitle => 'Force rediscovery on next send';
-
-  @override
-  String get chat_pathCleared =>
-      'Path cleared. Next message will rediscover route.';
-
-  @override
-  String get chat_floodModeSubtitle => 'Use routing toggle in app bar';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Flood mode enabled. Toggle back via routing icon in app bar.';
 
   @override
   String get chat_fullPath => 'Full Path';
@@ -2022,21 +1990,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter the room password for guest or admin access.';
 
   @override
-  String get login_routing => 'Routing';
-
-  @override
-  String get login_routingMode => 'Routing mode';
-
-  @override
-  String get login_autoUseSavedPath => 'Auto (use saved path)';
-
-  @override
-  String get login_forceFloodMode => 'Force Flood Mode';
-
-  @override
-  String get login_managePaths => 'Manage Paths';
-
-  @override
   String get login_login => 'Login';
 
   @override
@@ -2058,11 +2011,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get common_clear => 'Clear';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Current path: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Enter Custom Path';
@@ -3808,4 +3756,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'System language';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

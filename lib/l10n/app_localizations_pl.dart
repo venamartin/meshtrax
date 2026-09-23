@@ -1610,18 +1610,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get debugFrame_hexDump => 'Zrzut hex:';
 
   @override
-  String get chat_pathManagement => 'Zarządzanie ścieżkami';
-
-  @override
-  String get chat_routingMode => 'Tryb routingu';
-
-  @override
-  String get chat_autoUseSavedPath => 'Automatyczne (użyj zapisanej ścieżki)';
-
-  @override
-  String get chat_forceFloodMode => 'Wymuś tryb zalewowy';
-
-  @override
   String get chat_hopSingular => 'skok';
 
   @override
@@ -1642,28 +1630,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Ustaw ścieżkę niestandardową';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Ręcznie określ trasę.';
-
-  @override
-  String get chat_clearPath => 'Wyczyść Ścieżkę';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Wymuś ponowne wyznaczenie trasy przy następnym wysłaniu';
-
-  @override
-  String get chat_pathCleared =>
-      'Ścieżka wyczyszczona. Następna wiadomość odnajdzie trasę.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Użyj przełącznika routingu w pasku narzędzi.';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Tryb zalewowy włączony. Przełącz z powrotem ikoną routingu w pasku aplikacji.';
 
   @override
   String get chat_fullPath => 'Pełna ścieżka';
@@ -2066,21 +2032,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'Wprowadź hasło do pokoju, aby uzyskać dostęp do ustawień i statusu.';
 
   @override
-  String get login_routing => 'Trasowanie';
-
-  @override
-  String get login_routingMode => 'Tryb routingu';
-
-  @override
-  String get login_autoUseSavedPath => 'Automatycznie (użyj zapisanej ścieżki)';
-
-  @override
-  String get login_forceFloodMode => 'Wymuś tryb zalewowy';
-
-  @override
-  String get login_managePaths => 'Zarządzaj Ścieżkami';
-
-  @override
   String get login_login => 'Zaloguj się';
 
   @override
@@ -2102,11 +2053,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get common_clear => 'Wyczyść';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Aktualna ścieżka: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Wprowadź własną ścieżkę';
@@ -3886,4 +3832,49 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Język systemu';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

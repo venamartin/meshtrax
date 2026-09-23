@@ -1533,18 +1533,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get debugFrame_hexDump => '十六进制数据：';
 
   @override
-  String get chat_pathManagement => '路径管理';
-
-  @override
-  String get chat_routingMode => '路由模式';
-
-  @override
-  String get chat_autoUseSavedPath => '自动（使用保存的路径）';
-
-  @override
-  String get chat_forceFloodMode => '强制泛洪模式';
-
-  @override
   String get chat_hopSingular => '跳';
 
   @override
@@ -1557,24 +1545,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => '设置自定义路径';
-
-  @override
-  String get chat_setCustomPathSubtitle => '手动指定路由路径';
-
-  @override
-  String get chat_clearPath => '清除路径';
-
-  @override
-  String get chat_clearPathSubtitle => '清除当前路径，下次发送将重新尝试。';
-
-  @override
-  String get chat_pathCleared => '路径已清除。下一条消息将重新路由。';
-
-  @override
-  String get chat_floodModeSubtitle => '在应用栏中切换路由模式。';
-
-  @override
-  String get chat_floodModeEnabled => '泛洪模式已启用。可通过应用栏的路由图标切换。';
 
   @override
   String get chat_fullPath => '完整路径';
@@ -1962,21 +1932,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get login_roomDescription => '输入房间服务器密码以访问设置和状态。';
 
   @override
-  String get login_routing => '路由';
-
-  @override
-  String get login_routingMode => '路由模式';
-
-  @override
-  String get login_autoUseSavedPath => '自动（使用保存的路径）';
-
-  @override
-  String get login_forceFloodMode => '强制泛洪模式';
-
-  @override
-  String get login_managePaths => '管理路径';
-
-  @override
   String get login_login => '登录';
 
   @override
@@ -1997,11 +1952,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get common_clear => '清除';
-
-  @override
-  String path_currentPath(String path) {
-    return '当前路径：$path';
-  }
 
   @override
   String get path_enterCustomPath => '输入自定义路径';
@@ -3623,4 +3573,49 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => '系统语言';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

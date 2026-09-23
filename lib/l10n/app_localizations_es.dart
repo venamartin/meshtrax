@@ -1600,18 +1600,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get debugFrame_hexDump => 'Mapeo Hexadecimal:';
 
   @override
-  String get chat_pathManagement => 'Gestión de Rutas';
-
-  @override
-  String get chat_routingMode => 'Modo de enrutamiento';
-
-  @override
-  String get chat_autoUseSavedPath => 'Auto (usar la ruta guardada)';
-
-  @override
-  String get chat_forceFloodMode => 'Modo Inundación Forzado';
-
-  @override
   String get chat_hopSingular => 'salta';
 
   @override
@@ -1630,29 +1618,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Establecer Ruta Personalizada';
-
-  @override
-  String get chat_setCustomPathSubtitle =>
-      'Especificar manualmente la ruta de enrutamiento';
-
-  @override
-  String get chat_clearPath => 'Limpiar Ruta';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Forzar redescubrimiento en el próximo envío';
-
-  @override
-  String get chat_pathCleared =>
-      'Ruta eliminada. El siguiente mensaje redescubrirá la ruta.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Utilizar el interruptor de enrutamiento en la barra de herramientas';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'El modo de inundación está habilitado. Desactívalo mediante el icono de enrutamiento en la barra de herramientas de la aplicación.';
 
   @override
   String get chat_fullPath => 'Ruta completa';
@@ -2054,21 +2019,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ingrese la contraseña de la sala para acceder a la configuración y el estado.';
 
   @override
-  String get login_routing => 'Enrutamiento';
-
-  @override
-  String get login_routingMode => 'Modo de enrutamiento';
-
-  @override
-  String get login_autoUseSavedPath => 'Auto (usar la ruta guardada)';
-
-  @override
-  String get login_forceFloodMode => 'Activar Modo Inundación Forzada';
-
-  @override
-  String get login_managePaths => 'Gestionar Rutas';
-
-  @override
   String get login_login => 'Iniciar sesión';
 
   @override
@@ -2090,11 +2040,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get common_clear => 'Borrar';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Ruta actual: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Introducir Ruta Personalizada';
@@ -3879,4 +3824,49 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Idioma del sistema';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }

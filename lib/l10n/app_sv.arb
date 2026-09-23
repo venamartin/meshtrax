@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Hexdump:",
-  "chat_pathManagement": "Stigarhantering",
-  "chat_routingMode": "Ruttläge",
-  "chat_autoUseSavedPath": "Automatisk (använd sparad sökväg)",
-  "chat_forceFloodMode": "Tvinga Översvämningsläge",
   "chat_hopSingular": "hoppa",
   "chat_hopPlural": "hoppar",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Ange anpassad sökväg",
-  "chat_setCustomPathSubtitle": "Ange ruttväg manuellt",
-  "chat_clearPath": "Rensa Vägen",
-  "chat_clearPathSubtitle": "Tvinga fram omstart vid nästa sändning",
-  "chat_pathCleared": "Routen är nu fri. Nästa meddelande kommer att upptäcka rutten igen.",
-  "chat_floodModeSubtitle": "Använd routningsomkopplaren i appraden",
-  "chat_floodModeEnabled": "Översvämningsläge aktiverat. Stäng av via ruttikonen i appraden.",
   "chat_fullPath": "Fullständig sökväg",
   "chat_pathDetailsNotAvailable": "Stigaruppgifterna är ännu inte tillgängliga. Försök att skicka ett meddelande för att uppdatera.",
   "chat_type": "Skriv",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "Lösenord kommer att lagras säkert på enheten.",
   "login_repeaterDescription": "Ange återuppspelarens lösenord för att komma åt inställningar och status.",
   "login_roomDescription": "Ange rummets lösenord för att komma åt inställningar och status.",
-  "login_routing": "Ruttning",
-  "login_routingMode": "Ruttläge",
-  "login_autoUseSavedPath": "Automatisk (använd sparad sökväg)",
-  "login_forceFloodMode": "Tvinga Översvämningsläge",
-  "login_managePaths": "Hantera Sökvägar",
   "login_login": "Logga in",
   "login_attempt": "Försök {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Inloggning misslyckades. Antingen är lösenordet fel eller så går det inte att nå repeatern.",
   "common_reload": "Ladda om",
   "common_clear": "Rensa",
-  "path_currentPath": "Nuvarande sökväg: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Ange anpassad sökväg",
   "path_currentPathLabel": "Nuvarande sökväg",
   "path_hexPrefixInstructions": "Ange 2-tecknets hex-prefett för varje hopp, åtskilda med komma.",

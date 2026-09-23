@@ -28,7 +28,7 @@ import '../services/chat_text_scale_service.dart';
 import '../services/storage_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
-import '../widgets/path_management_dialog.dart';
+import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'map_screen.dart';
@@ -273,110 +273,12 @@ class _ChatScreenState extends State<ChatScreen> {
           Consumer<MeshCoreConnector>(
             builder: (context, connector, _) {
               final contact = _resolveContact(connector);
-              final isFloodMode = contact.pathOverride == -1;
-
-              final isDirectMode = contact.pathOverride == 0;
-              final activeMode = isFloodMode
-                  ? 'flood'
-                  : isDirectMode
-                  ? 'direct'
-                  : 'auto';
-
-              return PopupMenuButton<String>(
-                icon: Icon(isFloodMode ? Icons.waves : Icons.route),
-                tooltip: context.l10n.chat_routingMode,
-                onSelected: (mode) async {
-                  if (mode == 'flood') {
-                    await connector.setPathOverride(contact, pathLen: -1);
-                  } else if (mode == 'direct') {
-                    await connector.setPathOverride(
-                      contact,
-                      pathLen: 0,
-                      pathBytes: Uint8List(0),
-                    );
-                  } else {
-                    await connector.setPathOverride(contact, pathLen: null);
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'auto',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.auto_mode,
-                          size: 20,
-                          color: activeMode == 'auto'
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.chat_autoUseSavedPath,
-                          style: TextStyle(
-                            fontWeight: activeMode == 'auto'
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'direct',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.near_me,
-                          size: 20,
-                          color: activeMode == 'direct'
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.chat_direct,
-                          style: TextStyle(
-                            fontWeight: activeMode == 'direct'
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'flood',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.waves,
-                          size: 20,
-                          color: activeMode == 'flood'
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.chat_forceFloodMode,
-                          style: TextStyle(
-                            fontWeight: activeMode == 'flood'
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              return IconButton(
+                icon: Icon(routingIconOf(contact)),
+                tooltip: context.l10n.routing_title,
+                onPressed: () => RoutingDialog.show(context, contact: contact),
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.timeline),
-            tooltip: context.l10n.chat_pathManagement,
-            onPressed: () =>
-                PathManagementDialog.show(context, contact: widget.contact),
           ),
           if (widget.contact.type == advTypeRoom)
             Consumer<MeshCoreConnector>(

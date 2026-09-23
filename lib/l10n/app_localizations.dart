@@ -2938,30 +2938,6 @@ abstract class AppLocalizations {
   /// **'Hex Dump:'**
   String get debugFrame_hexDump;
 
-  /// No description provided for @chat_pathManagement.
-  ///
-  /// In en, this message translates to:
-  /// **'Path Management'**
-  String get chat_pathManagement;
-
-  /// No description provided for @chat_routingMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing mode'**
-  String get chat_routingMode;
-
-  /// No description provided for @chat_autoUseSavedPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto (use saved path)'**
-  String get chat_autoUseSavedPath;
-
-  /// No description provided for @chat_forceFloodMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Force Flood Mode'**
-  String get chat_forceFloodMode;
-
   /// No description provided for @chat_hopSingular.
   ///
   /// In en, this message translates to:
@@ -2985,42 +2961,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set Custom Path'**
   String get chat_setCustomPath;
-
-  /// No description provided for @chat_setCustomPathSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manually specify routing path'**
-  String get chat_setCustomPathSubtitle;
-
-  /// No description provided for @chat_clearPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Path'**
-  String get chat_clearPath;
-
-  /// No description provided for @chat_clearPathSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Force rediscovery on next send'**
-  String get chat_clearPathSubtitle;
-
-  /// No description provided for @chat_pathCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Path cleared. Next message will rediscover route.'**
-  String get chat_pathCleared;
-
-  /// No description provided for @chat_floodModeSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Use routing toggle in app bar'**
-  String get chat_floodModeSubtitle;
-
-  /// No description provided for @chat_floodModeEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Flood mode enabled. Toggle back via routing icon in app bar.'**
-  String get chat_floodModeEnabled;
 
   /// No description provided for @chat_fullPath.
   ///
@@ -3723,36 +3663,6 @@ abstract class AppLocalizations {
   /// **'Enter the room password for guest or admin access.'**
   String get login_roomDescription;
 
-  /// No description provided for @login_routing.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing'**
-  String get login_routing;
-
-  /// No description provided for @login_routingMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing mode'**
-  String get login_routingMode;
-
-  /// No description provided for @login_autoUseSavedPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto (use saved path)'**
-  String get login_autoUseSavedPath;
-
-  /// No description provided for @login_forceFloodMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Force Flood Mode'**
-  String get login_forceFloodMode;
-
-  /// No description provided for @login_managePaths.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage Paths'**
-  String get login_managePaths;
-
   /// No description provided for @login_login.
   ///
   /// In en, this message translates to:
@@ -3788,12 +3698,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get common_clear;
-
-  /// No description provided for @path_currentPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Current path: {path}'**
-  String path_currentPath(String path);
 
   /// No description provided for @path_enterCustomPath.
   ///
@@ -6736,6 +6640,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System language'**
   String get translation_systemLanguage;
+
+  /// No description provided for @routing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing'**
+  String get routing_title;
+
+  /// No description provided for @routing_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Route: {route}'**
+  String routing_route(String route);
+
+  /// No description provided for @routing_noRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'none yet — the next message floods and learns one'**
+  String get routing_noRoute;
+
+  /// No description provided for @routing_auto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get routing_auto;
+
+  /// No description provided for @routing_autoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the route the radio learned. Recommended.'**
+  String get routing_autoSubtitle;
+
+  /// No description provided for @routing_flood.
+  ///
+  /// In en, this message translates to:
+  /// **'Always flood'**
+  String get routing_flood;
+
+  /// No description provided for @routing_floodSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every message goes to the whole mesh'**
+  String get routing_floodSubtitle;
+
+  /// No description provided for @routing_custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom path'**
+  String get routing_custom;
+
+  /// No description provided for @routing_customSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the repeaters yourself'**
+  String get routing_customSubtitle;
+
+  /// No description provided for @routing_forget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget route'**
+  String get routing_forget;
+
+  /// No description provided for @routing_forgetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Route forgotten. The next message floods and learns a fresh one.'**
+  String get routing_forgetDone;
+
+  /// No description provided for @path_direct.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct — no repeaters'**
+  String get path_direct;
+
+  /// No description provided for @path_directSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only when the contact can hear this radio itself'**
+  String get path_directSubtitle;
 }
 
 class _AppLocalizationsDelegate

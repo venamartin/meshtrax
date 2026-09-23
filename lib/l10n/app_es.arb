@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Mapeo Hexadecimal:",
-  "chat_pathManagement": "Gestión de Rutas",
-  "chat_routingMode": "Modo de enrutamiento",
-  "chat_autoUseSavedPath": "Auto (usar la ruta guardada)",
-  "chat_forceFloodMode": "Modo Inundación Forzado",
   "chat_hopSingular": "salta",
   "chat_hopPlural": "salta",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Establecer Ruta Personalizada",
-  "chat_setCustomPathSubtitle": "Especificar manualmente la ruta de enrutamiento",
-  "chat_clearPath": "Limpiar Ruta",
-  "chat_clearPathSubtitle": "Forzar redescubrimiento en el próximo envío",
-  "chat_pathCleared": "Ruta eliminada. El siguiente mensaje redescubrirá la ruta.",
-  "chat_floodModeSubtitle": "Utilizar el interruptor de enrutamiento en la barra de herramientas",
-  "chat_floodModeEnabled": "El modo de inundación está habilitado. Desactívalo mediante el icono de enrutamiento en la barra de herramientas de la aplicación.",
   "chat_fullPath": "Ruta completa",
   "chat_pathDetailsNotAvailable": "Los detalles de la ruta aún no están disponibles. Intenta enviar un mensaje para refrescar.",
   "chat_type": "Escribe",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "La contraseña se almacenará de forma segura en este dispositivo.",
   "login_repeaterDescription": "Ingrese la contraseña del repetidor para acceder a la configuración y el estado.",
   "login_roomDescription": "Ingrese la contraseña de la sala para acceder a la configuración y el estado.",
-  "login_routing": "Enrutamiento",
-  "login_routingMode": "Modo de enrutamiento",
-  "login_autoUseSavedPath": "Auto (usar la ruta guardada)",
-  "login_forceFloodMode": "Activar Modo Inundación Forzada",
-  "login_managePaths": "Gestionar Rutas",
   "login_login": "Iniciar sesión",
   "login_attempt": "Intentar {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Inicio fallido. La contraseña es incorrecta o el repetidor no está disponible.",
   "common_reload": "Recargar",
   "common_clear": "Borrar",
-  "path_currentPath": "Ruta actual: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Introducir Ruta Personalizada",
   "path_currentPathLabel": "Ruta actual",
   "path_hexPrefixInstructions": "Introduzca los prefijos hexadecimales de 2 caracteres para cada salto, separados por comas.",

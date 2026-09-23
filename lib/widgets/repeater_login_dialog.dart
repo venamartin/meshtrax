@@ -13,7 +13,7 @@ import '../services/map_tile_cache_service.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../utils/app_logger.dart';
-import 'path_management_dialog.dart';
+import 'routing_dialog.dart';
 
 class RepeaterLoginDialog extends StatefulWidget {
   final Contact repeater;
@@ -290,9 +290,6 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
     final l10n = context.l10n;
     final connector = context.watch<MeshCoreConnector>();
     final repeater = _resolveRepeater(connector);
-    final isFloodMode = repeater.pathOverride == -1;
-    final isDirectMode = repeater.pathOverride == 0;
-    final isAutoMode = repeater.pathOverride != -1 && repeater.pathOverride != 0;
     final isSavedContact = _resolveRepeaterIndex != -1;
     return AlertDialog(
       title: Row(
@@ -461,129 +458,20 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                   const Divider(),
                   Row(
                     children: [
-                      Text(
-                        l10n.login_routing,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      Icon(routingIconOf(repeater), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          repeater.pathLabel,
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ),
-                      const Spacer(),
-                      PopupMenuButton<String>(
-                        icon: Icon(isFloodMode ? Icons.waves : (isDirectMode ? Icons.arrow_forward : Icons.route)),
-                        tooltip: l10n.login_routingMode,
-                        onSelected: (mode) async {
-                          if (mode == 'flood') {
-                            await connector.setPathOverride(
-                              repeater,
-                              pathLen: -1,
-                            );
-                          } else if (mode == 'direct') {
-                            // pathBytes is required, not optional: without
-                            // it copyWith keeps the previous override bytes
-                            // AND setPathOverride skips the device sync, so
-                            // the radio keeps routing on the old multi-hop
-                            // path while the UI claims Direct.
-                            await connector.setPathOverride(
-                              repeater,
-                              pathLen: 0,
-                              pathBytes: Uint8List(0),
-                            );
-                          } else {
-                            await connector.setPathOverride(
-                              repeater,
-                              pathLen: null,
-                            );
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'auto',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_mode,
-                                  size: 20,
-                                  color: isAutoMode
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  l10n.login_autoUseSavedPath,
-                                  style: TextStyle(
-                                    fontWeight: isAutoMode
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'direct',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.arrow_forward,
-                                  size: 20,
-                                  color: isDirectMode
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Force Direct Mode', // Replace with l10n.login_forceDirectMode if you add it to your ARB file
-                                  style: TextStyle(
-                                    fontWeight: isDirectMode
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'flood',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.waves,
-                                  size: 20,
-                                  color: isFloodMode
-                                      ? Theme.of(context).primaryColor
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  l10n.login_forceFloodMode,
-                                  style: TextStyle(
-                                    fontWeight: isFloodMode
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      TextButton(
+                        onPressed: () =>
+                            RoutingDialog.show(context, contact: repeater),
+                        child: Text(l10n.routing_title),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    repeater.pathLabel,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () =>
-                          PathManagementDialog.show(context, contact: repeater),
-                      icon: const Icon(Icons.timeline, size: 18),
-                      label: Text(l10n.login_managePaths),
-                    ),
                   ),
                 ],
               ),

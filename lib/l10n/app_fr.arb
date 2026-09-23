@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Vidéo de Dump Hexadécimal :",
-  "chat_pathManagement": "Gestion des chemins",
-  "chat_routingMode": "Mode de routage",
-  "chat_autoUseSavedPath": "Auto (utiliser le chemin sauvegardé)",
-  "chat_forceFloodMode": "Mode tout le réseau forcé",
   "chat_hopSingular": "saut",
   "chat_hopPlural": "sauts",
   "chat_hopsCount": "{count} {count, plural, =1{saut} other{sauts}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Définir un chemin personnalisé",
-  "chat_setCustomPathSubtitle": "Spécifier manuellement le chemin de routage",
-  "chat_clearPath": "Effacer le chemin",
-  "chat_clearPathSubtitle": "Forcer la redécouverte lors de la prochaine envoi",
-  "chat_pathCleared": "Le chemin est dégagé. Le prochain message redécouvrira le tracé.",
-  "chat_floodModeSubtitle": "Désactive l'apprentissage du chemin (à éviter). Utiliser le commutateur de routage dans la barre d'application pour rebasculer en mode auto par la suite.",
-  "chat_floodModeEnabled": "Le mode envoi à tout le réseau est activé. Changer via l'icône de routage dans la barre d'outils.",
   "chat_fullPath": "Chemin complet",
   "chat_pathDetailsNotAvailable": "Les détails du chemin ne sont pas encore disponibles. Essayez d'envoyer un message pour rafraîchir.",
   "chat_type": "Saisir",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "Le mot de passe sera stocké en toute sécurité sur cet appareil.",
   "login_repeaterDescription": "Entrez le mot de passe du répéteur pour accéder aux paramètres et à l'état.",
   "login_roomDescription": "Entrez le mot de passe de la pièce pour accéder aux paramètres et à l'état.",
-  "login_routing": "Redirection",
-  "login_routingMode": "Mode de routage",
-  "login_autoUseSavedPath": "Auto (utiliser le chemin sauvegardé)",
-  "login_forceFloodMode": "Mode tout le réseau forcé",
-  "login_managePaths": "Gérer les chemins",
   "login_login": "Connexion",
   "login_attempt": "Essayer {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Connexion échouée. Soit le mot de passe est incorrect, soit le relais est injoignable.",
   "common_reload": "Recharger",
   "common_clear": "Effacer",
-  "path_currentPath": "Chemin actuel : {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Entrer un chemin personnalisé",
   "path_currentPathLabel": "Chemin actuel",
   "path_hexPrefixInstructions": "Entrez les préfixes hexadécimaux de 2 caractères pour chaque saut, séparés par des virgules.",

@@ -539,10 +539,6 @@
     }
   },
   "debugFrame_hexDump": "Dumpa Esadecimale:",
-  "chat_pathManagement": "Gestione Percorsi",
-  "chat_routingMode": "Modalità di routing",
-  "chat_autoUseSavedPath": "Utilizza il percorso salvato",
-  "chat_forceFloodMode": "Modalità Inondamento Forzato",
   "chat_hopSingular": "salta",
   "chat_hopPlural": "salta",
   "chat_hopsCount": "{count} {count, plural, =1{salto} other{salti}}",
@@ -554,12 +550,6 @@
     }
   },
   "chat_setCustomPath": "Imposta Percorso Personalizzato",
-  "chat_setCustomPathSubtitle": "Specifica manualmente il percorso di routing",
-  "chat_clearPath": "Cancella Percorso",
-  "chat_clearPathSubtitle": "Riprova la scoperta alla prossima invio",
-  "chat_pathCleared": "Percorso sgomberato. Il prossimo messaggio riidentifierà il percorso.",
-  "chat_floodModeSubtitle": "Utilizza l'interruttore di routing nella barra delle applicazioni",
-  "chat_floodModeEnabled": "Modalità alluvione abilitata. Disattivala tramite l'icona di routing nella barra in alto.",
   "chat_fullPath": "Percorso Completo",
   "chat_pathDetailsNotAvailable": "I dettagli del percorso non sono ancora disponibili. Prova a inviare un messaggio per ricaricare.",
   "chat_type": "Digita",
@@ -791,11 +781,6 @@
   "login_savePasswordSubtitle": "La password verrà memorizzata in modo sicuro su questo dispositivo.",
   "login_repeaterDescription": "Inserisci la password del ripetitore per accedere alle impostazioni e allo stato.",
   "login_roomDescription": "Inserisci la password della stanza per accedere alle impostazioni e allo stato.",
-  "login_routing": "Instradamento",
-  "login_routingMode": "Modalità di routing",
-  "login_autoUseSavedPath": "Utilizza il percorso salvato",
-  "login_forceFloodMode": "Modalità Inondamento Forzato",
-  "login_managePaths": "Gestisci Percorsi",
   "login_login": "Accedi",
   "login_attempt": "Prova {current}/{max}",
   "@login_attempt": {
@@ -819,14 +804,6 @@
   "login_failedMessage": "Accesso fallito. La password non è corretta oppure il ripetitore non è raggiungibile.",
   "common_reload": "Ricaricare",
   "common_clear": "Cancella",
-  "path_currentPath": "Percorso corrente: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Inserisci percorso personalizzato",
   "path_currentPathLabel": "Percorso corrente",
   "path_hexPrefixInstructions": "Inserire i prefissi esadecimali a 2 caratteri per ogni salto, separati da virgole.",

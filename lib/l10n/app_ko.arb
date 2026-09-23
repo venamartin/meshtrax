@@ -692,10 +692,6 @@
     }
   },
   "debugFrame_hexDump": "헥스 덤프:",
-  "chat_pathManagement": "경로 관리",
-  "chat_routingMode": "라우팅 방식",
-  "chat_autoUseSavedPath": "자동 (저장된 경로 사용)",
-  "chat_forceFloodMode": "강수 모드 활성화",
   "chat_hopSingular": "점프",
   "chat_hopPlural": "홉",
   "chat_hopsCount": "{count} {count, plural, =1{홉} other{홉}}",
@@ -707,12 +703,6 @@
     }
   },
   "chat_setCustomPath": "사용자 지정 경로 설정",
-  "chat_setCustomPathSubtitle": "수동으로 경로를 지정",
-  "chat_clearPath": "명확한 길",
-  "chat_clearPathSubtitle": "다음 전송 시, 강제 재전송 설정",
-  "chat_pathCleared": "경로가 확보되었습니다. 다음 메시지는 경로를 다시 찾을 것입니다.",
-  "chat_floodModeSubtitle": "앱 바에서 라우팅 스위치를 사용",
-  "chat_floodModeEnabled": "홍수 모드 활성화됨. 앱 바의 경로 아이콘을 사용하여 다시 전환할 수 있습니다.",
   "chat_fullPath": "전체 경로",
   "chat_pathDetailsNotAvailable": "경로 정보는 아직 제공되지 않습니다. 메시지를 보내어 다시 시도해 보세요.",
   "chat_type": "종류",
@@ -954,11 +944,6 @@
   "login_savePasswordSubtitle": "비밀번호는 이 장치에 안전하게 저장됩니다.",
   "login_repeaterDescription": "반복기 비밀번호를 입력하여 설정 및 상태를 확인하십시오.",
   "login_roomDescription": "설정 및 상태에 액세스하려면 방 비밀번호를 입력하세요.",
-  "login_routing": "라우팅",
-  "login_routingMode": "라우팅 모드",
-  "login_autoUseSavedPath": "자동 (저장된 경로 사용)",
-  "login_forceFloodMode": "강수 모드 활성화",
-  "login_managePaths": "경로 관리",
   "login_login": "로그인",
   "login_attempt": "시도 {current}/{max}",
   "@login_attempt": {
@@ -982,14 +967,6 @@
   "login_failedMessage": "로그인에 실패했습니다. 비밀번호가 잘못되었거나, 연결이 되지 않는 것 같습니다.",
   "common_reload": "다시 로드",
   "common_clear": "명확하게",
-  "path_currentPath": "현재 경로: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "사용자 지정 경로 입력",
   "path_currentPathLabel": "현재 경로",
   "path_hexPrefixInstructions": "각 단계에 대한 2자리 헥사데진 접두사를 쉼표로 구분하여 입력하세요.",

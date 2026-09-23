@@ -692,10 +692,6 @@
     }
   },
   "debugFrame_hexDump": "Hex-dump:",
-  "chat_pathManagement": "Útvonal-kezelés",
-  "chat_routingMode": "Útvonal-kezelési mód",
-  "chat_autoUseSavedPath": "Automatikus (az eddigi útvonal használata)",
-  "chat_forceFloodMode": "Erőforrás-alapú áramlás mód",
   "chat_hopSingular": "ugor",
   "chat_hopPlural": "babér",
   "chat_hopsCount": "{count} {count, plural, =1{ugrás} other{ugrások}}",
@@ -707,12 +703,6 @@
     }
   },
   "chat_setCustomPath": "Beállítsd a saját útvonalat",
-  "chat_setCustomPathSubtitle": "Kézzel megadott útvonal",
-  "chat_clearPath": "Egyértelmű út",
-  "chat_clearPathSubtitle": "A parancs új küldéskor újra kell aktivizálnia.",
-  "chat_pathCleared": "Útvonal cleared. A következő üzenet újból feltérképezheti az útvonalat.",
-  "chat_floodModeSubtitle": "Használja a \"útvonal\" kapcsolót az alkalmazás sávjában.",
-  "chat_floodModeEnabled": "Árvízvédelmi mód bekapcsolva. A visszaállítás a alkalmazásban található útvonal ikon segítségével.",
   "chat_fullPath": "Teljes elérési út",
   "chat_pathDetailsNotAvailable": "Az útvonal részletei még nem elérhetők. Próbálja meg küldeni egy üzenetet, hogy frissítse az információkat.",
   "chat_type": "Típus",
@@ -954,11 +944,6 @@
   "login_savePasswordSubtitle": "A jelszó biztonságosan tárolódik ezen a készüléken.",
   "login_repeaterDescription": "Adja meg a repeater (ismétítő) jelszót, hogy hozzáférhessen a beállításokhoz és az állapot információkhoz.",
   "login_roomDescription": "Adja meg a belépési kódot, hogy hozzáférhessen a beállításokhoz és az állapot információkhoz.",
-  "login_routing": "Útvonal meghatározás",
-  "login_routingMode": "Útvonal-kezelési mód",
-  "login_autoUseSavedPath": "Automatikus (az eddigi útvonal használata)",
-  "login_forceFloodMode": "Erőforrás-alapú áramlás mód",
-  "login_managePaths": "Útvonalak kezelése",
   "login_login": "Bejelentkezés",
   "login_attempt": "Megpróbálás {current}/{max}-adik",
   "@login_attempt": {
@@ -982,14 +967,6 @@
   "login_failedMessage": "Belépés sikertelen. Vagy a jelszó helytelen, vagy a hálózati kapcsolat nem létesül.",
   "common_reload": "Újra töltés",
   "common_clear": "Egyértelmű",
-  "path_currentPath": "Jelenlegi útvonal: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "Adja meg a saját elérési útvonalat",
   "path_currentPathLabel": "Jelenlegi útvonal",
   "path_hexPrefixInstructions": "Adja meg a 2 karakteres hexadecimális előtagokat minden lépéshez, tagolva kommával.",

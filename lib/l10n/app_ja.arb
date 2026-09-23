@@ -692,10 +692,6 @@
     }
   },
   "debugFrame_hexDump": "ヘックスダンプ：",
-  "chat_pathManagement": "経路管理",
-  "chat_routingMode": "ルーティングモード",
-  "chat_autoUseSavedPath": "自動 (保存されたパスを使用)",
-  "chat_forceFloodMode": "強制的に洪水モードを起動",
   "chat_hopSingular": "ジャンプ",
   "chat_hopPlural": "ホップ",
   "chat_hopsCount": "{count} {count, plural, =1{ホップ} other{ホップ}}",
@@ -707,12 +703,6 @@
     }
   },
   "chat_setCustomPath": "カスタムパスを設定",
-  "chat_setCustomPathSubtitle": "手動で経路を指定する",
-  "chat_clearPath": "明確な道",
-  "chat_clearPathSubtitle": "次回送信時に、以前の情報を再取得する",
-  "chat_pathCleared": "経路が確保されました。次のメッセージでルートを再確認します。",
-  "chat_floodModeSubtitle": "アプリのバーにあるルーティング切り替え機能を使用する",
-  "chat_floodModeEnabled": "洪水モードが有効になっています。アプリのメニューバーにあるルートアイコンを使用して、モードを切り替えることができます。",
   "chat_fullPath": "フルパス",
   "chat_pathDetailsNotAvailable": "経路の詳細については、まだ情報がありません。「リフレッシュ」ボタンを押して、再度お試しください。",
   "chat_type": "種類",
@@ -954,11 +944,6 @@
   "login_savePasswordSubtitle": "パスワードは、このデバイスに安全に保存されます。",
   "login_repeaterDescription": "設定やステータスにアクセスするために、リピーターのパスワードを入力してください。",
   "login_roomDescription": "設定やステータスへのアクセスには、部屋のパスワードを入力してください。",
-  "login_routing": "経路設定",
-  "login_routingMode": "ルーティングモード",
-  "login_autoUseSavedPath": "自動 (保存されたパスを使用)",
-  "login_forceFloodMode": "強制的に洪水モードを起動",
-  "login_managePaths": "パスの管理",
   "login_login": "ログイン",
   "login_attempt": "試行回数：{current}/{max}",
   "@login_attempt": {
@@ -982,14 +967,6 @@
   "login_failedMessage": "ログインに失敗しました。パスワードが間違っているか、または接続が確立されていません。",
   "common_reload": "再読み込み",
   "common_clear": "明確",
-  "path_currentPath": "現在のパス: {path}",
-  "@path_currentPath": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "path_enterCustomPath": "カスタムパスを入力",
   "path_currentPathLabel": "現在の経路",
   "path_hexPrefixInstructions": "各ホップに対して、2文字の16進数プレフィックスをカンマで区切って入力してください。",

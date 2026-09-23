@@ -1594,18 +1594,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get debugFrame_hexDump => 'Дамп Hex:';
 
   @override
-  String get chat_pathManagement => 'Керування шляхами';
-
-  @override
-  String get chat_routingMode => 'Режим маршрутизації';
-
-  @override
-  String get chat_autoUseSavedPath => 'Авто (використовувати збережений шлях)';
-
-  @override
-  String get chat_forceFloodMode => 'Примусово на всю мережу';
-
-  @override
   String get chat_hopSingular => 'Стрибок';
 
   @override
@@ -1626,28 +1614,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get chat_setCustomPath => 'Встановити власний шлях';
-
-  @override
-  String get chat_setCustomPathSubtitle => 'Вказати шлях маршрутизації вручну';
-
-  @override
-  String get chat_clearPath => 'Очистити шлях';
-
-  @override
-  String get chat_clearPathSubtitle =>
-      'Примусово повторити пошук при наступному надсиланні';
-
-  @override
-  String get chat_pathCleared =>
-      'Шлях очищено. Наступне повідомлення оновить маршрут.';
-
-  @override
-  String get chat_floodModeSubtitle =>
-      'Використовувати перемикач маршрутизації в панелі програми';
-
-  @override
-  String get chat_floodModeEnabled =>
-      'Увімкнено режим «на всю мережу». Перемикайте через іконку маршрутизації на панелі інструментів.';
 
   @override
   String get chat_fullPath => 'Повний шлях';
@@ -2049,21 +2015,6 @@ class AppLocalizationsUk extends AppLocalizations {
       'Введіть пароль кімнати для доступу до налаштувань та статусу.';
 
   @override
-  String get login_routing => 'Маршрутизація';
-
-  @override
-  String get login_routingMode => 'Режим маршрутизації';
-
-  @override
-  String get login_autoUseSavedPath => 'Авто (використовувати збережений шлях)';
-
-  @override
-  String get login_forceFloodMode => 'Примусово на всю мережу';
-
-  @override
-  String get login_managePaths => 'Керувати шляхами';
-
-  @override
   String get login_login => 'Вхід';
 
   @override
@@ -2085,11 +2036,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get common_clear => 'Очистити';
-
-  @override
-  String path_currentPath(String path) {
-    return 'Поточний шлях: $path';
-  }
 
   @override
   String get path_enterCustomPath => 'Ввести власний шлях';
@@ -3886,4 +3832,49 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get translation_systemLanguage => 'Мова системи';
+
+  @override
+  String get routing_title => 'Routing';
+
+  @override
+  String routing_route(String route) {
+    return 'Route: $route';
+  }
+
+  @override
+  String get routing_noRoute =>
+      'none yet — the next message floods and learns one';
+
+  @override
+  String get routing_auto => 'Automatic';
+
+  @override
+  String get routing_autoSubtitle =>
+      'Use the route the radio learned. Recommended.';
+
+  @override
+  String get routing_flood => 'Always flood';
+
+  @override
+  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+
+  @override
+  String get routing_custom => 'Custom path';
+
+  @override
+  String get routing_customSubtitle => 'Choose the repeaters yourself';
+
+  @override
+  String get routing_forget => 'Forget route';
+
+  @override
+  String get routing_forgetDone =>
+      'Route forgotten. The next message floods and learns a fresh one.';
+
+  @override
+  String get path_direct => 'Direct — no repeaters';
+
+  @override
+  String get path_directSubtitle =>
+      'Only when the contact can hear this radio itself';
 }
