@@ -2,13 +2,12 @@ import 'package:drift/drift.dart';
 
 import 'db/database.dart';
 
-/// Node metadata precedence: signed advert > import > anonymous
-/// observation (see design doc, import semantics).
-enum NodeSource { observed, imported, advert }
+/// Node metadata precedence: signed advert > anonymous observation.
+enum NodeSource { observed, advert }
 
 class NodeState {
   NodeState({required this.source, this.name, this.role, this.lat, this.lon,
-      this.lastHeard, this.region, this.pubkey});
+      this.lastHeard, this.pubkey});
 
   NodeSource source;
   String? name;
@@ -16,14 +15,15 @@ class NodeState {
   double? lat;
   double? lon;
   int? lastHeard; // arrival millis
-  String? region;
   String? pubkey;
 }
 
+/// One direction of one link, as this radio observed it. Nothing here
+/// comes from anywhere but the air.
 class EdgeState {
   EdgeState({required this.source});
 
-  /// Attempt-counted local evidence (never touched by imports).
+  /// Attempt-counted evidence.
   int s = 0;
   int n = 0;
 
@@ -33,21 +33,8 @@ class EdgeState {
   int obsCount = 0;
   String source;
 
-  // Import layer (meshtrax-graph-v2, replaced wholesale per collector).
-  // Somebody else's measurements of THIS direction — never merged into
-  // the local counters above, never copied to the reverse edge.
-  double? importedSnr;
-  int importedObservations = 0;
-  int importedDelivered = 0;
-  int importedAttempts = 0;
-  int? importedLastObserved;
-
-  // Local layer: trace-fed SNR EWMA.
+  /// Trace-fed SNR EWMA: the only measurement of a middle hop.
   double? measuredSnr;
-
-  /// Anything at all in the import layer?
-  bool get hasImport =>
-      importedSnr != null || importedObservations > 0 || importedAttempts > 0;
 }
 
 /// In-memory working set over the Drift durability layer. All hot
@@ -108,8 +95,7 @@ class GraphStore {
 
   /// Metadata enrichment respecting source precedence.
   void enrichNode(String hash, NodeSource source,
-      {String? name, String? role, double? lat, double? lon, String? pubkey,
-      String? region}) {
+      {String? name, String? role, double? lat, double? lon, String? pubkey}) {
     final node = nodeFor(hash, source);
     final outranks = source.index >= node.source.index;
     if (outranks) {
@@ -119,7 +105,6 @@ class GraphStore {
       if (lat != null) node.lat = lat;
       if (lon != null) node.lon = lon;
       if (pubkey != null) node.pubkey = pubkey;
-      if (region != null) node.region = region;
     } else {
       // Lower-precedence source fills blanks only.
       node.name ??= name;
@@ -127,7 +112,6 @@ class GraphStore {
       node.lat ??= lat;
       node.lon ??= lon;
       node.pubkey ??= pubkey;
-      node.region ??= region;
     }
     _dirtyNodes.add(hash);
   }
@@ -189,8 +173,7 @@ class GraphStore {
           ..role ??= ghost.role
           ..lat ??= ghost.lat
           ..lon ??= ghost.lon
-          ..pubkey ??= ghost.pubkey
-          ..region ??= ghost.region;
+          ..pubkey ??= ghost.pubkey;
         if ((ghost.lastHeard ?? 0) > (target.lastHeard ?? 0)) {
           target.lastHeard = ghost.lastHeard;
         }
@@ -234,7 +217,6 @@ class GraphStore {
         lat: row.lat,
         lon: row.lon,
         lastHeard: row.lastHeard,
-        region: row.region,
         pubkey: row.pubkey,
       );
     }
@@ -245,11 +227,6 @@ class GraphStore {
         ..trafficWeight = row.trafficWeight
         ..lastObserved = row.lastObserved
         ..obsCount = row.obsCount
-        ..importedSnr = row.importedSnr
-        ..importedObservations = row.importedObservations
-        ..importedDelivered = row.importedDelivered
-        ..importedAttempts = row.importedAttempts
-        ..importedLastObserved = row.importedLastObserved
         ..measuredSnr = row.measuredSnr;
     }
   }
@@ -295,7 +272,6 @@ class GraphStore {
             lon: Value(n.lon),
             lastHeard: Value(n.lastHeard),
             source: n.source.name,
-            region: Value(n.region),
             pubkey: Value(n.pubkey),
           ),
           mode: InsertMode.insertOrReplace,
@@ -315,11 +291,6 @@ class GraphStore {
             lastObserved: Value(e.lastObserved),
             obsCount: Value(e.obsCount),
             source: e.source,
-            importedSnr: Value(e.importedSnr),
-            importedObservations: Value(e.importedObservations),
-            importedDelivered: Value(e.importedDelivered),
-            importedAttempts: Value(e.importedAttempts),
-            importedLastObserved: Value(e.importedLastObserved),
             measuredSnr: Value(e.measuredSnr),
           ),
           mode: InsertMode.insertOrReplace,

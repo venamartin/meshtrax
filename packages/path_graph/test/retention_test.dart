@@ -51,22 +51,11 @@ void main() {
       expect(graph.snapshot().edges.keys, contains(('A277', '1312')));
     });
 
-    test('imported priors never age out', () async {
-      await graph.importGraph({
-        'format': 'meshtrax-graph-v2',
-        'directed': true,
-        'graph': {'region_hint': 'r'},
-        'nodes': [
-          {'id': 'AAAA'},
-          {'id': 'BBBB'}
-        ],
-        'links': [
-          {'source': 'AAAA', 'target': 'BBBB', 'observations': 5}
-        ],
-      });
+    test('traced links never age out', () {
+      graph.observeTrace(['A277', '1312'], [8.0, 6.0]);
       nowMs += 400 * dayMs;
-      expect(graph.sweepStale().totalRemoved, 0);
-      expect(graph.snapshot().edges.keys, contains(('AAAA', 'BBBB')));
+      expect(graph.sweepStale().edgesAged, 0);
+      expect(graph.snapshot().edges.keys, contains(('A277', '1312')));
     });
 
     test('advert-known node outlives its stale edges', () {
@@ -157,22 +146,11 @@ void main() {
   });
 
   group('clear learned data', () {
-    test('wipes local layers, keeps imported priors', () async {
-      await graph.importGraph({
-        'format': 'meshtrax-graph-v2',
-        'directed': true,
-        'graph': {'region_hint': 'r'},
-        'nodes': [
-          {'id': 'AAAA'},
-          {'id': 'BBBB'}
-        ],
-        'links': [
-          {'source': 'AAAA', 'target': 'BBBB', 'observations': 5,
-           'measured_snr': 6.0}
-        ],
-      });
-      // Local evidence on the imported edge AND a purely local edge.
-      graph.reportSendResult(Uint8List.fromList([0xAA, 0xAA, 0xBB, 0xBB]), true);
+    test('wipes everything; the graph relearns from the next packet',
+        () async {
+      graph.reportSendResult(Uint8List.fromList([0xAA, 0xAA, 0xBB, 0xBB]), true,
+          contactPubkey: bobPk);
+      graph.ingestNode('A277', name: 'Alpha');
       hear([0xA2, 0x77, 0x13, 0x12]);
       graph.observePath(Uint8List.fromList([0xA2, 0x77]), 2,
           const ObservationOrigin.pubkeyConfirmed(bobPk));
@@ -180,16 +158,14 @@ void main() {
       await graph.clearLearnedData();
 
       final snap = graph.snapshot();
-      expect(snap.edges.keys, [('AAAA', 'BBBB')]);
-      final kept = snap.edges[('AAAA', 'BBBB')]!;
-      expect(kept.importedObservations, 5, reason: 'prior survives');
-      expect(kept.n, 0, reason: 'local counters zeroed');
-      expect(kept.measuredSnr, isNull, reason: 'locally measured SNR wiped');
-      expect(kept.importedSnr, 6.0);
-      expect(snap.nodes.keys, isNot(contains('A277')));
+      expect(snap.edges, isEmpty);
+      expect(snap.nodes, isEmpty);
       expect(graph.egressCandidates(), isEmpty);
       expect(graph.ingressCandidates(bobPk), isEmpty);
       expect(graph.counters.observationsApplied, 0);
+
+      hear([0xA2, 0x77, 0x13, 0x12]);
+      expect(graph.snapshot().edges.keys, [('A277', '1312')]);
     });
   });
 

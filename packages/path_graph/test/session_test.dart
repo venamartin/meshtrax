@@ -20,23 +20,11 @@ Future<PathGraph> populated() async {
       const ObservationOrigin.pubkeyConfirmed(bobPk),
       position: const GeoPosition(36.9, -121.7));
   g.observeTrace(['A277', '1312', 'A277'], [9.0, 6.5, -4.0]);
-  g.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true);
+  g.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true,
+      contactPubkey: bobPk);
   g.observeDiscoverResults(
       [const DiscoverResponse(repeaterHash: 'A277', uplinkSnr: 9, rxSnr: 7)],
       failureEpisode: false);
-  await g.importGraph({
-    'format': 'meshtrax-graph-v2',
-    'directed': true,
-    'graph': {'region_hint': 'elsewhere'},
-    'nodes': [
-      {'id': 'AAAA'},
-      {'id': 'BBBB'}
-    ],
-    'links': [
-      {'source': 'AAAA', 'target': 'BBBB', 'measured_snr': 7.0,
-       'observations': 12, 'delivered': 2, 'attempts': 3}
-    ],
-  });
   return g;
 }
 
@@ -67,12 +55,20 @@ void main() {
     expect(edge.measuredSnr, 6.5);
     expect(edge.obsCount, before.edges[('A277', '1312')]!.obsCount);
 
-    // The imported prior layer, kept separate and intact.
-    final imported = restored.snapshot().edges[('AAAA', 'BBBB')]!;
-    expect(imported.importedSnr, 7.0);
-    expect(imported.importedDelivered, 2);
-    expect(imported.importedAttempts, 3);
-    expect(imported.s, 0);
+    // Send-direction proof survives: the doorstep A277 was proven by a
+    // delivered send, and so was Bob's ingress at 1312.
+    expect(
+        restored
+            .egressCandidates()
+            .singleWhere((c) => c.repeaterHash == 'A277')
+            .proven,
+        isTrue);
+    expect(
+        restored
+            .ingressCandidates(bobPk)
+            .singleWhere((c) => c.repeaterHash == '1312')
+            .proven,
+        isTrue);
 
     // Advert metadata and its precedence marker.
     final node = restored.snapshot().nodes['A277']!;

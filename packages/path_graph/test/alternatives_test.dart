@@ -13,7 +13,9 @@ void main() {
   late PathGraph graph;
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    // Corridor search only; endpoint proof is covered in evidence_test.
+    graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(allowInferredEndpoints: true));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });

@@ -57,21 +57,6 @@ void main() {
     expect(link['last_observed'], isA<String>());
   });
 
-  test('round-trips through importGraph', () async {
-    graph.observeTrace(['A277', '1312', 'A277'], [9.0, 6.5, -4.0]);
-    graph.ingestNode('A277', name: 'Alpha', lat: 36.9, lon: -121.7);
-    final doc = graph.exportGraph();
-
-    final other = PathGraph(NativeDatabase.memory());
-    await other.init();
-    await other.importGraph(doc);
-    final snap = other.snapshot();
-    expect(snap.nodes['A277']!.name, 'Alpha');
-    expect(snap.edges[('A277', '1312')]!.importedSnr, 6.5);
-    expect(snap.edges[('1312', 'A277')]!.importedSnr, -4.0);
-    await other.dispose();
-  });
-
   test('carries repeater topology and nothing else', () async {
     // Everything private the module knows: a named contact, their
     // ingress list, my own doorstep, and a position tag.
@@ -95,28 +80,5 @@ void main() {
     // What it DOES carry: the repeater-to-repeater hop.
     expect(linksOf(graph.exportGraph()).single,
         containsPair('source', 'A277'));
-  });
-
-  test('imported priors are not re-exported', () async {
-    await graph.importGraph({
-      'format': 'meshtrax-graph-v2',
-      'directed': true,
-      'graph': {'region_hint': 'elsewhere'},
-      'nodes': [
-        {'id': 'AAAA'},
-        {'id': 'BBBB'}
-      ],
-      'links': [
-        {'source': 'AAAA', 'target': 'BBBB', 'measured_snr': 7.0,
-         'observations': 99}
-      ],
-    });
-    graph.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
-        const ObservationOrigin.anonymous());
-
-    final links = linksOf(graph.exportGraph());
-    expect(links.single['source'], 'A277',
-        reason: "someone else's measurement stays theirs");
-    expect((graph.exportGraph()['nodes'] as List).length, 2);
   });
 }

@@ -79,7 +79,7 @@ class PathLabScreen extends StatefulWidget {
 }
 
 class _PathLabScreenState extends State<PathLabScreen> {
-  final _importPath = TextEditingController(text: 'meshtrax-graph.json');
+  final _exportPath = TextEditingController(text: 'meshtrax-graph.json');
   final _sessionPath = TextEditingController(text: 'path_lab_session.json');
   final _contactPk = TextEditingController();
   String _status = '';
@@ -318,26 +318,15 @@ class _PathLabScreenState extends State<PathLabScreen> {
     });
   }
 
-  Future<void> _import() async {
-    try {
-      final doc = jsonDecode(await File(_importPath.text).readAsString())
-          as Map<String, dynamic>;
-      await graph.importGraph(doc);
-      setState(() => _status = 'imported ${_importPath.text}');
-    } catch (e) {
-      setState(() => _status = 'import failed: $e');
-    }
-  }
-
   Future<void> _export() async {
     try {
       final doc = graph.exportGraph(collector: 'meshtrax path_lab');
-      await File(_importPath.text).writeAsString(
+      await File(_exportPath.text).writeAsString(
           const JsonEncoder.withIndent(' ').convert(doc));
       final links = (doc['links'] as List).length;
       final nodes = (doc['nodes'] as List).length;
       setState(() => _status =
-          'exported $nodes nodes / $links directed links → ${_importPath.text}');
+          'exported $nodes nodes / $links directed links → ${_exportPath.text}');
     } catch (e) {
       setState(() => _status = 'export failed: $e');
     }
@@ -605,10 +594,9 @@ class _PathLabScreenState extends State<PathLabScreen> {
               Row(children: [
                 Expanded(
                     child: TextField(
-                        controller: _importPath,
+                        controller: _exportPath,
                         decoration:
-                            const InputDecoration(labelText: 'graph file'))),
-                TextButton(onPressed: _import, child: const Text('Import')),
+                            const InputDecoration(labelText: 'export file'))),
                 TextButton(onPressed: _export, child: const Text('Export')),
               ]),
               // Full private checkpoint — everything, not the shareable
@@ -726,7 +714,10 @@ class _PathLabScreenState extends State<PathLabScreen> {
                       style: const TextStyle(fontFamily: 'monospace')),
                   subtitle: Text(
                       '${_routes[i].pathBytes.length ~/ 2} hop(s) · est '
-                      '${(_routes[i].estDelivery * 100).toStringAsFixed(0)}%'),
+                      '${(_routes[i].estDelivery * 100).toStringAsFixed(0)}%'
+                      '${_routes[i].egressProven ? '' : ' · doorstep UNPROVEN'}'
+                      '${_routes[i].ingressProven ? '' : ' · far side UNPROVEN'}'
+                      '${_routes[i].hopProbabilities.isEmpty ? '' : ' · p ${_routes[i].hopProbabilities.map((p) => p.toStringAsFixed(2)).join(' ')}'}'),
                 ),
               if (_routes.length == 1)
                 Builder(builder: (context) {

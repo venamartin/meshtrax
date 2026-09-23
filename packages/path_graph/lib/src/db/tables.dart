@@ -1,9 +1,8 @@
 import 'package:drift/drift.dart';
 
-/// One row per 2-byte hash bucket. Hash alone is identity — region is
-/// metadata on imported rows, so observed + imported never fragment.
+/// One row per hash bucket. Hash alone is identity.
 class GraphNodes extends Table {
-  /// 4 hex chars, uppercase (2-byte hash).
+  /// Uppercase hex at the graph's identity width.
   TextColumn get hashBytes => text()();
   TextColumn get name => text().nullable()();
   TextColumn get role => text().nullable()();
@@ -13,9 +12,8 @@ class GraphNodes extends Table {
   /// Arrival-time millis (never wire timestamps).
   IntColumn get lastHeard => integer().nullable()();
 
-  /// imported | observed | advert
+  /// observed | advert
   TextColumn get source => text()();
-  TextColumn get region => text().nullable()();
 
   /// Full 64-hex pubkey when known (enables re-collapse at other widths).
   TextColumn get pubkey => text().nullable()();
@@ -25,15 +23,13 @@ class GraphNodes extends Table {
 }
 
 /// Directed edge — from→to and to→from are separate rows that never
-/// copy each other. Local evidence (s/n, trafficWeight, measuredSnr) is
-/// never touched by imports; the imported_* prior is replaceable
-/// wholesale. Calibrated p combines the layers at read.
+/// copy each other. Everything here was observed by this radio.
 @TableIndex(name: 'idx_edges_from', columns: {#fromHash})
 class GraphEdges extends Table {
   TextColumn get fromHash => text()();
   TextColumn get toHash => text()();
 
-  /// Attempt-counted local evidence (successes / attempts).
+  /// Attempt-counted evidence (successes / attempts).
   IntColumn get s => integer().withDefault(const Constant(0))();
   IntColumn get n => integer().withDefault(const Constant(0))();
 
@@ -45,17 +41,7 @@ class GraphEdges extends Table {
   IntColumn get obsCount => integer().withDefault(const Constant(0))();
   TextColumn get source => text()();
 
-  // Import layer (meshtrax-graph-v2, replaceable). Another collector's
-  // measurements OF THIS DIRECTION — mirrors the local columns above so
-  // the two layers stay separable at read.
-  RealColumn get importedSnr => real().nullable()();
-  IntColumn get importedObservations =>
-      integer().withDefault(const Constant(0))();
-  IntColumn get importedDelivered => integer().withDefault(const Constant(0))();
-  IntColumn get importedAttempts => integer().withDefault(const Constant(0))();
-  IntColumn get importedLastObserved => integer().nullable()();
-
-  // Local layer: trace-fed per-hop SNR EWMA.
+  /// Trace-fed per-hop SNR EWMA.
   RealColumn get measuredSnr => real().nullable()();
 
   @override
@@ -72,6 +58,11 @@ class ContactIngress extends Table {
   TextColumn get evidence => text()();
   RealColumn get observedLat => real().nullable()();
   RealColumn get observedLon => real().nullable()();
+
+  /// Arrival millis of the last proof in the SENDING direction (a
+  /// delivered send, a trace, a Discover answer). Null = only ever
+  /// heard, never proven to reach. Routes end only at proven rows.
+  IntColumn get provenAt => integer().nullable()();
 
   /// Measured first-hop link, both directions (Discover): uplink = how
   /// well they heard US, downlink = how well we heard THEM.
@@ -101,7 +92,7 @@ class KnownContacts extends Table {
   Set<Column> get primaryKey => {contactPubkey};
 }
 
-/// Import identity, home position, and counters.
+/// Identity width stamp and counters.
 class GraphMeta extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();

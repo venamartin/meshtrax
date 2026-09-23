@@ -25,6 +25,13 @@ class IngressEntry {
   double? observedLat;
   double? observedLon;
 
+  /// Arrival millis of the last proof in the SENDING direction: a
+  /// delivered send through this hop, a trace, a Discover answer. Only
+  /// hearing a repeater never sets it — hearing proves the other
+  /// direction. Routes start and end at proven rows only.
+  int? provenAt;
+  bool get proven => provenAt != null;
+
   /// Measured first-hop SNR, both directions (Discover).
   double? uplinkSnr;
   double? downlinkSnr;
@@ -36,10 +43,13 @@ class IngressEntry {
 
 class Candidate {
   const Candidate(this.repeaterHash, this.weight, this.tier,
-      {this.uplinkSnr, this.downlinkSnr});
+      {this.uplinkSnr, this.downlinkSnr, this.proven = false});
   final String repeaterHash;
   final double weight;
   final EvidenceTier tier;
+
+  /// Proven in the sending direction (see [IngressEntry.provenAt]).
+  final bool proven;
 
   /// Measured link to this candidate when Discover has run.
   final double? uplinkSnr;
@@ -84,11 +94,22 @@ class EvidenceStore {
     return entry;
   }
 
-  /// Contact ingress: path[0] of traffic they originated.
+  /// Contact ingress guess: path[0] of traffic they originated proves
+  /// that repeater heard THEM — the reverse of what a send needs — so it
+  /// is a candidate for Discover ranking and the UI, never a route end.
   void recordIngress(String contactPubkey, String repeaterHash,
       {required bool pubkeyConfirmed, required int arrival}) {
-    _upsert(contactPubkey, repeaterHash, EvidenceTier.proven,
+    _upsert(contactPubkey, repeaterHash, EvidenceTier.inferred,
         pubkeyConfirmed ? 3.0 : 1.0, arrival);
+  }
+
+  /// Proven contact ingress: the last hop of a send that was delivered
+  /// (ACKed) or of a path-discovery out_path — a repeater that reached
+  /// them, in the direction that matters.
+  void recordProvenIngress(
+      String contactPubkey, String repeaterHash, int arrival) {
+    _upsert(contactPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
+        .provenAt = arrival;
   }
 
   /// Self last-hop prior: final hop of a received path (inferred tier).
@@ -110,14 +131,20 @@ class EvidenceStore {
     }
   }
 
-  /// Direct reception of a contact (empty path).
-  void recordDirect(String contactPubkey, int arrival) {
-    _upsert(contactPubkey, directHash, EvidenceTier.direct, 3.0, arrival);
+  /// Direct reception of a contact (empty path). Hearing them proves
+  /// they reach me; [proven] is a delivered empty-path send, which
+  /// proves I reach them.
+  void recordDirect(String contactPubkey, int arrival,
+      {bool proven = false}) {
+    final e =
+        _upsert(contactPubkey, directHash, EvidenceTier.direct, 3.0, arrival);
+    if (proven) e.provenAt = arrival;
   }
 
   /// Proven egress upgrade (delivered send through this first hop).
   void recordProvenEgress(String selfPubkey, String repeaterHash, int arrival) {
-    _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival);
+    _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
+        .provenAt = arrival;
   }
 
   /// Discover results: proven refresh always; supersede/slash only in a
@@ -153,7 +180,8 @@ class EvidenceStore {
               .clamp(0.0, 1.0);
       final entry = _upsert(
           selfPubkey, r.hash, EvidenceTier.proven, 1.0 + 2.0 * quality,
-          arrival);
+          arrival)
+        ..provenAt = arrival; // it answered: it heard us
       // Keep the measured dB, both directions — a Discover exchange is
       // the best-measured link we ever get (fresh, bidirectional, and
       // it's the first hop). EWMA so repeat probes refine.
@@ -186,11 +214,14 @@ class EvidenceStore {
 
   /// Ranked candidates for an owner. Self rows get fast decay and the
   /// hub demotion (penultimate ≫ final, vetoed by proven tier).
-  List<Candidate> candidatesFor(String owner, int now, {required bool isSelf}) {
+  /// [provenOnly] keeps rows proven in the sending direction.
+  List<Candidate> candidatesFor(String owner, int now,
+      {required bool isSelf, bool provenOnly = false}) {
     final out = <Candidate>[];
     for (final entry in entries.entries) {
       if (entry.key.$1 != owner) continue;
       final e = entry.value;
+      if (provenOnly && !e.proven) continue;
       var w = _decayedWeight(owner, e, now, isSelf);
       if (isSelf && e.tier == EvidenceTier.inferred) {
         final appearances = e.finalCount + e.penultimateCount;
@@ -200,17 +231,22 @@ class EvidenceStore {
       }
       if (w > 0.05) {
         out.add(Candidate(entry.key.$2, w, e.tier,
-            uplinkSnr: e.uplinkSnr, downlinkSnr: e.downlinkSnr));
+            uplinkSnr: e.uplinkSnr,
+            downlinkSnr: e.downlinkSnr,
+            proven: e.proven));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
     return out;
   }
 
-  /// Fresh direct-reception evidence for this contact?
-  bool hasFreshDirect(String contactPubkey, int now) {
+  /// Fresh direct-reception evidence for this contact? With
+  /// [provenOnly], only when an empty-path send to them was delivered.
+  bool hasFreshDirect(String contactPubkey, int now,
+      {bool provenOnly = false}) {
     final e = entries[(contactPubkey, directHash)];
     if (e == null) return false;
+    if (provenOnly && !e.proven) return false;
     return now - e.lastSeen <= config.directFreshMinutes * 60 * 1000;
   }
 
@@ -279,6 +315,9 @@ class EvidenceStore {
           ..penultimateCount += ghost.penultimateCount
           ..uplinkSnr ??= ghost.uplinkSnr
           ..downlinkSnr ??= ghost.downlinkSnr;
+        if ((ghost.provenAt ?? 0) > (target.provenAt ?? 0)) {
+          target.provenAt = ghost.provenAt;
+        }
         if (ghost.lastSeen > target.lastSeen) {
           target.lastSeen = ghost.lastSeen;
           target.observedLat = ghost.observedLat ?? target.observedLat;
@@ -299,6 +338,7 @@ class EvidenceStore {
         observedLat: row.observedLat,
         observedLon: row.observedLon,
       )
+        ..provenAt = row.provenAt
         ..uplinkSnr = row.uplinkSnr
         ..downlinkSnr = row.downlinkSnr
         ..finalCount = row.finalCount
@@ -342,6 +382,7 @@ class EvidenceStore {
             evidence: e.tier.name,
             observedLat: Value(e.observedLat),
             observedLon: Value(e.observedLon),
+            provenAt: Value(e.provenAt),
             uplinkSnr: Value(e.uplinkSnr),
             downlinkSnr: Value(e.downlinkSnr),
             finalCount: Value(e.finalCount),

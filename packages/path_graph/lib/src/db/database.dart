@@ -15,17 +15,18 @@ class PathGraphDatabase extends _$PathGraphDatabase {
 
   /// v2 (2026-08-05): contact_ingress gains uplinkSnr/downlinkSnr —
   /// the Discover-measured first-hop link in both directions.
-  /// v3 (2026-08-07): the Corescope prior (importedScore/avgSnr — one
-  /// symmetric number seeded into both directions) is replaced by the
-  /// per-direction meshtrax-graph-v2 prior. The old columns are dropped
-  /// rather than migrated: a symmetric estimate has no honest
-  /// per-direction value to become.
-  /// v4 (2026-08-07): contact_ingress gains finalCount/penultimateCount.
-  /// They were in-memory only, so every restart reset the hub-signature
-  /// demotion to zero and inferred egress candidates briefly looked
-  /// better than they are.
+  /// v3 (2026-08-07): the symmetric Corescope prior columns were
+  /// replaced by a per-direction imported prior.
+  /// v4 (2026-08-07): contact_ingress gains finalCount/penultimateCount
+  /// so the hub-signature demotion survives a restart.
+  /// v5 (2026-09-23): the graph learns itself — every imported prior
+  /// column and the node region tag are dropped (a rebuild copies the
+  /// locally observed columns across; nodes that only an import knew
+  /// become plain observed nodes), and contact_ingress gains provenAt:
+  /// routes may only start and end at doorsteps proven in the sending
+  /// direction.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -35,25 +36,21 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             await m.addColumn(contactIngress, contactIngress.uplinkSnr);
             await m.addColumn(contactIngress, contactIngress.downlinkSnr);
           }
-          if (from < 3) {
-            // Rebuild from the new schema: copies the local-evidence
-            // columns across, drops imported_score/avg_snr, defaults the
-            // imported_* columns.
-            await m.alterTable(TableMigration(
-              graphEdges,
-              newColumns: [
-                graphEdges.importedSnr,
-                graphEdges.importedObservations,
-                graphEdges.importedDelivered,
-                graphEdges.importedAttempts,
-                graphEdges.importedLastObserved,
-              ],
-            ));
-          }
           if (from < 4) {
             await m.addColumn(contactIngress, contactIngress.finalCount);
             await m.addColumn(
                 contactIngress, contactIngress.penultimateCount);
+          }
+          if (from < 5) {
+            await customStatement(
+                "UPDATE graph_nodes SET source = 'observed' "
+                "WHERE source = 'imported'");
+            // Rebuilds copy the columns both shapes share and drop the
+            // rest (imported_score/avg_snr from v2, imported_* from v3+,
+            // region from graph_nodes).
+            await m.alterTable(TableMigration(graphNodes));
+            await m.alterTable(TableMigration(graphEdges));
+            await m.addColumn(contactIngress, contactIngress.provenAt);
           }
         },
       );

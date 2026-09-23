@@ -50,6 +50,24 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-09-23 (user directives, after the firmware audit in PR #121)** —
+  **The graph learns itself: no import, ever.** `importGraph` and the
+  imported-prior layer are gone (schema v5); a session checkpoint is the
+  only backup, `exportGraph` stays as a read-only diagnostic.
+  **Proven endpoints only.** A route may start only at a doorstep that
+  was proven to hear this radio (delivered send, trace, Discover answer)
+  and end only at one proven to reach the contact (the last hop of a
+  delivered send or a path-discovery `out_path`). "I heard X last" and
+  "X heard them first" are reciprocity guesses; both now live in the
+  `inferred` tier for Discover ranking and the UI, never as route ends
+  (`PathGraphConfig.allowInferredEndpoints` re-enables them for harness
+  comparison). Until the first ACKed exchange with a contact the answer
+  is flood — which is exactly the app's attempt ladder. `reportSendResult`
+  takes `contactPubkey` so the firmware's `out_path` after an ACK proves
+  both ends at once. `RouteResult` carries `hopProbabilities` and the
+  endpoint proof flags. Corescope stays out entirely. The package remains
+  the sole path authority and touches nothing in `lib/`; its only future
+  hook is the raw frame feed.
 * **2026-08-03** — Hash-native identity, no pubkey resolution (§ hard
   problem 2). Width: **2-byte** (4-byte far future). Module self-contained
   with its own DB. Export file stays lossless (full pubkeys); app collapses
@@ -1101,6 +1119,10 @@ open; the sections after this one are rationale and history.
    companion parks on 920 after); first session surfaced the
    stride-3 bug within hours — the campaign is already earning its
    keep.
+6. ~~**Apply the 2026-09-23 directives**~~ — DONE 2026-09-23: import
+   removed (schema v5), proven-only endpoints with `provenAt` on
+   `contact_ingress`, proven contact ingress from delivered sends,
+   evidence on `RouteResult`. See the decision log entry.
 
 **Session checkpoints (done 2026-08-07).** `saveSession()` /
 `loadSession()` write and restore a complete private snapshot —

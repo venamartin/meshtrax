@@ -88,7 +88,7 @@ void main() {
 
       final g3 = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3);
       await g3.init();
-      expect(g3.importGraph(export), throwsFormatException);
+      expect((export['graph'] as Map)['hash_width'], 2);
       expect(g3.loadSession(session), throwsFormatException);
       await g3.dispose();
 
@@ -107,30 +107,38 @@ void main() {
     });
   });
 
-  test('a once-heard doorstep never shows near-certain delivery', () {
+  test('a once-heard doorstep never shows near-certain delivery', () async {
     // Live find (AA77, 2026-08-14): hearing a repeater's transmission
     // once makes it an inferred egress candidate — fine — but the
     // 1-hop route to it displayed est 100% because the estimate only
     // multiplied between-hop edges and a direct route has none. The
-    // doorstep-confidence term must be in the estimate.
-    graph.setRadioIdentity('ab' * 32, 2);
-    graph.observePath(Uint8List.fromList([0xAA, 0x77]), 2,
+    // doorstep-confidence term must be in the estimate. (Inferred
+    // endpoints are off by default; the harness comparison turns them
+    // on, and that is what this test exercises.)
+    final g = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(allowInferredEndpoints: true));
+    await g.init();
+    g.setRadioIdentity('ab' * 32, 2);
+    g.observePath(Uint8List.fromList([0xAA, 0x77]), 2,
         const ObservationOrigin.anonymous());
-    final result = graph.findPathToRepeater('AA77');
+    final result = g.findPathToRepeater('AA77');
     expect(result, isA<RouteResult>());
-    final est = (result as RouteResult).estDelivery;
-    expect(est, lessThan(0.5),
+    final route = result as RouteResult;
+    expect(route.egressProven, isFalse);
+    expect(route.estDelivery, lessThan(0.5),
         reason: 'one overheard transmission is not near-certainty');
 
     // Proven, SNR-measured evidence raises it — the estimate tracks
     // the evidence, not the hop count.
-    graph.observeDiscoverResults(
+    g.observeDiscoverResults(
         [const DiscoverResponse(repeaterHash: 'AA77', uplinkSnr: 8, rxSnr: 8)],
         failureEpisode: false);
-    final proven = graph.findPathToRepeater('AA77') as RouteResult;
-    expect(proven.estDelivery, greaterThan(est));
+    final proven = g.findPathToRepeater('AA77') as RouteResult;
+    expect(proven.egressProven, isTrue);
+    expect(proven.estDelivery, greaterThan(route.estDelivery));
     expect(proven.estDelivery, greaterThan(0.8),
         reason: 'measured 8 dB uplink is near-full quality');
+    await g.dispose();
   });
 
   test('wide hops truncate into 2-byte buckets — never a second identity',

@@ -23,12 +23,61 @@ void main() {
 
   tearDown(() => graph.dispose());
 
-  test('confirmed traffic writes contact ingress from path[0]', () {
+  test('confirmed traffic writes contact ingress from path[0] as a guess',
+      () {
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
     final ingress = graph.ingressCandidates(bobPk);
     expect(ingress.single.repeaterHash, 'A277');
-    expect(ingress.single.tier, EvidenceTier.proven);
+    expect(ingress.single.tier, EvidenceTier.inferred,
+        reason: 'A277 heard Bob; that says nothing about reaching Bob');
+    expect(ingress.single.proven, isFalse);
+  });
+
+  test('a delivered send proves its last hop reaches the contact', () {
+    graph.reportSendResult(path([0xA2, 0x77, 0x13, 0x12]), true,
+        contactPubkey: bobPk);
+    final ingress = graph.ingressCandidates(bobPk).single;
+    expect(ingress.repeaterHash, '1312');
+    expect(ingress.tier, EvidenceTier.proven);
+    expect(ingress.proven, isTrue);
+    expect(graph.egressCandidates().single.proven, isTrue);
+  });
+
+  test('routes need proven endpoints: guesses on both sides flood', () {
+    // Heard Bob through A277 and heard 1312 last: both ends guessed.
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    graph.observePath(path([0x13, 0x12, 0xA2, 0x77]), 2,
+        const ObservationOrigin.anonymous());
+    expect((graph.findPath(bobPk) as FloodResult).reason,
+        FloodReason.noProvenEndpoint);
+    expect(graph.findAlternatives(bobPk), isEmpty);
+
+    // One flood exchange proves both ends; the same corridor now routes.
+    graph.reportSendResult(path([0xA2, 0x77, 0x13, 0x12]), true,
+        contactPubkey: bobPk);
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.anonymous(), lastHopHeard: false);
+    final route = graph.findPath(bobPk);
+    expect(route, isA<RouteResult>());
+    expect((route as RouteResult).egressProven, isTrue);
+    expect(route.ingressProven, isTrue);
+    expect(route.hopProbabilities, hasLength(1));
+  });
+
+  test('allowInferredEndpoints restores the guess, flagged', () async {
+    final g = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(allowInferredEndpoints: true));
+    await g.init();
+    g.setRadioIdentity(selfPk, 2);
+    g.observePath(path([0xA2, 0x77]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    g.reportSendResult(path([0xA2, 0x77]), true);
+    final route = g.findPath(bobPk) as RouteResult;
+    expect(route.egressProven, isTrue);
+    expect(route.ingressProven, isFalse);
+    await g.dispose();
   });
 
   test('uniqueName attribution weighs less than pubkey-confirmed', () {
@@ -63,10 +112,14 @@ void main() {
         reason: 'penultimate-heavy hub demoted');
   });
 
-  test('empty path from confirmed sender = fresh direct → findPath direct',
+  test('direct: hearing them is a guess, a delivered empty send is proof',
       () {
     graph.observePath(
         Uint8List(0), 2, const ObservationOrigin.pubkeyConfirmed(bobPk));
+    expect(graph.findPath(bobPk), isA<FloodResult>(),
+        reason: 'hearing them proves they reach me, not that I reach them');
+
+    graph.reportSendResult(Uint8List(0), true, contactPubkey: bobPk);
     expect(graph.findPath(bobPk), isA<DirectResult>());
 
     nowMillis += 31 * 60 * 1000; // beyond directFreshMinutes

@@ -88,7 +88,8 @@ void main() {
     dir.deleteSync(recursive: true);
   });
 
-  test('v2 sheds the Corescope prior and keeps local evidence', () async {
+  test('a v2 database rebuilds to the current shape and keeps its evidence',
+      () async {
     final dir = Directory.systemTemp.createTempSync('path_graph_mig3');
     final file = File('${dir.path}/v2.db');
 
@@ -131,6 +132,9 @@ void main() {
         "INSERT INTO contact_ingress VALUES ('me', 'A277', 3.0, "
         "${DateTime.now().millisecondsSinceEpoch}, 'proven', NULL, NULL, "
         '9.0, 7.0)');
+    // A node only an import ever knew becomes an ordinary observed node.
+    await v2.customStatement(
+        "INSERT INTO graph_nodes (hash_bytes, source) VALUES ('1312', 'imported')");
     await v2.customStatement('PRAGMA user_version = 2');
     await v2.close();
 
@@ -150,25 +154,13 @@ void main() {
     expect(e.trafficWeight, 9.0);
     expect(e.obsCount, 9);
     expect(e.measuredSnr, -3.5);
-    expect(e.hasImport, isFalse,
-        reason: 'a symmetric score has no honest per-direction successor');
+    expect(graph.snapshot().nodes['1312']!.source, NodeSource.observed,
+        reason: 'imported nodes are plain observed nodes now');
 
-    // The v2 columns are writable and independent of the local ones.
-    await graph.importGraph({
-      'format': 'meshtrax-graph-v2',
-      'directed': true,
-      'graph': {'region_hint': 'testland'},
-      'nodes': [
-        {'id': 'A277'},
-        {'id': '1312'}
-      ],
-      'links': [
-        {'source': 'A277', 'target': '1312', 'measured_snr': 7.0,
-         'observations': 3}
-      ],
-    });
+    // The rebuilt table is writable.
+    graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true);
     await graph.flush();
-    expect(graph.snapshot().edges[('A277', '1312')]!.importedSnr, 7.0);
+    expect(graph.snapshot().edges[('A277', '1312')]!.s, 5);
 
     await graph.dispose();
     dir.deleteSync(recursive: true);

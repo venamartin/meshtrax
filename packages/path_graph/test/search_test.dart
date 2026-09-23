@@ -15,8 +15,11 @@ void main() {
 
   setUp(() async {
     nowMillis = 1000000000;
+    // These tests exercise the corridor search; endpoint proof is
+    // covered in evidence_test, so inferred doorsteps are allowed here.
     graph = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(allowInferredEndpoints: true));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });

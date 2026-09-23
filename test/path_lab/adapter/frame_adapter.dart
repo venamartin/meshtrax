@@ -252,7 +252,9 @@ class PathLabAdapter {
     final contact = pendingDiscoveryPubkey;
 
     if (parsed.outPath.isNotEmpty) {
-      graph.reportSendResult(parsed.outPath, true);
+      // out_path was delivered end to end: first hop heard us, last hop
+      // reached them.
+      graph.reportSendResult(parsed.outPath, true, contactPubkey: contact);
     }
     if (parsed.inPath.isNotEmpty) {
       graph.observePath(

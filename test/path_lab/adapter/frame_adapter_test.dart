@@ -128,8 +128,14 @@ void main() {
     // Return path proven in reverse.
     expect(snap.edges[('5CBB', '249F')]!.n, greaterThanOrEqualTo(0));
     expect(snap.edges.containsKey(('5CBB', '249F')), isTrue);
-    // Their doorstep = first hop of the return path.
-    expect(graph.ingressCandidates(contact).single.repeaterHash, '5CBB');
+    // The outbound path's last hop reached them: proven ingress. The
+    // return path's first hop only heard them: a guess, kept as inferred.
+    final ingress = {
+      for (final c in graph.ingressCandidates(contact)) c.repeaterHash: c
+    };
+    expect(ingress['1312']!.proven, isTrue);
+    expect(ingress['5CBB']!.proven, isFalse);
+    expect(ingress['5CBB']!.tier, EvidenceTier.inferred);
     // My doorstep proven from the outbound first hop.
     expect(graph.egressCandidates().map((c) => c.repeaterHash),
         contains('A277'));

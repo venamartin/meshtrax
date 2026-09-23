@@ -11,19 +11,13 @@ void main() {
   const hour = 60 * 60 * 1000;
 
   EdgeState edge({int s = 0, int n = 0, double traffic = 0, int? last,
-      double? importedSnr, int impObs = 0, int impDelivered = 0,
-      int impAttempts = 0, int? impLast, double? measuredSnr, int obs = 0}) {
+      double? measuredSnr, int obs = 0}) {
     return EdgeState(source: 'observed')
       ..s = s
       ..n = n
       ..trafficWeight = traffic
       ..lastObserved = last
       ..obsCount = obs
-      ..importedSnr = importedSnr
-      ..importedObservations = impObs
-      ..importedDelivered = impDelivered
-      ..importedAttempts = impAttempts
-      ..importedLastObserved = impLast
       ..measuredSnr = measuredSnr;
   }
 
@@ -40,43 +34,29 @@ void main() {
     expect(est.snrQuality(0), greaterThan(est.snrQuality(-10)));
   });
 
-  test('imported-only edge routes at its imported SNR', () {
-    final e = edge(importedSnr: 6.0);
+  test('a traced edge routes at its measured SNR', () {
+    final e = edge(measuredSnr: 6.0);
     expect(est.calibratedP(e, 0), closeTo(est.snrQuality(6.0), 1e-9),
-        reason: 'no local attempts → the prior stands alone');
+        reason: 'no attempts -> the measured prior stands alone');
     expect(est.usable(e, 0), isTrue);
   });
 
-  test('measured trace SNR outranks the imported one', () {
-    final e = edge(
-        importedSnr: config.snrZeroQualityDb,
-        measuredSnr: config.snrFullQualityDb);
-    expect(est.priorQuality(e), 1.0);
+  test('an unmeasured edge sits at the passive default', () {
+    expect(est.priorQuality(edge()), config.passiveDefaultQ);
   });
 
-  test('imported SNR and delivery record average into one prior', () {
-    final snrOnly = edge(importedSnr: config.snrFullQualityDb);
-    final both = edge(
-        importedSnr: config.snrFullQualityDb,
-        impDelivered: 0,
-        impAttempts: 8);
-    expect(est.priorQuality(snrOnly), 1.0);
-    expect(est.priorQuality(both), lessThan(0.7),
-        reason: 'a strong signal that never delivers is not a good link');
-  });
-
-  test('imported observations raise prior confidence', () {
-    final thin = edge(importedSnr: 6.0, impObs: 0);
-    final thick = edge(importedSnr: 6.0, impObs: 60, impLast: 0);
+  test('traffic raises prior confidence', () {
+    final thin = edge(traffic: 0);
+    final thick = edge(traffic: 60, last: 0);
     expect(est.priorConfidence(thin, 0), config.n0Min);
     expect(est.priorConfidence(thick, 0), greaterThan(config.n0Min * 2));
   });
 
   test('attempts override the prior in both directions', () {
-    final good = edge(importedSnr: -14, s: 10, n: 10);
+    final good = edge(measuredSnr: -14, s: 10, n: 10);
     expect(est.calibratedP(good, 0), greaterThan(0.8));
 
-    final bad = edge(importedSnr: 8, s: 0, n: 10);
+    final bad = edge(measuredSnr: 8, s: 0, n: 10);
     expect(est.calibratedP(bad, 0), lessThan(0.35));
     expect(est.usable(bad, 0), isFalse);
   });
@@ -93,7 +73,7 @@ void main() {
   });
 
   test('edge cost is -log(p) + tau', () {
-    final e = edge(importedSnr: config.snrFullQualityDb);
+    final e = edge(measuredSnr: config.snrFullQualityDb);
     expect(est.edgeCost(e, 0), closeTo(config.tau, 1e-9));
     expect(config.tau, closeTo(-math.log(config.beta), 1e-12));
   });

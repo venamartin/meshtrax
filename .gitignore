@@ -114,3 +114,7 @@ path_lab.db*
 # graph state — review before deliberately committing one as a fixture.
 path_lab_corpus_*.jsonl
 path_lab_session.json
+
+# path_graph package test/build output
+packages/path_graph/build/
+packages/path_graph/.dart_tool/

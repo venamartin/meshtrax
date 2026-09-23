@@ -35,7 +35,7 @@ Color snrColor(double? db) {
           const Color(0xFFFFB300), const Color(0xFF43A047), (q - 0.5) * 2)!;
 }
 
-double? _edgeSnr(EdgeState e) => e.measuredSnr ?? e.importedSnr;
+double? _edgeSnr(EdgeState e) => e.measuredSnr;
 
 /// Screen placement for every node: geographic where known, a grid
 /// strip where not. [gridAll] ignores positions and grids everything —
@@ -252,7 +252,7 @@ class _MapScreenState extends State<MapScreen> {
               snr == null
                   ? 'snr —'
                   : 'snr ${snr.toStringAsFixed(1)}'
-                      '${e.measuredSnr == null ? " (imported)" : ""}',
+                      '',
               'obs ${e.obsCount}',
               if (e.n > 0) '${e.s}/${e.n} delivered',
               if (reverse == null) 'ONE-WAY',

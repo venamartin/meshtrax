@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 
@@ -71,30 +70,61 @@ class GeoPosition {
 }
 
 /// Why findPath returned flood — surfaced in the why-this-path UI.
-enum FloodReason { noEvidence, noBidirectionalRoute, belowThreshold, overBudget }
+enum FloodReason {
+  noEvidence,
+
+  /// Doorsteps exist on both sides, but none was ever proven in the
+  /// sending direction (only heard). A flood exchange proves them.
+  noProvenEndpoint,
+  noBidirectionalRoute,
+  belowThreshold,
+  overBudget,
+}
 
 /// The three-tier return contract: direct | bidirectional path | flood.
 sealed class PathResult {
   const PathResult();
 
   const factory PathResult.direct() = DirectResult;
-  const factory PathResult.path(Uint8List pathBytes, double estDelivery) =
-      RouteResult;
+  const factory PathResult.path(
+    Uint8List pathBytes,
+    double estDelivery, {
+    List<double> hopProbabilities,
+    bool egressProven,
+    bool ingressProven,
+  }) = RouteResult;
   const factory PathResult.flood(FloodReason reason) = FloodResult;
 }
 
-/// Zero-hop: fresh direct-reception evidence — send with an empty path.
+/// Zero-hop: a delivered empty-path send proved they hear this radio —
+/// send with an empty path while that is fresh.
 class DirectResult extends PathResult {
   const DirectResult();
 }
 
 /// A route over links proven in both directions. [pathBytes] is wire
 /// format (hops at the graph's identity width); truncate each hop to
-/// its first byte for 1-byte-mode targets.
+/// its first byte for 1-byte-mode targets. The evidence rides along so
+/// the caller can see why this option ranks where it does.
 class RouteResult extends PathResult {
-  const RouteResult(this.pathBytes, this.estDelivery);
+  const RouteResult(
+    this.pathBytes,
+    this.estDelivery, {
+    this.hopProbabilities = const [],
+    this.egressProven = true,
+    this.ingressProven = true,
+  });
   final Uint8List pathBytes;
   final double estDelivery;
+
+  /// Calibrated p of each between-hop link, in path order.
+  final List<double> hopProbabilities;
+
+  /// Whether the first hop was proven to hear this radio, and the last
+  /// hop proven to reach the target. Both are true unless the graph was
+  /// configured to allow inferred endpoints.
+  final bool egressProven;
+  final bool ingressProven;
 }
 
 class FloodResult extends PathResult {
@@ -141,7 +171,6 @@ class PathGraph {
   }
 
   final int hashWidthBytes;
-  int get _hexWidth => hashWidthBytes * 2;
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
@@ -356,20 +385,30 @@ class PathGraph {
   }
 
   /// Delivery outcome for a path we sent on. Success proves every
-  /// forward hop (s+1, n+1); failure is the small forward penalty (n+1
-  /// only — the break can't be localized). The ACK's own route is never
-  /// inferred. Uses the radio's stride ([setRadioIdentity]).
+  /// forward hop (s+1, n+1): the first hop heard us (proven egress) and,
+  /// with [contactPubkey], the last hop reached them (proven ingress —
+  /// the firmware's out_path after an ACK is exactly this). Failure is
+  /// the small forward penalty (n+1 only — the break can't be
+  /// localized). The ACK's own route is never inferred. An empty path
+  /// delivered to [contactPubkey] proves the zero-hop link. Uses the
+  /// radio's stride ([setRadioIdentity]).
   void reportSendResult(
     Uint8List pathBytes,
     bool success, {
     int? tripTimeMs,
+    String? contactPubkey,
   }) {
-    final stride = _selfStride;
-    if (stride < 2 || pathBytes.isEmpty || pathBytes.length % stride != 0) {
+    final arrival = _arrivalMillis;
+    if (pathBytes.isEmpty) {
+      if (success && contactPubkey != null) {
+        _evidence.recordDirect(contactPubkey, arrival, proven: true);
+        _scheduleFlush();
+      }
       return;
     }
+    final stride = _selfStride;
+    if (stride < 2 || pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
-    final arrival = _arrivalMillis;
     for (var i = 0; i < hopCount - 1; i++) {
       final from = _hopHex(pathBytes, stride, i);
       final to = _hopHex(pathBytes, stride, i + 1);
@@ -380,11 +419,16 @@ class PathGraph {
       edge.lastObserved = arrival;
       _store.markEdgeDirty(from, to);
     }
-    // Delivered send proves the first hop heard us: proven egress.
-    final self = _selfPubkey;
-    if (success && self != null && hopCount >= 1) {
-      _evidence.recordProvenEgress(
-          self, _hopHex(pathBytes, stride, 0), arrival);
+    if (success) {
+      final self = _selfPubkey;
+      if (self != null) {
+        _evidence.recordProvenEgress(
+            self, _hopHex(pathBytes, stride, 0), arrival);
+      }
+      if (contactPubkey != null) {
+        _evidence.recordProvenIngress(
+            contactPubkey, _hopHex(pathBytes, stride, hopCount - 1), arrival);
+      }
     }
     _scheduleFlush();
   }
@@ -474,9 +518,10 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final egress = _evidence.candidatesFor(self, now, isSelf: true);
+    final egress = _egressCandidates(self, now);
+    if (egress == null) return const PathResult.flood(FloodReason.noEvidence);
     if (egress.isEmpty) {
-      return const PathResult.flood(FloodReason.noEvidence);
+      return const PathResult.flood(FloodReason.noProvenEndpoint);
     }
 
     final route = PathFinder(estimator.config, estimator).search(
@@ -490,11 +535,36 @@ class PathGraph {
     if (route == null) {
       return const PathResult.flood(FloodReason.noBidirectionalRoute);
     }
-    return PathResult.path(_hopsToBytes(route.hops), route.estDelivery);
+    return _toResult(route);
   }
 
+  bool get _provenOnly => !config.allowInferredEndpoints;
+
+  /// Egress candidates for routing: null when nothing is known at all,
+  /// empty when doorsteps are known but none is proven.
+  List<Candidate>? _egressCandidates(String self, int now) {
+    final all = _evidence.candidatesFor(self, now, isSelf: true);
+    if (all.isEmpty) return null;
+    return _provenOnly ? all.where((c) => c.proven).toList() : all;
+  }
+
+  List<Candidate>? _ingressCandidates(String contactPubkey, int now) {
+    final all = _evidence.candidatesFor(contactPubkey, now, isSelf: false);
+    if (all.isEmpty) return null;
+    return _provenOnly ? all.where((c) => c.proven).toList() : all;
+  }
+
+  RouteResult _toResult(RouteFound route) => RouteResult(
+        _hopsToBytes(route.hops),
+        route.estDelivery,
+        hopProbabilities: route.hopProbabilities,
+        egressProven: route.egressProven,
+        ingressProven: route.ingressProven,
+      );
+
   static Candidate _selfTarget(String repeaterHash) =>
-      Candidate(repeaterHash.toUpperCase(), 1e9, EvidenceTier.proven);
+      Candidate(repeaterHash.toUpperCase(), 1e9, EvidenceTier.proven,
+          proven: true);
 
   Uint8List _hopsToBytes(List<String> hops) {
     final bytes = Uint8List(hops.length * hashWidthBytes);
@@ -512,8 +582,7 @@ class PathGraph {
   /// (the retry ladder's alternative-path step, and the harness UI).
   List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) =>
       _alternatives(
-          (now) => _evidence.candidatesFor(contactPubkey, now, isSelf: false),
-          count);
+          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count);
 
   /// Alternatives with a repeater itself as the destination.
   List<RouteResult> findAlternativesToRepeater(String repeaterHash,
@@ -525,7 +594,7 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const [];
-    final egress = _evidence.candidatesFor(self, now, isSelf: true);
+    final egress = _egressCandidates(self, now) ?? const [];
     final ingress = ingressFor(now);
     if (egress.isEmpty || ingress.isEmpty) return const [];
 
@@ -543,9 +612,7 @@ class PathGraph {
       );
       if (route == null) break;
       final key = route.hops.join('>');
-      if (seen.add(key)) {
-        results.add(RouteResult(_hopsToBytes(route.hops), route.estDelivery));
-      }
+      if (seen.add(key)) results.add(_toResult(route));
       for (var h = 0; h < route.hops.length - 1; h++) {
         final k = (route.hops[h], route.hops[h + 1]);
         penalties[k] = (penalties[k] ?? 0) + 1.4; // ≈ ×4 in probability
@@ -579,7 +646,7 @@ class PathGraph {
   /// Staleness sweep: forget idle unconfirmed hearsay past the policy's
   /// age gate, drop stale position tags (row survives, coordinate goes),
   /// and enforce the growth caps. Infrastructure — attempt-counted or
-  /// imported edges — is never aged out by idleness. Cheap; run on
+  /// traced edges — is never aged out by idleness. Cheap; run on
   /// connect and daily. The report is for the UI: silent deletion of a
   /// user's learned map would be the wrong kind of surprise.
   RetentionReport sweepStale(
@@ -591,123 +658,14 @@ class PathGraph {
   }
 
   /// The privacy escape hatch ("Clear learned data"): wipes everything
-  /// this radio learned — observed nodes/edges, local counters, contact
-  /// ingress, position tags. Imported priors survive; they are removed
-  /// separately by region. Flushes immediately.
+  /// this radio learned — nodes, edges, counters, contact ingress,
+  /// position tags. The graph relearns from the next packet. Flushes
+  /// immediately.
   Future<void> clearLearnedData() async {
     Retention(_store, _evidence, _estimator).clearLearnedData();
     _observationsApplied = 0;
     _droppedNarrow = 0;
     await flush();
-  }
-
-  static const _maxImportNodes = 20000;
-  static const _maxImportLinks = 100000;
-
-  static double _haversineKm(double la1, double lo1, double la2, double lo2) {
-    const r = 6371.0, p = math.pi / 180;
-    final dLa = (la2 - la1) * p, dLo = (lo2 - lo1) * p;
-    final a = math.sin(dLa / 2) * math.sin(dLa / 2) +
-        math.cos(la1 * p) * math.cos(la2 * p) *
-            math.sin(dLo / 2) * math.sin(dLo / 2);
-    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-  }
-
-  late final _hashPattern = RegExp('^[0-9A-F]{$_hexWidth}\$');
-
-  static int? _millisFromIso(Object? value) =>
-      value is String ? DateTime.tryParse(value)?.millisecondsSinceEpoch : null;
-
-  /// meshtrax-graph-v2 node-link document → the import prior layer.
-  ///
-  /// v2 is a true directed graph: A→B and B→A are separate links with
-  /// their own measurements, and neither is ever derived from the other.
-  /// A document that only knows one direction seeds only that direction,
-  /// so an imported link cannot on its own satisfy the bidirectional
-  /// route contract — which is the whole point of dropping v1, where one
-  /// symmetric Corescope SNR was copied into both directions and made
-  /// unproven links look routable.
-  ///
-  /// Node ids are 2-byte hash buckets (4 hex chars); the full pubkey
-  /// rides alongside when the exporter knew it. Local evidence (s/n,
-  /// traffic, measured SNR, ingress) is never touched, and re-importing
-  /// replaces the prior wholesale rather than accumulating.
-  ///
-  /// Throws [FormatException] on an unknown format or cap violation.
-  Future<void> importGraph(
-    Map<String, dynamic> document, {
-    GeoPosition? homePosition,
-    double? radiusKm,
-  }) async {
-    if (document['format'] != 'meshtrax-graph-v2') {
-      throw FormatException(
-          'not a meshtrax-graph-v2 document (got ${document['format']})');
-    }
-    if (document['directed'] == false) {
-      throw const FormatException(
-          'undirected documents are not importable — one SNR for both '
-          'directions is not a measurement of either');
-    }
-    final nodes = (document['nodes'] as List?) ?? const [];
-    final links = (document['links'] as List?) ?? const [];
-    if (nodes.length > _maxImportNodes || links.length > _maxImportLinks) {
-      throw const FormatException('import exceeds size caps');
-    }
-    final meta = (document['graph'] as Map?) ?? const {};
-    final docWidth = (meta['hash_width'] as num?)?.toInt() ?? 2;
-    if (docWidth != hashWidthBytes) {
-      throw FormatException(
-          'document uses hash width $docWidth, this graph runs at '
-          '$hashWidthBytes — widths cannot mix');
-    }
-    final region = meta['region_hint'] as String?;
-
-    final kept = <String>{}; // hash buckets that survived the geo filter
-    for (final raw in nodes) {
-      final node = raw as Map;
-      final hash = (node['id'] as String?)?.toUpperCase();
-      if (hash == null || !_hashPattern.hasMatch(hash)) continue;
-      final lat = (node['lat'] as num?)?.toDouble();
-      final lon = (node['lon'] as num?)?.toDouble();
-      // Geo scope: belt-and-suspenders at 2-byte; position-less kept.
-      if (homePosition != null && radiusKm != null &&
-          lat != null && lon != null &&
-          _haversineKm(homePosition.lat, homePosition.lon, lat, lon) >
-              radiusKm) {
-        continue;
-      }
-      kept.add(hash);
-      _store.enrichNode(hash, NodeSource.imported,
-          name: node['name'] as String?,
-          role: node['role'] as String?,
-          lat: lat,
-          lon: lon,
-          pubkey: node['pubkey'] as String?,
-          region: region);
-    }
-
-    for (final raw in links) {
-      final link = raw as Map;
-      final from = (link['source'] as String?)?.toUpperCase();
-      final to = (link['target'] as String?)?.toUpperCase();
-      if (from == null || to == null) continue;
-      if (!kept.contains(from) || !kept.contains(to)) continue;
-      final edge = _store.edges
-          .putIfAbsent((from, to), () => EdgeState(source: 'imported'));
-      // Replace, never accumulate: this is one collector's current view.
-      edge.importedSnr = (link['measured_snr'] as num?)?.toDouble();
-      edge.importedObservations = (link['observations'] as num?)?.toInt() ?? 0;
-      edge.importedDelivered = (link['delivered'] as num?)?.toInt() ?? 0;
-      edge.importedAttempts = (link['attempts'] as num?)?.toInt() ?? 0;
-      edge.importedLastObserved = _millisFromIso(link['last_observed']);
-      _store.markEdgeDirty(from, to);
-    }
-
-    await _db.into(_db.graphMeta).insertOnConflictUpdate(
-        GraphMetaCompanion.insert(
-            key: 'import:${region ?? "unknown"}',
-            value: '${meta['generated_at']}'));
-    _scheduleFlush();
   }
 
   static String _isoFromMillis(int millis) =>
@@ -725,11 +683,9 @@ class PathGraph {
   /// or doorstep. A node appears only if a link references it, so the
   /// document cannot name a node I merely heard about.
   ///
-  /// Only locally observed edges are exported. An imported prior belongs
-  /// to the collector that measured it and is not laundered through my
-  /// file — which also keeps a two-way exchange from feeding each side
-  /// its own data back. (Multi-collector merge is a separate problem,
-  /// deliberately deferred.)
+  /// Everything in the graph was observed by this radio, so every edge
+  /// with evidence is exported. Nothing is ever imported back: the graph
+  /// learns only from the air, and a session checkpoint is the backup.
   Map<String, dynamic> exportGraph({
     String? regionHint,
     String collector = 'meshtrax',
@@ -793,10 +749,11 @@ class PathGraph {
   ///
   /// This is NOT [exportGraph]. Export is the shareable file and
   /// withholds contact ingress, the contact mirror, my identity and my
-  /// doorstep by design. A session carries all of it, plus imported
-  /// priors and the in-memory hub counters, so a restore lands exactly
-  /// where the save left off. Keep it local — sharing one hands over a
-  /// position-tagged log of who this radio talks to.
+  /// doorstep by design. A session carries all of it, plus the in-memory
+  /// hub counters, so a restore lands exactly where the save left off.
+  /// It is the backup of what this radio learned. Keep it local —
+  /// sharing one hands over a position-tagged log of who this radio
+  /// talks to.
   ///
   /// Timestamps are raw arrival millis, not wire times: a session is a
   /// machine checkpoint, and converting them would only lose precision.
@@ -825,7 +782,6 @@ class PathGraph {
             if (e.value.lat != null) 'lat': e.value.lat,
             if (e.value.lon != null) 'lon': e.value.lon,
             if (e.value.lastHeard != null) 'last_heard': e.value.lastHeard,
-            if (e.value.region != null) 'region': e.value.region,
             if (e.value.pubkey != null) 'pubkey': e.value.pubkey,
           }
       ],
@@ -843,13 +799,6 @@ class PathGraph {
               'last_observed': e.value.lastObserved,
             if (e.value.measuredSnr != null)
               'measured_snr': e.value.measuredSnr,
-            if (e.value.importedSnr != null)
-              'imported_snr': e.value.importedSnr,
-            'imported_observations': e.value.importedObservations,
-            'imported_delivered': e.value.importedDelivered,
-            'imported_attempts': e.value.importedAttempts,
-            if (e.value.importedLastObserved != null)
-              'imported_last_observed': e.value.importedLastObserved,
           }
       ],
       'ingress': [
@@ -860,6 +809,7 @@ class PathGraph {
             'weight': e.value.weight,
             'last_seen': e.value.lastSeen,
             'tier': e.value.tier.name,
+            if (e.value.provenAt != null) 'proven_at': e.value.provenAt,
             if (e.value.observedLat != null) 'lat': e.value.observedLat,
             if (e.value.observedLon != null) 'lon': e.value.observedLon,
             if (e.value.uplinkSnr != null) 'uplink_snr': e.value.uplinkSnr,
@@ -902,14 +852,15 @@ class PathGraph {
 
     for (final raw in (document['nodes'] as List?) ?? const []) {
       final n = raw as Map;
+      // Checkpoints from before imports were removed may carry
+      // 'imported' nodes; they are plain observed nodes now.
       _store.nodes[n['hash'] as String] = NodeState(
-        source: NodeSource.values.byName(n['source'] as String),
+        source: n['source'] == 'advert' ? NodeSource.advert : NodeSource.observed,
         name: n['name'] as String?,
         role: n['role'] as String?,
         lat: (n['lat'] as num?)?.toDouble(),
         lon: (n['lon'] as num?)?.toDouble(),
         lastHeard: (n['last_heard'] as num?)?.toInt(),
-        region: n['region'] as String?,
         pubkey: n['pubkey'] as String?,
       );
     }
@@ -922,15 +873,7 @@ class PathGraph {
             ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
             ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
             ..lastObserved = (e['last_observed'] as num?)?.toInt()
-            ..measuredSnr = (e['measured_snr'] as num?)?.toDouble()
-            ..importedSnr = (e['imported_snr'] as num?)?.toDouble()
-            ..importedObservations =
-                (e['imported_observations'] as num?)?.toInt() ?? 0
-            ..importedDelivered =
-                (e['imported_delivered'] as num?)?.toInt() ?? 0
-            ..importedAttempts = (e['imported_attempts'] as num?)?.toInt() ?? 0
-            ..importedLastObserved =
-                (e['imported_last_observed'] as num?)?.toInt();
+            ..measuredSnr = (e['measured_snr'] as num?)?.toDouble();
     }
     for (final raw in (document['ingress'] as List?) ?? const []) {
       final i = raw as Map;
@@ -942,6 +885,7 @@ class PathGraph {
         observedLat: (i['lat'] as num?)?.toDouble(),
         observedLon: (i['lon'] as num?)?.toDouble(),
       )
+            ..provenAt = (i['proven_at'] as num?)?.toInt()
             ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()
             ..downlinkSnr = (i['downlink_snr'] as num?)?.toDouble()
             ..finalCount = (i['final_count'] as num?)?.toInt() ?? 0
@@ -975,22 +919,27 @@ class PathGraph {
   }
 
   /// Best path to this contact: direct | bidirectional route | flood.
+  /// Routes start and end only at doorsteps proven in the sending
+  /// direction unless [PathGraphConfig.allowInferredEndpoints] is set.
   PathResult findPath(String contactPubkey) {
     final now = _arrivalMillis;
 
-    // Tier 1: fresh direct-reception evidence → empty path wins.
-    if (_evidence.hasFreshDirect(contactPubkey, now)) {
+    // Tier 1: fresh (proven) direct-reception evidence → empty path wins.
+    if (_evidence.hasFreshDirect(contactPubkey, now,
+        provenOnly: _provenOnly)) {
       return const PathResult.direct();
     }
 
     // Tier 2: bidirectional route over candidate lists.
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final egress = _evidence.candidatesFor(self, now, isSelf: true);
-    final ingress =
-        _evidence.candidatesFor(contactPubkey, now, isSelf: false);
-    if (egress.isEmpty || ingress.isEmpty) {
+    final egress = _egressCandidates(self, now);
+    final ingress = _ingressCandidates(contactPubkey, now);
+    if (egress == null || ingress == null) {
       return const PathResult.flood(FloodReason.noEvidence);
+    }
+    if (egress.isEmpty || ingress.isEmpty) {
+      return const PathResult.flood(FloodReason.noProvenEndpoint);
     }
 
     final route = PathFinder(estimator.config, estimator).search(
@@ -1002,7 +951,7 @@ class PathGraph {
     if (route == null) {
       return const PathResult.flood(FloodReason.noBidirectionalRoute);
     }
-    return PathResult.path(_hopsToBytes(route.hops), route.estDelivery);
+    return _toResult(route);
   }
 
   PathGraphCounters get counters => PathGraphCounters(

@@ -53,10 +53,9 @@ class RetentionReport {
 ///
 /// Infrastructure is protected: repeater links do not get worse because
 /// nobody used them this week, so an edge with attempt counts (we sent
-/// through it, traced it, or a handshake proved it) or an imported prior
-/// is never aged out by idleness. Only unconfirmed hearsay ages, plus
-/// the genuinely perishable doorstep lists — people move even though
-/// repeaters don't.
+/// through it, traced it, or a handshake proved it) is never aged out by
+/// idleness. Only unconfirmed hearsay ages, plus the genuinely
+/// perishable doorstep lists — people move even though repeaters don't.
 class Retention {
   const Retention(this._store, this._evidence, this._estimator);
 
@@ -67,7 +66,7 @@ class Retention {
   static const _trafficEpsilon = 0.05;
   static const _dayMillis = 24 * 60 * 60 * 1000;
 
-  static bool _edgeProtected(EdgeState e) => e.n > 0 || e.hasImport;
+  static bool _edgeProtected(EdgeState e) => e.n > 0 || e.measuredSnr != null;
 
   RetentionReport sweep(int nowMillis, RetentionPolicy policy) {
     var edgesAged = 0, nodesAged = 0, ingressAged = 0, positionsCleared = 0;
@@ -136,7 +135,7 @@ class Retention {
   }
 
   /// Backstop when the age pass cannot keep up. Unconfirmed hearsay goes
-  /// first, lightest traffic first; attempt-counted and imported rows are
+  /// first, lightest traffic first; attempt-counted and traced rows are
   /// evicted last, and only because a hard cap has to be hard.
   int _capEdges(int nowMillis, int maxEdges) {
     final over = _store.edges.length - maxEdges;
@@ -179,39 +178,16 @@ class Retention {
     return over;
   }
 
-  /// The privacy escape hatch: wipe everything this radio learned and
-  /// keep the community starter map. Imported priors survive (they go
-  /// separately, by region); local counters on an imported edge are
-  /// zeroed rather than deleted so the prior stays intact.
+  /// The privacy escape hatch: wipe everything this radio learned. The
+  /// graph is only ever what the air taught it, so this is a clean
+  /// slate — it relearns from the next packet.
   void clearLearnedData() {
     for (final key in _store.edges.keys.toList()) {
-      final e = _store.edges[key]!;
-      if (!e.hasImport) {
-        _store.removeEdge(key.$1, key.$2);
-        continue;
-      }
-      e
-        ..s = 0
-        ..n = 0
-        ..trafficWeight = 0
-        ..obsCount = 0
-        ..lastObserved = null
-        ..measuredSnr = null
-        ..source = 'imported';
-      _store.markEdgeDirty(key.$1, key.$2);
+      _store.removeEdge(key.$1, key.$2);
     }
-
-    final referenced = _referencedNodes();
     for (final hash in _store.nodes.keys.toList()) {
-      final n = _store.nodes[hash]!;
-      if (n.source == NodeSource.imported || referenced.contains(hash)) {
-        n.lastHeard = null;
-        _store.markNodeDirty(hash);
-        continue;
-      }
       _store.removeNode(hash);
     }
-
     for (final key in _evidence.entries.keys.toList()) {
       _evidence.removeEntry(key);
     }

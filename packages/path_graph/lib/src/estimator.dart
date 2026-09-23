@@ -23,7 +23,15 @@ class PathGraphConfig {
     this.slashEpochMinutes = 2,
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
+    this.allowInferredEndpoints = false,
   });
+
+  /// Let a route start or end at a doorstep that was only ever heard
+  /// (a reciprocity guess). Off by default: a repeater that hears me is
+  /// proven by a delivered send, a trace or a Discover answer, and one
+  /// that reaches a contact by a delivered send to them. The harness
+  /// turns this on to compare against the guess.
+  final bool allowInferredEndpoints;
 
   /// Hop tax: an extra hop hurts like ×β reliability.
   final double beta;
@@ -76,7 +84,11 @@ class PathGraphConfig {
 
   double get tau => -math.log(beta);
 
-  PathGraphConfig copyWith({double? beta, double? pThreshold, int? maxHops}) =>
+  PathGraphConfig copyWith(
+          {double? beta,
+          double? pThreshold,
+          int? maxHops,
+          bool? allowInferredEndpoints}) =>
       PathGraphConfig(
         beta: beta ?? this.beta,
         trafficHalfLifeHours: trafficHalfLifeHours,
@@ -95,6 +107,8 @@ class PathGraphConfig {
         slashEpochMinutes: slashEpochMinutes,
         slashFactorProven: slashFactorProven,
         slashFactorInferred: slashFactorInferred,
+        allowInferredEndpoints:
+            allowInferredEndpoints ?? this.allowInferredEndpoints,
       );
 }
 
@@ -120,44 +134,15 @@ class Estimator {
     return ((db - config.snrZeroQualityDb) / span).clamp(0.0, 1.0);
   }
 
-  /// Someone else's traffic count for this direction, decayed from
-  /// *their* last observation. Feeds confidence only — never p.
-  double importedTraffic(EdgeState e, int nowMillis) {
-    final last = e.importedLastObserved;
-    if (e.importedObservations == 0) return 0;
-    final obs = e.importedObservations.toDouble();
-    if (last == null) return obs;
-    final hours = (nowMillis - last) / (1000 * 60 * 60);
-    if (hours <= 0) return obs;
-    return obs * math.pow(0.5, hours / config.trafficHalfLifeHours);
-  }
+  /// Prior quality q₀ for THIS direction: a traced SNR when we have one,
+  /// else the passive default.
+  double priorQuality(EdgeState e) =>
+      e.measuredSnr != null ? snrQuality(e.measuredSnr!) : config.passiveDefaultQ;
 
-  /// Prior quality q₀ for THIS direction: my own measured SNR (trace)
-  /// outranks an imported measurement, which outranks the passive
-  /// default. An import carrying both a measured SNR and a delivery
-  /// record averages the two — they are independent readings of the
-  /// same link.
-  double priorQuality(EdgeState e) {
-    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
-    var sum = 0.0, parts = 0;
-    if (e.importedSnr != null) {
-      sum += snrQuality(e.importedSnr!);
-      parts++;
-    }
-    if (e.importedAttempts > 0) {
-      // Beta-smoothed toward the passive default so a lone 1/1 does not
-      // read as certainty.
-      sum += (e.importedDelivered + config.passiveDefaultQ * config.n0Min) /
-          (e.importedAttempts + config.n0Min);
-      parts++;
-    }
-    return parts == 0 ? config.passiveDefaultQ : sum / parts;
-  }
-
-  /// Prior confidence n₀: how often this direction has been seen — by
-  /// me or by the collector I imported from — scales trust in q₀.
+  /// Prior confidence n₀: how often this direction has been seen scales
+  /// trust in q₀.
   double priorConfidence(EdgeState e, int nowMillis) {
-    final t = decayedTraffic(e, nowMillis) + importedTraffic(e, nowMillis);
+    final t = decayedTraffic(e, nowMillis);
     final scale = t / (t + config.trafficConfidenceHalf);
     return config.n0Min + (config.n0Max - config.n0Min) * scale;
   }
@@ -170,7 +155,8 @@ class Estimator {
 
   /// Any evidence at all? (Nodes minted by a single sighting shouldn't
   /// route on the bare passive default.)
-  bool hasEvidence(EdgeState e) => e.n > 0 || e.obsCount > 0 || e.hasImport;
+  bool hasEvidence(EdgeState e) =>
+      e.n > 0 || e.obsCount > 0 || e.measuredSnr != null;
 
   /// Usable in this direction.
   bool usable(EdgeState e, int nowMillis) =>

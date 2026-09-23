@@ -5,11 +5,19 @@ import 'evidence.dart';
 import 'graph_store.dart';
 
 class RouteFound {
-  const RouteFound(this.hops, this.estDelivery);
+  const RouteFound(this.hops, this.estDelivery, this.hopProbabilities,
+      {required this.egressProven, required this.ingressProven});
 
   /// Repeater hash hex per hop, first hop = my doorstep.
   final List<String> hops;
   final double estDelivery;
+
+  /// Calibrated p of each between-hop link, hops[i]→hops[i+1].
+  final List<double> hopProbabilities;
+
+  /// Whether each end of the route was proven in the sending direction.
+  final bool egressProven;
+  final bool ingressProven;
 }
 
 /// Multi-source/multi-target Dijkstra over the bidirectional-usable
@@ -141,12 +149,17 @@ class PathFinder {
         targets.where((t) => t.repeaterHash == hops.last).firstOrNull;
     var delivery = (source == null ? 1.0 : _candidateConfidence(source)) *
         (target == null ? 1.0 : _candidateConfidence(target));
+    final hopProbabilities = <double>[];
     for (var i = 0; i < hops.length - 1; i++) {
       final e = edges[(hops[i], hops[i + 1])];
-      if (e != null) {
-        delivery *= estimator.calibratedP(e, nowMillis).clamp(0.01, 1.0);
-      }
+      final p = e == null
+          ? 1.0
+          : estimator.calibratedP(e, nowMillis).clamp(0.01, 1.0);
+      hopProbabilities.add(p);
+      delivery *= p;
     }
-    return RouteFound(hops, delivery);
+    return RouteFound(hops, delivery, hopProbabilities,
+        egressProven: source?.proven ?? false,
+        ingressProven: target?.proven ?? false);
   }
 }
