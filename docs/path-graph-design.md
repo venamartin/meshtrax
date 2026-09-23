@@ -1408,10 +1408,12 @@ hooks). Accepted findings still to fold in at implementation planning:
    is a primary scenario. Direction caveat stands: hearing them proves
    the downlink, the uplink is a reciprocity guess until their ACK — the
    ladder validates at the cost of one retry.
-4. **`path_history_service` — DECIDED: remove entirely** (it is broken and
-   confusing; all in-app path generation is removed — the module is the
-   sole source of truth). Salvage findings from reading the code
-   (2026-08-05):
+4. **`path_history_service` — DONE on master (PR #121, 2026-09-23)**:
+   the service, route rotation, advert-path reversal and
+   `PathManagementDialog` are gone; the app sends on the firmware's own
+   route and floods on retry, and the module is the sole source of any
+   future path advice. Original decision and salvage findings from reading
+   the code (2026-08-05):
    * **Hook points = migration map.** Every PHS call site is where a
      module input belongs: `_handlePathUpdated` (0x81 + contact sync) →
      `observePath` of the firmware-learned out_path (forward-proven);

@@ -17,8 +17,6 @@ import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
-import 'package:meshtrax/services/path_history_service.dart';
-import 'package:meshtrax/services/storage_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:path_graph/path_graph.dart';
 
@@ -38,12 +36,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PrefsManager.initialize();
 
-  final storage = StorageService();
   connector = MeshCoreConnector();
-  connector.initialize(
-    retryService: MessageRetryService(),
-    pathHistoryService: PathHistoryService(storage),
-  );
+  connector.initialize(retryService: MessageRetryService());
 
   graph = PathGraph(NativeDatabase(File('path_lab.db')));
   await graph.init();
