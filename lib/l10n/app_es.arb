@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Notificaciones de Anuncios",
   "appSettings_advertisementNotificationsSubtitle": "Mostrar notificación cuando se descubren nuevos nodos",
   "appSettings_messaging": "Mensajería",
-  "appSettings_clearPathOnMaxRetry": "Borrar Camino en Max Reintentos",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Restablecer la ruta de contacto después de 5 intentos de envío fallidos",
-  "appSettings_pathsWillBeCleared": "Los caminos se limpiarán después de 5 intentos fallidos.",
-  "appSettings_pathsWillNotBeCleared": "Las rutas no se eliminarán automáticamente.",
-  "appSettings_autoRouteRotation": "Rotación de Ruta Automática",
-  "appSettings_autoRouteRotationSubtitle": "Alternar entre las mejores rutas y el modo inundación",
-  "appSettings_autoRouteRotationEnabled": "Rotación de ruta automática habilitada",
-  "appSettings_autoRouteRotationDisabled": "Rotación de ruta automática desactivada",
   "appSettings_battery": "Batería",
   "appSettings_batteryChemistry": "Química de la batería",
   "appSettings_batteryChemistryPerDevice": "Configuración por dispositivo ({deviceName})",
@@ -551,8 +543,6 @@
   "chat_routingMode": "Modo de enrutamiento",
   "chat_autoUseSavedPath": "Auto (usar la ruta guardada)",
   "chat_forceFloodMode": "Modo Inundación Forzado",
-  "chat_recentAckPaths": "Rutas de ACK Recientes (tocar para usar):",
-  "chat_pathHistoryFull": "El historial de rutas está completo. Eliminar entradas para añadir nuevas.",
   "chat_hopSingular": "salta",
   "chat_hopPlural": "salta",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -563,10 +553,6 @@
       }
     }
   },
-  "chat_successes": "Éxitos",
-  "chat_removePath": "Eliminar ruta",
-  "chat_noPathHistoryYet": "Aún no hay historial de rutas.\nEnvía un mensaje para descubrir rutas.",
-  "chat_pathActions": "Acciones de Ruta:",
   "chat_setCustomPath": "Establecer Ruta Personalizada",
   "chat_setCustomPathSubtitle": "Especificar manualmente la ruta de enrutamiento",
   "chat_clearPath": "Limpiar Ruta",
@@ -576,20 +562,6 @@
   "chat_floodModeEnabled": "El modo de inundación está habilitado. Desactívalo mediante el icono de enrutamiento en la barra de herramientas de la aplicación.",
   "chat_fullPath": "Ruta completa",
   "chat_pathDetailsNotAvailable": "Los detalles de la ruta aún no están disponibles. Intenta enviar un mensaje para refrescar.",
-  "chat_pathSetHops": "Ruta establecida: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Guardado localmente. Conéctate para sincronizar.",
-  "chat_pathDeviceConfirmed": "Dispositivo confirmado.",
-  "chat_pathDeviceNotConfirmed": "Dispositivo aún no confirmado.",
   "chat_type": "Escribe",
   "chat_path": "Ruta",
   "chat_publicKey": "Clave Pública",
@@ -852,14 +824,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Usando {count} {count, plural, =1{hop} other{hops}} ruta",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },
@@ -1644,7 +1608,6 @@
   "scanner_enableBluetooth": "Habilitar Bluetooth",
   "snrIndicator_nearByRepeaters": "Repetidores cercanos",
   "snrIndicator_lastSeen": "Visto por última vez",
-  "chat_ShowAllPaths": "Mostrar todos los caminos",
   "settings_clientRepeatFreqWarning": "Para la comunicación fuera de la red, se requiere una frecuencia de 433, 869 o 918 MHz.",
   "settings_clientRepeat": "Repetir sin conexión",
   "settings_clientRepeatSubtitle": "Permita que este dispositivo repita los paquetes de red para otros usuarios.",
@@ -1923,16 +1886,6 @@
   "tcpConnectionFailed": "Error en la conexión TCP: {error}",
   "map_showDiscoveryContacts": "Mostrar Contactos de Descubrimiento",
   "map_setAsMyLocation": "Establecer mi ubicación",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacySubtitle": "Controlar qué información se comparte.",
   "settings_allowByContact": "Permitir por banderas de contacto",
   "settings_denyAll": "Denegar todo",
@@ -1955,17 +1908,8 @@
   "contact_teleBaseSubtitle": "Permitir el intercambio de nivel de batería y telemetría básica",
   "contact_teleEnv": "Entorno de Telemetría",
   "contact_teleEnvSubtitle": "Permitir el intercambio de datos de sensores de entorno",
-  "appSettings_initialRouteWeight": "Peso inicial de la ruta",
-  "appSettings_maxRouteWeight": "Peso máximo permitido para la ruta",
-  "appSettings_initialRouteWeightSubtitle": "Peso inicial para rutas recién descubiertas",
-  "appSettings_maxRouteWeightSubtitle": "Peso máximo que una ruta puede acumular gracias a entregas exitosas.",
-  "appSettings_routeWeightSuccessIncrement": "Incremento de peso para el éxito",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Peso añadido a una ruta después de una entrega exitosa.",
-  "appSettings_routeWeightFailureDecrement": "Reducción del peso asociado al fallo",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Peso retirado de un camino después de un intento de entrega fallido.",
   "appSettings_maxMessageRetries": "Número máximo de reintentos de envío de mensajes",
   "appSettings_maxMessageRetriesSubtitle": "Número de intentos de reintento antes de marcar un mensaje como fallido.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Modo de telemetría actualizado",
   "map_showOverlaps": "Superposiciones de tecla repetidora",
   "map_runTraceWithReturnPath": "Volver atrás por el mismo camino.",

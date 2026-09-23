@@ -766,68 +766,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get appSettings_messaging => 'Komuniciranje';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Ponovite pot do cilja na največjem štetju';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Ponovi pot zimske obveščevalne poti po 5 neuspešnih poskusih pošiljanja';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Počisti pot po 5 neuspešnih poskusih.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Poti ne bodo samodejno čiščene.';
-
-  @override
-  String get appSettings_autoRouteRotation =>
-      'Avtomatsko rotacija prenosne poti';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Menjaj med boljšo potjo in flood načinom';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Samodejno krmilno rotiranje omogočeno';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Samodejno krmilno rotiranje je onemogočeno';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Največja dovoljena teža poti';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Največja teža, ki jo lahko pot doseže s uspešnimi dostavnami.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Izvirna teža poti';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Izguba teže za nove, odkriti poti';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Učinkovitost: povečanje';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Težava, dodana poti po uspešni dostavi';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Zmanjšanje teže, ki je povezana s pomanjkanjem';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Težo, ki ni bila uspešno dostavljena, odstranili s poti.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Najve število poskusov pošiljanja sporočil';
 
@@ -842,11 +780,6 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Baterija';
@@ -1656,9 +1589,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_pathManagement => 'Upravljanje poti';
 
   @override
-  String get chat_ShowAllPaths => 'Prikaži vse poti';
-
-  @override
   String get chat_routingMode => 'Navodilo za usmerjevalni način';
 
   @override
@@ -1666,13 +1596,6 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Nasilje obvezati v način';
-
-  @override
-  String get chat_recentAckPaths => 'Nedavni poti ACK (tap za uporabo):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Zapiske o poti so popolni. Izbriši vnose, da dodaš nove.';
 
   @override
   String get chat_hopSingular => 'skok';
@@ -1690,19 +1613,6 @@ class AppLocalizationsSl extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'Uspešni';
-
-  @override
-  String get chat_removePath => 'Izbriši pot';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Ni shranjenih poti.\nPošlji sporočilo za odkrivanje poti.';
-
-  @override
-  String get chat_pathActions => 'Potni ukazi:';
 
   @override
   String get chat_setCustomPath => 'Nastavi Prilozeno Pot';
@@ -1734,27 +1644,6 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Podrobnosti poti zaenkrat niso na voljo. Poskusite poslati sporočilo za osvežitev.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Pot nastavljen: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Shrano lokalno. Povežite se za sinhronizacijo.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Naprave potrjeno.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Naprave še niso potrdile.';
 
   @override
   String get chat_type => 'Vnesite';
@@ -2191,17 +2080,6 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Trenutna pot: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Uporablja $count $_temp0 pot';
   }
 
   @override

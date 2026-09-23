@@ -776,69 +776,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appSettings_messaging => 'Обмен сообщениями';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Сбросить маршрут после максимального числа попыток';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Сбросить маршрут контакта после 5 неудачных попыток отправки';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Маршруты будут сброшены после 5 неудачных попыток';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Маршруты не будут автоматически сбрасываться';
-
-  @override
-  String get appSettings_autoRouteRotation =>
-      'Автоматическое переключение маршрутов';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Циклически переключаться между лучшими маршрутами и режимом рассылки';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Автоматическое переключение маршрутов включено';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Автоматическое переключение маршрутов отключено';
-
-  @override
-  String get appSettings_maxRouteWeight =>
-      'Максимальный допустимый вес маршрута';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Максимальный вес, который может быть перевезён по определённому маршруту при успешных доставках.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Начальный вес маршрута';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Начальный вес для новых, только что открытых маршрутов';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Увеличение веса успеха';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Вес, добавленный к маршруту после успешной доставки.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Уменьшение веса неудачи';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Вес, который был удален с пути после неудачной доставки.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Максимальное количество повторных попыток отправки сообщения';
 
@@ -853,11 +790,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Батарея';
@@ -1669,9 +1601,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chat_pathManagement => 'Управление маршрутами';
 
   @override
-  String get chat_ShowAllPaths => 'Показать все пути';
-
-  @override
   String get chat_routingMode => 'Режим маршрутизации';
 
   @override
@@ -1679,14 +1608,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Принудительный режим рассылки';
-
-  @override
-  String get chat_recentAckPaths =>
-      'Недавние подтверждённые маршруты (нажмите, чтобы использовать):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'История маршрутов заполнена. Удалите записи, чтобы добавить новые.';
 
   @override
   String get chat_hopSingular => 'хоп';
@@ -1706,19 +1627,6 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'успешно';
-
-  @override
-  String get chat_removePath => 'Удалить маршрут';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'История маршрутов пока пуста.\nОтправьте сообщение, чтобы обнаружить маршруты.';
-
-  @override
-  String get chat_pathActions => 'Действия с маршрутом:';
 
   @override
   String get chat_setCustomPath => 'Указать маршрут вручную';
@@ -1751,29 +1659,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Детали маршрута ещё недоступны. Попробуйте отправить сообщение для обновления.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'хопов',
-      many: 'хопов',
-      few: 'хопа',
-      one: 'хоп',
-    );
-    return 'Маршрут установлен: $hopCount $_temp0 — $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Сохранено локально. Подключитесь для синхронизации.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Подтверждено устройством.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Ещё не подтверждено устройством.';
 
   @override
   String get chat_type => 'Тип';
@@ -2208,19 +2093,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Текущий маршрут: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'хопов',
-      many: 'хопов',
-      few: 'хопа',
-      one: 'хоп',
-    );
-    return 'Используется маршрут из $count $_temp0';
   }
 
   @override

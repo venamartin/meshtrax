@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Opozorila o oglasih",
   "appSettings_advertisementNotificationsSubtitle": "Pokaži obvestilo, ko so najdene nove naprave.",
   "appSettings_messaging": "Komuniciranje",
-  "appSettings_clearPathOnMaxRetry": "Ponovite pot do cilja na največjem štetju",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Ponovi pot zimske obveščevalne poti po 5 neuspešnih poskusih pošiljanja",
-  "appSettings_pathsWillBeCleared": "Počisti pot po 5 neuspešnih poskusih.",
-  "appSettings_pathsWillNotBeCleared": "Poti ne bodo samodejno čiščene.",
-  "appSettings_autoRouteRotation": "Avtomatsko rotacija prenosne poti",
-  "appSettings_autoRouteRotationSubtitle": "Menjaj med boljšo potjo in flood načinom",
-  "appSettings_autoRouteRotationEnabled": "Samodejno krmilno rotiranje omogočeno",
-  "appSettings_autoRouteRotationDisabled": "Samodejno krmilno rotiranje je onemogočeno",
   "appSettings_battery": "Baterija",
   "appSettings_batteryChemistry": "Kemija baterije",
   "appSettings_batteryChemistryPerDevice": "Nastavitev za napravo ({deviceName})",
@@ -551,8 +543,6 @@
   "chat_routingMode": "Navodilo za usmerjevalni način",
   "chat_autoUseSavedPath": "Avto (uporabi shranjeno pot)",
   "chat_forceFloodMode": "Nasilje obvezati v način",
-  "chat_recentAckPaths": "Nedavni poti ACK (tap za uporabo):",
-  "chat_pathHistoryFull": "Zapiske o poti so popolni. Izbriši vnose, da dodaš nove.",
   "chat_hopSingular": "skok",
   "chat_hopPlural": "skokov",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -563,10 +553,6 @@
       }
     }
   },
-  "chat_successes": "Uspešni",
-  "chat_removePath": "Izbriši pot",
-  "chat_noPathHistoryYet": "Ni shranjenih poti.\nPošlji sporočilo za odkrivanje poti.",
-  "chat_pathActions": "Potni ukazi:",
   "chat_setCustomPath": "Nastavi Prilozeno Pot",
   "chat_setCustomPathSubtitle": "Ročno določite potniško pot.",
   "chat_clearPath": "Počisti pot",
@@ -576,20 +562,6 @@
   "chat_floodModeEnabled": "Narejena je bila omrežna modaliteta. Vklopi jo znova preko ikone v meniju aplikacije.",
   "chat_fullPath": "Polna pot",
   "chat_pathDetailsNotAvailable": "Podrobnosti poti zaenkrat niso na voljo. Poskusite poslati sporočilo za osvežitev.",
-  "chat_pathSetHops": "Pot nastavljen: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Shrano lokalno. Povežite se za sinhronizacijo.",
-  "chat_pathDeviceConfirmed": "Naprave potrjeno.",
-  "chat_pathDeviceNotConfirmed": "Naprave še niso potrdile.",
   "chat_type": "Vnesite",
   "chat_path": "Pot",
   "chat_publicKey": "Ključ javnega tipa",
@@ -852,14 +824,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Uporablja {count} {count, plural, =1{hop} other{hops}} pot",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },
@@ -1616,7 +1580,6 @@
   "scanner_bluetoothOff": "Bluetooth je izklopljen",
   "snrIndicator_lastSeen": "Zadnjič videno",
   "snrIndicator_nearByRepeaters": "Bližnji ponovitelji",
-  "chat_ShowAllPaths": "Prikaži vse poti",
   "settings_clientRepeatFreqWarning": "Za ponovni prenos na brezžični način so potrebne frekvence 433, 869 ali 918 MHz.",
   "settings_clientRepeatSubtitle": "Omogočite temu naprave, da ponavlja paketne sporočila za druge.",
   "settings_clientRepeat": "Neovadno ponavljanje",
@@ -1895,16 +1858,6 @@
   "tcpConnectionFailed": "Napaka pri povezavi TCP: {error}",
   "map_showDiscoveryContacts": "Prikaži odkritja kontaktov",
   "map_setAsMyLocation": "Nastavite to kot mojo lokacijo",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_privacy": "Nastavitve zasebnosti",
   "settings_privacySettingsDescription": "Izberite, katere informacije vaš naprava deli z drugimi.",
   "settings_telemetryBaseMode": "Osnovni način telemetrije",
@@ -1927,17 +1880,8 @@
   "contact_teleEnv": "Okolje telemetrije",
   "contact_teleEnvSubtitle": "Dovoli deljenje podatkov okoljskih senzorjev",
   "contact_teleLocSubtitle": "Dovoli deljenje podatkov o lokaciji",
-  "appSettings_maxRouteWeightSubtitle": "Največja teža, ki jo lahko pot doseže s uspešnimi dostavnami.",
-  "appSettings_initialRouteWeight": "Izvirna teža poti",
-  "appSettings_initialRouteWeightSubtitle": "Izguba teže za nove, odkriti poti",
-  "appSettings_maxRouteWeight": "Največja dovoljena teža poti",
-  "appSettings_routeWeightSuccessIncrement": "Učinkovitost: povečanje",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Težava, dodana poti po uspešni dostavi",
-  "appSettings_routeWeightFailureDecrement": "Zmanjšanje teže, ki je povezana s pomanjkanjem",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Težo, ki ni bila uspešno dostavljena, odstranili s poti.",
   "appSettings_maxMessageRetries": "Najve število poskusov pošiljanja sporočil",
   "appSettings_maxMessageRetriesSubtitle": "Število poskusov ponovnega poslanja, preden se sporočilo označuje kot neuspešno",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Način telemetrije posodobljen",
   "map_showOverlaps": "Prekrivanje ključa ponovnega predvajanja",
   "map_runTraceWithReturnPath": "Vrni se nazaj po isti poti.",

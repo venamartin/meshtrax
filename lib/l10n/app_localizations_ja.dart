@@ -744,58 +744,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appSettings_messaging => 'メッセージング';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'マックスリトライでの明確な手順';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      '5回送信に失敗した場合、連絡経路をリセットする';
-
-  @override
-  String get appSettings_pathsWillBeCleared => '5回失敗した後、経路が再開されます。';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared => 'パスは自動で削除されません。';
-
-  @override
-  String get appSettings_autoRouteRotation => '自動ルートの切り替え';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle => '最適なルートと、洪水モードを切り替える';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled => '自動ルートの切り替え機能が有効になっています';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled => '自動ルートの変更機能が無効になっています。';
-
-  @override
-  String get appSettings_maxRouteWeight => '最大ルート重量';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'ある経路が、成功裏に配送された場合に、積み上げられる最大重量';
-
-  @override
-  String get appSettings_initialRouteWeight => '初期ルートの重み';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle => '新たに発見された経路の初期重量';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement => '成功時の重み増加';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      '配送が成功した場合に、経路に追加される重量';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement => '失敗時の重み減少';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      '配送に失敗した際に、経路から取り除かれた重量';
-
-  @override
   String get appSettings_maxMessageRetries => '最大メッセージ再試行回数';
 
   @override
@@ -809,11 +757,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'バッテリー';
@@ -1609,9 +1552,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_pathManagement => '経路管理';
 
   @override
-  String get chat_ShowAllPaths => 'すべての経路を表示';
-
-  @override
   String get chat_routingMode => 'ルーティングモード';
 
   @override
@@ -1619,12 +1559,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => '強制的に洪水モードを起動';
-
-  @override
-  String get chat_recentAckPaths => '最近使用したACKパス（タップして使用）：';
-
-  @override
-  String get chat_pathHistoryFull => 'パスの履歴は完全です。エントリを削除して、新しいものを追加できます。';
 
   @override
   String get chat_hopSingular => 'ジャンプ';
@@ -1642,18 +1576,6 @@ class AppLocalizationsJa extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => '成功事例';
-
-  @override
-  String get chat_removePath => 'パスを削除する';
-
-  @override
-  String get chat_noPathHistoryYet => 'まだ履歴はありません。\nパスを特定するためにメッセージを送信してください。';
-
-  @override
-  String get chat_pathActions => 'パスの操作：';
 
   @override
   String get chat_setCustomPath => 'カスタムパスを設定';
@@ -1683,26 +1605,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       '経路の詳細については、まだ情報がありません。「リフレッシュ」ボタンを押して、再度お試しください。';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Path set: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally => 'ローカルで保存。同期のために接続する。';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'デバイスの確認済み。';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'デバイスの確認はまだできていません。';
 
   @override
   String get chat_type => '種類';
@@ -2125,17 +2027,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return '現在のパス: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'ホップ',
-      one: 'ホップ',
-    );
-    return '$count $_temp0のパスを使用';
   }
 
   @override

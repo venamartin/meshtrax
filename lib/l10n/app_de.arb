@@ -190,14 +190,6 @@
   "appSettings_advertisementNotifications": "Ankündigungsbenachrichtigungen",
   "appSettings_advertisementNotificationsSubtitle": "Zeige Benachrichtigung, wenn neue Knoten entdeckt werden.",
   "appSettings_messaging": "Nachrichten",
-  "appSettings_clearPathOnMaxRetry": "Lösche Pfade bei Max Wiederholungsversuchen",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Zurücksetzen der Kontaktpfade nach 5 fehlgeschlagenen Sendeabbrüchen",
-  "appSettings_pathsWillBeCleared": "Die Pfade werden nach 5 fehlgeschlagenen Versuchen gelöscht.",
-  "appSettings_pathsWillNotBeCleared": "Die Pfade werden nicht automatisch gelöscht.",
-  "appSettings_autoRouteRotation": "Automatische Routenrotation",
-  "appSettings_autoRouteRotationSubtitle": "Wechseln zwischen den besten Pfaden und dem Fluten",
-  "appSettings_autoRouteRotationEnabled": "Automatische Routenrotation aktiviert",
-  "appSettings_autoRouteRotationDisabled": "Automatische Routenrotation deaktiviert",
   "appSettings_battery": "Akku",
   "appSettings_batteryChemistry": "Batteriechemie",
   "appSettings_batteryChemistryPerDevice": "Konfiguriert pro Gerät ({deviceName})",
@@ -551,8 +543,6 @@
   "chat_routingMode": "Routenmodus",
   "chat_autoUseSavedPath": "Automatisch (gespeicherten Pfad verwenden)",
   "chat_forceFloodMode": "Flut-Modus erzwingen",
-  "chat_recentAckPaths": "Aktuelle ACK-Pfade (antippen, um zu verwenden):",
-  "chat_pathHistoryFull": "Die Pfadhistorie ist voll. Entferne Einträge, um neue hinzuzufügen.",
   "chat_hopSingular": "Sprung",
   "chat_hopPlural": "Sprünge",
   "chat_hopsCount": "{count} {count, plural, =1{Sprung} other{Sprünge}}",
@@ -563,10 +553,6 @@
       }
     }
   },
-  "chat_successes": "Erfolgreich",
-  "chat_removePath": "Pfad entfernen",
-  "chat_noPathHistoryYet": "Keine Pfadhistorie vorhanden.\nSende eine Nachricht, um Pfade zu entdecken.",
-  "chat_pathActions": "Pfadaktionen:",
   "chat_setCustomPath": "Lege benutzerdefinierten Pfad fest",
   "chat_setCustomPathSubtitle": "Manuellen Routenpfad festlegen",
   "chat_clearPath": "Pfad zurücksetzen",
@@ -576,20 +562,6 @@
   "chat_floodModeEnabled": "Flutmodus aktiviert.",
   "chat_fullPath": "Vollständiger Pfad",
   "chat_pathDetailsNotAvailable": "Die Pfaddetails sind noch nicht verfügbar. Versuchen Sie, eine Nachricht zu senden, um zu aktualisieren.",
-  "chat_pathSetHops": "Pfad gesetzt: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Lokal Gespeichert. Bitte Verbinden zum Synchronisieren.",
-  "chat_pathDeviceConfirmed": "Gerät bestätigt.",
-  "chat_pathDeviceNotConfirmed": "Gerät noch nicht bestätigt.",
   "chat_type": "Gebe ein",
   "chat_path": "Pfad",
   "chat_publicKey": "Öffentlicher Schlüssel",
@@ -852,14 +824,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Verwenden Sie {count} {count, plural, =1{Hop} other{Hops}} Pfad",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },
@@ -1647,7 +1611,6 @@
   "scanner_enableBluetooth": "Bluetooth aktivieren",
   "snrIndicator_lastSeen": "Zuletzt gesehen",
   "snrIndicator_nearByRepeaters": "In der Nähe befindliche Repeater",
-  "chat_ShowAllPaths": "Alle Pfade anzeigen",
   "settings_clientRepeat": "Wiederholung, ohne Stromanschluss",
   "settings_clientRepeatFreqWarning": "Die Kommunikation ohne Stromversorgung erfordert Frequenzen von 433, 869 oder 918 MHz.",
   "settings_clientRepeatSubtitle": "Ermöglichen Sie diesem Gerät, Mesh-Pakete für andere zu wiederholen.",
@@ -1923,16 +1886,6 @@
   "tcpConnectionFailed": "Fehler beim TCP-Verbindungsaufbau: {error}",
   "map_showDiscoveryContacts": "Entdeckungs-Kontakte anzeigen",
   "map_setAsMyLocation": "Als meine aktuelle Position festlegen",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "settings_allowByContact": "Zulassen durch Kontaktflaggen",
   "settings_privacy": "Datenschutzeinstellungen",
   "settings_allowAll": "Alles zulassen",
@@ -1955,17 +1908,8 @@
   "contact_lastSeen": "Zuletzt gesehen",
   "contact_clearChat": "Chat löschen",
   "contact_teleEnvSubtitle": "Teilen von Umgebungsensordaten zulassen",
-  "appSettings_initialRouteWeightSubtitle": "Ausgangsgewicht für neu entdeckte Pfade",
-  "appSettings_maxRouteWeightSubtitle": "Maximales Gewicht, das ein Weg durch erfolgreiche Lieferungen erreichen kann.",
-  "appSettings_maxRouteWeight": "Maximale Gesamtstreckenlänge",
-  "appSettings_initialRouteWeight": "Anfangs-Streckengewicht",
-  "appSettings_routeWeightSuccessIncrement": "Erhöhung des Erfolgsgewichts",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Gewicht, das einem Pfad nach erfolgreicher Lieferung hinzugefügt wird.",
-  "appSettings_routeWeightFailureDecrement": "Reduzierung des Gewichts bei Fehlern",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Gewicht, das nach einem fehlgeschlagenen Versand von einem Weg entfernt wurde",
   "appSettings_maxMessageRetries": "Maximale Anzahl an Wiederholungsversuchen",
   "appSettings_maxMessageRetriesSubtitle": "Anzahl der Versuche, eine Nachricht erneut zu senden, bevor sie als fehlgeschlagen markiert wird.",
-  "path_routeWeight": "{weight}/{max}",
   "settings_telemetryModeUpdated": "Telemetriemodus aktualisiert",
   "map_showOverlaps": "Überlappungen der Repeater-Taste",
   "map_runTraceWithReturnPath": "Auf dem gleichen Pfad zurückkehren.",

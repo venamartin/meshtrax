@@ -261,35 +261,8 @@
   "appSettings_advertisementNotifications": "Reklám értesítések",
   "appSettings_advertisementNotificationsSubtitle": "A figyelmeztetést megjelenítve, amikor új csomópontok kerülnek felfedezésre.",
   "appSettings_messaging": "Üzenetek küldése",
-  "appSettings_clearPathOnMaxRetry": "Egyértelmű út a Max Retry funkció használatával",
-  "appSettings_clearPathOnMaxRetrySubtitle": "A kapcsolat visszaállítás 5 sikertelen továbbítás után",
-  "appSettings_pathsWillBeCleared": "Ha 5-szer sikertelenül próbálunk, a útvonalat automatikusan tisztítjuk.",
-  "appSettings_pathsWillNotBeCleared": "A utak automatikusan nem tisztítódnak.",
-  "appSettings_autoRouteRotation": "Autóútok forgása",
-  "appSettings_autoRouteRotationSubtitle": "Válasszon a legjobb útvonalak között, vagy válassza a vízözön-módot.",
-  "appSettings_autoRouteRotationEnabled": "Az automatikus útvonalváltás engedélyezve",
-  "appSettings_autoRouteRotationDisabled": "Az automatikus útvonal-választás funkció kikapcsolva.",
-  "appSettings_maxRouteWeight": "Maximális útvonal súly",
-  "appSettings_maxRouteWeightSubtitle": "A lehető legnagyobb súly, amit egy útvonal sikeres szállítmányok során összegyűjthet.",
-  "appSettings_initialRouteWeight": "A kezdeti útvonal súlya",
-  "appSettings_initialRouteWeightSubtitle": "Az új, felfedezett útvonalakhoz tartozó kezdeti súly",
-  "appSettings_routeWeightSuccessIncrement": "Sikerhez vezető növelés",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "A sikeresen teljesített útvonalhoz hozzáadott súly.",
-  "appSettings_routeWeightFailureDecrement": "Hibás súly csökkenése",
-  "appSettings_routeWeightFailureDecrementSubtitle": "A jártatásból eltávolított súly, ami a sikertelen szállítás következménye.",
   "appSettings_maxMessageRetries": "Maximális üzenetek újraküldési próbálkozások",
   "appSettings_maxMessageRetriesSubtitle": "A próbálkozások száma, mielőtt egy üzenetet hibásnak jelölünk.",
-  "path_routeWeight": "{weight}/{max}",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "appSettings_battery": "Akku",
   "appSettings_batteryChemistry": "Aakkum töltés kémia",
   "appSettings_batteryChemistryPerDevice": "Beállítások {deviceName}-hez",
@@ -720,12 +693,9 @@
   },
   "debugFrame_hexDump": "Hex-dump:",
   "chat_pathManagement": "Útvonal-kezelés",
-  "chat_ShowAllPaths": "Mutasson meg minden útvonalat",
   "chat_routingMode": "Útvonal-kezelési mód",
   "chat_autoUseSavedPath": "Automatikus (az eddigi útvonal használata)",
   "chat_forceFloodMode": "Erőforrás-alapú áramlás mód",
-  "chat_recentAckPaths": "Legutóbbi használt útvonalak (gombra kattintva):",
-  "chat_pathHistoryFull": "Az előző lépések listája teljes. Törölj ki a bejegyzéseket, hogy újokat hozzáadhatsd.",
   "chat_hopSingular": "ugor",
   "chat_hopPlural": "babér",
   "chat_hopsCount": "{count} {count, plural, =1{ugrás} other{ugrások}}",
@@ -736,10 +706,6 @@
       }
     }
   },
-  "chat_successes": "sikerek",
-  "chat_removePath": "Törölje a elérési útvonalat",
-  "chat_noPathHistoryYet": "Még nincs útvonal-történet.\nKüldjön egy üzenetet, hogy megtudja a lehetséges útvonalakat.",
-  "chat_pathActions": "Céltúrások:",
   "chat_setCustomPath": "Beállítsd a saját útvonalat",
   "chat_setCustomPathSubtitle": "Kézzel megadott útvonal",
   "chat_clearPath": "Egyértelmű út",
@@ -749,20 +715,6 @@
   "chat_floodModeEnabled": "Árvízvédelmi mód bekapcsolva. A visszaállítás a alkalmazásban található útvonal ikon segítségével.",
   "chat_fullPath": "Teljes elérési út",
   "chat_pathDetailsNotAvailable": "Az útvonal részletei még nem elérhetők. Próbálja meg küldeni egy üzenetet, hogy frissítse az információkat.",
-  "chat_pathSetHops": "Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Helyileg mentve. Kapcsolódjon a szinkronizáláshoz.",
-  "chat_pathDeviceConfirmed": "A készülék megvan.",
-  "chat_pathDeviceNotConfirmed": "A készülék még nem bizonyított.",
   "chat_type": "Típus",
   "chat_path": "Út",
   "chat_publicKey": "Nyelvkönyv",
@@ -1035,14 +987,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "{count} {count, plural, =1{ugrás} other{ugrások}} útvonal használata",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },

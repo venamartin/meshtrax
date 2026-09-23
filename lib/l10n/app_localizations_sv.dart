@@ -762,66 +762,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get appSettings_messaging => 'Meddelanden';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'Rensa Vägen på Max Försök';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Återställ kontaktväg efter 5 misslyckade försök att skicka';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Sökvägar kommer att tömmas efter 5 misslyckade försök.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Sökvägar kommer inte att rensas automatiskt.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Automatisk Rutväxling';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Blixtra mellan bästa vägar och flödesläge';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Automatisk ruttrotation är aktiverad';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Automatisk ruttrotation är avstängd';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Maximalt tillåtet vikt för rutten';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Maximal vikt som en leveransväg kan ackumulera från framgångsrika leveranser.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Initial vikt för rutt';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Initial vikt för nyligen upptäckta vägar';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Ökning av vikt för framgång';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Vikt läggs till en väg efter en lyckad leverans.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Minskning av vikten för misslyckande';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Vikt som tagits bort från en väg efter ett misslyckat leveransförsök';
-
-  @override
   String get appSettings_maxMessageRetries => 'Maximalt antal försök';
 
   @override
@@ -835,11 +775,6 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Batteri';
@@ -1650,9 +1585,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_pathManagement => 'Stigarhantering';
 
   @override
-  String get chat_ShowAllPaths => 'Visa alla vägar';
-
-  @override
   String get chat_routingMode => 'Ruttläge';
 
   @override
@@ -1660,14 +1592,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Tvinga Översvämningsläge';
-
-  @override
-  String get chat_recentAckPaths =>
-      'Nyligen Ack-vägar (tryck för att använda):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Historisk sökväg är full. Ta bort poster för att lägga till nya.';
 
   @override
   String get chat_hopSingular => 'hoppa';
@@ -1685,19 +1609,6 @@ class AppLocalizationsSv extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'framgångar';
-
-  @override
-  String get chat_removePath => 'Ta bort sökväg';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Ingen historik ännu.\nSkicka ett meddelande för att upptäcka spår.';
-
-  @override
-  String get chat_pathActions => 'Stigar:';
 
   @override
   String get chat_setCustomPath => 'Ange anpassad sökväg';
@@ -1728,27 +1639,6 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Stigaruppgifterna är ännu inte tillgängliga. Försök att skicka ett meddelande för att uppdatera.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hoppar',
-      one: 'hopp',
-    );
-    return 'Sökväg inställd: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Sparat lokalt. Anslut för att synkronisera.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Enheten bekräftad.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Enheten har inte bekräftats ännu.';
 
   @override
   String get chat_type => 'Skriv';
@@ -2180,17 +2070,6 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Nuvarande sökväg: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Använda $count $_temp0 sökväg';
   }
 
   @override

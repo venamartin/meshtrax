@@ -743,58 +743,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_messaging => '메시징';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'Max 재시도 시 경로 명확하게 설정';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      '5번의 전송 시도가 실패하면 연락 경로를 재설정';
-
-  @override
-  String get appSettings_pathsWillBeCleared => '5번의 시도 실패 후, 해당 경로가 확보될 것입니다.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared => '경로는 자동으로 정리되지 않습니다.';
-
-  @override
-  String get appSettings_autoRouteRotation => '자동 경로 순환';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle => '최적 경로와 방수 모드 사이를 전환';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled => '자동 경로 순환 기능 활성화';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled => '자동 경로 순환 기능 비활성화';
-
-  @override
-  String get appSettings_maxRouteWeight => '최대 경로 무게';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      '한 경로가 성공적인 배송을 통해 누적할 수 있는 최대 무게';
-
-  @override
-  String get appSettings_initialRouteWeight => '초기 경로 가중치';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle => '새롭게 발견된 경로의 초기 무게';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement => '성공 횟수 증가';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      '성공적으로 배송된 경로에 추가된 무게';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement => '오류 가중치 감소';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      '배송 실패 후 경로에서 제거된 무게';
-
-  @override
   String get appSettings_maxMessageRetries => '최대 메시지 재시도 횟수';
 
   @override
@@ -807,11 +755,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => '배터리';
@@ -1604,9 +1547,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_pathManagement => '경로 관리';
 
   @override
-  String get chat_ShowAllPaths => '모든 경로 표시';
-
-  @override
   String get chat_routingMode => '라우팅 방식';
 
   @override
@@ -1614,13 +1554,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => '강수 모드 활성화';
-
-  @override
-  String get chat_recentAckPaths => '최근 사용한 ACK 경로 (사용하려면 탭):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      '이력 기록은 이미 가득 차 있습니다. 항목을 삭제하여 새로운 항목을 추가할 수 있습니다.';
 
   @override
   String get chat_hopSingular => '점프';
@@ -1638,18 +1571,6 @@ class AppLocalizationsKo extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => '성공 사례';
-
-  @override
-  String get chat_removePath => '경로 제거';
-
-  @override
-  String get chat_noPathHistoryYet => '아직 경로 기록이 없습니다.\n경로를 찾기 위해 메시지를 보내세요.';
-
-  @override
-  String get chat_pathActions => '경로 작업:';
 
   @override
   String get chat_setCustomPath => '사용자 지정 경로 설정';
@@ -1679,26 +1600,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       '경로 정보는 아직 제공되지 않습니다. 메시지를 보내어 다시 시도해 보세요.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Path set: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally => '로컬에 저장. 동기화 연결';
-
-  @override
-  String get chat_pathDeviceConfirmed => '장치 확인 완료.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => '기기가 아직 확인되지 않았습니다.';
 
   @override
   String get chat_type => '종류';
@@ -2120,17 +2021,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return '현재 경로: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Using $count $_temp0 path';
   }
 
   @override

@@ -261,35 +261,8 @@
   "appSettings_advertisementNotifications": "광고 알림",
   "appSettings_advertisementNotificationsSubtitle": "새 노드가 발견되었을 때 알림 표시",
   "appSettings_messaging": "메시징",
-  "appSettings_clearPathOnMaxRetry": "Max 재시도 시 경로 명확하게 설정",
-  "appSettings_clearPathOnMaxRetrySubtitle": "5번의 전송 시도가 실패하면 연락 경로를 재설정",
-  "appSettings_pathsWillBeCleared": "5번의 시도 실패 후, 해당 경로가 확보될 것입니다.",
-  "appSettings_pathsWillNotBeCleared": "경로는 자동으로 정리되지 않습니다.",
-  "appSettings_autoRouteRotation": "자동 경로 순환",
-  "appSettings_autoRouteRotationSubtitle": "최적 경로와 방수 모드 사이를 전환",
-  "appSettings_autoRouteRotationEnabled": "자동 경로 순환 기능 활성화",
-  "appSettings_autoRouteRotationDisabled": "자동 경로 순환 기능 비활성화",
-  "appSettings_maxRouteWeight": "최대 경로 무게",
-  "appSettings_maxRouteWeightSubtitle": "한 경로가 성공적인 배송을 통해 누적할 수 있는 최대 무게",
-  "appSettings_initialRouteWeight": "초기 경로 가중치",
-  "appSettings_initialRouteWeightSubtitle": "새롭게 발견된 경로의 초기 무게",
-  "appSettings_routeWeightSuccessIncrement": "성공 횟수 증가",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "성공적으로 배송된 경로에 추가된 무게",
-  "appSettings_routeWeightFailureDecrement": "오류 가중치 감소",
-  "appSettings_routeWeightFailureDecrementSubtitle": "배송 실패 후 경로에서 제거된 무게",
   "appSettings_maxMessageRetries": "최대 메시지 재시도 횟수",
   "appSettings_maxMessageRetriesSubtitle": "메시지를 실패로 처리하기 전 시도 횟수",
-  "path_routeWeight": "{weight}/{max}",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "appSettings_battery": "배터리",
   "appSettings_batteryChemistry": "배터리 화학",
   "appSettings_batteryChemistryPerDevice": "{deviceName} 당분간",
@@ -720,12 +693,9 @@
   },
   "debugFrame_hexDump": "헥스 덤프:",
   "chat_pathManagement": "경로 관리",
-  "chat_ShowAllPaths": "모든 경로 표시",
   "chat_routingMode": "라우팅 방식",
   "chat_autoUseSavedPath": "자동 (저장된 경로 사용)",
   "chat_forceFloodMode": "강수 모드 활성화",
-  "chat_recentAckPaths": "최근 사용한 ACK 경로 (사용하려면 탭):",
-  "chat_pathHistoryFull": "이력 기록은 이미 가득 차 있습니다. 항목을 삭제하여 새로운 항목을 추가할 수 있습니다.",
   "chat_hopSingular": "점프",
   "chat_hopPlural": "홉",
   "chat_hopsCount": "{count} {count, plural, =1{홉} other{홉}}",
@@ -736,10 +706,6 @@
       }
     }
   },
-  "chat_successes": "성공 사례",
-  "chat_removePath": "경로 제거",
-  "chat_noPathHistoryYet": "아직 경로 기록이 없습니다.\n경로를 찾기 위해 메시지를 보내세요.",
-  "chat_pathActions": "경로 작업:",
   "chat_setCustomPath": "사용자 지정 경로 설정",
   "chat_setCustomPathSubtitle": "수동으로 경로를 지정",
   "chat_clearPath": "명확한 길",
@@ -749,20 +715,6 @@
   "chat_floodModeEnabled": "홍수 모드 활성화됨. 앱 바의 경로 아이콘을 사용하여 다시 전환할 수 있습니다.",
   "chat_fullPath": "전체 경로",
   "chat_pathDetailsNotAvailable": "경로 정보는 아직 제공되지 않습니다. 메시지를 보내어 다시 시도해 보세요.",
-  "chat_pathSetHops": "Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "로컬에 저장. 동기화 연결",
-  "chat_pathDeviceConfirmed": "장치 확인 완료.",
-  "chat_pathDeviceNotConfirmed": "기기가 아직 확인되지 않았습니다.",
   "chat_type": "종류",
   "chat_path": "경로",
   "chat_publicKey": "공개 키",
@@ -1035,14 +987,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Using {count} {count, plural, =1{hop} other{hops}} path",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },

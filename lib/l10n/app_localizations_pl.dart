@@ -779,67 +779,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appSettings_messaging => 'Wiadomości';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Wyczyść ścieżkę po maks. liczbie prób';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Resetuj ścieżkę kontaktu po 5 nieudanych próbach wysłania';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Ścieżka zostanie wyczyszczona po 5 nieudanych próbach.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Ścieżka nie zostanie automatycznie wyczyszczona.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Automatyczna rotacja trasy';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Przełączaj się między najlepszymi ścieżkami a trybem zalewowym.';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Automatyczne obracanie tras włączone';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Automatyczne obracanie tras wyłączone';
-
-  @override
-  String get appSettings_maxRouteWeight =>
-      'Maksymalny dopuszczalny ciężar pojazdu';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Maksymalna waga, jaką ścieżka może zgromadzić dzięki udanym dostawom.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Początkowa waga trasy';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Początkowa waga dla nowych, odkrytych ścieżek';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement => 'Wzrost wagi sukcesu';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Waga dodana do ścieżki po pomyślnym dostarczeniu';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Zmniejszenie wagi kary';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Waga usunięta z trasy po nieudanej dostawie';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Maksymalna liczba prób wysłania wiadomości';
 
@@ -854,11 +793,6 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Bateria';
@@ -1679,9 +1613,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_pathManagement => 'Zarządzanie ścieżkami';
 
   @override
-  String get chat_ShowAllPaths => 'Pokaż wszystkie ścieżki';
-
-  @override
   String get chat_routingMode => 'Tryb routingu';
 
   @override
@@ -1689,14 +1620,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Wymuś tryb zalewowy';
-
-  @override
-  String get chat_recentAckPaths =>
-      'Ostatnie ścieżki ACK (naciśnij, aby użyć):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Historia ścieżek jest pełna. Usuń wpisy, aby dodać nowe.';
 
   @override
   String get chat_hopSingular => 'skok';
@@ -1716,19 +1639,6 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'Sukcesy';
-
-  @override
-  String get chat_removePath => 'Usuń ścieżkę';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Brak historii ścieżek.\nWyślij wiadomość, aby odkryć ścieżki.';
-
-  @override
-  String get chat_pathActions => 'Działania ścieżki:';
 
   @override
   String get chat_setCustomPath => 'Ustaw ścieżkę niestandardową';
@@ -1761,28 +1671,6 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Szczegóły ścieżki jeszcze niedostępne. Spróbuj wysłać wiadomość, aby odświeżyć.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Ścieżka ustawiona: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Zapisano lokalnie. Połącz się, aby zsynchronizować.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Urządzenie potwierdzone.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed =>
-      'Urządzenie nie zostało jeszcze potwierdzone.';
 
   @override
   String get chat_type => 'Typ';
@@ -2218,19 +2106,6 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Aktualna ścieżka: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'skoków',
-      many: 'skoków',
-      few: 'skoki',
-      one: 'skok',
-    );
-    return 'Użyj ścieżki $count $_temp0.';
   }
 
   @override

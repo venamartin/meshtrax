@@ -151,7 +151,6 @@
       }
     }
   },
-  
   "scanner_stop": "Stop",
   "scanner_scan": "Scan",
   "scanner_scanFromImage": "Scan from image",
@@ -303,37 +302,10 @@
   "appSettings_advertisementNotifications": "Advertisement Notifications",
   "appSettings_advertisementNotificationsSubtitle": "Show notification when new nodes are discovered",
   "appSettings_messaging": "Messaging",
-  "appSettings_clearPathOnMaxRetry": "Clear Path on Max Retry",
-  "appSettings_clearPathOnMaxRetrySubtitle": "Reset contact path after 5 failed send attempts",
-  "appSettings_pathsWillBeCleared": "Paths will be cleared after 5 failed retries",
-  "appSettings_pathsWillNotBeCleared": "Paths will not be auto-cleared",
-  "appSettings_autoRouteRotation": "Auto Route Rotation",
-  "appSettings_autoRouteRotationSubtitle": "Cycle between best paths and flood mode",
-  "appSettings_autoRouteRotationEnabled": "Auto route rotation enabled",
-  "appSettings_autoRouteRotationDisabled": "Auto route rotation disabled",
-  "appSettings_maxRouteWeight": "Max Route Weight",
-  "appSettings_maxRouteWeightSubtitle": "Maximum weight a path can accumulate from successful deliveries",
-  "appSettings_initialRouteWeight": "Initial Route Weight",
-  "appSettings_initialRouteWeightSubtitle": "Starting weight for newly discovered paths",
-  "appSettings_routeWeightSuccessIncrement": "Success Weight Increment",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "Weight added to a path after successful delivery",
-  "appSettings_routeWeightFailureDecrement": "Failure Weight Decrement",
-  "appSettings_routeWeightFailureDecrementSubtitle": "Weight removed from a path after failed delivery",
   "appSettings_maxMessageRetries": "Max Message Retries",
   "appSettings_maxMessageRetriesSubtitle": "Send attempts before a message is marked failed. The first uses the known route; the rest flood.",
   "appSettings_maxChannelMessageRetries": "Max Channel Message Retries",
   "appSettings_maxChannelMessageRetriesSubtitle": "It will retry this many times until it hears at least one repeat",
-  "path_routeWeight": "{weight}/{max}",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "appSettings_battery": "Battery",
   "appSettings_batteryChemistry": "Battery Chemistry",
   "appSettings_batteryChemistryPerDevice": "Set per device ({deviceName})",
@@ -678,10 +650,10 @@
   "channels_hashtagHint": "e.g. #team",
   "chat_noMessages": "No messages yet",
   "chat_sendMessage": "Send message",
-  "chat_sendMessageTo": "Send message to {name}",
+  "chat_sendMessageTo": "Send a message to {contactName}",
   "@chat_sendMessageTo": {
     "placeholders": {
-      "name": {
+      "contactName": {
         "type": "String"
       }
     }
@@ -705,14 +677,6 @@
     }
   },
   "chat_location": "Location",
-  "chat_sendMessageTo": "Send a message to {contactName}",
-  "@chat_sendMessageTo": {
-    "placeholders": {
-      "contactName": {
-        "type": "String"
-      }
-    }
-  },
   "common_copiedToClipboard": "Copied to clipboard",
   "common_copyToClipboard": "Copy to clipboard",
   "contacts_copyContactToClipboard": "Copy My Contact to Clipboard",
@@ -886,12 +850,9 @@
   },
   "debugFrame_hexDump": "Hex Dump:",
   "chat_pathManagement": "Path Management",
-  "chat_ShowAllPaths": "Show all paths",
   "chat_routingMode": "Routing mode",
   "chat_autoUseSavedPath": "Auto (use saved path)",
   "chat_forceFloodMode": "Force Flood Mode",
-  "chat_recentAckPaths": "Recent ACK Paths (tap to use):",
-  "chat_pathHistoryFull": "Path history is full. Remove entries to add new ones.",
   "chat_hopSingular": "hop",
   "chat_hopPlural": "hops",
   "chat_hopsCount": "{count} {count, plural, =1{hop} other{hops}}",
@@ -902,10 +863,6 @@
       }
     }
   },
-  "chat_successes": "successes",
-  "chat_removePath": "Remove path",
-  "chat_noPathHistoryYet": "No path history yet.\nSend a message to discover paths.",
-  "chat_pathActions": "Path Actions:",
   "chat_setCustomPath": "Set Custom Path",
   "chat_setCustomPathSubtitle": "Manually specify routing path",
   "chat_clearPath": "Clear Path",
@@ -915,20 +872,6 @@
   "chat_floodModeEnabled": "Flood mode enabled. Toggle back via routing icon in app bar.",
   "chat_fullPath": "Full Path",
   "chat_pathDetailsNotAvailable": "Path details not available yet. Try sending a message to refresh.",
-  "chat_pathSetHops": "Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "Saved locally. Connect to sync.",
-  "chat_pathDeviceConfirmed": "Device confirmed.",
-  "chat_pathDeviceNotConfirmed": "Device not confirmed yet.",
   "chat_type": "Type",
   "chat_path": "Path",
   "chat_publicKey": "Public Key",
@@ -1203,14 +1146,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "Using {count} {count, plural, =1{hop} other{hops}} path",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },
@@ -2211,7 +2146,6 @@
   "radioStats_stripWaiting": "Fetching radio stats…",
   "radioStats_settingsTile": "Radio stats",
   "radioStats_settingsSubtitle": "Noise floor, RSSI, SNR, and airtime",
-
   "translation_title": "Translation",
   "translation_enableTitle": "Enable translation",
   "translation_enableSubtitle": "Translate incoming messages and allow pre-send translation.",

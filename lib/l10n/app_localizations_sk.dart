@@ -767,65 +767,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get appSettings_messaging => 'Správy';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'Vyčisti cestu na Max Retry';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Resetovať kontaktný priebeh po 5 neúspešných pokusoch o doručenie';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Cesty budú vymazané po 5 neúspešných pokusoch.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Cesty sa automaticky nevymazávajú.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Automatické prechodové trasy';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Striedajte sa medzi najlepšími trasami a režimom povodňovej analýzy.';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Automatické otáčanie trasy povolené';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Automatické prekladanie trás pozastavené';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Maximálna hmotnosť trasy';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Maximálna hmotnosť, ktorú môže trás prenášať vďaka úspešným zásielkam.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Počiatočná váha trasy';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Počiatočná váha pre nové, objavené cesty';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement => 'Zvyšenie váhy úspechu';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Hmotnosť pridaná k trase po úspešnej doručení';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Sníženie váhy, ktorá sa používa na odhad rizika.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Hmotnosť odstránená z cesty po neúspešnej doručenie';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Maximalný počet pokusov o doručenie správ';
 
@@ -840,11 +781,6 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Batéria';
@@ -1658,9 +1594,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_pathManagement => 'Správa ciest';
 
   @override
-  String get chat_ShowAllPaths => 'Zobraziť všetky cesty';
-
-  @override
   String get chat_routingMode => 'Režim trasy';
 
   @override
@@ -1669,13 +1602,6 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get chat_forceFloodMode =>
       'Zavrieť režim núdzového povodňového režimu';
-
-  @override
-  String get chat_recentAckPaths => 'Nedávne cesty ACK (klepni na použitie):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'História ciest je plná. Odstráňte záznamy, aby ste mohli pridať nové.';
 
   @override
   String get chat_hopSingular => 'Skok';
@@ -1693,19 +1619,6 @@ class AppLocalizationsSk extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'Úspechy';
-
-  @override
-  String get chat_removePath => 'Odstrániť cestu';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Zatiaľ žiadna história trás.\nPošlite správu a objavte trasy.';
-
-  @override
-  String get chat_pathActions => 'Cesty:';
 
   @override
   String get chat_setCustomPath => 'Nastaviť vlastnú cestu';
@@ -1738,28 +1651,6 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Podrobnosti o ceste zatiaľ dostupné nie sú. Skúste poslať správu na obnovenie.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Cesta nastavená: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Uložené lokálne. Spojte sa na synchronizáciu.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Zariadenie potvrdené.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed =>
-      'Zariadenie zatiaľ nebolo potvrdené.';
 
   @override
   String get chat_type => 'Napište';
@@ -2193,17 +2084,6 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Aktívna cesta: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Používa $count $_temp0 cestu';
   }
 
   @override

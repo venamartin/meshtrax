@@ -1522,102 +1522,6 @@ abstract class AppLocalizations {
   /// **'Messaging'**
   String get appSettings_messaging;
 
-  /// No description provided for @appSettings_clearPathOnMaxRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Path on Max Retry'**
-  String get appSettings_clearPathOnMaxRetry;
-
-  /// No description provided for @appSettings_clearPathOnMaxRetrySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset contact path after 5 failed send attempts'**
-  String get appSettings_clearPathOnMaxRetrySubtitle;
-
-  /// No description provided for @appSettings_pathsWillBeCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Paths will be cleared after 5 failed retries'**
-  String get appSettings_pathsWillBeCleared;
-
-  /// No description provided for @appSettings_pathsWillNotBeCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Paths will not be auto-cleared'**
-  String get appSettings_pathsWillNotBeCleared;
-
-  /// No description provided for @appSettings_autoRouteRotation.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto Route Rotation'**
-  String get appSettings_autoRouteRotation;
-
-  /// No description provided for @appSettings_autoRouteRotationSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Cycle between best paths and flood mode'**
-  String get appSettings_autoRouteRotationSubtitle;
-
-  /// No description provided for @appSettings_autoRouteRotationEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto route rotation enabled'**
-  String get appSettings_autoRouteRotationEnabled;
-
-  /// No description provided for @appSettings_autoRouteRotationDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto route rotation disabled'**
-  String get appSettings_autoRouteRotationDisabled;
-
-  /// No description provided for @appSettings_maxRouteWeight.
-  ///
-  /// In en, this message translates to:
-  /// **'Max Route Weight'**
-  String get appSettings_maxRouteWeight;
-
-  /// No description provided for @appSettings_maxRouteWeightSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Maximum weight a path can accumulate from successful deliveries'**
-  String get appSettings_maxRouteWeightSubtitle;
-
-  /// No description provided for @appSettings_initialRouteWeight.
-  ///
-  /// In en, this message translates to:
-  /// **'Initial Route Weight'**
-  String get appSettings_initialRouteWeight;
-
-  /// No description provided for @appSettings_initialRouteWeightSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting weight for newly discovered paths'**
-  String get appSettings_initialRouteWeightSubtitle;
-
-  /// No description provided for @appSettings_routeWeightSuccessIncrement.
-  ///
-  /// In en, this message translates to:
-  /// **'Success Weight Increment'**
-  String get appSettings_routeWeightSuccessIncrement;
-
-  /// No description provided for @appSettings_routeWeightSuccessIncrementSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Weight added to a path after successful delivery'**
-  String get appSettings_routeWeightSuccessIncrementSubtitle;
-
-  /// No description provided for @appSettings_routeWeightFailureDecrement.
-  ///
-  /// In en, this message translates to:
-  /// **'Failure Weight Decrement'**
-  String get appSettings_routeWeightFailureDecrement;
-
-  /// No description provided for @appSettings_routeWeightFailureDecrementSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Weight removed from a path after failed delivery'**
-  String get appSettings_routeWeightFailureDecrementSubtitle;
-
   /// No description provided for @appSettings_maxMessageRetries.
   ///
   /// In en, this message translates to:
@@ -1641,12 +1545,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It will retry this many times until it hears at least one repeat'**
   String get appSettings_maxChannelMessageRetriesSubtitle;
-
-  /// No description provided for @path_routeWeight.
-  ///
-  /// In en, this message translates to:
-  /// **'{weight}/{max}'**
-  String path_routeWeight(String weight, String max);
 
   /// No description provided for @appSettings_battery.
   ///
@@ -3046,12 +2944,6 @@ abstract class AppLocalizations {
   /// **'Path Management'**
   String get chat_pathManagement;
 
-  /// No description provided for @chat_ShowAllPaths.
-  ///
-  /// In en, this message translates to:
-  /// **'Show all paths'**
-  String get chat_ShowAllPaths;
-
   /// No description provided for @chat_routingMode.
   ///
   /// In en, this message translates to:
@@ -3070,18 +2962,6 @@ abstract class AppLocalizations {
   /// **'Force Flood Mode'**
   String get chat_forceFloodMode;
 
-  /// No description provided for @chat_recentAckPaths.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent ACK Paths (tap to use):'**
-  String get chat_recentAckPaths;
-
-  /// No description provided for @chat_pathHistoryFull.
-  ///
-  /// In en, this message translates to:
-  /// **'Path history is full. Remove entries to add new ones.'**
-  String get chat_pathHistoryFull;
-
   /// No description provided for @chat_hopSingular.
   ///
   /// In en, this message translates to:
@@ -3099,30 +2979,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} {count, plural, =1{hop} other{hops}}'**
   String chat_hopsCount(int count);
-
-  /// No description provided for @chat_successes.
-  ///
-  /// In en, this message translates to:
-  /// **'successes'**
-  String get chat_successes;
-
-  /// No description provided for @chat_removePath.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove path'**
-  String get chat_removePath;
-
-  /// No description provided for @chat_noPathHistoryYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No path history yet.\nSend a message to discover paths.'**
-  String get chat_noPathHistoryYet;
-
-  /// No description provided for @chat_pathActions.
-  ///
-  /// In en, this message translates to:
-  /// **'Path Actions:'**
-  String get chat_pathActions;
 
   /// No description provided for @chat_setCustomPath.
   ///
@@ -3177,30 +3033,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Path details not available yet. Try sending a message to refresh.'**
   String get chat_pathDetailsNotAvailable;
-
-  /// No description provided for @chat_pathSetHops.
-  ///
-  /// In en, this message translates to:
-  /// **'Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}'**
-  String chat_pathSetHops(int hopCount, String status);
-
-  /// No description provided for @chat_pathSavedLocally.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved locally. Connect to sync.'**
-  String get chat_pathSavedLocally;
-
-  /// No description provided for @chat_pathDeviceConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'Device confirmed.'**
-  String get chat_pathDeviceConfirmed;
-
-  /// No description provided for @chat_pathDeviceNotConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'Device not confirmed yet.'**
-  String get chat_pathDeviceNotConfirmed;
 
   /// No description provided for @chat_type.
   ///
@@ -3962,12 +3794,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current path: {path}'**
   String path_currentPath(String path);
-
-  /// No description provided for @path_usingHopsPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Using {count} {count, plural, =1{hop} other{hops}} path'**
-  String path_usingHopsPath(int count);
 
   /// No description provided for @path_enterCustomPath.
   ///

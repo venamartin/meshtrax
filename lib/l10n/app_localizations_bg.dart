@@ -777,69 +777,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get appSettings_messaging => 'Съобщения';
 
   @override
-  String get appSettings_clearPathOnMaxRetry => 'Изчисти Път на Макс Опит';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Възстанови контактния път след 5 неуспешни опита за изпращане';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Пътищата ще бъдат почистени след 5 неуспешни опита.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Пътищата няма да бъдат автоматично изчистени.';
-
-  @override
-  String get appSettings_autoRouteRotation =>
-      'Автоматично маршрутизиране на завъртания';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Превключете между най-добрите пътища и режим на наводняване';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Автоматично маршрутизиране вкл.';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Автоматично маршрутизирането е деактивирано';
-
-  @override
-  String get appSettings_maxRouteWeight =>
-      'Максимално допустимо тегло на маршрута';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Максималното тегло, което един маршрут може да събере от успешни доставки.';
-
-  @override
-  String get appSettings_initialRouteWeight =>
-      'Първоначална тежест на маршрута';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Начално тегло за новооткрити маршрути';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Увеличение на теглото за успех';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Тегло, добавено към път след успешно доставяне.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Намаляване на теглото, свързано с неуспех';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Тегло, което е било премахнато от пътя след неуспешен опит за доставка.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Максимален брой опити за изпращане на съобщение';
 
@@ -854,11 +791,6 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Батерия';
@@ -1671,9 +1603,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_pathManagement => 'Управление на пътища';
 
   @override
-  String get chat_ShowAllPaths => 'Покажи всички пътища';
-
-  @override
   String get chat_routingMode => 'Режим на маршрутизиране';
 
   @override
@@ -1681,14 +1610,6 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Принуди режим на наводняване';
-
-  @override
-  String get chat_recentAckPaths =>
-      'Неотдавни ACK пътища (докоснете, за да използвате):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'Историята на пътя е пълна. Премахнете записи, за да добавите нови.';
 
   @override
   String get chat_hopSingular => 'скочи';
@@ -1706,19 +1627,6 @@ class AppLocalizationsBg extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'Успехи';
-
-  @override
-  String get chat_removePath => 'Премахни пътя';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Няма история на пътищата още.\nИзпратете съобщение, за да откриете пътища.';
-
-  @override
-  String get chat_pathActions => 'Действия по пътя:';
 
   @override
   String get chat_setCustomPath => 'Задайте персонализиран път';
@@ -1751,28 +1659,6 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Детайлите за пътя все още не са налични. Опитайте да изпратите съобщение, за да освежите.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Пътят е зададен: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Запазено локално. Свържете се за синхронизиране.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Устройство потвърдено.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed =>
-      'Устройството все още не е потвърдено.';
 
   @override
   String get chat_type => 'Въведете';
@@ -2208,17 +2094,6 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Текущ път: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Използване на $count $_temp0 път';
   }
 
   @override

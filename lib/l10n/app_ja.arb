@@ -261,35 +261,8 @@
   "appSettings_advertisementNotifications": "広告通知",
   "appSettings_advertisementNotificationsSubtitle": "新しいノードが発見された場合に通知を表示する",
   "appSettings_messaging": "メッセージング",
-  "appSettings_clearPathOnMaxRetry": "マックスリトライでの明確な手順",
-  "appSettings_clearPathOnMaxRetrySubtitle": "5回送信に失敗した場合、連絡経路をリセットする",
-  "appSettings_pathsWillBeCleared": "5回失敗した後、経路が再開されます。",
-  "appSettings_pathsWillNotBeCleared": "パスは自動で削除されません。",
-  "appSettings_autoRouteRotation": "自動ルートの切り替え",
-  "appSettings_autoRouteRotationSubtitle": "最適なルートと、洪水モードを切り替える",
-  "appSettings_autoRouteRotationEnabled": "自動ルートの切り替え機能が有効になっています",
-  "appSettings_autoRouteRotationDisabled": "自動ルートの変更機能が無効になっています。",
-  "appSettings_maxRouteWeight": "最大ルート重量",
-  "appSettings_maxRouteWeightSubtitle": "ある経路が、成功裏に配送された場合に、積み上げられる最大重量",
-  "appSettings_initialRouteWeight": "初期ルートの重み",
-  "appSettings_initialRouteWeightSubtitle": "新たに発見された経路の初期重量",
-  "appSettings_routeWeightSuccessIncrement": "成功時の重み増加",
-  "appSettings_routeWeightSuccessIncrementSubtitle": "配送が成功した場合に、経路に追加される重量",
-  "appSettings_routeWeightFailureDecrement": "失敗時の重み減少",
-  "appSettings_routeWeightFailureDecrementSubtitle": "配送に失敗した際に、経路から取り除かれた重量",
   "appSettings_maxMessageRetries": "最大メッセージ再試行回数",
   "appSettings_maxMessageRetriesSubtitle": "メッセージを「失敗」とマークするまでの、再試行回数",
-  "path_routeWeight": "{weight}/{max}",
-  "@path_routeWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "appSettings_battery": "バッテリー",
   "appSettings_batteryChemistry": "電池の化学",
   "appSettings_batteryChemistryPerDevice": "{deviceName} 単位",
@@ -720,12 +693,9 @@
   },
   "debugFrame_hexDump": "ヘックスダンプ：",
   "chat_pathManagement": "経路管理",
-  "chat_ShowAllPaths": "すべての経路を表示",
   "chat_routingMode": "ルーティングモード",
   "chat_autoUseSavedPath": "自動 (保存されたパスを使用)",
   "chat_forceFloodMode": "強制的に洪水モードを起動",
-  "chat_recentAckPaths": "最近使用したACKパス（タップして使用）：",
-  "chat_pathHistoryFull": "パスの履歴は完全です。エントリを削除して、新しいものを追加できます。",
   "chat_hopSingular": "ジャンプ",
   "chat_hopPlural": "ホップ",
   "chat_hopsCount": "{count} {count, plural, =1{ホップ} other{ホップ}}",
@@ -736,10 +706,6 @@
       }
     }
   },
-  "chat_successes": "成功事例",
-  "chat_removePath": "パスを削除する",
-  "chat_noPathHistoryYet": "まだ履歴はありません。\nパスを特定するためにメッセージを送信してください。",
-  "chat_pathActions": "パスの操作：",
   "chat_setCustomPath": "カスタムパスを設定",
   "chat_setCustomPathSubtitle": "手動で経路を指定する",
   "chat_clearPath": "明確な道",
@@ -749,20 +715,6 @@
   "chat_floodModeEnabled": "洪水モードが有効になっています。アプリのメニューバーにあるルートアイコンを使用して、モードを切り替えることができます。",
   "chat_fullPath": "フルパス",
   "chat_pathDetailsNotAvailable": "経路の詳細については、まだ情報がありません。「リフレッシュ」ボタンを押して、再度お試しください。",
-  "chat_pathSetHops": "Path set: {hopCount} {hopCount, plural, =1{hop} other{hops}} - {status}",
-  "@chat_pathSetHops": {
-    "placeholders": {
-      "hopCount": {
-        "type": "int"
-      },
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "chat_pathSavedLocally": "ローカルで保存。同期のために接続する。",
-  "chat_pathDeviceConfirmed": "デバイスの確認済み。",
-  "chat_pathDeviceNotConfirmed": "デバイスの確認はまだできていません。",
   "chat_type": "種類",
   "chat_path": "道",
   "chat_publicKey": "公開鍵",
@@ -1035,14 +987,6 @@
     "placeholders": {
       "path": {
         "type": "String"
-      }
-    }
-  },
-  "path_usingHopsPath": "{count} {count, plural, =1{ホップ} other{ホップ}}のパスを使用",
-  "@path_usingHopsPath": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },

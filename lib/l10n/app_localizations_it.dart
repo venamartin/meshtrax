@@ -777,68 +777,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get appSettings_messaging => 'Messaggi';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Cancella Percorso su Massimo Riprovo';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Reimposta il percorso di contatto dopo 5 tentativi di invio falliti';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'I percorsi verranno puliti dopo 5 tentativi falliti.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'I percorsi non verranno eliminati automaticamente.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Rotazione Percorso Automatico';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Alterna tra i percorsi migliori e la modalità alluvione';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Rotazione percorso automatico abilitata';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Rotazione del percorso automatico disabilitata';
-
-  @override
-  String get appSettings_maxRouteWeight =>
-      'Massimo peso consentito per il percorso';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Il peso massimo che un percorso può accumulare grazie a consegne di successo.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Peso iniziale del percorso';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Peso di partenza per nuovi percorsi';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Aumento del peso del successo';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Peso aggiunto a un percorso dopo una consegna riuscita.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Riduzione del peso associato al fallimento';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Peso rimosso da un percorso dopo un tentativo di consegna fallito.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Numero massimo di tentativi di invio del messaggio';
 
@@ -853,11 +791,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Batteria';
@@ -1670,9 +1603,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chat_pathManagement => 'Gestione Percorsi';
 
   @override
-  String get chat_ShowAllPaths => 'Mostra tutti i percorsi';
-
-  @override
   String get chat_routingMode => 'Modalità di routing';
 
   @override
@@ -1680,13 +1610,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Modalità Inondamento Forzato';
-
-  @override
-  String get chat_recentAckPaths => 'Percorsi ACK Recenti (tocca per usare):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'La cronologia del percorso è piena. Rimuovi gli elementi per aggiungere nuovi.';
 
   @override
   String get chat_hopSingular => 'salta';
@@ -1704,19 +1627,6 @@ class AppLocalizationsIt extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'successi';
-
-  @override
-  String get chat_removePath => 'Rimuovi percorso';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Non c\'è ancora una cronologia del percorso.\nInvia un messaggio per scoprire i percorsi.';
-
-  @override
-  String get chat_pathActions => 'Azioni Percorso:';
 
   @override
   String get chat_setCustomPath => 'Imposta Percorso Personalizzato';
@@ -1750,28 +1660,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'I dettagli del percorso non sono ancora disponibili. Prova a inviare un messaggio per ricaricare.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Percorso impostato: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Salvatato localmente. Connetti per sincronizzare.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Dispositivo confermato.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed =>
-      'Dispositivo non confermato ancora.';
 
   @override
   String get chat_type => 'Digita';
@@ -2205,17 +2093,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Percorso corrente: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Utilizzare $count $_temp0 percorso';
   }
 
   @override

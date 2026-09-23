@@ -777,67 +777,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get appSettings_messaging => 'Mensagens';
 
   @override
-  String get appSettings_clearPathOnMaxRetry =>
-      'Limpar Caminho em Tentativas Máximas';
-
-  @override
-  String get appSettings_clearPathOnMaxRetrySubtitle =>
-      'Redefinir o caminho de contato após 5 tentativas de envio falhas';
-
-  @override
-  String get appSettings_pathsWillBeCleared =>
-      'Os caminhos serão limpos após 5 tentativas falhas.';
-
-  @override
-  String get appSettings_pathsWillNotBeCleared =>
-      'Os caminhos não serão limpos automaticamente.';
-
-  @override
-  String get appSettings_autoRouteRotation => 'Rotação de Rota Automática';
-
-  @override
-  String get appSettings_autoRouteRotationSubtitle =>
-      'Alternar entre os melhores caminhos e o modo inundação';
-
-  @override
-  String get appSettings_autoRouteRotationEnabled =>
-      'Rotação de roteamento automático habilitada';
-
-  @override
-  String get appSettings_autoRouteRotationDisabled =>
-      'Rotação de roteamento automático desativada';
-
-  @override
-  String get appSettings_maxRouteWeight => 'Peso Máximo da Rota';
-
-  @override
-  String get appSettings_maxRouteWeightSubtitle =>
-      'Peso máximo que um determinado percurso pode acumular com entregas bem-sucedidas.';
-
-  @override
-  String get appSettings_initialRouteWeight => 'Peso Inicial da Rota';
-
-  @override
-  String get appSettings_initialRouteWeightSubtitle =>
-      'Peso inicial para novos caminhos descobertos';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrement =>
-      'Aumento do peso para indicar sucesso';
-
-  @override
-  String get appSettings_routeWeightSuccessIncrementSubtitle =>
-      'Peso adicionado a um caminho após a entrega bem-sucedida.';
-
-  @override
-  String get appSettings_routeWeightFailureDecrement =>
-      'Redução do peso da falha';
-
-  @override
-  String get appSettings_routeWeightFailureDecrementSubtitle =>
-      'Peso removido de um caminho após uma tentativa de entrega malsucedida.';
-
-  @override
   String get appSettings_maxMessageRetries =>
       'Número máximo de tentativas de envio de mensagens';
 
@@ -852,11 +791,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
       'It will retry this many times until it hears at least one repeat';
-
-  @override
-  String path_routeWeight(String weight, String max) {
-    return '$weight/$max';
-  }
 
   @override
   String get appSettings_battery => 'Bateria';
@@ -1669,9 +1603,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chat_pathManagement => 'Gerenciamento de Caminhos';
 
   @override
-  String get chat_ShowAllPaths => 'Mostrar todos os caminhos';
-
-  @override
   String get chat_routingMode => 'Modo de roteamento';
 
   @override
@@ -1679,13 +1610,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get chat_forceFloodMode => 'Modo de Inundação Forçado';
-
-  @override
-  String get chat_recentAckPaths => 'Rotas de ACK Recentes (toque para usar):';
-
-  @override
-  String get chat_pathHistoryFull =>
-      'O histórico está cheio. Remova entradas para adicionar novas.';
 
   @override
   String get chat_hopSingular => 'pule';
@@ -1703,19 +1627,6 @@ class AppLocalizationsPt extends AppLocalizations {
     );
     return '$count $_temp0';
   }
-
-  @override
-  String get chat_successes => 'Sucessos';
-
-  @override
-  String get chat_removePath => 'Remover caminho';
-
-  @override
-  String get chat_noPathHistoryYet =>
-      'Ainda não há histórico de caminhos.\nEnvie uma mensagem para descobrir caminhos.';
-
-  @override
-  String get chat_pathActions => 'Ações do Caminho:';
 
   @override
   String get chat_setCustomPath => 'Definir Caminho Personalizado';
@@ -1749,27 +1660,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get chat_pathDetailsNotAvailable =>
       'Os detalhes do caminho ainda não estão disponíveis. Tente enviar uma mensagem para atualizar.';
-
-  @override
-  String chat_pathSetHops(int hopCount, String status) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hopCount,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Caminho definido: $hopCount $_temp0 - $status';
-  }
-
-  @override
-  String get chat_pathSavedLocally =>
-      'Salvo localmente. Conectar para sincronizar.';
-
-  @override
-  String get chat_pathDeviceConfirmed => 'Dispositivo confirmado.';
-
-  @override
-  String get chat_pathDeviceNotConfirmed => 'Dispositivo ainda não confirmado.';
 
   @override
   String get chat_type => 'Digite';
@@ -2204,17 +2094,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String path_currentPath(String path) {
     return 'Caminho atual: $path';
-  }
-
-  @override
-  String path_usingHopsPath(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'Usando $count $_temp0 caminho';
   }
 
   @override
