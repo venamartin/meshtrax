@@ -121,6 +121,8 @@ class ContactStore {
       'flags': contact.flags,
       'pathLength': contact.pathLength,
       'path': base64Encode(contact.path),
+      'inboundPath': base64Encode(contact.inboundPath),
+      'inboundHopCount': contact.inboundHopCount,
       'pathOverride': contact.pathOverride,
       'pathOverrideBytes': contact.pathOverrideBytes != null
           ? base64Encode(contact.pathOverrideBytes!)
@@ -161,6 +163,10 @@ class ContactStore {
       }(),
       path: pathBytes,
       pathHashSize: pathHashSize,
+      inboundPath: json['inboundPath'] != null
+          ? Uint8List.fromList(base64Decode(json['inboundPath'] as String))
+          : null,
+      inboundHopCount: json['inboundHopCount'] as int?,
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: json['pathOverrideBytes'] != null
           ? Uint8List.fromList(

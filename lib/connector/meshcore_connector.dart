@@ -2930,6 +2930,8 @@ class MeshCoreConnector extends ChangeNotifier {
       rawPacket: tmp.rawPacket,
       latitude: tmp.latitude,
       longitude: tmp.longitude,
+      inboundPath: tmp.inboundPath,
+      inboundHopCount: tmp.inboundHopCount,
     );
   }
 
@@ -3688,6 +3690,8 @@ class MeshCoreConnector extends ChangeNotifier {
         pathLength: contact.pathLength,
         path: contact.path,
         pathHashSize: contact.pathHashSize, // preserve hash size
+        inboundPath: contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
@@ -5037,9 +5041,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   static const int _minFloodTimeoutMs = 10000;
   static const int _maxTimeoutMs = 60000;
 
-  /// Best known distance to [contact] in hops, or null when nothing is known.
+  /// Best known distance to [contact] in hops: the firmware's route, else
+  /// how far the contact's last advert travelled, else null.
   int? estimatedHopsTo(Contact contact) =>
-      contact.pathLength >= 0 ? contact.pathLength : null;
+      contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount;
 
   /// Timeout for one send attempt.
   ///
@@ -5115,6 +5120,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device DB rows can be legitimately old, so skew is only assessed
           // on live adverts; carry the last assessment through syncs.
           clockCorrected: existing.clockCorrected,
+          // Device frames carry no inbound advert path.
+          inboundPath: existing.inboundPath,
+          inboundHopCount: existing.inboundHopCount,
         );
 
         appLogger.info(
@@ -5193,6 +5201,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        inboundPath: contact.inboundHopCount == null
+            ? existing.inboundPath
+            : contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
       );
 
       appLogger.info(
@@ -8144,11 +8156,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: pathBytes.isEmpty ? -1 : hopCount,
+        // No route until the firmware learns one; the advert's path only
+        // proves the inbound direction.
+        pathLength: -1,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(pathBytes, stride: hashSize).reversed.expand((h) => h).toList(),
-        ), // Store path in reverse for easier use in outgoing messages
+        path: Uint8List(0),
+        inboundPath: pathBytes,
+        inboundHopCount: hopCount,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -8260,11 +8274,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         publicKey: publicKey,
         name: name,
         type: type,
-        pathLength: path.isEmpty ? -1 : hopCount,
+        pathLength: -1,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
-        ), // Store path in reverse for easier use in outgoing messages
+        path: Uint8List(0),
+        inboundPath: path,
+        inboundHopCount: hopCount,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -8303,16 +8317,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         tag: 'Connector',
       );
 
-      // CRITICAL: Preserve user's path override when contact is refreshed from device
+      // The firmware's route (path/pathLength) is untouched: an advert only
+      // tells us how the contact reaches us.
       _contacts[existingIndex] = existing.copyWith(
         latitude: hasLocation ? latitude : existing.latitude,
         longitude: hasLocation ? longitude : existing.longitude,
         name: hasName ? name : existing.name,
         pathHashSize: hashSize,
-        path: Uint8List.fromList(
-          PathHelper.getHops(path, stride: hashSize).reversed.expand((h) => h).toList(),
-        ),
-        pathLength: path.isEmpty ? -1 : hopCount,
+        inboundPath: path,
+        inboundHopCount: hopCount,
         lastMessageAt: mergedLastMessageAt,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
@@ -8456,6 +8469,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         type: contact.type,
         pathLength: contact.pathLength,
         path: contact.path,
+        inboundPath: contact.inboundPath,
+        inboundHopCount: contact.inboundHopCount,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: contact.lastSeen,
@@ -8475,6 +8490,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       type: contact.type,
       pathLength: contact.pathLength,
       path: contact.path,
+      inboundPath: contact.inboundPath,
+      inboundHopCount: contact.inboundHopCount,
       latitude: contact.latitude,
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,

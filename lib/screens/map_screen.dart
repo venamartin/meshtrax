@@ -191,7 +191,10 @@ class _MapScreenState extends State<MapScreen> {
         // Compute guessed locations with caching
         final maxRangeKm = _estimateLoRaRangeKm(connector);
         final filteredKeys = filteredByKeyPrefix
-            .map((c) => '${c.publicKeyHex}:${c.pathIdList}')
+            .map(
+              (c) =>
+                  '${c.publicKeyHex}:${c.pathIdList}:${c.inboundHopCount}:${c.inboundPath.length}',
+            )
             .join(',');
         final anchorKeys = allContactsWithLocation
             .map(
@@ -631,19 +634,25 @@ class _MapScreenState extends State<MapScreen> {
 
       final anchorSet = <LatLng>{};
 
-      // Collect the contact-side (last-hop) repeater from every known path.
-      // path = [device-side hop, ..., contact-side hop]
-      // Only path.last is actually within radio range of the contact — using
-      // earlier bytes would anchor against our own side of the network.
+      // Anchor on the repeater nearest the contact: the first hop of its
+      // inbound advert path, or the last hop of the firmware's route to it.
+      // Hops nearer our side would anchor against our own network.
       final repeaterByHash = getRepeaterMapForStride(contact.pathHashSize);
 
       final lastHopBytes = <String>{};
-      final hops = PathHelper.getHops(
+      final inboundHops = PathHelper.getHops(
+        contact.inboundPath,
+        stride: contact.pathHashSize,
+      );
+      final routeHops = PathHelper.getHops(
         contact.path,
         stride: contact.pathHashSize,
       );
-      if (hops.isNotEmpty) {
-        final prefix = PathHelper.hopHex(hops.last);
+      for (final hop in [
+        if (inboundHops.isNotEmpty) inboundHops.first,
+        if (routeHops.isNotEmpty) routeHops.last,
+      ]) {
+        final prefix = PathHelper.hopHex(hop);
         lastHopBytes.add(prefix);
         final r = repeaterByHash[prefix];
         if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
