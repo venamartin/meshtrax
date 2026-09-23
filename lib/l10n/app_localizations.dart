@@ -6784,6 +6784,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resending by flood'**
   String get chat_resendingByFlood;
+
+  /// No description provided for @settings_pathGraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Path graph (experimental)'**
+  String get settings_pathGraph;
+
+  /// No description provided for @settings_pathGraphSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learns routes from everything the radio hears. Observe only — never changes how a message is sent.'**
+  String get settings_pathGraphSubtitle;
+
+  /// No description provided for @map_routeAndTrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Route & trace'**
+  String get map_routeAndTrace;
 }
 
 class _AppLocalizationsDelegate

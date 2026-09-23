@@ -1065,8 +1065,12 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
+  /// Observers of outgoing message state (the path graph hook).
+  void Function(Message message)? onOutgoingMessageUpdated;
+
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
+    onOutgoingMessageUpdated?.call(message);
     unawaited(() async {
       final updated = await _messageStore.updateMessage(
         contactKey,

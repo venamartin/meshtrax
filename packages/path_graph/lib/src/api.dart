@@ -538,6 +538,48 @@ class PathGraph {
     return _toResult(route);
   }
 
+  /// A traceable route from this radio to repeater [b] that passes
+  /// through repeater [a]: my proven doorstep → … → A → … → B. Built for
+  /// the map's "route & trace": the app sends a round-trip trace along
+  /// it, and the trace result proves (or refutes) every hop in both
+  /// directions. Pass [a] equal to [b] to route to a single repeater.
+  PathResult findRouteVia(String a, String b) {
+    final first = findPathToRepeater(a);
+    if (first is! RouteResult) return first;
+    final aHash = a.toUpperCase();
+    final bHash = b.toUpperCase();
+    if (aHash == bHash) return first;
+
+    final leg = PathFinder(estimator.config, estimator).search(
+      egress: [_selfTarget(aHash)],
+      ingress: [_selfTarget(bHash)],
+      edges: _store.edges,
+      nowMillis: _arrivalMillis,
+    );
+    if (leg == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    final hops = [..._bytesToHops(first.pathBytes), ...leg.hops.skip(1)];
+    if (hops.length > config.maxHops) {
+      return const PathResult.flood(FloodReason.overBudget);
+    }
+    return RouteResult(
+      _hopsToBytes(hops),
+      first.estDelivery * leg.estDelivery,
+      hopProbabilities: [...first.hopProbabilities, ...leg.hopProbabilities],
+      egressProven: first.egressProven,
+      ingressProven: true,
+    );
+  }
+
+  List<String> _bytesToHops(Uint8List bytes) => [
+        for (var i = 0; i + hashWidthBytes <= bytes.length; i += hashWidthBytes)
+          [
+            for (var b = 0; b < hashWidthBytes; b++)
+              bytes[i + b].toRadixString(16).padLeft(2, '0').toUpperCase()
+          ].join()
+      ];
+
   bool get _provenOnly => !config.allowInferredEndpoints;
 
   /// Egress candidates for routing: null when nothing is known at all,

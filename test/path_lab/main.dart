@@ -21,7 +21,7 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:path_graph/path_graph.dart';
 
 import 'adapter/corpus.dart';
-import 'adapter/frame_adapter.dart';
+import 'package:meshtrax/services/path_graph/frame_adapter.dart';
 import 'map_view.dart';
 
 late final MeshCoreConnector connector;

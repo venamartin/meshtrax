@@ -18,7 +18,7 @@ import 'dart:typed_data';
 import 'package:drift/native.dart';
 import 'package:path_graph/path_graph.dart';
 
-import 'frame_adapter.dart';
+import 'package:meshtrax/services/path_graph/frame_adapter.dart';
 
 const corpusFormat = 'path-lab-corpus-v1';
 

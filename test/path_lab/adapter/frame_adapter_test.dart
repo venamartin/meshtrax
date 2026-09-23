@@ -4,7 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_graph/path_graph.dart';
 
-import 'frame_adapter.dart';
+import 'package:meshtrax/services/path_graph/frame_adapter.dart';
 
 /// Builds an 0x88 RX-log frame: [0x88][snr*4][rssi][packet].
 Uint8List rxFrame({

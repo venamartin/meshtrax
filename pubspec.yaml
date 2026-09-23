@@ -73,6 +73,9 @@ dependencies:
   image_picker: ^1.2.2
   drift: ^2.34.2
   drift_flutter: ^0.3.1
+  # Learns mesh routes from the radio's raw frames; observe-only hook
+  path_graph:
+    path: packages/path_graph
   emoji_picker_flutter: ^4.4.0
 
 
@@ -84,10 +87,6 @@ dev_dependencies:
     sdk: flutter
   # Windows BLE for the two-radio hardware bench harness (not shipped in app)
   win_ble: ^1.1.1
-  # Path graph module under verification (test/path_lab harness; not shipped
-  # until Phase 3 of docs/path-graph-implementation.md moves it to dependencies)
-  path_graph:
-    path: packages/path_graph
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

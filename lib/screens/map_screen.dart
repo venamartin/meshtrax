@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
+import 'package:meshtrax/services/path_graph/path_graph_service.dart';
+import 'package:path_graph/path_graph.dart' show RouteResult, FloodResult;
 import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -2213,6 +2215,58 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  /// Asks the path graph for a route from me through the first tapped
+  /// repeater to the second, then traces it out and back. The trace
+  /// result feeds the graph, so a route the graph believed is proven or
+  /// refuted hop by hop on the air.
+  Future<void> _routeAndTrace(BuildContext context) async {
+    final connector = context.read<MeshCoreConnector>();
+    final graph = context.read<PathGraphService>().graph;
+    final l10n = context.l10n;
+    if (graph == null) return;
+    final stride = connector.pathHashByteWidth;
+    String hashOf(Contact c) => PathHelper.hopHex(
+        PathHelper.pubKeyPrefix(c.publicKey, stride: graph.hashWidthBytes));
+    final a = _pathTraceContacts[_pathTraceContacts.length - 2];
+    final b = _pathTraceContacts.last;
+
+    final result = graph.findRouteVia(hashOf(a), hashOf(b));
+    if (result is! RouteResult) {
+      final reason = result is FloodResult ? result.reason.name : 'direct';
+      showDismissibleSnackBar(
+        context,
+        content: Text('${l10n.map_routeAndTrace}: $reason'),
+      );
+      return;
+    }
+
+    // The graph identifies hops at its own width; the radio routes at
+    // its path hash size, and a hash is a pubkey prefix, so truncating
+    // each hop is lossless.
+    final hops = PathHelper.getHops(result.pathBytes,
+        stride: graph.hashWidthBytes);
+    final wire = Uint8List.fromList([
+      for (final hop in hops) ...hop.take(stride < graph.hashWidthBytes ? stride : graph.hashWidthBytes)
+    ]);
+    final roundTrip = PathHelper.roundTripPath(wire, stride: stride);
+
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PathTraceMapScreen(
+          title: '${l10n.map_routeAndTrace} ${a.name} → ${b.name}',
+          path: roundTrip,
+          pathHashByteWidth: stride,
+          pathContacts: connector.allContacts,
+        ),
+      ),
+    );
+    setState(() {
+      _isBuildingPathTrace = false;
+    });
+  }
+
   void _startPath(LatLng position) {
     setState(() {
       _isBuildingPathTrace = true;
@@ -2362,6 +2416,13 @@ class _MapScreenState extends State<MapScreen> {
                       },
                       tooltip: l10n.map_runTraceWithReturnPath,
                       icon: const Icon(Icons.replay),
+                    ),
+                  if (_pathTraceContacts.length >= 2 &&
+                      context.watch<PathGraphService>().isRunning)
+                    IconButton(
+                      onPressed: () => _routeAndTrace(context),
+                      tooltip: l10n.map_routeAndTrace,
+                      icon: const Icon(Icons.hub_outlined),
                     ),
                   if (_pathTrace.isNotEmpty)
                     IconButton(

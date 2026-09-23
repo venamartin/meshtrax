@@ -16,6 +16,7 @@ import 'screens/channel_chat_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'services/storage_service.dart';
 import 'services/message_retry_service.dart';
+import 'services/path_graph/path_graph_service.dart';
 import 'services/app_settings_service.dart';
 import 'services/notification_service.dart';
 import 'services/ble_debug_log_service.dart';
@@ -36,6 +37,7 @@ void main() async {
   // Initialize services
   final storage = StorageService();
   final connector = MeshCoreConnector();
+  final pathGraphService = PathGraphService();
   final retryService = MessageRetryService();
   final appSettingsService = AppSettingsService();
   final bleDebugLogService = BleDebugLogService();
@@ -74,6 +76,14 @@ void main() async {
     backgroundService: backgroundService,
   );
 
+  // The path graph is an observe-only hook on the raw frame stream; it
+  // runs only while its debug setting is on.
+  Future<void> syncPathGraph() => appSettingsService.settings.pathGraphEnabled
+      ? pathGraphService.start(connector)
+      : pathGraphService.stop();
+  appSettingsService.addListener(syncPathGraph);
+  await syncPathGraph();
+
   await connector.loadContactCache();
   // Channel settings and messages are keyed by channel identity, so the
   // cached channel list must load first.
@@ -86,6 +96,7 @@ void main() async {
   runApp(
     MeshTraxApp(
       connector: connector,
+      pathGraphService: pathGraphService,
       retryService: retryService,
       storage: storage,
       appSettingsService: appSettingsService,
@@ -121,6 +132,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 class MeshTraxApp extends StatefulWidget {
   final MeshCoreConnector connector;
+  final PathGraphService pathGraphService;
   final MessageRetryService retryService;
   final StorageService storage;
   final AppSettingsService appSettingsService;
@@ -133,6 +145,7 @@ class MeshTraxApp extends StatefulWidget {
   const MeshTraxApp({
     super.key,
     required this.connector,
+    required this.pathGraphService,
     required this.retryService,
     required this.storage,
     required this.appSettingsService,
@@ -237,6 +250,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: widget.connector),
+        ChangeNotifierProvider.value(value: widget.pathGraphService),
         ChangeNotifierProvider.value(value: widget.retryService),
         ChangeNotifierProvider.value(value: widget.appSettingsService),
         ChangeNotifierProvider.value(value: widget.bleDebugLogService),

@@ -206,8 +206,11 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
 
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     final flags = encodeTraceFlags(widget.pathHashByteWidth);
+    // Random tag, not a seconds timestamp: repeaters drop packets they
+    // have already seen, so two traces of the same route within a second
+    // were byte-identical and the second was silently dropped mid-path.
     final frame = buildTraceReq(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      Random().nextInt(0xFFFFFFFF),
       0, //auth
       flags, //flags
       payload: path,
