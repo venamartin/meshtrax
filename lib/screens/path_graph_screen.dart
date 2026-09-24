@@ -13,6 +13,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import 'path_trace_map.dart';
 import '../services/path_graph/path_graph_service.dart';
 
 /// Developer view of the path graph: what it has learned and what it
@@ -272,6 +273,30 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             _ => null,
           },
         ),
+        // A delivered message proves the forward direction only; a
+        // round-trip trace along the same route proves the way back.
+        if (!isNode && target.pathLength > 0 && target.path.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PathTraceMapScreen(
+                    title: '${context.l10n.contacts_pathTrace} ${target.name}',
+                    path: target.path,
+                    flipPathAround: true,
+                    targetContact: target,
+                    pathHashByteWidth: target.pathHashSize,
+                    pathContacts: context.read<MeshCoreConnector>().allContacts,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.radar),
+              label: Text(
+                  'Trace this route (${target.pathLength} hops, ${target.pathHashSize}-byte hashes) — proves the way back'),
+            ),
+          ),
         for (var i = 1; i < alternatives.length; i++)
           ListTile(
             dense: true,
