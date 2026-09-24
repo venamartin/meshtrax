@@ -100,7 +100,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             _counters(graph, connector),
             const Divider(),
             _candidates(
-              'Who hears me (egress)',
+              'My doorsteps — repeaters that carry my packets out (egress)',
               graph.egressCandidates(),
             ),
             const Divider(),
@@ -183,7 +183,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             title: Text(c.repeaterHash,
                 style: const TextStyle(fontFamily: 'monospace')),
             subtitle: Text(
-              '${c.proven ? "proven" : "heard only"} · weight '
+              '${c.proven ? "proven by a delivery, trace or discover" : "only heard from — unproven"} · weight '
               '${c.weight.toStringAsFixed(1)}'
               '${c.uplinkSnr != null ? " · uplink ${c.uplinkSnr!.toStringAsFixed(1)} dB" : ""}',
             ),
@@ -214,7 +214,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         ),
         if (target != null) ...[
           _candidates(
-            'Who reaches ${target.name} (ingress)',
+            '${target.name}\'s doorsteps — repeaters that deliver to them (ingress)',
             graph.ingressCandidates(target.publicKeyHex),
           ),
           _answer(graph, target),
