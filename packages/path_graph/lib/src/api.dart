@@ -390,13 +390,20 @@ class PathGraph {
   /// the firmware's out_path after an ACK is exactly this). Failure is
   /// the small forward penalty (n+1 only — the break can't be
   /// localized). The ACK's own route is never inferred. An empty path
-  /// delivered to [contactPubkey] proves the zero-hop link. Uses the
-  /// radio's stride ([setRadioIdentity]).
+  /// delivered to [contactPubkey] proves the zero-hop link.
+  ///
+  /// [stride] is the hash width the path was written at — a contact's
+  /// stored route keeps the width of the packet that built it, which
+  /// need not be the radio's own. Default: the radio's stride
+  /// ([setRadioIdentity]). A path narrower than the graph's bucket is
+  /// dropped and counted, like any other observation: reading 1-byte
+  /// hashes two at a time would mint repeaters that do not exist.
   void reportSendResult(
     Uint8List pathBytes,
     bool success, {
     int? tripTimeMs,
     String? contactPubkey,
+    int? stride,
   }) {
     final arrival = _arrivalMillis;
     if (pathBytes.isEmpty) {
@@ -406,12 +413,18 @@ class PathGraph {
       }
       return;
     }
-    final stride = _selfStride;
-    if (stride < 2 || pathBytes.length % stride != 0) return;
+    stride ??= _selfStride;
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
     for (var i = 0; i < hopCount - 1; i++) {
       final from = _hopHex(pathBytes, stride, i);
       final to = _hopHex(pathBytes, stride, i + 1);
+      _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
+      _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
       final edge = _store.edges.putIfAbsent(
           (from, to), () => EdgeState(source: 'observed'));
       if (success) edge.s++;

@@ -118,7 +118,9 @@ class PathGraphService extends ChangeNotifier {
 
   /// The firmware only ever stores a route a packet actually travelled
   /// in the sending direction (a PATH reply's payload), so a contact's
-  /// out_path is proof for every hop — unless the user wrote it.
+  /// out_path is proof for every hop — unless the user wrote it. The
+  /// route keeps the hash width of the packet that built it
+  /// ([Contact.pathHashSize]), not the radio's.
   void _proveFirmwareRoute(Contact contact) {
     final graph = _graph;
     if (graph == null || contact.pathOverride != null) return;
@@ -129,20 +131,35 @@ class PathGraphService extends ChangeNotifier {
     if (_lastProvenPath[contact.publicKeyHex] == hex) return;
     _lastProvenPath[contact.publicKeyHex] = hex;
     graph.reportSendResult(contact.path, true,
-        contactPubkey: contact.publicKeyHex);
+        contactPubkey: contact.publicKeyHex, stride: contact.pathHashSize);
     _notifySoon();
   }
 
   /// A direct send that was ACKed proves the route it used; a flood
   /// delivery is proven through the contact refresh that follows it.
+  /// The message's path bytes are the contact's stored route (its own
+  /// hash width) or a user override (the radio's width).
   void _onOutgoingMessage(Message message) {
     final graph = _graph;
-    if (graph == null || !message.isOutgoing) return;
+    final connector = _connector;
+    if (graph == null || connector == null || !message.isOutgoing) return;
     if (message.status != MessageStatus.delivered) return;
     final hops = message.pathLength;
     if (hops == null || hops < 0) return;
+    Contact? contact;
+    for (final c in connector.contacts) {
+      if (c.publicKeyHex == message.senderKeyHex) {
+        contact = c;
+        break;
+      }
+    }
+    final stride = contact == null || contact.pathOverride != null
+        ? connector.pathHashByteWidth
+        : contact.pathHashSize;
     graph.reportSendResult(message.pathBytes, true,
-        contactPubkey: message.senderKeyHex, tripTimeMs: message.tripTimeMs);
+        contactPubkey: message.senderKeyHex,
+        tripTimeMs: message.tripTimeMs,
+        stride: stride);
     _notifySoon();
   }
 

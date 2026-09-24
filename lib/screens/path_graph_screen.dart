@@ -137,11 +137,12 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         .where((k) => snap.edges.containsKey((k.$2, k.$1)))
         .length ~/
         2;
+    // A path's hash width is set by the node that built the packet, so
+    // other nodes' traffic can be 1-byte no matter what this radio uses.
     final narrow = c.droppedNarrow > 0
-        ? '\nDropped ${c.droppedNarrow} narrow paths — the radio sends '
-            '${connector.pathHashByteWidth}-byte hashes; the graph needs '
-            '${graph.hashWidthBytes}. Set the radio\'s path hash size to '
-            '${graph.hashWidthBytes} bytes.'
+        ? '\nDropped ${c.droppedNarrow} paths with hashes narrower than '
+            '${graph.hashWidthBytes} bytes — the graph cannot use them '
+            '(this radio sends ${connector.pathHashByteWidth}-byte hashes).'
         : '';
     return ListTile(
       title: Text('${snap.nodes.length} repeaters · ${snap.edges.length} '

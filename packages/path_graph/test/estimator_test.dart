@@ -93,4 +93,27 @@ void main() {
     expect(e.n, 2);
     await graph.dispose();
   });
+
+  test('reportSendResult drops a 1-byte path instead of pairing its bytes',
+      () async {
+    // Live find (2026-09-23): a contact's stored route kept the 1-byte
+    // width of the packet that built it; sliced at the radio's 2-byte
+    // stride, A2,AA,BE,41 minted repeaters 'A2AA' and 'BE41'.
+    final graph = PathGraph(NativeDatabase.memory());
+    await graph.init();
+    graph.setRadioIdentity('ab' * 32, 2);
+    graph.reportSendResult(Uint8List.fromList([0xA2, 0xAA, 0xBE, 0x41]), true,
+        contactPubkey: 'b0' * 32, stride: 1);
+    expect(graph.snapshot().edges, isEmpty);
+    expect(graph.snapshot().nodes, isEmpty);
+    expect(graph.egressCandidates(), isEmpty);
+    expect(graph.counters.droppedNarrow, 1);
+
+    // The same bytes at their true width are two real hops.
+    graph.reportSendResult(Uint8List.fromList([0xA2, 0xAA, 0xBE, 0x41]), true,
+        contactPubkey: 'b0' * 32, stride: 2);
+    expect(graph.snapshot().edges.keys, [('A2AA', 'BE41')]);
+    expect(graph.snapshot().nodes.keys, unorderedEquals(['A2AA', 'BE41']));
+    await graph.dispose();
+  });
 }
