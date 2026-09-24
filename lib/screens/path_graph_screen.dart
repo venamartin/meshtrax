@@ -80,7 +80,10 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         centerTitle: true,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        // Clear the system navigation bar so the action buttons at the
+        // bottom stay tappable.
+        padding: EdgeInsets.fromLTRB(
+            12, 12, 12, 24 + MediaQuery.paddingOf(context).bottom),
         children: [
           SwitchListTile(
             title: Text(context.l10n.settings_pathGraph),
