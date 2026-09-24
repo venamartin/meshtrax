@@ -230,6 +230,35 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
+  /// What the graph knows about the way back: from a repeater heard
+  /// carrying their packets to one this radio heard last.
+  Widget _returnAnswer(PathGraph graph, Contact target) {
+    final result = graph.findReturnPath(target.publicKeyHex);
+    final width = graph.hashWidthBytes;
+    return ListTile(
+      leading: const Icon(Icons.keyboard_return),
+      title: Text(switch (result) {
+        RouteResult(:final pathBytes) =>
+          'Back from ${target.name}: ${_fmtPath(pathBytes, width)}',
+        FloodResult(:final reason) =>
+          'Back from ${target.name}: unknown — ${switch (reason) {
+            FloodReason.noEvidence =>
+              'no packet of theirs has been heard arriving here yet',
+            FloodReason.noBidirectionalRoute =>
+              'their doorstep and mine are known but no two-way corridor joins them',
+            _ => reason.name,
+          }}',
+        DirectResult() => 'Back from ${target.name}: direct',
+      }),
+      subtitle: switch (result) {
+        RouteResult(:final estDelivery) =>
+          Text('est ${(estDelivery * 100).toStringAsFixed(0)}% · '
+              'what their radio actually uses is its own choice'),
+        _ => null,
+      },
+    );
+  }
+
   Widget _answer(PathGraph graph, Contact target, {required bool isNode}) {
     final width = graph.hashWidthBytes;
     // A repeater or room is itself the destination node; a chat contact
@@ -273,6 +302,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             _ => null,
           },
         ),
+        if (!isNode) _returnAnswer(graph, target),
         // A delivered message proves the forward direction only; a
         // round-trip trace along the same route proves the way back.
         if (!isNode && target.pathLength > 0 && target.path.isNotEmpty)

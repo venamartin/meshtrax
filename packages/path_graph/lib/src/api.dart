@@ -551,6 +551,34 @@ class PathGraph {
     return _toResult(route);
   }
 
+  /// The route a packet from [contactPubkey] would take BACK to this
+  /// radio, over corridors proven both ways: from a repeater heard
+  /// carrying their packets (their doorstep) to one this radio heard
+  /// last (mine). The same "heard" rows the forward query refuses as
+  /// guesses are the proof here — hearing is evidence for the direction
+  /// the packet travelled. Diagnostic: the ACK's real route is chosen by
+  /// their radio, not ours.
+  PathResult findReturnPath(String contactPubkey) {
+    final now = _arrivalMillis;
+    final self = _selfPubkey;
+    if (self == null) return const PathResult.flood(FloodReason.noEvidence);
+    final theirs = _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false);
+    final mine = _evidence.heardCandidatesFor(self, now, isSelf: true);
+    if (theirs.isEmpty || mine.isEmpty) {
+      return const PathResult.flood(FloodReason.noEvidence);
+    }
+    final route = PathFinder(estimator.config, estimator).search(
+      egress: theirs,
+      ingress: mine,
+      edges: _store.edges,
+      nowMillis: now,
+    );
+    if (route == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    return _toResult(route);
+  }
+
   /// A traceable route from this radio to repeater [b] that passes
   /// through repeater [a]: my proven doorstep → … → A → … → B. Built for
   /// the map's "route & trace": the app sends a round-trip trace along

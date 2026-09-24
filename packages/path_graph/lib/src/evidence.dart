@@ -99,8 +99,31 @@ class EvidenceStore {
   /// is a candidate for Discover ranking and the UI, never a route end.
   void recordIngress(String contactPubkey, String repeaterHash,
       {required bool pubkeyConfirmed, required int arrival}) {
+    // finalCount on a contact row counts "was their first hop" — proof,
+    // in the return direction, that this repeater hears them.
     _upsert(contactPubkey, repeaterHash, EvidenceTier.inferred,
-        pubkeyConfirmed ? 3.0 : 1.0, arrival);
+        pubkeyConfirmed ? 3.0 : 1.0, arrival).finalCount++;
+  }
+
+  /// Doorsteps proven for the RETURN direction: repeaters that were
+  /// heard carrying the owner's own packets (a contact's first hop, or
+  /// the last hop before this radio). A guess for sending, proof for
+  /// receiving.
+  List<Candidate> heardCandidatesFor(String owner, int now,
+      {required bool isSelf}) {
+    final out = <Candidate>[];
+    for (final entry in entries.entries) {
+      if (entry.key.$1 != owner) continue;
+      final e = entry.value;
+      if (e.finalCount == 0 || entry.key.$2 == directHash) continue;
+      final w = _decayedWeight(owner, e, now, isSelf);
+      if (w > 0.05) {
+        out.add(Candidate(entry.key.$2, w, e.tier,
+            uplinkSnr: e.uplinkSnr, downlinkSnr: e.downlinkSnr, proven: true));
+      }
+    }
+    out.sort((a, b) => b.weight.compareTo(a.weight));
+    return out;
   }
 
   /// Proven contact ingress: the last hop of a send that was delivered
