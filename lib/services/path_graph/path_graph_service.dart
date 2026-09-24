@@ -55,6 +55,8 @@ class PathGraphService extends ChangeNotifier {
     final graph = _graph;
     if (graph == null) return;
     _discoverWindow?.cancel();
+    _notifyThrottle?.cancel();
+    _notifyThrottle = null;
     await _frames?.cancel();
     _connector?.removeListener(_onConnectorChanged);
     _connector?.onOutgoingMessageUpdated = null;
@@ -67,10 +69,24 @@ class PathGraphService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Listeners (the debug screen) are told about new observations at
+  /// most every couple of seconds; RX-log frames can arrive in bursts.
+  Timer? _notifyThrottle;
+  void _notifySoon() {
+    _notifyThrottle ??= Timer(const Duration(seconds: 2), () {
+      _notifyThrottle = null;
+      notifyListeners();
+    });
+  }
+
   void _onFrame(Uint8List frame) {
     final adapter = _adapter;
     if (adapter == null) return;
+    final before = adapter.framesSeen;
     adapter.handleFrame(frame);
+    if (adapter.framesSeen != before || frame[0] == pushTraceData) {
+      _notifySoon();
+    }
     // Discover answers arrive one push per responder; commit the batch
     // once the radio's answer window has passed.
     if (frame.isNotEmpty &&
@@ -114,6 +130,7 @@ class PathGraphService extends ChangeNotifier {
     _lastProvenPath[contact.publicKeyHex] = hex;
     graph.reportSendResult(contact.path, true,
         contactPubkey: contact.publicKeyHex);
+    _notifySoon();
   }
 
   /// A direct send that was ACKed proves the route it used; a flood
@@ -126,6 +143,7 @@ class PathGraphService extends ChangeNotifier {
     if (hops == null || hops < 0) return;
     graph.reportSendResult(message.pathBytes, true,
         contactPubkey: message.senderKeyHex, tripTimeMs: message.tripTimeMs);
+    _notifySoon();
   }
 
   @override
