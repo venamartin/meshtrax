@@ -7,6 +7,8 @@ import 'package:path_graph/path_graph.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
+import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
@@ -193,9 +195,12 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
   }
 
   Widget _targetPicker(MeshCoreConnector connector, PathGraph graph) {
-    final contacts = connector.contacts.toList()
+    // Discovered nodes too: a repeater need not be saved to be routed to.
+    final contacts = connector.allContacts.toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     final target = _target;
+    final isNode = target != null &&
+        (target.type == advTypeRepeater || target.type == advTypeRoom);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -213,20 +218,29 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           ),
         ),
         if (target != null) ...[
-          _candidates(
-            '${target.name}\'s doorsteps — repeaters that deliver to them (ingress)',
-            graph.ingressCandidates(target.publicKeyHex),
-          ),
-          _answer(graph, target),
+          if (!isNode)
+            _candidates(
+              '${target.name}\'s doorsteps — repeaters that deliver to them (ingress)',
+              graph.ingressCandidates(target.publicKeyHex),
+            ),
+          _answer(graph, target, isNode: isNode),
         ],
       ],
     );
   }
 
-  Widget _answer(PathGraph graph, Contact target) {
-    final result = graph.findPath(target.publicKeyHex);
-    final alternatives = graph.findAlternatives(target.publicKeyHex, count: 3);
+  Widget _answer(PathGraph graph, Contact target, {required bool isNode}) {
     final width = graph.hashWidthBytes;
+    // A repeater or room is itself the destination node; a chat contact
+    // is reached through its doorsteps.
+    final hash = PathHelper.hopHex(
+        PathHelper.pubKeyPrefix(target.publicKey, stride: width));
+    final result = isNode
+        ? graph.findPathToRepeater(hash)
+        : graph.findPath(target.publicKeyHex);
+    final alternatives = isNode
+        ? graph.findAlternativesToRepeater(hash, count: 3)
+        : graph.findAlternatives(target.publicKeyHex, count: 3);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
