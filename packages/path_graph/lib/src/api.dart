@@ -1,0 +1,1152 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart';
+
+import 'db/database.dart';
+import 'estimator.dart';
+import 'evidence.dart';
+import 'graph_store.dart';
+import 'retention.dart';
+import 'search.dart';
+
+export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
+export 'evidence.dart' show Candidate, EvidenceTier, directHash;
+export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
+export 'retention.dart' show RetentionPolicy, RetentionReport;
+
+/// Attribution quality of an observed path's originator.
+sealed class ObservationOrigin {
+  const ObservationOrigin();
+
+  /// Sender identity cryptographically confirmed (DM decrypt, path
+  /// return, signed advert).
+  const factory ObservationOrigin.pubkeyConfirmed(String contactPubkey) =
+      PubkeyConfirmedOrigin;
+
+  /// Channel message whose display name matched exactly one contact.
+  const factory ObservationOrigin.uniqueName(String contactPubkey) =
+      UniqueNameOrigin;
+
+  /// Unknown or ambiguous sender — edges only, no ingress attribution.
+  const factory ObservationOrigin.anonymous() = AnonymousOrigin;
+}
+
+class PubkeyConfirmedOrigin extends ObservationOrigin {
+  const PubkeyConfirmedOrigin(this.contactPubkey);
+  final String contactPubkey;
+}
+
+class UniqueNameOrigin extends ObservationOrigin {
+  const UniqueNameOrigin(this.contactPubkey);
+  final String contactPubkey;
+}
+
+class AnonymousOrigin extends ObservationOrigin {
+  const AnonymousOrigin();
+}
+
+/// A single repeater's answer to a zero-hop Discover.
+class DiscoverResponse {
+  const DiscoverResponse(
+      {required this.repeaterHash, this.uplinkSnr, this.rxSnr});
+
+  /// Hash bucket in hex, at the graph's identity width.
+  final String repeaterHash;
+
+  /// dB at which the repeater heard OUR request (control payload byte
+  /// 1) — the direction that matters for sending.
+  final double? uplinkSnr;
+
+  /// dB at which WE heard the response (frame header) — the reverse
+  /// direction of the same exchange.
+  final double? rxSnr;
+}
+
+/// Geographic position (any of the three optional sources).
+class GeoPosition {
+  const GeoPosition(this.lat, this.lon);
+  final double lat;
+  final double lon;
+}
+
+/// Why findPath returned flood — surfaced in the why-this-path UI.
+enum FloodReason {
+  noEvidence,
+
+  /// Doorsteps exist on both sides, but none of MINE was ever proven to
+  /// hear this radio (only heard by me). A delivered send, a trace or a
+  /// Discover answer proves one.
+  noProvenEndpoint,
+  noBidirectionalRoute,
+  belowThreshold,
+  overBudget,
+}
+
+/// The three-tier return contract: direct | bidirectional path | flood.
+sealed class PathResult {
+  const PathResult();
+
+  const factory PathResult.direct() = DirectResult;
+  const factory PathResult.path(
+    Uint8List pathBytes,
+    double estDelivery, {
+    List<double> hopProbabilities,
+    bool egressProven,
+    bool ingressProven,
+  }) = RouteResult;
+  const factory PathResult.flood(FloodReason reason) = FloodResult;
+}
+
+/// Zero-hop: a delivered empty-path send proved they hear this radio —
+/// send with an empty path while that is fresh.
+class DirectResult extends PathResult {
+  const DirectResult();
+}
+
+/// A route over links proven in both directions. [pathBytes] is wire
+/// format (hops at the graph's identity width); truncate each hop to
+/// its first byte for 1-byte-mode targets. The evidence rides along so
+/// the caller can see why this option ranks where it does.
+class RouteResult extends PathResult {
+  const RouteResult(
+    this.pathBytes,
+    this.estDelivery, {
+    this.hopProbabilities = const [],
+    this.egressProven = true,
+    this.ingressProven = true,
+  });
+  final Uint8List pathBytes;
+  final double estDelivery;
+
+  /// Calibrated p of each between-hop link, in path order.
+  final List<double> hopProbabilities;
+
+  /// Whether the first hop was proven to hear this radio (always, unless
+  /// the graph was configured to allow inferred endpoints), and whether
+  /// the last hop was proven to reach the target by a delivery — false
+  /// when the route ends at a doorstep only heard carrying their
+  /// traffic.
+  final bool egressProven;
+  final bool ingressProven;
+}
+
+class FloodResult extends PathResult {
+  const FloodResult(this.reason);
+  final FloodReason reason;
+}
+
+/// Observation counters (graph_meta backed; snapshot for UI/debug).
+class PathGraphCounters {
+  const PathGraphCounters({
+    required this.observationsApplied,
+    required this.droppedNarrow,
+  });
+
+  final int observationsApplied;
+
+  /// Paths whose stride was narrower than the graph's bucket width —
+  /// unusable for identity (a 1-byte hash can't be widened to 2).
+  final int droppedNarrow;
+}
+
+/// The module. Push-in, never read-out: this API is the complete
+/// inventory of everything the module will ever know.
+class PathGraph {
+  /// [hashWidthBytes] is the graph's identity width — every node, edge
+  /// and ingress key is the first N bytes of a pubkey. 2 is right for
+  /// today's meshes; the knob exists so a regional mesh outgrowing 2
+  /// bytes moves to 3 or 4 by re-collecting (or re-collapsing stored
+  /// pubkeys), not by hunting hardcoded 2s. The width is stamped into
+  /// the database, exports, and session checkpoints — mixing widths is
+  /// refused rather than silently mangled.
+  PathGraph(
+    QueryExecutor executor, {
+    DateTime Function()? now,
+    PathGraphConfig config = const PathGraphConfig(),
+    this.hashWidthBytes = 2,
+  })  : assert(hashWidthBytes >= 2 && hashWidthBytes <= 4,
+            'wire path hops are 1–4 bytes; buckets below 2 are useless'),
+        _db = PathGraphDatabase(executor),
+        _now = now ?? DateTime.now,
+        _estimator = Estimator(config) {
+    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes);
+    _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
+  }
+
+  final int hashWidthBytes;
+
+  final PathGraphDatabase _db;
+  final DateTime Function() _now;
+  Estimator _estimator;
+
+  Estimator get estimator => _estimator;
+  PathGraphConfig get config => _estimator.config;
+
+  /// Live retune (β slider, thresholds). Affects routing immediately;
+  /// stored evidence is untouched.
+  void updateConfig(PathGraphConfig config) {
+    _estimator = Estimator(config);
+    _evidence.config = config;
+  }
+  late final GraphStore _store;
+  late final EvidenceStore _evidence;
+
+  Timer? _flushTimer;
+  static const _flushDelay = Duration(seconds: 30);
+
+  String? _selfPubkey;
+  int _selfStride = 2;
+
+  int _observationsApplied = 0;
+  int _droppedNarrow = 0;
+
+  /// Loads persisted state into the in-memory working set.
+  Future<void> init() async {
+    // The identity width is a property of the collected data, not of
+    // the code — refuse a database collected at another width rather
+    // than silently mangling its keys. (Databases from before the
+    // stamp were all width-2.)
+    final stamp = await (_db.select(_db.graphMeta)
+          ..where((t) => t.key.equals('hash_width')))
+        .getSingleOrNull();
+    // No stamp + existing rows = a database from before the stamp,
+    // which was always collected at width 2.
+    final dbWidth = stamp != null
+        ? int.tryParse(stamp.value) ?? 2
+        : (await (_db.select(_db.graphNodes)..limit(1)).get()).isEmpty
+            ? hashWidthBytes
+            : 2;
+    if (dbWidth != hashWidthBytes) {
+      throw StateError(
+          'database was collected at hash width $dbWidth, this PathGraph '
+          'runs at $hashWidthBytes — re-collect or re-collapse; widths '
+          'cannot mix');
+    }
+    await _db.into(_db.graphMeta).insertOnConflictUpdate(
+        GraphMetaCompanion.insert(
+            key: 'hash_width', value: '$hashWidthBytes'));
+
+    await _store.load();
+    await _evidence.load();
+    // Heal rows minted before wide hops truncated into buckets.
+    _store.normalizeKeys();
+    _evidence.normalizeKeys();
+  }
+
+  Future<void> dispose() async {
+    _flushTimer?.cancel();
+    await flush();
+    await _db.close();
+  }
+
+  /// Persists dirty state now (also runs on a debounce after writes).
+  Future<void> flush() async {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    await _store.flush();
+    await _evidence.flush();
+  }
+
+  void _scheduleFlush() {
+    _flushTimer ??= Timer(_flushDelay, () {
+      _flushTimer = null;
+      _store.flush();
+      _evidence.flush();
+    });
+  }
+
+  int get _arrivalMillis => _now().millisecondsSinceEpoch;
+
+  /// Hash-native identity: a hop is always its first [hashWidthBytes]
+  /// bytes, whatever width the sender used. Hashes are pubkey prefixes,
+  /// so a wider hop truncates losslessly into the bucket the rest of
+  /// the graph knows — found live: a stride-3 path minted 'A27782'
+  /// beside 'A277', the same repeater counted twice.
+  String _hopHex(Uint8List path, int stride, int hopIndex) {
+    final start = hopIndex * stride;
+    final b = StringBuffer();
+    for (var i = start; i < start + hashWidthBytes; i++) {
+      b.write(path[i].toRadixString(16).padLeft(2, '0').toUpperCase());
+    }
+    return b.toString();
+  }
+
+  /// Identity of the connected radio; scopes egress rows and default
+  /// observation stride.
+  void setRadioIdentity(String selfPubkey, int stride) {
+    _selfPubkey = selfPubkey;
+    _selfStride = stride;
+  }
+
+  String? get selfPubkey => _selfPubkey;
+  int get selfStride => _selfStride;
+
+  /// Any received path (already parsed by the caller — the module never
+  /// touches wire frames). Rejects strides narrower than the bucket
+  /// width (counted, not silent). Wider hops truncate losslessly into
+  /// buckets.
+  /// [messageId] enables union-per-message dedup across flood variants.
+  /// [lastHopHeard]: true for paths physically received over RF (their
+  /// final hop is a repeater *I heard* → feeds the last-hop prior);
+  /// false for payload-embedded paths (path-return contents, firmware
+  /// out_paths) whose final hop proves nothing about my RX.
+  void observePath(
+    Uint8List pathBytes,
+    int stride,
+    ObservationOrigin origin, {
+    double? rxSnr,
+    GeoPosition? position,
+    String? messageId,
+    bool lastHopHeard = true,
+  }) {
+    final arrival = _arrivalMillis;
+
+    // Empty path + known sender = direct reception (zero-hop evidence).
+    if (pathBytes.isEmpty) {
+      final contact = switch (origin) {
+        PubkeyConfirmedOrigin(:final contactPubkey) => contactPubkey,
+        UniqueNameOrigin(:final contactPubkey) => contactPubkey,
+        AnonymousOrigin() => null,
+      };
+      if (contact != null) {
+        _evidence.recordDirect(contact, arrival);
+        _observationsApplied++;
+        _scheduleFlush();
+      }
+      return;
+    }
+
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+
+    final hopCount = pathBytes.length ~/ stride;
+    for (var i = 0; i < hopCount - 1; i++) {
+      _store.observeEdge(
+        _hopHex(pathBytes, stride, i),
+        _hopHex(pathBytes, stride, i + 1),
+        arrival,
+        messageId: messageId,
+      );
+    }
+    if (hopCount == 1) {
+      _store
+          .nodeFor(_hopHex(pathBytes, stride, 0), NodeSource.observed)
+          .lastHeard = arrival;
+    }
+
+    // Contact ingress: path[0] of traffic they originated.
+    final first = _hopHex(pathBytes, stride, 0);
+    switch (origin) {
+      case PubkeyConfirmedOrigin(:final contactPubkey):
+        _creditContactDoorstep(contactPubkey, first,
+            confirmed: true, arrival: arrival);
+      case UniqueNameOrigin(:final contactPubkey):
+        _creditContactDoorstep(contactPubkey, first,
+            confirmed: false, arrival: arrival);
+      case AnonymousOrigin():
+        break; // edges only
+    }
+
+    // Self egress: final hop is the last-hop prior; penultimate feeds
+    // the hub-signature demotion. RF-received paths only.
+    final self = _selfPubkey;
+    if (self != null && lastHopHeard) {
+      _evidence.recordLastHop(
+          self, _hopHex(pathBytes, stride, hopCount - 1), arrival,
+          lat: position?.lat, lon: position?.lon, downlinkSnr: rxSnr);
+      if (hopCount >= 2) {
+        _evidence.recordPenultimate(
+            self, _hopHex(pathBytes, stride, hopCount - 2));
+      }
+    }
+
+    _observationsApplied++;
+    _scheduleFlush();
+  }
+
+  /// A channel message the app decrypted: [senderName] is the "name: "
+  /// prefix of the text, [pathBytes] the path the packet arrived on.
+  /// Attribution only — the same packet already reached [observePath]
+  /// anonymously through the raw feed, so edges and my own last-hop
+  /// prior are not counted again here. A name that matches exactly one
+  /// known contact credits their doorstep; anything else is dropped.
+  void observeChannelSender(
+      String senderName, Uint8List pathBytes, int stride) {
+    final pk = _evidence.contactByUniqueName(senderName);
+    if (pk == null) return;
+    final arrival = _arrivalMillis;
+    if (pathBytes.isEmpty) {
+      _evidence.recordDirect(pk, arrival);
+      _observationsApplied++;
+      _scheduleFlush();
+      return;
+    }
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+    _creditContactDoorstep(pk, _hopHex(pathBytes, stride, 0),
+        confirmed: false, arrival: arrival);
+    _observationsApplied++;
+    _scheduleFlush();
+  }
+
+  /// An echo of my own flood, heard back with the path it travelled.
+  /// Only the FIRST hop proves anything about me: it heard me directly,
+  /// in the sending direction, so it is a confirmed doorstep. The hops
+  /// after it forwarded each other — I may hear them, they did not
+  /// necessarily hear me — and the raw feed already filed the corridor
+  /// and the heard-last guess for the same packet, so nothing else is
+  /// counted here. No level is recorded: a repeater does not report how
+  /// loud it heard me.
+  void observeOwnEcho(Uint8List pathBytes, int stride) {
+    final self = _selfPubkey;
+    if (self == null || pathBytes.isEmpty) return;
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+    _evidence.recordProvenEgress(
+        self, _hopHex(pathBytes, stride, 0), _arrivalMillis);
+    _observationsApplied++;
+    _scheduleFlush();
+  }
+
+  /// One sighting of a contact through [hash]: the repeater that heard
+  /// them first. Their doorstep list answers "who hears them now", so
+  /// the sighting first pushes the rest of the list down — wiped when
+  /// advert positions show [hash] is too far from their current top
+  /// doorstep to be the same place, slashed otherwise — and then counts.
+  void _creditContactDoorstep(String pk, String hash,
+      {required bool confirmed, required int arrival}) {
+    final top = _evidence
+        .candidatesFor(pk, arrival, isSelf: false)
+        .where((c) => c.repeaterHash != directHash)
+        .firstOrNull;
+    if (top != null && top.repeaterHash != hash && _movedFar(top.repeaterHash, hash)) {
+      _evidence.wipeContact(pk);
+    } else {
+      _evidence.supersedeContact(pk,
+          except: hash, factor: config.contactSupersedeFactor);
+    }
+    _evidence.recordIngress(pk, hash,
+        pubkeyConfirmed: confirmed, arrival: arrival);
+  }
+
+  bool _movedFar(String fromHash, String toHash) {
+    final a = _store.nodes[fromHash];
+    final b = _store.nodes[toHash];
+    if (a?.lat == null || a?.lon == null || b?.lat == null || b?.lon == null) {
+      return false;
+    }
+    return haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) >
+        config.contactMoveWipeKm;
+  }
+
+  /// Proven egress refresh; supersede/slash only in a failure episode.
+  void observeDiscoverResults(
+    List<DiscoverResponse> responses, {
+    GeoPosition? position,
+    required bool failureEpisode,
+  }) {
+    final self = _selfPubkey;
+    if (self == null) return;
+    _evidence.applyDiscover(
+      self,
+      [
+        for (final r in responses)
+          (hash: r.repeaterHash, snr: r.uplinkSnr, rxSnr: r.rxSnr)
+      ],
+      _arrivalMillis,
+      failureEpisode: failureEpisode,
+    );
+    _scheduleFlush();
+  }
+
+  /// Delivery outcome for a path we sent on. Success proves every
+  /// forward hop (s+1, n+1): the first hop heard us (proven egress) and,
+  /// with [contactPubkey], the last hop reached them (proven ingress —
+  /// the firmware's out_path after an ACK is exactly this). Failure is
+  /// the small forward penalty (n+1 only — the break can't be
+  /// localized). The ACK's own route is never inferred. An empty path
+  /// delivered to [contactPubkey] proves the zero-hop link.
+  ///
+  /// [stride] is the hash width the path was written at — a contact's
+  /// stored route keeps the width of the packet that built it, which
+  /// need not be the radio's own. Default: the radio's stride
+  /// ([setRadioIdentity]). A path narrower than the graph's bucket is
+  /// dropped and counted, like any other observation: reading 1-byte
+  /// hashes two at a time would mint repeaters that do not exist.
+  void reportSendResult(
+    Uint8List pathBytes,
+    bool success, {
+    int? tripTimeMs,
+    String? contactPubkey,
+    int? stride,
+  }) {
+    final arrival = _arrivalMillis;
+    if (pathBytes.isEmpty) {
+      if (success && contactPubkey != null) {
+        _evidence.recordDirect(contactPubkey, arrival, proven: true);
+        _scheduleFlush();
+      }
+      return;
+    }
+    stride ??= _selfStride;
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+    final hopCount = pathBytes.length ~/ stride;
+    for (var i = 0; i < hopCount - 1; i++) {
+      final from = _hopHex(pathBytes, stride, i);
+      final to = _hopHex(pathBytes, stride, i + 1);
+      _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
+      _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
+      final edge = _store.edges.putIfAbsent(
+          (from, to), () => EdgeState(source: 'observed'));
+      if (success) edge.s++;
+      edge.n++;
+      edge.lastObserved = arrival;
+      _store.markEdgeDirty(from, to);
+    }
+    if (success) {
+      final self = _selfPubkey;
+      if (self != null) {
+        _evidence.recordProvenEgress(
+            self, _hopHex(pathBytes, stride, 0), arrival);
+      }
+      if (contactPubkey != null) {
+        _evidence.recordProvenIngress(
+            contactPubkey, _hopHex(pathBytes, stride, hopCount - 1), arrival);
+      }
+    }
+    _scheduleFlush();
+  }
+
+  /// Trace result: top-grade evidence — the only source of middle-hop
+  /// SNR. [hops] are bucket-width hash hex in traversal order; [snrs][i] is
+  /// the level at which hops[i] heard the *previous* transmission (so
+  /// snrs[0] is my first hop hearing ME → proven egress, measured). The
+  /// firmware appends one more value, how I heard hops.last, so a
+  /// full list is `hops.length + 1` long: hops.last reached me directly
+  /// (a heard doorstep, measured downlink), and on a round trip (A,B,A)
+  /// my doorstep is measured both ways from one trace. Each hop pair
+  /// gets measuredSnr plus an attempt-counted success; round trips fill
+  /// the reverse edges by the same rule, no special case.
+  void observeTrace(List<String> hops, List<double> snrs) {
+    if (hops.isEmpty) return;
+    final arrival = _arrivalMillis;
+    final self = _selfPubkey;
+
+    if (self != null && snrs.isNotEmpty) {
+      _evidence.recordProvenEgress(self, hops[0].toUpperCase(), arrival,
+          uplinkSnr: snrs[0]);
+      if (snrs.length > hops.length) {
+        _evidence.recordLastHop(self, hops.last.toUpperCase(), arrival,
+            downlinkSnr: snrs[hops.length]);
+      }
+    }
+    for (var i = 1; i < hops.length; i++) {
+      final from = hops[i - 1].toUpperCase();
+      final to = hops[i].toUpperCase();
+      final edge = _store.edges
+          .putIfAbsent((from, to), () => EdgeState(source: 'trace'));
+      if (i < snrs.length) {
+        // EWMA so repeated traces refine rather than overwrite.
+        edge.measuredSnr = edge.measuredSnr == null
+            ? snrs[i]
+            : edge.measuredSnr! * 0.6 + snrs[i] * 0.4;
+      }
+      edge.s++;
+      edge.n++;
+      edge.lastObserved = arrival;
+      _store.markEdgeDirty(from, to);
+      _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
+    }
+    _scheduleFlush();
+  }
+
+  /// Repeater advert metadata enrichment (advert outranks import).
+  void ingestNode(
+    String hashBytes, {
+    String? name,
+    String? pubkey,
+    double? lat,
+    double? lon,
+  }) {
+    _store.enrichNode(
+      hashBytes.toUpperCase(),
+      NodeSource.advert,
+      name: name,
+      pubkey: pubkey,
+      lat: lat,
+      lon: lon,
+    );
+    _store.nodeFor(hashBytes.toUpperCase(), NodeSource.advert).lastHeard =
+        _arrivalMillis;
+    _scheduleFlush();
+  }
+
+  /// Read-only view of the working set for UI/debug rendering.
+  ({Map<String, NodeState> nodes, Map<(String, String), EdgeState> edges})
+      snapshot() => (
+            nodes: Map.unmodifiable(_store.nodes),
+            edges: Map.unmodifiable(_store.edges),
+          );
+
+  /// Contact mirror feed (full PK→name refresh on connect, add/rename).
+  void ingestContact(String contactPubkey, String name,
+      {GeoPosition? position}) {
+    _evidence.ingestContact(contactPubkey, name, _arrivalMillis);
+    _scheduleFlush();
+  }
+
+  /// Channel attribution against the module's own mirror: exactly one
+  /// name match → uniqueName origin, else anonymous.
+  ObservationOrigin resolveName(String name) {
+    final pk = _evidence.contactByUniqueName(name);
+    return pk == null
+        ? const ObservationOrigin.anonymous()
+        : ObservationOrigin.uniqueName(pk);
+  }
+
+  /// Best path TO a repeater itself (repeater/room login, map tap):
+  /// the target is the node — no contact ingress list involved. A
+  /// repeater that is also my own doorstep yields a single-hop path.
+  PathResult findPathToRepeater(String repeaterHash) {
+    final now = _arrivalMillis;
+    final self = _selfPubkey;
+    if (self == null) return const PathResult.flood(FloodReason.noEvidence);
+    final egress = _egressCandidates(self, now);
+    if (egress == null) return const PathResult.flood(FloodReason.noEvidence);
+    if (egress.isEmpty) {
+      return const PathResult.flood(FloodReason.noProvenEndpoint);
+    }
+
+    final route = PathFinder(estimator.config, estimator).search(
+      egress: egress,
+      // The repeater IS the destination — full-confidence virtual
+      // target, no far-side doorstep uncertainty to price in.
+      ingress: [_selfTarget(repeaterHash)],
+      edges: _store.edges,
+      nowMillis: now,
+    );
+    if (route == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    return _toResult(route);
+  }
+
+  /// The route a packet from [contactPubkey] would take BACK to this
+  /// radio, over corridors proven both ways: from a repeater heard
+  /// carrying their packets (their doorstep) to one this radio heard
+  /// last (mine). The same "heard" rows the forward query refuses as
+  /// guesses are the proof here — hearing is evidence for the direction
+  /// the packet travelled. Diagnostic: the ACK's real route is chosen by
+  /// their radio, not ours.
+  PathResult findReturnPath(String contactPubkey) {
+    final now = _arrivalMillis;
+    final self = _selfPubkey;
+    if (self == null) return const PathResult.flood(FloodReason.noEvidence);
+    final theirs = _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false);
+    final mine = _evidence.heardCandidatesFor(self, now, isSelf: true);
+    if (theirs.isEmpty || mine.isEmpty) {
+      return const PathResult.flood(FloodReason.noEvidence);
+    }
+    final route = PathFinder(estimator.config, estimator).search(
+      egress: theirs,
+      ingress: mine,
+      edges: _store.edges,
+      nowMillis: now,
+    );
+    if (route == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    return _toResult(route);
+  }
+
+  /// A traceable route from this radio to repeater [b] that passes
+  /// through repeater [a]: my proven doorstep → … → A → … → B. Built for
+  /// the map's "route & trace": the app sends a round-trip trace along
+  /// it, and the trace result proves (or refutes) every hop in both
+  /// directions. Pass [a] equal to [b] to route to a single repeater.
+  PathResult findRouteVia(String a, String b) {
+    final first = findPathToRepeater(a);
+    if (first is! RouteResult) return first;
+    final aHash = a.toUpperCase();
+    final bHash = b.toUpperCase();
+    if (aHash == bHash) return first;
+
+    final leg = PathFinder(estimator.config, estimator).search(
+      egress: [_selfTarget(aHash)],
+      ingress: [_selfTarget(bHash)],
+      edges: _store.edges,
+      nowMillis: _arrivalMillis,
+    );
+    if (leg == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    final hops = [..._bytesToHops(first.pathBytes), ...leg.hops.skip(1)];
+    if (hops.length > config.maxHops) {
+      return const PathResult.flood(FloodReason.overBudget);
+    }
+    return RouteResult(
+      _hopsToBytes(hops),
+      first.estDelivery * leg.estDelivery,
+      hopProbabilities: [...first.hopProbabilities, ...leg.hopProbabilities],
+      egressProven: first.egressProven,
+      ingressProven: true,
+    );
+  }
+
+  List<String> _bytesToHops(Uint8List bytes) => [
+        for (var i = 0; i + hashWidthBytes <= bytes.length; i += hashWidthBytes)
+          [
+            for (var b = 0; b < hashWidthBytes; b++)
+              bytes[i + b].toRadixString(16).padLeft(2, '0').toUpperCase()
+          ].join()
+      ];
+
+  bool get _provenOnly => !config.allowInferredEndpoints;
+
+  /// Egress candidates for routing: null when nothing is known at all,
+  /// empty when doorsteps are known but none is proven.
+  List<Candidate>? _egressCandidates(String self, int now) {
+    final all = _evidence.candidatesFor(self, now, isSelf: true);
+    if (all.isEmpty) return null;
+    return _provenOnly ? all.where((c) => c.proven).toList() : all;
+  }
+
+  /// A contact's route end may be a doorstep proven by a delivery or one
+  /// merely heard carrying their traffic: a repeater that hears a
+  /// handheld reaches it (first-hop symmetry, 2026-09-25). Only rows
+  /// that are neither — e.g. a DIRECT row minted by a delivered
+  /// empty-path send — stay out.
+  List<Candidate>? _ingressCandidates(String contactPubkey, int now) {
+    final all = _evidence.candidatesFor(contactPubkey, now, isSelf: false);
+    if (all.isEmpty) return null;
+    return _provenOnly
+        ? all.where((c) => c.proven || c.heard).toList()
+        : all;
+  }
+
+  RouteResult _toResult(RouteFound route) => RouteResult(
+        _hopsToBytes(route.hops),
+        route.estDelivery,
+        hopProbabilities: route.hopProbabilities,
+        egressProven: route.egressProven,
+        ingressProven: route.ingressProven,
+      );
+
+  static Candidate _selfTarget(String repeaterHash) =>
+      Candidate(repeaterHash.toUpperCase(), 1e9, EvidenceTier.proven,
+          proven: true);
+
+  Uint8List _hopsToBytes(List<String> hops) {
+    final bytes = Uint8List(hops.length * hashWidthBytes);
+    for (var i = 0; i < hops.length; i++) {
+      for (var b = 0; b < hashWidthBytes; b++) {
+        bytes[i * hashWidthBytes + b] =
+            int.parse(hops[i].substring(b * 2, b * 2 + 2), radix: 16);
+      }
+    }
+    return bytes;
+  }
+
+  /// Up to [count] genuinely divergent routes: after each find, its
+  /// edges are penalized so the next search prefers different links
+  /// (the retry ladder's alternative-path step, and the harness UI).
+  List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) =>
+      _alternatives(
+          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count);
+
+  /// Alternatives with a repeater itself as the destination.
+  List<RouteResult> findAlternativesToRepeater(String repeaterHash,
+          {int count = 3}) =>
+      _alternatives((_) => [_selfTarget(repeaterHash)], count);
+
+  List<RouteResult> _alternatives(
+      List<Candidate> Function(int now) ingressFor, int count) {
+    final now = _arrivalMillis;
+    final self = _selfPubkey;
+    if (self == null) return const [];
+    final egress = _egressCandidates(self, now) ?? const [];
+    final ingress = ingressFor(now);
+    if (egress.isEmpty || ingress.isEmpty) return const [];
+
+    final finder = PathFinder(estimator.config, estimator);
+    final penalties = <(String, String), double>{};
+    final results = <RouteResult>[];
+    final seen = <String>{};
+    for (var i = 0; i < count * 2 && results.length < count; i++) {
+      final route = finder.search(
+        egress: egress,
+        ingress: ingress,
+        edges: _store.edges,
+        nowMillis: now,
+        penalties: penalties,
+      );
+      if (route == null) break;
+      final key = route.hops.join('>');
+      if (seen.add(key)) results.add(_toResult(route));
+      for (var h = 0; h < route.hops.length - 1; h++) {
+        final k = (route.hops[h], route.hops[h + 1]);
+        penalties[k] = (penalties[k] ?? 0) + 1.4; // ≈ ×4 in probability
+      }
+    }
+    return results;
+  }
+
+  /// The confidence the router prices a doorstep at (UI/debug): tally
+  /// blended with the measured link when one exists.
+  double doorstepConfidence(Candidate c) =>
+      PathFinder(estimator.config, estimator).candidateConfidence(c);
+
+  /// Ranked egress candidates for the connected radio (UI/debug).
+  List<Candidate> egressCandidates() {
+    final self = _selfPubkey;
+    if (self == null) return const [];
+    return _evidence.candidatesFor(self, _arrivalMillis, isSelf: true);
+  }
+
+  /// Contacts that have at least one ingress entry — i.e. targets
+  /// `findPath` can actually reason about (UI/debug).
+  List<String> contactsWithIngress() {
+    final self = _selfPubkey;
+    return _evidence.entries.keys
+        .map((k) => k.$1)
+        .where((owner) => owner != self)
+        .toSet()
+        .toList();
+  }
+
+  /// Ranked ingress candidates for a contact (UI/debug).
+  List<Candidate> ingressCandidates(String contactPubkey) =>
+      _evidence.candidatesFor(contactPubkey, _arrivalMillis, isSelf: false);
+
+  /// Staleness sweep: forget idle unconfirmed hearsay past the policy's
+  /// age gate, drop stale position tags (row survives, coordinate goes),
+  /// and enforce the growth caps. Infrastructure — attempt-counted or
+  /// traced edges — is never aged out by idleness. Cheap; run on
+  /// connect and daily. The report is for the UI: silent deletion of a
+  /// user's learned map would be the wrong kind of surprise.
+  RetentionReport sweepStale(
+      {RetentionPolicy policy = const RetentionPolicy()}) {
+    final report = Retention(_store, _evidence, _estimator)
+        .sweep(_arrivalMillis, policy);
+    if (!report.isEmpty) _scheduleFlush();
+    return report;
+  }
+
+  /// The privacy escape hatch ("Clear learned data"): wipes everything
+  /// this radio learned — nodes, edges, counters, contact ingress,
+  /// position tags. The graph relearns from the next packet. Flushes
+  /// immediately.
+  Future<void> clearLearnedData() async {
+    Retention(_store, _evidence, _estimator).clearLearnedData();
+    _observationsApplied = 0;
+    _droppedNarrow = 0;
+    await flush();
+  }
+
+  static String _isoFromMillis(int millis) =>
+      DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true)
+          .toIso8601String();
+
+  /// This radio's observations as a meshtrax-graph-v2 document, ready to
+  /// hand to another collector.
+  ///
+  /// **Repeater topology only.** The export carries directed links
+  /// between forwarding nodes and the public advert metadata of the
+  /// nodes those links touch — nothing else. Contact ingress lists are
+  /// never exported (they are a position-tagged log of who I talked to
+  /// and where I stood), nor is the contact mirror, nor my own identity
+  /// or doorstep. A node appears only if a link references it, so the
+  /// document cannot name a node I merely heard about.
+  ///
+  /// Everything in the graph was observed by this radio, so every edge
+  /// with evidence is exported. Nothing is ever imported back: the graph
+  /// learns only from the air, and a session checkpoint is the backup.
+  Map<String, dynamic> exportGraph({
+    String? regionHint,
+    String collector = 'meshtrax',
+  }) {
+    final links = <Map<String, dynamic>>[];
+    final referenced = <String>{};
+
+    for (final entry in _store.edges.entries) {
+      final e = entry.value;
+      final local = e.obsCount > 0 || e.n > 0 || e.measuredSnr != null;
+      if (!local) continue;
+      final (from, to) = entry.key;
+      referenced
+        ..add(from)
+        ..add(to);
+      links.add({
+        'source': from,
+        'target': to,
+        'observations': e.obsCount,
+        if (e.measuredSnr != null) 'measured_snr': e.measuredSnr,
+        'trace_confirmed': e.measuredSnr != null,
+        if (e.n > 0) 'delivered': e.s,
+        if (e.n > 0) 'attempts': e.n,
+        if (e.lastObserved != null)
+          'last_observed': _isoFromMillis(e.lastObserved!),
+      });
+    }
+
+    final nodes = <Map<String, dynamic>>[];
+    for (final hash in referenced.toList()..sort()) {
+      final n = _store.nodes[hash];
+      nodes.add({
+        'id': hash,
+        if (n?.pubkey != null) 'pubkey': n!.pubkey,
+        if (n?.name != null) 'name': n!.name,
+        if (n?.role != null) 'role': n!.role,
+        if (n?.lat != null) 'lat': n!.lat,
+        if (n?.lon != null) 'lon': n!.lon,
+        if (n?.lastHeard != null) 'last_heard': _isoFromMillis(n!.lastHeard!),
+      });
+    }
+
+    return {
+      'format': 'meshtrax-graph-v2',
+      'directed': true,
+      'multigraph': false,
+      'graph': {
+        'generated_at': _isoFromMillis(_arrivalMillis),
+        'collector': collector,
+        if (regionHint != null) 'region_hint': regionHint,
+        'hash_width': hashWidthBytes,
+      },
+      'nodes': nodes,
+      'links': links,
+    };
+  }
+
+  static const _sessionFormat = 'meshtrax-path-graph-session-v1';
+
+  /// A complete private checkpoint of everything the module holds.
+  ///
+  /// This is NOT [exportGraph]. Export is the shareable file and
+  /// withholds contact ingress, the contact mirror, my identity and my
+  /// doorstep by design. A session carries all of it, plus the in-memory
+  /// hub counters, so a restore lands exactly where the save left off.
+  /// It is the backup of what this radio learned. Keep it local —
+  /// sharing one hands over a position-tagged log of who this radio
+  /// talks to.
+  ///
+  /// Timestamps are raw arrival millis, not wire times: a session is a
+  /// machine checkpoint, and converting them would only lose precision.
+  ///
+  /// Ordinary restarts do not need this — state persists in the
+  /// database. It exists to checkpoint before an experiment and roll
+  /// back after one.
+  Map<String, dynamic> saveSession() {
+    return {
+      'format': _sessionFormat,
+      'private': true,
+      'saved_at': _isoFromMillis(_arrivalMillis),
+      'hash_width': hashWidthBytes,
+      'self': {'pubkey': _selfPubkey, 'stride': _selfStride},
+      'counters': {
+        'observations_applied': _observationsApplied,
+        'dropped_narrow': _droppedNarrow,
+      },
+      'nodes': [
+        for (final e in _store.nodes.entries)
+          {
+            'hash': e.key,
+            'source': e.value.source.name,
+            if (e.value.name != null) 'name': e.value.name,
+            if (e.value.role != null) 'role': e.value.role,
+            if (e.value.lat != null) 'lat': e.value.lat,
+            if (e.value.lon != null) 'lon': e.value.lon,
+            if (e.value.lastHeard != null) 'last_heard': e.value.lastHeard,
+            if (e.value.pubkey != null) 'pubkey': e.value.pubkey,
+          }
+      ],
+      'edges': [
+        for (final e in _store.edges.entries)
+          {
+            'from': e.key.$1,
+            'to': e.key.$2,
+            'source': e.value.source,
+            's': e.value.s,
+            'n': e.value.n,
+            'traffic_weight': e.value.trafficWeight,
+            'obs_count': e.value.obsCount,
+            if (e.value.lastObserved != null)
+              'last_observed': e.value.lastObserved,
+            if (e.value.measuredSnr != null)
+              'measured_snr': e.value.measuredSnr,
+          }
+      ],
+      'ingress': [
+        for (final e in _evidence.entries.entries)
+          {
+            'owner': e.key.$1,
+            'repeater': e.key.$2,
+            'weight': e.value.weight,
+            'last_seen': e.value.lastSeen,
+            'tier': e.value.tier.name,
+            if (e.value.provenAt != null) 'proven_at': e.value.provenAt,
+            if (e.value.observedLat != null) 'lat': e.value.observedLat,
+            if (e.value.observedLon != null) 'lon': e.value.observedLon,
+            if (e.value.uplinkSnr != null) 'uplink_snr': e.value.uplinkSnr,
+            if (e.value.downlinkSnr != null)
+              'downlink_snr': e.value.downlinkSnr,
+            'final_count': e.value.finalCount,
+            'penultimate_count': e.value.penultimateCount,
+          }
+      ],
+      'contacts': [
+        for (final e in _evidence.knownContacts.entries)
+          {
+            'pubkey': e.key,
+            'name': e.value.name,
+            'last_refreshed': e.value.lastRefreshed,
+          }
+      ],
+    };
+  }
+
+  /// Restores a [saveSession] checkpoint, **replacing** everything the
+  /// module currently holds — memory and database both. Throws
+  /// [FormatException] on anything else.
+  Future<void> loadSession(Map<String, dynamic> document) async {
+    if (document['format'] != _sessionFormat) {
+      throw FormatException(
+          'not a $_sessionFormat document (got ${document['format']})');
+    }
+    // Checkpoints from before the stamp existed were all width-2.
+    final docWidth = (document['hash_width'] as num?)?.toInt() ?? 2;
+    if (docWidth != hashWidthBytes) {
+      throw FormatException(
+          'checkpoint was saved at hash width $docWidth, this graph runs '
+          'at $hashWidthBytes — widths cannot mix');
+    }
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    await _store.clear();
+    await _evidence.clear();
+
+    for (final raw in (document['nodes'] as List?) ?? const []) {
+      final n = raw as Map;
+      // Checkpoints from before imports were removed may carry
+      // 'imported' nodes; they are plain observed nodes now.
+      _store.nodes[n['hash'] as String] = NodeState(
+        source: n['source'] == 'advert' ? NodeSource.advert : NodeSource.observed,
+        name: n['name'] as String?,
+        role: n['role'] as String?,
+        lat: (n['lat'] as num?)?.toDouble(),
+        lon: (n['lon'] as num?)?.toDouble(),
+        lastHeard: (n['last_heard'] as num?)?.toInt(),
+        pubkey: n['pubkey'] as String?,
+      );
+    }
+    for (final raw in (document['edges'] as List?) ?? const []) {
+      final e = raw as Map;
+      _store.edges[(e['from'] as String, e['to'] as String)] =
+          EdgeState(source: e['source'] as String? ?? 'observed')
+            ..s = (e['s'] as num?)?.toInt() ?? 0
+            ..n = (e['n'] as num?)?.toInt() ?? 0
+            ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
+            ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
+            ..lastObserved = (e['last_observed'] as num?)?.toInt()
+            ..measuredSnr = (e['measured_snr'] as num?)?.toDouble();
+    }
+    for (final raw in (document['ingress'] as List?) ?? const []) {
+      final i = raw as Map;
+      _evidence.entries[(i['owner'] as String, i['repeater'] as String)] =
+          IngressEntry(
+        weight: (i['weight'] as num).toDouble(),
+        lastSeen: (i['last_seen'] as num).toInt(),
+        tier: EvidenceTier.values.byName(i['tier'] as String),
+        observedLat: (i['lat'] as num?)?.toDouble(),
+        observedLon: (i['lon'] as num?)?.toDouble(),
+      )
+            ..provenAt = (i['proven_at'] as num?)?.toInt()
+            ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()
+            ..downlinkSnr = (i['downlink_snr'] as num?)?.toDouble()
+            ..finalCount = (i['final_count'] as num?)?.toInt() ?? 0
+            ..penultimateCount = (i['penultimate_count'] as num?)?.toInt() ?? 0;
+    }
+    for (final raw in (document['contacts'] as List?) ?? const []) {
+      final c = raw as Map;
+      _evidence.knownContacts[c['pubkey'] as String] = (
+        name: c['name'] as String,
+        lastRefreshed: (c['last_refreshed'] as num).toInt(),
+      );
+    }
+
+    final self = (document['self'] as Map?) ?? const {};
+    final pubkey = self['pubkey'] as String?;
+    if (pubkey != null) {
+      setRadioIdentity(pubkey, (self['stride'] as num?)?.toInt() ?? 2);
+    }
+    final counters = (document['counters'] as Map?) ?? const {};
+    _observationsApplied =
+        (counters['observations_applied'] as num?)?.toInt() ?? 0;
+    _droppedNarrow = (counters['dropped_narrow'] as num?)?.toInt() ??
+        (counters['dropped_1byte'] as num?)?.toInt() ??
+        0;
+
+    _store.markAllDirty();
+    _evidence.markAllDirty();
+    _store.normalizeKeys();
+    _evidence.normalizeKeys();
+    await flush();
+  }
+
+  /// Best path to this contact: direct | bidirectional route | flood.
+  /// A route starts only at a doorstep proven to hear this radio
+  /// (unless [PathGraphConfig.allowInferredEndpoints] is set) and ends
+  /// at one proven to reach the contact or heard carrying their
+  /// packets — hearing a handheld is reaching it.
+  PathResult findPath(String contactPubkey) {
+    final now = _arrivalMillis;
+
+    // Tier 1: fresh direct-reception evidence → empty path wins. Their
+    // packet arriving with no hops is the same symmetric evidence as a
+    // delivered empty-path send.
+    if (_evidence.hasFreshDirect(contactPubkey, now)) {
+      return const PathResult.direct();
+    }
+
+    // Tier 2: bidirectional route over candidate lists.
+    final self = _selfPubkey;
+    if (self == null) return const PathResult.flood(FloodReason.noEvidence);
+    final egress = _egressCandidates(self, now);
+    final ingress = _ingressCandidates(contactPubkey, now);
+    if (egress == null || ingress == null) {
+      return const PathResult.flood(FloodReason.noEvidence);
+    }
+    if (egress.isEmpty || ingress.isEmpty) {
+      return const PathResult.flood(FloodReason.noProvenEndpoint);
+    }
+
+    final route = PathFinder(estimator.config, estimator).search(
+      egress: egress,
+      ingress: ingress,
+      edges: _store.edges,
+      nowMillis: now,
+    );
+    if (route == null) {
+      return const PathResult.flood(FloodReason.noBidirectionalRoute);
+    }
+    return _toResult(route);
+  }
+
+  PathGraphCounters get counters => PathGraphCounters(
+        observationsApplied: _observationsApplied,
+        droppedNarrow: _droppedNarrow,
+      );
+}

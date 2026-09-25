@@ -3766,4 +3766,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get settings_pathGraph => 'Path graph (experimental)';
+
+  @override
+  String get settings_pathGraphSubtitle =>
+      'Learns routes from everything the radio hears. Observe only — never changes how a message is sent.';
+
+  @override
+  String get map_routeAndTrace => 'Route & trace';
 }

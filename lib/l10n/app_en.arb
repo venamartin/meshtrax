@@ -2270,5 +2270,8 @@
     }
   },
   "chat_statusFailedShort": "Failed · tap to resend",
-  "chat_resendingByFlood": "Resending by flood"
+  "chat_resendingByFlood": "Resending by flood",
+  "settings_pathGraph": "Path graph (experimental)",
+  "settings_pathGraphSubtitle": "Learns routes from everything the radio hears. Observe only — never changes how a message is sent.",
+  "map_routeAndTrace": "Route & trace"
 }

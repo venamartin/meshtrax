@@ -18,6 +18,7 @@ import '../helpers/snack_bar_builder.dart';
 import 'app_settings_screen.dart';
 import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
+import 'path_graph_screen.dart';
 import '../widgets/radio_stats_entry.dart';
 
 /// Convert device coding-rate value (1-4 on some firmware, 5-8 on others)
@@ -604,6 +605,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const AppDebugLogScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.hub_outlined),
+            title: Text(l10n.settings_pathGraph),
+            subtitle: Text(l10n.settings_pathGraphSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PathGraphScreen(),
                 ),
               );
             },

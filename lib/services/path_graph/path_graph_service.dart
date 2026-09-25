@@ -1,0 +1,196 @@
+import 'dart:async';
+
+import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path_graph/path_graph.dart';
+
+import '../../connector/meshcore_connector.dart';
+import '../../models/contact.dart';
+import '../../models/message.dart';
+import '../../utils/app_logger.dart';
+import 'frame_adapter.dart';
+
+/// The path graph's hook into the app: observe only.
+///
+/// When enabled it feeds the graph from the radio's raw frame stream (the
+/// adapter parses every packet the radio logs), the radio identity, the
+/// contact list, every channel packet the connector decrypts (sender name
+/// plus the path it arrived on — echoes of this radio's own messages
+/// confirm their first hop as a doorstep), and every route the firmware proves — a
+/// contact's `out_path` after a delivery, and a direct send that was
+/// ACKed. Nothing here chooses a route for a message; the debug screen and
+/// the map read the graph's answers and a trace proves them on the air.
+class PathGraphService extends ChangeNotifier {
+  PathGraphService();
+
+  PathGraph? _graph;
+  PathLabAdapter? _adapter;
+  MeshCoreConnector? _connector;
+  StreamSubscription<Uint8List>? _frames;
+  Timer? _discoverWindow;
+
+  /// The firmware route last fed per contact (hex), so a refresh that
+  /// carries the same path is not counted twice.
+  final Map<String, String> _lastProvenPath = {};
+
+  PathGraph? get graph => _graph;
+  PathLabAdapter? get adapter => _adapter;
+  bool get isRunning => _graph != null;
+
+  /// Opens the graph on `path_graph.db` and starts listening. Idempotent.
+  Future<void> start(MeshCoreConnector connector) async {
+    if (_graph != null) return;
+    final graph = PathGraph(driftDatabase(name: 'path_graph'));
+    await graph.init();
+    _graph = graph;
+    _adapter = PathLabAdapter(graph);
+    _connector = connector;
+    _frames = connector.receivedFrames.listen(_onFrame);
+    connector.addListener(_onConnectorChanged);
+    connector.onOutgoingMessageUpdated = _onOutgoingMessage;
+    connector.onChannelPacketHeard = _onChannelPacket;
+    connector.onOwnEchoHeard = _onOwnEcho;
+    _onConnectorChanged();
+    appLogger.info('path graph started', tag: 'PathGraph');
+    notifyListeners();
+  }
+
+  Future<void> stop() async {
+    final graph = _graph;
+    if (graph == null) return;
+    _discoverWindow?.cancel();
+    _notifyThrottle?.cancel();
+    _notifyThrottle = null;
+    await _frames?.cancel();
+    _connector?.removeListener(_onConnectorChanged);
+    _connector?.onOutgoingMessageUpdated = null;
+    _connector?.onChannelPacketHeard = null;
+    _connector?.onOwnEchoHeard = null;
+    _connector = null;
+    _adapter = null;
+    _graph = null;
+    _lastProvenPath.clear();
+    await graph.dispose();
+    appLogger.info('path graph stopped', tag: 'PathGraph');
+    notifyListeners();
+  }
+
+  /// Listeners (the debug screen) are told about new observations at
+  /// most every couple of seconds; RX-log frames can arrive in bursts.
+  Timer? _notifyThrottle;
+  void _notifySoon() {
+    _notifyThrottle ??= Timer(const Duration(seconds: 2), () {
+      _notifyThrottle = null;
+      notifyListeners();
+    });
+  }
+
+  void _onFrame(Uint8List frame) {
+    final adapter = _adapter;
+    if (adapter == null) return;
+    final before = adapter.framesSeen;
+    adapter.handleFrame(frame);
+    if (adapter.framesSeen != before || frame[0] == pushTraceData) {
+      _notifySoon();
+    }
+    // Discover answers arrive one push per responder; commit the batch
+    // once the radio's answer window has passed.
+    if (frame.isNotEmpty &&
+        frame[0] == pushControlData &&
+        adapter.pendingDiscover.isNotEmpty) {
+      _discoverWindow?.cancel();
+      _discoverWindow = Timer(const Duration(seconds: 30), () {
+        adapter.commitDiscover(failureEpisode: false);
+        notifyListeners();
+      });
+    }
+  }
+
+  void _onConnectorChanged() {
+    final graph = _graph;
+    final connector = _connector;
+    if (graph == null || connector == null) return;
+
+    final self = connector.selfPublicKeyHex;
+    if (self.isNotEmpty && graph.selfPubkey != self) {
+      graph.setRadioIdentity(self, connector.pathHashByteWidth);
+    }
+
+    for (final contact in connector.contacts) {
+      graph.ingestContact(contact.publicKeyHex, contact.name);
+      _proveFirmwareRoute(contact);
+    }
+  }
+
+  /// The firmware only ever stores a route a packet actually travelled
+  /// in the sending direction (a PATH reply's payload), so a contact's
+  /// out_path is proof for every hop — unless the user wrote it. The
+  /// route keeps the hash width of the packet that built it
+  /// ([Contact.pathHashSize]), not the radio's.
+  void _proveFirmwareRoute(Contact contact) {
+    final graph = _graph;
+    if (graph == null || contact.pathOverride != null) return;
+    if (contact.pathLength < 0) return;
+    final hex = contact.path
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    if (_lastProvenPath[contact.publicKeyHex] == hex) return;
+    _lastProvenPath[contact.publicKeyHex] = hex;
+    graph.reportSendResult(contact.path, true,
+        contactPubkey: contact.publicKeyHex, stride: contact.pathHashSize);
+    _notifySoon();
+  }
+
+  /// A direct send that was ACKed proves the route it used; a flood
+  /// delivery is proven through the contact refresh that follows it.
+  /// The message's path bytes are the contact's stored route (its own
+  /// hash width) or a user override (the radio's width).
+  void _onOutgoingMessage(Message message) {
+    final graph = _graph;
+    final connector = _connector;
+    if (graph == null || connector == null || !message.isOutgoing) return;
+    if (message.status != MessageStatus.delivered) return;
+    final hops = message.pathLength;
+    if (hops == null || hops < 0) return;
+    Contact? contact;
+    for (final c in connector.contacts) {
+      if (c.publicKeyHex == message.senderKeyHex) {
+        contact = c;
+        break;
+      }
+    }
+    final stride = contact == null || contact.pathOverride != null
+        ? connector.pathHashByteWidth
+        : contact.pathHashSize;
+    graph.reportSendResult(message.pathBytes, true,
+        contactPubkey: message.senderKeyHex,
+        tripTimeMs: message.tripTimeMs,
+        stride: stride);
+    _notifySoon();
+  }
+
+  /// A channel message names its sender; if that name belongs to exactly
+  /// one contact, the packet's first hop is a repeater that heard them.
+  void _onChannelPacket(String senderName, Uint8List pathBytes, int stride) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.observeChannelSender(senderName, pathBytes, stride);
+    _notifySoon();
+  }
+
+  /// My own channel message came back through the mesh: its first hop
+  /// heard me directly. Every echo counts — two echoes with different
+  /// first hops confirm two doorsteps from one message.
+  void _onOwnEcho(Uint8List pathBytes, int stride) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.observeOwnEcho(pathBytes, stride);
+    _notifySoon();
+  }
+
+  @override
+  void dispose() {
+    stop();
+    super.dispose();
+  }
+}
