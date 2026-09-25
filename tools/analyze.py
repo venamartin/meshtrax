@@ -61,9 +61,8 @@ _LEAFLET_JS = r"""
   var cLon = positioned.reduce(function(a,n){return a+n.lon;},0)/positioned.length;
 
   var map = L.map('map').setView([cLat, cLon], 7);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; <a href="https://www.esri.com">Esri</a> &mdash; Esri, HERE, Garmin, FAO, NOAA, USGS',
     maxZoom: 19
   }).addTo(map);
 
