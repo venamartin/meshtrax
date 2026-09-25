@@ -231,6 +231,31 @@ void main() {
     expect(graph.findPath(bobPk), isA<DirectResult>());
   });
 
+  test('the level I heard the last hop at is kept as its downlink', () {
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.anonymous(), rxSnr: 5.0);
+    expect(graph.egressCandidates().single.downlinkSnr, 5.0);
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.anonymous(), rxSnr: 0.0);
+    expect(graph.egressCandidates().single.downlinkSnr, closeTo(3.0, 1e-9));
+  });
+
+  test('doorstep confidence: a measured weak link ranks below a good tally',
+      () {
+    graph.observeDiscoverResults(
+        [const DiscoverResponse(repeaterHash: '1000', uplinkSnr: -12)],
+        failureEpisode: false);
+    for (var i = 0; i < 5; i++) {
+      graph.reportSendResult(path([0xA2, 0x77]), true);
+    }
+    final byHash = {
+      for (final c in graph.egressCandidates()) c.repeaterHash: c
+    };
+    expect(byHash['1000']!.proven, isTrue, reason: 'it answered');
+    expect(graph.doorstepConfidence(byHash['1000']!),
+        lessThan(graph.doorstepConfidence(byHash['A277']!)));
+  });
+
   test('delivered send upgrades first hop to proven egress', () {
     graph.reportSendResult(path([0xA2, 0x77, 0x13, 0x12]), true);
     final egress = graph.egressCandidates();

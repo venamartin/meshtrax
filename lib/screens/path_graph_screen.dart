@@ -103,7 +103,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             _counters(graph, connector),
             const Divider(),
             _candidates(
-              'My doorsteps — repeaters that carry my packets out (egress)',
+              graph,
+              'Repeaters that hear me',
+              'where my messages leave the mesh — the first hop',
               graph.egressCandidates(),
               isSelf: true,
             ),
@@ -164,19 +166,23 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
-  /// My own rows are a guess until proven (I may hear a mountaintop that
-  /// cannot hear me); a contact's heard-from row is already a route end
-  /// (a repeater that hears a handheld reaches it).
-  Widget _candidates(String title, List<Candidate> list,
-      {required bool isSelf}) {
+  /// One doorstep list, in the router's own order (confidence: tally
+  /// blended with the measured link). My own rows are a guess until
+  /// confirmed (I may hear a mountaintop that cannot hear me); a
+  /// contact's heard-from row is already a route end (a repeater that
+  /// hears a handheld reaches it). Plain words only — ingress/egress
+  /// stay in the code.
+  Widget _candidates(PathGraph graph, String title, String subtitle,
+      List<Candidate> list,
+      {required bool isSelf, String who = 'them'}) {
     String verdict(Candidate c) {
       if (c.proven) {
         return isSelf
-            ? 'proven by a delivery, trace or discover'
-            : 'proven by a delivery or path discovery';
+            ? 'confirmed — it answered a trace, discover or delivery'
+            : 'confirmed — a message reached $who this way';
       }
-      if (!isSelf && c.heard) return 'heard from — reaches them';
-      return 'only heard — unproven';
+      if (!isSelf && c.heard) return 'heard $who — can reach $who';
+      return isSelf ? 'I hear it — not yet confirmed it hears me' : 'unconfirmed';
     }
 
     Color? tint(Candidate c) {
@@ -185,19 +191,30 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       return Colors.grey;
     }
 
+    String db(double? v) => v == null ? '' : ' ${v.toStringAsFixed(1)} dB';
+    final ranked = list.toList()
+      ..sort((a, b) => graph
+          .doorstepConfidence(b)
+          .compareTo(graph.doorstepConfidence(a)));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
-        if (list.isEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Text(subtitle,
+              style: Theme.of(context).textTheme.bodySmall),
+        ),
+        if (ranked.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text('nothing yet'),
           ),
-        for (final c in list.take(8))
+        for (final c in ranked.take(8))
           ListTile(
             dense: true,
             leading: Icon(
@@ -207,9 +224,11 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             title: Text(c.repeaterHash,
                 style: const TextStyle(fontFamily: 'monospace')),
             subtitle: Text(
-              '${verdict(c)} · weight '
+              '${verdict(c)} · conf '
+              '${graph.doorstepConfidence(c).toStringAsFixed(2)} · weight '
               '${c.weight.toStringAsFixed(1)}'
-              '${c.uplinkSnr != null ? " · uplink ${c.uplinkSnr!.toStringAsFixed(1)} dB" : ""}',
+              '${c.uplinkSnr != null ? " · up${db(c.uplinkSnr)}" : ""}'
+              '${c.downlinkSnr != null ? " · down${db(c.downlinkSnr)}" : ""}',
             ),
           ),
       ],
@@ -221,8 +240,17 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     final contacts = connector.allContacts.toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     final target = _target;
-    final isNode = target != null &&
-        (target.type == advTypeRepeater || target.type == advTypeRoom);
+    // Anything that is not a chat contact is a node in its own right —
+    // and so is any hash the graph has already learned as a repeater,
+    // whatever the contact record says (field: a repeater filed under
+    // another type was asked the contact question and answered
+    // "nothing yet" right after a round-trip trace had proven it).
+    final knownNode = target != null &&
+        graph.snapshot().nodes.containsKey(PathHelper.hopHex(
+            PathHelper.pubKeyPrefix(target.publicKey,
+                stride: graph.hashWidthBytes)));
+    final isNode =
+        target != null && (target.type != advTypeChat || knownNode);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,11 +270,16 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         if (target != null) ...[
           if (!isNode)
             _candidates(
-              '${target.name}\'s doorsteps — repeaters that hear them (ingress)',
+              graph,
+              'Repeaters that hear ${target.name}',
+              'where a message to them arrives — the last hop',
               graph.ingressCandidates(target.publicKeyHex),
               isSelf: false,
+              who: target.name,
             ),
-          _answer(graph, target, isNode: isNode),
+          _answer(graph, target,
+              isNode: isNode,
+              treatedAsNode: isNode && target.type == advTypeChat),
         ],
       ],
     );
@@ -265,9 +298,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         FloodResult(:final reason) =>
           'Back from ${target.name}: unknown — ${switch (reason) {
             FloodReason.noEvidence =>
-              'no packet of theirs has been heard arriving here yet',
+              'no message of theirs has arrived here yet',
             FloodReason.noBidirectionalRoute =>
-              'their doorstep and mine are known but no two-way corridor joins them',
+              'a repeater hears them and one hears me, but no two-way corridor joins them',
             _ => reason.name,
           }}',
         DirectResult() => 'Back from ${target.name}: direct',
@@ -281,7 +314,8 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
-  Widget _answer(PathGraph graph, Contact target, {required bool isNode}) {
+  Widget _answer(PathGraph graph, Contact target,
+      {required bool isNode, bool treatedAsNode = false}) {
     final width = graph.hashWidthBytes;
     // A repeater or room is itself the destination node; a chat contact
     // is reached through its doorsteps.
@@ -314,16 +348,23 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             FloodResult(:final reason) => Text(switch (reason) {
                 FloodReason.noEvidence => 'nothing known on one side yet',
                 FloodReason.noProvenEndpoint =>
-                  'my doorstep is not proven yet — one delivered '
-                      'message, trace or discover proves it',
+                  'none of the repeaters that hear me is confirmed yet — '
+                      'one delivery, trace or discover confirms it',
                 FloodReason.noBidirectionalRoute =>
-                  'no corridor proven in both directions',
+                  'no two-way corridor joins a repeater that hears me to '
+                      'one that hears ${isNode ? "it" : "them"}',
                 FloodReason.belowThreshold => 'links too weak',
                 FloodReason.overBudget => 'route too long',
               }),
             _ => null,
           },
         ),
+        if (treatedAsNode)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+                'treated as a repeater — the graph knows this hash as a node'),
+          ),
         if (!isNode) _returnAnswer(graph, target),
         // A delivered message proves the forward direction only; a
         // round-trip trace along the same route proves the way back.

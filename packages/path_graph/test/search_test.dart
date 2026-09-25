@@ -92,6 +92,59 @@ void main() {
     expect((result as RouteResult).pathBytes.sublist(0, 2), [0xA2, 0x77]);
   });
 
+  test('a strong doorstep with a longer corridor beats a weak one with a short corridor',
+      () async {
+    // A277 hears me well (proven five times); 1000 heard me once. Bob is
+    // heard through 1312. 1000 links to 1312 directly; A277 needs 5CBB.
+    Future<PathGraph> build(double doorstepWeight,
+        {bool measureWeak = false}) async {
+      final g = PathGraph(NativeDatabase.memory(),
+          config: PathGraphConfig(doorstepWeight: doorstepWeight));
+      await g.init();
+      g.setRadioIdentity(selfPk, 2);
+      for (var i = 0; i < 5; i++) {
+        g.reportSendResult(path([0xA2, 0x77]), true);
+      }
+      g.reportSendResult(path([0x10, 0x00]), true);
+      if (measureWeak) {
+        g.observeDiscoverResults(
+            [const DiscoverResponse(repeaterHash: '1000', uplinkSnr: -12)],
+            failureEpisode: false);
+      }
+      g.observePath(path([0x13, 0x12]), 2,
+          const ObservationOrigin.pubkeyConfirmed(bobPk), lastHopHeard: false);
+      void both(List<int> a, List<int> b) {
+        g.observePath(path([...a, ...b]), 2,
+            const ObservationOrigin.anonymous(), lastHopHeard: false);
+        g.observePath(path([...b, ...a]), 2,
+            const ObservationOrigin.anonymous(), lastHopHeard: false);
+      }
+
+      both([0x10, 0x00], [0x13, 0x12]);
+      both([0xA2, 0x77], [0x5C, 0xBB]);
+      both([0x5C, 0xBB], [0x13, 0x12]);
+      return g;
+    }
+
+    final strong = await build(3);
+    expect((strong.findPath(bobPk) as RouteResult).pathBytes,
+        [0xA2, 0x77, 0x5C, 0xBB, 0x13, 0x12],
+        reason: 'start at the repeater that hears me best');
+    await strong.dispose();
+
+    final flat = await build(1);
+    expect((flat.findPath(bobPk) as RouteResult).pathBytes,
+        [0x10, 0x00, 0x13, 0x12],
+        reason: 'at weight 1 the shorter corridor wins — the field bug');
+    await flat.dispose();
+
+    final measured = await build(1, measureWeak: true);
+    expect((measured.findPath(bobPk) as RouteResult).pathBytes.sublist(0, 2),
+        [0xA2, 0x77],
+        reason: 'a measured weak uplink loses even without the knob');
+    await measured.dispose();
+  });
+
   test('multi-hop route through the trunk', () {
     anchor();
     link([0xA2, 0x77], [0x5C, 0xBB]);

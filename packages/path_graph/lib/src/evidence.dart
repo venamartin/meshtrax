@@ -169,14 +169,22 @@ class EvidenceStore {
         .provenAt = arrival;
   }
 
+  /// EWMA so repeat measurements refine rather than overwrite.
+  static double _blend(double? old, double fresh) =>
+      old == null ? fresh : old * 0.6 + fresh * 0.4;
+
   /// Self last-hop prior: final hop of a received path (inferred tier).
+  /// [downlinkSnr] is the level I heard that hop at — the reverse of
+  /// what a send needs, but the only strength measurement a heard-only
+  /// doorstep ever gets (ranking falls back to it).
   void recordLastHop(String selfPubkey, String repeaterHash, int arrival,
-      {double? lat, double? lon}) {
+      {double? lat, double? lon, double? downlinkSnr}) {
     final e =
         _upsert(selfPubkey, repeaterHash, EvidenceTier.inferred, 1.0, arrival);
     e.finalCount++;
     if (lat != null) e.observedLat = lat;
     if (lon != null) e.observedLon = lon;
+    if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
   }
 
   /// Hub-signature counter: repeater seen second-to-last.
@@ -198,10 +206,15 @@ class EvidenceStore {
     if (proven) e.provenAt = arrival;
   }
 
-  /// Proven egress upgrade (delivered send through this first hop).
-  void recordProvenEgress(String selfPubkey, String repeaterHash, int arrival) {
-    _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
-        .provenAt = arrival;
+  /// Proven egress upgrade (delivered send or trace through this first
+  /// hop). A trace also measures the link: [uplinkSnr] is how the hop
+  /// heard ME, [downlinkSnr] how I heard it.
+  void recordProvenEgress(String selfPubkey, String repeaterHash, int arrival,
+      {double? uplinkSnr, double? downlinkSnr}) {
+    final e = _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
+      ..provenAt = arrival;
+    if (uplinkSnr != null) e.uplinkSnr = _blend(e.uplinkSnr, uplinkSnr);
+    if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
   }
 
   /// Discover results: proven refresh always; supersede/slash only in a
@@ -241,16 +254,10 @@ class EvidenceStore {
         ..provenAt = arrival; // it answered: it heard us
       // Keep the measured dB, both directions — a Discover exchange is
       // the best-measured link we ever get (fresh, bidirectional, and
-      // it's the first hop). EWMA so repeat probes refine.
-      if (r.snr != null) {
-        entry.uplinkSnr = entry.uplinkSnr == null
-            ? r.snr
-            : entry.uplinkSnr! * 0.6 + r.snr! * 0.4;
-      }
+      // it's the first hop).
+      if (r.snr != null) entry.uplinkSnr = _blend(entry.uplinkSnr, r.snr!);
       if (r.rxSnr != null) {
-        entry.downlinkSnr = entry.downlinkSnr == null
-            ? r.rxSnr
-            : entry.downlinkSnr! * 0.6 + r.rxSnr! * 0.4;
+        entry.downlinkSnr = _blend(entry.downlinkSnr, r.rxSnr!);
       }
     }
   }

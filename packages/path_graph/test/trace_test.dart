@@ -57,6 +57,32 @@ void main() {
     expect(after.ingressProven, isTrue);
   });
 
+  test('a round trip measures my doorstep both ways', () {
+    // Firmware appends how I heard the last hop: four levels for three hops.
+    graph.observeTrace(['A277', '1312', 'A277'], [9.0, 6.5, 7.0, 8.5]);
+    final a277 = graph.egressCandidates().single;
+    expect(a277.proven, isTrue);
+    expect(a277.uplinkSnr, 9.0, reason: 'A277 heard me at 9 dB');
+    expect(a277.downlinkSnr, 8.5, reason: 'I heard A277 at 8.5 dB');
+
+    graph.observeTrace(['A277', '1312', 'A277'], [4.0, 6.5, 7.0, 3.5]);
+    final again = graph.egressCandidates().single;
+    expect(again.uplinkSnr, closeTo(7.0, 1e-9)); // 9*0.6 + 4*0.4
+    expect(again.downlinkSnr, closeTo(6.5, 1e-9)); // 8.5*0.6 + 3.5*0.4
+  });
+
+  test('a one-way trace hears its last hop directly', () {
+    graph.observeTrace(['A277', '5CBB'], [9.0, 3.0, -4.0]);
+    final byHash = {
+      for (final c in graph.egressCandidates()) c.repeaterHash: c
+    };
+    expect(byHash['A277']!.proven, isTrue);
+    expect(byHash['5CBB']!.proven, isFalse,
+        reason: 'I heard 5CBB; nothing says it hears me');
+    expect(byHash['5CBB']!.heard, isTrue);
+    expect(byHash['5CBB']!.downlinkSnr, -4.0);
+  });
+
   test('repeat traces refine SNR by EWMA', () {
     graph.observeTrace(['A277', '1312'], [9.0, 10.0]);
     graph.observeTrace(['A277', '1312'], [9.0, 0.0]);

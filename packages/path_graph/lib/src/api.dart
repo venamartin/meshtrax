@@ -356,7 +356,7 @@ class PathGraph {
     if (self != null && lastHopHeard) {
       _evidence.recordLastHop(
           self, _hopHex(pathBytes, stride, hopCount - 1), arrival,
-          lat: position?.lat, lon: position?.lon);
+          lat: position?.lat, lon: position?.lon, downlinkSnr: rxSnr);
       if (hopCount >= 2) {
         _evidence.recordPenultimate(
             self, _hopHex(pathBytes, stride, hopCount - 2));
@@ -511,16 +511,25 @@ class PathGraph {
   /// Trace result: top-grade evidence — the only source of middle-hop
   /// SNR. [hops] are bucket-width hash hex in traversal order; [snrs][i] is
   /// the level at which hops[i] heard the *previous* transmission (so
-  /// snrs[0] is my first hop hearing ME → proven egress). Each hop pair
-  /// gets measuredSnr plus an attempt-counted success. Round-trip paths
-  /// (A,B,A) fill the reverse edges by the same rule, no special case.
+  /// snrs[0] is my first hop hearing ME → proven egress, measured). The
+  /// firmware appends one more value, how I heard hops.last, so a
+  /// full list is `hops.length + 1` long: hops.last reached me directly
+  /// (a heard doorstep, measured downlink), and on a round trip (A,B,A)
+  /// my doorstep is measured both ways from one trace. Each hop pair
+  /// gets measuredSnr plus an attempt-counted success; round trips fill
+  /// the reverse edges by the same rule, no special case.
   void observeTrace(List<String> hops, List<double> snrs) {
     if (hops.isEmpty) return;
     final arrival = _arrivalMillis;
     final self = _selfPubkey;
 
     if (self != null && snrs.isNotEmpty) {
-      _evidence.recordProvenEgress(self, hops[0].toUpperCase(), arrival);
+      _evidence.recordProvenEgress(self, hops[0].toUpperCase(), arrival,
+          uplinkSnr: snrs[0]);
+      if (snrs.length > hops.length) {
+        _evidence.recordLastHop(self, hops.last.toUpperCase(), arrival,
+            downlinkSnr: snrs[hops.length]);
+      }
     }
     for (var i = 1; i < hops.length; i++) {
       final from = hops[i - 1].toUpperCase();
@@ -772,6 +781,11 @@ class PathGraph {
     }
     return results;
   }
+
+  /// The confidence the router prices a doorstep at (UI/debug): tally
+  /// blended with the measured link when one exists.
+  double doorstepConfidence(Candidate c) =>
+      PathFinder(estimator.config, estimator).candidateConfidence(c);
 
   /// Ranked egress candidates for the connected radio (UI/debug).
   List<Candidate> egressCandidates() {

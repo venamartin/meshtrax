@@ -30,16 +30,22 @@ class PathFinder {
   final PathGraphConfig config;
   final Estimator estimator;
 
-  /// Confidence for virtual candidate edges. A Discover-measured link
-  /// (dB, both directions) beats a tally: blend measured quality with
-  /// the tally so a strong-but-new responder outranks a weak favourite.
-  double _candidateConfidence(Candidate c) {
+  /// Confidence for virtual candidate edges. A measured link (dB from a
+  /// Discover answer or a trace, either direction) beats a tally: blend
+  /// measured quality with the tally so a strong-but-new responder
+  /// outranks a weak favourite.
+  double candidateConfidence(Candidate c) {
     final tally = (c.weight / (c.weight + 2)).clamp(0.05, 1.0);
     final snr = c.bestSnr;
     if (snr == null) return tally;
     final measured = estimator.snrQuality(snr);
     return (0.7 * measured + 0.3 * tally).clamp(0.05, 1.0);
   }
+
+  /// Doorstep cost: strength dominates corridor length
+  /// ([PathGraphConfig.doorstepWeight]).
+  double _doorstepCost(Candidate c) =>
+      config.doorstepWeight * -math.log(candidateConfidence(c));
 
   RouteFound? search({
     required List<Candidate> egress,
@@ -72,8 +78,7 @@ class PathFinder {
 
     const virtualSource = '<SRC>';
     final targetCost = {
-      for (final t in targets)
-        t.repeaterHash: -math.log(_candidateConfidence(t)),
+      for (final t in targets) t.repeaterHash: _doorstepCost(t),
     };
 
     final dist = <String, double>{virtualSource: 0};
@@ -83,7 +88,7 @@ class PathFinder {
 
     // Seed: virtual source → each egress candidate.
     for (final s in sources) {
-      final cost = -math.log(_candidateConfidence(s));
+      final cost = _doorstepCost(s);
       if (cost < (dist[s.repeaterHash] ?? double.infinity)) {
         dist[s.repeaterHash] = cost;
         hopsTo[s.repeaterHash] = 1;
@@ -147,8 +152,8 @@ class PathFinder {
         sources.where((s) => s.repeaterHash == hops.first).firstOrNull;
     final target =
         targets.where((t) => t.repeaterHash == hops.last).firstOrNull;
-    var delivery = (source == null ? 1.0 : _candidateConfidence(source)) *
-        (target == null ? 1.0 : _candidateConfidence(target));
+    var delivery = (source == null ? 1.0 : candidateConfidence(source)) *
+        (target == null ? 1.0 : candidateConfidence(target));
     final hopProbabilities = <double>[];
     for (var i = 0; i < hops.length - 1; i++) {
       final e = edges[(hops[i], hops[i + 1])];

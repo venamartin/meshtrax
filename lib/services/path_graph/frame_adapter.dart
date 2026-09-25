@@ -122,9 +122,12 @@ ParsedAdvert? parseAdvert(Uint8List payload) {
 }
 
 /// Trace response (0x89):
-/// [code][reserved][path_len][flag][tag x4][auth x4][path][snr per hop]
+/// [code][reserved][path_len][flag][tag x4][auth x4][path][snr per hop][snr final]
 /// Each SNR byte is signed, quarter-dB: the level at which that hop
-/// heard the *previous* transmission (snr[0] = hop 1 heard us).
+/// heard the *previous* transmission (snr[0] = hop 1 heard us). The
+/// firmware appends one extra byte, the level at which THIS radio heard
+/// the last hop (companion MyMesh.cpp onTraceRecv), so `snrs` is one
+/// longer than `hops`.
 ({List<String> hops, List<double> snrs})? parseTraceResponse(
     Uint8List frame, int stride, int bucketBytes) {
   if (frame.length < 12 || stride < bucketBytes) return null;

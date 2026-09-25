@@ -50,6 +50,34 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-09-25 (b) — doorstep strength dominates.** Field: the router
+  offered `1000,FACE` to a contact although 1000 had heard this radio
+  weakly once or twice — a doorstep's `−log(confidence)` gap (≈0.9 nat
+  between weak and strong) was smaller than one passive corridor hop
+  (≈0.74), so the shorter corridor won; a shared weak doorstep was a
+  one-hop route with no corridor cost at all. Fix:
+  `PathGraphConfig.doorstepWeight` (default 3) multiplies both doorstep
+  costs in `PathFinder.search`, so a route starts at the repeater that
+  hears me strongest and ends at the one that hears them strongest;
+  corridor length only breaks ties (a doorstep with no two-way corridor
+  still cannot win — "loud dead-end" rule kept). And the measurements
+  that make "strongest" real are no longer dropped: a trace's `snrs[0]`
+  (my first hop heard ME) becomes the proven doorstep's `uplinkSnr`, the
+  firmware's extra final byte (how I heard the last hop,
+  `MyMesh.cpp onTraceRecv`) becomes its `downlinkSnr` and marks the
+  last hop heard, and `observePath`'s `rxSnr` (previously ignored) is
+  the heard-last doorstep's `downlinkSnr`. `candidateConfidence` already
+  weighted a measured link at 70% — it just never had one outside
+  Discover. `PathGraph.doorstepConfidence(c)` exposes the router's
+  number to the debug screen, which now sorts by it and shows
+  `conf · up dB · down dB`. The `tools/analyze.py` viewer's cost
+  controls (cost mode, hop tax, A*) are viewer-only: it routes node to
+  node over exported edges and has no doorstep model. Debug screen also
+  routes any non-chat target, or any hash the graph knows as a node, as
+  a repeater (field: AA77 filed under another type was asked the
+  contact question after a proving round trip), and uses plain words —
+  "Repeaters that hear me" / "Repeaters that hear {name}" — with
+  ingress/egress kept to the code.
 * **2026-09-25 (user reasoning on the two entities)** — The graph is
   two things: a directed graph of repeaters, and per-pubkey lists of
   pointers at those repeaters (doorsteps). A user is a pubkey plus
@@ -1156,6 +1184,10 @@ open; the sections after this one are rationale and history.
    in `_creditContactDoorstep`, 12 h contact half-life,
    `observeChannelSender` fed by the connector's
    `onChannelPacketHeard`. See the decision log entry.
+8. ~~**Doorstep strength dominates; trace/RX-log SNR kept on the
+   doorstep**~~ — DONE 2026-09-25: `doorstepWeight`, trace uplink/
+   downlink, `rxSnr` used, `doorstepConfidence` on the debug screen,
+   node classification fix, plain-word titles. See decision log (b).
 
 **Session checkpoints (done 2026-08-07).** `saveSession()` /
 `loadSession()` write and restore a complete private snapshot —

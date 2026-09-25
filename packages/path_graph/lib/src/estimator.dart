@@ -21,6 +21,7 @@ class PathGraphConfig {
     this.ingressHalfLifeHours = 12,
     this.contactSupersedeFactor = 0.5,
     this.contactMoveWipeKm = 60,
+    this.doorstepWeight = 3,
     this.directFreshMinutes = 30,
     this.slashEpochMinutes = 2,
     this.slashFactorProven = 0.3,
@@ -99,6 +100,16 @@ class PathGraphConfig {
   /// (they cannot be inside both footprints).
   final double contactMoveWipeKm;
 
+  /// How much a doorstep's strength counts against corridor length: one
+  /// nat of doorstep confidence costs this many nats of corridor. A
+  /// route must start at the repeater that hears me strongest and end at
+  /// the one that hears them strongest; at 3, a weak doorstep with a
+  /// shorter corridor only wins when the strong doorstep's corridor is
+  /// about four passive hops longer (field finding 2026-09-25: at 1 the
+  /// router picked a repeater that heard this radio weakly once because
+  /// its corridor was a hop shorter).
+  final double doorstepWeight;
+
   /// Zero-hop direct wins while direct-reception evidence is this fresh.
   final double directFreshMinutes;
 
@@ -113,6 +124,7 @@ class PathGraphConfig {
           {double? beta,
           double? pThreshold,
           int? maxHops,
+          double? doorstepWeight,
           bool? allowInferredEndpoints}) =>
       PathGraphConfig(
         beta: beta ?? this.beta,
@@ -130,6 +142,7 @@ class PathGraphConfig {
         ingressHalfLifeHours: ingressHalfLifeHours,
         contactSupersedeFactor: contactSupersedeFactor,
         contactMoveWipeKm: contactMoveWipeKm,
+        doorstepWeight: doorstepWeight ?? this.doorstepWeight,
         directFreshMinutes: directFreshMinutes,
         slashEpochMinutes: slashEpochMinutes,
         slashFactorProven: slashFactorProven,
