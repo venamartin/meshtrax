@@ -35,24 +35,26 @@ void main() {
     expect(snap.edges[('1312', 'A277')]!.measuredSnr, 7.0);
   });
 
-  test('traced corridor routes once the far doorstep is proven', () {
+  test('traced corridor routes as soon as the far doorstep is heard', () {
     graph.observeTrace(['A277', '1312', 'A277'], [9.0, 8.0, 8.0]);
-    // Hearing the contact through 1312 only guesses their doorstep…
+    // Hearing the contact through 1312 is enough: it heard them, so it
+    // reaches them, and the traced corridor carries the route.
     graph.observePath(
         Uint8List.fromList([0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed('b0' 'b0'),
         lastHopHeard: false);
-    expect((graph.findPath('b0' 'b0') as FloodResult).reason,
-        FloodReason.noProvenEndpoint);
-    // …a delivered send through it proves it, and the traced corridor
-    // carries the route.
-    graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true,
-        contactPubkey: 'b0' 'b0');
     final result = graph.findPath('b0' 'b0');
     expect(result, isA<RouteResult>());
     expect((result as RouteResult).pathBytes, [0xA2, 0x77, 0x13, 0x12]);
-    expect(result.hopProbabilities.single, greaterThan(0.8),
-        reason: 'measured 8 dB plus a delivery');
+    expect(result.ingressProven, isFalse);
+    expect(result.hopProbabilities.single, greaterThan(0.7),
+        reason: 'measured 8 dB');
+    // A delivered send through it upgrades the end to proven; same route.
+    graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true,
+        contactPubkey: 'b0' 'b0');
+    final after = graph.findPath('b0' 'b0') as RouteResult;
+    expect(after.pathBytes, result.pathBytes);
+    expect(after.ingressProven, isTrue);
   });
 
   test('repeat traces refine SNR by EWMA', () {

@@ -1068,6 +1068,12 @@ class MeshCoreConnector extends ChangeNotifier {
   /// Observers of outgoing message state (the path graph hook).
   void Function(Message message)? onOutgoingMessageUpdated;
 
+  /// A channel packet this app decrypted from the radio's raw RX log:
+  /// the sender's display name and the path it arrived on (the path
+  /// graph hook — a channel message carries a name, not a pubkey).
+  void Function(String senderName, Uint8List pathBytes, int pathHashSize)?
+      onChannelPacketHeard;
+
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
     onOutgoingMessageUpdated?.call(message);
@@ -5875,6 +5881,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             message.timestamp,
             pathBytes: message.pathBytes,
           );
+          onChannelPacketHeard?.call(
+              parsed.senderName, packet.pathBytes, packet.hashSize);
           final label = channel.displayName;
           unawaited(() async {
             final isNew = await _ingestChannelMessage(channel.index, message);

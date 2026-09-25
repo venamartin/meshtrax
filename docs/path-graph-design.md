@@ -50,6 +50,33 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-09-25 (user reasoning on the two entities)** — The graph is
+  two things: a directed graph of repeaters, and per-pubkey lists of
+  pointers at those repeaters (doorsteps). A user is a pubkey plus
+  pointers, never a vertex. **The most important fact about a user is
+  which repeater hears them right now**, and **first-hop symmetry
+  holds on the contact side**: antenna gain is reciprocal and a
+  handheld is out-transmitted by the repeater, so a repeater that heard
+  them almost always reaches them (the common asymmetry is the reverse
+  — I hear a mountaintop that cannot hear me — which is exactly my own
+  end). So the 2026-09-23 proven-only rule becomes **asymmetric**: my
+  egress still needs a delivered send, trace or Discover answer; a
+  contact's heard-from doorstep (`finalCount > 0`, `Candidate.heard`)
+  is a valid route end, `RouteResult.ingressProven` says whether a
+  delivery has confirmed it, and hearing them at zero hops is a fresh
+  DIRECT. **The list must forget fast**: contact half-life 72 h → 12 h;
+  every attributed sighting slashes the contact's other rows
+  (`contactSupersedeFactor` 0.5, DIRECT included); and when advert
+  positions show the new first hop is farther than `contactMoveWipeKm`
+  (60) from their current top doorstep, the list is wiped outright —
+  Watsonville to San Francisco in one message. **Channel messages feed
+  it**: the app already decrypts every raw `GRP_TXT` packet and shows
+  its paths under the message, so the connector raises
+  `onChannelPacketHeard(name, path, stride)` from that handler and the
+  service calls `observeChannelSender`, which resolves the name against
+  the contact mirror (unique, case-insensitive) and credits the
+  doorstep only — the raw feed already harvested the edges and my
+  last-hop prior for the same packet. No new parser, no schema change.
 * **2026-09-23 (user directives, after the firmware audit in PR #121)** —
   **The graph learns itself: no import, ever.** `importGraph` and the
   imported-prior layer are gone (schema v5); a session checkpoint is the
@@ -1123,6 +1150,12 @@ open; the sections after this one are rationale and history.
    removed (schema v5), proven-only endpoints with `provenAt` on
    `contact_ingress`, proven contact ingress from delivered sends,
    evidence on `RouteResult`. See the decision log entry.
+7. ~~**Contact doorsteps: heard-from is enough, forget fast, feed from
+   channel messages**~~ — DONE 2026-09-25: asymmetric endpoint rule
+   (`_ingressCandidates` accepts `heard`), slash-on-sighting + GPS wipe
+   in `_creditContactDoorstep`, 12 h contact half-life,
+   `observeChannelSender` fed by the connector's
+   `onChannelPacketHeard`. See the decision log entry.
 
 **Session checkpoints (done 2026-08-07).** `saveSession()` /
 `loadSession()` write and restore a complete private snapshot —

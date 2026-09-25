@@ -43,13 +43,23 @@ class IngressEntry {
 
 class Candidate {
   const Candidate(this.repeaterHash, this.weight, this.tier,
-      {this.uplinkSnr, this.downlinkSnr, this.proven = false});
+      {this.uplinkSnr,
+      this.downlinkSnr,
+      this.proven = false,
+      this.heard = false});
   final String repeaterHash;
   final double weight;
   final EvidenceTier tier;
 
   /// Proven in the sending direction (see [IngressEntry.provenAt]).
   final bool proven;
+
+  /// Heard carrying the owner's own packets (a contact's first hop, or
+  /// the last hop before this radio). For a contact this is enough to
+  /// end a route on: a repeater that hears a handheld reaches it. For
+  /// my own end it is only a guess — I may hear a mountaintop that
+  /// cannot hear me.
+  final bool heard;
 
   /// Measured link to this candidate when Discover has run.
   final double? uplinkSnr;
@@ -119,11 +129,35 @@ class EvidenceStore {
       final w = _decayedWeight(owner, e, now, isSelf);
       if (w > 0.05) {
         out.add(Candidate(entry.key.$2, w, e.tier,
-            uplinkSnr: e.uplinkSnr, downlinkSnr: e.downlinkSnr, proven: true));
+            uplinkSnr: e.uplinkSnr,
+            downlinkSnr: e.downlinkSnr,
+            proven: true,
+            heard: true));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
     return out;
+  }
+
+  /// A fresh sighting of the contact through one repeater makes every
+  /// other doorstep of theirs less likely to be where they are now:
+  /// multiply the rest (DIRECT included) by [factor]. Proof markers and
+  /// tallies stay; only the ranking weight moves.
+  void supersedeContact(String owner,
+      {required String except, required double factor}) {
+    for (final entry in entries.entries) {
+      if (entry.key.$1 != owner || entry.key.$2 == except) continue;
+      entry.value.weight *= factor;
+      _dirty.add(entry.key);
+    }
+  }
+
+  /// They moved out of range of everything known: drop every doorstep
+  /// row of theirs.
+  void wipeContact(String owner) {
+    for (final key in entries.keys.where((k) => k.$1 == owner).toList()) {
+      removeEntry(key);
+    }
   }
 
   /// Proven contact ingress: the last hop of a send that was delivered
@@ -256,7 +290,8 @@ class EvidenceStore {
         out.add(Candidate(entry.key.$2, w, e.tier,
             uplinkSnr: e.uplinkSnr,
             downlinkSnr: e.downlinkSnr,
-            proven: e.proven));
+            proven: e.proven,
+            heard: e.finalCount > 0));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
@@ -289,10 +324,14 @@ class EvidenceStore {
   }
 
   /// Unique-name lookup for channel attribution (null if 0 or 2+ match).
+  /// Case and surrounding whitespace are ignored, as the app's own
+  /// channel-sender matching does.
   String? contactByUniqueName(String name) {
+    final wanted = name.trim().toLowerCase();
+    if (wanted.isEmpty) return null;
     String? found;
     for (final entry in knownContacts.entries) {
-      if (entry.value.name == name) {
+      if (entry.value.name.trim().toLowerCase() == wanted) {
         if (found != null) return null;
         found = entry.key;
       }

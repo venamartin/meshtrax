@@ -14,10 +14,11 @@ import 'frame_adapter.dart';
 ///
 /// When enabled it feeds the graph from the radio's raw frame stream (the
 /// adapter parses every packet the radio logs), the radio identity, the
-/// contact list, and every route the firmware proves — a contact's
-/// `out_path` after a delivery, and a direct send that was ACKed. Nothing
-/// here chooses a route for a message; the debug screen and the map read
-/// the graph's answers and a trace proves them on the air.
+/// contact list, every channel packet the connector decrypts (sender name
+/// plus the path it arrived on), and every route the firmware proves — a
+/// contact's `out_path` after a delivery, and a direct send that was
+/// ACKed. Nothing here chooses a route for a message; the debug screen and
+/// the map read the graph's answers and a trace proves them on the air.
 class PathGraphService extends ChangeNotifier {
   PathGraphService();
 
@@ -46,6 +47,7 @@ class PathGraphService extends ChangeNotifier {
     _frames = connector.receivedFrames.listen(_onFrame);
     connector.addListener(_onConnectorChanged);
     connector.onOutgoingMessageUpdated = _onOutgoingMessage;
+    connector.onChannelPacketHeard = _onChannelPacket;
     _onConnectorChanged();
     appLogger.info('path graph started', tag: 'PathGraph');
     notifyListeners();
@@ -60,6 +62,7 @@ class PathGraphService extends ChangeNotifier {
     await _frames?.cancel();
     _connector?.removeListener(_onConnectorChanged);
     _connector?.onOutgoingMessageUpdated = null;
+    _connector?.onChannelPacketHeard = null;
     _connector = null;
     _adapter = null;
     _graph = null;
@@ -160,6 +163,15 @@ class PathGraphService extends ChangeNotifier {
         contactPubkey: message.senderKeyHex,
         tripTimeMs: message.tripTimeMs,
         stride: stride);
+    _notifySoon();
+  }
+
+  /// A channel message names its sender; if that name belongs to exactly
+  /// one contact, the packet's first hop is a repeater that heard them.
+  void _onChannelPacket(String senderName, Uint8List pathBytes, int stride) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.observeChannelSender(senderName, pathBytes, stride);
     _notifySoon();
   }
 

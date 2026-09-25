@@ -18,7 +18,9 @@ class PathGraphConfig {
     this.maxHops = 32,
     this.egressHalfLifeMinutes = 45,
     this.egressProvenDecayFactor = 4,
-    this.ingressHalfLifeHours = 72,
+    this.ingressHalfLifeHours = 12,
+    this.contactSupersedeFactor = 0.5,
+    this.contactMoveWipeKm = 60,
     this.directFreshMinutes = 30,
     this.slashEpochMinutes = 2,
     this.slashFactorProven = 0.3,
@@ -26,11 +28,13 @@ class PathGraphConfig {
     this.allowInferredEndpoints = false,
   });
 
-  /// Let a route start or end at a doorstep that was only ever heard
-  /// (a reciprocity guess). Off by default: a repeater that hears me is
-  /// proven by a delivered send, a trace or a Discover answer, and one
-  /// that reaches a contact by a delivered send to them. The harness
-  /// turns this on to compare against the guess.
+  /// Let a route START at a doorstep I only ever heard (a reciprocity
+  /// guess about MY end). Off by default: a repeater that hears me is
+  /// proven by a delivered send, a trace or a Discover answer. The
+  /// contact's end is not gated by this — a repeater heard carrying
+  /// their traffic as first hop reaches them by first-hop symmetry (see
+  /// `ingressHalfLifeHours`). The harness turns this on to compare
+  /// against the guess.
   final bool allowInferredEndpoints;
 
   /// Hop tax: an extra hop hurts like ×β reliability.
@@ -60,19 +64,40 @@ class PathGraphConfig {
   /// Path budget: 64 wire bytes ÷ 2-byte hops.
   final int maxHops;
 
-  /// Mobility: self-egress ages fast (my doorstep changes when I move),
-  /// contact ingress slowly. Verification finding (2026-08-05): a
-  /// 10-minute half-life evaporates bench evidence between tests —
-  /// minutes-scale must still survive a quiet coffee break. Movement,
-  /// not the clock, is the real invalidator (position gating handles
-  /// that when a position source exists).
+  /// Mobility: self-egress ages fast (my doorstep changes when I move).
+  /// Verification finding (2026-08-05): a 10-minute half-life evaporates
+  /// bench evidence between tests — minutes-scale must still survive a
+  /// quiet coffee break. Movement, not the clock, is the real
+  /// invalidator (position gating handles that when a position source
+  /// exists).
   final double egressHalfLifeMinutes;
 
   /// Proven egress (Discover response, delivered send, trace) decays
   /// this many times slower than an inferred last-hop guess.
   final double egressProvenDecayFactor;
 
+  /// A contact's doorstep list answers "which repeater hears them RIGHT
+  /// NOW" (2026-09-25). Antenna gain is reciprocal and a handheld is
+  /// out-transmitted by the repeater, so a repeater that heard them
+  /// almost always reaches them — the heard-from row is a route end.
+  /// The list must therefore forget fast: an unrefreshed row fades in
+  /// hours, every fresh sighting slashes the others
+  /// ([contactSupersedeFactor]), and a sighting through a repeater far
+  /// from the current top one wipes the list outright
+  /// ([contactMoveWipeKm]) — Watsonville to San Francisco in one
+  /// message, not three days.
   final double ingressHalfLifeHours;
+
+  /// Every attributed first-hop sighting multiplies the contact's other
+  /// doorstep rows by this. Alternating between two repeaters that both
+  /// hear them keeps both alive; a move buries the old one in two or
+  /// three messages.
+  final double contactSupersedeFactor;
+
+  /// When repeater advert positions are known: a new first hop farther
+  /// than this from the contact's current top doorstep wipes their list
+  /// (they cannot be inside both footprints).
+  final double contactMoveWipeKm;
 
   /// Zero-hop direct wins while direct-reception evidence is this fresh.
   final double directFreshMinutes;
@@ -103,6 +128,8 @@ class PathGraphConfig {
         egressHalfLifeMinutes: egressHalfLifeMinutes,
         egressProvenDecayFactor: egressProvenDecayFactor,
         ingressHalfLifeHours: ingressHalfLifeHours,
+        contactSupersedeFactor: contactSupersedeFactor,
+        contactMoveWipeKm: contactMoveWipeKm,
         directFreshMinutes: directFreshMinutes,
         slashEpochMinutes: slashEpochMinutes,
         slashFactorProven: slashFactorProven,
@@ -167,4 +194,15 @@ class Estimator {
     final p = calibratedP(e, nowMillis).clamp(0.01, 1.0);
     return -math.log(p) + config.tau;
   }
+}
+
+/// Great-circle distance between two advert positions.
+double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+  const r = 6371.0;
+  double rad(double deg) => deg * math.pi / 180;
+  final dLat = rad(lat2 - lat1);
+  final dLon = rad(lon2 - lon1);
+  final a = math.pow(math.sin(dLat / 2), 2) +
+      math.cos(rad(lat1)) * math.cos(rad(lat2)) * math.pow(math.sin(dLon / 2), 2);
+  return 2 * r * math.asin(math.sqrt(a));
 }

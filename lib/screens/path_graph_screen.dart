@@ -105,6 +105,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             _candidates(
               'My doorsteps — repeaters that carry my packets out (egress)',
               graph.egressCandidates(),
+              isSelf: true,
             ),
             const Divider(),
             _targetPicker(connector, graph),
@@ -163,7 +164,27 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
-  Widget _candidates(String title, List<Candidate> list) {
+  /// My own rows are a guess until proven (I may hear a mountaintop that
+  /// cannot hear me); a contact's heard-from row is already a route end
+  /// (a repeater that hears a handheld reaches it).
+  Widget _candidates(String title, List<Candidate> list,
+      {required bool isSelf}) {
+    String verdict(Candidate c) {
+      if (c.proven) {
+        return isSelf
+            ? 'proven by a delivery, trace or discover'
+            : 'proven by a delivery or path discovery';
+      }
+      if (!isSelf && c.heard) return 'heard from — reaches them';
+      return 'only heard — unproven';
+    }
+
+    Color? tint(Candidate c) {
+      if (c.proven) return Colors.green;
+      if (!isSelf && c.heard) return Colors.amber;
+      return Colors.grey;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -181,12 +202,12 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             dense: true,
             leading: Icon(
               c.proven ? Icons.verified : Icons.hearing,
-              color: c.proven ? Colors.green : Colors.grey,
+              color: tint(c),
             ),
             title: Text(c.repeaterHash,
                 style: const TextStyle(fontFamily: 'monospace')),
             subtitle: Text(
-              '${c.proven ? "proven by a delivery, trace or discover" : "only heard from — unproven"} · weight '
+              '${verdict(c)} · weight '
               '${c.weight.toStringAsFixed(1)}'
               '${c.uplinkSnr != null ? " · uplink ${c.uplinkSnr!.toStringAsFixed(1)} dB" : ""}',
             ),
@@ -221,8 +242,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         if (target != null) ...[
           if (!isNode)
             _candidates(
-              '${target.name}\'s doorsteps — repeaters that deliver to them (ingress)',
+              '${target.name}\'s doorsteps — repeaters that hear them (ingress)',
               graph.ingressCandidates(target.publicKeyHex),
+              isSelf: false,
             ),
           _answer(graph, target, isNode: isNode),
         ],
@@ -292,8 +314,8 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             FloodResult(:final reason) => Text(switch (reason) {
                 FloodReason.noEvidence => 'nothing known on one side yet',
                 FloodReason.noProvenEndpoint =>
-                  'doorsteps heard but none proven — one delivered '
-                      'message proves them',
+                  'my doorstep is not proven yet — one delivered '
+                      'message, trace or discover proves it',
                 FloodReason.noBidirectionalRoute =>
                   'no corridor proven in both directions',
                 FloodReason.belowThreshold => 'links too weak',

@@ -9,7 +9,7 @@ import 'graph_store.dart';
 import 'retention.dart';
 import 'search.dart';
 
-export 'estimator.dart' show Estimator, PathGraphConfig;
+export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
 export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
 export 'retention.dart' show RetentionPolicy, RetentionReport;
@@ -73,8 +73,9 @@ class GeoPosition {
 enum FloodReason {
   noEvidence,
 
-  /// Doorsteps exist on both sides, but none was ever proven in the
-  /// sending direction (only heard). A flood exchange proves them.
+  /// Doorsteps exist on both sides, but none of MINE was ever proven to
+  /// hear this radio (only heard by me). A delivered send, a trace or a
+  /// Discover answer proves one.
   noProvenEndpoint,
   noBidirectionalRoute,
   belowThreshold,
@@ -120,9 +121,11 @@ class RouteResult extends PathResult {
   /// Calibrated p of each between-hop link, in path order.
   final List<double> hopProbabilities;
 
-  /// Whether the first hop was proven to hear this radio, and the last
-  /// hop proven to reach the target. Both are true unless the graph was
-  /// configured to allow inferred endpoints.
+  /// Whether the first hop was proven to hear this radio (always, unless
+  /// the graph was configured to allow inferred endpoints), and whether
+  /// the last hop was proven to reach the target by a delivery — false
+  /// when the route ends at a doorstep only heard carrying their
+  /// traffic.
   final bool egressProven;
   final bool ingressProven;
 }
@@ -338,11 +341,11 @@ class PathGraph {
     final first = _hopHex(pathBytes, stride, 0);
     switch (origin) {
       case PubkeyConfirmedOrigin(:final contactPubkey):
-        _evidence.recordIngress(contactPubkey, first,
-            pubkeyConfirmed: true, arrival: arrival);
+        _creditContactDoorstep(contactPubkey, first,
+            confirmed: true, arrival: arrival);
       case UniqueNameOrigin(:final contactPubkey):
-        _evidence.recordIngress(contactPubkey, first,
-            pubkeyConfirmed: false, arrival: arrival);
+        _creditContactDoorstep(contactPubkey, first,
+            confirmed: false, arrival: arrival);
       case AnonymousOrigin():
         break; // edges only
     }
@@ -362,6 +365,65 @@ class PathGraph {
 
     _observationsApplied++;
     _scheduleFlush();
+  }
+
+  /// A channel message the app decrypted: [senderName] is the "name: "
+  /// prefix of the text, [pathBytes] the path the packet arrived on.
+  /// Attribution only — the same packet already reached [observePath]
+  /// anonymously through the raw feed, so edges and my own last-hop
+  /// prior are not counted again here. A name that matches exactly one
+  /// known contact credits their doorstep; anything else is dropped.
+  void observeChannelSender(
+      String senderName, Uint8List pathBytes, int stride) {
+    final pk = _evidence.contactByUniqueName(senderName);
+    if (pk == null) return;
+    final arrival = _arrivalMillis;
+    if (pathBytes.isEmpty) {
+      _evidence.recordDirect(pk, arrival);
+      _observationsApplied++;
+      _scheduleFlush();
+      return;
+    }
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+    _creditContactDoorstep(pk, _hopHex(pathBytes, stride, 0),
+        confirmed: false, arrival: arrival);
+    _observationsApplied++;
+    _scheduleFlush();
+  }
+
+  /// One sighting of a contact through [hash]: the repeater that heard
+  /// them first. Their doorstep list answers "who hears them now", so
+  /// the sighting first pushes the rest of the list down — wiped when
+  /// advert positions show [hash] is too far from their current top
+  /// doorstep to be the same place, slashed otherwise — and then counts.
+  void _creditContactDoorstep(String pk, String hash,
+      {required bool confirmed, required int arrival}) {
+    final top = _evidence
+        .candidatesFor(pk, arrival, isSelf: false)
+        .where((c) => c.repeaterHash != directHash)
+        .firstOrNull;
+    if (top != null && top.repeaterHash != hash && _movedFar(top.repeaterHash, hash)) {
+      _evidence.wipeContact(pk);
+    } else {
+      _evidence.supersedeContact(pk,
+          except: hash, factor: config.contactSupersedeFactor);
+    }
+    _evidence.recordIngress(pk, hash,
+        pubkeyConfirmed: confirmed, arrival: arrival);
+  }
+
+  bool _movedFar(String fromHash, String toHash) {
+    final a = _store.nodes[fromHash];
+    final b = _store.nodes[toHash];
+    if (a?.lat == null || a?.lon == null || b?.lat == null || b?.lon == null) {
+      return false;
+    }
+    return haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) >
+        config.contactMoveWipeKm;
   }
 
   /// Proven egress refresh; supersede/slash only in a failure episode.
@@ -631,10 +693,17 @@ class PathGraph {
     return _provenOnly ? all.where((c) => c.proven).toList() : all;
   }
 
+  /// A contact's route end may be a doorstep proven by a delivery or one
+  /// merely heard carrying their traffic: a repeater that hears a
+  /// handheld reaches it (first-hop symmetry, 2026-09-25). Only rows
+  /// that are neither — e.g. a DIRECT row minted by a delivered
+  /// empty-path send — stay out.
   List<Candidate>? _ingressCandidates(String contactPubkey, int now) {
     final all = _evidence.candidatesFor(contactPubkey, now, isSelf: false);
     if (all.isEmpty) return null;
-    return _provenOnly ? all.where((c) => c.proven).toList() : all;
+    return _provenOnly
+        ? all.where((c) => c.proven || c.heard).toList()
+        : all;
   }
 
   RouteResult _toResult(RouteFound route) => RouteResult(
@@ -1002,14 +1071,17 @@ class PathGraph {
   }
 
   /// Best path to this contact: direct | bidirectional route | flood.
-  /// Routes start and end only at doorsteps proven in the sending
-  /// direction unless [PathGraphConfig.allowInferredEndpoints] is set.
+  /// A route starts only at a doorstep proven to hear this radio
+  /// (unless [PathGraphConfig.allowInferredEndpoints] is set) and ends
+  /// at one proven to reach the contact or heard carrying their
+  /// packets — hearing a handheld is reaching it.
   PathResult findPath(String contactPubkey) {
     final now = _arrivalMillis;
 
-    // Tier 1: fresh (proven) direct-reception evidence → empty path wins.
-    if (_evidence.hasFreshDirect(contactPubkey, now,
-        provenOnly: _provenOnly)) {
+    // Tier 1: fresh direct-reception evidence → empty path wins. Their
+    // packet arriving with no hops is the same symmetric evidence as a
+    // delivered empty-path send.
+    if (_evidence.hasFreshDirect(contactPubkey, now)) {
       return const PathResult.direct();
     }
 

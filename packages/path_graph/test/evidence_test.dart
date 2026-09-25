@@ -44,8 +44,9 @@ void main() {
     expect(graph.egressCandidates().single.proven, isTrue);
   });
 
-  test('routes need proven endpoints: guesses on both sides flood', () {
-    // Heard Bob through A277 and heard 1312 last: both ends guessed.
+  test('my doorstep must be proven: a heard-only egress floods', () {
+    // Heard Bob through A277 and heard 1312 last: Bob's end is good
+    // (A277 heard him), mine is a guess (I hear 1312; does it hear me?).
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
     graph.observePath(path([0x13, 0x12, 0xA2, 0x77]), 2,
@@ -54,16 +55,120 @@ void main() {
         FloodReason.noProvenEndpoint);
     expect(graph.findAlternatives(bobPk), isEmpty);
 
-    // One flood exchange proves both ends; the same corridor now routes.
+    // One flood exchange proves my end (A277 hears me). A277 also heard
+    // Bob, so the shared doorstep is the whole route.
     graph.reportSendResult(path([0xA2, 0x77, 0x13, 0x12]), true,
         contactPubkey: bobPk);
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
     final route = graph.findPath(bobPk);
     expect(route, isA<RouteResult>());
-    expect((route as RouteResult).egressProven, isTrue);
-    expect(route.ingressProven, isTrue);
-    expect(route.hopProbabilities, hasLength(1));
+    expect((route as RouteResult).pathBytes, [0xA2, 0x77]);
+    expect(route.egressProven, isTrue);
+    expect(route.ingressProven, isFalse, reason: 'A277 heard Bob, no delivery yet');
+    expect(route.hopProbabilities, isEmpty);
+  });
+
+  test('a heard-from contact doorstep ends a route once mine is proven',
+      () {
+    graph.reportSendResult(path([0xA2, 0x77]), true); // A277 hears me
+    // Bob's message came 1312 -> A277 -> me: 1312 heard Bob.
+    graph.observePath(path([0x13, 0x12, 0xA2, 0x77]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.anonymous(), lastHopHeard: false);
+
+    final bobs = graph.ingressCandidates(bobPk).single;
+    expect(bobs.repeaterHash, '1312');
+    expect(bobs.heard, isTrue);
+    expect(bobs.proven, isFalse);
+
+    final route = graph.findPath(bobPk);
+    expect(route, isA<RouteResult>(),
+        reason: 'a repeater that hears a handheld reaches it');
+    expect((route as RouteResult).pathBytes, [0xA2, 0x77, 0x13, 0x12]);
+    expect(route.egressProven, isTrue);
+    expect(route.ingressProven, isFalse);
+  });
+
+  test('a channel sender with a unique name credits their doorstep only',
+      () {
+    graph.ingestContact(bobPk, 'Bob');
+    graph.observeChannelSender('Bob', path([0xA2, 0x77, 0x13, 0x12]), 2);
+    final bobs = graph.ingressCandidates(bobPk).single;
+    expect(bobs.repeaterHash, 'A277');
+    expect(bobs.weight, 1.0, reason: 'name-matched weighs less');
+    expect(bobs.heard, isTrue);
+    expect(graph.snapshot().edges, isEmpty,
+        reason: 'edges came from the raw feed already');
+    expect(graph.egressCandidates(), isEmpty,
+        reason: 'no second last-hop tally for me');
+
+    graph.observeChannelSender(' bob ', path([0xA2, 0x77]), 2);
+    expect(graph.ingressCandidates(bobPk).single.weight, 2.0,
+        reason: 'case and whitespace do not matter');
+
+    graph.ingestContact('cc' 'cc' 'cc', 'Bob');
+    graph.observeChannelSender('Bob', path([0x5C, 0xBB]), 2);
+    expect(graph.ingressCandidates(bobPk).single.repeaterHash, 'A277',
+        reason: 'an ambiguous name credits nobody');
+    expect(graph.ingressCandidates('cc' 'cc' 'cc'), isEmpty);
+  });
+
+  test('every sighting slashes the other doorsteps: a move buries the old',
+      () {
+    for (var i = 0; i < 3; i++) {
+      graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+          const ObservationOrigin.pubkeyConfirmed(bobPk));
+    }
+    expect(graph.ingressCandidates(bobPk).single.weight, 9.0);
+
+    for (var i = 0; i < 3; i++) {
+      graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
+          const ObservationOrigin.pubkeyConfirmed(bobPk));
+    }
+    final ranked = graph.ingressCandidates(bobPk);
+    expect(ranked.first.repeaterHash, '5CBB');
+    expect(ranked.first.weight, 9.0);
+    expect(ranked.last.repeaterHash, 'A277');
+    expect(ranked.last.weight, closeTo(1.125, 1e-9), reason: '9 × 0.5³');
+  });
+
+  test('a first hop far from the current top doorstep wipes the list', () {
+    graph.ingestNode('A277', lat: 36.97, lon: -121.73); // Watsonville
+    graph.ingestNode('5CBB', lat: 37.77, lon: -122.42); // San Francisco
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    graph.observePath(Uint8List(0), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk)); // heard direct too
+    expect(graph.ingressCandidates(bobPk), hasLength(2));
+
+    graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    final after = graph.ingressCandidates(bobPk);
+    expect(after.map((c) => c.repeaterHash), ['5CBB'],
+        reason: 'one message from 100 km away replaces everything');
+    expect(after.single.weight, 3.0);
+  });
+
+  test('without positions a far move is only a slash', () {
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    final byHash = {
+      for (final c in graph.ingressCandidates(bobPk)) c.repeaterHash: c.weight
+    };
+    expect(byHash, {'5CBB': 3.0, 'A277': 1.5});
+  });
+
+  test('an unrefreshed contact doorstep fades in hours, not days', () {
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
+    nowMillis += 2 * 60 * 60 * 1000;
+    expect(graph.ingressCandidates(bobPk), isNotEmpty);
+    nowMillis += 4 * 24 * 60 * 60 * 1000;
+    expect(graph.ingressCandidates(bobPk), isEmpty);
   });
 
   test('allowInferredEndpoints restores the guess, flagged', () async {
@@ -112,18 +217,18 @@ void main() {
         reason: 'penultimate-heavy hub demoted');
   });
 
-  test('direct: hearing them is a guess, a delivered empty send is proof',
+  test('direct: hearing them at zero hops is as good as a delivered send',
       () {
     graph.observePath(
         Uint8List(0), 2, const ObservationOrigin.pubkeyConfirmed(bobPk));
-    expect(graph.findPath(bobPk), isA<FloodResult>(),
-        reason: 'hearing them proves they reach me, not that I reach them');
-
-    graph.reportSendResult(Uint8List(0), true, contactPubkey: bobPk);
-    expect(graph.findPath(bobPk), isA<DirectResult>());
+    expect(graph.findPath(bobPk), isA<DirectResult>(),
+        reason: 'two handhelds: if I hear them, they hear me');
 
     nowMillis += 31 * 60 * 1000; // beyond directFreshMinutes
     expect(graph.findPath(bobPk), isA<FloodResult>());
+
+    graph.reportSendResult(Uint8List(0), true, contactPubkey: bobPk);
+    expect(graph.findPath(bobPk), isA<DirectResult>());
   });
 
   test('delivered send upgrades first hop to proven egress', () {
