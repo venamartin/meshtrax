@@ -15,7 +15,8 @@ import 'frame_adapter.dart';
 /// When enabled it feeds the graph from the radio's raw frame stream (the
 /// adapter parses every packet the radio logs), the radio identity, the
 /// contact list, every channel packet the connector decrypts (sender name
-/// plus the path it arrived on), and every route the firmware proves — a
+/// plus the path it arrived on — echoes of this radio's own messages
+/// confirm their first hop as a doorstep), and every route the firmware proves — a
 /// contact's `out_path` after a delivery, and a direct send that was
 /// ACKed. Nothing here chooses a route for a message; the debug screen and
 /// the map read the graph's answers and a trace proves them on the air.
@@ -48,6 +49,7 @@ class PathGraphService extends ChangeNotifier {
     connector.addListener(_onConnectorChanged);
     connector.onOutgoingMessageUpdated = _onOutgoingMessage;
     connector.onChannelPacketHeard = _onChannelPacket;
+    connector.onOwnEchoHeard = _onOwnEcho;
     _onConnectorChanged();
     appLogger.info('path graph started', tag: 'PathGraph');
     notifyListeners();
@@ -63,6 +65,7 @@ class PathGraphService extends ChangeNotifier {
     _connector?.removeListener(_onConnectorChanged);
     _connector?.onOutgoingMessageUpdated = null;
     _connector?.onChannelPacketHeard = null;
+    _connector?.onOwnEchoHeard = null;
     _connector = null;
     _adapter = null;
     _graph = null;
@@ -172,6 +175,16 @@ class PathGraphService extends ChangeNotifier {
     final graph = _graph;
     if (graph == null) return;
     graph.observeChannelSender(senderName, pathBytes, stride);
+    _notifySoon();
+  }
+
+  /// My own channel message came back through the mesh: its first hop
+  /// heard me directly. Every echo counts — two echoes with different
+  /// first hops confirm two doorsteps from one message.
+  void _onOwnEcho(Uint8List pathBytes, int stride) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.observeOwnEcho(pathBytes, stride);
     _notifySoon();
   }
 

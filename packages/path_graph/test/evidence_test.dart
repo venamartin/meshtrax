@@ -256,6 +256,30 @@ void main() {
         lessThan(graph.doorstepConfidence(byHash['A277']!)));
   });
 
+  test('an echo of my own flood confirms its first hop, nothing after it',
+      () {
+    // My message came back A277 -> BBBB -> BEEF -> A377. A277 heard me;
+    // the rest forwarded each other.
+    graph.observeOwnEcho(path([0xA2, 0x77, 0xBB, 0xBB, 0xBE, 0xEF, 0xA3, 0x77]), 2);
+    final mine = graph.egressCandidates().single;
+    expect(mine.repeaterHash, 'A277');
+    expect(mine.proven, isTrue);
+    expect(mine.uplinkSnr, isNull, reason: 'a repeater never reports the level');
+    expect(graph.snapshot().edges, isEmpty,
+        reason: 'the corridor came from the raw feed already');
+
+    // A second echo through another first hop confirms a second doorstep.
+    graph.observeOwnEcho(path([0x10, 0x00, 0xA3, 0x77]), 2);
+    expect(graph.egressCandidates().map((c) => c.repeaterHash),
+        containsAll(['A277', '1000']));
+    expect(graph.egressCandidates().every((c) => c.proven), isTrue);
+
+    graph.observeOwnEcho(path([0x5C]), 1); // 1-byte hashes: unusable
+    expect(graph.counters.droppedNarrow, 1);
+    graph.observeOwnEcho(Uint8List(0), 2); // no repeater involved
+    expect(graph.egressCandidates(), hasLength(2));
+  });
+
   test('delivered send upgrades first hop to proven egress', () {
     graph.reportSendResult(path([0xA2, 0x77, 0x13, 0x12]), true);
     final egress = graph.egressCandidates();

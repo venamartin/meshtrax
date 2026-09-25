@@ -1074,6 +1074,11 @@ class MeshCoreConnector extends ChangeNotifier {
   void Function(String senderName, Uint8List pathBytes, int pathHashSize)?
       onChannelPacketHeard;
 
+  /// An echo of this radio's own channel message, heard back from the
+  /// mesh with the path it travelled. Its first hop is a repeater that
+  /// heard this radio directly (the path graph hook).
+  void Function(Uint8List pathBytes, int pathHashSize)? onOwnEchoHeard;
+
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
     onOutgoingMessageUpdated?.call(message);
@@ -5881,8 +5886,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             message.timestamp,
             pathBytes: message.pathBytes,
           );
-          onChannelPacketHeard?.call(
-              parsed.senderName, packet.pathBytes, packet.hashSize);
+          if (parsed.senderName.trim() == (_selfName?.trim() ?? '')) {
+            onOwnEchoHeard?.call(packet.pathBytes, packet.hashSize);
+          } else {
+            onChannelPacketHeard?.call(
+                parsed.senderName, packet.pathBytes, packet.hashSize);
+          }
           final label = channel.displayName;
           unawaited(() async {
             final isNew = await _ingestChannelMessage(channel.index, message);

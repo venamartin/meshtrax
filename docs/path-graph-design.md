@@ -78,6 +78,20 @@ me and who hears my contact, what path bytes should this DM use?*
   contact question after a proving round trip), and uses plain words —
   "Repeaters that hear me" / "Repeaters that hear {name}" — with
   ingress/egress kept to the code.
+* **2026-09-25 (c) — my own echoes confirm my doorstep.** An echo of my
+  own Public message, heard back through the mesh, is the best passive
+  proof of my doorstep: **the FIRST hop in its path heard me directly**,
+  in the sending direction (user rule: only the first; the hops after it
+  forwarded each other — I may hear them, they did not necessarily hear
+  me). The connector already decrypts and keeps such echoes (self-name
+  match, non-empty path); it now raises `onOwnEchoHeard(path, stride)`
+  instead of the channel-sender callback, and `observeOwnEcho` marks
+  path[0] a proven doorstep (no level: a repeater never reports how loud
+  it heard me). Attribution only — the raw feed already filed the
+  corridor edges and the heard-last guess for the same packet. Every
+  echo counts, so two echoes with different first hops confirm two
+  doorsteps from one message. Echoes of my own DMs are not yet matched
+  (not decryptable by name) — later.
 * **2026-09-25 (user reasoning on the two entities)** — The graph is
   two things: a directed graph of repeaters, and per-pubkey lists of
   pointers at those repeaters (doorsteps). A user is a pubkey plus

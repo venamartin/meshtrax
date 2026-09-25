@@ -395,6 +395,28 @@ class PathGraph {
     _scheduleFlush();
   }
 
+  /// An echo of my own flood, heard back with the path it travelled.
+  /// Only the FIRST hop proves anything about me: it heard me directly,
+  /// in the sending direction, so it is a confirmed doorstep. The hops
+  /// after it forwarded each other — I may hear them, they did not
+  /// necessarily hear me — and the raw feed already filed the corridor
+  /// and the heard-last guess for the same packet, so nothing else is
+  /// counted here. No level is recorded: a repeater does not report how
+  /// loud it heard me.
+  void observeOwnEcho(Uint8List pathBytes, int stride) {
+    final self = _selfPubkey;
+    if (self == null || pathBytes.isEmpty) return;
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+    _evidence.recordProvenEgress(
+        self, _hopHex(pathBytes, stride, 0), _arrivalMillis);
+    _observationsApplied++;
+    _scheduleFlush();
+  }
+
   /// One sighting of a contact through [hash]: the repeater that heard
   /// them first. Their doorstep list answers "who hears them now", so
   /// the sighting first pushes the rest of the list down — wiped when
