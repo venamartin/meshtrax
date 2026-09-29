@@ -1246,16 +1246,10 @@ abstract class AppLocalizations {
   /// **'TX Power (dBm)'**
   String get settings_txPower;
 
-  /// No description provided for @settings_txPowerHelper.
-  ///
-  /// In en, this message translates to:
-  /// **'0 - 22'**
-  String get settings_txPowerHelper;
-
   /// No description provided for @settings_txPowerInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Invalid TX power (0-22 dBm)'**
+  /// **'Invalid TX power'**
   String get settings_txPowerInvalid;
 
   /// No description provided for @settings_clientRepeat.
@@ -4127,7 +4121,7 @@ abstract class AppLocalizations {
   /// No description provided for @repeater_txPowerHelper.
   ///
   /// In en, this message translates to:
-  /// **'1-30 dBm'**
+  /// **'-9 – 30 dBm'**
   String get repeater_txPowerHelper;
 
   /// No description provided for @repeater_bandwidth.

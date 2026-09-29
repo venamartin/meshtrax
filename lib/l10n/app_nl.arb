@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Spreadsnelheid",
   "settings_codingRate": "Codeertarief",
   "settings_txPower": "TX-Vermogen (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Ongeldige TX-vermogen (0-22 dBm)",
+  "settings_txPowerInvalid": "Ongeldige TX-vermogen",
   "settings_error": "Fout: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frequentie (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Power",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Bandbreedte",
   "repeater_spreadingFactor": "Spreidingsfactor",
   "repeater_codingRate": "Codeertarief",

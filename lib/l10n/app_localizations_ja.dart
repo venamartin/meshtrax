@@ -597,10 +597,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_txPower => 'TX 信号電力 (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => '無効な送信電力 (0-22 dBm)';
+  String get settings_txPowerInvalid => '無効な送信電力';
 
   @override
   String get settings_clientRepeat => 'オフグリッド（電力網から孤立した状態）の繰り返し';
@@ -2209,7 +2206,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get repeater_txPower => 'TXパワー';
 
   @override
-  String get repeater_txPowerHelper => '-30～-10 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => '帯域幅';

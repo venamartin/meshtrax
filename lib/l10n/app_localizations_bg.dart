@@ -626,10 +626,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get settings_txPower => 'TX Мощност (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => 'Невалидна мощност на TX (0-22 dBm)';
+  String get settings_txPowerInvalid => 'Невалидна мощност на TX';
 
   @override
   String get settings_clientRepeat => 'Без електричество – повторение';
@@ -2285,7 +2282,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get repeater_txPower => 'TX Power';
 
   @override
-  String get repeater_txPowerHelper => '1-30 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => 'Ширина на честотния спектър';

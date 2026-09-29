@@ -623,11 +623,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_txPower => 'Мощность передачи (дБм)';
 
   @override
-  String get settings_txPowerHelper => '0 – 22';
-
-  @override
-  String get settings_txPowerInvalid =>
-      'Недопустимая мощность передачи (0–22 дБм)';
+  String get settings_txPowerInvalid => 'Недопустимая мощность передачи';
 
   @override
   String get settings_clientRepeat => 'Повторение \"вне сети\"';
@@ -2278,7 +2274,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get repeater_txPower => 'Мощность передачи';
 
   @override
-  String get repeater_txPowerHelper => '1–30 дБм';
+  String get repeater_txPowerHelper => '-9 – 30 дБм';
 
   @override
   String get repeater_bandwidth => 'Полоса пропускания';

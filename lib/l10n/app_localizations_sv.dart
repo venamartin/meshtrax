@@ -613,10 +613,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get settings_txPower => 'TX-effekt (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => 'Ogiltig TX-effekt (0-22 dBm)';
+  String get settings_txPowerInvalid => 'Ogiltig TX-effekt';
 
   @override
   String get settings_clientRepeat => 'Upprepa utan elnät';
@@ -2258,7 +2255,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get repeater_txPower => 'TX Effekt';
 
   @override
-  String get repeater_txPowerHelper => '1-30 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => 'Bandbredd';

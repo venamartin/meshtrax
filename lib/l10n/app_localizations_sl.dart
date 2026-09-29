@@ -616,10 +616,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get settings_txPower => 'TX Moč (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => 'Neveljavna TX moč (0-22 dBm)';
+  String get settings_txPowerInvalid => 'Neveljavna TX moč';
 
   @override
   String get settings_clientRepeat => 'Neovadno ponavljanje';
@@ -2267,7 +2264,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get repeater_txPower => 'TX Moč';
 
   @override
-  String get repeater_txPowerHelper => '1-30 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => 'Pasovna širina';

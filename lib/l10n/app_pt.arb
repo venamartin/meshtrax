@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Fator de Dispersão",
   "settings_codingRate": "Taxa de Codificação",
   "settings_txPower": "TX Potência (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Potência de TX inválida (0-22 dBm)",
+  "settings_txPowerInvalid": "Potência de TX inválida",
   "settings_error": "Erro: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frequência (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Power",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Largura de banda",
   "repeater_spreadingFactor": "Fator de Dispersão",
   "repeater_codingRate": "Taxa de Codificação",

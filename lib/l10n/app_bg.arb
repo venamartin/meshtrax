@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Фактор на разпространение",
   "settings_codingRate": "Такса за кодиране",
   "settings_txPower": "TX Мощност (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Невалидна мощност на TX (0-22 dBm)",
+  "settings_txPowerInvalid": "Невалидна мощност на TX",
   "settings_error": "Грешка: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Честота (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Power",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Ширина на честотния спектър",
   "repeater_spreadingFactor": "Фактор на разпространение",
   "repeater_codingRate": "Такса за кодиране",

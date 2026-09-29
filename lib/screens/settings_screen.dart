@@ -1426,6 +1426,9 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
   LoRaSpreadingFactor _spreadingFactor = LoRaSpreadingFactor.sf7;
   LoRaCodingRate _codingRate = LoRaCodingRate.cr4_5;
   final _txPowerController = TextEditingController(text: '20');
+  // Companion firmware rejects anything below -9 (CMD_SET_RADIO_TX_POWER);
+  // only the max is reported by the device.
+  static const _minTxPower = -9;
   bool _clientRepeat = false;
   int? _selectedPresetIndex;
   _RadioSettingsSnapshot? _lastNonRepeatSnapshot;
@@ -1740,10 +1743,12 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
     }
 
     final maxTxPower = widget.connector.maxTxPower ?? 22;
-    if (txPower == null || txPower < 0 || txPower > maxTxPower) {
+    if (txPower == null || txPower < _minTxPower || txPower > maxTxPower) {
       showDismissibleSnackBar(
         context,
-        content: Text('${l10n.settings_txPowerInvalid} (0-$maxTxPower dBm)'),
+        content: Text(
+          '${l10n.settings_txPowerInvalid} ($_minTxPower – $maxTxPower dBm)',
+        ),
       );
       return;
     }
@@ -1956,11 +1961,10 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
               decoration: InputDecoration(
                 labelText: l10n.settings_txPower,
                 border: const OutlineInputBorder(),
-                helperText: widget.connector.maxTxPower != null
-                    ? '${l10n.settings_txPowerHelper} (max: ${widget.connector.maxTxPower} dBm)'
-                    : l10n.settings_txPowerHelper,
+                helperText:
+                    '$_minTxPower – ${widget.connector.maxTxPower ?? 22} dBm',
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(signed: true),
             ),
             if (widget.connector.clientRepeat != null) ...[
               const SizedBox(height: 16),

@@ -625,10 +625,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_txPower => 'TX Potenza (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => 'Potere TX non valido (0-22 dBm)';
+  String get settings_txPowerInvalid => 'Potere TX non valido';
 
   @override
   String get settings_clientRepeat => 'Ripetizione \"fuori dalla rete\"';
@@ -2282,7 +2279,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get repeater_txPower => 'TX Potenza';
 
   @override
-  String get repeater_txPowerHelper => '1-30 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => 'Larghezza di banda';

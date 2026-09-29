@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Spreadingfaktor",
   "settings_codingRate": "Kodningsgrad",
   "settings_txPower": "TX-effekt (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Ogiltig TX-effekt (0-22 dBm)",
+  "settings_txPowerInvalid": "Ogiltig TX-effekt",
   "settings_error": "Fel: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frekvens (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Effekt",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Bandbredd",
   "repeater_spreadingFactor": "Spreadingfaktor",
   "repeater_codingRate": "Kodningsgrad",

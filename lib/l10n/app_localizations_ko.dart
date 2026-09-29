@@ -597,10 +597,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_txPower => 'TX 전력 (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => '유효하지 않은 TX 전력 (0-22 dBm)';
+  String get settings_txPowerInvalid => '유효하지 않은 TX 전력';
 
   @override
   String get settings_clientRepeat => '오프그리드 반복';
@@ -2205,7 +2202,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get repeater_txPower => 'TX 파워';
 
   @override
-  String get repeater_txPowerHelper => '1~30 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => '대역폭';

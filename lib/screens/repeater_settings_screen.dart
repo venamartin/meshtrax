@@ -251,7 +251,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
         // Extract just the power value - format is typically "10" or "10 dBm"
         final powerStr = txValue.replaceAll(RegExp(r'[^0-9-]'), '');
         final powerInt = int.tryParse(powerStr);
-        if (powerInt != null && powerInt >= 1 && powerInt <= 30) {
+        if (powerInt != null && powerInt >= -9 && powerInt <= 30) {
           _txPowerController.text = powerInt.toString();
         }
       }
@@ -1052,7 +1052,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
                 border: const OutlineInputBorder(),
                 suffixText: 'dBm',
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(signed: true),
               onChanged: (_) => _markChanged(),
             ),
             const SizedBox(height: 16),

@@ -621,10 +621,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settings_txPower => 'Потужність TX (дБм)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => 'Некоректна потужність TX (0-22 дБм)';
+  String get settings_txPowerInvalid => 'Некоректна потужність TX';
 
   @override
   String get settings_clientRepeat => 'Автономна система';
@@ -2278,7 +2275,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get repeater_txPower => 'Потужність TX';
 
   @override
-  String get repeater_txPowerHelper => '1-30 дБм';
+  String get repeater_txPowerHelper => '-9 – 30 дБм';
 
   @override
   String get repeater_bandwidth => 'Смуга пропускання';

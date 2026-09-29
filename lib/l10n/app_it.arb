@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Fattore di Spettro",
   "settings_codingRate": "Tasso di Codifica",
   "settings_txPower": "TX Potenza (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Potere TX non valido (0-22 dBm)",
+  "settings_txPowerInvalid": "Potere TX non valido",
   "settings_error": "Errore: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frequenza (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Potenza",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Larghezza di banda",
   "repeater_spreadingFactor": "Spreading Factor",
   "repeater_codingRate": "Tasso di Codifica",

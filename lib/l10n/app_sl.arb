@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Razširitveni faktor",
   "settings_codingRate": "Programska hitrost",
   "settings_txPower": "TX Moč (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Neveljavna TX moč (0-22 dBm)",
+  "settings_txPowerInvalid": "Neveljavna TX moč",
   "settings_error": "Napaka: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frekvenca (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Moč",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Pasovna širina",
   "repeater_spreadingFactor": "Razširitveni faktor",
   "repeater_codingRate": "Programska hitrost",

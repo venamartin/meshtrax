@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Коефіцієнт розширення",
   "settings_codingRate": "Швидкість кодування",
   "settings_txPower": "Потужність TX (дБм)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Некоректна потужність TX (0-22 дБм)",
+  "settings_txPowerInvalid": "Некоректна потужність TX",
   "settings_error": "Помилка: {message}",
   "@settings_error": {
     "placeholders": {
@@ -929,7 +928,7 @@
   "repeater_frequencyMhz": "Частота (МГц)",
   "repeater_frequencyHelper": "300-2500 МГц",
   "repeater_txPower": "Потужність TX",
-  "repeater_txPowerHelper": "1-30 дБм",
+  "repeater_txPowerHelper": "-9 – 30 дБм",
   "repeater_bandwidth": "Смуга пропускання",
   "repeater_spreadingFactor": "Коефіцієнт розширення",
   "repeater_codingRate": "Швидкість кодування",

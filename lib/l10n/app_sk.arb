@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Rozptýľovací faktor",
   "settings_codingRate": "Cenový kurz pre programovanie",
   "settings_txPower": "TX Výkon (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Neplatná hodnota výkonu TX (0-22 dBm)",
+  "settings_txPowerInvalid": "Neplatná hodnota výkonu TX",
   "settings_error": "Chyba: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frekvencia (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Power",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Šírka pásma",
   "repeater_spreadingFactor": "Šírenie faktoru",
   "repeater_codingRate": "Rýchlosť kódovania",

@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Verteilungsfaktor",
   "settings_codingRate": "Kodierungsrate",
   "settings_txPower": "TX-Leistung (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Ungültige TX-Leistung (0-22 dBm)",
+  "settings_txPowerInvalid": "Ungültige TX-Leistung",
   "settings_error": "Fehler: {message}",
   "@settings_error": {
     "placeholders": {
@@ -928,7 +927,7 @@
   "repeater_frequencyMhz": "Frequenz (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "TX Power",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Bandbreite",
   "repeater_spreadingFactor": "Verteilungsfaktor",
   "repeater_codingRate": "Kodierungsrate",

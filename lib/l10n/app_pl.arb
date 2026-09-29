@@ -146,8 +146,7 @@
   "settings_spreadingFactor": "Współczynnik rozpraszania",
   "settings_codingRate": "Współczynnik kodowania",
   "settings_txPower": "Moc TX (dBm)",
-  "settings_txPowerHelper": "0 - 22",
-  "settings_txPowerInvalid": "Nieprawidłowa moc TX (0-22 dBm)",
+  "settings_txPowerInvalid": "Nieprawidłowa moc TX",
   "settings_error": "Błąd: {message}",
   "@settings_error": {
     "placeholders": {
@@ -938,7 +937,7 @@
   "repeater_frequencyMhz": "Częstotliwość (MHz)",
   "repeater_frequencyHelper": "300-2500 MHz",
   "repeater_txPower": "Moc TX",
-  "repeater_txPowerHelper": "1-30 dBm",
+  "repeater_txPowerHelper": "-9 – 30 dBm",
   "repeater_bandwidth": "Przepustowość",
   "repeater_spreadingFactor": "Współczynnik rozpraszania",
   "repeater_codingRate": "Współczynnik kodowania",

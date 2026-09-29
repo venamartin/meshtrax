@@ -590,10 +590,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_txPower => 'TX 功率 (dBm)';
 
   @override
-  String get settings_txPowerHelper => '0 - 22';
-
-  @override
-  String get settings_txPowerInvalid => '无效的发射功率（0-22 dBm）';
+  String get settings_txPowerInvalid => '无效的发射功率';
 
   @override
   String get settings_clientRepeat => '离网重复';
@@ -2181,7 +2178,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get repeater_txPower => 'TX 功率';
 
   @override
-  String get repeater_txPowerHelper => '1-30 dBm';
+  String get repeater_txPowerHelper => '-9 – 30 dBm';
 
   @override
   String get repeater_bandwidth => '带宽';
