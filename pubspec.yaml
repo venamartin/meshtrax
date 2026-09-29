@@ -123,6 +123,9 @@ flutter_launcher_icons:
   ios: true
   image_path: "mesh-icon.png"
   remove_alpha_ios: true
+  windows:
+    generate: true
+    icon_size: 256
 
   # To add assets to your application, add an assets section, like this:
   # assets:
