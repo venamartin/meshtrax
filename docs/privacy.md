@@ -1,11 +1,11 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** August 13, 2026
-**Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, and MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later
+**Last updated:** September 29, 2026
+**Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
 
-MeshTrax ("the App", "we", "us") is a free, open-source client application for communicating with [MeshCore](https://meshcore.co.uk/) LoRa mesh-networking devices ("companion devices"). This Privacy Policy explains what data the App accesses, stores, and shares, and why. It is written to comply with the [Google Play Developer Program Policies](https://support.google.com/googleplay/android-developer/answer/10144311) and the Google Play Data safety requirements, and with Apple's [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#privacy) and App Privacy disclosure requirements. The App behaves the same way on both platforms; where a detail is platform-specific it is called out below.
+MeshTrax ("the App", "we", "us") is a free, open-source client application for communicating with [MeshCore](https://meshcore.co.uk/) LoRa mesh-networking devices ("companion devices"). This Privacy Policy explains what data the App accesses, stores, and shares, and why. It is written to comply with the [Google Play Developer Program Policies](https://support.google.com/googleplay/android-developer/answer/10144311) and the Google Play Data safety requirements, Apple's [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#privacy) and App Privacy disclosure requirements, and the [Microsoft Store Policies](https://learn.microsoft.com/windows/apps/publish/store-policies). The App behaves the same way on all platforms; where a detail is platform-specific it is called out below.
 
 The App is developed by an independent, open-source developer. You can review the complete source code to verify every statement in this policy at **https://github.com/venamartin/meshtrax**.
 
@@ -19,7 +19,7 @@ The App is developed by an independent, open-source developer. You can review th
 
 ## Data the App collects and stores on your device
 
-All of the following is stored locally on your device using the operating system's standard app storage (`SharedPreferences` on Android, `UserDefaults` on iOS). None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
+All of the following is stored locally on your device using the operating system's standard app storage (`SharedPreferences` on Android, `UserDefaults` on iOS, the app's own local application-data folder on Windows). None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
 
 | Category | What it includes | Purpose |
 |---|---|---|
@@ -98,6 +98,16 @@ iOS does not require location permission for BLE scanning; the App never request
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `WAKE_LOCK` | Keep the connection to your companion device alive while the App runs in the background |
 | USB host feature (optional) | Connect to a companion device over a USB serial cable, where supported |
 
+### Windows
+
+| Capability | Why it is needed |
+|---|---|
+| Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
+| Internet | Download map tiles (OpenStreetMap), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
+| Full trust (desktop app) | Standard for Windows desktop apps; lets the App open USB serial (COM) ports to reach a companion device over a cable |
+
+The Windows app does not use the camera, location, or notifications.
+
 The App can also connect to a companion device over your **local network (TCP)** using an IP address that you enter manually. This traffic stays on your local network.
 
 ## Camera and photos
@@ -115,7 +125,7 @@ Locally stored data is protected by your device's operating-system storage sandb
 ## Data retention and deletion
 
 - All App data is retained on your device until you delete it.
-- You can delete data at any time by using the App's in-app controls (for example, clearing contacts, channels, or debug logs), by clearing the App's storage in Android Settings, or by uninstalling the App (either platform), which removes all locally stored data.
+- You can delete data at any time by using the App's in-app controls (for example, clearing contacts, channels, or debug logs), by clearing the App's storage in Android Settings, or by uninstalling the App (any platform), which removes all locally stored data.
 - Because we hold none of your data on any server, there is nothing for you to request that we delete on our side.
 
 ## Children's privacy
