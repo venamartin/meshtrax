@@ -13,6 +13,7 @@ BUILD_APK=false
 BUILD_IOS=false
 BUILD_WINDOWS=false
 BUILD_LINUX=false
+BUILD_MSIX=false
 APPEND_ONLY=false
 
 # 1. Parse Command Line Arguments
@@ -22,6 +23,7 @@ while [[ "$#" -gt 0 ]]; do
         --ios) BUILD_IOS=true ;;
         --windows) BUILD_WINDOWS=true ;;
         --linux) BUILD_LINUX=true ;;
+        --msix) BUILD_WINDOWS=true; BUILD_MSIX=true ;;
         --append) APPEND_ONLY=true ;;
         *) echo "ERROR: Unknown parameter: $1"; exit 1 ;;
     esac
@@ -30,7 +32,7 @@ done
 
 # Check if at least one platform was selected
 if [ "$BUILD_APK" = false ] && [ "$BUILD_IOS" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ]; then
-    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --linux)"
+    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux)"
     exit 1
 fi
 
@@ -325,6 +327,23 @@ if [ "$BUILD_WINDOWS" = true ]; then
         echo "SUCCESS: Windows build complete."
         echo "LOCATION: Artifacts are in '$DIST_DIR/'"
         echo "FILE: $WIN_DEST_ZIP"
+
+        if [ "$BUILD_MSIX" = true ]; then
+            # Store package: unsigned (the Store signs it), so it is uploaded to
+            # Partner Center by hand and never attached to the GitHub release.
+            if grep -q "PLACEHOLDER" pubspec.yaml; then
+                echo "ERROR: msix_config in pubspec.yaml still has PLACEHOLDER identity values."
+                echo "       Copy them from Partner Center > MeshTrax > Product identity."
+                exit 1
+            fi
+            MSIX_NAME="meshtrax-v$VERSION"
+            "$DART_BIN" run msix:create --store --output-path "$DIST_DIR" --output-name "$MSIX_NAME"
+            if [ $? -ne 0 ] || [ ! -f "$DIST_DIR/$MSIX_NAME.msix" ]; then
+                echo "ERROR: MSIX packaging failed."
+                exit 1
+            fi
+            echo "FILE: $DIST_DIR/$MSIX_NAME.msix (upload to Partner Center, not GitHub)"
+        fi
         
         if [ "$APPEND_ONLY" = false ] && [ "$BUILD_LINUX" = false ]; then
             echo "PROMPT: Do you want to proceed to the GitHub Draft phase? (y/n)"

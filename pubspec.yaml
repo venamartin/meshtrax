@@ -1,5 +1,5 @@
 name: meshtrax
-description: "A meshcore application based on meshcore-open"
+description: "Off-grid messaging for MeshCore LoRa mesh radios"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -93,6 +93,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   drift_dev: ^2.34.0
   build_runner: ^2.15.1
+  msix: ^3.18.0
 
 dependency_overrides:
   # Vendored with a framing fix: upstream's stdout parser crashes on frames
@@ -126,6 +127,20 @@ flutter_launcher_icons:
   windows:
     generate: true
     icon_size: 256
+
+# Microsoft Store package (dart run msix:create). The three identity values
+# come from Partner Center > MeshTrax > Product identity and must match it
+# exactly. release.sh --msix adds --store; without it msix signs with a local
+# test certificate for sideload testing. Version comes from `version:` above
+# (1.7.25+34 -> 1.7.25.0).
+msix_config:
+  display_name: MeshTrax
+  publisher_display_name: PLACEHOLDER # Package/Properties/PublisherDisplayName
+  identity_name: PLACEHOLDER.MeshTrax # Package/Identity/Name
+  publisher: CN=PLACEHOLDER # Package/Identity/Publisher
+  logo_path: mesh-icon.png
+  capabilities: internetClient,bluetooth
+  build_windows: false
 
   # To add assets to your application, add an assets section, like this:
   # assets:
