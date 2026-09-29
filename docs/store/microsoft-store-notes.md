@@ -62,11 +62,10 @@ https://github.com/venamartin/meshtrax/issues
 
 ## Restricted capability justification (runFullTrust)
 
+The Partner Center box is limited to 500 characters.
+
 ```
-MeshTrax is a Flutter desktop (Win32) application. It runs at full trust to
-open USB serial (COM) ports to MeshCore LoRa radios and to use the WinRT
-Bluetooth LE APIs to connect to them. It does not install drivers, services,
-or run other processes.
+MeshTrax is a Flutter desktop (Win32) app packaged as MSIX, so it needs runFullTrust to run as a standard desktop app. It is a client for MeshCore LoRa radios and uses full trust to open USB serial (COM) ports and the WinRT Bluetooth LE APIs to connect to the user's radio. It installs no drivers or services, does not run at startup, and launches no other processes. Open source: https://github.com/venamartin/meshtrax
 ```
 
 ## Notes for certification
