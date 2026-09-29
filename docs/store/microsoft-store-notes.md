@@ -5,6 +5,14 @@ Adapted from the App Store listing in [../app-review-notes.md](../app-review-not
 — kept in sync by hand. The Windows app has no notifications, camera, or
 background service, so those lines are left out here.
 
+## Store identity
+
+- Store ID: `9N0DM90LRH49`
+- Listing: https://apps.microsoft.com/detail/9N0DM90LRH49
+- Package family name: `MartinGreatorex.MeshTrax_a1f4byw357jqj`
+- Identity values live in `msix_config` in `pubspec.yaml` (Partner Center →
+  MeshTrax → Product identity).
+
 ## Building the package
 
 ```

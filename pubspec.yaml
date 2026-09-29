@@ -135,9 +135,9 @@ flutter_launcher_icons:
 # (1.7.25+34 -> 1.7.25.0).
 msix_config:
   display_name: MeshTrax
-  publisher_display_name: PLACEHOLDER # Package/Properties/PublisherDisplayName
-  identity_name: PLACEHOLDER.MeshTrax # Package/Identity/Name
-  publisher: CN=PLACEHOLDER # Package/Identity/Publisher
+  publisher_display_name: Martin Greatorex
+  identity_name: MartinGreatorex.MeshTrax
+  publisher: CN=E72E7FF4-BD6B-4759-80C4-0775BB9E77E5
   logo_path: mesh-icon.png
   capabilities: internetClient,bluetooth
   build_windows: false
