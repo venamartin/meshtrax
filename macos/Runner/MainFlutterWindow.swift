@@ -7,6 +7,8 @@ class MainFlutterWindow: NSWindow {
     let windowFrame = self.frame
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
+    // Saves the frame on every move/resize and restores it on next launch.
+    self.setFrameAutosaveName("MainWindow")
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
