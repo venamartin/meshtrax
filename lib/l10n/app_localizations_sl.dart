@@ -3614,6 +3614,9 @@ class AppLocalizationsSl extends AppLocalizations {
       'Prosimo, počakajte trenutek, preden pošljete ponovno.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread =>
       'Pritisnite za najstarejše nepročitano sporočilo';
 

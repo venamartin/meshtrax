@@ -3610,6 +3610,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_sendCooldown => 'Prosím, počkajte chvíľu, než zašlete znova.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread => 'Presk oceň';
 
   @override

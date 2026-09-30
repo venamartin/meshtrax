@@ -3618,6 +3618,9 @@ class AppLocalizationsNl extends AppLocalizations {
       'Gelieve even te wachten voordat u opnieuw verzendt.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread =>
       'Ga naar het oudste ongelezen bericht';
 

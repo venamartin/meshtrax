@@ -3643,6 +3643,9 @@ class AppLocalizationsUk extends AppLocalizations {
       'Будь ласка, зачекайте трохи, перш ніж відправляти знову.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread =>
       'Перейти до найстарішого непрочитаного повідомлення';
 

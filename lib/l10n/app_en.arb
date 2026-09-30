@@ -2050,6 +2050,7 @@
   "discoveredContacts_deleteContactAll": "Delete Discovered Contacts",
   "discoveredContacts_deleteContactAllContent": "Are you sure you want to delete all discovered contacts?",
   "chat_sendCooldown": "Please wait a moment before sending again.",
+  "chat_notConnected": "Not connected to a radio. Message not sent.",
   "appSettings_jumpToOldestUnread": "Jump to oldest unread",
   "appSettings_jumpToOldestUnreadSubtitle": "When opening a chat with unread messages, scroll to the first unread instead of the latest.",
   "appSettings_languageHu": "Hungarian",

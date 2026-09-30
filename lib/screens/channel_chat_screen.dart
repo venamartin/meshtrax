@@ -29,6 +29,7 @@ import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
+import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
@@ -1030,6 +1031,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         top: false,
         child: Column(
           children: [
+            Consumer<MeshCoreConnector>(
+              builder: (context, connector, _) =>
+                  ConnectionStatusBanner.ifDisconnected(context, connector) ??
+                  const SizedBox.shrink(),
+            ),
             Expanded(
               child: Consumer<MeshCoreConnector>(
                 builder: (context, connector, child) {
@@ -2347,6 +2353,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    final connector = context.read<MeshCoreConnector>();
+    if (!_warnIfDisconnected(connector)) return;
+
     final now = DateTime.now();
     if (_lastChannelSendAt != null &&
         now.difference(_lastChannelSendAt!) < const Duration(seconds: 1)) {
@@ -2358,7 +2367,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
     _lastChannelSendAt = now;
 
-    final connector = context.read<MeshCoreConnector>();
     final maxBytes = maxChannelMessageBytes(connector.selfName);
     final replyTarget = _replyingToMessage;
 
@@ -2559,8 +2567,20 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
+  /// The connector drops sends silently while disconnected; the user has to
+  /// hear about it, and their text has to stay in the box.
+  bool _warnIfDisconnected(MeshCoreConnector connector) {
+    if (connector.isConnected) return true;
+    showDismissibleSnackBar(
+      context,
+      content: Text(context.l10n.chat_notConnected),
+    );
+    return false;
+  }
+
   void _sendReaction(ChannelMessage message, String emoji) {
     final connector = context.read<MeshCoreConnector>();
+    if (!_warnIfDisconnected(connector)) return;
     // MeshCore One dialect: readable on every client, SHA-hashed target,
     // any emoji — no fixed table.
     connector.sendChannelMessage(

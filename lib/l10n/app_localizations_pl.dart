@@ -3646,6 +3646,9 @@ class AppLocalizationsPl extends AppLocalizations {
       'Prosimy o chwilowe oczekiwanie przed ponownym wysłaniem.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread =>
       'Przejdź do najstarszego nieodczytanej wiadomości';
 

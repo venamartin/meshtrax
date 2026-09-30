@@ -1580,10 +1580,25 @@ class MeshCoreConnector extends ChangeNotifier {
             state == MeshCoreConnectionState.disconnecting);
   }
 
+  /// [autoRetry] marks an attempt made by the reconnect timer rather than the
+  /// user: it keeps the backoff counter and survives a silent handshake.
+  /// A link that opened but stayed silent is, on a retry to a radio we were
+  /// already talking to, the radio at the edge of range rather than a pairing
+  /// problem: the loop keeps going. Every other failure still stops it, and a
+  /// user-initiated attempt always stops so the scanner can show the error.
+  @visibleForTesting
+  static bool shouldKeepAutoReconnect({
+    required bool autoRetry,
+    required MeshCoreBleFailure kind,
+  }) {
+    return autoRetry && kind == MeshCoreBleFailure.handshakeTimeout;
+  }
+
   Future<void> connect(
     BluetoothDevice device, {
     String? displayName,
     Future<String?> Function()? linuxPairingPinProvider,
+    bool autoRetry = false,
   }) async {
     final requestedDeviceId = device.remoteId.toString();
     if (_state == MeshCoreConnectionState.connecting ||
@@ -1626,7 +1641,12 @@ class MeshCoreConnector extends ChangeNotifier {
     _lastDeviceId = _deviceId;
     _lastDeviceDisplayName = _deviceDisplayName;
     _manualDisconnect = false;
-    _cancelReconnectTimer();
+    // An automatic retry keeps the backoff counter. Zeroing it here made the
+    // disconnect(manual: false) inside the catch below reschedule at the 1s
+    // floor on every failure, so the loop never backed off.
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    if (!autoRetry) _reconnectAttempts = 0;
     _bleInitialSyncStarted = false;
     if (PlatformInfo.isWeb) {
       _resetConnectionHandshakeState();
@@ -2001,6 +2021,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _pendingInitialChannelSync = true;
       }
       await _startBleInitialSync();
+      _reconnectAttempts = 0;
     } catch (e) {
       _appDebugLogService?.error('Connection error: $e', tag: 'BLE Connect');
       if (shouldIgnoreLateBleConnectError(
@@ -2017,6 +2038,14 @@ class MeshCoreConnector extends ChangeNotifier {
         return;
       }
       if (e is MeshCoreBleFailureException) {
+        if (shouldKeepAutoReconnect(autoRetry: autoRetry, kind: e.kind)) {
+          _appDebugLogService?.warn(
+            'BLE ${e.kind.name} during auto-reconnect: retrying',
+            tag: 'BLE Connect',
+          );
+          await disconnect(manual: false);
+          rethrow;
+        }
         _appDebugLogService?.warn(
           'BLE ${e.kind.name}: stopping reconnect until user retries manually',
           tag: 'BLE Connect',
@@ -2601,14 +2630,15 @@ class MeshCoreConnector extends ChangeNotifier {
               : BluetoothDevice.fromId(_lastDeviceId!));
       if (device == null) return;
 
-      // connect() zeroes the backoff counter (it treats itself as a fresh
-      // user attempt) — remember it so failed retries keep backing off
-      // toward the 30s cap instead of hammering at the floor delay.
-      final priorAttempts = _reconnectAttempts;
       try {
-        await connect(device, displayName: _lastDeviceDisplayName);
+        await connect(
+          device,
+          displayName: _lastDeviceDisplayName,
+          autoRetry: true,
+        );
       } catch (_) {
-        _reconnectAttempts = priorAttempts;
+        // A failed attempt normally reschedules itself through
+        // disconnect(manual: false); this covers one that never got there.
         _scheduleReconnect();
       }
     });
@@ -7950,6 +7980,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _handleDisconnection() {
+    _appDebugLogService?.warn(
+      'BLE link to ${_deviceDisplayName ?? _deviceId} dropped; '
+      'scheduling reconnect',
+      tag: 'Connection',
+    );
     _stopBatteryPolling();
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;

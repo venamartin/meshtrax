@@ -3631,6 +3631,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Por favor, aguarde um momento antes de reenviar.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread =>
       'Vá para a mensagem mais antiga não lida';
 

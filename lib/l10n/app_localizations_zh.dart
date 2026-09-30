@@ -3397,6 +3397,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_sendCooldown => '请稍等片刻后再尝试发送。';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread => '跳转到最旧、未读的文章';
 
   @override

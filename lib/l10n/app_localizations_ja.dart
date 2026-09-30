@@ -3485,6 +3485,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_sendCooldown => '再度送信する前に、しばらくお待ちください。';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread => '最も古い未読のメッセージへ移動';
 
   @override

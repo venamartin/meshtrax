@@ -6323,6 +6323,12 @@ abstract class AppLocalizations {
   /// **'Please wait a moment before sending again.'**
   String get chat_sendCooldown;
 
+  /// No description provided for @chat_notConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to a radio. Message not sent.'**
+  String get chat_notConnected;
+
   /// No description provided for @appSettings_jumpToOldestUnread.
   ///
   /// In en, this message translates to:

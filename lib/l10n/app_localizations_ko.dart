@@ -3483,6 +3483,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_sendCooldown => '다시 보내기 전에 잠시 기다려 주시기 바랍니다.';
 
   @override
+  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+
+  @override
   String get appSettings_jumpToOldestUnread => '가장 오래된, 아직 읽지 않은 항목으로 이동';
 
   @override

@@ -29,6 +29,7 @@ import '../services/chat_text_scale_service.dart';
 import '../services/storage_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
+import '../widgets/connection_status_banner.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
@@ -416,6 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
               : visibleMessages.toList();
           return Column(
             children: [
+              ?ConnectionStatusBanner.ifDisconnected(context, connector),
               Expanded(
                 child: Stack(
                   children: [
@@ -823,6 +825,15 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage(MeshCoreConnector connector) async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+    if (!connector.isConnected) {
+      // The connector drops sends silently while disconnected; the user has
+      // to hear about it, and their text has to stay in the box.
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.chat_notConnected),
+      );
+      return;
+    }
 
     final now = DateTime.now();
     if (_lastTextSendAt != null &&
