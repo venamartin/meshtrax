@@ -797,12 +797,11 @@ winrt::fire_and_forget FlutterBluePlusWinrtPlugin::CreateBondAsync(std::string r
                 });
             auto kinds = DevicePairingKinds::ConfirmOnly | DevicePairingKinds::ProvidePin |
                          DevicePairingKinds::ConfirmPinMatch | DevicePairingKinds::DisplayPin;
-            // A passkey pairing needs the authenticated level; with Default,
-            // Windows asks for the PIN but then pairs at Encryption only and
-            // the radio rejects it (status 19, protection 1).
-            auto level = pin.empty() ? DevicePairingProtectionLevel::Default
-                                     : DevicePairingProtectionLevel::EncryptionAndAuthentication;
-            auto result_val = co_await custom.PairAsync(kinds, level);
+            // Keep the protection level at Default: Windows then negotiates
+            // passkey entry with the radio and raises ProvidePin. Asking for
+            // EncryptionAndAuthentication up front makes the pairing fail
+            // before any PIN is requested (status 19, no handler call).
+            auto result_val = co_await custom.PairAsync(kinds, DevicePairingProtectionLevel::Default);
             custom.PairingRequested(token);
             auto status = result_val.Status();
             bool ok = status == DevicePairingResultStatus::Paired || status == DevicePairingResultStatus::AlreadyPaired;
