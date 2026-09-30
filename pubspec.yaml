@@ -102,6 +102,12 @@ dependency_overrides:
   # still loads from the pub cache — the vendored copy ships no assets.
   win_ble:
     path: tools/win_ble_patched
+  # Vendored with PIN pairing: upstream's createBond uses the plain PairAsync(),
+  # which cannot answer a passkey request, so pairing a MeshCore radio from the
+  # app fails with "Connection failed" (tools/flutter_blue_plus_winrt_patched/
+  # windows/flutter_blue_plus_winrt_plugin.cpp, CreateBondAsync).
+  flutter_blue_plus_winrt:
+    path: tools/flutter_blue_plus_winrt_patched
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

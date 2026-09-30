@@ -143,6 +143,8 @@
   },
   "scanner_searchingDevices": "Searching for MeshCore devices...",
   "scanner_tapToScan": "Tap Scan to find MeshCore devices",
+  "scanner_radioNotResponding": "The radio isn't responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.",
+  "scanner_pairingFailed": "Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.",
   "scanner_connectionFailed": "Connection failed: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {

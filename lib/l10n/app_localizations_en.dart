@@ -316,6 +316,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanner_tapToScan => 'Tap Scan to find MeshCore devices';
 
   @override
+  String get scanner_radioNotResponding =>
+      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+
+  @override
+  String get scanner_pairingFailed =>
+      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+
+  @override
   String scanner_connectionFailed(String error) {
     return 'Connection failed: $error';
   }

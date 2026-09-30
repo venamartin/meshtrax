@@ -694,6 +694,18 @@ abstract class AppLocalizations {
   /// **'Tap Scan to find MeshCore devices'**
   String get scanner_tapToScan;
 
+  /// No description provided for @scanner_radioNotResponding.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.'**
+  String get scanner_radioNotResponding;
+
+  /// No description provided for @scanner_pairingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.'**
+  String get scanner_pairingFailed;
+
   /// No description provided for @scanner_connectionFailed.
   ///
   /// In en, this message translates to:

@@ -363,7 +363,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       await connector.connect(
         result.device,
         displayName: name,
-        linuxPairingPinProvider: PlatformInfo.isLinux
+        linuxPairingPinProvider: PlatformInfo.isLinux || PlatformInfo.isWindows
             ? () async {
                 if (!context.mounted) return null;
                 return _promptLinuxPairingPin(context, name);
@@ -384,9 +384,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
         return;
       }
       if (context.mounted) {
+        final l10n = context.l10n;
+        final message = e is MeshCoreBleFailureException
+            ? switch (e.kind) {
+                MeshCoreBleFailure.pairingFailed => l10n.scanner_pairingFailed,
+                MeshCoreBleFailure.handshakeTimeout =>
+                  l10n.scanner_radioNotResponding,
+              }
+            : l10n.scanner_connectionFailed(e.toString());
         showDismissibleSnackBar(
           context,
-          content: Text(context.l10n.scanner_connectionFailed(e.toString())),
+          content: Text(message),
           backgroundColor: Colors.red,
         );
       }
@@ -401,7 +409,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     var pinValue = '';
     var obscure = true;
     appLogger.info(
-      'Showing Linux BLE pairing PIN prompt for $deviceName',
+      'Showing BLE pairing PIN prompt for $deviceName',
       tag: 'ScannerScreen',
     );
     final pin = await showDialog<String>(

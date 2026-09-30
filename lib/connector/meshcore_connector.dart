@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:pointycastle/export.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart';
 
@@ -140,6 +141,37 @@ enum MeshCoreConnectionState {
 }
 
 enum MeshCoreTransportType { bluetooth, usb, tcp }
+
+enum MeshCoreBleFailure {
+  /// The OS pairing prompt was declined, timed out, or failed.
+  pairingFailed,
+
+  /// The link opened but the radio never answered the handshake. An unpaired
+  /// radio looks exactly like this: it accepts the connection and stays silent.
+  handshakeTimeout,
+}
+
+/// A BLE connect that got as far as a link but not a working session. These
+/// stop auto-reconnect: retrying without the user changing something (pairing,
+/// PIN) would just loop.
+class MeshCoreBleFailureException implements Exception {
+  const MeshCoreBleFailureException(this.kind, {this.detail});
+
+  final MeshCoreBleFailure kind;
+
+  /// Platform-level reason, when there is one (e.g. Windows' pairing status).
+  final String? detail;
+
+  @override
+  String toString() {
+    final base = switch (kind) {
+      MeshCoreBleFailure.pairingFailed => 'Bluetooth pairing failed',
+      MeshCoreBleFailure.handshakeTimeout =>
+        'Radio did not respond to the handshake',
+    };
+    return detail == null ? base : '$base ($detail)';
+  }
+}
 
 class RepeaterBatterySnapshot {
   final int millivolts;
@@ -1144,7 +1176,13 @@ class MeshCoreConnector extends ChangeNotifier {
     _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
       _scanResults
         ..clear()
-        ..addAll(results);
+        // The Windows plugin ignores withKeywords and reports every
+        // advertiser, so apply the same name filter here.
+        ..addAll(
+          PlatformInfo.isWindows
+              ? results.where(_advertisesMeshCoreName)
+              : results,
+        );
       _mergeLinuxSystemScanResults();
       notifyListeners();
     });
@@ -1164,6 +1202,17 @@ class MeshCoreConnector extends ChangeNotifier {
 
     await Future.delayed(timeout);
     await stopScan();
+  }
+
+  static bool _advertisesMeshCoreName(ScanResult result) {
+    final name = result.advertisementData.advName.isNotEmpty
+        ? result.advertisementData.advName
+        : result.device.platformName;
+    if (name.isEmpty) return false;
+    final lower = name.toLowerCase();
+    return MeshCoreUuids.deviceNamePrefixes.any(
+      (keyword) => lower.contains(keyword.toLowerCase()),
+    );
   }
 
   Future<void> _loadLinuxSystemDevicesForScan() async {
@@ -1615,6 +1664,13 @@ class MeshCoreConnector extends ChangeNotifier {
         );
       }
 
+      if (PlatformInfo.isWindows) {
+        await _ensureWindowsBleBond(
+          device,
+          onRequestPin: linuxPairingPinProvider,
+        );
+      }
+
       final connectTimeout = PlatformInfo.isLinux
           ? const Duration(seconds: 6)
           : const Duration(seconds: 15);
@@ -1960,6 +2016,14 @@ class MeshCoreConnector extends ChangeNotifier {
         );
         return;
       }
+      if (e is MeshCoreBleFailureException) {
+        _appDebugLogService?.warn(
+          'BLE ${e.kind.name}: stopping reconnect until user retries manually',
+          tag: 'BLE Connect',
+        );
+        await disconnect(manual: true);
+        rethrow;
+      }
       final errorText = e.toString();
       final lowerErrorText = errorText.toLowerCase();
       final isLinuxPairingFailure =
@@ -2176,6 +2240,73 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
+  // Windows opens a GATT link to an unpaired radio without complaint, but the
+  // radio refuses to talk until the OS has paired it. MeshCore radios need a
+  // passkey, so ask the user for it first and hand it to the (patched)
+  // plugin's createBond, which answers Windows' pairing request with it.
+  Future<void> _ensureWindowsBleBond(
+    BluetoothDevice device, {
+    Future<String?> Function()? onRequestPin,
+  }) async {
+    final platform = FlutterBluePlusPlatform.instance;
+    BmBondStateEnum? bondState;
+    try {
+      final response = await platform.getBondState(
+        BmBondStateRequest(remoteId: device.remoteId),
+      );
+      bondState = response.bondState;
+    } catch (error) {
+      _appDebugLogService?.warn(
+        'Windows getBondState unavailable for ${device.remoteId.str}: $error',
+        tag: 'BLE Connect',
+      );
+      return;
+    }
+    if (bondState == BmBondStateEnum.bonded) return;
+
+    String? pin;
+    if (onRequestPin != null) {
+      pin = await onRequestPin();
+      if (pin == null) {
+        // User dismissed the PIN prompt.
+        throw const MeshCoreBleFailureException(
+          MeshCoreBleFailure.pairingFailed,
+        );
+      }
+    }
+    _appDebugLogService?.info(
+      'Windows BLE device not paired; requesting OS pairing '
+      '(${pin == null || pin.isEmpty ? 'no PIN' : 'with PIN'})',
+      tag: 'BLE Connect',
+    );
+    bool paired;
+    String? detail;
+    try {
+      paired = await platform.createBond(
+        BmCreateBondRequest(
+          remoteId: device.remoteId,
+          pin: pin == null || pin.isEmpty
+              ? null
+              : Uint8List.fromList(utf8.encode(pin)),
+        ),
+      );
+    } catch (error) {
+      _appDebugLogService?.error(
+        'Windows createBond failed: $error',
+        tag: 'BLE Connect',
+      );
+      paired = false;
+      detail = error is PlatformException ? error.message : error.toString();
+    }
+    if (!paired) {
+      throw MeshCoreBleFailureException(
+        MeshCoreBleFailure.pairingFailed,
+        detail: detail,
+      );
+    }
+    _appDebugLogService?.info('Windows BLE pairing completed', tag: 'BLE Connect');
+  }
+
   Future<bool> _waitForSelfInfo({required Duration timeout}) async {
     if (_selfPublicKey != null) return true;
     if (!isConnected) return false;
@@ -2219,12 +2350,27 @@ class MeshCoreConnector extends ChangeNotifier {
     _startBatteryPolling();
     if (_radioStatsPollRefCount > 0) _startRadioStatsPolling();
 
-    final gotSelfInfo = await _waitForSelfInfo(
+    var gotSelfInfo = await _waitForSelfInfo(
       timeout: const Duration(seconds: 3),
     );
     if (!gotSelfInfo) {
       await refreshDeviceInfo();
-      await _waitForSelfInfo(timeout: const Duration(seconds: 3));
+      gotSelfInfo = await _waitForSelfInfo(
+        timeout: const Duration(seconds: 3),
+      );
+    }
+    if (!gotSelfInfo) {
+      await refreshDeviceInfo();
+      gotSelfInfo = await _waitForSelfInfo(
+        timeout: const Duration(seconds: 4),
+      );
+    }
+    // A silent radio must not be shown as connected. Web keeps the old
+    // behaviour: its handshake is deliberately throttled and can be slow.
+    if (!gotSelfInfo && !PlatformInfo.isWeb && isConnected) {
+      throw const MeshCoreBleFailureException(
+        MeshCoreBleFailure.handshakeTimeout,
+      );
     }
 
     await syncTime();
