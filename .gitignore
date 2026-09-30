@@ -32,6 +32,9 @@ migrate_working_dir/
 .pub/
 pubspec.lock
 /build/
+packages/*/build/
+# Captures written by integration_test live runs
+/*.jsonl
 /coverage/
 # fvm project files
 .fvm/
