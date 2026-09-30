@@ -1298,10 +1298,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
-        ? orphanReaction.emoji +
-            (orphanReaction.targetSender != null
+        ? (orphanReaction.targetSender != null
                 ? '@[${orphanReaction.targetSender}]'
-                : '')
+                : '') +
+            orphanReaction.emoji
         : message.text.replaceAll(gifPattern, '').trim();
     final displayPathString = message.pathBytes.isNotEmpty
         ? message.displayPathString

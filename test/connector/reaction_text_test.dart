@@ -24,7 +24,7 @@ void main() {
       final wire = MeshCoreConnector.channelReactionText(target, '😂');
       final expectedHash =
           ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
-      expect(wire, '😂@[GWQ∆🍓]\n$expectedHash');
+      expect(wire, '@[GWQ∆🍓]😂\n$expectedHash');
     });
 
     test('hashes the mention-stripped display text — what MC1 clients hold',
@@ -56,7 +56,7 @@ void main() {
       final wire = MeshCoreConnector.channelReactionText(target, '👍');
       final expectedHash =
           ReactionHelper.computeMeshCoreOneHash('Hello', 1234567921);
-      expect(wire, '👍@[Me]\n$expectedHash');
+      expect(wire, '@[Me]👍\n$expectedHash');
     });
 
     test('round-trips through the receive matcher on another meshtrax', () {
@@ -132,7 +132,7 @@ void main() {
         messageId: '${replySecs}000_x_y',
       );
       final wire = MeshCoreConnector.channelReactionText(replyRow, '😂');
-      expect(wire, '😂@[GWQ∆🍓]\n8p4kahn8',
+      expect(wire, '@[GWQ∆🍓]😂\n8p4kahn8',
           reason: 'must produce the hash MeshCore One resolves — the '
               'body-only hash (2ehjvpha) chips on nobody');
     });

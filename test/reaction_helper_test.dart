@@ -1002,9 +1002,8 @@ void main() {
       final hash = ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
       final wire =
           ReactionHelper.encodeMeshCoreOne('😂', hash, targetSender: 'GWQ∆🍓');
-      // Emoji-first by decision (2026-09-21): pre-1.4.1 MC1 builds parse
-      // only this order; 1.4.1+ accepts both. See encodeMeshCoreOne.
-      expect(wire, '😂@[GWQ∆🍓]\n$hash');
+      // Mention-first: the MC1 1.4.1+ order (Reactions.md).
+      expect(wire, '@[GWQ∆🍓]😂\n$hash');
       final info = ReactionHelper.parseMeshCoreOneReaction(wire)!;
       expect(info.emoji, '😂');
       expect(info.targetSender, 'GWQ∆🍓');

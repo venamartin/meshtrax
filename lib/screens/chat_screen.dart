@@ -1406,10 +1406,10 @@ class _MessageBubble extends StatelessWidget {
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
-        ? orphanReaction.emoji +
-            (orphanReaction.targetSender != null
+        ? (orphanReaction.targetSender != null
                 ? '@[${orphanReaction.targetSender}]'
-                : '')
+                : '') +
+            orphanReaction.emoji
         : messageText.replaceAll(gifPattern, '').trim();
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(messageText);

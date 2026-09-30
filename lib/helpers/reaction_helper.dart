@@ -368,22 +368,17 @@ class ReactionHelper {
   }
 
   /// Encode a MeshCore One reaction — the send format. Channel reactions
-  /// carry the target message's sender; DM reactions do not. The result is
-  /// human-readable on clients that don't speak the dialect, and
-  /// [parseMeshCoreOneReaction] round-trips it.
-  ///
-  /// Deliberately the OLD emoji-first order (owner decision 2026-09-21):
-  /// MC1 1.4.1 switched sends to mention-first but accepts both, while
-  /// pre-1.4.1 builds — still what's deployed on the mesh — parse only
-  /// emoji-first and would render mention-first as raw text. Flip to
-  /// `@[$targetSender]$emoji\n$hash` once 1.4.1+ is widespread.
+  /// carry the target message's sender (mention-first, the MC1 1.4.1+
+  /// order); DM reactions do not. The result is human-readable on clients
+  /// that don't speak the dialect, and [parseMeshCoreOneReaction]
+  /// round-trips it.
   static String encodeMeshCoreOne(
     String emoji,
     String hash, {
     String? targetSender,
   }) {
     return targetSender != null
-        ? '$emoji@[$targetSender]\n$hash'
+        ? '@[$targetSender]$emoji\n$hash'
         : '$emoji\n$hash';
   }
 }
