@@ -24,10 +24,6 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         // Play Store package name (immutable once the app is created in the
         // Play Console). The code namespace above can differ from this.
@@ -74,6 +70,12 @@ android {
     //         path = file("src/main/cpp/CMakeLists.txt")
     //     }
     // }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 flutter {
