@@ -632,6 +632,12 @@ class MeshCoreConnector extends ChangeNotifier {
   int get maxChannels => _maxChannels;
   Set<String> get knownContactKeys => Set.unmodifiable(_knownContactKeys);
   SyncStatus? get currentSyncStatus {
+    // A full contact download is always long enough to deserve the banner,
+    // including the manual Refresh Contacts after the initial sync. The
+    // incremental pass stays silent once the initial sync is done.
+    if (_isLoadingContacts && _contactSyncSince == 0) {
+      return SyncStatus.contacts;
+    }
     if (_initialSyncComplete) return null;
     if (_awaitingSelfInfo) return SyncStatus.deviceInfo;
     if (_isLoadingContacts) return SyncStatus.contacts;
