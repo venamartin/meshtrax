@@ -194,7 +194,10 @@ const int cmdExportContact = 17;
 const int cmdImportContact = 18;
 const int cmdReboot = 19;
 const int cmdGetBattAndStorage = 20;
+const int cmdSetTuningParams = 21;
 const int cmdDeviceQuery = 22;
+const int cmdExportPrivateKey = 23;
+const int cmdImportPrivateKey = 24;
 const int cmdSendRawData = 25;
 const int cmdSendLogin = 26;
 const int cmdSendStatusReq = 27;
@@ -208,6 +211,7 @@ const int cmdSetOtherParams = 38;
 const int cmdSendTelemetryReq = 39;
 const int cmdGetCustomVar = 40;
 const int cmdSetCustomVar = 41;
+const int cmdGetTuningParams = 43;
 const int cmdSendBinaryReq = 50;
 const int cmdSetFloodScopeKey = 54;
 const int cmdSendControlData = 55;
@@ -252,10 +256,13 @@ const int respCodeNoMoreMessages = 10;
 const int respCodeExportContact = 11;
 const int respCodeBattAndStorage = 12;
 const int respCodeDeviceInfo = 13;
+const int respCodePrivateKey = 14;
+const int respCodeDisabled = 15;
 const int respCodeContactMsgRecvV3 = 16;
 const int respCodeChannelMsgRecvV3 = 17;
 const int respCodeChannelInfo = 18;
 const int respCodeCustomVars = 21;
+const int respCodeTuningParams = 23;
 const int respCodeStats = 24;
 const int respCodeAutoAddConfig = 25;
 const int respCodeChannelDataRecv = 27;
@@ -791,6 +798,7 @@ Uint8List buildUpdateContactPathFrame(
   double? lat,
   double? lon,
   DateTime? lastModified,
+  int? lastAdvertEpochSeconds,
 }) {
   final writer = BufferWriter();
   writer.writeByte(cmdAddUpdateContact);
@@ -804,8 +812,9 @@ Uint8List buildUpdateContactPathFrame(
   // Name (32 bytes, null-padded)
   writer.writeCString(name, maxNameSize);
 
-  // Timestamp
-  final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  // Last advert timestamp
+  final timestamp =
+      lastAdvertEpochSeconds ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
   writer.writeUInt32LE(timestamp);
 
   // Latitude and Longitude are expected in degrees, convert to int by multiplying by 1e6
@@ -1002,13 +1011,14 @@ Uint8List buildZeroHopContact(Uint8List pubKey) {
 Uint8List buildSetOtherParamsFrame(
   int allowTelemetryFlags,
   int advertLocationPolicy,
-  int multiAcks,
-) {
+  int multiAcks, {
+  int manualAdd = 0x01,
+}) {
   final writer = BufferWriter();
   writer.writeByte(cmdSetOtherParams);
   //Going forward the app will just set Auto Add Contacts to disabled, and use the filter flags
   //Allow Auto Add Contacts use inverted logic (0x01 = disabled, 0x00 = enabled).
-  writer.writeByte(0x01);
+  writer.writeByte(manualAdd);
   writer.writeByte(allowTelemetryFlags); // Allow Telemetry Flags
   writer.writeByte(advertLocationPolicy); // Advertisement Location Policy
   writer.writeByte(multiAcks); // Multi Acknowledgements
@@ -1016,13 +1026,14 @@ Uint8List buildSetOtherParamsFrame(
 }
 
 // Build CMD_SET_AUTO_ADD_CONFIG frame
-// Format: [cmd][flags]
+// Format: [cmd][flags][max_hops?]
 Uint8List buildSetAutoAddConfigFrame({
   required bool autoAddChat,
   required bool autoAddRepeater,
   required bool autoAddRoomServer,
   required bool autoAddSensor,
   required bool overwriteOldest,
+  int? maxHops,
 }) {
   final writer = BufferWriter();
   writer.writeByte(cmdSetAutoAddConfig);
@@ -1033,6 +1044,44 @@ Uint8List buildSetAutoAddConfigFrame({
   if (autoAddSensor) flags |= autoAddSensorFlag;
   if (overwriteOldest) flags |= autoAddOverwriteOldestFlag;
   writer.writeByte(flags);
+  if (maxHops != null) {
+    writer.writeByte(maxHops);
+  }
+  return writer.toBytes();
+}
+
+// Build CMD_EXPORT_PRIVATE_KEY frame
+// Format: [cmd]
+// Reply: [RESP_CODE_PRIVATE_KEY][key x64] or [RESP_CODE_DISABLED]
+Uint8List buildExportPrivateKeyFrame() {
+  return Uint8List.fromList([cmdExportPrivateKey]);
+}
+
+// Build CMD_IMPORT_PRIVATE_KEY frame
+// Format: [cmd][key x64]
+// Device saves the new identity, then reloads contacts (shared secrets reset).
+Uint8List buildImportPrivateKeyFrame(Uint8List key) {
+  assert(key.length == 64);
+  final writer = BufferWriter();
+  writer.writeByte(cmdImportPrivateKey);
+  writer.writeBytes(key);
+  return writer.toBytes();
+}
+
+// Build CMD_GET_TUNING_PARAMS frame
+// Format: [cmd]
+// Reply: [RESP_CODE_TUNING_PARAMS][rx_delay_base*1000 x4][airtime_factor*1000 x4]
+Uint8List buildGetTuningParamsFrame() {
+  return Uint8List.fromList([cmdGetTuningParams]);
+}
+
+// Build CMD_SET_TUNING_PARAMS frame
+// Format: [cmd][rx_delay_base*1000 x4][airtime_factor*1000 x4]
+Uint8List buildSetTuningParamsFrame(int rxDelayBase1000, int airtimeFactor1000) {
+  final writer = BufferWriter();
+  writer.writeByte(cmdSetTuningParams);
+  writer.writeUInt32LE(rxDelayBase1000);
+  writer.writeUInt32LE(airtimeFactor1000);
   return writer.toBytes();
 }
 

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:meshtrax/utils/gpx_export.dart';
-import 'package:meshtrax/utils/contact_backup_service.dart';
+import 'package:meshtrax/utils/backup_service.dart';
 import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -11,8 +11,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
+import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
 import '../services/app_debug_log_service.dart';
+import '../services/app_settings_service.dart';
 import '../widgets/app_bar.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'app_settings_screen.dart';
@@ -509,33 +511,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.backup_outlined),
-            title: const Text('Export Contacts (Backup)'),
-            subtitle: const Text('Save your contacts to a JSON file'),
-            onTap: () async {
-              if (Platform.isAndroid) {
-                final result = await ContactBackupService.exportContacts(connector.contacts);
-                if (context.mounted && result != null) {
-                  showDismissibleSnackBar(context, content: const Text('Backup ready to save or share.'));
-                }
-              } else {
-                final FileSaveLocation? location = await getSaveLocation(
-                  suggestedName: 'meshtrax_contacts_${DateTime.now().toIso8601String().replaceAll(':', '').split('.')[0]}.json',
-                  acceptedTypeGroups: [const XTypeGroup(label: 'JSON', extensions: ['json'])],
-                );
-                if (location != null) {
-                  final success = await ContactBackupService.saveContactsToPath(connector.contacts, location.path);
-                  if (context.mounted) {
-                    showDismissibleSnackBar(context, content: Text(success ? 'Backup saved to: ${location.path}' : 'Failed to save backup.'));
-                  }
-                }
-              }
-            },
+            title: const Text('Back up this radio'),
+            subtitle: const Text(
+              'Save the radio\'s identity, settings, channels, contacts, and app settings to a file',
+            ),
+            onTap: () => _startBackup(context, connector),
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.restore),
-            title: const Text('Import Contacts (Restore)'),
-            subtitle: const Text('Restore contacts from a backup file'),
+            title: const Text('Restore this radio'),
+            subtitle: const Text('Set up the radio from a backup file'),
             onTap: () async {
               final XFile? file = await openFile(
                 acceptedTypeGroups: [const XTypeGroup(label: 'JSON', extensions: ['json'])],
@@ -1254,35 +1240,274 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
+  void _showProgressDialog(
+    BuildContext context,
+    String title,
+    ValueNotifier<String> message,
+  ) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Text(title),
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ValueListenableBuilder<String>(
+                  valueListenable: message,
+                  builder: (context, value, _) => Text(value),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startBackup(
+    BuildContext context,
+    MeshCoreConnector connector,
+  ) async {
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Back up this radio?'),
+        content: const Text(
+          'The backup saves the radio\'s identity, name, radio settings, '
+          'channels, contacts, and this app\'s settings.\n\n'
+          'The file contains the radio\'s private key, channel keys, and '
+          'saved repeater passwords. Anyone with the file can read your '
+          'messages and send as this radio, so store it somewhere safe.\n\n'
+          'Settings that only exist on the radio\'s own screen (such as the '
+          'buzzer) are not included.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Back up'),
+          ),
+        ],
+      ),
+    );
+    if (proceed != true || !context.mounted) return;
+
+    final progress = ValueNotifier<String>('Reading radio settings...');
+    _showProgressDialog(context, 'Backing up', progress);
+    final String json;
+    try {
+      final backup = await connector.gatherDeviceBackup(
+        onContactProgress: (done, total) =>
+            progress.value = 'Reading contact $done of $total...',
+      );
+      json = await BackupService.createBackupJson(backup);
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        showDismissibleSnackBar(context, content: Text('Backup failed: $e'));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    Navigator.pop(context);
+
+    String? savedPath;
+    if (Platform.isAndroid) {
+      savedPath = await BackupService.exportToFile(json);
+    } else {
+      final FileSaveLocation? location = await getSaveLocation(
+        suggestedName: BackupService.suggestedFileName(),
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'JSON', extensions: ['json']),
+        ],
+      );
+      if (location != null &&
+          await BackupService.saveToPath(json, location.path)) {
+        savedPath = location.path;
+      }
+    }
+    if (!context.mounted || savedPath == null) return;
+    showDismissibleSnackBar(
+      context,
+      content: Text('Backup saved to: $savedPath'),
+    );
+    if (connector.privateKeyExportDisabled) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Backup saved without identity key'),
+          content: const Text(
+            'This radio\'s firmware does not allow exporting its identity '
+            'key. Restoring this backup will set up a radio with a new '
+            'identity, and your contacts will need to hear from it before '
+            'they can message it.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   Future<void> _processImport(
     BuildContext context,
     MeshCoreConnector connector,
     String path,
   ) async {
-    final contacts = await ContactBackupService.importContactsFromPath(path);
+    final parsed = await BackupService.parseBackupFromPath(path);
 
     if (!context.mounted) return;
-    if (contacts == null) {
-      showDismissibleSnackBar(
-        context,
-        content: const Text(
-          'Failed to parse backup data. Ensure it is a valid MeshTrax backup file.',
+    switch (parsed) {
+      case null:
+        showDismissibleSnackBar(
+          context,
+          content: const Text(
+            'Failed to parse backup data. Ensure it is a valid MeshTrax backup file.',
+          ),
+        );
+      case LegacyContactsBackup(:final contacts):
+        showDismissibleSnackBar(
+          context,
+          content: Text('Restoring ${contacts.length} contacts...'),
+        );
+        await connector.restoreContacts(contacts);
+        if (context.mounted) {
+          showDismissibleSnackBar(
+            context,
+            content: const Text('Contacts restored successfully.'),
+          );
+        }
+      case FullBackup():
+        await _startFullRestore(context, connector, parsed);
+    }
+  }
+
+  Future<void> _startFullRestore(
+    BuildContext context,
+    MeshCoreConnector connector,
+    FullBackup backup,
+  ) async {
+    final device = backup.device;
+    final created = backup.createdAt?.toLocal().toString().split('.')[0];
+    final hasIdentity = device.privateKeyHex != null;
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restore this radio?'),
+        content: Text(
+          'Backup of "${device.name}"${created != null ? ', made $created' : ''}, '
+          'with ${device.contacts.length} contacts and '
+          '${device.channels.length} channels.\n\n'
+          'This replaces everything on the connected radio — its identity, '
+          'name, radio settings, channels, and contacts — and overwrites '
+          'this app\'s settings. This can\'t be undone.'
+          '${hasIdentity ? '' : '\n\nThis backup has no identity key, so the radio keeps its current identity.'}',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+    if (proceed != true || !context.mounted) return;
+
+    final progress = ValueNotifier<String>('Starting...');
+    _showProgressDialog(context, 'Restoring', progress);
+    final RestoreReport report;
+    try {
+      report = await connector.restoreDeviceBackup(
+        device,
+        onProgress: (step, done, total) {
+          progress.value = switch (step) {
+            RestoreStep.identity => 'Restoring identity...',
+            RestoreStep.settings => 'Writing settings ($done of $total)...',
+            RestoreStep.channels => 'Writing channels ($done of $total)...',
+            RestoreStep.contacts => 'Writing contacts ($done of $total)...',
+            RestoreStep.resync => 'Re-reading the radio...',
+          };
+        },
       );
+      await BackupService.restoreAppSettings(backup.appSettings);
+      if (context.mounted) {
+        await context.read<AppSettingsService>().loadSettings();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        showDismissibleSnackBar(context, content: Text('Restore failed: $e'));
+      }
       return;
     }
+    if (!context.mounted) return;
+    Navigator.pop(context);
+    await _showRestoreSummary(context, connector, report);
+  }
 
-    showDismissibleSnackBar(
-      context,
-      content: Text('Restoring ${contacts.length} contacts...'),
+  Future<void> _showRestoreSummary(
+    BuildContext context,
+    MeshCoreConnector connector,
+    RestoreReport report,
+  ) {
+    final lines = <String>[
+      '${report.contactsWritten} contacts and ${report.channelsWritten} '
+          'channels restored.',
+      if (report.identityRestored)
+        'The radio now uses the backed-up identity. If the original radio '
+            'is still set up, keep only one of them powered on.',
+      if (report.identityUnsupported)
+        'This radio\'s firmware does not allow importing an identity key, '
+            'so it keeps its own identity.',
+      if (report.identityMissing)
+        'The backup has no identity key, so the radio keeps its own identity.',
+      if (report.channelsDropped > 0)
+        '${report.channelsDropped} channels did not fit on this radio and '
+            'were skipped.',
+      if (report.hasFailures)
+        'Problems:\n${report.failures.map((f) => '• $f').join('\n')}',
+      'Restart the app to apply all restored app settings.',
+    ];
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          report.hasFailures
+              ? 'Restore finished with problems'
+              : 'Restore complete',
+        ),
+        content: SingleChildScrollView(child: Text(lines.join('\n\n'))),
+        actions: [
+          TextButton(
+            onPressed: () {
+              connector.rebootDevice();
+              Navigator.pop(context);
+            },
+            child: const Text('Restart radio'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
     );
-    await connector.restoreContacts(contacts);
-    if (context.mounted) {
-      showDismissibleSnackBar(
-        context,
-        content: const Text('Contacts restored successfully.'),
-      );
-    }
   }
 }
 
