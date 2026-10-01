@@ -2626,6 +2626,48 @@ abstract class AppLocalizations {
   /// **'Don\'t show this again'**
   String get dmChannel_dontShowAgain;
 
+  /// No description provided for @batterySleep_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep MeshTrax running'**
+  String get batterySleep_title;
+
+  /// No description provided for @batterySleep_bodySamsung.
+  ///
+  /// In en, this message translates to:
+  /// **'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.'**
+  String get batterySleep_bodySamsung;
+
+  /// No description provided for @batterySleep_bodyGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.'**
+  String get batterySleep_bodyGeneric;
+
+  /// No description provided for @batterySleep_openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get batterySleep_openSettings;
+
+  /// No description provided for @batterySleep_notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get batterySleep_notNow;
+
+  /// No description provided for @batterySleep_settingsTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep MeshTrax running in background'**
+  String get batterySleep_settingsTile;
+
+  /// No description provided for @batterySleep_settingsTileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the phone\'s battery saver from putting MeshTrax to sleep'**
+  String get batterySleep_settingsTileSubtitle;
+
   /// No description provided for @dmChannel_noMatchTitle.
   ///
   /// In en, this message translates to:

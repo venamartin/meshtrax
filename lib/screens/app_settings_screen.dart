@@ -6,9 +6,11 @@ import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
+import '../services/battery_sleep_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/notification_service.dart';
 import '../services/ui_view_state_service.dart';
+import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'map_cache_screen.dart';
@@ -308,6 +310,16 @@ class AppSettingsScreen extends StatelessWidget {
               }
             },
           ),
+          if (PlatformInfo.isAndroid) ...[
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.battery_saver_outlined),
+              title: Text(context.l10n.batterySleep_settingsTile),
+              subtitle: Text(context.l10n.batterySleep_settingsTileSubtitle),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: BatterySleepService.openSettings,
+            ),
+          ],
           const Divider(height: 1),
           SwitchListTile(
             secondary: Icon(

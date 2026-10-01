@@ -62,6 +62,10 @@ class AppSettings {
   /// set when the user checks "don't show again".
   final bool dmIdentityWarningDismissed;
 
+  /// One-time "your phone may put MeshTrax to sleep" warning; set when the
+  /// user checks "don't show again".
+  final bool batterySleepWarningDismissed;
+
   /// Public-key hexes of blocked direct-message contacts.
   final Set<String> blockedContactKeys;
 
@@ -106,6 +110,7 @@ class AppSettings {
     this.incrementalContactSync = false,
     this.senderNameColors = true,
     this.dmIdentityWarningDismissed = false,
+    this.batterySleepWarningDismissed = false,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
@@ -152,6 +157,7 @@ class AppSettings {
       'incremental_contact_sync': incrementalContactSync,
       'sender_name_colors': senderNameColors,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
+      'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
     };
@@ -222,6 +228,8 @@ class AppSettings {
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
       dmIdentityWarningDismissed:
           json['dm_identity_warning_dismissed'] as bool? ?? false,
+      batterySleepWarningDismissed:
+          json['battery_sleep_warning_dismissed'] as bool? ?? false,
       blockedContactKeys:
           ((json['blocked_contact_keys'] as List?)
               ?.map((e) => e.toString())
@@ -272,6 +280,7 @@ class AppSettings {
     bool? incrementalContactSync,
     bool? senderNameColors,
     bool? dmIdentityWarningDismissed,
+    bool? batterySleepWarningDismissed,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) {
@@ -324,6 +333,8 @@ class AppSettings {
       senderNameColors: senderNameColors ?? this.senderNameColors,
       dmIdentityWarningDismissed:
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
+      batterySleepWarningDismissed:
+          batterySleepWarningDismissed ?? this.batterySleepWarningDismissed,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
     );

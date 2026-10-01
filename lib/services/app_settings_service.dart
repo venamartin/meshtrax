@@ -220,6 +220,12 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(dmIdentityWarningDismissed: true));
   }
 
+  Future<void> dismissBatterySleepWarning() async {
+    await updateSettings(
+      _settings.copyWith(batterySleepWarningDismissed: true),
+    );
+  }
+
   Future<void> setSenderNameColors(bool value) async {
     await updateSettings(_settings.copyWith(senderNameColors: value));
   }
