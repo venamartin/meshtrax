@@ -878,6 +878,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'アプリケーションのデバッグログが無効化されています。';
 
   @override
+  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+
+  @override
+  String get appSettings_incrementalContactSyncSubtitle =>
+      'On reconnect, ask the radio only for contacts that changed since last time';
+
+  @override
   String get contacts_title => '連絡先';
 
   @override

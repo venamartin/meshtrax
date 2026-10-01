@@ -196,4 +196,17 @@ void main() {
       expect(AppSettings.fromJson({}).maxMessageRetries, equals(3));
     });
   });
+
+  group('AppSettings — incrementalContactSync', () {
+    test('defaults to off', () {
+      expect(AppSettings().incrementalContactSync, isFalse);
+      expect(AppSettings.fromJson({}).incrementalContactSync, isFalse);
+    });
+
+    test('round-trips through JSON', () {
+      final json = AppSettings().copyWith(incrementalContactSync: true).toJson();
+      expect(json['incremental_contact_sync'], isTrue);
+      expect(AppSettings.fromJson(json).incrementalContactSync, isTrue);
+    });
+  });
 }

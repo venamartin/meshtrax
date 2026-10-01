@@ -862,6 +862,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_appDebugLoggingDisabled => '应用调试日志已禁用';
 
   @override
+  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+
+  @override
+  String get appSettings_incrementalContactSyncSubtitle =>
+      'On reconnect, ask the radio only for contacts that changed since last time';
+
+  @override
   String get contacts_title => '联系人';
 
   @override

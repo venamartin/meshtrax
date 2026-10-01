@@ -1762,6 +1762,18 @@ abstract class AppLocalizations {
   /// **'App debug logging disabled'**
   String get appSettings_appDebugLoggingDisabled;
 
+  /// No description provided for @appSettings_incrementalContactSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Incremental contact sync'**
+  String get appSettings_incrementalContactSync;
+
+  /// No description provided for @appSettings_incrementalContactSyncSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'On reconnect, ask the radio only for contacts that changed since last time'**
+  String get appSettings_incrementalContactSyncSubtitle;
+
   /// No description provided for @contacts_title.
   ///
   /// In en, this message translates to:

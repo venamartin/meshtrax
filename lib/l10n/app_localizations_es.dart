@@ -915,6 +915,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'El registro de depuración de la aplicación está desactivado';
 
   @override
+  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+
+  @override
+  String get appSettings_incrementalContactSyncSubtitle =>
+      'On reconnect, ask the radio only for contacts that changed since last time';
+
+  @override
   String get contacts_title => 'Contactos';
 
   @override

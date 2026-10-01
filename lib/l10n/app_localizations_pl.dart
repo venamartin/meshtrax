@@ -918,6 +918,13 @@ class AppLocalizationsPl extends AppLocalizations {
       'Logowanie debugowania aplikacji wyłączone.';
 
   @override
+  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+
+  @override
+  String get appSettings_incrementalContactSyncSubtitle =>
+      'On reconnect, ask the radio only for contacts that changed since last time';
+
+  @override
   String get contacts_title => 'Kontakty';
 
   @override

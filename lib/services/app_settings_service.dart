@@ -212,6 +212,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(autoConnectLastDevice: value));
   }
 
+  Future<void> setIncrementalContactSync(bool value) async {
+    await updateSettings(_settings.copyWith(incrementalContactSync: value));
+  }
+
   Future<void> dismissDmIdentityWarning() async {
     await updateSettings(_settings.copyWith(dmIdentityWarningDismissed: true));
   }

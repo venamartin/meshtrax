@@ -366,6 +366,8 @@
   "appSettings_appDebugLoggingSubtitle": "Log app debug messages for troubleshooting",
   "appSettings_appDebugLoggingEnabled": "App debug logging enabled",
   "appSettings_appDebugLoggingDisabled": "App debug logging disabled",
+  "appSettings_incrementalContactSync": "Incremental contact sync",
+  "appSettings_incrementalContactSyncSubtitle": "On reconnect, ask the radio only for contacts that changed since last time",
   "contacts_title": "Contacts",
   "contacts_noContacts": "No contacts yet",
   "contacts_shareMyQrCode": "Share My QR Code",

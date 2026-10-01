@@ -21,6 +21,22 @@ class ContactStore {
 
   String get keyFor => '$_keyPrefix$publicKeyHex';
 
+  /// Newest contact `lastmod` the radio reported at the end of its last
+  /// contact list, per radio. Sent back as `since` so the radio streams only
+  /// contacts changed after it. Comes only from END_OF_CONTACTS; the Contact
+  /// model folds lastmod into lastSeen, which adverts overwrite.
+  static const String _cursorKeyPrefix = 'contact_sync_cursor_';
+
+  int loadSyncCursor() {
+    if (publicKeyHex.isEmpty) return 0;
+    return PrefsManager.instance.getInt('$_cursorKeyPrefix$publicKeyHex') ?? 0;
+  }
+
+  Future<void> saveSyncCursor(int value) async {
+    if (publicKeyHex.isEmpty || value <= 0) return;
+    await PrefsManager.instance.setInt('$_cursorKeyPrefix$publicKeyHex', value);
+  }
+
   AppDatabase get _db => AppDatabase.instance;
 
   Future<List<Contact>> loadContacts() async {

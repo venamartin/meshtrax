@@ -371,6 +371,14 @@ class MeshCoreConnector extends ChangeNotifier {
   bool _isLoadingContacts = false;
   int _expectedContactsCount = 0;
   int _loadedContactsCount = 0;
+  // One contact download in flight: timing for the debug log, the cursor it
+  // was asked with (0 = full), the radio's total from CONTACTS_START (sent
+  // even when `since` filters), and whether an incremental pass found the
+  // counts disagree.
+  Stopwatch? _contactSyncStopwatch;
+  int _contactSyncSince = 0;
+  int _contactSyncRadioTotal = 0;
+  bool _contactFullResyncPending = false;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -624,6 +632,12 @@ class MeshCoreConnector extends ChangeNotifier {
   int get maxChannels => _maxChannels;
   Set<String> get knownContactKeys => Set.unmodifiable(_knownContactKeys);
   SyncStatus? get currentSyncStatus {
+    // A full contact download is always long enough to deserve the banner,
+    // including the manual Refresh Contacts after the initial sync. The
+    // incremental pass stays silent once the initial sync is done.
+    if (_isLoadingContacts && _contactSyncSince == 0) {
+      return SyncStatus.contacts;
+    }
     if (_initialSyncComplete) return null;
     if (_awaitingSelfInfo) return SyncStatus.deviceInfo;
     if (_isLoadingContacts) return SyncStatus.contacts;
@@ -1592,6 +1606,24 @@ class MeshCoreConnector extends ChangeNotifier {
     required MeshCoreBleFailure kind,
   }) {
     return autoRetry && kind == MeshCoreBleFailure.handshakeTimeout;
+  }
+
+  /// Incremental needs something to merge onto and a cursor to ask from;
+  /// the first full download of a radio seeds both.
+  @visibleForTesting
+  static bool shouldSyncIncrementally({
+    required bool enabled,
+    required int cachedCount,
+    required int cursor,
+  }) {
+    return enabled && cachedCount > 0 && cursor > 0;
+  }
+
+  /// The radio reports 0 when nothing passed its `since` filter; the cursor
+  /// only ever moves forward.
+  @visibleForTesting
+  static int mergeSyncCursor(int stored, int returned) {
+    return returned > stored ? returned : stored;
   }
 
   Future<void> connect(
@@ -2805,6 +2837,10 @@ class MeshCoreConnector extends ChangeNotifier {
     _isLoadingContacts = false;
     _isLoadingChannels = false;
     _preserveContactsOnRefresh = false;
+    _contactSyncStopwatch = null;
+    _contactSyncSince = 0;
+    _contactSyncRadioTotal = 0;
+    _contactFullResyncPending = false;
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
@@ -3110,6 +3146,22 @@ class MeshCoreConnector extends ChangeNotifier {
     );
   }
 
+  /// Contact download after SELF_INFO. With the bench toggle on, a cached list
+  /// and a stored cursor for this radio, ask only for contacts changed since
+  /// the cursor and merge onto the cache; otherwise the full download.
+  Future<void> _syncContactsAfterSelfInfo() async {
+    final cursor = _contactStore.loadSyncCursor();
+    if (shouldSyncIncrementally(
+      enabled: _appSettingsService?.settings.incrementalContactSync == true,
+      cachedCount: _contacts.length,
+      cursor: cursor,
+    )) {
+      await getContacts(since: cursor, preserveExisting: true);
+    } else {
+      await getContacts();
+    }
+  }
+
   Future<void> getContacts({int? since, bool preserveExisting = false}) async {
     if (!isConnected) return;
 
@@ -3120,6 +3172,8 @@ class MeshCoreConnector extends ChangeNotifier {
       notifyListeners();
     }
 
+    _contactSyncSince = since ?? 0;
+    _contactSyncStopwatch = Stopwatch()..start();
     await sendFrame(buildGetContactsFrame(since: since));
   }
 
@@ -4715,10 +4769,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (frame.length >= 5) {
           final reader = BufferReader(frame);
           reader.skipBytes(1);
-          _expectedContactsCount = reader.readUInt32LE();
+          _contactSyncRadioTotal = reader.readUInt32LE();
         } else {
-          _expectedContactsCount = 0;
+          _contactSyncRadioTotal = 0;
         }
+        // The radio sends its total even when `since` filters the stream, so
+        // an incremental pass shows the banner without a misleading n/total.
+        _expectedContactsCount =
+            _contactSyncSince > 0 ? 0 : _contactSyncRadioTotal;
         _loadedContactsCount = 0;
         _isLoadingContacts = true;
         notifyListeners();
@@ -4758,6 +4816,39 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case respCodeEndOfContacts:
         debugPrint('Got END_OF_CONTACTS');
+        final syncElapsedMs = _contactSyncStopwatch?.elapsedMilliseconds;
+        _contactSyncStopwatch = null;
+        final syncSince = _contactSyncSince;
+        _contactSyncSince = 0;
+        // Bytes 1..4: newest lastmod the radio streamed, our next `since`.
+        final newestLastmod = frame.length >= 5
+            ? (BufferReader(frame)..skipBytes(1)).readUInt32LE()
+            : 0;
+        if (newestLastmod > 0) {
+          unawaited(
+            _contactStore.saveSyncCursor(
+              mergeSyncCursor(_contactStore.loadSyncCursor(), newestLastmod),
+            ),
+          );
+        }
+        _appDebugLogService?.info(
+          'Contact sync: received $_loadedContactsCount '
+          '(radio total $_contactSyncRadioTotal) in ${syncElapsedMs ?? -1} ms, '
+          'mode=${syncSince > 0 ? 'since $syncSince' : 'full'}',
+          tag: 'Connector',
+        );
+        // `since` cannot report contacts deleted on the radio; a count that
+        // disagrees after the merge is the tell. The full pass runs once the
+        // initial sync is done — the radio serves one request protocol at a
+        // time and the queue drain is about to start.
+        if (syncSince > 0 && _contacts.length != _contactSyncRadioTotal) {
+          _contactFullResyncPending = true;
+          _appDebugLogService?.warn(
+            'Contact sync: have ${_contacts.length}, radio has '
+            '$_contactSyncRadioTotal; full sync after initial sync',
+            tag: 'Connector',
+          );
+        }
         _isLoadingContacts = false;
         _preserveContactsOnRefresh = false;
         unawaited(updateKnownDiscovered());
@@ -4992,7 +5083,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     // Now that we have self info, we can load all the persisted data for this node
     _loadChannelOrder();
-    loadContactCache();
+    // Awaited by the contact kick-off below: un-awaited, this clear-and-refill
+    // raced the first CONTACT frames of the download it precedes.
+    final cacheLoaded = loadContactCache();
     // Settings and messages are keyed by channel identity, so the cached
     // channel list must be in place first.
     loadCachedChannels().then((_) async {
@@ -5019,9 +5112,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     } else if (_activeTransport == MeshCoreTransportType.usb ||
         _activeTransport == MeshCoreTransportType.tcp) {
       _pendingDeferredChannelSyncAfterContacts = true;
-      getContacts();
+      unawaited(cacheLoaded.then((_) => _syncContactsAfterSelfInfo()));
     } else {
-      getContacts();
+      unawaited(cacheLoaded.then((_) => _syncContactsAfterSelfInfo()));
     }
     if (_shouldGateInitialChannelSync &&
         _activeTransport != MeshCoreTransportType.usb &&
@@ -8041,6 +8134,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // sync banner has to be cleared here or it sticks at its last count.
     _isLoadingContacts = false;
     _preserveContactsOnRefresh = false;
+    _contactSyncStopwatch = null;
+    _contactSyncSince = 0;
+    _contactSyncRadioTotal = 0;
+    _contactFullResyncPending = false;
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -8184,6 +8281,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingDeferredChannelSyncAfterContacts &&
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
+      if (_contactFullResyncPending) {
+        _contactFullResyncPending = false;
+        _appDebugLogService?.info(
+          'Contact sync: running the deferred full sync',
+          tag: 'Connector',
+        );
+        unawaited(getContacts());
+      }
     }
     markNotifyDirty();
   }
