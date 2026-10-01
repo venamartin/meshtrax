@@ -8,7 +8,7 @@ import '../utils/platform_info.dart';
 import 'app_logger.dart';
 
 /// Saves the app debug log as a text file via the native OS save dialog
-/// (same flow as ContactBackupService).
+/// (same flow as BackupService).
 class DebugLogExport {
   /// Returns the saved path, or null when unsupported or cancelled.
   static Future<String?> saveToFile(List<AppDebugLogEntry> entries) async {
