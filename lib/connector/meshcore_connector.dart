@@ -13,6 +13,7 @@ import '../models/channel.dart';
 import '../models/channel_message.dart';
 import '../models/companion_radio_stats.dart';
 import '../models/contact.dart';
+import '../models/device_backup.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../helpers/path_helper.dart';
@@ -4300,8 +4301,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _multiAcks = multiAcks.clamp(0, 2).toInt();
     await sendFrame(
       buildSetOtherParamsFrame(
-        (_telemetryModeLoc << 4) |
-            (_telemetryModeEnv << 2) |
+        (_telemetryModeEnv << 4) |
+            (_telemetryModeLoc << 2) |
             _telemetryModeBase,
         _advertLocPolicy,
         _multiAcks,
@@ -4939,6 +4940,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeCustomVars:
         _handleCustomVars(frame);
         break;
+      // Consumed by awaiting listeners on receivedFrames (backup/restore).
+      case respCodePrivateKey:
+      case respCodeDisabled:
+      case respCodeExportContact:
+      case respCodeTuningParams:
+        break;
       // RESP_CODE_ERR is a defined firmware response (code 1), not an unknown frame.
       case respCodeErr:
         _handleErrorFrame(frame);
@@ -5012,10 +5019,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _selfLongitude = reader.readInt32LE() / 1000000.0;
       _multiAcks = reader.readByte();
       _advertLocPolicy = reader.readByte();
+      // Firmware packs (env << 4) | (loc << 2) | base
       final telemetryFlag = reader.readByte();
       _telemetryModeBase = telemetryFlag & 0x03;
-      _telemetryModeEnv = telemetryFlag >> 2 & 0x03;
-      _telemetryModeLoc = telemetryFlag >> 4 & 0x03;
+      _telemetryModeLoc = telemetryFlag >> 2 & 0x03;
+      _telemetryModeEnv = telemetryFlag >> 4 & 0x03;
 
       _manualAddContacts = reader.readByte() & 0x01 == 0x00;
 
@@ -8374,7 +8382,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         name: contact.name,
         lat: contact.latitude,
         lon: contact.longitude,
-        lastModified: contact.lastSeen,
+        lastModified: contact.lastSeen.millisecondsSinceEpoch > 0
+            ? contact.lastSeen
+            : null,
       );
 
       appLogger.info('Restoring contact ${contact.name}: type=${contact.type}, flags=${contact.flags}, isFavorite=${contact.isFavorite}', tag: 'Connector');
@@ -8389,89 +8399,445 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await getContacts();
   }
 
-  void importContact(Uint8List frame) {
-    final packet = BufferReader(frame);
-    int payloadType = 0;
-    Uint8List pathBytes = Uint8List(0);
-    int hopCount = -1;
-    int hashSize = 1;
+  // ---- Full device backup/restore ----
+
+  bool _privateKeyExportDisabled = false;
+  bool get privateKeyExportDisabled => _privateKeyExportDisabled;
+
+  Future<Uint8List?> _sendAndWaitForFrame(
+    Uint8List data,
+    bool Function(Uint8List frame) matcher, {
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    if (!isConnected) return null;
+    final completer = Completer<Uint8List?>();
+    final subscription = receivedFrames.listen((frame) {
+      if (frame.isEmpty) return;
+      if (matcher(frame) && !completer.isCompleted) {
+        completer.complete(frame);
+      }
+    });
+    final timer = Timer(timeout, () {
+      if (!completer.isCompleted) completer.complete(null);
+    });
     try {
-      packet.skipBytes(1); // Skip frame type byte
-      packet.skipBytes(1); // Skip SNR byte
-      packet.skipBytes(1); // Skip RSSI byte
+      await sendFrame(data);
+      return await completer.future;
+    } catch (_) {
+      return null;
+    } finally {
+      timer.cancel();
+      await subscription.cancel();
+    }
+  }
+
+  Future<Uint8List?> exportPrivateKey() async {
+    _privateKeyExportDisabled = false;
+    final frame = await _sendAndWaitForFrame(
+      buildExportPrivateKeyFrame(),
+      (f) => f[0] == respCodePrivateKey || f[0] == respCodeDisabled,
+    );
+    if (frame == null) return null;
+    if (frame[0] == respCodeDisabled || frame.length < 65) {
+      _privateKeyExportDisabled = frame[0] == respCodeDisabled;
+      return null;
+    }
+    return frame.sublist(1, 65);
+  }
+
+  Future<PrivateKeyImportResult> importPrivateKey(Uint8List key) async {
+    if (key.length != 64) return PrivateKeyImportResult.error;
+    final frame = await _sendAndWaitForFrame(
+      buildImportPrivateKeyFrame(key),
+      (f) =>
+          f[0] == respCodeOk ||
+          f[0] == respCodeErr ||
+          f[0] == respCodeDisabled,
+      // The device re-loads its whole contact table after the import.
+      timeout: const Duration(seconds: 10),
+    );
+    if (frame == null) return PrivateKeyImportResult.error;
+    switch (frame[0]) {
+      case respCodeOk:
+        return PrivateKeyImportResult.ok;
+      case respCodeDisabled:
+        return PrivateKeyImportResult.disabled;
+      default:
+        return PrivateKeyImportResult.error;
+    }
+  }
+
+  Future<Uint8List?> exportContactAdvert(Uint8List pubKey) async {
+    final frame = await _sendAndWaitForFrame(
+      buildExportContactFrame(pubKey),
+      (f) => f[0] == respCodeExportContact || f[0] == respCodeErr,
+    );
+    if (frame == null || frame[0] != respCodeExportContact || frame.length < 2) {
+      return null;
+    }
+    return frame.sublist(1);
+  }
+
+  Future<bool> importContactAdvert(
+    Uint8List rawAdvert, {
+    Duration timeout = const Duration(seconds: 2),
+  }) => _sendAndWaitForAck(buildImportContactFrame(rawAdvert), timeout: timeout);
+
+  Future<BackupTuning?> getTuningParams() async {
+    final frame = await _sendAndWaitForFrame(
+      buildGetTuningParamsFrame(),
+      (f) => f[0] == respCodeTuningParams || f[0] == respCodeErr,
+    );
+    if (frame == null || frame[0] != respCodeTuningParams || frame.length < 9) {
+      return null;
+    }
+    final reader = BufferReader(frame)..skipBytes(1);
+    return BackupTuning(
+      rxDelayBase: reader.readUInt32LE(),
+      airtimeFactor: reader.readUInt32LE(),
+    );
+  }
+
+  /// The advert timestamp sits after the packet header, path and pubkey in a
+  /// raw advert blob (the form CMD_EXPORT/IMPORT_CONTACT use).
+  int? _advertTimestampFromBlob(Uint8List blob) {
+    try {
+      final packet = BufferReader(blob);
       final header = packet.readByte();
       final routeType = header & 0x03;
-      payloadType = (header >> 2) & 0x0F;
+      final payloadType = (header >> 2) & 0x0F;
+      if (payloadType != payloadTypeADVERT) return null;
       if (routeType == _routeTransportFlood ||
           routeType == _routeTransportDirect) {
-        packet.skipBytes(4); // Skip transport-specific bytes
+        packet.skipBytes(4);
       }
-      //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
-      hopCount = extractPathHopCount(pathLenRaw);
-      hashSize = extractPathHashSize(pathLenRaw);
-      final pathByteLen = _decodePathByteLen(pathLenRaw);
-      pathBytes = packet.readBytes(pathByteLen);
-    } catch (e) {
-      appLogger.warn('Malformed RX frame: $e', tag: 'Connector');
-      return;
+      packet.skipBytes(_decodePathByteLen(pathLenRaw));
+      packet.skipBytes(32); // pubkey
+      return packet.readUInt32LE();
+    } catch (_) {
+      return null;
     }
-    double? latitude;
-    double? longitude;
-    String name = '';
-    Uint8List publicKey = Uint8List(0);
-    int type = 0;
-    int timestamp = 0;
-    bool hasLocation = false;
-    bool hasName = false;
-    if (payloadType != payloadTypeADVERT) {
-      appLogger.warn('Unexpected payload type: $payloadType', tag: 'Connector');
-      return;
-    }
-    try {
-      publicKey = packet.readBytes(32);
-      timestamp = packet.readInt32LE();
-      //TODO add signature verification
-      packet.skipBytes(64); // Skip signature for now
-      final flags = packet.readByte();
-      type = flags & 0x0F;
-      hasLocation = (flags & 0x10) != 0;
-      // For future use:
-      //final hasFeature1 = (flags & 0x20) != 0;
-      //final hasFeature2 = (flags & 0x40) != 0;
-      hasName = (flags & 0x80) != 0;
-      if (hasLocation && packet.remaining >= 8) {
-        latitude = packet.readInt32LE() / 1e6;
-        longitude = packet.readInt32LE() / 1e6;
+  }
+
+  /// Contact and channel lists are eventually consistent after connect: the
+  /// incremental sync path serves the cached list plus a delta first. A
+  /// backup must never snapshot that interim state, so this waits out any
+  /// in-flight sync, then runs one authoritative full sync and only
+  /// snapshots after it completes. The radio's reported total can
+  /// legitimately exceed what it streams — a row with lastmod 0 is counted
+  /// but never served (the firmware filters on lastmod > since even when
+  /// since is 0) — so a residual mismatch is logged, not fatal.
+  Future<void> _settleBeforeBackup() async {
+    final deadline = DateTime.now().add(const Duration(minutes: 5));
+    Future<void> waitWhile(bool Function() busy, String what) async {
+      while (busy()) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Backup aborted: $what did not finish in time');
+        }
+        await Future.delayed(const Duration(milliseconds: 250));
       }
-      if (hasName && packet.remaining > 0) {
-        name = packet.readCString();
-      }
-    } catch (e) {
-      appLogger.warn('Malformed advert frame: $e', tag: 'Connector');
-      return;
     }
 
-    final advertTime = _parseAdvertTimestamp(timestamp);
-    importDiscoveredContact(
-      Contact(
-        rawPacket: frame,
-        publicKey: publicKey,
-        name: name,
-        type: type,
-        // No route until the firmware learns one; the advert's path only
-        // proves the inbound direction.
-        pathLength: -1,
-        pathHashSize: hashSize,
-        path: Uint8List(0),
-        inboundPath: pathBytes,
-        inboundHopCount: hopCount,
-        latitude: latitude,
-        longitude: longitude,
-        lastSeen: advertTime.time,
-        clockCorrected: advertTime.corrected,
-      ),
+    await waitWhile(
+      () => !_channelsVerified || _isLoadingChannels,
+      'channel sync',
     );
+    await waitWhile(() => _isLoadingContacts, 'contact sync');
+    _contactFullResyncPending = false;
+    await getContacts();
+    await waitWhile(() => _isLoadingContacts, 'full contact sync');
+    final total = _contactSyncRadioTotal;
+    if (total != 0 && _contacts.length != total) {
+      appLogger.warn(
+        'Backup: radio reports $total contacts but serves '
+        '${_contacts.length}; rows the firmware never streams (lastmod 0) '
+        'cannot be backed up',
+        tag: 'Connector',
+      );
+    }
+  }
+
+  Future<DeviceBackup> gatherDeviceBackup({
+    void Function(int done, int total)? onContactProgress,
+  }) async {
+    await _settleBeforeBackup();
+    final privateKey = await exportPrivateKey();
+    final tuning = await getTuningParams();
+
+    final deviceContacts = contacts;
+    final backupContacts = <BackupContact>[];
+    for (var i = 0; i < deviceContacts.length; i++) {
+      final contact = deviceContacts[i];
+      final blob =
+          await exportContactAdvert(contact.publicKey) ?? contact.rawPacket;
+      backupContacts.add(
+        BackupContact(
+          contact: contact,
+          rawAdvert: blob,
+          lastAdvertTimestamp: blob != null
+              ? _advertTimestampFromBlob(blob)
+              : null,
+        ),
+      );
+      onContactProgress?.call(i + 1, deviceContacts.length);
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
+    return DeviceBackup(
+      firmwareVersion: _firmwareVersion,
+      firmwareVerCode: _firmwareVerCode,
+      publicKeyHex: selfPublicKeyHex,
+      privateKeyHex: privateKey != null ? pubKeyToHex(privateKey) : null,
+      name: _selfName ?? '',
+      txPower: _currentTxPower,
+      latitude: _selfLatitude,
+      longitude: _selfLongitude,
+      freqHz: _currentFreqHz,
+      bwHz: _currentBwHz,
+      sf: _currentSf,
+      cr: _currentCr,
+      clientRepeat: _clientRepeat,
+      pathHashMode: _pathHashByteWidth - 1,
+      multiAcks: _multiAcks,
+      advertLocPolicy: _advertLocPolicy,
+      telemetryBase: _telemetryModeBase,
+      telemetryLoc: _telemetryModeLoc,
+      telemetryEnv: _telemetryModeEnv,
+      autoAddChat: _autoAddUsers,
+      autoAddRepeater: _autoAddRepeaters,
+      autoAddRoomServer: _autoAddRoomServers,
+      autoAddSensor: _autoAddSensors,
+      autoAddOverwriteOldest: _overwriteOldest,
+      tuning: tuning,
+      customVars: Map.of(_currentCustomVars ?? {}),
+      channels: [
+        for (final ch in channels)
+          if (!ch.isEmpty)
+            BackupChannel(index: ch.index, name: ch.name, pskHex: ch.pskHex),
+      ],
+      contacts: backupContacts,
+    );
+  }
+
+  Future<RestoreReport> restoreDeviceBackup(
+    DeviceBackup backup, {
+    void Function(RestoreStep step, int done, int total)? onProgress,
+  }) async {
+    final report = RestoreReport();
+    const frameGap = Duration(milliseconds: 100);
+    // The radio periodically flushes dirty contacts to flash during a bulk
+    // write and can sit silent well past the usual 2 s ack window.
+    const ackTimeout = Duration(seconds: 10);
+
+    // 1. Identity first: the device wipes shared secrets and reloads its
+    // contact table on import, so everything else must come after.
+    onProgress?.call(RestoreStep.identity, 0, 1);
+    if (backup.privateKeyHex != null) {
+      final result = await importPrivateKey(
+        hex2Uint8List(backup.privateKeyHex!),
+      );
+      switch (result) {
+        case PrivateKeyImportResult.ok:
+          report.identityRestored = true;
+          break;
+        case PrivateKeyImportResult.disabled:
+          report.identityUnsupported = true;
+          break;
+        case PrivateKeyImportResult.error:
+          report.failures.add('Radio identity key was not accepted');
+          break;
+      }
+    } else {
+      report.identityMissing = true;
+    }
+    onProgress?.call(RestoreStep.identity, 1, 1);
+
+    // 2. Node settings.
+    final settings = <String, Uint8List>{
+      'Name': buildSetAdvertNameFrame(backup.name),
+      if (backup.freqHz != null &&
+          backup.bwHz != null &&
+          backup.sf != null &&
+          backup.cr != null)
+        'Radio settings': buildSetRadioParamsFrame(
+          backup.freqHz!,
+          backup.bwHz!,
+          backup.sf!,
+          backup.cr!,
+          // Omitting the byte on v9+ firmware would turn repeat OFF.
+          clientRepeat: (backup.firmwareVerCode ?? 0) >= 9
+              ? (backup.clientRepeat ?? false)
+              : null,
+        ),
+      if (backup.txPower != null)
+        'Transmit power': buildSetRadioTxPowerFrame(backup.txPower!),
+      if (backup.latitude != null && backup.longitude != null)
+        'Location': buildSetAdvertLatLonFrame(
+          backup.latitude!,
+          backup.longitude!,
+        ),
+      'Path hash size': buildSetPathHashModeFrame(backup.pathHashMode),
+      'Telemetry and advert settings': buildSetOtherParamsFrame(
+        (backup.telemetryEnv << 4) |
+            (backup.telemetryLoc << 2) |
+            backup.telemetryBase,
+        backup.advertLocPolicy,
+        backup.multiAcks,
+      ),
+      'Contact auto-add settings': buildSetAutoAddConfigFrame(
+        autoAddChat: backup.autoAddChat,
+        autoAddRepeater: backup.autoAddRepeater,
+        autoAddRoomServer: backup.autoAddRoomServer,
+        autoAddSensor: backup.autoAddSensor,
+        overwriteOldest: backup.autoAddOverwriteOldest,
+      ),
+      if (backup.tuning != null)
+        'Tuning settings': buildSetTuningParamsFrame(
+          backup.tuning!.rxDelayBase,
+          backup.tuning!.airtimeFactor,
+        ),
+      for (final entry in backup.customVars.entries)
+        'Setting ${entry.key}': buildSetCustomVarFrame(
+          '${entry.key}:${entry.value}',
+        ),
+    };
+    var settingsDone = 0;
+    for (final entry in settings.entries) {
+      onProgress?.call(RestoreStep.settings, settingsDone, settings.length);
+      final ok = await _sendAndWaitForAck(entry.value, timeout: ackTimeout);
+      if (!ok) report.failures.add('${entry.key} was not accepted');
+      settingsDone++;
+      await Future.delayed(frameGap);
+    }
+    onProgress?.call(RestoreStep.settings, settings.length, settings.length);
+
+    // 3. Channels: write every slot the radio has, clearing the ones the
+    // backup doesn't fill. Raw frames on purpose — setChannel() refuses
+    // duplicate PSKs against the (stale) cached list mid-restore.
+    final bySlot = {for (final ch in backup.channels) ch.index: ch};
+    for (var slot = 0; slot < _maxChannels; slot++) {
+      onProgress?.call(RestoreStep.channels, slot, _maxChannels);
+      final ch = bySlot[slot];
+      final frame = ch != null
+          ? buildSetChannelFrame(slot, ch.name, Channel.parsePskHex(ch.pskHex))
+          : buildSetChannelFrame(slot, '', Uint8List(16));
+      final ok = await _sendAndWaitForAck(frame, timeout: ackTimeout);
+      if (ok) {
+        if (ch != null) report.channelsWritten++;
+      } else {
+        report.failures.add(
+          ch != null
+              ? 'Channel "${ch.name.isEmpty ? 'slot $slot' : ch.name}" was not accepted'
+              : 'Channel slot $slot was not cleared',
+        );
+      }
+      await Future.delayed(frameGap);
+    }
+    report.channelsDropped = backup.channels
+        .where((ch) => ch.index >= _maxChannels)
+        .length;
+    onProgress?.call(RestoreStep.channels, _maxChannels, _maxChannels);
+
+    // 4. Contacts. ADD_UPDATE first (bypasses the radio's auto-add gating for
+    // brand-new contacts), with last_advert set just BEHIND the blob's
+    // timestamp — the radio drops replayed adverts that aren't newer than the
+    // stored value (BaseChatMesh replay check). The replay then rebuilds the
+    // stored advert blob so share/export works on the restored radio.
+    //
+    // Self is the BACKUP's identity, not the connector's cached one — the key
+    // import above already changed who the radio is, and the pre-restore
+    // identity is a legitimate contact when restoring onto a different radio.
+    final restorable = backup.contacts
+        .where((bc) => bc.contact.publicKeyHex != backup.publicKeyHex)
+        .where(
+          (bc) =>
+              report.identityRestored ||
+              bc.contact.publicKeyHex != selfPublicKeyHex,
+        )
+        .toList();
+    final hashWidth = backup.pathHashMode + 1;
+    for (var i = 0; i < restorable.length; i++) {
+      onProgress?.call(RestoreStep.contacts, i, restorable.length);
+      final bc = restorable[i];
+      final contact = bc.contact;
+      final advertTs = bc.lastAdvertTimestamp;
+      final frame = buildUpdateContactPathFrame(
+        contact.publicKey,
+        contact.pathOverrideBytes ?? contact.path,
+        contact.pathOverride ?? contact.pathLength,
+        contact.pathOverrideBytes != null ? hashWidth : contact.pathHashSize,
+        type: contact.type,
+        flags: contact.flags,
+        name: contact.name,
+        lat: contact.latitude,
+        lon: contact.longitude,
+        // lastmod 0 would make the contact invisible to every future sync
+        // (the firmware never streams such rows) — let the device stamp
+        // "now" instead.
+        lastModified: contact.lastSeen.millisecondsSinceEpoch > 0
+            ? contact.lastSeen
+            : null,
+        lastAdvertEpochSeconds: advertTs != null
+            ? advertTs - 1
+            : contact.lastSeen.millisecondsSinceEpoch ~/ 1000,
+      );
+      final ok = await _sendAndWaitForAck(frame, timeout: ackTimeout);
+      if (ok) {
+        report.contactsWritten++;
+      } else {
+        report.failures.add('Contact "${contact.name}" was not accepted');
+      }
+      await Future.delayed(frameGap);
+      if (ok && bc.rawAdvert != null) {
+        if (await importContactAdvert(bc.rawAdvert!, timeout: ackTimeout)) {
+          report.advertsReplayed++;
+        }
+        await Future.delayed(frameGap);
+      }
+    }
+    onProgress?.call(
+      RestoreStep.contacts,
+      restorable.length,
+      restorable.length,
+    );
+
+    // 5. Resync the app's view of the radio (new identity included). The
+    // radio serves one request protocol at a time, so the contact stream
+    // must finish before the channel sync starts.
+    onProgress?.call(RestoreStep.resync, 0, 1);
+    await refreshDeviceInfo();
+    // refreshDeviceInfo only SENDS the handshake frames. Processing the
+    // SELF_INFO reply re-points every store at the restored identity and
+    // reloads cached lists — let that land first, or it clobbers the table
+    // the sync below is about to stream.
+    if (report.identityRestored) {
+      final selfDeadline = DateTime.now().add(const Duration(seconds: 30));
+      while (selfPublicKeyHex != backup.publicKeyHex &&
+          DateTime.now().isBefore(selfDeadline)) {
+        await Future.delayed(const Duration(milliseconds: 250));
+      }
+      if (selfPublicKeyHex != backup.publicKeyHex) {
+        report.failures.add(
+          'Radio did not confirm the restored identity in time',
+        );
+      }
+    }
+    await getContacts();
+    // A big table over BLE can stream for minutes; giving up early would
+    // start the channel sync mid-stream (one request protocol at a time).
+    final contactsDeadline = DateTime.now().add(const Duration(minutes: 4));
+    while (_isLoadingContacts && DateTime.now().isBefore(contactsDeadline)) {
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    if (_isLoadingContacts) {
+      report.failures.add(
+        'Contact list was still syncing back when the restore finished',
+      );
+    }
+    await getChannels(force: true);
+    onProgress?.call(RestoreStep.resync, 1, 1);
+    return report;
   }
 
   bool hasValidLocation(double? latitude, double? longitude) {

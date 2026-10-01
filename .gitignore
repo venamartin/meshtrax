@@ -111,3 +111,4 @@ notes.md
 
 # Local bench artifacts (path_lab harness SQLite store)
 *.db
+/backup_swap_*.json
