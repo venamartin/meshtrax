@@ -1422,6 +1422,30 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dmChannel_dontShowAgain => 'Don\'t show this again';
 
   @override
+  String get batterySleep_title => 'Keep MeshTrax running';
+
+  @override
+  String get batterySleep_bodySamsung =>
+      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+
+  @override
+  String get batterySleep_bodyGeneric =>
+      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+
+  @override
+  String get batterySleep_openSettings => 'Open settings';
+
+  @override
+  String get batterySleep_notNow => 'Not now';
+
+  @override
+  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+
+  @override
+  String get batterySleep_settingsTileSubtitle =>
+      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+
+  @override
   String dmChannel_noMatchTitle(String name) {
     return 'Can\'t DM $name yet';
   }

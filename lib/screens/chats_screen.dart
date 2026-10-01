@@ -17,6 +17,7 @@ import '../utils/telemetry_dialog.dart';
 import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
+import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../widgets/unread_badge.dart';
@@ -111,6 +112,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
         }
       };
       _connector.addListener(_connectorListener);
+      if (mounted) unawaited(showBatterySleepWarningIfNeeded(context));
     });
   }
 

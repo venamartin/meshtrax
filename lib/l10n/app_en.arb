@@ -714,6 +714,13 @@
   "dmChannel_warningTitle": "Is this really them?",
   "dmChannel_warningBody": "Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact's public key another way first.",
   "dmChannel_dontShowAgain": "Don't show this again",
+  "batterySleep_title": "Keep MeshTrax running",
+  "batterySleep_bodySamsung": "Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.",
+  "batterySleep_bodyGeneric": "Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.",
+  "batterySleep_openSettings": "Open settings",
+  "batterySleep_notNow": "Not now",
+  "batterySleep_settingsTile": "Keep MeshTrax running in background",
+  "batterySleep_settingsTileSubtitle": "Stop the phone's battery saver from putting MeshTrax to sleep",
   "dmChannel_noMatchTitle": "Can't DM {name} yet",
   "@dmChannel_noMatchTitle": {
     "placeholders": {
