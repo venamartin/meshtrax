@@ -918,6 +918,21 @@ class AppLocalizationsBg extends AppLocalizations {
       'Логването за отстраняване на грешки в приложението е изключено.';
 
   @override
+  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+
+  @override
+  String get appSettings_incrementalContactSyncSubtitle =>
+      'On reconnect, ask the radio only for contacts that changed since last time';
+
+  @override
+  String get appSettings_highPriorityBleContactSync =>
+      'Fast Bluetooth during contact sync';
+
+  @override
+  String get appSettings_highPriorityBleContactSyncSubtitle =>
+      'Android only. Ask the phone for a faster Bluetooth link while contacts download';
+
+  @override
   String get contacts_title => 'Контакти';
 
   @override

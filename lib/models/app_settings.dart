@@ -50,6 +50,12 @@ class AppSettings {
   final bool autoFavoriteOnChat;
   final bool autoConnectLastDevice;
 
+  /// Bench toggles for the contact download (Debug card). Off = today's
+  /// behaviour: every connect downloads the whole list at the phone's
+  /// default Bluetooth connection interval.
+  final bool incrementalContactSync;
+  final bool highPriorityBleContactSync;
+
   /// Per-sender name colors in channel chats (WhatsApp-style). Off paints
   /// every sender name in the theme color, as before.
   final bool senderNameColors;
@@ -99,6 +105,8 @@ class AppSettings {
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
     this.autoConnectLastDevice = true,
+    this.incrementalContactSync = false,
+    this.highPriorityBleContactSync = false,
     this.senderNameColors = true,
     this.dmIdentityWarningDismissed = false,
     Set<String>? blockedContactKeys,
@@ -144,6 +152,8 @@ class AppSettings {
       'jump_to_oldest_unread': jumpToOldestUnread,
       'auto_favorite_on_chat': autoFavoriteOnChat,
       'auto_connect_last_device': autoConnectLastDevice,
+      'incremental_contact_sync': incrementalContactSync,
+      'high_priority_ble_contact_sync': highPriorityBleContactSync,
       'sender_name_colors': senderNameColors,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
@@ -211,6 +221,10 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
+      incrementalContactSync:
+          json['incremental_contact_sync'] as bool? ?? false,
+      highPriorityBleContactSync:
+          json['high_priority_ble_contact_sync'] as bool? ?? false,
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
       dmIdentityWarningDismissed:
           json['dm_identity_warning_dismissed'] as bool? ?? false,
@@ -261,6 +275,8 @@ class AppSettings {
     bool? jumpToOldestUnread,
     bool? autoFavoriteOnChat,
     bool? autoConnectLastDevice,
+    bool? incrementalContactSync,
+    bool? highPriorityBleContactSync,
     bool? senderNameColors,
     bool? dmIdentityWarningDismissed,
     Set<String>? blockedContactKeys,
@@ -310,6 +326,10 @@ class AppSettings {
       autoFavoriteOnChat: autoFavoriteOnChat ?? this.autoFavoriteOnChat,
       autoConnectLastDevice:
           autoConnectLastDevice ?? this.autoConnectLastDevice,
+      incrementalContactSync:
+          incrementalContactSync ?? this.incrementalContactSync,
+      highPriorityBleContactSync:
+          highPriorityBleContactSync ?? this.highPriorityBleContactSync,
       senderNameColors: senderNameColors ?? this.senderNameColors,
       dmIdentityWarningDismissed:
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
