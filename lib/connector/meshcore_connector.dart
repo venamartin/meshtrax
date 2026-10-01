@@ -8382,7 +8382,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         name: contact.name,
         lat: contact.latitude,
         lon: contact.longitude,
-        lastModified: contact.lastSeen,
+        lastModified: contact.lastSeen.millisecondsSinceEpoch > 0
+            ? contact.lastSeen
+            : null,
       );
 
       appLogger.info('Restoring contact ${contact.name}: type=${contact.type}, flags=${contact.flags}, isFavorite=${contact.isFavorite}', tag: 'Connector');
@@ -8476,8 +8478,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return frame.sublist(1);
   }
 
-  Future<bool> importContactAdvert(Uint8List rawAdvert) =>
-      _sendAndWaitForAck(buildImportContactFrame(rawAdvert));
+  Future<bool> importContactAdvert(
+    Uint8List rawAdvert, {
+    Duration timeout = const Duration(seconds: 2),
+  }) => _sendAndWaitForAck(buildImportContactFrame(rawAdvert), timeout: timeout);
 
   Future<BackupTuning?> getTuningParams() async {
     final frame = await _sendAndWaitForFrame(
@@ -8516,9 +8520,48 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
+  /// Contact and channel lists are eventually consistent after connect: the
+  /// incremental sync path serves the cached list plus a delta first. A
+  /// backup must never snapshot that interim state, so this waits out any
+  /// in-flight sync, then runs one authoritative full sync and only
+  /// snapshots after it completes. The radio's reported total can
+  /// legitimately exceed what it streams — a row with lastmod 0 is counted
+  /// but never served (the firmware filters on lastmod > since even when
+  /// since is 0) — so a residual mismatch is logged, not fatal.
+  Future<void> _settleBeforeBackup() async {
+    final deadline = DateTime.now().add(const Duration(minutes: 5));
+    Future<void> waitWhile(bool Function() busy, String what) async {
+      while (busy()) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Backup aborted: $what did not finish in time');
+        }
+        await Future.delayed(const Duration(milliseconds: 250));
+      }
+    }
+
+    await waitWhile(
+      () => !_channelsVerified || _isLoadingChannels,
+      'channel sync',
+    );
+    await waitWhile(() => _isLoadingContacts, 'contact sync');
+    _contactFullResyncPending = false;
+    await getContacts();
+    await waitWhile(() => _isLoadingContacts, 'full contact sync');
+    final total = _contactSyncRadioTotal;
+    if (total != 0 && _contacts.length != total) {
+      appLogger.warn(
+        'Backup: radio reports $total contacts but serves '
+        '${_contacts.length}; rows the firmware never streams (lastmod 0) '
+        'cannot be backed up',
+        tag: 'Connector',
+      );
+    }
+  }
+
   Future<DeviceBackup> gatherDeviceBackup({
     void Function(int done, int total)? onContactProgress,
   }) async {
+    await _settleBeforeBackup();
     final privateKey = await exportPrivateKey();
     final tuning = await getTuningParams();
 
@@ -8583,6 +8626,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }) async {
     final report = RestoreReport();
     const frameGap = Duration(milliseconds: 100);
+    // The radio periodically flushes dirty contacts to flash during a bulk
+    // write and can sit silent well past the usual 2 s ack window.
+    const ackTimeout = Duration(seconds: 10);
 
     // 1. Identity first: the device wipes shared secrets and reloads its
     // contact table on import, so everything else must come after.
@@ -8659,7 +8705,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     var settingsDone = 0;
     for (final entry in settings.entries) {
       onProgress?.call(RestoreStep.settings, settingsDone, settings.length);
-      final ok = await _sendAndWaitForAck(entry.value);
+      final ok = await _sendAndWaitForAck(entry.value, timeout: ackTimeout);
       if (!ok) report.failures.add('${entry.key} was not accepted');
       settingsDone++;
       await Future.delayed(frameGap);
@@ -8676,7 +8722,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final frame = ch != null
           ? buildSetChannelFrame(slot, ch.name, Channel.parsePskHex(ch.pskHex))
           : buildSetChannelFrame(slot, '', Uint8List(16));
-      final ok = await _sendAndWaitForAck(frame);
+      final ok = await _sendAndWaitForAck(frame, timeout: ackTimeout);
       if (ok) {
         if (ch != null) report.channelsWritten++;
       } else {
@@ -8698,8 +8744,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // timestamp — the radio drops replayed adverts that aren't newer than the
     // stored value (BaseChatMesh replay check). The replay then rebuilds the
     // stored advert blob so share/export works on the restored radio.
+    //
+    // Self is the BACKUP's identity, not the connector's cached one — the key
+    // import above already changed who the radio is, and the pre-restore
+    // identity is a legitimate contact when restoring onto a different radio.
     final restorable = backup.contacts
-        .where((bc) => bc.contact.publicKeyHex != selfPublicKeyHex)
+        .where((bc) => bc.contact.publicKeyHex != backup.publicKeyHex)
+        .where(
+          (bc) =>
+              report.identityRestored ||
+              bc.contact.publicKeyHex != selfPublicKeyHex,
+        )
         .toList();
     final hashWidth = backup.pathHashMode + 1;
     for (var i = 0; i < restorable.length; i++) {
@@ -8717,12 +8772,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         name: contact.name,
         lat: contact.latitude,
         lon: contact.longitude,
-        lastModified: contact.lastSeen,
+        // lastmod 0 would make the contact invisible to every future sync
+        // (the firmware never streams such rows) — let the device stamp
+        // "now" instead.
+        lastModified: contact.lastSeen.millisecondsSinceEpoch > 0
+            ? contact.lastSeen
+            : null,
         lastAdvertEpochSeconds: advertTs != null
             ? advertTs - 1
             : contact.lastSeen.millisecondsSinceEpoch ~/ 1000,
       );
-      final ok = await _sendAndWaitForAck(frame);
+      final ok = await _sendAndWaitForAck(frame, timeout: ackTimeout);
       if (ok) {
         report.contactsWritten++;
       } else {
@@ -8730,7 +8790,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       await Future.delayed(frameGap);
       if (ok && bc.rawAdvert != null) {
-        if (await importContactAdvert(bc.rawAdvert!)) {
+        if (await importContactAdvert(bc.rawAdvert!, timeout: ackTimeout)) {
           report.advertsReplayed++;
         }
         await Future.delayed(frameGap);
@@ -8742,10 +8802,39 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       restorable.length,
     );
 
-    // 5. Resync the app's view of the radio (new identity included).
+    // 5. Resync the app's view of the radio (new identity included). The
+    // radio serves one request protocol at a time, so the contact stream
+    // must finish before the channel sync starts.
     onProgress?.call(RestoreStep.resync, 0, 1);
     await refreshDeviceInfo();
+    // refreshDeviceInfo only SENDS the handshake frames. Processing the
+    // SELF_INFO reply re-points every store at the restored identity and
+    // reloads cached lists — let that land first, or it clobbers the table
+    // the sync below is about to stream.
+    if (report.identityRestored) {
+      final selfDeadline = DateTime.now().add(const Duration(seconds: 30));
+      while (selfPublicKeyHex != backup.publicKeyHex &&
+          DateTime.now().isBefore(selfDeadline)) {
+        await Future.delayed(const Duration(milliseconds: 250));
+      }
+      if (selfPublicKeyHex != backup.publicKeyHex) {
+        report.failures.add(
+          'Radio did not confirm the restored identity in time',
+        );
+      }
+    }
     await getContacts();
+    // A big table over BLE can stream for minutes; giving up early would
+    // start the channel sync mid-stream (one request protocol at a time).
+    final contactsDeadline = DateTime.now().add(const Duration(minutes: 4));
+    while (_isLoadingContacts && DateTime.now().isBefore(contactsDeadline)) {
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    if (_isLoadingContacts) {
+      report.failures.add(
+        'Contact list was still syncing back when the restore finished',
+      );
+    }
     await getChannels(force: true);
     onProgress?.call(RestoreStep.resync, 1, 1);
     return report;
