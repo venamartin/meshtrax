@@ -197,23 +197,16 @@ void main() {
     });
   });
 
-  group('AppSettings — contact sync bench toggles', () {
-    test('both default to off', () {
+  group('AppSettings — incrementalContactSync', () {
+    test('defaults to off', () {
       expect(AppSettings().incrementalContactSync, isFalse);
-      expect(AppSettings().highPriorityBleContactSync, isFalse);
       expect(AppSettings.fromJson({}).incrementalContactSync, isFalse);
-      expect(AppSettings.fromJson({}).highPriorityBleContactSync, isFalse);
     });
 
-    test('round-trip through JSON', () {
-      final json = AppSettings()
-          .copyWith(incrementalContactSync: true, highPriorityBleContactSync: true)
-          .toJson();
+    test('round-trips through JSON', () {
+      final json = AppSettings().copyWith(incrementalContactSync: true).toJson();
       expect(json['incremental_contact_sync'], isTrue);
-      expect(json['high_priority_ble_contact_sync'], isTrue);
-      final parsed = AppSettings.fromJson(json);
-      expect(parsed.incrementalContactSync, isTrue);
-      expect(parsed.highPriorityBleContactSync, isTrue);
+      expect(AppSettings.fromJson(json).incrementalContactSync, isTrue);
     });
   });
 }

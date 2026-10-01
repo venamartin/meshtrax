@@ -880,14 +880,6 @@ class AppLocalizationsKo extends AppLocalizations {
       'On reconnect, ask the radio only for contacts that changed since last time';
 
   @override
-  String get appSettings_highPriorityBleContactSync =>
-      'Fast Bluetooth during contact sync';
-
-  @override
-  String get appSettings_highPriorityBleContactSyncSubtitle =>
-      'Android only. Ask the phone for a faster Bluetooth link while contacts download';
-
-  @override
   String get contacts_title => '연락처';
 
   @override

@@ -373,12 +373,11 @@ class MeshCoreConnector extends ChangeNotifier {
   int _loadedContactsCount = 0;
   // One contact download in flight: timing for the debug log, the cursor it
   // was asked with (0 = full), the radio's total from CONTACTS_START (sent
-  // even when `since` filters), whether we raised the BLE priority for it,
-  // and whether an incremental pass found the counts disagree.
+  // even when `since` filters), and whether an incremental pass found the
+  // counts disagree.
   Stopwatch? _contactSyncStopwatch;
   int _contactSyncSince = 0;
   int _contactSyncRadioTotal = 0;
-  bool _contactSyncPriorityRaised = false;
   bool _contactFullResyncPending = false;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
@@ -2835,7 +2834,6 @@ class MeshCoreConnector extends ChangeNotifier {
     _contactSyncStopwatch = null;
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
-    _contactSyncPriorityRaised = false;
     _contactFullResyncPending = false;
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
@@ -3169,27 +3167,6 @@ class MeshCoreConnector extends ChangeNotifier {
     }
 
     _contactSyncSince = since ?? 0;
-    // Bench toggle: a shorter connection interval makes each per-contact
-    // notification cheaper. Android only; dropped back at END_OF_CONTACTS.
-    if (_appSettingsService?.settings.highPriorityBleContactSync == true &&
-        PlatformInfo.isAndroid &&
-        _device != null) {
-      try {
-        await _device!.requestConnectionPriority(
-          connectionPriorityRequest: ConnectionPriority.high,
-        );
-        _contactSyncPriorityRaised = true;
-        _appDebugLogService?.info(
-          'Contact sync: BLE priority high',
-          tag: 'Connector',
-        );
-      } catch (e) {
-        _appDebugLogService?.warn(
-          'Contact sync: BLE priority request failed: $e',
-          tag: 'Connector',
-        );
-      }
-    }
     _contactSyncStopwatch = Stopwatch()..start();
     await sendFrame(buildGetContactsFrame(since: since));
   }
@@ -4851,28 +4828,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _appDebugLogService?.info(
           'Contact sync: received $_loadedContactsCount '
           '(radio total $_contactSyncRadioTotal) in ${syncElapsedMs ?? -1} ms, '
-          'mode=${syncSince > 0 ? 'since $syncSince' : 'full'}, '
-          'priority=${_contactSyncPriorityRaised ? 'high' : 'default'}',
+          'mode=${syncSince > 0 ? 'since $syncSince' : 'full'}',
           tag: 'Connector',
         );
-        if (_contactSyncPriorityRaised) {
-          _contactSyncPriorityRaised = false;
-          final device = _device;
-          if (device != null) {
-            unawaited(
-              device
-                  .requestConnectionPriority(
-                    connectionPriorityRequest: ConnectionPriority.balanced,
-                  )
-                  .catchError((Object e) {
-                    _appDebugLogService?.warn(
-                      'Contact sync: BLE priority reset failed: $e',
-                      tag: 'Connector',
-                    );
-                  }),
-            );
-          }
-        }
         // `since` cannot report contacts deleted on the radio; a count that
         // disagrees after the merge is the tell. The full pass runs once the
         // initial sync is done — the radio serves one request protocol at a
@@ -8173,7 +8131,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncStopwatch = null;
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
-    _contactSyncPriorityRaised = false;
     _contactFullResyncPending = false;
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a

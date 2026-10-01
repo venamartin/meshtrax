@@ -216,12 +216,6 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(incrementalContactSync: value));
   }
 
-  Future<void> setHighPriorityBleContactSync(bool value) async {
-    await updateSettings(
-      _settings.copyWith(highPriorityBleContactSync: value),
-    );
-  }
-
   Future<void> dismissDmIdentityWarning() async {
     await updateSettings(_settings.copyWith(dmIdentityWarningDismissed: true));
   }

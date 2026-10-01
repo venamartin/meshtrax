@@ -1124,16 +1124,6 @@ class AppSettingsScreen extends StatelessWidget {
             value: settingsService.settings.incrementalContactSync,
             onChanged: settingsService.setIncrementalContactSync,
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            secondary: const Icon(Icons.bluetooth_outlined),
-            title: Text(context.l10n.appSettings_highPriorityBleContactSync),
-            subtitle: Text(
-              context.l10n.appSettings_highPriorityBleContactSyncSubtitle,
-            ),
-            value: settingsService.settings.highPriorityBleContactSync,
-            onChanged: settingsService.setHighPriorityBleContactSync,
-          ),
         ],
       ),
     );
