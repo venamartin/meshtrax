@@ -48,11 +48,15 @@ class ChannelMessagePathScreen extends StatelessWidget {
         final startLocation = pathStartsAtSelf && (connector.selfLatitude != null && connector.selfLongitude != null)
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
-        
+        final endLocation = pathStartsAtSelf || connector.selfLatitude == null || connector.selfLongitude == null
+            ? null
+            : LatLng(connector.selfLatitude!, connector.selfLongitude!);
+
         final hops = PathResolver.buildPathHops(
           primaryPath, 
           connector.allContacts, 
           startLocation: startLocation, 
+          endLocation: endLocation,
           stride: pathHashSize,
         );
         final hasHopDetails = primaryPath.isNotEmpty;
@@ -380,10 +384,15 @@ class _ChannelMessagePathMapScreenState
         final startLocation = pathStartsAtSelf && (connector.selfLatitude != null && connector.selfLongitude != null)
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
+        final endLocation = pathStartsAtSelf || connector.selfLatitude == null || connector.selfLongitude == null
+            ? null
+            : LatLng(connector.selfLatitude!, connector.selfLongitude!);
+
         final hops = PathResolver.buildPathHops(
           selectedPath, 
           connector.allContacts, 
           startLocation: startLocation, 
+          endLocation: endLocation,
           stride: widget.message.pathHashSize,
         );
 

@@ -15,20 +15,29 @@ class ObservedPath {
 
   const ObservedPath({required this.pathBytes, required this.isPrimary});
 
-  int getHopCount(int stride) => PathHelper.getHopCount(pathBytes, stride: stride);
+  int getHopCount(int stride) =>
+      PathHelper.getHopCount(pathBytes, stride: stride);
 }
 
 class PathResolver {
-  /// Maximum distance in meters a repeater can be from the previous hop
+  /// Maximum distance in meters a repeater can be from the previous located hop
   /// before we consider it an implausible match (~310 miles).
   static const double _maxHopDistanceMeters = 500000.0;
 
+  /// Upper bound on search steps when prefixes collide heavily. A path with no
+  /// collisions costs one step per hop; a complete path is always found before
+  /// this limit can trigger, so hitting it only stops looking for a better one.
+  static const int _maxSearchVisits = 2000;
+
   /// Builds a list of resolved hops given a raw path buffer.
-  /// Applies geometric constraints to pick the likeliest repeater when hashes collide.
+  /// When prefixes collide, searches every candidate combination and keeps the
+  /// path with the smallest average distance between located hops. A hop with
+  /// no plausible candidate is kept as an unknown placeholder.
   static List<ResolvedHop> buildPathHops(
     Uint8List pathBytes,
     List<Contact> allContacts, {
     LatLng? startLocation,
+    LatLng? endLocation,
     int stride = 1,
   }) {
     if (pathBytes.isEmpty) return const [];
@@ -48,84 +57,79 @@ class PathResolver {
       candidates.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
     }
 
-    var previousPosition = startLocation;
-    final distCalc = Distance();
-    final hops = <ResolvedHop>[];
-    var hopIndex = 1;
+    const distance = Distance();
+    var visits = 0;
+    var bestAverage = double.infinity;
+    List<ResolvedHop>? best;
 
-    for (var i = 0; i < pathBytes.length; i += stride) {
-      if (pathBytes[i] == 0x00) break; // padding sentinel
+    void search(
+      int depth,
+      List<ResolvedHop> path,
+      LatLng? lastLocation,
+      double length,
+      int segments,
+    ) {
+      if (++visits > _maxSearchVisits && best != null) return;
 
-      final slotEnd = (i + stride).clamp(0, pathBytes.length);
-      final slotBytes = pathBytes.sublist(i, slotEnd);
-      final fullPrefix = slotBytes
+      final slotStart = depth * stride;
+      if (slotStart >= pathBytes.length || pathBytes[slotStart] == 0x00) {
+        if (endLocation != null && lastLocation != null) {
+          length += distance(lastLocation, endLocation);
+          segments++;
+        }
+        final average = segments == 0 ? double.infinity : length / segments;
+        if (best == null || average < bestAverage) {
+          bestAverage = average;
+          best = path;
+        }
+        return;
+      }
+
+      final slotEnd = (slotStart + stride).clamp(0, pathBytes.length);
+      final fullPrefix = pathBytes
+          .sublist(slotStart, slotEnd)
           .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
           .join();
 
-      final searchPoint = hopIndex == 1 ? startLocation : previousPosition;
-      final candidatesList = candidatesByPrefix[fullPrefix];
-      Contact? contact;
+      var matched = false;
+      for (final candidate in candidatesByPrefix[fullPrefix] ?? const <Contact>[]) {
+        if (path.any((hop) => hop.contact == candidate)) continue;
 
-      if (candidatesList != null && candidatesList.isNotEmpty) {
-        var bestMatchIndex = 0;
-        var closestDistance = double.infinity;
-
-        if (searchPoint != null) {
-          for (int j = 0; j < candidatesList.length; j++) {
-            final candidate = candidatesList[j];
-            if (!candidate.hasLocation ||
-                candidate.latitude == null ||
-                candidate.longitude == null) {
-              continue;
-            }
-            final d = distCalc(
-              searchPoint,
-              LatLng(candidate.latitude!, candidate.longitude!),
-            );
-            if (d < closestDistance) {
-              closestDistance = d;
-              bestMatchIndex = j;
-            }
-          }
+        final position = _resolvePosition(candidate);
+        if (position != null &&
+            lastLocation != null &&
+            distance(lastLocation, position) > _maxHopDistanceMeters) {
+          continue;
         }
 
-        // Peek at the winner before committing. Only reject if:
-        //  - we have a known search point AND the candidate has GPS
-        //  - AND it is implausibly far (> _maxHopDistanceMeters)
-        // If the candidate has no GPS we always accept it (can't judge distance).
-        final winner = candidatesList[bestMatchIndex];
-        final winnerHasGps = winner.hasLocation &&
-            winner.latitude != null &&
-            winner.longitude != null;
-        final tooFar = winnerHasGps &&
-            searchPoint != null &&
-            closestDistance != double.infinity &&
-            closestDistance > _maxHopDistanceMeters;
-
-        if (!tooFar) {
-          contact = candidatesList.removeAt(bestMatchIndex);
-          if (candidatesList.isEmpty) {
-            candidatesByPrefix.remove(fullPrefix);
-          }
-        }
-      }
-
-      final resolvedPosition = _resolvePosition(contact);
-      if (resolvedPosition != null) {
-        previousPosition = resolvedPosition;
-      }
-
-      hops.add(
-        ResolvedHop(
-          index: hopIndex,
+        matched = true;
+        final hop = ResolvedHop(
+          index: depth + 1,
           fullPrefixLabel: fullPrefix,
-          contact: contact,
-          position: resolvedPosition,
-        ),
-      );
-      hopIndex++;
+          contact: candidate,
+          position: position,
+        );
+        if (position == null || lastLocation == null) {
+          search(depth + 1, [...path, hop], position ?? lastLocation, length, segments);
+        } else {
+          search(
+            depth + 1,
+            [...path, hop],
+            position,
+            length + distance(lastLocation, position),
+            segments + 1,
+          );
+        }
+      }
+
+      if (!matched) {
+        final hop = ResolvedHop(index: depth + 1, fullPrefixLabel: fullPrefix);
+        search(depth + 1, [...path, hop], lastLocation, length, segments);
+      }
     }
-    return hops;
+
+    search(0, const [], startLocation, 0, 0);
+    return best ?? const [];
   }
 
   static LatLng? _resolvePosition(Contact? contact) {
