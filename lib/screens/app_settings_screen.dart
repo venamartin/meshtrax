@@ -508,12 +508,28 @@ class AppSettingsScreen extends StatelessWidget {
           ),
           Consumer<UiViewStateService>(
             builder: (context, uiState, _) {
-              return SwitchListTile(
-                secondary: const Icon(Icons.gif_box_outlined),
-                title: const Text("Inline GIFs"),
-                subtitle: const Text("Render Giphy links as animated GIFs in chat"),
-                value: uiState.renderGifs,
-                onChanged: (value) => uiState.setRenderGifs(value),
+              return Column(
+                children: [
+                  SwitchListTile(
+                    secondary: const Icon(Icons.gif_box_outlined),
+                    title: const Text("Inline GIFs"),
+                    subtitle: const Text("Render Giphy links as animated GIFs in chat"),
+                    value: uiState.renderGifs,
+                    onChanged: (value) => uiState.setRenderGifs(value),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.link),
+                    title: const Text("Send GIFs as links"),
+                    subtitle: const Text(
+                      "Sends a Giphy https link instead of a g: code. "
+                      "People on apps that can't decode g: codes can tap "
+                      "the link to see the GIF.",
+                    ),
+                    value: uiState.sendGifsAsLinks,
+                    onChanged: (value) => uiState.setSendGifsAsLinks(value),
+                  ),
+                ],
               );
             },
           ),

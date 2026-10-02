@@ -1300,7 +1300,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
     final poi = _parsePoiMessage(message.text);
-    final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1308,7 +1307,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 ? '@[${orphanReaction.targetSender}]'
                 : '') +
             orphanReaction.emoji
-        : message.text.replaceAll(gifPattern, '').trim();
+        : GifHelper.stripGif(message.text);
     final displayPathString = message.pathBytes.isNotEmpty
         ? message.displayPathString
         : (message.pathVariants.isNotEmpty
@@ -1983,7 +1982,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       isScrollControlled: true,
       builder: (context) => GifPicker(
         onGifSelected: (gifId) {
-          _textController.text = GifHelper.encodeGif(gifId);
+          _textController.text = GifHelper.encodeGif(
+            gifId,
+            asLink: context.read<UiViewStateService>().sendGifsAsLinks,
+          );
         },
       ),
     );

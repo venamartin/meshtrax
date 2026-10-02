@@ -814,7 +814,10 @@ class _ChatScreenState extends State<ChatScreen> {
       isScrollControlled: true,
       builder: (context) => GifPicker(
         onGifSelected: (gifId) {
-          _textController.text = GifHelper.encodeGif(gifId);
+          _textController.text = GifHelper.encodeGif(
+            gifId,
+            asLink: context.read<UiViewStateService>().sendGifsAsLinks,
+          );
         },
       ),
     );
@@ -1413,7 +1416,6 @@ class _MessageBubble extends StatelessWidget {
         : warmLight
             ? ChatColors.bubbleText
             : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
-    final gifPattern = RegExp(r'g:[A-Za-z0-9_-]{12,}');
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1421,7 +1423,7 @@ class _MessageBubble extends StatelessWidget {
                 ? '@[${orphanReaction.targetSender}]'
                 : '') +
             orphanReaction.emoji
-        : messageText.replaceAll(gifPattern, '').trim();
+        : GifHelper.stripGif(messageText);
 
     final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;

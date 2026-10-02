@@ -17,6 +17,7 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyChannelsSortOption = 'ui_channels_sort_option';
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
   static const _keyRenderGifs = 'ui_render_gifs';
+  static const _keySendGifsAsLinks = 'ui_send_gifs_as_links';
 
   String _contactsSelectedGroupName = contactsAllGroupsValue;
   String _contactsSearchText = '';
@@ -28,6 +29,7 @@ class UiViewStateService extends ChangeNotifier {
   String _channelsSearchText = '';
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
   bool _renderGifs = true;
+  bool _sendGifsAsLinks = false;
 
   String get contactsSelectedGroupName => _contactsSelectedGroupName;
   String get contactsSearchText => _contactsSearchText;
@@ -38,6 +40,7 @@ class UiViewStateService extends ChangeNotifier {
   String get channelsSearchText => _channelsSearchText;
   ChannelSortOption get channelsSortOption => _channelsSortOption;
   bool get renderGifs => _renderGifs;
+  bool get sendGifsAsLinks => _sendGifsAsLinks;
 
   Future<void> initialize() async {
     final prefs = PrefsManager.instance;
@@ -66,6 +69,9 @@ class UiViewStateService extends ChangeNotifier {
       );
     }
 
+    _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
+    _sendGifsAsLinks = prefs.getBool(_keySendGifsAsLinks) ?? false;
+
     final channelSortStr = prefs.getString(_keyChannelsSortOption);
     if (channelSortStr != null) {
       _channelsSortOption = ChannelSortOption.values.firstWhere(
@@ -92,8 +98,6 @@ class UiViewStateService extends ChangeNotifier {
       default:
         _channelsSortOption = ChannelSortOption.manual;
     }
-
-    _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
   }
 
   void setContactsSelectedGroupName(String value) {
@@ -162,5 +166,12 @@ class UiViewStateService extends ChangeNotifier {
     _renderGifs = value;
     notifyListeners();
     unawaited(PrefsManager.instance.setBool(_keyRenderGifs, value));
+  }
+
+  void setSendGifsAsLinks(bool value) {
+    if (_sendGifsAsLinks == value) return;
+    _sendGifsAsLinks = value;
+    notifyListeners();
+    unawaited(PrefsManager.instance.setBool(_keySendGifsAsLinks, value));
   }
 }
