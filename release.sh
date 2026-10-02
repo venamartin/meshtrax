@@ -228,9 +228,12 @@ bash tool/strip_integration_registrant.sh
 
 DIST_DIR="dist"
 
+# Sets GIPHY_DEFINE from the untracked giphy.key when present.
+source tool/giphy_define.sh
+
 if [ "$BUILD_APK" = true ]; then
     echo "BUILD: Starting Android Production Build (arm64-v8a)..."
-    flutter build apk --release --split-per-abi
+    flutter build apk --release --split-per-abi "${GIPHY_DEFINE[@]}"
     
     if [ $? -eq 0 ]; then
         mkdir -p "$DIST_DIR"
@@ -277,8 +280,8 @@ fi
 
 if [ "$BUILD_WINDOWS" = true ]; then
     echo "BUILD: Starting Windows Production Build..."
-    flutter build windows --release
-    
+    flutter build windows --release "${GIPHY_DEFINE[@]}"
+
     if [ $? -eq 0 ]; then
         mkdir -p "$DIST_DIR"
         
@@ -367,7 +370,7 @@ if [ "$BUILD_LINUX" = true ]; then
     fi
 
     echo "BUILD: Starting Linux Production Build ($LINUX_ARCH)..."
-    flutter build linux --release
+    flutter build linux --release "${GIPHY_DEFINE[@]}"
     
     if [ $? -eq 0 ]; then
         mkdir -p "$DIST_DIR"

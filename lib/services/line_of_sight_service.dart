@@ -108,12 +108,9 @@ class LineOfSightService {
   final ElevationDataSource? _elevationDataSource;
   final Map<String, _CachedElevation> _elevationCache = {};
 
-  LineOfSightService({
-    http.Client? httpClient,
-    ElevationDataSource? elevationDataSource,
-  }) : _httpClient = httpClient ?? http.Client(),
-       _ownsHttpClient = httpClient == null,
-       _elevationDataSource = elevationDataSource;
+  LineOfSightService({http.Client? httpClient, this._elevationDataSource})
+    : _httpClient = httpClient ?? http.Client(),
+      _ownsHttpClient = httpClient == null;
 
   Future<LineOfSightPathResult> analyzePath(
     List<LatLng> points, {

@@ -13,6 +13,13 @@ analyzer:
   exclude:
     # Vendored third-party code (framing fix only) keeps upstream style.
     - tools/win_ble_patched/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the

@@ -59,6 +59,7 @@ app.*.map.json
 .env
 *.env
 secrets.dart
+giphy.key
 
 # macOS
 .DS_Store

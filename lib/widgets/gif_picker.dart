@@ -19,9 +19,13 @@ class _GifPickerState extends State<GifPicker> {
   bool _isLoading = false;
   String? _error;
 
-  // Giphy API key - Using public beta key (limited usage)
-  // For production, replace with your own Giphy API key from developers.giphy.com
-  static const String _giphyApiKey = 'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh';
+  // Release scripts inject the project's own Giphy API key from the untracked
+  // giphy.key file via --dart-define; other builds fall back to Giphy's
+  // public beta key (limited usage).
+  static const String _giphyApiKey = String.fromEnvironment(
+    'GIPHY_API_KEY',
+    defaultValue: 'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh',
+  );
 
   @override
   void initState() {
@@ -52,6 +56,7 @@ class _GifPickerState extends State<GifPicker> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _gifs = List<Map<String, dynamic>>.from(data['data']);
           _isLoading = false;
@@ -94,6 +99,7 @@ class _GifPickerState extends State<GifPicker> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _gifs = List<Map<String, dynamic>>.from(data['data']);
           _isLoading = false;
