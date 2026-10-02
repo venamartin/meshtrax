@@ -56,6 +56,7 @@ class _GifPickerState extends State<GifPicker> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _gifs = List<Map<String, dynamic>>.from(data['data']);
           _isLoading = false;
@@ -98,6 +99,7 @@ class _GifPickerState extends State<GifPicker> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _gifs = List<Map<String, dynamic>>.from(data['data']);
           _isLoading = false;
