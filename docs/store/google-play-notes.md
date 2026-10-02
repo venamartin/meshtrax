@@ -13,8 +13,8 @@ Package: `com.vena.meshtrax`. Upload tool: `tool/play_upload.py` (run with `uv`)
    APIs & Services → Library → enable **Google Play Android Developer API**.
 2. IAM & Admin → **Service accounts** → Create service account
    (`play-publisher`, no project roles) → Keys → Add key → **JSON**.
-   Save the file as `~/.meshtrax/play-service-account.json`
-   (`C:\Users\<you>\.meshtrax\`). Never commit it. To keep it elsewhere, set
+   Save the file as `~/Desktop/keyStore/meshtrax-play-service-account.json`
+   (beside the upload keystore). Never commit it. To keep it elsewhere, set
    `PLAY_SERVICE_ACCOUNT_JSON` to its path.
 3. **Play Console → Users and permissions → Invite new users**: enter the
    service account email (`play-publisher@<project>.iam.gserviceaccount.com`),

@@ -28,7 +28,7 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
 PACKAGE = "com.vena.meshtrax"
-DEFAULT_KEY = Path.home() / ".meshtrax" / "play-service-account.json"
+DEFAULT_KEY = Path.home() / "Desktop" / "keyStore" / "meshtrax-play-service-account.json"
 NOTES_LIMIT = 500
 
 
