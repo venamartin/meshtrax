@@ -16,6 +16,7 @@ import '../models/contact.dart';
 import '../models/device_backup.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
+import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
@@ -5870,7 +5871,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   String prepareContactOutboundText(Contact contact, String text) {
     final trimmed = text.trim();
     final isStructuredPayload =
-        trimmed.startsWith('g:') ||
+        GifHelper.parseGif(trimmed) != null ||
         trimmed.startsWith('m:') ||
         trimmed.startsWith('V1|');
     if (!isStructuredPayload && isContactSmazEnabled(contact.publicKeyHex)) {
@@ -5882,7 +5883,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   String prepareChannelOutboundText(int channelIndex, String text) {
     final trimmed = text.trim();
     final isStructuredPayload =
-        trimmed.startsWith('g:') || trimmed.startsWith('m:');
+        GifHelper.parseGif(trimmed) != null || trimmed.startsWith('m:');
     if (!isStructuredPayload && isChannelSmazEnabled(channelIndex)) {
       return Smaz.encodeIfSmaller(text);
     }

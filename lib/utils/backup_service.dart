@@ -56,6 +56,7 @@ class BackupService {
     'ui_contacts_type_filter',
     'ui_channels_sort_option',
     'ui_render_gifs',
+    'ui_send_gifs_as_links',
   };
   static const _settingsPrefixes = [
     'channel_order_',
