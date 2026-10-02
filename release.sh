@@ -14,6 +14,7 @@ BUILD_IOS=false
 BUILD_WINDOWS=false
 BUILD_LINUX=false
 BUILD_MSIX=false
+PUBLISH_PLAY=false
 APPEND_ONLY=false
 
 # 1. Parse Command Line Arguments
@@ -24,6 +25,7 @@ while [[ "$#" -gt 0 ]]; do
         --windows) BUILD_WINDOWS=true ;;
         --linux) BUILD_LINUX=true ;;
         --msix) BUILD_WINDOWS=true; BUILD_MSIX=true ;;
+        --play) PUBLISH_PLAY=true ;;
         --append) APPEND_ONLY=true ;;
         *) echo "ERROR: Unknown parameter: $1"; exit 1 ;;
     esac
@@ -31,9 +33,16 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if at least one platform was selected
-if [ "$BUILD_APK" = false ] && [ "$BUILD_IOS" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ]; then
-    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux)"
+if [ "$BUILD_APK" = false ] && [ "$BUILD_IOS" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ] && [ "$PUBLISH_PLAY" = false ]; then
+    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux, ./release.sh --play)"
     exit 1
+fi
+
+# Store-only runs (e.g. ./release.sh --play to retry a failed upload) build and
+# publish to the stores without touching GitHub releases or tags.
+GITHUB_RELEASE=false
+if [ "$BUILD_APK" = true ] || [ "$BUILD_IOS" = true ] || [ "$BUILD_WINDOWS" = true ] || [ "$BUILD_LINUX" = true ]; then
+    GITHUB_RELEASE=true
 fi
 
 # Helper function to zip a directory cross-platform
@@ -166,6 +175,69 @@ verify_release_engine() {
     return 1
 }
 
+# Opens the store "What's new" notes in an editor until they are valid. One
+# file serves every store, so it is held to the strictest limit (Play: 500).
+collect_release_notes() {
+    NOTES_FILE="$DIST_DIR/whatsnew-v$VERSION.txt"
+    mkdir -p "$DIST_DIR"
+
+    local open_editor=true
+    if [ -f "$NOTES_FILE" ]; then
+        echo "PROMPT: Reuse the existing store notes in $NOTES_FILE? (y/n)"
+        read -r REUSE_NOTES
+        if [ "$REUSE_NOTES" = "y" ]; then
+            open_editor=false
+        else
+            rm "$NOTES_FILE"
+        fi
+    fi
+
+    if [ ! -f "$NOTES_FILE" ]; then
+        local last_tag range
+        last_tag=$(git describe --tags --abbrev=0 2>/dev/null)
+        range=${last_tag:+$last_tag..HEAD}
+        {
+            echo "# What's new in v$VERSION, shown on the store listings (max 500 characters)."
+            echo "# Lines starting with # are ignored."
+            echo "# Commits since ${last_tag:-the start}:"
+            git log ${range:--20} --no-merges --format='#   %s'
+        } > "$NOTES_FILE"
+    fi
+
+    local notes length
+    while true; do
+        if [ "$open_editor" = true ]; then
+            ${VISUAL:-${EDITOR:-nano}} "$NOTES_FILE"
+        fi
+        open_editor=true
+
+        notes=$(grep -v '^[[:space:]]*#' "$NOTES_FILE" | tr -d '\r' | sed -e '/[^[:space:]]/,$!d')
+        length=$(printf '%s' "$notes" | LC_ALL=C.UTF-8 wc -m)
+        if [ -z "$notes" ]; then
+            echo "ERROR: The store notes are empty."
+        elif [ "$length" -gt 500 ]; then
+            echo "ERROR: The store notes are $length characters; the limit is 500."
+        else
+            echo "SUCCESS: Store notes ready ($length characters)."
+            return 0
+        fi
+    done
+}
+
+publish_stores() {
+    if [ "$PUBLISH_PLAY" = true ]; then
+        echo "PUBLISH: Uploading v$VERSION to Google Play (production)..."
+        uv run tool/play_upload.py upload --aab "$AAB_DEST" --notes-file "$NOTES_FILE"
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Google Play upload failed."
+            if [ "$GITHUB_RELEASE" = true ]; then
+                echo "       The GitHub release is done; retry Play alone with: ./release.sh --play"
+            fi
+            return 1
+        fi
+    fi
+}
+
 # 2. Safety Checks: Uncommitted Changes
 if [ -n "$(git status --porcelain | grep -v 'release.sh' | grep -v 'dist/')" ]; then
   echo "ERROR: You have uncommitted changes. Please commit or stash them first."
@@ -198,14 +270,38 @@ fi
 
 # 4. Extract Version from pubspec.yaml
 VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //; s/+.*//' | tr -d '\r' | tr -d ' ')
+BUILD_NUMBER=$(grep '^version: ' pubspec.yaml | sed 's/.*+//' | tr -d '\r' | tr -d ' ')
 
 if [ -z "$VERSION" ]; then
     echo "ERROR: Could not find version number in pubspec.yaml"
     exit 1
 fi
 
+DIST_DIR="dist"
+
+# 4b. Store preflight: fail on missing credentials or a reused build number
+# now, not after a ten-minute build.
+if [ "$PUBLISH_PLAY" = true ]; then
+    if ! command -v uv &> /dev/null; then
+        echo "ERROR: 'uv' is not on PATH; it runs tool/play_upload.py."
+        exit 1
+    fi
+    if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: pubspec.yaml version has no +build number (Play versionCode)."
+        exit 1
+    fi
+    uv run tool/play_upload.py check --version-code "$BUILD_NUMBER"
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Google Play preflight failed. See docs/store/google-play-notes.md."
+        exit 1
+    fi
+    collect_release_notes
+fi
+
 # 5. Check for Tag Collision
-if [ "$APPEND_ONLY" = false ]; then
+if [ "$GITHUB_RELEASE" = false ]; then
+    echo "SUCCESS: Preparation complete. Store-only release of v$VERSION (no GitHub release)"
+elif [ "$APPEND_ONLY" = false ]; then
     if git rev-parse "v$VERSION" >/dev/null 2>&1; then
         echo "ERROR: Tag v$VERSION already exists locally or on GitHub."
         echo "Please increment the version in pubspec.yaml before releasing."
@@ -226,10 +322,21 @@ flutter pub get
 # which is itself capable of regenerating the contaminated file.
 bash tool/strip_integration_registrant.sh
 
-DIST_DIR="dist"
-
 # Sets GIPHY_DEFINE from the untracked giphy.key when present.
 source tool/giphy_define.sh
+
+if [ "$PUBLISH_PLAY" = true ]; then
+    # buildaab.sh refuses to build without the upload keystore, which Play needs.
+    bash buildaab.sh
+    if [ $? -ne 0 ]; then
+        echo "ERROR: App bundle build failed."
+        exit 1
+    fi
+    mkdir -p "$DIST_DIR"
+    AAB_DEST="$DIST_DIR/meshtrax-v$VERSION.aab"
+    cp build/app/outputs/bundle/release/app-release.aab "$AAB_DEST" || exit 1
+    echo "FILE: $AAB_DEST (Google Play only, not GitHub)"
+fi
 
 if [ "$BUILD_APK" = true ]; then
     echo "BUILD: Starting Android Production Build (arm64-v8a)..."
@@ -421,6 +528,11 @@ if [ "$BUILD_LINUX" = true ]; then
 fi
 
 # 7. Publishing Phase
+if [ "$GITHUB_RELEASE" = false ]; then
+    publish_stores
+    exit $?
+fi
+
 # Gather files to upload
 FILES_TO_UPLOAD=()
 if [ "$BUILD_APK" = true ] && [ -f "$DEST_APK" ]; then
@@ -455,6 +567,8 @@ if [ "$APPEND_ONLY" = true ]; then
     
     if [ $? -eq 0 ]; then
         echo "SUCCESS: Upload complete!"
+        publish_stores
+        exit $?
     else
         echo "ERROR: Failed to upload artifacts."
         exit 1
@@ -490,10 +604,11 @@ if [ $? -eq 0 ]; then
         echo "PUBLISH: Making the release public..."
         gh release edit "v$VERSION" --draft=false
         echo "SUCCESS: Release v$VERSION is now LIVE!"
+        publish_stores || exit 1
     else
         echo "INFO: Deleting the draft release from GitHub..."
         gh release delete "v$VERSION" --yes
-        echo "DONE: Release aborted. Artifacts remain in '$DIST_DIR/'."
+        echo "DONE: Release aborted, store uploads skipped. Artifacts remain in '$DIST_DIR/'."
     fi
 else
     echo "ERROR: Failed to create draft release on GitHub."
