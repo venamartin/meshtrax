@@ -19,7 +19,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.7.38+48
 
 environment:
-  sdk: ^3.9.2
+  # Dart 3.13 = Flutter 3.47, the minimum whose Gradle plugin can drive the
+  # AGP 9.1 / Gradle 9.3 Android toolchain this project is pinned to.
+  sdk: ^3.13.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
