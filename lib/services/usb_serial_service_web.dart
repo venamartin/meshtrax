@@ -12,9 +12,6 @@ import 'usb_serial_frame_codec.dart';
 class UsbSerialService {
   UsbSerialService();
 
-  static const Map<String, String> _knownUsbNames = <String, String>{
-    '2886:1667': 'Seeed Wio Tracker L1',
-  };
   static final Map<String, String> _deviceNamesByPortKey = <String, String>{};
   static final Map<String, String> _baseLabelsByPortKey = <String, String>{};
   static final Map<String, JSObject> _authorizedPortsByKey =
@@ -463,7 +460,7 @@ class UsbSerialService {
       productId: hasProduct ? productId : null,
       requestPortLabel: _requestPortLabel,
       fallbackDeviceName: _fallbackDeviceName,
-      knownUsbNames: _knownUsbNames,
+      knownUsbNames: knownUsbProductNames,
     );
   }
 

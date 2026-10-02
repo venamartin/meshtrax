@@ -71,6 +71,13 @@ void main() {
     },
   );
 
+  test('describeUsbVidPid prefers exact product over vendor name', () {
+    expect(describeUsbVidPid('2886', '1667'), 'Seeed Wio Tracker L1');
+    expect(describeUsbVidPid('2886', '0001'), 'Seeed');
+    expect(describeUsbVidPid('303A', '0002'), 'Espressif ESP32');
+    expect(describeUsbVidPid('1234', '5678'), isNull);
+  });
+
   test('describeWebUsbPort uses known VID/PID names when available', () {
     expect(
       describeWebUsbPort(
