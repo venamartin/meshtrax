@@ -27,6 +27,29 @@ String friendlyUsbPortName(String portLabel) {
   return description;
 }
 
+/// Keyed by lowercase `vid:pid` hex.
+const Map<String, String> knownUsbProductNames = <String, String>{
+  '2886:1667': 'Seeed Wio Tracker L1',
+};
+
+/// Keyed by lowercase vid hex. Names the chip family when the exact board
+/// is unknown.
+const Map<String, String> knownUsbVendorNames = <String, String>{
+  '303a': 'Espressif ESP32',
+  '239a': 'nRF52 (Adafruit)',
+  '2886': 'Seeed',
+  '10c4': 'Silicon Labs CP210x',
+  '1a86': 'WCH CH34x',
+  '0403': 'FTDI',
+  '2e8a': 'RP2040',
+};
+
+String? describeUsbVidPid(String vid, String pid) {
+  final v = vid.toLowerCase();
+  return knownUsbProductNames['$v:${pid.toLowerCase()}'] ??
+      knownUsbVendorNames[v];
+}
+
 String describeWebUsbPort({
   required int? vendorId,
   required int? productId,

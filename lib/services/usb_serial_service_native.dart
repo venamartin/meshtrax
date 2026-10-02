@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flserial/flserial.dart';
@@ -8,7 +9,9 @@ import 'package:flutter/services.dart';
 import 'app_debug_log_service.dart';
 import '../utils/macos_usb_device_names.dart';
 import '../utils/platform_info.dart';
+import '../storage/prefs_manager.dart';
 import '../utils/usb_port_labels.dart';
+import '../utils/windows_serial_ports.dart';
 import 'usb_serial_frame_codec.dart';
 
 /// Wraps the native flserial plugin to expose a stream of raw bytes for the
@@ -22,6 +25,7 @@ class UsbSerialService {
   static const EventChannel _androidEventChannel = EventChannel(
     'meshtrax/android_usb_serial_events',
   );
+  static const String _nodeNamesPrefsKey = 'usb_port_node_names';
   final StreamController<Uint8List> _frameController =
       StreamController<Uint8List>.broadcast();
   final UsbSerialFrameDecoder _frameDecoder = UsbSerialFrameDecoder();
@@ -65,12 +69,83 @@ class UsbSerialService {
     if (!_isSupportedPlatform) {
       return const <String>[];
     }
+    final List<String> ports;
     if (_useAndroidUsbHost) {
-      final ports = await _androidMethodChannel.invokeListMethod<String>(
-        'listPorts',
-      );
-      return ports ?? <String>[];
+      ports =
+          await _androidMethodChannel.invokeListMethod<String>('listPorts') ??
+          <String>[];
+    } else if (Platform.isWindows) {
+      final windowsPorts = await queryWindowsSerialPorts();
+      ports = windowsPorts != null
+          ? windowsPorts.map(_labelWindowsPort).toList()
+          : await _listFlSerialPorts();
+    } else {
+      ports = await _listFlSerialPorts();
     }
+    return _applyRememberedNodeNames(ports);
+  }
+
+  String _labelWindowsPort(WindowsSerialPort port) {
+    final vid = port.vid;
+    final pid = port.pid;
+    if (vid == null || pid == null) return port.port;
+    final name = describeUsbVidPid(vid, pid) ?? 'USB Serial Device';
+    return '${port.port} - $name - VID:$vid PID:$pid';
+  }
+
+  /// Swaps in the radio's own name for ports we have connected to before,
+  /// then lists named ports first.
+  List<String> _applyRememberedNodeNames(List<String> ports) {
+    final names = _rememberedNodeNames();
+    final labelled = ports.map((entry) {
+      final port = normalizeUsbPortName(entry);
+      final name = names[port];
+      if (name == null) return entry;
+      final segments = entry.split(' - ');
+      final hardwareId = segments.length >= 3 ? segments.last : 'n/a';
+      return '$port - $name - $hardwareId';
+    }).toList();
+    bool isNamed(String entry) =>
+        friendlyUsbPortName(entry) != normalizeUsbPortName(entry);
+    int portNumber(String entry) =>
+        int.tryParse(
+          RegExp(r'(\d+)$').firstMatch(normalizeUsbPortName(entry))?.group(1) ??
+              '',
+        ) ??
+        0;
+    labelled.sort((a, b) {
+      final named = (isNamed(a) ? 0 : 1).compareTo(isNamed(b) ? 0 : 1);
+      if (named != 0) return named;
+      final number = portNumber(a).compareTo(portNumber(b));
+      return number != 0 ? number : a.compareTo(b);
+    });
+    return labelled;
+  }
+
+  Map<String, String> _rememberedNodeNames() {
+    try {
+      final raw = PrefsManager.instance.getString(_nodeNamesPrefsKey);
+      if (raw == null) return const <String, String>{};
+      return Map<String, String>.from(jsonDecode(raw) as Map);
+    } catch (_) {
+      return const <String, String>{};
+    }
+  }
+
+  void _rememberNodeName(String port, String name) {
+    final names = Map<String, String>.of(_rememberedNodeNames());
+    if (names[port] == name) return;
+    names[port] = name;
+    try {
+      unawaited(
+        PrefsManager.instance.setString(_nodeNamesPrefsKey, jsonEncode(names)),
+      );
+    } catch (_) {
+      // Prefs not initialized (tests); names are a convenience only.
+    }
+  }
+
+  Future<List<String>> _listFlSerialPorts() async {
     final ports = await FlSerial.availablePorts();
     final rawPorts = ports.map((e) => e.path).toList();
     // On macOS, flserial's native device-name lookup is broken on macOS
@@ -143,7 +218,7 @@ class UsbSerialService {
       }
     } else {
       // On macOS, flserial lists both cu.* and tty.* device nodes.
-      // When a cu.* open fails, try the tty.* variant as a fallback 
+      // When a cu.* open fails, try the tty.* variant as a fallback
       // (and vice-versa) before giving up.
       final candidates = _buildPortCandidates(normalizedPortName);
       Exception? lastError;
@@ -152,7 +227,10 @@ class UsbSerialService {
       for (final candidate in candidates) {
         final serial = _freshSerial();
         try {
-          final openStatus = await serial.open(candidate, SerialConfig(baudRate: baudRate));
+          final openStatus = await serial.open(
+            candidate,
+            SerialConfig(baudRate: baudRate),
+          );
           if (!openStatus) {
             final msg = 'Failed to open USB port $candidate';
             _debugLogService?.error(msg, tag: 'USB Serial');
@@ -168,7 +246,7 @@ class UsbSerialService {
           _serial = serial;
           // Update the normalized port name to whichever candidate succeeded.
           normalizedPortName = candidate;
-          
+
           final modem = serial.getModemStatus();
           _debugLogService?.info(
             'USB serial opened port=$candidate cts=${modem['CTS']} dsr=${modem['DSR']} dtr=true rts=false',
@@ -302,6 +380,10 @@ class UsbSerialService {
     final trimmed = label.trim();
     if (trimmed.isEmpty) {
       return;
+    }
+    final port = _connectedPortKey;
+    if (port != null) {
+      _rememberNodeName(port, trimmed);
     }
     _connectedPortLabel = buildUsbDisplayLabel(
       basePortLabel: _connectedPortKey ?? trimmed,
