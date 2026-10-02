@@ -2,7 +2,7 @@
 
 **MeshTrax** is a free, open-source client for **[MeshCore](https://meshcore.io/)** LoRa mesh-networking radios. Chat across long-range, off-grid mesh networks, without needing towers, internet, or accounts.
 
-<a href="https://play.google.com/store/apps/details?id=com.vena.meshtrax"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60"></a><a href="https://apps.apple.com/us/app/meshtrax/id6799214428"><img alt="Download on the App Store" src="docs/store/app-store-badge.png" height="60"></a>
+<a href="https://play.google.com/store/apps/details?id=com.vena.meshtrax"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60"></a><a href="https://apps.apple.com/us/app/meshtrax/id6799214428"><img alt="Download on the App Store" src="docs/store/app-store-badge.png" height="60"></a><a href="https://apps.microsoft.com/detail/9N0DM90LRH49"><img alt="Get it from Microsoft" src="https://get.microsoft.com/images/en-us%20dark.svg" height="48"></a>
 
 
 > **MeshTrax is UNOFFICIAL.**
@@ -66,6 +66,8 @@ MeshTrax is a **client** — it requires a compatible **MeshCore** device (a sup
 ## 🚀 Getting started
 
 - **Google Play:** [Get MeshTrax on Google Play](https://play.google.com/store/apps/details?id=com.vena.meshtrax)
+- **App Store (iPhone/iPad):** [Download MeshTrax on the App Store](https://apps.apple.com/us/app/meshtrax/id6799214428)
+- **Microsoft Store (Windows):** [Get MeshTrax from the Microsoft Store](https://apps.microsoft.com/detail/9N0DM90LRH49)
 - **Build from source:** see below.
 
 ### Build from source
