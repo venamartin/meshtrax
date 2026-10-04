@@ -49,15 +49,28 @@ void main() {
       }
     });
 
-    test('a single attempt gets the full budget, never a short one', () {
-      // retries: 1 means there is no second chance, so it must not be cut
-      // short — this is the CLI screen's one-shot path.
-      expect(
-          RepeaterCommandService.attemptTimeoutMs(_direct, 0, 1), _direct * 3);
+    test('a single attempt gets its round-trip base untripled', () {
+      // The CLI screen's one-shot path (retries: 1). Tripling the base here
+      // is what made a failed CLI command sit ~24 s at one hop: the base
+      // already covers both legs, the repeater reply delay, and a CAD stall.
+      expect(RepeaterCommandService.attemptTimeoutMs(_direct, 0, 1), _direct);
+      expect(RepeaterCommandService.attemptTimeoutMs(_oneHop, 0, 1), _oneHop);
     });
 
-    test('the 8 s floor still applies to the last attempt on a fast path', () {
-      expect(RepeaterCommandService.attemptTimeoutMs(100, 0, 1), 8000);
+    test('a one-shot still never drops below the reply-delay floor', () {
+      expect(RepeaterCommandService.attemptTimeoutMs(100, 0, 1),
+          RepeaterCommandService.minAttemptTimeoutMs);
+    });
+
+    test('the 8 s floor still applies to the last attempt of a ladder', () {
+      expect(RepeaterCommandService.attemptTimeoutMs(100, 2, 3), 8000);
+    });
+
+    test('no single attempt ever exceeds the 60 s cap', () {
+      // A flood to an unknown-distance contact used to ladder 60+120+180 s —
+      // the telemetry screen's "waits forever".
+      expect(RepeaterCommandService.attemptTimeoutMs(60000, 2, 3), 60000);
+      expect(RepeaterCommandService.attemptTimeoutMs(60000, 0, 1), 60000);
     });
 
     test('no attempt ever waits longer than the old policy did', () {
