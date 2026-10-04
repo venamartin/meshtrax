@@ -55,6 +55,34 @@ class _RoutingDialog extends StatelessWidget {
     return contact;
   }
 
+  /// Routing choices are stored on the saved contact, so a repeater that is
+  /// only discovered (not yet imported) must be saved first — otherwise
+  /// setPathOverride finds nothing to update and the chosen mode silently
+  /// never takes effect.
+  Future<bool> _ensureSaved(
+    BuildContext context,
+    MeshCoreConnector connector,
+    Contact c,
+  ) async {
+    final saved = connector.contacts.any(
+      (x) => x.publicKeyHex == c.publicKeyHex,
+    );
+    if (saved) return true;
+    final imported = await connector.importDiscoveredContact(c);
+    if (!context.mounted) return false;
+    showDismissibleSnackBar(
+      context,
+      content: Text(
+        imported
+            ? '${c.name} automatically added to contacts.'
+            : 'Could not save ${c.name} to contacts.',
+      ),
+      backgroundColor: imported ? null : Colors.red,
+      duration: const Duration(seconds: 2),
+    );
+    return imported;
+  }
+
   String _routeLabel(BuildContext context, Contact c) {
     final l10n = context.l10n;
     if (c.pathLength < 0) return l10n.routing_noRoute;
@@ -137,12 +165,15 @@ class _RoutingDialog extends StatelessWidget {
     if (c.pathLength > 0 && c.path.isEmpty && connector.isConnected) {
       connector.getContacts();
     }
+    // Overrides are always written at the connector's width; the device
+    // path carries its own hash width and is only a usable seed when the
+    // two agree — regrouping it at a different stride fabricates hops.
     final current = c.pathOverrideBytes != null
         ? PathHelper.formatPathHex(
             c.pathOverrideBytes!,
             stride: connector.pathHashByteWidth,
           )
-        : c.pathFormattedIdList(connector.pathHashByteWidth);
+        : (c.pathHashSize == connector.pathHashByteWidth ? c.pathIdList : '');
     final result = await PathSelectionDialog.show(
       context,
       availableContacts: connector.allContacts
@@ -154,6 +185,7 @@ class _RoutingDialog extends StatelessWidget {
       pathHashByteWidth: connector.pathHashByteWidth,
     );
     if (result == null) return;
+    if (!context.mounted || !await _ensureSaved(context, connector, c)) return;
     if (result.isEmpty) {
       await connector.setPathOverride(c, pathLen: 0, pathBytes: Uint8List(0));
     } else {
@@ -173,8 +205,10 @@ class _RoutingDialog extends StatelessWidget {
         Future<void> select(RoutingMode? next) async {
           switch (next) {
             case RoutingMode.auto:
+              if (!await _ensureSaved(context, connector, c)) return;
               await connector.setPathOverride(c, pathLen: null);
             case RoutingMode.flood:
+              if (!await _ensureSaved(context, connector, c)) return;
               await connector.setPathOverride(c, pathLen: -1);
             case RoutingMode.custom:
               await _pickCustomPath(context, connector, c);

@@ -7429,7 +7429,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         reader.skipBytes(4);
       }
       final pathLenRaw = reader.readByte();
-      final pathByteLen = _decodePathByteLen(pathLenRaw);
+      final pathByteLen = extractPathByteLen(pathLenRaw);
       final pathBytes = reader.readBytes(pathByteLen);
       final payload = reader.readBytes(reader.remaining);
 
@@ -8341,7 +8341,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
-      final pathByteLen = _decodePathByteLen(pathLenRaw);
+      final pathByteLen = extractPathByteLen(pathLenRaw);
       final pathBytes = packet.readBytes(pathByteLen);
       final payload = packet.readBytes(packet.remaining);
 
@@ -8513,7 +8513,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         packet.skipBytes(4);
       }
       final pathLenRaw = packet.readByte();
-      packet.skipBytes(_decodePathByteLen(pathLenRaw));
+      packet.skipBytes(extractPathByteLen(pathLenRaw));
       packet.skipBytes(32); // pubkey
       return packet.readUInt32LE();
     } catch (_) {
@@ -9300,14 +9300,6 @@ const int _routeTransportDirect = 0x03;
 const int _payloadTypeGroupText = 0x05;
 const int _cipherMacSize = 2;
 
-/// Decodes the firmware's encoded path_len byte into actual byte length.
-/// Bits 0-5: hash count (0-63), Bits 6-7: hash size code (0=1byte, 1=2bytes, 2=3bytes).
-int _decodePathByteLen(int pathLenRaw) {
-  final hashCount = pathLenRaw & 63;
-  final hashSize = ((pathLenRaw >> 6) & 0x03) + 1;
-  return hashCount * hashSize;
-}
-
 class _RawPacket {
   final int header;
   final int routeType;
@@ -9330,8 +9322,8 @@ class _RawPacket {
   bool get isFlood =>
       routeType == _routeFlood || routeType == _routeTransportFlood;
 
-  int get hopCount => pathLenRaw & 63;
-  
+  int get hopCount => extractPathHopCount(pathLenRaw);
+
   int get hashSize => extractPathHashSize(pathLenRaw);
 }
 

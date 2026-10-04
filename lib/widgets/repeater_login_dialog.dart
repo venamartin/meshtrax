@@ -231,6 +231,13 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
       }
 
       if (mounted) {
+        // The attempt loop runs for many seconds; the user may have stacked
+        // the Routing or custom-path dialog on top by now. A plain pop would
+        // close that topmost dialog instead of this one.
+        final ownRoute = ModalRoute.of(context);
+        if (ownRoute != null && !ownRoute.isCurrent) {
+          Navigator.of(context).popUntil((r) => r == ownRoute);
+        }
         Navigator.pop(context, password);
         Future.microtask(() => widget.onLogin(password, isAdmin));
       }
