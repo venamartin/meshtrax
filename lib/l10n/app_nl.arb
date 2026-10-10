@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Bezorgde berichten",
   "room_reloadPosts": "Recente berichten opnieuw laden",
   "room_reloadPostsExplain": "Vraagt de ruimte om recente berichten opnieuw te sturen (maximaal 32). Je wordt om het ruimtewachtwoord gevraagd. Bestaande berichten blijven bewaard.",
-  "room_reloadFailed": "Kon de ruimte niet resetten op de radio"
+  "room_reloadFailed": "Kon de ruimte niet resetten op de radio",
+  "room_selfDemoteWarning": "Je wijzigt je eigen toegang. Als je je beheerdersrol opgeeft, kan alleen de console van de ruimte die teruggeven."
 }

@@ -4019,4 +4019,8 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Kunde inte återställa rummet på radion';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Du ändrar din egen åtkomst. Om du släpper din adminroll kan bara rummets egen konsol ge tillbaka den.';
 }

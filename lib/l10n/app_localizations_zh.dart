@@ -3804,4 +3804,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get room_reloadFailed => '无法在电台上重置房间';
+
+  @override
+  String get room_selfDemoteWarning => '您正在更改自己的访问权限。如果放弃管理员角色，只能通过房间自身的控制台恢复。';
 }

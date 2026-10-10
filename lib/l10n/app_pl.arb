@@ -2045,5 +2045,6 @@
   "room_postsDelivered": "Dostarczone wpisy",
   "room_reloadPosts": "Wczytaj ponownie ostatnie wpisy",
   "room_reloadPostsExplain": "Prosi pokój o ponowne wysłanie ostatnich wpisów (przechowuje do 32). Zostaniesz poproszony o hasło pokoju. Posiadane wiadomości zostaną zachowane.",
-  "room_reloadFailed": "Nie udało się zresetować pokoju w radiu"
+  "room_reloadFailed": "Nie udało się zresetować pokoju w radiu",
+  "room_selfDemoteWarning": "Zmieniasz własny dostęp. Jeśli utracisz rolę administratora, przywrócić ją może tylko konsola pokoju."
 }

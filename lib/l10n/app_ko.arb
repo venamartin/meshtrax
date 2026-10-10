@@ -2045,5 +2045,6 @@
   "room_postsDelivered": "전달된 게시물",
   "room_reloadPosts": "최근 게시물 다시 불러오기",
   "room_reloadPostsExplain": "룸에 최근 게시물(최대 32개 보관)을 다시 보내 달라고 요청합니다. 룸 비밀번호가 필요합니다. 기존 메시지는 유지됩니다.",
-  "room_reloadFailed": "무전기에서 룸을 초기화하지 못했습니다"
+  "room_reloadFailed": "무전기에서 룸을 초기화하지 못했습니다",
+  "room_selfDemoteWarning": "자신의 접근 권한을 변경하려고 합니다. 관리자 역할을 잃으면 룸 자체 콘솔에서만 되돌릴 수 있습니다."
 }

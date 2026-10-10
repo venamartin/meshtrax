@@ -3895,4 +3895,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get room_reloadFailed => '無線機でルームをリセットできませんでした';
+
+  @override
+  String get room_selfDemoteWarning =>
+      '自分自身のアクセス権を変更しようとしています。管理者ロールを失うと、ルーム本体のコンソールからしか戻せません。';
 }

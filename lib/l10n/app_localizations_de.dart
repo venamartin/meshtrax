@@ -4067,4 +4067,8 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get room_reloadFailed =>
       'Raum konnte auf dem Funkgerät nicht zurückgesetzt werden';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Du änderst deinen eigenen Zugang. Gibst du deine Admin-Rolle ab, kann nur die Konsole des Raums sie zurückgeben.';
 }

@@ -4082,4 +4082,8 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get room_reloadFailed =>
       'Impossible de réinitialiser la room sur la radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Vous modifiez votre propre accès. Si vous abandonnez votre rôle d\'admin, seule la console de la room peut le rétablir.';
 }

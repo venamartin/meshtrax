@@ -216,6 +216,34 @@ class _RoomUsersScreenState extends State<RoomUsersScreen> {
       ),
     );
     if (role == null) return;
+    // Demoting or removing yourself is one tap away from losing admin
+    // access that only the room's own console can restore.
+    if (role < 3 &&
+        keyHex.toLowerCase() == _connector.selfPublicKeyHex.toLowerCase()) {
+      if (!mounted) return;
+      final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(l10n.room_setUserRole),
+              content: Text(l10n.room_selfDemoteWarning),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(l10n.common_cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(
+                    l10n.common_continue,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!confirmed) return;
+    }
     await _setPermission(keyHex, role);
   }
 

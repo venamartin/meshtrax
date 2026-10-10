@@ -4054,4 +4054,8 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Não foi possível redefinir a sala no rádio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Você está alterando seu próprio acesso. Se abrir mão da função de admin, só o console da sala pode devolvê-la.';
 }

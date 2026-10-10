@@ -4055,4 +4055,8 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Стаята не можа да бъде нулирана на радиото';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Променяте собствения си достъп. Ако се откажете от ролята на админ, само конзолата на стаята може да я върне.';
 }

@@ -2035,5 +2035,6 @@
   "room_postsDelivered": "Zugestellte Beiträge",
   "room_reloadPosts": "Letzte Beiträge neu laden",
   "room_reloadPostsExplain": "Bittet den Raum, seine letzten Beiträge erneut zu senden (er speichert bis zu 32). Du wirst nach dem Raum-Passwort gefragt. Vorhandene Nachrichten bleiben erhalten.",
-  "room_reloadFailed": "Raum konnte auf dem Funkgerät nicht zurückgesetzt werden"
+  "room_reloadFailed": "Raum konnte auf dem Funkgerät nicht zurückgesetzt werden",
+  "room_selfDemoteWarning": "Du änderst deinen eigenen Zugang. Gibst du deine Admin-Rolle ab, kann nur die Konsole des Raums sie zurückgeben."
 }

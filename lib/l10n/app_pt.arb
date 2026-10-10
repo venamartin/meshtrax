@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Mensagens entregues",
   "room_reloadPosts": "Recarregar mensagens recentes",
   "room_reloadPostsExplain": "Pede à sala para reenviar as mensagens recentes (guarda até 32). A senha da sala será solicitada. As mensagens que você já tem são mantidas.",
-  "room_reloadFailed": "Não foi possível redefinir a sala no rádio"
+  "room_reloadFailed": "Não foi possível redefinir a sala no rádio",
+  "room_selfDemoteWarning": "Você está alterando seu próprio acesso. Se abrir mão da função de admin, só o console da sala pode devolvê-la."
 }

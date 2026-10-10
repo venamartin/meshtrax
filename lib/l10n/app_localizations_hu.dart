@@ -4075,4 +4075,8 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get room_reloadFailed =>
       'A szobát nem sikerült visszaállítani a rádión';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'A saját hozzáférésedet módosítod. Ha lemondasz az admin szerepről, csak a szoba saját konzolja adhatja vissza.';
 }

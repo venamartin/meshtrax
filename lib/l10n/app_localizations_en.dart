@@ -3991,4 +3991,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Couldn\'t reset the room on the radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'You\'re changing your own access. If you drop your admin role, only the room\'s own console can give it back.';
 }

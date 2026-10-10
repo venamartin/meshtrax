@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Messages distribués",
   "room_reloadPosts": "Recharger les messages récents",
   "room_reloadPostsExplain": "Demande à la room de renvoyer ses messages récents (elle en garde jusqu'à 32). Le mot de passe de la room sera demandé. Vos messages existants sont conservés.",
-  "room_reloadFailed": "Impossible de réinitialiser la room sur la radio"
+  "room_reloadFailed": "Impossible de réinitialiser la room sur la radio",
+  "room_selfDemoteWarning": "Vous modifiez votre propre accès. Si vous abandonnez votre rôle d'admin, seule la console de la room peut le rétablir."
 }

@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Messaggi consegnati",
   "room_reloadPosts": "Ricarica messaggi recenti",
   "room_reloadPostsExplain": "Chiede alla stanza di inviare di nuovo i messaggi recenti (ne conserva fino a 32). Ti verrà chiesta la password della stanza. I messaggi già presenti restano.",
-  "room_reloadFailed": "Impossibile ripristinare la stanza sulla radio"
+  "room_reloadFailed": "Impossibile ripristinare la stanza sulla radio",
+  "room_selfDemoteWarning": "Stai cambiando il tuo stesso accesso. Se rinunci al ruolo di admin, solo la console della stanza può restituirtelo."
 }

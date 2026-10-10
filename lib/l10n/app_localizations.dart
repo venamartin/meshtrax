@@ -7018,6 +7018,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t reset the room on the radio'**
   String get room_reloadFailed;
+
+  /// No description provided for @room_selfDemoteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re changing your own access. If you drop your admin role, only the room\'s own console can give it back.'**
+  String get room_selfDemoteWarning;
 }
 
 class _AppLocalizationsDelegate

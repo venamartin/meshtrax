@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Levererade inlägg",
   "room_reloadPosts": "Läs in senaste inläggen igen",
   "room_reloadPostsExplain": "Ber rummet skicka sina senaste inlägg igen (det sparar upp till 32). Du ombeds ange rummets lösenord. Befintliga meddelanden behålls.",
-  "room_reloadFailed": "Kunde inte återställa rummet på radion"
+  "room_reloadFailed": "Kunde inte återställa rummet på radion",
+  "room_selfDemoteWarning": "Du ändrar din egen åtkomst. Om du släpper din adminroll kan bara rummets egen konsol ge tillbaka den."
 }

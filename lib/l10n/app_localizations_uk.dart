@@ -4068,4 +4068,8 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Не вдалося скинути кімнату на радіо';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Ви змінюєте власний доступ. Якщо ви втратите роль адміна, повернути її зможе лише консоль кімнати.';
 }

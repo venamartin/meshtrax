@@ -4064,4 +4064,8 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get room_reloadFailed =>
       'Impossibile ripristinare la stanza sulla radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Stai cambiando il tuo stesso accesso. Se rinunci al ruolo di admin, solo la console della stanza può restituirtelo.';
 }

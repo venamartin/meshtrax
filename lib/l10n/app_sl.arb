@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Dostavljene objave",
   "room_reloadPosts": "Znova naloži nedavne objave",
   "room_reloadPostsExplain": "Prosi sobo, naj znova pošlje nedavne objave (hrani do 32). Vprašani boste za geslo sobe. Obstoječa sporočila ostanejo.",
-  "room_reloadFailed": "Sobe ni bilo mogoče ponastaviti na radiu"
+  "room_reloadFailed": "Sobe ni bilo mogoče ponastaviti na radiu",
+  "room_selfDemoteWarning": "Spreminjate svoj lastni dostop. Če se odpoveste vlogi admina, vam jo lahko vrne le konzola sobe."
 }

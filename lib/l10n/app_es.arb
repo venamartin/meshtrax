@@ -2035,5 +2035,6 @@
   "room_postsDelivered": "Mensajes entregados",
   "room_reloadPosts": "Recargar mensajes recientes",
   "room_reloadPostsExplain": "Pide a la sala reenviar sus mensajes recientes (guarda hasta 32). Se te pedirá la contraseña de la sala. Los mensajes que ya tienes se conservan.",
-  "room_reloadFailed": "No se pudo restablecer la sala en la radio"
+  "room_reloadFailed": "No se pudo restablecer la sala en la radio",
+  "room_selfDemoteWarning": "Estás cambiando tu propio acceso. Si pierdes tu rol de admin, solo la consola de la sala puede devolvértelo."
 }

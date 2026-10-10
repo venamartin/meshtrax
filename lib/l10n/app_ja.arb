@@ -2045,5 +2045,6 @@
   "room_postsDelivered": "配信された投稿",
   "room_reloadPosts": "最近の投稿を再読み込み",
   "room_reloadPostsExplain": "ルームに最近の投稿の再送信を依頼します（最大32件保持）。ルームパスワードの入力が必要です。既存のメッセージは保持されます。",
-  "room_reloadFailed": "無線機でルームをリセットできませんでした"
+  "room_reloadFailed": "無線機でルームをリセットできませんでした",
+  "room_selfDemoteWarning": "自分自身のアクセス権を変更しようとしています。管理者ロールを失うと、ルーム本体のコンソールからしか戻せません。"
 }

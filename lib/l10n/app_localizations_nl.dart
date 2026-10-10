@@ -4042,4 +4042,8 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Kon de ruimte niet resetten op de radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Je wijzigt je eigen toegang. Als je je beheerdersrol opgeeft, kan alleen de console van de ruimte die teruggeven.';
 }

@@ -2007,5 +2007,6 @@
   "room_postsDelivered": "Doručené príspevky",
   "room_reloadPosts": "Znovu načítať nedávne príspevky",
   "room_reloadPostsExplain": "Požiada miestnosť o opätovné odoslanie nedávnych príspevkov (uchováva až 32). Budete požiadaní o heslo miestnosti. Existujúce správy zostanú.",
-  "room_reloadFailed": "Miestnosť sa nepodarilo resetovať na rádiu"
+  "room_reloadFailed": "Miestnosť sa nepodarilo resetovať na rádiu",
+  "room_selfDemoteWarning": "Meníte svoj vlastný prístup. Ak sa vzdáte roly admina, vrátiť vám ju môže len konzola miestnosti."
 }

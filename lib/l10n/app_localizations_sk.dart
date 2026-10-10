@@ -4033,4 +4033,8 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Miestnosť sa nepodarilo resetovať na rádiu';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Meníte svoj vlastný prístup. Ak sa vzdáte roly admina, vrátiť vám ju môže len konzola miestnosti.';
 }

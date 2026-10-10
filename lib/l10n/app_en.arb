@@ -2310,5 +2310,6 @@
   "room_postsDelivered": "Posts delivered",
   "room_reloadPosts": "Reload recent posts",
   "room_reloadPostsExplain": "Asks the room to send its recent posts again (it keeps up to 32). You'll be asked to log in with the room password. Messages you already have are kept.",
-  "room_reloadFailed": "Couldn't reset the room on the radio"
+  "room_reloadFailed": "Couldn't reset the room on the radio",
+  "room_selfDemoteWarning": "You're changing your own access. If you drop your admin role, only the room's own console can give it back."
 }

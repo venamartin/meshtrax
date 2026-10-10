@@ -4060,4 +4060,8 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Не удалось сбросить комнату на радио';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Вы меняете собственный доступ. Если вы лишитесь роли админа, вернуть её сможет только консоль комнаты.';
 }

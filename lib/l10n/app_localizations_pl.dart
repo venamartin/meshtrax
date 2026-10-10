@@ -4069,4 +4069,8 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Nie udało się zresetować pokoju w radiu';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Zmieniasz własny dostęp. Jeśli utracisz rolę administratora, przywrócić ją może tylko konsola pokoju.';
 }

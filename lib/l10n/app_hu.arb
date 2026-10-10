@@ -2045,5 +2045,6 @@
   "room_postsDelivered": "Kézbesített bejegyzések",
   "room_reloadPosts": "Friss bejegyzések újratöltése",
   "room_reloadPostsExplain": "Megkéri a szobát, hogy küldje el újra a friss bejegyzéseket (legfeljebb 32-t tárol). A szoba jelszavát kérni fogja. A meglévő üzenetek megmaradnak.",
-  "room_reloadFailed": "A szobát nem sikerült visszaállítani a rádión"
+  "room_reloadFailed": "A szobát nem sikerült visszaállítani a rádión",
+  "room_selfDemoteWarning": "A saját hozzáférésedet módosítod. Ha lemondasz az admin szerepről, csak a szoba saját konzolja adhatja vissza."
 }

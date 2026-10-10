@@ -3893,4 +3893,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get room_reloadFailed => '무전기에서 룸을 초기화하지 못했습니다';
+
+  @override
+  String get room_selfDemoteWarning =>
+      '자신의 접근 권한을 변경하려고 합니다. 관리자 역할을 잃으면 룸 자체 콘솔에서만 되돌릴 수 있습니다.';
 }

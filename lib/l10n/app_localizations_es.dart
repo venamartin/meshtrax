@@ -4059,4 +4059,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'No se pudo restablecer la sala en la radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Estás cambiando tu propio acceso. Si pierdes tu rol de admin, solo la consola de la sala puede devolvértelo.';
 }

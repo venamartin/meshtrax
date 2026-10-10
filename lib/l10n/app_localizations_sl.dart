@@ -4038,4 +4038,8 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Sobe ni bilo mogoče ponastaviti na radiu';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Spreminjate svoj lastni dostop. Če se odpoveste vlogi admina, vam jo lahko vrne le konzola sobe.';
 }
