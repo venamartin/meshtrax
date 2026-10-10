@@ -2008,5 +2008,7 @@
   "chat_sendMessage": "Nachricht senden",
   "room_guest": "Informationen zum Room Server",
   "settings_multiAck": "Mehrere Bestätigungen",
-  "chat_resendingByRoute": "Erneutes Senden über die festgelegte Route"
+  "chat_resendingByRoute": "Erneutes Senden über die festgelegte Route",
+  "room_mute": "Raum stummschalten",
+  "room_unmute": "Stummschaltung des Raums aufheben"
 }

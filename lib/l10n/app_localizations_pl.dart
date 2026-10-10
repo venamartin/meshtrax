@@ -3979,4 +3979,10 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Ponowne wysyłanie ustawioną trasą';
+
+  @override
+  String get room_mute => 'Wycisz pokój';
+
+  @override
+  String get room_unmute => 'Wyłącz wyciszenie pokoju';
 }

@@ -1980,5 +1980,7 @@
   "chat_sendMessage": "Enviar mensagem",
   "repeater_guest": "Informações sobre repetidores",
   "repeater_guestTools": "Ferramentas para hóspedes",
-  "chat_resendingByRoute": "Reenviando pela rota definida"
+  "chat_resendingByRoute": "Reenviando pela rota definida",
+  "room_mute": "Silenciar sala",
+  "room_unmute": "Reativar som da sala"
 }

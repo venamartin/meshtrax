@@ -3930,4 +3930,10 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Skickar igen via din angivna rutt';
+
+  @override
+  String get room_mute => 'Tysta rummet';
+
+  @override
+  String get room_unmute => 'Slå på ljud för rummet';
 }

@@ -3945,4 +3945,10 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Opätovné odosielanie nastavenou trasou';
+
+  @override
+  String get room_mute => 'Stlmiť miestnosť';
+
+  @override
+  String get room_unmute => 'Zrušiť stlmenie miestnosti';
 }

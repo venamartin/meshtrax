@@ -3954,4 +3954,10 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get chat_resendingByRoute =>
       'Opnieuw verzenden via de ingestelde route';
+
+  @override
+  String get room_mute => 'Ruimte dempen';
+
+  @override
+  String get room_unmute => 'Dempen van ruimte opheffen';
 }

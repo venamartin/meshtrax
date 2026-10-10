@@ -2008,5 +2008,7 @@
   "repeater_guestTools": "Herramientas para invitados",
   "room_guest": "Información del servidor",
   "settings_multiAck": "Múltiples respuestas de confirmación",
-  "chat_resendingByRoute": "Reenviando por la ruta establecida"
+  "chat_resendingByRoute": "Reenviando por la ruta establecida",
+  "room_mute": "Silenciar sala",
+  "room_unmute": "Dejar de silenciar sala"
 }

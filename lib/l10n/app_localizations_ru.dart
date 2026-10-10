@@ -3972,4 +3972,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get chat_resendingByRoute =>
       'Повторная отправка по заданному маршруту';
+
+  @override
+  String get room_mute => 'Отключить уведомления комнаты';
+
+  @override
+  String get room_unmute => 'Включить уведомления комнаты';
 }

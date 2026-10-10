@@ -1980,5 +1980,7 @@
   "room_guest": "Informations sur le serveur",
   "repeater_guest": "Informations sur les répéteurs",
   "settings_multiAck": "Plusieurs accusés de réception",
-  "chat_resendingByRoute": "Renvoi via l'itinéraire défini"
+  "chat_resendingByRoute": "Renvoi via l'itinéraire défini",
+  "room_mute": "Désactiver les notifications de la room",
+  "room_unmute": "Réactiver les notifications de la room"
 }

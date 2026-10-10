@@ -1980,5 +1980,7 @@
   "room_guest": "Informacije o strežniku",
   "repeater_guestTools": "Naložila za goste",
   "settings_multiAck": "Več potrdil",
-  "chat_resendingByRoute": "Ponovno pošiljanje po nastavljeni poti"
+  "chat_resendingByRoute": "Ponovno pošiljanje po nastavljeni poti",
+  "room_mute": "Utišaj sobo",
+  "room_unmute": "Prekliči utišanje sobe"
 }

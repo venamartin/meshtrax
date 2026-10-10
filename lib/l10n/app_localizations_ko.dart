@@ -3807,4 +3807,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => '설정한 경로로 다시 전송 중';
+
+  @override
+  String get room_mute => '룸 음소거';
+
+  @override
+  String get room_unmute => '룸 음소거 해제';
 }

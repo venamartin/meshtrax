@@ -2018,5 +2018,7 @@
   "chat_sendMessage": "Üzenet küldése",
   "repeater_guest": "Adatok a repeaterről",
   "settings_multiAck": "Többszörös visszaigazolások",
-  "chat_resendingByRoute": "Újraküldés a beállított útvonalon"
+  "chat_resendingByRoute": "Újraküldés a beállított útvonalon",
+  "room_mute": "Szoba némítása",
+  "room_unmute": "Szoba némításának feloldása"
 }

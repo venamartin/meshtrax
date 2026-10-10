@@ -3720,4 +3720,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => '正在通过您设置的路由重新发送';
+
+  @override
+  String get room_mute => '静音房间';
+
+  @override
+  String get room_unmute => '取消静音房间';
 }

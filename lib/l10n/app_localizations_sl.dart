@@ -3950,4 +3950,10 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Ponovno pošiljanje po nastavljeni poti';
+
+  @override
+  String get room_mute => 'Utišaj sobo';
+
+  @override
+  String get room_unmute => 'Prekliči utišanje sobe';
 }

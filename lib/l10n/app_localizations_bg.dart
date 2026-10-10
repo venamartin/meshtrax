@@ -3965,4 +3965,10 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get chat_resendingByRoute =>
       'Повторно изпращане по зададения от вас маршрут';
+
+  @override
+  String get room_mute => 'Заглушаване на стаята';
+
+  @override
+  String get room_unmute => 'Включване на звука за стаята';
 }

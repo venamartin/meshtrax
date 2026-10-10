@@ -3809,4 +3809,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => '設定したルートで再送信中';
+
+  @override
+  String get room_mute => 'ルームをミュート';
+
+  @override
+  String get room_unmute => 'ルームのミュートを解除';
 }

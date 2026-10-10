@@ -2018,5 +2018,7 @@
   "repeater_guest": "Informacje dotyczące urządzenia powtarzającego",
   "room_guest": "Informacje o serwerze",
   "settings_multiAck": "Wielokrotne potwierdzenia odbioru",
-  "chat_resendingByRoute": "Ponowne wysyłanie ustawioną trasą"
+  "chat_resendingByRoute": "Ponowne wysyłanie ustawioną trasą",
+  "room_mute": "Wycisz pokój",
+  "room_unmute": "Wyłącz wyciszenie pokoju"
 }

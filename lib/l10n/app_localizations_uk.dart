@@ -3980,4 +3980,10 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get chat_resendingByRoute =>
       'Повторне надсилання за заданим маршрутом';
+
+  @override
+  String get room_mute => 'Вимкнути сповіщення кімнати';
+
+  @override
+  String get room_unmute => 'Увімкнути сповіщення кімнати';
 }

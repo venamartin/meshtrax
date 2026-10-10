@@ -3985,4 +3985,10 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Újraküldés a beállított útvonalon';
+
+  @override
+  String get room_mute => 'Szoba némítása';
+
+  @override
+  String get room_unmute => 'Szoba némításának feloldása';
 }

@@ -3965,4 +3965,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Reenviando pela rota definida';
+
+  @override
+  String get room_mute => 'Silenciar sala';
+
+  @override
+  String get room_unmute => 'Reativar som da sala';
 }

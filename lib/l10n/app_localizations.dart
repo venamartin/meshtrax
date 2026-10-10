@@ -6856,6 +6856,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resending using your set route'**
   String get chat_resendingByRoute;
+
+  /// No description provided for @room_mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute room'**
+  String get room_mute;
+
+  /// No description provided for @room_unmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute room'**
+  String get room_unmute;
 }
 
 class _AppLocalizationsDelegate

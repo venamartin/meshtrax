@@ -3972,4 +3972,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Reinvio tramite il percorso impostato';
+
+  @override
+  String get room_mute => 'Silenzia stanza';
+
+  @override
+  String get room_unmute => 'Riattiva stanza';
 }

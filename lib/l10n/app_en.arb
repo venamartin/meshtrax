@@ -2282,5 +2282,7 @@
   },
   "chat_statusFailedShort": "Failed · tap to resend",
   "chat_resendingByFlood": "Resending by flood",
-  "chat_resendingByRoute": "Resending using your set route"
+  "chat_resendingByRoute": "Resending using your set route",
+  "room_mute": "Mute room",
+  "room_unmute": "Unmute room"
 }

@@ -2018,5 +2018,7 @@
   "repeater_guest": "반복 장비 정보",
   "room_guest": "서버 정보",
   "settings_multiAck": "다중 ACK",
-  "chat_resendingByRoute": "설정한 경로로 다시 전송 중"
+  "chat_resendingByRoute": "설정한 경로로 다시 전송 중",
+  "room_mute": "룸 음소거",
+  "room_unmute": "룸 음소거 해제"
 }

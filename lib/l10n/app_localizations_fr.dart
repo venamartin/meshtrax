@@ -3991,4 +3991,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chat_resendingByRoute => 'Renvoi via l\'itinéraire défini';
+
+  @override
+  String get room_mute => 'Désactiver les notifications de la room';
+
+  @override
+  String get room_unmute => 'Réactiver les notifications de la room';
 }

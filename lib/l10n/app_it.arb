@@ -1980,5 +1980,7 @@
   "chat_sendMessage": "Invia messaggio",
   "room_guest": "Informazioni sul server",
   "settings_multiAck": "ACK multipli",
-  "chat_resendingByRoute": "Reinvio tramite il percorso impostato"
+  "chat_resendingByRoute": "Reinvio tramite il percorso impostato",
+  "room_mute": "Silenzia stanza",
+  "room_unmute": "Riattiva stanza"
 }

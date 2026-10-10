@@ -43,6 +43,9 @@ class AppSettings {
   final Map<String, String> batteryChemistryByRepeaterId;
   final UnitSystem unitSystem;
   final Set<String> mutedChannels;
+
+  /// Muted conversations keyed by contact pubkey hex (room servers today).
+  final Set<String> mutedContacts;
   final bool mapShowDiscoveryContacts;
   final String tcpServerAddress;
   final int tcpServerPort;
@@ -101,6 +104,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
     Set<String>? mutedChannels,
+    Set<String>? mutedContacts,
     this.mapShowDiscoveryContacts = true,
     this.tcpServerAddress = '',
     this.tcpServerPort = 0,
@@ -116,6 +120,7 @@ class AppSettings {
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
        mutedChannels = mutedChannels ?? {},
+       mutedContacts = mutedContacts ?? {},
        blockedContactKeys = blockedContactKeys ?? {},
        blockedSenderNames = blockedSenderNames ?? {};
 
@@ -148,6 +153,7 @@ class AppSettings {
       'battery_chemistry_by_repeater_id': batteryChemistryByRepeaterId,
       'unit_system': unitSystem.value,
       'muted_channels': mutedChannels.toList(),
+      'muted_contacts': mutedContacts.toList(),
       'map_show_discovery_contacts': mapShowDiscoveryContacts,
       'tcp_server_address': tcpServerAddress,
       'tcp_server_port': tcpServerPort,
@@ -216,6 +222,11 @@ class AppSettings {
               ?.map((e) => e.toString())
               .toSet()) ??
           {},
+      mutedContacts:
+          ((json['muted_contacts'] as List?)
+              ?.map((e) => e.toString())
+              .toSet()) ??
+          {},
       mapShowDiscoveryContacts:
           json['map_show_discovery_contacts'] as bool? ?? true,
       tcpServerAddress: json['tcp_server_address'] as String? ?? '',
@@ -271,6 +282,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByRepeaterId,
     UnitSystem? unitSystem,
     Set<String>? mutedChannels,
+    Set<String>? mutedContacts,
     bool? mapShowDiscoveryContacts,
     String? tcpServerAddress,
     int? tcpServerPort,
@@ -320,6 +332,7 @@ class AppSettings {
           batteryChemistryByRepeaterId ?? this.batteryChemistryByRepeaterId,
       unitSystem: unitSystem ?? this.unitSystem,
       mutedChannels: mutedChannels ?? this.mutedChannels,
+      mutedContacts: mutedContacts ?? this.mutedContacts,
       mapShowDiscoveryContacts:
           mapShowDiscoveryContacts ?? this.mapShowDiscoveryContacts,
       tcpServerAddress: tcpServerAddress ?? this.tcpServerAddress,

@@ -1980,5 +1980,7 @@
   "repeater_guest": "Informácie o opakovači",
   "room_guest": "Informácie o serveri",
   "repeater_guestTools": "Nástroje pre hostí",
-  "chat_resendingByRoute": "Opätovné odosielanie nastavenou trasou"
+  "chat_resendingByRoute": "Opätovné odosielanie nastavenou trasou",
+  "room_mute": "Stlmiť miestnosť",
+  "room_unmute": "Zrušiť stlmenie miestnosti"
 }

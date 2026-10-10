@@ -5796,8 +5796,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             !incoming.isCli &&
             _appSettingsService != null) {
           final settings = _appSettingsService!.settings;
-          if (settings.notificationsEnabled && settings.notifyOnNewMessage) {
-            if (contact?.type == advTypeChat) {
+          if (settings.notificationsEnabled) {
+            if (contact?.type == advTypeChat &&
+                settings.notifyOnNewMessage) {
               _notificationService.showMessageNotification(
                 contactName: contact?.name ?? 'Unknown',
                 message: incoming.text,
@@ -5805,12 +5806,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
                 badgeCount: getTotalUnreadCount(),
               );
             } else if (contact?.type == advTypeRoom) {
-              _notificationService.showMessageNotification(
-                contactName: contact?.name ?? 'Unknown Room',
-                message: incoming.text,
-                contactId: incoming.senderKeyHex,
-                badgeCount: getTotalUnreadCount(),
-              );
+              _maybeNotifyRoomMessage(contact!, incoming);
             }
           }
         }
@@ -7493,6 +7489,36 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return 'Unknown';
     }
     return contact?.name ?? 'Unknown';
+  }
+
+  /// Room post notification, mirroring the channel rules: a mention or
+  /// reply-to-me outranks the new-message toggle and the room's mute; an
+  /// unplaced reaction never notifies (its "{emoji}@[target]" text would
+  /// read as a mention and pierce a mute the user set).
+  void _maybeNotifyRoomMessage(Contact room, Message message) {
+    final settingsService = _appSettingsService;
+    if (settingsService == null) return;
+    final settings = settingsService.settings;
+
+    if (ReactionHelper.parseMeshCoreOneReaction(message.text) != null) return;
+
+    final isMention = settings.notifyOnMention &&
+        ChannelMessage.mentionsUser(message.text, _selfName);
+    if (!isMention && !settings.notifyOnNewMessage) return;
+    if (!isMention && settingsService.isContactMuted(room.publicKeyHex)) {
+      return;
+    }
+
+    // Show the post's author and body, not the raw reply wire text.
+    final body =
+        ChannelMessage.parseReply(message.text)?.actualMessage ?? message.text;
+    final author = _resolveContactSenderName(message, room, true);
+    _notificationService.showMessageNotification(
+      contactName: room.name,
+      message: author != null && author.isNotEmpty ? '$author: $body' : body,
+      contactId: message.senderKeyHex,
+      badgeCount: getTotalUnreadCount(),
+    );
   }
 
   String? _resolveContactSenderName(

@@ -3978,4 +3978,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get chat_resendingByRoute =>
       'Erneutes Senden über die festgelegte Route';
+
+  @override
+  String get room_mute => 'Raum stummschalten';
+
+  @override
+  String get room_unmute => 'Stummschaltung des Raums aufheben';
 }

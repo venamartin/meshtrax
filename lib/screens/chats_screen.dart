@@ -405,6 +405,35 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                   );
                 },
               ),
+              if (contact.type == advTypeRoom)
+                Builder(
+                  builder: (context) {
+                    final isMuted =
+                        settingsService.isContactMuted(contact.publicKeyHex);
+                    return ListTile(
+                      leading: Icon(
+                        isMuted
+                            ? Icons.notifications_outlined
+                            : Icons.notifications_off_outlined,
+                      ),
+                      title: Text(
+                        isMuted
+                            ? context.l10n.room_unmute
+                            : context.l10n.room_mute,
+                      ),
+                      onTap: () async {
+                        Navigator.pop(sheetContext);
+                        if (isMuted) {
+                          await settingsService
+                              .unmuteContact(contact.publicKeyHex);
+                        } else {
+                          await settingsService
+                              .muteContact(contact.publicKeyHex);
+                        }
+                      },
+                    );
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.security),
                 title: Text(context.l10n.contact_telemetry),

@@ -1985,5 +1985,7 @@
   "repeater_guest": "重复器信息",
   "chat_sendMessage": "发送消息",
   "room_guest": "服务器信息",
-  "chat_resendingByRoute": "正在通过您设置的路由重新发送"
+  "chat_resendingByRoute": "正在通过您设置的路由重新发送",
+  "room_mute": "静音房间",
+  "room_unmute": "取消静音房间"
 }
