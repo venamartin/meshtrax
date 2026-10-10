@@ -3813,4 +3813,84 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get room_unmute => '룸 음소거 해제';
+
+  @override
+  String get room_roleAdmin => '관리자';
+
+  @override
+  String get room_roleMember => '멤버';
+
+  @override
+  String get room_roleReadOnly => '읽기 전용';
+
+  @override
+  String room_clockOff(int minutes) {
+    return '룸 시계가 약 $minutes분 어긋나 있습니다 — 메시지 시간이 틀릴 수 있습니다';
+  }
+
+  @override
+  String get room_fixClock => '시계 맞추기';
+
+  @override
+  String get room_clockSyncSent => '룸으로 시계 동기화를 보냈습니다';
+
+  @override
+  String get room_readOnlyNotice =>
+      '읽기 전용: 룸이 비밀번호를 승인하지 않아 보낸 메시지가 다른 멤버에게 전달되지 않습니다.';
+
+  @override
+  String get room_postAnnouncement => '공지 올리기';
+
+  @override
+  String get room_postAnnouncementSubtitle => '룸 자체 이름으로 모든 멤버에게 메시지 보내기';
+
+  @override
+  String get room_announcementSent => '공지를 올렸습니다';
+
+  @override
+  String get room_announcementFailed => '공지 게시에 실패했습니다';
+
+  @override
+  String get room_users => '룸 사용자';
+
+  @override
+  String get room_usersSubtitle => '관리자 확인 및 역할 설정';
+
+  @override
+  String get room_usersAdminsNote =>
+      '룸은 관리자만 표시합니다. 룸 비밀번호로 참여한 멤버는 표시되지 않습니다.';
+
+  @override
+  String get room_usersLoadFailed => '관리자 목록을 불러오지 못했습니다';
+
+  @override
+  String get room_setUserRole => '역할 설정';
+
+  @override
+  String get room_removeAccess => '접근 권한 제거';
+
+  @override
+  String get room_removeOnlyUnknown => '이 사용자는 연락처에 없어 제거만 가능하고 변경할 수 없습니다.';
+
+  @override
+  String get room_roleUpdated => '역할이 변경되었습니다';
+
+  @override
+  String get room_roleUpdateFailed => '역할 변경에 실패했습니다';
+
+  @override
+  String get room_postsStored => '저장된 게시물';
+
+  @override
+  String get room_postsDelivered => '전달된 게시물';
+
+  @override
+  String get room_reloadPosts => '최근 게시물 다시 불러오기';
+
+  @override
+  String get room_reloadPostsExplain =>
+      '룸에 최근 게시물(최대 32개 보관)을 다시 보내 달라고 요청합니다. 룸 비밀번호가 필요합니다. 기존 메시지는 유지됩니다.';
+
+  @override
+  String get room_reloadFailed => '무전기에서 룸을 초기화하지 못했습니다';
 }

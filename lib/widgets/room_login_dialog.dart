@@ -175,6 +175,16 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
       final isAdmin =
           isAdminResult ?? await _storage.isRoomAdmin(widget.room.publicKeyHex);
 
+      // Remember the role byte from an explicit response so the room's
+      // badge survives app restarts; implied successes don't carry one.
+      final event = _connector.lastRoomLoginEvent(widget.room.publicKeyHex);
+      if (event != null && !event.implied && event.permissions != null) {
+        await _storage.setRoomPermissions(
+          widget.room.publicKeyHex,
+          event.permissions,
+        );
+      }
+
       // If we got a response, login succeeded
       // Save password if requested
       if (_savePassword) {
@@ -222,12 +232,13 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
       if (frame.isEmpty) return;
       final code = frame[0];
       if (code != pushCodeLoginSuccess && code != pushCodeLoginFail) return;
-      // NOTE: a bug in the repeater firmware only ever sends 1 or 0 back, not the
-      // expected client permissions
-      isAdmin = (frame[1] == 1);
       if (frame.length < 8) return;
       final prefix = frame.sublist(2, 8);
       if (!listEquals(prefix, targetPrefix)) return;
+      // NOTE: a bug in the repeater firmware only ever sends 1 or 0 back, not the
+      // expected client permissions. Read only after the prefix matched —
+      // another node's login push must not overwrite our result.
+      isAdmin = (frame[1] == 1);
 
       if (!completer.isCompleted) {
         completer.complete(code == pushCodeLoginSuccess);

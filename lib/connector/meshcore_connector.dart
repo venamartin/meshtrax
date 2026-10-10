@@ -241,6 +241,15 @@ class RoomLoginEvent {
 
   /// Null for implied events — a pushed post says nothing about permissions.
   final bool? isAdmin;
+
+  /// Raw ACL permissions byte from the login response (low 2 bits are the
+  /// role: 0 guest, 1 read-only, 2 member, 3 admin). Null for implied
+  /// events and legacy 8-byte responses.
+  final int? permissions;
+
+  /// The room server's own clock when it accepted the login — lets the app
+  /// warn when the room's clock is off (posts carry its timestamps).
+  final DateTime? serverClock;
   final bool implied;
   final DateTime at;
 
@@ -248,9 +257,14 @@ class RoomLoginEvent {
     required this.roomKeyHex,
     required this.success,
     required this.isAdmin,
+    this.permissions,
+    this.serverClock,
     required this.implied,
     required this.at,
   });
+
+  /// Role from the low 2 bits of [permissions]; null when unknown.
+  int? get role => permissions == null ? null : permissions! & 0x3;
 }
 
 class MeshCoreConnector extends ChangeNotifier {
@@ -349,6 +363,9 @@ class MeshCoreConnector extends ChangeNotifier {
   void _recordRoomLoginEvent(RoomLoginEvent event) {
     _lastRoomLoginEvents[event.roomKeyHex] = event;
     _roomLoginEventsController.add(event);
+    // The chat screen's role badge and clock-skew banner read the last
+    // event from a Consumer build.
+    notifyListeners();
   }
 
   void _handleRoomLoginPush(Uint8List frame) {
@@ -359,11 +376,28 @@ class MeshCoreConnector extends ChangeNotifier {
       orElse: () => null,
     );
     if (room == null) return;
+    // New-style success push (14 bytes) carries the server's clock, the ACL
+    // permissions byte and the firmware version level past the prefix; the
+    // legacy 8-byte form has none of them.
+    int? permissions;
+    DateTime? serverClock;
+    if (frame[0] == pushCodeLoginSuccess && frame.length >= 14) {
+      final secs = frame[8] |
+          (frame[9] << 8) |
+          (frame[10] << 16) |
+          (frame[11] << 24);
+      if (secs > 0) {
+        serverClock = DateTime.fromMillisecondsSinceEpoch(secs * 1000);
+      }
+      permissions = frame[12];
+    }
     _recordRoomLoginEvent(RoomLoginEvent(
       roomKeyHex: room.publicKeyHex,
       success: frame[0] == pushCodeLoginSuccess,
-      // Repeater firmware sends 1/0 here, not the documented permission bits.
+      // Byte 1 is 1 for admin, 2 for guest, 0 otherwise.
       isAdmin: frame[1] == 1,
+      permissions: permissions,
+      serverClock: serverClock,
       implied: false,
       at: DateTime.now(),
     ));
@@ -3941,6 +3975,40 @@ class MeshCoreConnector extends ChangeNotifier {
     );
     unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
     notifyListeners();
+  }
+
+  /// Resets the radio's room-post sync cursor by deleting and re-adding the
+  /// contact on the RADIO only — the app keeps its stored messages, and the
+  /// database dedups whatever the server pushes again. The companion has no
+  /// command to write sync_since directly; a freshly added contact starts
+  /// at zero, and the next PASSWORD login (a blank one is ignored by stock
+  /// servers) makes the room re-push its whole backlog, up to 32 posts.
+  Future<bool> resetRoomSyncCursor(Contact room) async {
+    if (!isConnected) return false;
+    final removed =
+        await _sendAndWaitForAck(buildRemoveContactFrame(room.publicKey));
+    if (!removed) return false;
+    final readded = await _sendAndWaitForAck(
+      buildUpdateContactPathFrame(
+        room.publicKey,
+        room.path,
+        room.pathLength,
+        room.pathHashSize,
+        type: room.type,
+        flags: room.flags,
+        name: room.name,
+        lat: room.latitude,
+        lon: room.longitude,
+        lastModified: room.lastSeen,
+      ),
+    );
+    if (!readded) {
+      appLogger.error(
+        'Room ${room.name} removed but re-add failed during history reload',
+        tag: 'Connector',
+      );
+    }
+    return readded;
   }
 
   Future<bool> importDiscoveredContact(Contact contact) async {

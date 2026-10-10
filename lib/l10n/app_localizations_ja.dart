@@ -3815,4 +3815,84 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get room_unmute => 'ルームのミュートを解除';
+
+  @override
+  String get room_roleAdmin => '管理者';
+
+  @override
+  String get room_roleMember => 'メンバー';
+
+  @override
+  String get room_roleReadOnly => '閲覧のみ';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'ルームの時計が約$minutes分ずれています — メッセージの時刻が正しくない可能性があります';
+  }
+
+  @override
+  String get room_fixClock => '時計を合わせる';
+
+  @override
+  String get room_clockSyncSent => 'ルームへ時刻同期を送信しました';
+
+  @override
+  String get room_readOnlyNotice =>
+      '閲覧のみ: ルームがパスワードを受け付けていないため、送信したメッセージは他のメンバーに届きません。';
+
+  @override
+  String get room_postAnnouncement => 'お知らせを投稿';
+
+  @override
+  String get room_postAnnouncementSubtitle => 'ルーム自身の名前で全メンバーにメッセージを送信';
+
+  @override
+  String get room_announcementSent => 'お知らせを投稿しました';
+
+  @override
+  String get room_announcementFailed => 'お知らせの投稿に失敗しました';
+
+  @override
+  String get room_users => 'ルームのユーザー';
+
+  @override
+  String get room_usersSubtitle => '管理者の確認とロールの設定';
+
+  @override
+  String get room_usersAdminsNote =>
+      'ルームは管理者のみを一覧表示します。ルームパスワードで参加したメンバーは表示されません。';
+
+  @override
+  String get room_usersLoadFailed => '管理者リストを読み込めませんでした';
+
+  @override
+  String get room_setUserRole => 'ロールを設定';
+
+  @override
+  String get room_removeAccess => 'アクセスを削除';
+
+  @override
+  String get room_removeOnlyUnknown => 'このユーザーは連絡先にないため、削除のみ可能で変更はできません。';
+
+  @override
+  String get room_roleUpdated => 'ロールを更新しました';
+
+  @override
+  String get room_roleUpdateFailed => 'ロールの変更に失敗しました';
+
+  @override
+  String get room_postsStored => '保存された投稿';
+
+  @override
+  String get room_postsDelivered => '配信された投稿';
+
+  @override
+  String get room_reloadPosts => '最近の投稿を再読み込み';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'ルームに最近の投稿の再送信を依頼します（最大32件保持）。ルームパスワードの入力が必要です。既存のメッセージは保持されます。';
+
+  @override
+  String get room_reloadFailed => '無線機でルームをリセットできませんでした';
 }

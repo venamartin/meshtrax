@@ -6,6 +6,7 @@ class StorageService {
   static const String _repeaterAutoClockSyncAfterLoginKey =
       'repeater_auto_clock_sync_after_login';
   static const String _roomAdminFlagsKey = 'room_admin_flags';
+  static const String _roomPermissionsKey = 'room_permissions';
 
   Future<Map<String, bool>> _loadRepeaterAutoClockSyncAfterLogin() async {
     final prefs = PrefsManager.instance;
@@ -114,4 +115,34 @@ class StorageService {
     return (await _loadRoomAdminFlags()).contains(pubKeyHex);
   }
 
+  /// Last known ACL permissions byte per room (low 2 bits are the role:
+  /// 0 guest, 1 read-only, 2 member, 3 admin), from the latest explicit
+  /// login response. A hint across restarts — the server may have changed
+  /// or forgotten the session since.
+  Future<Map<String, int>> _loadRoomPermissions() async {
+    final prefs = PrefsManager.instance;
+    final jsonStr = prefs.getString(_roomPermissionsKey);
+    if (jsonStr == null) return {};
+    try {
+      return (jsonDecode(jsonStr) as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, v as int));
+    } catch (e) {
+      return {};
+    }
+  }
+
+  Future<void> setRoomPermissions(String pubKeyHex, int? permissions) async {
+    final prefs = PrefsManager.instance;
+    final perms = await _loadRoomPermissions();
+    if (permissions == null) {
+      perms.remove(pubKeyHex);
+    } else {
+      perms[pubKeyHex] = permissions;
+    }
+    await prefs.setString(_roomPermissionsKey, jsonEncode(perms));
+  }
+
+  Future<int?> getRoomPermissions(String pubKeyHex) async {
+    return (await _loadRoomPermissions())[pubKeyHex];
+  }
 }

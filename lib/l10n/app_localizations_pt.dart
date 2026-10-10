@@ -3971,4 +3971,87 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get room_unmute => 'Reativar som da sala';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'membro';
+
+  @override
+  String get room_roleReadOnly => 'somente leitura';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'O relógio da sala difere cerca de $minutes min — os horários das mensagens podem estar errados';
+  }
+
+  @override
+  String get room_fixClock => 'Acertar relógio';
+
+  @override
+  String get room_clockSyncSent => 'Sincronização de relógio enviada à sala';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Somente leitura: a sala não aceitou sua senha, suas mensagens não chegarão aos outros membros.';
+
+  @override
+  String get room_postAnnouncement => 'Publicar aviso';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Enviar uma mensagem da própria sala a todos os membros';
+
+  @override
+  String get room_announcementSent => 'Aviso publicado';
+
+  @override
+  String get room_announcementFailed => 'Falha ao publicar o aviso';
+
+  @override
+  String get room_users => 'Usuários da sala';
+
+  @override
+  String get room_usersSubtitle => 'Ver admins e definir funções';
+
+  @override
+  String get room_usersAdminsNote =>
+      'A sala só lista seus admins. Membros com a senha da sala não aparecem.';
+
+  @override
+  String get room_usersLoadFailed =>
+      'Não foi possível carregar a lista de admins';
+
+  @override
+  String get room_setUserRole => 'Definir função';
+
+  @override
+  String get room_removeAccess => 'Remover acesso';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Este usuário não está nos seus contatos; só pode ser removido, não alterado.';
+
+  @override
+  String get room_roleUpdated => 'Função atualizada';
+
+  @override
+  String get room_roleUpdateFailed => 'Falha ao alterar a função';
+
+  @override
+  String get room_postsStored => 'Mensagens guardadas';
+
+  @override
+  String get room_postsDelivered => 'Mensagens entregues';
+
+  @override
+  String get room_reloadPosts => 'Recarregar mensagens recentes';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Pede à sala para reenviar as mensagens recentes (guarda até 32). A senha da sala será solicitada. As mensagens que você já tem são mantidas.';
+
+  @override
+  String get room_reloadFailed => 'Não foi possível redefinir a sala no rádio';
 }

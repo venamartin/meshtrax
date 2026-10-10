@@ -3984,4 +3984,87 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get room_unmute => 'Stummschaltung des Raums aufheben';
+
+  @override
+  String get room_roleAdmin => 'Admin';
+
+  @override
+  String get room_roleMember => 'Mitglied';
+
+  @override
+  String get room_roleReadOnly => 'nur Lesen';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Die Uhr des Raums weicht um etwa $minutes Min. ab — Nachrichtenzeiten können falsch sein';
+  }
+
+  @override
+  String get room_fixClock => 'Uhr stellen';
+
+  @override
+  String get room_clockSyncSent => 'Zeitabgleich an den Raum gesendet';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Nur Lesen: Der Raum hat dein Passwort nicht akzeptiert, deine Nachrichten erreichen andere Mitglieder nicht.';
+
+  @override
+  String get room_postAnnouncement => 'Ankündigung senden';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Eine Nachricht im Namen des Raums an alle Mitglieder senden';
+
+  @override
+  String get room_announcementSent => 'Ankündigung veröffentlicht';
+
+  @override
+  String get room_announcementFailed => 'Senden der Ankündigung fehlgeschlagen';
+
+  @override
+  String get room_users => 'Raum-Benutzer';
+
+  @override
+  String get room_usersSubtitle => 'Admins ansehen und Rollen festlegen';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Der Raum listet nur seine Admins. Mitglieder mit Raum-Passwort werden nicht angezeigt.';
+
+  @override
+  String get room_usersLoadFailed => 'Admin-Liste konnte nicht geladen werden';
+
+  @override
+  String get room_setUserRole => 'Benutzerrolle festlegen';
+
+  @override
+  String get room_removeAccess => 'Zugang entfernen';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Dieser Benutzer ist nicht in deinen Kontakten und kann daher nur entfernt, nicht geändert werden.';
+
+  @override
+  String get room_roleUpdated => 'Rolle aktualisiert';
+
+  @override
+  String get room_roleUpdateFailed => 'Rollenänderung fehlgeschlagen';
+
+  @override
+  String get room_postsStored => 'Gespeicherte Beiträge';
+
+  @override
+  String get room_postsDelivered => 'Zugestellte Beiträge';
+
+  @override
+  String get room_reloadPosts => 'Letzte Beiträge neu laden';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Bittet den Raum, seine letzten Beiträge erneut zu senden (er speichert bis zu 32). Du wirst nach dem Raum-Passwort gefragt. Vorhandene Nachrichten bleiben erhalten.';
+
+  @override
+  String get room_reloadFailed =>
+      'Raum konnte auf dem Funkgerät nicht zurückgesetzt werden';
 }

@@ -3978,4 +3978,86 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get room_unmute => 'Включить уведомления комнаты';
+
+  @override
+  String get room_roleAdmin => 'админ';
+
+  @override
+  String get room_roleMember => 'участник';
+
+  @override
+  String get room_roleReadOnly => 'только чтение';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Часы комнаты расходятся примерно на $minutes мин — время сообщений может быть неверным';
+  }
+
+  @override
+  String get room_fixClock => 'Исправить часы';
+
+  @override
+  String get room_clockSyncSent => 'Синхронизация часов отправлена комнате';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Только чтение: комната не приняла ваш пароль, ваши сообщения не дойдут до других участников.';
+
+  @override
+  String get room_postAnnouncement => 'Опубликовать объявление';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Отправить сообщение от имени комнаты всем участникам';
+
+  @override
+  String get room_announcementSent => 'Объявление опубликовано';
+
+  @override
+  String get room_announcementFailed => 'Не удалось опубликовать объявление';
+
+  @override
+  String get room_users => 'Пользователи комнаты';
+
+  @override
+  String get room_usersSubtitle => 'Просмотр админов и назначение ролей';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Комната показывает только админов. Участники с паролем комнаты не отображаются.';
+
+  @override
+  String get room_usersLoadFailed => 'Не удалось загрузить список админов';
+
+  @override
+  String get room_setUserRole => 'Назначить роль';
+
+  @override
+  String get room_removeAccess => 'Убрать доступ';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Этого пользователя нет в контактах — его можно только удалить, но не изменить.';
+
+  @override
+  String get room_roleUpdated => 'Роль обновлена';
+
+  @override
+  String get room_roleUpdateFailed => 'Не удалось изменить роль';
+
+  @override
+  String get room_postsStored => 'Сохранённые сообщения';
+
+  @override
+  String get room_postsDelivered => 'Доставленные сообщения';
+
+  @override
+  String get room_reloadPosts => 'Перезагрузить последние сообщения';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Просит комнату снова отправить последние сообщения (хранится до 32). Потребуется пароль комнаты. Уже полученные сообщения сохранятся.';
+
+  @override
+  String get room_reloadFailed => 'Не удалось сбросить комнату на радио';
 }

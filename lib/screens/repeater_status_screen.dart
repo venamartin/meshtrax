@@ -46,6 +46,11 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
   int? _noiseFloor;
   int? _txAirSecs;
   int? _rxAirSecs;
+  // Room servers put post counters where the repeater struct has RX airtime.
+  int? _nPosted;
+  int? _nPostPush;
+
+  bool get _isRoom => widget.repeater.type == advTypeRoom;
   int? _packetsSent;
   int? _packetsRecv;
   int? _floodTx;
@@ -162,7 +167,17 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     offset += 2;
     final floodDups = data.getUint16(offset, Endian.little);
     offset += 2;
-    final rxAirSecs = data.getUint32(offset, Endian.little);
+    // The structs agree up to here. A room server's tail is two u16 post
+    // counters (posts stored, pushes delivered); a repeater's is RX airtime.
+    int? rxAirSecs;
+    int? nPosted;
+    int? nPostPush;
+    if (_isRoom) {
+      nPosted = data.getUint16(offset, Endian.little);
+      nPostPush = data.getUint16(offset + 2, Endian.little);
+    } else {
+      rxAirSecs = data.getUint32(offset, Endian.little);
+    }
 
     if (!mounted) return;
     setState(() {
@@ -175,6 +190,8 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
       _packetsSent = packetsSent;
       _txAirSecs = txAirSecs;
       _rxAirSecs = rxAirSecs;
+      _nPosted = nPosted;
+      _nPostPush = nPostPush;
       _uptimeSecs = uptimeSecs;
       _floodTx = floodTx;
       _directTx = directTx;
@@ -534,7 +551,13 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
               _formatValue(_noiseFloor, suffix: ' dB'),
             ),
             _buildInfoRow(l10n.repeater_txAirtime, _formatDuration(_txAirSecs)),
-            _buildInfoRow(l10n.repeater_rxAirtime, _formatDuration(_rxAirSecs)),
+            if (_isRoom) ...[
+              _buildInfoRow(l10n.room_postsStored, _nPosted?.toString() ?? '—'),
+              _buildInfoRow(
+                  l10n.room_postsDelivered, _nPostPush?.toString() ?? '—'),
+            ] else
+              _buildInfoRow(
+                  l10n.repeater_rxAirtime, _formatDuration(_rxAirSecs)),
           ],
         ),
       ),

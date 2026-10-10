@@ -3726,4 +3726,82 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get room_unmute => '取消静音房间';
+
+  @override
+  String get room_roleAdmin => '管理员';
+
+  @override
+  String get room_roleMember => '成员';
+
+  @override
+  String get room_roleReadOnly => '只读';
+
+  @override
+  String room_clockOff(int minutes) {
+    return '房间时钟偏差约 $minutes 分钟 — 消息时间可能不准确';
+  }
+
+  @override
+  String get room_fixClock => '校正时钟';
+
+  @override
+  String get room_clockSyncSent => '已向房间发送时钟同步';
+
+  @override
+  String get room_readOnlyNotice => '只读：房间未接受您的密码，您发送的消息无法送达其他成员。';
+
+  @override
+  String get room_postAnnouncement => '发布公告';
+
+  @override
+  String get room_postAnnouncementSubtitle => '以房间名义向所有成员发送消息';
+
+  @override
+  String get room_announcementSent => '公告已发布';
+
+  @override
+  String get room_announcementFailed => '发布公告失败';
+
+  @override
+  String get room_users => '房间用户';
+
+  @override
+  String get room_usersSubtitle => '查看管理员并设置角色';
+
+  @override
+  String get room_usersAdminsNote => '房间仅列出管理员。使用房间密码加入的成员不会显示。';
+
+  @override
+  String get room_usersLoadFailed => '无法加载管理员列表';
+
+  @override
+  String get room_setUserRole => '设置角色';
+
+  @override
+  String get room_removeAccess => '移除访问权限';
+
+  @override
+  String get room_removeOnlyUnknown => '该用户不在您的联系人中，只能移除，无法更改。';
+
+  @override
+  String get room_roleUpdated => '角色已更新';
+
+  @override
+  String get room_roleUpdateFailed => '更改角色失败';
+
+  @override
+  String get room_postsStored => '已存帖子';
+
+  @override
+  String get room_postsDelivered => '已送达帖子';
+
+  @override
+  String get room_reloadPosts => '重新加载最近帖子';
+
+  @override
+  String get room_reloadPostsExplain =>
+      '请求房间重新发送最近的帖子（最多保留 32 条）。需要输入房间密码。已有的消息会保留。';
+
+  @override
+  String get room_reloadFailed => '无法在电台上重置房间';
 }

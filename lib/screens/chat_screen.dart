@@ -77,6 +77,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool get _isRoom => widget.contact.type == advTypeRoom;
 
+  /// Last persisted ACL permissions byte for this room — a restart hint
+  /// until a live login event replaces it.
+  int? _storedRoomPerms;
+  bool _clockBannerDismissed = false;
+
   bool _isLoadingOlder = false;
   MeshCoreConnector? _connector;
   Message? _firstUnreadMessage;
@@ -150,6 +155,36 @@ class _ChatScreenState extends State<ChatScreen> {
     if (widget.contact.type == advTypeRoom) {
       _textController.addListener(_mentionsListener);
       _restoreRoomAdminSession(connector);
+      StorageService().getRoomPermissions(widget.contact.publicKeyHex).then(
+        (perms) {
+          if (mounted && perms != null) {
+            setState(() => _storedRoomPerms = perms);
+          }
+        },
+      );
+    }
+  }
+
+  /// Role in this room (0 guest, 1 read-only, 2 member, 3 admin), from the
+  /// live login event when there is one, else the persisted hint.
+  int? _roomRole(MeshCoreConnector connector) {
+    if (!_isRoom) return null;
+    final live =
+        connector.lastRoomLoginEvent(widget.contact.publicKeyHex)?.role;
+    return live ?? (_storedRoomPerms == null ? null : _storedRoomPerms! & 0x3);
+  }
+
+  String? _roomRoleLabel(int? role) {
+    switch (role) {
+      case 3:
+        return context.l10n.room_roleAdmin;
+      case 2:
+        return context.l10n.room_roleMember;
+      case 1:
+      case 0:
+        return context.l10n.room_roleReadOnly;
+      default:
+        return null;
     }
   }
 
@@ -407,6 +442,10 @@ class _ChatScreenState extends State<ChatScreen> {
             );
             final unreadLabel = context.l10n.chat_unread(unreadCount);
             final pathLabel = _currentPathLabel(contact, connector);
+            final roleLabel = _roomRoleLabel(_roomRole(connector));
+            final subtitle = roleLabel == null
+                ? '$pathLabel • $unreadLabel'
+                : '$pathLabel • $unreadLabel • $roleLabel';
 
             // Show path details if we have non-empty path data (from device or override)
             final effectivePath = contact.pathOverrideBytes ?? contact.path;
@@ -429,7 +468,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           )
                       : null,
                   child: Text(
-                    '$pathLabel • $unreadLabel',
+                    subtitle,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
@@ -527,6 +566,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (value == 'clearChat') {
                     connector.clearMessagesForContact(widget.contact);
                   }
+                  if (value == 'reloadPosts') {
+                    _reloadRoomPosts(connector);
+                  }
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(
@@ -559,6 +601,17 @@ class _ChatScreenState extends State<ChatScreen> {
                       ],
                     ),
                   ),
+                  if (_isRoom)
+                    PopupMenuItem(
+                      value: 'reloadPosts',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.history, size: 20),
+                          const SizedBox(width: 12),
+                          Text(context.l10n.room_reloadPosts),
+                        ],
+                      ),
+                    ),
                   PopupMenuItem(
                     value: 'clearChat',
                     child: Row(
@@ -591,6 +644,7 @@ class _ChatScreenState extends State<ChatScreen> {
           return Column(
             children: [
               ?ConnectionStatusBanner.ifDisconnected(context, connector),
+              if (_isRoom) ?_buildClockSkewBanner(connector),
               Expanded(
                 child: Stack(
                   children: [
@@ -631,6 +685,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   contacts: _filteredMentionContacts,
                   onSelect: _insertMention,
                 ),
+              if (_isRoom && _roomRole(connector) == 0)
+                _buildReadOnlyBanner(),
               _buildInputBar(connector),
             ],
           );
@@ -738,6 +794,9 @@ class _ChatScreenState extends State<ChatScreen> {
               final senderName = isRoom
                   ? (roomAuthor?.name ?? "Unknown [$fourByteHex]")
                   : contact.name;
+              final isAnnouncement = isRoom &&
+                  roomAuthor != null &&
+                  roomAuthor.publicKeyHex == resolvedContact.publicKeyHex;
               String? viaLabel;
               if (message.pathBytes.isNotEmpty) {
                 final names = PathHelper.resolvePathNames(
@@ -754,6 +813,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 replyInfo:
                     isRoom ? ChannelMessage.parseReply(message.text) : null,
                 viaLabel: viaLabel,
+                isAnnouncement: isAnnouncement,
                 textScale: textScale,
                 onTap: () => message.isOutgoing &&
                         message.status == MessageStatus.failed
@@ -852,6 +912,149 @@ class _ChatScreenState extends State<ChatScreen> {
         },
       ),
     ),
+    );
+  }
+
+  /// Re-asks the room for its recent backlog (the server holds up to 32
+  /// posts in memory). The radio's sync cursor can only be rewound by
+  /// deleting and re-adding the contact; the login that follows must carry
+  /// the password — stock servers ignore the rewind on a blank re-login.
+  Future<void> _reloadRoomPosts(MeshCoreConnector connector) async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.room_reloadPosts),
+            content: Text(l10n.room_reloadPostsExplain),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.common_cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.room_reloadPosts),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    final ok = await connector.resetRoomSyncCursor(_resolveContact(connector));
+    if (!mounted) return;
+    if (!ok) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(l10n.room_reloadFailed),
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    // The login (with the password) is what makes the server re-push.
+    await showDialog(
+      context: context,
+      builder: (context) => RoomLoginDialog(
+        room: widget.contact,
+        onLogin: (password, isAdmin) {},
+      ),
+    );
+  }
+
+  /// Amber strip when the room server's clock disagrees with ours by more
+  /// than five minutes (its clock stamps every post). Admins get a one-tap
+  /// fix; anyone can dismiss it for this visit.
+  Widget? _buildClockSkewBanner(MeshCoreConnector connector) {
+    if (_clockBannerDismissed) return null;
+    final event =
+        connector.lastRoomLoginEvent(widget.contact.publicKeyHex);
+    final serverClock = event?.serverClock;
+    if (event == null || serverClock == null) return null;
+    final skew = serverClock.difference(event.at);
+    if (skew.abs() < const Duration(minutes: 5)) return null;
+    final isAdmin =
+        connector.roomAdminPassword(widget.contact.publicKeyHex) != null;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: colorScheme.tertiaryContainer,
+      child: Row(
+        children: [
+          Icon(Icons.schedule, size: 18, color: colorScheme.onTertiaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.room_clockOff(skew.abs().inMinutes),
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          if (isAdmin)
+            TextButton(
+              onPressed: () async {
+                final timestampSeconds =
+                    DateTime.now().millisecondsSinceEpoch ~/ 1000;
+                try {
+                  await connector.sendFrame(
+                    buildSendCliCommandFrame(
+                      _resolveContact(connector).publicKey,
+                      'clock sync',
+                      timestampSeconds: timestampSeconds,
+                    ),
+                  );
+                } catch (_) {}
+                if (mounted) {
+                  setState(() => _clockBannerDismissed = true);
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(context.l10n.room_clockSyncSent),
+                  );
+                }
+              },
+              child: Text(context.l10n.room_fixClock),
+            ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            color: colorScheme.onTertiaryContainer,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => setState(() => _clockBannerDismissed = true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shown above the composer when the last login came back as a guest:
+  /// the room relays nothing a guest posts (stock firmware never ACKs it).
+  Widget _buildReadOnlyBanner() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: colorScheme.surfaceContainerHigh,
+      child: Row(
+        children: [
+          Icon(
+            Icons.visibility_outlined,
+            size: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.room_readOnlyNotice,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1742,6 +1945,10 @@ class _MessageBubble extends StatelessWidget {
   /// incoming: our known route, only when its length matches the hops the
   /// packet actually reported.
   final String? viaLabel;
+
+  /// Post authored by the room server itself (room.post / system post) —
+  /// gets an announcement marker next to the sender name.
+  final bool isAnnouncement;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final void Function(Message message, String emoji)? onRetryReaction;
@@ -1754,6 +1961,7 @@ class _MessageBubble extends StatelessWidget {
     required this.textScale,
     this.replyInfo,
     this.viaLabel,
+    this.isAnnouncement = false,
     this.onTap,
     this.onLongPress,
     this.onRetryReaction,
@@ -1863,16 +2071,31 @@ class _MessageBubble extends StatelessWidget {
                                     bottom: 4,
                                   )
                                 : EdgeInsets.zero,
-                            child: Text(
-                              senderName,
-                              style: TextStyle(
-                                fontSize: 12 * textScale,
-                                fontWeight: FontWeight.bold,
-                                color: settingsService
-                                        .settings.senderNameColors
-                                    ? _getColorForName(senderName)
-                                    : colorScheme.primary,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isAnnouncement) ...[
+                                  Icon(
+                                    Icons.campaign,
+                                    size: 14 * textScale,
+                                    color: colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    senderName,
+                                    style: TextStyle(
+                                      fontSize: 12 * textScale,
+                                      fontWeight: FontWeight.bold,
+                                      color: settingsService
+                                              .settings.senderNameColors
+                                          ? _getColorForName(senderName)
+                                          : colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           if (gifId == null) const SizedBox(height: 4),

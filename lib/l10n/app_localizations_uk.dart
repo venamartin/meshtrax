@@ -3986,4 +3986,86 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get room_unmute => 'Увімкнути сповіщення кімнати';
+
+  @override
+  String get room_roleAdmin => 'адмін';
+
+  @override
+  String get room_roleMember => 'учасник';
+
+  @override
+  String get room_roleReadOnly => 'лише читання';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Годинник кімнати розходиться приблизно на $minutes хв — час повідомлень може бути хибним';
+  }
+
+  @override
+  String get room_fixClock => 'Виправити годинник';
+
+  @override
+  String get room_clockSyncSent => 'Синхронізацію годинника надіслано кімнаті';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Лише читання: кімната не прийняла ваш пароль, ваші повідомлення не дійдуть до інших учасників.';
+
+  @override
+  String get room_postAnnouncement => 'Опублікувати оголошення';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Надіслати повідомлення від імені кімнати всім учасникам';
+
+  @override
+  String get room_announcementSent => 'Оголошення опубліковано';
+
+  @override
+  String get room_announcementFailed => 'Не вдалося опублікувати оголошення';
+
+  @override
+  String get room_users => 'Користувачі кімнати';
+
+  @override
+  String get room_usersSubtitle => 'Перегляд адмінів і призначення ролей';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Кімната показує лише адмінів. Учасники з паролем кімнати не відображаються.';
+
+  @override
+  String get room_usersLoadFailed => 'Не вдалося завантажити список адмінів';
+
+  @override
+  String get room_setUserRole => 'Призначити роль';
+
+  @override
+  String get room_removeAccess => 'Прибрати доступ';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Цього користувача немає в контактах — його можна лише видалити, а не змінити.';
+
+  @override
+  String get room_roleUpdated => 'Роль оновлено';
+
+  @override
+  String get room_roleUpdateFailed => 'Не вдалося змінити роль';
+
+  @override
+  String get room_postsStored => 'Збережені повідомлення';
+
+  @override
+  String get room_postsDelivered => 'Доставлені повідомлення';
+
+  @override
+  String get room_reloadPosts => 'Перезавантажити останні повідомлення';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Просить кімнату надіслати останні повідомлення ще раз (зберігається до 32). Потрібен пароль кімнати. Наявні повідомлення збережуться.';
+
+  @override
+  String get room_reloadFailed => 'Не вдалося скинути кімнату на радіо';
 }
