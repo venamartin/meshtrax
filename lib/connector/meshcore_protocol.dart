@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+import '../helpers/path_helper.dart';
+
 // Buffer Reader - sequential binary data reader with pointer tracking
 class BufferReader {
   int _pointer = 0;
@@ -350,47 +352,6 @@ const int maxPathSize = 64;
 const int maxNameSize = 32;
 const int maxFrameSize = 176;
 
-/// Extracts the path hash size from the path_len byte.
-/// The top 2 bits encode the size minus 1 (i.e., 00 = 1 byte, 01 = 2 bytes, 10 = 3 bytes).
-/// Tolerates a signed read: 0xFF parsed via readInt8 arrives as -1.
-int extractPathHashSize(int pathLenByte) {
-  final b = pathLenByte & 0xFF;
-  if (b == 0xFF) return 1;
-  int sizeBits = (b >> 6) & 0x03;
-  return sizeBits + 1;
-}
-
-/// Extracts the actual hop count from the path_len byte by masking off the top 2 bits.
-/// Tolerates a signed read: 0xFF parsed via readInt8 arrives as -1.
-int extractPathHopCount(int pathLenByte) {
-  final b = pathLenByte & 0xFF;
-  if (b == 0xFF) return -1; // Special case for force flood
-  return b & 0x3F;
-}
-
-/// Byte length of the path that follows a wire path_len byte:
-/// hop count (bits 0-5) × hash size (bits 6-7, size − 1). No 0xFF special
-/// case on purpose: 0xFF decodes to an impossible 252, so a malformed raw
-/// frame keeps failing its read instead of parsing garbage.
-int extractPathByteLen(int pathLenByte) {
-  final b = pathLenByte & 0xFF;
-  return (b & 0x3F) * (((b >> 6) & 0x03) + 1);
-}
-
-/// Encodes the hop count and hash size into a single path_len byte.
-int encodePathLenByte(int hopCount, int hashSize) {
-  if (hopCount < 0 || hopCount >= 0xFF) return 0xFF; // force flood
-  int sizeBits = (hashSize - 1).clamp(0, 3);
-  return (hopCount & 0x3F) | (sizeBits << 6);
-}
-
-/// Flags byte for CMD_SEND_TRACE_PATH: low 2 bits encode the path hash
-/// width (firmware: `path_sz = flags & 0x03`, hop count = `path_len >> path_sz`).
-int encodeTraceFlags(int hashWidth) => (hashWidth - 1).clamp(0, 3);
-
-/// CMD_SET_PATH_HASH_MODE mode value for an on-air hash width in bytes
-/// (mode 0..2 → width 1..3).
-int pathHashModeFromWidth(int width) => (width - 1).clamp(0, 2);
 const int appProtocolVersion = 3;
 // Matches firmware MAX_TEXT_LEN (10 * CIPHER_BLOCK_SIZE).
 const int maxTextPayloadBytes = 160;
@@ -821,7 +782,7 @@ Uint8List buildUpdateContactPathFrame(
   writer.writeBytes(pubKey);
   writer.writeByte(type);
   writer.writeByte(flags);
-  writer.writeByte(encodePathLenByte(hopCount, hashSize));
+  writer.writeByte(PathHelper.encodePathLen(hopCount, hashSize));
 
   writer.writeBytesPadded(path, maxPathSize);
 

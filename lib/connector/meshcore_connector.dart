@@ -80,11 +80,6 @@ class DirectRepeater {
     return true;
   }
 
-  /// True when this repeater is the first hop of [pathBytes].
-  bool matchesFirstHopOf(List<int> pathBytes, {int stride = 1}) {
-    if (pathBytes.isEmpty) return false;
-    return matchesHash(pathBytes.sublist(0, math.min(stride, pathBytes.length)));
-  }
 
   void update(double newSNR) {
     snr = newSNR;
@@ -4113,24 +4108,6 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
-  void updateContactInMemory(
-    String publicKeyHex, {
-    Uint8List? pathBytes,
-    int? pathLength,
-  }) {
-    final existingIndex = _contacts.indexWhere(
-      (c) => c.publicKeyHex == publicKeyHex,
-    );
-    if (existingIndex >= 0) {
-      final existing = _contacts[existingIndex];
-      _contacts[existingIndex] = existing.copyWith(
-        pathLength: pathLength,
-        path: pathBytes,
-      );
-      notifyListeners();
-      unawaited(_persistContacts());
-    }
-  }
 
   /// How far the radio's clock sat from the phone's at the last check
   /// (positive = radio ahead). Null until a connection checks it.
@@ -5996,7 +5973,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         isOutgoing: false,
         isCli: isCli,
         status: MessageStatus.delivered,
-        pathLength: extractPathHopCount(layout.pathLen),
+        pathLength: PathHelper.pathLenHops(layout.pathLen),
         pathBytes: Uint8List(0),
         fourByteRoomContactKey: layout.authorPrefix,
       );
@@ -7634,7 +7611,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         reader.skipBytes(4);
       }
       final pathLenRaw = reader.readByte();
-      final pathByteLen = extractPathByteLen(pathLenRaw);
+      final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
       final pathBytes = reader.readBytes(pathByteLen);
       final payload = reader.readBytes(reader.remaining);
 
@@ -8547,7 +8524,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
-      final pathByteLen = extractPathByteLen(pathLenRaw);
+      final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
       final pathBytes = packet.readBytes(pathByteLen);
       final payload = packet.readBytes(packet.remaining);
 
@@ -8719,7 +8696,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         packet.skipBytes(4);
       }
       final pathLenRaw = packet.readByte();
-      packet.skipBytes(extractPathByteLen(pathLenRaw));
+      packet.skipBytes(PathHelper.pathLenBytes(pathLenRaw));
       packet.skipBytes(32); // pubkey
       return packet.readUInt32LE();
     } catch (_) {
@@ -9136,8 +9113,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contactKeyHex);
 
-    final hopCount = extractPathHopCount(pathLenRaw);
-    final hashSize = extractPathHashSize(pathLenRaw);
+    final hopCount = PathHelper.pathLenHops(pathLenRaw);
+    final hashSize = PathHelper.pathLenWidth(pathLenRaw);
     final advertTime = _parseAdvertTimestamp(timestamp);
 
     if (!_isLoadingContacts) {
@@ -9224,7 +9201,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List path,
     int pathLenRaw,
   ) {
-    final hashSize = extractPathHashSize(pathLenRaw);
+    final hashSize = PathHelper.pathLenWidth(pathLenRaw);
     // The direct (last) hop's full hash identifies the repeater we heard.
     final lastHopTake = math.min(hashSize, path.length);
     final pubkeyPrefix = path.isNotEmpty
@@ -9528,9 +9505,9 @@ class _RawPacket {
   bool get isFlood =>
       routeType == _routeFlood || routeType == _routeTransportFlood;
 
-  int get hopCount => extractPathHopCount(pathLenRaw);
+  int get hopCount => PathHelper.pathLenHops(pathLenRaw);
 
-  int get hashSize => extractPathHashSize(pathLenRaw);
+  int get hashSize => PathHelper.pathLenWidth(pathLenRaw);
 }
 
 class _ParsedText {

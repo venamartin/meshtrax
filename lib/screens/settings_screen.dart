@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../l10n/l10n.dart';
 import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
@@ -856,7 +857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _editPathHashSize(BuildContext context, MeshCoreConnector connector) {
-    int currentMode = pathHashModeFromWidth(connector.pathHashByteWidth)
+    int currentMode = PathHelper.hashModeFromWidth(connector.pathHashByteWidth)
         .clamp(0, 1); // dialog only offers 1- and 2-byte widths
     final l10n = context.l10n;
     showDialog(

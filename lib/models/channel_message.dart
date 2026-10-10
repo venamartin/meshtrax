@@ -216,8 +216,8 @@ class ChannelMessage {
 
       final decodedText = Smaz.tryDecodePrefixed(actualText) ?? actualText;
 
-      final explicitHopCount = extractPathHopCount(pathLen);
-      final hashSize = extractPathHashSize(pathLen);
+      final explicitHopCount = PathHelper.pathLenHops(pathLen);
+      final hashSize = PathHelper.pathLenWidth(pathLen);
       // Queue-delivered frames carry a path_len byte but NO path bytes —
       // keep the count instead of recomputing 0 from the empty path, which
       // made every offline-queued message claim it arrived "Direct"

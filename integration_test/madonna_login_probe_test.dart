@@ -79,7 +79,7 @@ void main() {
 
   void logStoredRoute(String when, Uint8List frame) {
     final pathLenByte = frame[35];
-    final byteLen = extractPathByteLen(pathLenByte);
+    final byteLen = PathHelper.pathLenBytes(pathLenByte);
     final pathBytes = frame.sublist(36, 36 + maxPathSize).sublist(
         0, byteLen.clamp(0, maxPathSize));
     blog('--- stored route $when ---');

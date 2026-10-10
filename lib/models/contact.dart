@@ -196,8 +196,8 @@ class Contact {
       final type = reader.readByte();
       final flags = reader.readByte();
       final pathLenByte = reader.readByte();
-      final hopCount = extractPathHopCount(pathLenByte);
-      final hashSize = extractPathHashSize(pathLenByte);
+      final hopCount = PathHelper.pathLenHops(pathLenByte);
+      final hashSize = PathHelper.pathLenWidth(pathLenByte);
       
       final actualPathBytesLen = hopCount > 0 ? hopCount * hashSize : 0;
       final safePathLen = actualPathBytesLen > maxPathSize ? maxPathSize : actualPathBytesLen;
