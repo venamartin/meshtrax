@@ -231,6 +231,28 @@ enum DeviceClockAction {
   stuckAhead,
 }
 
+/// Outcome of a room server login, observed on the frame stream or implied
+/// by a post arriving from the room (the server only pushes to logged-in
+/// clients, so an incoming post proves the session even when the LOGIN_OK
+/// frame was lost on the air).
+class RoomLoginEvent {
+  final String roomKeyHex;
+  final bool success;
+
+  /// Null for implied events — a pushed post says nothing about permissions.
+  final bool? isAdmin;
+  final bool implied;
+  final DateTime at;
+
+  RoomLoginEvent({
+    required this.roomKeyHex,
+    required this.success,
+    required this.isAdmin,
+    required this.implied,
+    required this.at,
+  });
+}
+
 class MeshCoreConnector extends ChangeNotifier {
   // Message windowing to limit memory usage
 
@@ -310,6 +332,42 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   String? roomAdminPassword(String pubKeyHex) => _roomAdminPasswords[pubKeyHex];
+
+  // Last login outcome per room, kept connection-scoped like the admin
+  // sessions. A dialog that missed the LOGIN_OK frame reads it here instead
+  // of being stranded on its own frame subscription.
+  final Map<String, RoomLoginEvent> _lastRoomLoginEvents = {};
+  final StreamController<RoomLoginEvent> _roomLoginEventsController =
+      StreamController<RoomLoginEvent>.broadcast();
+
+  Stream<RoomLoginEvent> get roomLoginEvents =>
+      _roomLoginEventsController.stream;
+
+  RoomLoginEvent? lastRoomLoginEvent(String pubKeyHex) =>
+      _lastRoomLoginEvents[pubKeyHex];
+
+  void _recordRoomLoginEvent(RoomLoginEvent event) {
+    _lastRoomLoginEvents[event.roomKeyHex] = event;
+    _roomLoginEventsController.add(event);
+  }
+
+  void _handleRoomLoginPush(Uint8List frame) {
+    if (frame.length < 8) return;
+    final prefix = frame.sublist(2, 8);
+    final room = _contacts.cast<Contact?>().firstWhere(
+      (c) => c!.type == advTypeRoom && _matchesPrefix(c.publicKey, prefix),
+      orElse: () => null,
+    );
+    if (room == null) return;
+    _recordRoomLoginEvent(RoomLoginEvent(
+      roomKeyHex: room.publicKeyHex,
+      success: frame[0] == pushCodeLoginSuccess,
+      // Repeater firmware sends 1/0 here, not the documented permission bits.
+      isAdmin: frame[1] == 1,
+      implied: false,
+      at: DateTime.now(),
+    ));
+  }
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
@@ -2798,6 +2856,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _contacts.clear();
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
+    _lastRoomLoginEvents.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
     // queue never redelivers drained messages, flushing requires a fresh
     // CHANNEL_INFO on the next connection, and the node-switch wipe clears
@@ -4916,6 +4975,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case pushCodeLoginSuccess:
       case pushCodeLoginFail:
+        _handleRoomLoginPush(frame);
+        break;
       case pushCodeStatusResponse:
         break;
       case pushCodeLogRxData:
@@ -5701,6 +5762,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       if (contact != null) {
         _updateContactLastMessageAt(contact.publicKeyHex, message.timestamp);
+      }
+      // A room server only pushes posts to logged-in clients, so an incoming
+      // post proves the session even when the LOGIN_OK frame was lost.
+      if (contact?.type == advTypeRoom && !message.isOutgoing) {
+        _recordRoomLoginEvent(RoomLoginEvent(
+          roomKeyHex: contact!.publicKeyHex,
+          success: true,
+          isAdmin: null,
+          implied: true,
+          at: DateTime.now(),
+        ));
       }
       // Dedup is the database's unique constraint; unread eligibility is
       // decided inside the ingest. Captured non-null: promotion of the
@@ -8340,6 +8412,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _channelMessageTimers.clear();
     radioStatsNotifier.dispose();
     _receivedFramesController.close();
+    _roomLoginEventsController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();
 

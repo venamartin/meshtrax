@@ -114,13 +114,32 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
           ? 'flood'
           : '${selection.hopCount} hops';
       appLogger.info('Login routing: $selectionLabel', tag: 'RoomLogin');
+      final loginStartedAt = DateTime.now();
       bool? loginResult;
-      bool isAdmin = false;
+      bool? isAdminResult;
       for (int attempt = 0; attempt < _maxAttempts; attempt++) {
         if (!mounted) return;
         setState(() {
           _currentAttempt = attempt + 1;
         });
+
+        // A response (or a post proving the session) that landed between
+        // attempts, outside our subscription window.
+        final recorded = _connector.lastRoomLoginEvent(room.publicKeyHex);
+        if (recorded != null && recorded.at.isAfter(loginStartedAt)) {
+          loginResult = recorded.success;
+          isAdminResult = recorded.isAdmin;
+          if (loginResult == true) {
+            appLogger.info(
+              'Login already confirmed for ${room.name}'
+              '${recorded.implied ? ' (post arrived)' : ''}',
+              tag: 'RoomLogin',
+            );
+            break;
+          }
+          appLogger.warn('Login failed for ${room.name}', tag: 'RoomLogin');
+          throw Exception('Wrong password or node is unreachable');
+        }
 
         appLogger.info(
           'Sending login attempt ${attempt + 1}/$_maxAttempts',
@@ -128,7 +147,7 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
         );
         await _connector.sendFrame(loginFrame);
 
-        (loginResult, isAdmin) = await _awaitLoginResponse(timeout);
+        (loginResult, isAdminResult) = await _awaitLoginResponse(timeout);
         if (loginResult == true) {
           appLogger.info('Login succeeded for ${room.name}', tag: 'RoomLogin');
           break;
@@ -150,6 +169,11 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
       if (loginResult != true) {
         throw Exception('Wrong password or node is unreachable');
       }
+
+      // An implied success (a post arrived, no response frame) says nothing
+      // about permissions — keep whatever admin outcome we last stored.
+      final isAdmin =
+          isAdminResult ?? await _storage.isRoomAdmin(widget.room.publicKeyHex);
 
       // If we got a response, login succeeded
       // Save password if requested
@@ -186,12 +210,13 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
     }
   }
 
-  Future<(bool?, bool)> _awaitLoginResponse(Duration timeout) async {
+  Future<(bool?, bool?)> _awaitLoginResponse(Duration timeout) async {
     final completer = Completer<bool?>();
     Timer? timer;
     StreamSubscription<Uint8List>? subscription;
+    StreamSubscription<RoomLoginEvent>? eventSubscription;
     final targetPrefix = widget.room.publicKey.sublist(0, 6);
-    bool isAdmin = false;
+    bool? isAdmin;
 
     subscription = _connector.receivedFrames.listen((frame) {
       if (frame.isEmpty) return;
@@ -204,21 +229,33 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
       final prefix = frame.sublist(2, 8);
       if (!listEquals(prefix, targetPrefix)) return;
 
-      completer.complete(code == pushCodeLoginSuccess);
-      subscription?.cancel();
-      timer?.cancel();
+      if (!completer.isCompleted) {
+        completer.complete(code == pushCodeLoginSuccess);
+      }
+    });
+
+    // The connector also records login outcomes, including ones implied by a
+    // post arriving from this room — the server only pushes to logged-in
+    // clients, so the dialog must not sit on retries while messages flow in
+    // behind it.
+    eventSubscription = _connector.roomLoginEvents
+        .where((e) => e.roomKeyHex == widget.room.publicKeyHex)
+        .listen((event) {
+      if (completer.isCompleted) return;
+      isAdmin = event.isAdmin;
+      completer.complete(event.success);
     });
 
     timer = Timer(timeout, () {
       if (!completer.isCompleted) {
         completer.complete(null);
-        subscription?.cancel();
       }
     });
 
     final result = await completer.future;
     timer.cancel();
     await subscription.cancel();
+    await eventSubscription.cancel();
     return (result, isAdmin);
   }
 
