@@ -21,6 +21,7 @@ import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
+import '../helpers/timeout_helper.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/ble_debug_log_service.dart';
 import '../services/linux_ble_error_classifier.dart';
@@ -5313,16 +5314,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return 50; // fallback: ~SF7/BW125 for 100 bytes
   }
 
-  /// Companion firmware budget for a direct send: SEND_TIMEOUT_BASE_MILLIS +
-  /// (airtime × DIRECT_SEND_PERHOP_FACTOR + DIRECT_SEND_PERHOP_EXTRA_MILLIS)
-  /// × (hops + 1).
+  /// Companion firmware budget for a direct send; see TimeoutHelper.
   int _directTimeoutMs(int hops, int airtime) =>
-      500 + ((airtime * 6 + 250) * (hops + 1));
+      TimeoutHelper.sendLegMs(airtime, hops);
 
   /// Hops assumed for a flood to a contact whose distance is unknown.
-  static const int defaultFloodHops = 8;
-  static const int _minFloodTimeoutMs = 10000;
-  static const int _maxTimeoutMs = 60000;
+  static const int defaultFloodHops = TimeoutHelper.defaultFloodHops;
+  static const int _minFloodTimeoutMs = TimeoutHelper.minFloodMs;
+  static const int _maxTimeoutMs = TimeoutHelper.maxMs;
 
   /// Best known distance to [contact] in hops: the firmware's route, else
   /// how far the contact's last advert travelled, else null.
@@ -5348,6 +5347,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final hops =
         (contact == null ? null : estimatedHopsTo(contact)) ?? defaultFloodHops;
     return (_directTimeoutMs(hops, airtime) * 2).clamp(
+      _minFloodTimeoutMs,
+      _maxTimeoutMs,
+    );
+  }
+
+  /// Realistic round-trip budget for a ONE-SHOT request (no retry ladder
+  /// behind it): out legs + the repeater's reply delay + return legs + one
+  /// CAD stall. Floods double it, since the reply is itself a flood and
+  /// every repeater adds a random delay.
+  int calculateRoundTripTimeout({
+    required int pathLength,
+    int messageBytes = 100,
+    Contact? contact,
+  }) {
+    final airtime = _estimateAirtimeMs(messageBytes);
+    if (pathLength >= 0) {
+      return TimeoutHelper.roundTripMs(airtime, pathLength)
+          .clamp(0, _maxTimeoutMs);
+    }
+    final hops =
+        (contact == null ? null : estimatedHopsTo(contact)) ?? defaultFloodHops;
+    return (TimeoutHelper.roundTripMs(airtime, hops) * 2).clamp(
       _minFloodTimeoutMs,
       _maxTimeoutMs,
     );
@@ -7429,7 +7450,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         reader.skipBytes(4);
       }
       final pathLenRaw = reader.readByte();
-      final pathByteLen = _decodePathByteLen(pathLenRaw);
+      final pathByteLen = extractPathByteLen(pathLenRaw);
       final pathBytes = reader.readBytes(pathByteLen);
       final payload = reader.readBytes(reader.remaining);
 
@@ -8341,7 +8362,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
-      final pathByteLen = _decodePathByteLen(pathLenRaw);
+      final pathByteLen = extractPathByteLen(pathLenRaw);
       final pathBytes = packet.readBytes(pathByteLen);
       final payload = packet.readBytes(packet.remaining);
 
@@ -8513,7 +8534,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         packet.skipBytes(4);
       }
       final pathLenRaw = packet.readByte();
-      packet.skipBytes(_decodePathByteLen(pathLenRaw));
+      packet.skipBytes(extractPathByteLen(pathLenRaw));
       packet.skipBytes(32); // pubkey
       return packet.readUInt32LE();
     } catch (_) {
@@ -9300,14 +9321,6 @@ const int _routeTransportDirect = 0x03;
 const int _payloadTypeGroupText = 0x05;
 const int _cipherMacSize = 2;
 
-/// Decodes the firmware's encoded path_len byte into actual byte length.
-/// Bits 0-5: hash count (0-63), Bits 6-7: hash size code (0=1byte, 1=2bytes, 2=3bytes).
-int _decodePathByteLen(int pathLenRaw) {
-  final hashCount = pathLenRaw & 63;
-  final hashSize = ((pathLenRaw >> 6) & 0x03) + 1;
-  return hashCount * hashSize;
-}
-
 class _RawPacket {
   final int header;
   final int routeType;
@@ -9330,8 +9343,8 @@ class _RawPacket {
   bool get isFlood =>
       routeType == _routeFlood || routeType == _routeTransportFlood;
 
-  int get hopCount => pathLenRaw & 63;
-  
+  int get hopCount => extractPathHopCount(pathLenRaw);
+
   int get hashSize => extractPathHashSize(pathLenRaw);
 }
 

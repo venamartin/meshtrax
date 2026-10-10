@@ -4,7 +4,7 @@ import '../models/contact.dart';
 import '../models/path_selection.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
-import 'dart:math' as math;
+import '../helpers/timeout_helper.dart';
 
 class RepeaterCommandService {
   final MeshCoreConnector _connector;
@@ -22,16 +22,16 @@ class RepeaterCommandService {
   /// simple_repeater/MyMesh.cpp:59) before it even transmits its reply, so a
   /// budget much under this cannot succeed on any path and would only add a
   /// duplicate transmission.
-  static const int minAttemptTimeoutMs = 3000;
+  static const int minAttemptTimeoutMs = TimeoutHelper.minAttemptMs;
 
   RepeaterCommandService(this._connector);
 
   /// Every attempt scales with the path, and the last attempt keeps the full
   /// conservative budget so a genuinely slow multi-hop path still completes.
   ///
-  /// [baseTimeoutMs] already carries the hop count — the connector's physics
-  /// bound is `500 + (airtime*6 + 250) * (hops+1)`, so on the bench radios it
-  /// runs 4.1 s direct, 7.8 s at one hop, 15.0 s at three, 9.5 s flood.
+  /// [baseTimeoutMs] is the connector's ROUND-TRIP budget: request legs +
+  /// the repeater's reply delay + reply legs + one CAD stall, so on the
+  /// bench radios it runs 6.2 s direct, 7.9 s at one hop, 11.1 s at three.
   /// Scaling attempts by it keeps a distant repeater's first attempt long
   /// enough to succeed, which a flat constant did not: 3 s would have expired
   /// on nearly every 3-hop command and put a duplicate on the mesh before the
@@ -51,12 +51,8 @@ class RepeaterCommandService {
     int baseTimeoutMs,
     int attempt,
     int attemptCount,
-  ) {
-    final ceiling = math.max(8000, baseTimeoutMs * 3);
-    if (attempt >= attemptCount - 1) return ceiling;
-    final scaled = baseTimeoutMs * (attempt + 1);
-    return math.min(ceiling, math.max(minAttemptTimeoutMs, scaled));
-  }
+  ) =>
+      TimeoutHelper.attemptMs(baseTimeoutMs, attempt, attemptCount);
 
   /// Send a CLI command to a repeater with automatic retries
   /// Returns a future that completes when a response is received or after max retries
@@ -144,7 +140,7 @@ class RepeaterCommandService {
         timestampSeconds: timestampSeconds,
       );
       responseBytes = frame.length > maxFrameSize ? frame.length : maxFrameSize;
-      final baseTimeoutMs = _connector.calculateTimeout(
+      final baseTimeoutMs = _connector.calculateRoundTripTimeout(
         pathLength: pathLengthValue,
         messageBytes: responseBytes,
         contact: repeater,
@@ -335,7 +331,7 @@ class RepeaterCommandService {
     // the airtime estimate honest for the return leg.
     final messageBytes =
         frame.length > maxFrameSize ? frame.length : maxFrameSize;
-    final baseTimeoutMs = _connector.calculateTimeout(
+    final baseTimeoutMs = _connector.calculateRoundTripTimeout(
       pathLength: pathLengthValue,
       messageBytes: messageBytes,
       contact: repeater,

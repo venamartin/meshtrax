@@ -368,6 +368,15 @@ int extractPathHopCount(int pathLenByte) {
   return b & 0x3F;
 }
 
+/// Byte length of the path that follows a wire path_len byte:
+/// hop count (bits 0-5) × hash size (bits 6-7, size − 1). No 0xFF special
+/// case on purpose: 0xFF decodes to an impossible 252, so a malformed raw
+/// frame keeps failing its read instead of parsing garbage.
+int extractPathByteLen(int pathLenByte) {
+  final b = pathLenByte & 0xFF;
+  return (b & 0x3F) * (((b >> 6) & 0x03) + 1);
+}
+
 /// Encodes the hop count and hash size into a single path_len byte.
 int encodePathLenByte(int hopCount, int hashSize) {
   if (hopCount < 0 || hopCount >= 0xFF) return 0xFF; // force flood
