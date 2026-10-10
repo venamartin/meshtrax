@@ -1088,11 +1088,19 @@ class _ChatScreenState extends State<ChatScreen> {
               .length;
     final maxBytes = (baseMaxBytes - replyOverhead).clamp(0, baseMaxBytes);
     final colorScheme = Theme.of(context).colorScheme;
+    // Same composer treatment as the channel screen: a soft upward shadow,
+    // not the divider line (near-white in dark mode).
     final inputBar = Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Row(
