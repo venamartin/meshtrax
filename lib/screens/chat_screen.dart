@@ -2096,6 +2096,12 @@ class _MessageBubble extends StatelessWidget {
                                     ),
                                   ),
                                 ),
+                                // Heard with zero hops: our radio heard
+                                // theirs, no repeater in between.
+                                if (message.pathLength == 0) ...[
+                                  const SizedBox(width: 6),
+                                  _buildDirectPill(context),
+                                ],
                               ],
                             ),
                           ),
@@ -2610,13 +2616,37 @@ class _MessageBubble extends StatelessWidget {
   /// One line that says where the send is in the attempt ladder. Delivered
   /// and failed always show; the in-flight detail only with tracing on.
   /// How a received packet reached us, from the hop count it reported:
-  /// "direct" (zero hops) or "route (N hops)". Null when the frame didn't
-  /// say (older stored rows, pre-hop-count builds).
+  /// "route (N hops)". Zero hops wears the Direct pill by the sender name
+  /// instead; null when the frame didn't say (older stored rows).
   String? _receivedKindLabel(BuildContext context) {
     final hops = message.pathLength;
-    if (hops == null || hops < 0) return null;
-    if (hops == 0) return context.l10n.chat_kindDirect;
+    if (hops == null || hops <= 0) return null;
     return context.l10n.chat_kindRoute(hops);
+  }
+
+  /// Same pill as the channel screen: this copy of the message was heard
+  /// with zero hops — our radio heard theirs, no repeater in between.
+  Widget _buildDirectPill(BuildContext context) {
+    final green = ChatColors.isLight(context)
+        ? Colors.green.shade700
+        : Colors.green.shade300;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: green.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: green.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Text(
+        context.l10n.chat_direct,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: green,
+          height: 1.2,
+        ),
+      ),
+    );
   }
 
   String? _deliveryStatus(BuildContext context, {required bool detailed}) {
