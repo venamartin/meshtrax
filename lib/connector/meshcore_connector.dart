@@ -64,10 +64,7 @@ class DirectRepeater {
     DateTime? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now();
 
-  String get prefixHex => pubkeyPrefix
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join()
-      .toUpperCase();
+  String get prefixHex => PathHelper.hopHex(pubkeyPrefix);
 
   /// True when [hash] (a hop hash or public key) agrees with this repeater's
   /// prefix on their common leading bytes.
@@ -5751,14 +5748,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   bool _pathMatchesContact(Uint8List pathBytes, Uint8List publicKey) {
     final w = _pathHashByteWidth;
-    if (pathBytes.isEmpty || publicKey.length < w) return false;
-    for (int i = 0; i + w <= pathBytes.length; i += w) {
-      final prefix = pathBytes.sublist(i, i + w);
-      if (_matchesPrefix(publicKey, prefix)) {
-        return true;
-      }
-    }
-    return false;
+    if (publicKey.length < w) return false;
+    return PathHelper.getHops(pathBytes, stride: w)
+        .any((hop) => _matchesPrefix(publicKey, hop));
   }
 
   void _handleIncomingMessage(Uint8List frame) async {
@@ -9203,10 +9195,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   ) {
     final hashSize = PathHelper.pathLenWidth(pathLenRaw);
     // The direct (last) hop's full hash identifies the repeater we heard.
-    final lastHopTake = math.min(hashSize, path.length);
-    final pubkeyPrefix = path.isNotEmpty
-        ? Uint8List.fromList(path.sublist(path.length - lastHopTake))
-        : PathHelper.pubKeyPrefix(contact.publicKey, stride: hashSize);
+    final pubkeyPrefix = PathHelper.lastHop(path, stride: hashSize) ??
+        PathHelper.pubKeyPrefix(contact.publicKey, stride: hashSize);
 
     _directRepeaters.removeWhere((r) => r.isStale());
 

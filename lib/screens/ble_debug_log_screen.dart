@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../services/ble_debug_log_service.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../helpers/snack_bar_builder.dart';
 
@@ -208,7 +209,8 @@ class _BleDebugLogScreenState extends State<BleDebugLogScreen> {
         rawHex: _bytesToHex(raw),
       );
     }
-    final pathLen = raw[index++];
+    final pathLenByte = raw[index++];
+    final pathLen = PathHelper.pathLenBytes(pathLenByte);
     if (raw.length < index + pathLen) {
       return _RawPacketInfo(
         title: 'RX RAW_LOG_RX_DATA • ${_payloadTypeLabel(payloadType)}',
@@ -230,8 +232,10 @@ class _BleDebugLogScreenState extends State<BleDebugLogScreen> {
     final title =
         'RX ${_payloadTypeLabel(payloadType)} • ${_routeLabel(routeType)} • v$payloadVer';
     final summary = _decodePayloadSummary(payloadType, payload);
+    final pathWidth = PathHelper.pathLenWidth(pathLenByte);
     final pathSummary = pathLen > 0
-        ? 'Path=${_bytesToHex(pathBytes)}'
+        ? 'Path=${PathHelper.formatPathHex(pathBytes, stride: pathWidth)} '
+            '(${PathHelper.pathLenHops(pathLenByte)} hops × $pathWidth B)'
         : 'Path=none';
     final detail = '$summary • $pathSummary • len=${raw.length}';
     return _RawPacketInfo(

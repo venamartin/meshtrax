@@ -156,11 +156,11 @@ class Contact {
 
   String get pathIdList => pathFormattedIdList(pathHashSize);
 
-  /// The repeater's own identity hash prefix (the first hop equivalent) based on its public key
-  /// formatted with the provided [stride] width.
+  /// The node's own identity hash prefix (how it appears in a path) at the
+  /// given [stride] width.
   String hashPrefixWithStride(int stride) {
     if (publicKey.isEmpty) return '';
-    return PathHelper.formatPathHex(publicKey, stride: stride > 0 ? stride : 1).split(',').first;
+    return PathHelper.hopHex(PathHelper.pubKeyPrefix(publicKey, stride: stride));
   }
 
   /// The repeater's own identity hash prefix using the contact's saved pathHashSize.
