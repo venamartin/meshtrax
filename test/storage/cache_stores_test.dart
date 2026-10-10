@@ -119,6 +119,18 @@ void main() {
       expect(await unscoped.loadContacts(), isEmpty);
     });
 
+    test('an empty cache drops the sync cursor, a populated one keeps it',
+        () async {
+      await store.saveSyncCursor(1234);
+      await store.saveContacts([contact(1)]);
+      await store.loadContacts();
+      expect(store.loadSyncCursor(), 1234);
+
+      await store.saveContacts([]);
+      await store.loadContacts();
+      expect(store.loadSyncCursor(), 0);
+    });
+
     test('keeps the route width, so a 2-byte route stays 2 hops', () async {
       await store.saveContacts([routed(1)]);
 

@@ -193,7 +193,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -257,6 +257,15 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'UPDATE contact_read_marks SET last_read_seq = last_read_ms * 1000',
         );
+      }
+      if (from < 7) {
+        // Cached contact rows predate the persisted route width, and a
+        // guessed width is how 2-byte routes read as four 1-byte hops. The
+        // radio is the source of truth: an empty cache makes the next
+        // connect a full download. User route overrides live only in this
+        // cache and reset to Automatic once.
+        await customStatement('DELETE FROM contact_rows');
+        await customStatement('DELETE FROM discovered_contact_rows');
       }
     },
     beforeOpen: (details) async {

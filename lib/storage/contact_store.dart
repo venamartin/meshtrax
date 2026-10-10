@@ -48,6 +48,11 @@ class ContactStore {
         await (_db.select(_db.contactRows)
               ..where((r) => r.nodeScope.equals(publicKeyHex)))
             .get();
+    if (rows.isEmpty) {
+      // No cache, no cursor: the next sync is a full download, which is
+      // also how the one-time v7 wipe gets rebuilt.
+      await PrefsManager.instance.remove('$_cursorKeyPrefix$publicKeyHex');
+    }
     final contacts = <Contact>[];
     for (final row in rows) {
       try {
