@@ -738,12 +738,22 @@ class _ChatScreenState extends State<ChatScreen> {
               final senderName = isRoom
                   ? (roomAuthor?.name ?? "Unknown [$fourByteHex]")
                   : contact.name;
+              String? viaLabel;
+              if (message.pathBytes.isNotEmpty) {
+                final names = PathHelper.resolvePathNames(
+                  message.pathBytes,
+                  connector.allContacts,
+                  stride: resolvedContact.pathHashSize,
+                );
+                if (names.isNotEmpty) viaLabel = names;
+              }
               Widget bubble = _MessageBubble(
                 message: message,
                 senderName: senderName,
                 isRoomServer: isRoom,
                 replyInfo:
                     isRoom ? ChannelMessage.parseReply(message.text) : null,
+                viaLabel: viaLabel,
                 textScale: textScale,
                 onTap: () => message.isOutgoing &&
                         message.status == MessageStatus.failed
@@ -1726,6 +1736,12 @@ class _MessageBubble extends StatelessWidget {
   /// Parsed reply markup (rooms only): the bubble shows a quote box and the
   /// reply body instead of the raw wire text.
   final ReplyInfo? replyInfo;
+
+  /// Resolved repeater names for this message's path, shown under the body
+  /// when message tracing is on — outgoing: the route the send used;
+  /// incoming: our known route, only when its length matches the hops the
+  /// packet actually reported.
+  final String? viaLabel;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final void Function(Message message, String emoji)? onRetryReaction;
@@ -1737,6 +1753,7 @@ class _MessageBubble extends StatelessWidget {
     required this.isRoomServer,
     required this.textScale,
     this.replyInfo,
+    this.viaLabel,
     this.onTap,
     this.onLongPress,
     this.onRetryReaction,
@@ -2018,6 +2035,21 @@ class _MessageBubble extends StatelessWidget {
                           ),
                         ],
                         if (enableTracing) ...[
+                          if (viaLabel != null) ...[
+                            const SizedBox(height: 4),
+                            Padding(
+                              padding: gifId != null
+                                  ? const EdgeInsets.symmetric(horizontal: 8)
+                                  : EdgeInsets.zero,
+                              child: Text(
+                                'via $viaLabel',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: displayMetaColor,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -2038,6 +2070,15 @@ class _MessageBubble extends StatelessWidget {
                                     color: displayMetaColor,
                                   ),
                                 ),
+                                if (!isOutgoing &&
+                                    _receivedKindLabel(context) != null)
+                                  Text(
+                                    '· ${_receivedKindLabel(context)!}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: displayMetaColor,
+                                    ),
+                                  ),
                                 if (isOutgoing) ...[
                                   const SizedBox(width: 4),
                                   _buildStatusIcon(displayMetaColor),
@@ -2344,6 +2385,16 @@ class _MessageBubble extends StatelessWidget {
 
   /// One line that says where the send is in the attempt ladder. Delivered
   /// and failed always show; the in-flight detail only with tracing on.
+  /// How a received packet reached us, from the hop count it reported:
+  /// "direct" (zero hops) or "route (N hops)". Null when the frame didn't
+  /// say (older stored rows, pre-hop-count builds).
+  String? _receivedKindLabel(BuildContext context) {
+    final hops = message.pathLength;
+    if (hops == null || hops < 0) return null;
+    if (hops == 0) return context.l10n.chat_kindDirect;
+    return context.l10n.chat_kindRoute(hops);
+  }
+
   String? _deliveryStatus(BuildContext context, {required bool detailed}) {
     final l10n = context.l10n;
     final m = message;

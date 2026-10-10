@@ -5755,10 +5755,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         orElse: () => null,
       );
       if (contact != null) {
-        message = message.copyWith(
-          pathLength: contact.pathLength < 0 ? -1 : contact.pathLength,
-          pathBytes: contact.pathLength < 0 ? Uint8List(0) : contact.path,
-        );
+        // The frame's path_len is the hops THIS packet traveled — keep it.
+        // Attach our known route's bytes only when its length agrees, so a
+        // repeater-names line never claims hops the packet didn't report.
+        final hops = message.pathLength ?? -1;
+        if (hops > 0 &&
+            contact.pathLength == hops &&
+            contact.path.isNotEmpty) {
+          message = message.copyWith(pathBytes: contact.path);
+        }
       }
       if (contact != null) {
         _updateContactLastMessageAt(contact.publicKeyHex, message.timestamp);
