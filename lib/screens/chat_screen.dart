@@ -440,12 +440,15 @@ class _ChatScreenState extends State<ChatScreen> {
             final unreadCount = connector.getUnreadCountForContactKey(
               widget.contact.publicKeyHex,
             );
-            final unreadLabel = context.l10n.chat_unread(unreadCount);
             final pathLabel = _currentPathLabel(contact, connector);
             final roleLabel = _roomRoleLabel(_roomRole(connector));
-            final subtitle = roleLabel == null
-                ? '$pathLabel • $unreadLabel'
-                : '$pathLabel • $unreadLabel • $roleLabel';
+            // "Unread: 0" is noise while the chat is open (it marks itself
+            // read) and it ellipsized the role badge off the narrow title.
+            final subtitle = [
+              pathLabel,
+              if (unreadCount > 0) context.l10n.chat_unread(unreadCount),
+              ?roleLabel,
+            ].join(' • ');
 
             // Show path details if we have non-empty path data (from device or override)
             final effectivePath = contact.pathOverrideBytes ?? contact.path;
