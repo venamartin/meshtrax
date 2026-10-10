@@ -6,7 +6,9 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
+import '../models/channel_message.dart';
 import '../models/contact.dart';
+import '../models/message.dart';
 import '../services/app_settings_service.dart';
 import '../services/notification_service.dart';
 import '../utils/dialog_utils.dart';
@@ -532,6 +534,24 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
     }
   }
 
+  /// Resolves a room post's 4-byte author prefix to a contact name, or the
+  /// bare hex when no advert from the author has been heard. The room's own
+  /// key is a genuine author too (system posts).
+  String? _resolveRoomAuthor(MeshCoreConnector connector, Message message) {
+    final key = message.fourByteRoomContactKey;
+    if (key.length < 4) return null;
+    for (final c in connector.allContactsUnfiltered) {
+      if (c.publicKey.length >= 4 &&
+          c.publicKey[0] == key[0] &&
+          c.publicKey[1] == key[1] &&
+          c.publicKey[2] == key[2] &&
+          c.publicKey[3] == key[3]) {
+        return c.name;
+      }
+    }
+    return pubKeyToHex(key).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<MeshCoreConnector>(
@@ -545,12 +565,29 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           final lastMessage = connector.latestContactMessage(contact);
           if (lastMessage != null) {
             final contactName = contact.name.isEmpty ? 'Unknown' : contact.name;
+            final isRoom = contact.type == advTypeRoom;
+            // Room rows store verbatim wire text; preview a reply's body,
+            // not its "@[Name]\n>snippet" header.
+            final previewSource = isRoom
+                ? (ChannelMessage.parseReply(lastMessage.text)?.actualMessage ??
+                    lastMessage.text)
+                : lastMessage.text;
             // Reaction/GIF rows preview as their human-readable form, never
             // raw wire text (a parked MC1 reaction would show its hash).
             final preview =
-                NotificationService.formatNotificationText(lastMessage.text);
-            final subtitle =
-                lastMessage.isOutgoing ? 'You: $preview' : preview;
+                NotificationService.formatNotificationText(previewSource);
+            final String subtitle;
+            if (lastMessage.isOutgoing) {
+              subtitle = 'You: $preview';
+            } else if (isRoom) {
+              // A room relays other members' posts — say who wrote it, like
+              // the channel rows do.
+              final author =
+                  _resolveRoomAuthor(connector, lastMessage);
+              subtitle = '${author ?? 'Unknown'}: $preview';
+            } else {
+              subtitle = preview;
+            }
             chatItems.add(
               _ChatListItem(
                 id: 'contact_${contact.publicKeyHex}',

@@ -80,6 +80,13 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoadingOlder = false;
   MeshCoreConnector? _connector;
   Message? _firstUnreadMessage;
+
+  /// Unread count captured synchronously at screen open. The first database
+  /// emission can land after setActiveContact has already marked the chat
+  /// read, so asking the connector then would always see zero — the race
+  /// that kept the NEW MESSAGES divider from arming on entry paths that
+  /// don't pass an unread count (room login flow, open-chat-with-author).
+  int _unreadAtOpen = 0;
   int _initialScrollIndex = 0;
   bool _isAtBottom = true;
   DateTime? _lastTextSendAt;
@@ -104,12 +111,12 @@ class _ChatScreenState extends State<ChatScreen> {
           _didInitialAnchor = true;
           _previousMessageCount = messages.length;
           final settings = context.read<AppSettingsService>().settings;
-          final unread = widget.unreadCount ??
-              connector
-                  .getUnreadCountForContactKey(widget.contact.publicKeyHex);
-          if (settings.jumpToOldestUnread && unread > 0) {
+          final unread = _unreadAtOpen;
+          if (unread > 0) {
+            // The NEW MESSAGES divider always marks the oldest unread; the
+            // setting only decides whether the list opens scrolled to it.
             _firstUnreadMessage = _findOldestUnreadAnchor(messages, unread);
-            if (_firstUnreadMessage != null) {
+            if (settings.jumpToOldestUnread && _firstUnreadMessage != null) {
               final idx =
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (idx != -1) {
@@ -130,6 +137,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
     final connector = context.read<MeshCoreConnector>();
+    _unreadAtOpen = widget.unreadCount ??
+        connector.getUnreadCountForContactKey(widget.contact.publicKeyHex);
     _subscribeMessages(connector);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -1756,18 +1765,20 @@ class _MessageBubble extends StatelessWidget {
     final poi = _parsePoiMessage(messageText);
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
+    // Same palette as the channel chat screen: warm ChatColors in light
+    // mode, primaryContainer/surfaceContainerHighest in dark.
     final bubbleColor = isFailed
         ? colorScheme.errorContainer
         : warmLight
             ? (isOutgoing ? ChatColors.outgoingBubble : ChatColors.incomingBubble)
             : (isOutgoing
-                  ? colorScheme.primary
+                  ? colorScheme.primaryContainer
                   : colorScheme.surfaceContainerHighest);
     final textColor = isFailed
         ? colorScheme.onErrorContainer
         : warmLight
             ? ChatColors.bubbleText
-            : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
+            : colorScheme.onSurface;
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1840,7 +1851,10 @@ class _MessageBubble extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12 * textScale,
                                 fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
+                                color: settingsService
+                                        .settings.senderNameColors
+                                    ? _getColorForName(senderName)
+                                    : colorScheme.primary,
                               ),
                             ),
                           ),
