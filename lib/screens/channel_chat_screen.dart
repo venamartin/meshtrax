@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -34,8 +33,10 @@ import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
+import '../widgets/mention_composer.dart';
 import '../widgets/message_status_icon.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../widgets/swipe_reply_bubble.dart';
 import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
@@ -698,75 +699,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Widget _buildMentionsOverlay() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 200),
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: ListView.separated(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          itemCount: _filteredMentionContacts.length,
-          separatorBuilder: (context, index) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final contact = _filteredMentionContacts[index];
-            return ListTile(
-              leading: CircleAvatar(
-                radius: 16,
-                backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                child: _buildContactMentionAvatar(contact, colorScheme.primary),
-              ),
-              title: Text(
-                contact.name,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-              onTap: () => _insertMention(contact),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   bool _startsWithEmoji(String name) {
     if (name.isEmpty) return false;
     return firstEmoji(name.characters.first) != null;
-  }
-
-  Widget _buildContactMentionAvatar(Contact contact, Color iconColor) {
-    final emoji = firstEmoji(contact.name);
-    if (emoji != null) {
-      return Text(emoji, style: const TextStyle(fontSize: 16));
-    }
-    return Icon(_getTypeIcon(contact.type), color: iconColor, size: 16);
-  }
-
-  IconData _getTypeIcon(int type) {
-    switch (type) {
-      case advTypeChat:
-        return Icons.chat_bubble;
-      case advTypeRepeater:
-        return Icons.cell_tower;
-      case advTypeRoom:
-        return Icons.group;
-      case advTypeSensor:
-        return Icons.sensors;
-      default:
-        return Icons.device_unknown;
-    }
   }
 
   Future<void> _loadOlderMessages() async {
@@ -1264,7 +1199,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 },
               ),
             ),
-            if (_showMentions) _buildMentionsOverlay(),
+            if (_showMentions)
+              MentionsOverlay(
+                contacts: _filteredMentionContacts,
+                onSelect: _insertMention,
+              ),
             _buildMessageComposer(),
           ],
         ),
@@ -1688,12 +1627,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
 
     if (!isOutgoing && !PlatformInfo.isDesktop) {
-      return _SwipeReplyBubble(
+      return SwipeReplyBubble(
         maxSwipeOffset: maxSwipeOffset,
         replySwipeThreshold: replySwipeThreshold,
         onReplyTriggered: () => _setReplyingTo(message),
         onMentionTriggered: () => _insertMentionOf(message.senderName),
-        hintBuilder: ({required mention}) => _buildSwipeHint(mention: mention),
+        hintBuilder: ({required mention}) => SwipeHint(mention: mention),
         child: messageBody,
       );
     } else {
@@ -1702,35 +1641,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
         child: messageBody,
       );
     }
-  }
-
-  /// Hint behind a swiped bubble: reply rides the left swipe (label at the
-  /// trailing edge, icon outermost), mention rides the right swipe (mirrored).
-  Widget _buildSwipeHint({required bool mention}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final icon = Icon(
-      mention ? Icons.alternate_email : Icons.reply,
-      color: colorScheme.primary,
-    );
-    final label = Text(
-      mention ? context.l10n.chat_mention : context.l10n.chat_reply,
-      style: TextStyle(
-        color: colorScheme.primary,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-
-    return Container(
-      alignment: mention ? Alignment.centerLeft : Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: colorScheme.primary.withValues(alpha: 0.08),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: mention
-            ? [icon, const SizedBox(width: 6), label]
-            : [label, const SizedBox(width: 6), icon],
-      ),
-    );
   }
 
   Widget _buildReplyPreview(ChannelMessage message, double textScale) {
@@ -2627,260 +2537,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 }
 
-class _SwipeReplyBubble extends StatefulWidget {
-  final double maxSwipeOffset;
-  final double replySwipeThreshold;
-  final VoidCallback onReplyTriggered;
-  /// Optional swipe-right action; null keeps the bubble left-swipe only.
-  final VoidCallback? onMentionTriggered;
-  final Widget Function({required bool mention}) hintBuilder;
-  final Widget child;
-
-  const _SwipeReplyBubble({
-    required this.maxSwipeOffset,
-    required this.replySwipeThreshold,
-    required this.onReplyTriggered,
-    this.onMentionTriggered,
-    required this.hintBuilder,
-    required this.child,
-  });
-
-  @override
-  State<_SwipeReplyBubble> createState() => _SwipeReplyBubbleState();
-}
-
-class _SwipeReplyBubbleState extends State<_SwipeReplyBubble> {
-  Offset? _swipeStartPosition;
-  double _swipeOffset = 0;
-  int? _swipePointerId;
-  bool _swipeLockedToHorizontal = false;
-  // A vertical-dominant start is a scroll: ignore this touch entirely.
-  bool _swipeRejected = false;
-  // Finger is past the trigger threshold RIGHT NOW (release would commit).
-  bool _swipeArmed = false;
-  // Which way this gesture is going: -1 left (reply), +1 right (mention).
-  int _swipeDirection = 0;
-
-  bool get _mentionEnabled => widget.onMentionTriggered != null;
-
-  void _handleSwipeStart(Offset position) {
-    _swipeStartPosition = position;
-    if (_swipeOffset != 0) {
-      setState(() => _swipeOffset = 0);
-    }
-  }
-
-  void _handleSwipePointerDown(PointerDownEvent event) {
-    _swipePointerId = event.pointer;
-    _swipeLockedToHorizontal = false;
-    _swipeRejected = false;
-    _swipeArmed = false;
-    _swipeDirection = 0;
-    _handleSwipeStart(event.position);
-  }
-
-  void _handleSwipePointerMove(PointerMoveEvent event) {
-    if (_swipePointerId != event.pointer ||
-        _swipeStartPosition == null ||
-        _swipeRejected) {
-      return;
-    }
-
-    final dx = event.position.dx - _swipeStartPosition!.dx;
-    final dy = event.position.dy - _swipeStartPosition!.dy;
-
-    const axisLockThreshold = 12.0;
-    if (!_swipeLockedToHorizontal) {
-      // Native feel: the swipe only claims the touch when horizontal
-      // movement clearly dominates. A vertical-dominant start is the list
-      // scrolling — reject the touch for good so a mid-scroll thumb arc
-      // can never turn into a reply.
-      if (dy.abs() >= axisLockThreshold && dy.abs() >= dx.abs()) {
-        _swipeRejected = true;
-        return;
-      }
-      if (dx.abs() < axisLockThreshold || dx.abs() < dy.abs() * 1.5) {
-        return;
-      }
-      if (dx < 0) {
-        _swipeDirection = -1;
-      } else if (_mentionEnabled) {
-        _swipeDirection = 1;
-      } else {
-        _swipeRejected = true;
-        return;
-      }
-      _swipeLockedToHorizontal = true;
-    }
-
-    _handleSwipeUpdate(event.position);
-  }
-
-  void _handleSwipeUpdate(Offset position) {
-    if (_swipeStartPosition == null) return;
-
-    // Progress along the locked direction; movement the other way resets to 0.
-    final dx =
-        (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
-    final travel = dx < 6 ? 0.0 : dx;
-
-    // Armed = releasing now would commit. Crossing the line gives the
-    // little haptic tick native apps use; sliding back disarms silently.
-    final armed = travel >= widget.replySwipeThreshold;
-    if (armed && !_swipeArmed) {
-      HapticFeedback.lightImpact();
-    }
-    _swipeArmed = armed;
-
-    final clamped = travel.clamp(0.0, widget.maxSwipeOffset);
-    final adjusted =
-        _applySwipeResistance(clamped, widget.maxSwipeOffset) *
-        _swipeDirection;
-    if (adjusted != _swipeOffset) {
-      setState(() => _swipeOffset = adjusted);
-    }
-  }
-
-  void _handleSwipePointerUp(Offset position) {
-    // Commit on where the finger IS at release, never on how far it once
-    // got: overshooting and pulling back means "never mind".
-    if (_swipeLockedToHorizontal && _swipeStartPosition != null) {
-      final dx =
-          (position.dx - _swipeStartPosition!.dx) * _swipeDirection;
-      if (dx >= widget.replySwipeThreshold) {
-        if (_swipeDirection < 0) {
-          widget.onReplyTriggered();
-        } else {
-          widget.onMentionTriggered?.call();
-        }
-        HapticFeedback.selectionClick();
-      }
-    }
-    _resetSwipe();
-  }
-
-  void _resetSwipe() {
-    if (_swipeOffset != 0) {
-      setState(() => _swipeOffset = 0);
-    }
-    _swipeStartPosition = null;
-    _swipePointerId = null;
-    _swipeLockedToHorizontal = false;
-    _swipeRejected = false;
-    _swipeArmed = false;
-    _swipeDirection = 0;
-  }
-
-  double _applySwipeResistance(double rawOffset, double maxOffset) {
-    final abs = rawOffset.abs();
-    if (abs <= 0) return 0;
-    final norm = (abs / maxOffset).clamp(0.0, 1.0);
-    const deadZone = 0.18;
-    if (norm <= deadZone) {
-      return rawOffset.sign * maxOffset * (norm * 0.08);
-    }
-    final t = ((norm - deadZone) / (1 - deadZone)).clamp(0.0, 1.0);
-    final curved = t < 0.5
-        ? 16 * math.pow(t, 5)
-        : 1 - math.pow(-2 * t + 2, 5) / 2;
-    const deadZoneEnd = 0.0144;
-    return rawOffset.sign *
-        maxOffset *
-        (deadZoneEnd + curved * (1 - deadZoneEnd));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: _handleSwipePointerDown,
-      onPointerMove: _handleSwipePointerMove,
-      onPointerUp: (event) => _handleSwipePointerUp(event.position),
-      onPointerCancel: (_) => _resetSwipe(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned.fill(
-              child: Opacity(
-                opacity: _swipeOffset.abs() / widget.maxSwipeOffset,
-                child: widget.hintBuilder(mention: _swipeDirection > 0),
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              transform: Matrix4.translationValues(_swipeOffset, 0, 0),
-              curve: Curves.easeOut,
-              child: widget.child,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _PoiInfo {
   final double lat;
   final double lon;
   final String label;
 
   const _PoiInfo({required this.lat, required this.lon, required this.label});
-}
-
-// ==========================================
-// Custom Controller for Rich Text Mentions
-// ==========================================
-class MentionTextEditingController extends TextEditingController {
-  final RegExp _mentionRegex = RegExp(r'@\[([^\]]+)\]');
-
-  @override
-  TextSpan buildTextSpan({
-    required BuildContext context,
-    TextStyle? style,
-    required bool withComposing,
-  }) {
-    // The IME's composing region must stay visible (the framework default
-    // underlines it) — dropping it desyncs Android keyboards from what the
-    // user sees while a word is being composed.
-    final TextRange? composing =
-        withComposing && value.isComposingRangeValid ? value.composing : null;
-    const underline = TextStyle(decoration: TextDecoration.underline);
-
-    final List<TextSpan> spans = [];
-    void addSegment(int from, int to, TextStyle? segmentStyle) {
-      if (from >= to) return;
-      if (composing == null || to <= composing.start || from >= composing.end) {
-        spans.add(TextSpan(text: text.substring(from, to), style: segmentStyle));
-        return;
-      }
-      final int cs = composing.start.clamp(from, to);
-      final int ce = composing.end.clamp(from, to);
-      if (from < cs) {
-        spans.add(TextSpan(text: text.substring(from, cs), style: segmentStyle));
-      }
-      spans.add(TextSpan(
-        text: text.substring(cs, ce),
-        style: (segmentStyle ?? const TextStyle()).merge(underline),
-      ));
-      if (ce < to) {
-        spans.add(TextSpan(text: text.substring(ce, to), style: segmentStyle));
-      }
-    }
-
-    final mentionStyle = style?.copyWith(
-      color: Theme.of(context).colorScheme.primary,
-      fontWeight: FontWeight.bold,
-    );
-
-    int start = 0;
-    for (final Match match in _mentionRegex.allMatches(text)) {
-      addSegment(start, match.start, style);
-      addSegment(match.start, match.end, mentionStyle);
-      start = match.end;
-    }
-    addSegment(start, text.length, style);
-
-    return TextSpan(children: spans, style: style);
-  }
 }

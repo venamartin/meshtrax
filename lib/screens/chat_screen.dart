@@ -40,8 +40,10 @@ import '../utils/emoji_utils.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
+import '../widgets/mention_composer.dart';
 import '../widgets/room_login_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../widgets/swipe_reply_bubble.dart';
 import '../l10n/l10n.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -59,10 +61,21 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _textController = TextEditingController();
+  final _textController = MentionTextEditingController();
   final _textFieldFocusNode = FocusNode();
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+
+  // Reply/mention state — rooms only; a 1-on-1 DM has no one to address.
+  Message? _replyingToMessage;
+  bool _showMentions = false;
+  String? _mentionSearchText;
+  List<Contact> _filteredMentionContacts = [];
+  // Memoized resolved-author list — rebuilt when the message list changes.
+  Map<String, Contact>? _cachedRoomAuthorMap;
+  int _cachedAuthorMapMessageCount = -1;
+
+  bool get _isRoom => widget.contact.type == advTypeRoom;
 
   bool _isLoadingOlder = false;
   MeshCoreConnector? _connector;
@@ -126,6 +139,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     if (widget.contact.type == advTypeRoom) {
+      _textController.addListener(_mentionsListener);
       _restoreRoomAdminSession(connector);
     }
   }
@@ -195,6 +209,155 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _setReplyingTo(Message message) {
+    setState(() {
+      _replyingToMessage = message;
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyingToMessage = null;
+    });
+  }
+
+  /// The `@[name]` a reply or mention of [message] goes on the wire with.
+  /// An unresolved author falls back to the bare hex prefix — "Unknown [..]"
+  /// contains a bracket and would break the wire syntax.
+  String _replyTargetName(Message message, MeshCoreConnector connector) {
+    if (message.isOutgoing) return connector.selfName ?? context.l10n.chat_me;
+    final author =
+        _resolveContactFrom4Bytes(connector, message.fourByteRoomContactKey);
+    if (author != null) return author.name;
+    return message.fourByteRoomContactKey.isNotEmpty
+        ? pubKeyToHex(message.fourByteRoomContactKey).toUpperCase()
+        : '00000000';
+  }
+
+  /// Room members who can be @-mentioned: authors seen in this conversation
+  /// whose adverts we hold. Unresolvable prefixes and the room itself are
+  /// excluded — there is no name to type.
+  List<Contact> _roomMentionCandidates(MeshCoreConnector connector) {
+    if (_cachedRoomAuthorMap == null ||
+        _cachedAuthorMapMessageCount != _messages.length) {
+      final map = <String, Contact>{};
+      final room = _resolveContact(connector);
+      for (final m in _messages) {
+        if (m.isOutgoing || m.fourByteRoomContactKey.length < 4) continue;
+        final hex = pubKeyToHex(m.fourByteRoomContactKey);
+        if (map.containsKey(hex)) continue;
+        final author =
+            _resolveContactFrom4Bytes(connector, m.fourByteRoomContactKey);
+        if (author == null) continue;
+        if (author.publicKeyHex == room.publicKeyHex) continue;
+        map[hex] = author;
+      }
+      _cachedRoomAuthorMap = map;
+      _cachedAuthorMapMessageCount = _messages.length;
+    }
+    return _cachedRoomAuthorMap!.values.toList();
+  }
+
+  void _mentionsListener() {
+    if (!mounted) return;
+    final text = _textController.text;
+    final selection = _textController.selection;
+
+    if (!selection.isValid || selection.baseOffset != selection.extentOffset) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final cursorPosition = selection.baseOffset;
+    if (cursorPosition == 0) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final textBeforeCursor = text.substring(0, cursorPosition);
+    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSignIndex != -1) {
+      final textAfterAt = textBeforeCursor.substring(lastAtSignIndex + 1);
+      final charBeforeAt =
+          lastAtSignIndex > 0 ? textBeforeCursor[lastAtSignIndex - 1] : ' ';
+
+      if (!textAfterAt.contains(' ') &&
+          (charBeforeAt == ' ' || charBeforeAt == '\n')) {
+        final search = textAfterAt.toLowerCase();
+        final connector = context.read<MeshCoreConnector>();
+
+        final filtered = _roomMentionCandidates(connector)
+            .where((c) => c.name.toLowerCase().contains(search))
+            .toList();
+        filtered.sort((a, b) {
+          final aStart = a.name.toLowerCase().startsWith(search);
+          final bStart = b.name.toLowerCase().startsWith(search);
+          if (aStart && !bStart) return -1;
+          if (!aStart && bStart) return 1;
+          return a.name.compareTo(b.name);
+        });
+
+        if (_showMentions != filtered.isNotEmpty ||
+            _mentionSearchText != search) {
+          setState(() {
+            _mentionSearchText = search;
+            _showMentions = filtered.isNotEmpty;
+            _filteredMentionContacts = filtered;
+          });
+        }
+        return;
+      }
+    }
+
+    if (_showMentions) {
+      setState(() => _showMentions = false);
+    }
+  }
+
+  void _insertMention(Contact contact) {
+    final text = _textController.text;
+    final selection = _textController.selection;
+    final cursorPosition = selection.baseOffset;
+    final textBeforeCursor = text.substring(0, cursorPosition);
+    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSignIndex != -1) {
+      final newText = text.replaceRange(
+        lastAtSignIndex,
+        cursorPosition,
+        '@[${contact.name}] ',
+      );
+
+      _textController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: lastAtSignIndex + contact.name.length + 4,
+        ),
+      );
+
+      setState(() => _showMentions = false);
+      _textFieldFocusNode.requestFocus();
+    }
+  }
+
+  /// Inserts "@[name] " at the cursor (or the end) and focuses the composer.
+  /// Used by the message actions sheet and the mention swipe.
+  void _insertMentionOf(String senderName) {
+    final text = _textController.text;
+    final sel = _textController.selection;
+    final start = sel.isValid ? sel.start : text.length;
+    final end = sel.isValid ? sel.end : text.length;
+    final needsSpace =
+        start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n';
+    final mention = '${needsSpace ? ' ' : ''}@[$senderName] ';
+    _textController.value = TextEditingValue(
+      text: text.replaceRange(start, end, mention),
+      selection: TextSelection.collapsed(offset: start + mention.length),
+    );
+    _textFieldFocusNode.requestFocus();
+  }
+
   Future<void> _loadOlderMessages() async {
     if (_isLoadingOlder) return;
     // Paging is a bigger LIMIT on the watched query — SQL does the rest.
@@ -215,6 +378,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
+    _textController.removeListener(_mentionsListener);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -453,6 +617,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   ],
                 ),
               ),
+              if (_showMentions)
+                MentionsOverlay(
+                  contacts: _filteredMentionContacts,
+                  onSelect: _insertMention,
+                ),
               _buildInputBar(connector),
             ],
           );
@@ -556,12 +725,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 (service) => service.scale,
               );
               final resolvedContact = _resolveContact(connector);
-              final bubble = _MessageBubble(
+              final isRoom = resolvedContact.type == advTypeRoom;
+              final senderName = isRoom
+                  ? (roomAuthor?.name ?? "Unknown [$fourByteHex]")
+                  : contact.name;
+              Widget bubble = _MessageBubble(
                 message: message,
-                senderName: resolvedContact.type == advTypeRoom
-                    ? (roomAuthor?.name ?? "Unknown [$fourByteHex]")
-                    : contact.name,
-                isRoomServer: resolvedContact.type == advTypeRoom,
+                senderName: senderName,
+                isRoomServer: isRoom,
+                replyInfo:
+                    isRoom ? ChannelMessage.parseReply(message.text) : null,
                 textScale: textScale,
                 onTap: () => message.isOutgoing &&
                         message.status == MessageStatus.failed
@@ -570,6 +743,20 @@ class _ChatScreenState extends State<ChatScreen> {
                 onLongPress: () => _showMessageActions(message, contact),
                 onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
+              if (isRoom && !message.isOutgoing && !PlatformInfo.isDesktop) {
+                bubble = SwipeReplyBubble(
+                  maxSwipeOffset: 64.0,
+                  replySwipeThreshold: 64.0,
+                  onReplyTriggered: () => _setReplyingTo(message),
+                  // No resolved name, nothing to type into the composer.
+                  onMentionTriggered: roomAuthor == null
+                      ? null
+                      : () => _insertMentionOf(roomAuthor!.name),
+                  hintBuilder: ({required mention}) =>
+                      SwipeHint(mention: mention),
+                  child: bubble,
+                );
+              }
               bool showDayMarker = false;
               if (index == reversedMessages.length - 1) {
                 showDayMarker = true;
@@ -650,9 +837,22 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildInputBar(MeshCoreConnector connector) {
-    final maxBytes = maxContactMessageBytes();
+    // Reserve room for the reply prefix ("@[Name]\n><snippet>..\n") while a
+    // reply is active, so the byte counter and typing limit account for it.
+    final baseMaxBytes =
+        _isRoom ? maxRoomMessageBytes() : maxContactMessageBytes();
+    final reply = _replyingToMessage;
+    final replyOverhead = reply == null
+        ? 0
+        : utf8
+              .encode(
+                '@[${_replyTargetName(reply, connector)}]\n>'
+                '${ChannelMessage.buildReplySnippet(ChannelMessage.parseReply(reply.text)?.actualMessage ?? reply.text, 10)}..\n',
+              )
+              .length;
+    final maxBytes = (baseMaxBytes - replyOverhead).clamp(0, baseMaxBytes);
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
+    final inputBar = Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -804,6 +1004,98 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (reply != null)
+          Builder(
+            builder: (context) {
+              final textScale = context.select<ChatTextScaleService, double>(
+                (service) => service.scale,
+              );
+              return _buildReplyBanner(reply, connector, textScale);
+            },
+          ),
+        inputBar,
+      ],
+    );
+  }
+
+  Widget _buildReplyBanner(
+    Message reply,
+    MeshCoreConnector connector,
+    double textScale,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final previewColor = colorScheme.onPrimaryContainer.withValues(alpha: 0.8);
+    final previewSource =
+        ChannelMessage.parseReply(reply.text)?.actualMessage ?? reply.text;
+    final gifId = GifHelper.parseGif(previewSource);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        border: Border(
+          bottom: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.reply, size: 18, color: colorScheme.onPrimaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n
+                      .chat_replyingTo(_replyTargetName(reply, connector)),
+                  style: TextStyle(
+                    fontSize: 12 * textScale,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                if (gifId != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.gif_box, size: 14, color: previewColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'GIF',
+                        style: TextStyle(
+                          fontSize: 11 * textScale,
+                          color: previewColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Text(
+                    previewSource,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11 * textScale,
+                      color: previewColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: _cancelReply,
+            color: colorScheme.onPrimaryContainer,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showGifPicker(BuildContext context) {
@@ -847,12 +1139,37 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _lastTextSendAt = now;
 
-    final maxBytes = maxContactMessageBytes();
-    final outboundText = connector.prepareContactOutboundText(
-      _resolveContact(connector),
-      text,
-    );
-    if (utf8.encode(outboundText).length > maxBytes) {
+    final contact = _resolveContact(connector);
+    final maxBytes = _isRoom ? maxRoomMessageBytes() : maxContactMessageBytes();
+
+    bool fits(String candidate) {
+      final outbound = connector.prepareContactOutboundText(contact, candidate);
+      return utf8.encode(outbound).length <= maxBytes;
+    }
+
+    String sendText = text;
+    final replyTarget = _replyingToMessage;
+    if (_isRoom && replyTarget != null) {
+      // Build a compatible "@[Name]\n><snippet>..\n<text>" reply, shrinking
+      // the snippet to fit the byte budget. Quoting a reply quotes its body,
+      // not its own reply header.
+      final built = ChannelMessage.buildReplyWireText(
+        targetName: _replyTargetName(replyTarget, connector),
+        quoteText: ChannelMessage.parseReply(replyTarget.text)?.actualMessage ??
+            replyTarget.text,
+        body: text,
+        selfName: connector.selfName ?? '',
+        fits: fits,
+      );
+      if (built == null) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.chat_messageTooLong(maxBytes)),
+        );
+        return;
+      }
+      sendText = built;
+    } else if (!fits(sendText)) {
       showDismissibleSnackBar(
         context,
         content: Text(context.l10n.chat_messageTooLong(maxBytes)),
@@ -861,11 +1178,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _textController.clear();
+    if (_replyingToMessage != null) _cancelReply();
     _textFieldFocusNode.requestFocus();
-    connector.sendMessage(
-      _resolveContact(connector),
-      text,
-    );
+    connector.sendMessage(contact, sendText);
   }
 
   void _showFullPathDialog(BuildContext context, List<int> pathBytes, int hashSize) {
@@ -1227,6 +1542,25 @@ class _ChatScreenState extends State<ChatScreen> {
                   _showEmojiPicker(message);
                 },
               ),
+            if (isRoom)
+              ListTile(
+                leading: const Icon(Icons.reply),
+                title: Text(context.l10n.chat_reply),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _setReplyingTo(message);
+                  _textFieldFocusNode.requestFocus();
+                },
+              ),
+            if (isRoom && !message.isOutgoing && !isRoomItself)
+              ListTile(
+                leading: const Icon(Icons.alternate_email),
+                title: Text(context.l10n.chat_mention),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _insertMentionOf(contact.name);
+                },
+              ),
             if (PlatformInfo.isDesktop)
               ListTile(
                 leading: const Icon(Icons.route),
@@ -1380,6 +1714,9 @@ class _MessageBubble extends StatelessWidget {
   final Message message;
   final String senderName;
   final bool isRoomServer;
+  /// Parsed reply markup (rooms only): the bubble shows a quote box and the
+  /// reply body instead of the raw wire text.
+  final ReplyInfo? replyInfo;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final void Function(Message message, String emoji)? onRetryReaction;
@@ -1390,6 +1727,7 @@ class _MessageBubble extends StatelessWidget {
     required this.senderName,
     required this.isRoomServer,
     required this.textScale,
+    this.replyInfo,
     this.onTap,
     this.onLongPress,
     this.onRetryReaction,
@@ -1412,7 +1750,7 @@ class _MessageBubble extends StatelessWidget {
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final messageText = message.text;
+    final messageText = replyInfo?.actualMessage ?? message.text;
 
     final gifId = GifHelper.parseGif(messageText);
     final poi = _parsePoiMessage(messageText);
@@ -1507,6 +1845,10 @@ class _MessageBubble extends StatelessWidget {
                             ),
                           ),
                           if (gifId == null) const SizedBox(height: 4),
+                        ],
+                        if (replyInfo != null) ...[
+                          _buildReplyQuote(context, replyInfo!, colorScheme),
+                          const SizedBox(height: 4),
                         ],
                         if (poi != null)
                           _buildPoiMessage(
@@ -1877,6 +2219,64 @@ class _MessageBubble extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+  }
+
+  /// Compact quote box above a reply's body. Room replies carry only the
+  /// wire snippet, never a resolvable message id, so there is no tap-to-scroll.
+  Widget _buildReplyQuote(
+    BuildContext context,
+    ReplyInfo reply,
+    ColorScheme colorScheme,
+  ) {
+    final warmLight = ChatColors.isLight(context);
+    final headerColor = warmLight
+        ? ChatColors.quoteBorder
+        : colorScheme.onSecondaryContainer;
+    final snippetColor = (warmLight
+            ? ChatColors.bubbleText
+            : colorScheme.onSecondaryContainer)
+        .withValues(alpha: 0.7);
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: warmLight
+            ? ChatColors.quoteBackground
+            : colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: warmLight ? ChatColors.quoteBorder : colorScheme.secondary,
+            width: 3,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.chat_replyTo(reply.mentionedNode),
+            style: TextStyle(
+              fontSize: 11 * textScale,
+              fontWeight: FontWeight.bold,
+              color: headerColor,
+            ),
+          ),
+          if (reply.snippet.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              '${reply.snippet}..',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12 * textScale,
+                color: snippetColor,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
