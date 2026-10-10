@@ -971,9 +971,18 @@ class _ChatScreenState extends State<ChatScreen> {
         connector.lastRoomLoginEvent(widget.contact.publicKeyHex);
     final serverClock = event?.serverClock;
     if (event == null || serverClock == null) return null;
+    // The measurement comes from the last login. After a fix was sent, stay
+    // down until a NEWER login re-measures — re-warning from the stale
+    // reading made the banner look like the fix never worked.
+    final syncSentAt =
+        connector.roomClockSyncSentAt(widget.contact.publicKeyHex);
+    if (syncSentAt != null && event.at.isBefore(syncSentAt)) return null;
     final skew = serverClock.difference(event.at);
     if (skew.abs() < const Duration(minutes: 5)) return null;
-    final isAdmin =
+    // The firmware only winds a clock FORWARD: a room running behind is
+    // fixable from here, a room running ahead needs its own console.
+    final fixable = skew.isNegative;
+    final isAdmin = fixable &&
         connector.roomAdminPassword(widget.contact.publicKeyHex) != null;
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -1007,6 +1016,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   );
                 } catch (_) {}
+                connector.markRoomClockSyncSent(widget.contact.publicKeyHex);
                 if (mounted) {
                   setState(() => _clockBannerDismissed = true);
                   showDismissibleSnackBar(

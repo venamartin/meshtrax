@@ -368,6 +368,18 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
   }
 
+  // When a clock sync was last sent per room. The skew banner measures from
+  // the LAST login response, so after a fix it must stay down until a newer
+  // login re-measures — otherwise it re-warns from the stale reading.
+  final Map<String, DateTime> _roomClockSyncSentAt = {};
+
+  void markRoomClockSyncSent(String pubKeyHex) {
+    _roomClockSyncSentAt[pubKeyHex] = DateTime.now();
+  }
+
+  DateTime? roomClockSyncSentAt(String pubKeyHex) =>
+      _roomClockSyncSentAt[pubKeyHex];
+
   void _handleRoomLoginPush(Uint8List frame) {
     if (frame.length < 8) return;
     final prefix = frame.sublist(2, 8);
@@ -2891,6 +2903,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
+    _roomClockSyncSentAt.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
     // queue never redelivers drained messages, flushing requires a fresh
     // CHANNEL_INFO on the next connection, and the node-switch wipe clears
