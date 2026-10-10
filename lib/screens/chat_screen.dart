@@ -537,17 +537,17 @@ class _ChatScreenState extends State<ChatScreen> {
           final messageIndex = index;
           Contact contact = _resolveContact(connector);
           final message = reversedMessages[messageIndex];
+          Contact? roomAuthor;
           String fourByteHex = '';
           if (contact.type == advTypeRoom) {
-            contact = _resolveContactFrom4Bytes(
+            roomAuthor = _resolveContactFrom4Bytes(
               connector,
-              message.fourByteRoomContactKey.isEmpty
-                  ? Uint8List.fromList([0, 0, 0, 0])
-                  : message.fourByteRoomContactKey,
+              message.fourByteRoomContactKey,
             );
             fourByteHex = message.fourByteRoomContactKey.isNotEmpty
                 ? pubKeyToHex(message.fourByteRoomContactKey).toUpperCase()
                 : "00000000";
+            contact = roomAuthor ?? contact;
           }
 
           return Builder(
@@ -559,16 +559,14 @@ class _ChatScreenState extends State<ChatScreen> {
               final bubble = _MessageBubble(
                 message: message,
                 senderName: resolvedContact.type == advTypeRoom
-                    ? (contact.publicKeyHex == resolvedContact.publicKeyHex
-                        ? "Unknown [$fourByteHex]"
-                        : contact.name)
+                    ? (roomAuthor?.name ?? "Unknown [$fourByteHex]")
                     : contact.name,
                 isRoomServer: resolvedContact.type == advTypeRoom,
                 textScale: textScale,
                 onTap: () => message.isOutgoing &&
                         message.status == MessageStatus.failed
                     ? _retryMessage(message)
-                    : _openMessagePath(message, contact),
+                    : _openMessagePath(message),
                 onLongPress: () => _showMessageActions(message, contact),
                 onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
@@ -948,18 +946,24 @@ class _ChatScreenState extends State<ChatScreen> {
     return connector.contacts[_resolveContactIndex];
   }
 
-  Contact _resolveContactFrom4Bytes(
+  /// Resolves a room post's 4-byte author prefix to a contact, or null when
+  /// no advert from the author has been heard. A match on the room's own key
+  /// is genuine — the room server authors its system posts.
+  Contact? _resolveContactFrom4Bytes(
     MeshCoreConnector connector,
     Uint8List key4Bytes,
   ) {
+    if (key4Bytes.length < 4) return null;
     // Search discovered contacts too — the post author doesn't have to be an
     // active device contact for us to know their name.
-    return connector.allContactsUnfiltered.firstWhere(
-      (c) =>
-          c.publicKey.length >= 4 &&
-          listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
-      orElse: () => widget.contact,
-    );
+    return connector.allContactsUnfiltered
+        .cast<Contact?>()
+        .firstWhere(
+          (c) =>
+              c!.publicKey.length >= 4 &&
+              listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
+          orElse: () => null,
+        );
   }
 
   String _currentPathLabel(Contact contact, MeshCoreConnector connector) {
@@ -1167,16 +1171,16 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _openMessagePath(Message message, Contact contact) {
+  void _openMessagePath(Message message) {
     final connector = context.read<MeshCoreConnector>();
     final fourByteHex = pubKeyToHex(message.fourByteRoomContactKey).toUpperCase();
     final String senderName;
     if (message.isOutgoing) {
       senderName = connector.selfName ?? context.l10n.chat_me;
     } else if (_resolveContact(connector).type == advTypeRoom) {
-      senderName = contact.publicKeyHex == _resolveContact(connector).publicKeyHex
-          ? "Unknown [$fourByteHex]"
-          : contact.name;
+      final author =
+          _resolveContactFrom4Bytes(connector, message.fourByteRoomContactKey);
+      senderName = author?.name ?? "Unknown [$fourByteHex]";
     } else {
       senderName = _resolveContact(connector).name;
     }
@@ -1201,6 +1205,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showMessageActions(Message message, Contact contact) {
+    final chatContact = _resolveContact(context.read<MeshCoreConnector>());
+    final isRoom = chatContact.type == advTypeRoom;
+    // In a room, [contact] is the resolved post author; it falls back to the
+    // room itself when the author is unknown or the room authored the post.
+    final isRoomItself =
+        isRoom && contact.publicKeyHex == chatContact.publicKeyHex;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -1223,7 +1233,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: Text(context.l10n.chat_path),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _openMessagePath(message, contact);
+                  _openMessagePath(message);
                 },
               ),
             ListTile(
@@ -1252,8 +1262,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
             if (!message.isOutgoing &&
-                _resolveContact(context.read<MeshCoreConnector>()).type == advTypeRoom &&
-                contact.publicKeyHex != _resolveContact(context.read<MeshCoreConnector>()).publicKeyHex)
+                isRoom &&
+                !isRoomItself &&
+                contact.type == advTypeChat)
               ListTile(
                 leading: const Icon(Icons.chat),
                 title: Text(context.l10n.contacts_openChat),
@@ -1276,22 +1287,25 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: Text('Block ${contact.name}'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await context
-                      .read<AppSettingsService>()
-                      .blockContact(contact.publicKeyHex);
-                  if (mounted) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text('Blocked ${contact.name}'),
-                    );
-                  }
-                },
-              ),
+              // Blocking a room post whose author is the room (or unknown)
+              // would block the room itself and silence every member.
+              if (!isRoomItself)
+                ListTile(
+                  leading: const Icon(Icons.block),
+                  title: Text('Block ${contact.name}'),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await context
+                        .read<AppSettingsService>()
+                        .blockContact(contact.publicKeyHex);
+                    if (mounted) {
+                      showDismissibleSnackBar(
+                        context,
+                        content: Text('Blocked ${contact.name}'),
+                      );
+                    }
+                  },
+                ),
             ],
             ListTile(
               leading: const Icon(Icons.close),
