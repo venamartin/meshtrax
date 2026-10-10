@@ -2232,6 +2232,21 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                           ),
+                        if (enableTracing && viaLabel != null) ...[
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: gifId != null
+                                ? const EdgeInsets.symmetric(horizontal: 8)
+                                : EdgeInsets.zero,
+                            child: Text(
+                              'via $viaLabel',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: displayMetaColor,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (isOutgoing) ...[
                           Builder(
                             builder: (context) {
@@ -2259,21 +2274,6 @@ class _MessageBubble extends StatelessWidget {
                           ),
                         ],
                         if (enableTracing) ...[
-                          if (viaLabel != null) ...[
-                            const SizedBox(height: 4),
-                            Padding(
-                              padding: gifId != null
-                                  ? const EdgeInsets.symmetric(horizontal: 8)
-                                  : EdgeInsets.zero,
-                              child: Text(
-                                'via $viaLabel',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: displayMetaColor,
-                                ),
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
