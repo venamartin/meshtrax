@@ -797,14 +797,15 @@ class _ChatScreenState extends State<ChatScreen> {
               final isAnnouncement = isRoom &&
                   roomAuthor != null &&
                   roomAuthor.publicKeyHex == resolvedContact.publicKeyHex;
+              // Same format as the channel screen: raw hop prefixes, not
+              // resolved names ("via AA,3F").
               String? viaLabel;
               if (message.pathBytes.isNotEmpty) {
-                final names = PathHelper.resolvePathNames(
+                final hexPath = PathHelper.formatPathHex(
                   message.pathBytes,
-                  connector.allContacts,
                   stride: resolvedContact.pathHashSize,
                 );
-                if (names.isNotEmpty) viaLabel = names;
+                if (hexPath.isNotEmpty) viaLabel = hexPath;
               }
               Widget bubble = _MessageBubble(
                 message: message,
@@ -1940,10 +1941,10 @@ class _MessageBubble extends StatelessWidget {
   /// reply body instead of the raw wire text.
   final ReplyInfo? replyInfo;
 
-  /// Resolved repeater names for this message's path, shown under the body
-  /// when message tracing is on — outgoing: the route the send used;
-  /// incoming: our known route, only when its length matches the hops the
-  /// packet actually reported.
+  /// Hex hop prefixes for this message's path (channel-screen format),
+  /// shown under the body when message tracing is on — outgoing: the route
+  /// the send used; incoming: our known route, only when its length matches
+  /// the hops the packet actually reported.
   final String? viaLabel;
 
   /// Post authored by the room server itself (room.post / system post) —
