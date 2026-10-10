@@ -82,19 +82,26 @@ class _RoomUsersScreenState extends State<RoomUsersScreen> {
     return true;
   }
 
+  bool _prefixMatches(Uint8List key, Uint8List prefix) {
+    if (key.length < prefix.length) return false;
+    for (int i = 0; i < prefix.length; i++) {
+      if (key[i] != prefix[i]) return false;
+    }
+    return true;
+  }
+
   Contact? _resolveByPrefix(Uint8List prefix) {
     for (final c in _connector.allContactsUnfiltered) {
-      if (c.publicKey.length < prefix.length) continue;
-      var match = true;
-      for (int i = 0; i < prefix.length; i++) {
-        if (c.publicKey[i] != prefix[i]) {
-          match = false;
-          break;
-        }
-      }
-      if (match) return c;
+      if (_prefixMatches(c.publicKey, prefix)) return c;
     }
     return null;
+  }
+
+  /// The ACL contains whoever logged in — including this radio, which is
+  /// never in its own contacts list.
+  bool _isSelf(Uint8List prefix) {
+    final selfKey = _connector.selfPublicKey;
+    return selfKey != null && _prefixMatches(selfKey, prefix);
   }
 
   Future<void> _loadAccessList() async {
@@ -315,14 +322,18 @@ class _RoomUsersScreenState extends State<RoomUsersScreen> {
                     itemCount: _entries.length,
                     itemBuilder: (context, index) {
                       final entry = _entries[index];
-                      final name = entry.contact?.name;
+                      final isSelf = _isSelf(entry.prefix);
+                      final name = isSelf
+                          ? (_connector.selfName ?? context.l10n.chat_me)
+                          : entry.contact?.name;
                       final prefixHex =
                           pubKeyToHex(entry.prefix).toUpperCase();
-                      // Only resolved contacts carry the full key setperm
-                      // needs; unresolved entries can still be removed by
-                      // their prefix.
-                      final keyHex =
-                          entry.contact?.publicKeyHex ?? prefixHex;
+                      // Only resolved contacts (or ourselves) carry the full
+                      // key setperm needs; unresolved entries can still be
+                      // removed by their prefix.
+                      final keyHex = isSelf
+                          ? _connector.selfPublicKeyHex
+                          : entry.contact?.publicKeyHex ?? prefixHex;
                       return ListTile(
                         leading: CircleAvatar(
                           child: Icon(
@@ -335,7 +346,7 @@ class _RoomUsersScreenState extends State<RoomUsersScreen> {
                         subtitle:
                             Text(name == null ? '' : prefixHex),
                         trailing: Text(_roleLabel(entry.role)),
-                        onTap: () => entry.contact != null
+                        onTap: () => isSelf || entry.contact != null
                             ? _pickRoleAndSet(keyHex)
                             : _confirmRemoveByPrefix(prefixHex),
                       );
