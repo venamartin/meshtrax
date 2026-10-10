@@ -146,8 +146,10 @@ class MessageRetryService extends ChangeNotifier {
       _pendingMessages.containsKey(messageId) &&
       !_activeMessages.contains(messageId);
 
-  /// [floodFirst] makes attempt 0 flood regardless of the contact's route,
-  /// for resending a message whose route just failed.
+  /// [floodFirst] makes attempt 0 flood, for resending a message whose route
+  /// just failed. Ignored when the contact has a manual route override — a
+  /// user-pinned route outranks the flood heuristic and still falls back to
+  /// flood after [routeAttempts].
   Future<void> sendMessageWithRetry({
     required Contact contact,
     required String text,
@@ -156,7 +158,7 @@ class MessageRetryService extends ChangeNotifier {
     bool floodFirst = false,
   }) async {
     final messageId = const Uuid().v4();
-    if (floodFirst) _floodFirst.add(messageId);
+    if (floodFirst && contact.pathOverride == null) _floodFirst.add(messageId);
     final resolved = resolvePathSelection(contact, forceFlood: floodFirst);
     final messagePathBytes =
         pathBytes ?? Uint8List.fromList(resolved.pathBytes);

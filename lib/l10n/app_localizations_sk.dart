@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3941,4 +3942,99 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Opätovné odosielanie nastavenou trasou';
+
+  @override
+  String get room_mute => 'Stlmiť miestnosť';
+
+  @override
+  String get room_unmute => 'Zrušiť stlmenie miestnosti';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'člen';
+
+  @override
+  String get room_roleReadOnly => 'len na čítanie';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Hodiny miestnosti sa líšia asi o $minutes min — časy správ môžu byť nesprávne';
+  }
+
+  @override
+  String get room_fixClock => 'Opraviť hodiny';
+
+  @override
+  String get room_clockSyncSent => 'Synchronizácia hodín odoslaná miestnosti';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Len na čítanie: miestnosť neprijala vaše heslo, vaše správy sa k ostatným členom nedostanú.';
+
+  @override
+  String get room_postAnnouncement => 'Uverejniť oznam';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Poslať správu v mene miestnosti všetkým členom';
+
+  @override
+  String get room_announcementSent => 'Oznam uverejnený';
+
+  @override
+  String get room_announcementFailed => 'Uverejnenie oznamu zlyhalo';
+
+  @override
+  String get room_users => 'Používatelia miestnosti';
+
+  @override
+  String get room_usersSubtitle => 'Zobraziť adminov a nastaviť role';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Miestnosť uvádza len svojich adminov. Členovia s heslom miestnosti sa nezobrazujú.';
+
+  @override
+  String get room_usersLoadFailed => 'Zoznam adminov sa nepodarilo načítať';
+
+  @override
+  String get room_setUserRole => 'Nastaviť rolu';
+
+  @override
+  String get room_removeAccess => 'Odobrať prístup';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Tento používateľ nie je vo vašich kontaktoch — možno ho len odstrániť, nie zmeniť.';
+
+  @override
+  String get room_roleUpdated => 'Rola aktualizovaná';
+
+  @override
+  String get room_roleUpdateFailed => 'Zmena roly zlyhala';
+
+  @override
+  String get room_postsStored => 'Uložené príspevky';
+
+  @override
+  String get room_postsDelivered => 'Doručené príspevky';
+
+  @override
+  String get room_reloadPosts => 'Znovu načítať nedávne príspevky';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Požiada miestnosť o opätovné odoslanie nedávnych príspevkov (uchováva až 32). Budete požiadaní o heslo miestnosti. Existujúce správy zostanú.';
+
+  @override
+  String get room_reloadFailed => 'Miestnosť sa nepodarilo resetovať na rádiu';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Meníte svoj vlastný prístup. Ak sa vzdáte roly admina, vrátiť vám ju môže len konzola miestnosti.';
 }

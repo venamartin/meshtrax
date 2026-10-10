@@ -192,6 +192,21 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mutedChannels: updated));
   }
 
+  bool isContactMuted(String pubKeyHex) {
+    return _settings.mutedContacts.contains(pubKeyHex);
+  }
+
+  Future<void> muteContact(String pubKeyHex) async {
+    final updated = Set<String>.from(_settings.mutedContacts)..add(pubKeyHex);
+    await updateSettings(_settings.copyWith(mutedContacts: updated));
+  }
+
+  Future<void> unmuteContact(String pubKeyHex) async {
+    final updated = Set<String>.from(_settings.mutedContacts)
+      ..remove(pubKeyHex);
+    await updateSettings(_settings.copyWith(mutedContacts: updated));
+  }
+
   Future<void> setTcpServerAddress(String value) async {
     await updateSettings(_settings.copyWith(tcpServerAddress: value));
   }

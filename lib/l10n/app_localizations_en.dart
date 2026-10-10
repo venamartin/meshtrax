@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3899,4 +3900,99 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Resending using your set route';
+
+  @override
+  String get room_mute => 'Mute room';
+
+  @override
+  String get room_unmute => 'Unmute room';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'member';
+
+  @override
+  String get room_roleReadOnly => 'read-only';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Room clock is off by about $minutes min — message times may be wrong';
+  }
+
+  @override
+  String get room_fixClock => 'Fix clock';
+
+  @override
+  String get room_clockSyncSent => 'Clock sync sent to the room';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Read-only: the room hasn\'t accepted your password, so messages you send won\'t reach other members.';
+
+  @override
+  String get room_postAnnouncement => 'Post announcement';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Send a message from the room itself to all members';
+
+  @override
+  String get room_announcementSent => 'Announcement posted';
+
+  @override
+  String get room_announcementFailed => 'Posting the announcement failed';
+
+  @override
+  String get room_users => 'Room users';
+
+  @override
+  String get room_usersSubtitle => 'See admins and set user roles';
+
+  @override
+  String get room_usersAdminsNote =>
+      'The room only lists its admins. Members who joined with the room password aren\'t shown.';
+
+  @override
+  String get room_usersLoadFailed => 'Couldn\'t load the admin list';
+
+  @override
+  String get room_setUserRole => 'Set user role';
+
+  @override
+  String get room_removeAccess => 'Remove access';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'This user isn\'t in your contacts, so they can only be removed, not changed.';
+
+  @override
+  String get room_roleUpdated => 'Role updated';
+
+  @override
+  String get room_roleUpdateFailed => 'Changing the role failed';
+
+  @override
+  String get room_postsStored => 'Posts stored';
+
+  @override
+  String get room_postsDelivered => 'Posts delivered';
+
+  @override
+  String get room_reloadPosts => 'Reload recent posts';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Asks the room to send its recent posts again (it keeps up to 32). You\'ll be asked to log in with the room password. Messages you already have are kept.';
+
+  @override
+  String get room_reloadFailed => 'Couldn\'t reset the room on the radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'You\'re changing your own access. If you drop your admin role, only the room\'s own console can give it back.';
 }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3975,4 +3976,101 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Ponowne wysyłanie ustawioną trasą';
+
+  @override
+  String get room_mute => 'Wycisz pokój';
+
+  @override
+  String get room_unmute => 'Wyłącz wyciszenie pokoju';
+
+  @override
+  String get room_roleAdmin => 'administrator';
+
+  @override
+  String get room_roleMember => 'członek';
+
+  @override
+  String get room_roleReadOnly => 'tylko odczyt';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Zegar pokoju różni się o około $minutes min — czasy wiadomości mogą być błędne';
+  }
+
+  @override
+  String get room_fixClock => 'Ustaw zegar';
+
+  @override
+  String get room_clockSyncSent => 'Wysłano synchronizację zegara do pokoju';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Tylko odczyt: pokój nie przyjął Twojego hasła, Twoje wiadomości nie dotrą do innych członków.';
+
+  @override
+  String get room_postAnnouncement => 'Opublikuj ogłoszenie';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Wyślij wiadomość w imieniu pokoju do wszystkich członków';
+
+  @override
+  String get room_announcementSent => 'Ogłoszenie opublikowane';
+
+  @override
+  String get room_announcementFailed =>
+      'Publikacja ogłoszenia nie powiodła się';
+
+  @override
+  String get room_users => 'Użytkownicy pokoju';
+
+  @override
+  String get room_usersSubtitle => 'Zobacz administratorów i ustaw role';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Pokój pokazuje tylko administratorów. Członkowie z hasłem pokoju nie są wyświetlani.';
+
+  @override
+  String get room_usersLoadFailed =>
+      'Nie udało się wczytać listy administratorów';
+
+  @override
+  String get room_setUserRole => 'Ustaw rolę';
+
+  @override
+  String get room_removeAccess => 'Usuń dostęp';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Tego użytkownika nie ma w kontaktach — można go tylko usunąć, nie zmienić.';
+
+  @override
+  String get room_roleUpdated => 'Rola zaktualizowana';
+
+  @override
+  String get room_roleUpdateFailed => 'Zmiana roli nie powiodła się';
+
+  @override
+  String get room_postsStored => 'Zapisane wpisy';
+
+  @override
+  String get room_postsDelivered => 'Dostarczone wpisy';
+
+  @override
+  String get room_reloadPosts => 'Wczytaj ponownie ostatnie wpisy';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Prosi pokój o ponowne wysłanie ostatnich wpisów (przechowuje do 32). Zostaniesz poproszony o hasło pokoju. Posiadane wiadomości zostaną zachowane.';
+
+  @override
+  String get room_reloadFailed => 'Nie udało się zresetować pokoju w radiu';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Zmieniasz własny dostęp. Jeśli utracisz rolę administratora, przywrócić ją może tylko konsola pokoju.';
 }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3946,4 +3947,99 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Ponovno pošiljanje po nastavljeni poti';
+
+  @override
+  String get room_mute => 'Utišaj sobo';
+
+  @override
+  String get room_unmute => 'Prekliči utišanje sobe';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'član';
+
+  @override
+  String get room_roleReadOnly => 'samo za branje';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Ura sobe odstopa za približno $minutes min — časi sporočil so lahko napačni';
+  }
+
+  @override
+  String get room_fixClock => 'Popravi uro';
+
+  @override
+  String get room_clockSyncSent => 'Sinhronizacija ure poslana sobi';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Samo za branje: soba ni sprejela vašega gesla, vaša sporočila ne bodo dosegla drugih članov.';
+
+  @override
+  String get room_postAnnouncement => 'Objavi obvestilo';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Pošlji sporočilo v imenu sobe vsem članom';
+
+  @override
+  String get room_announcementSent => 'Obvestilo objavljeno';
+
+  @override
+  String get room_announcementFailed => 'Objava obvestila ni uspela';
+
+  @override
+  String get room_users => 'Uporabniki sobe';
+
+  @override
+  String get room_usersSubtitle => 'Oglej si admine in nastavi vloge';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Soba navaja le svoje admine. Člani z geslom sobe niso prikazani.';
+
+  @override
+  String get room_usersLoadFailed => 'Seznama adminov ni bilo mogoče naložiti';
+
+  @override
+  String get room_setUserRole => 'Nastavi vlogo';
+
+  @override
+  String get room_removeAccess => 'Odstrani dostop';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Tega uporabnika ni med vašimi stiki — lahko ga le odstranite, ne spremenite.';
+
+  @override
+  String get room_roleUpdated => 'Vloga posodobljena';
+
+  @override
+  String get room_roleUpdateFailed => 'Sprememba vloge ni uspela';
+
+  @override
+  String get room_postsStored => 'Shranjene objave';
+
+  @override
+  String get room_postsDelivered => 'Dostavljene objave';
+
+  @override
+  String get room_reloadPosts => 'Znova naloži nedavne objave';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Prosi sobo, naj znova pošlje nedavne objave (hrani do 32). Vprašani boste za geslo sobe. Obstoječa sporočila ostanejo.';
+
+  @override
+  String get room_reloadFailed => 'Sobe ni bilo mogoče ponastaviti na radiu';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Spreminjate svoj lastni dostop. Če se odpoveste vlogi admina, vam jo lahko vrne le konzola sobe.';
 }

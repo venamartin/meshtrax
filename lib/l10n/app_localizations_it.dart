@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3968,4 +3969,103 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Reinvio tramite il percorso impostato';
+
+  @override
+  String get room_mute => 'Silenzia stanza';
+
+  @override
+  String get room_unmute => 'Riattiva stanza';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'membro';
+
+  @override
+  String get room_roleReadOnly => 'sola lettura';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'L\'orologio della stanza è sfasato di circa $minutes min — gli orari dei messaggi possono essere errati';
+  }
+
+  @override
+  String get room_fixClock => 'Correggi orologio';
+
+  @override
+  String get room_clockSyncSent =>
+      'Sincronizzazione orologio inviata alla stanza';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Sola lettura: la stanza non ha accettato la tua password, i tuoi messaggi non raggiungeranno gli altri membri.';
+
+  @override
+  String get room_postAnnouncement => 'Pubblica annuncio';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Invia un messaggio della stanza stessa a tutti i membri';
+
+  @override
+  String get room_announcementSent => 'Annuncio pubblicato';
+
+  @override
+  String get room_announcementFailed =>
+      'Pubblicazione dell\'annuncio non riuscita';
+
+  @override
+  String get room_users => 'Utenti della stanza';
+
+  @override
+  String get room_usersSubtitle => 'Vedi gli admin e assegna i ruoli';
+
+  @override
+  String get room_usersAdminsNote =>
+      'La stanza elenca solo i suoi admin. I membri con la password della stanza non compaiono.';
+
+  @override
+  String get room_usersLoadFailed =>
+      'Impossibile caricare l\'elenco degli admin';
+
+  @override
+  String get room_setUserRole => 'Assegna ruolo';
+
+  @override
+  String get room_removeAccess => 'Rimuovi accesso';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Questo utente non è nei tuoi contatti: può solo essere rimosso, non modificato.';
+
+  @override
+  String get room_roleUpdated => 'Ruolo aggiornato';
+
+  @override
+  String get room_roleUpdateFailed => 'Cambio ruolo non riuscito';
+
+  @override
+  String get room_postsStored => 'Messaggi memorizzati';
+
+  @override
+  String get room_postsDelivered => 'Messaggi consegnati';
+
+  @override
+  String get room_reloadPosts => 'Ricarica messaggi recenti';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Chiede alla stanza di inviare di nuovo i messaggi recenti (ne conserva fino a 32). Ti verrà chiesta la password della stanza. I messaggi già presenti restano.';
+
+  @override
+  String get room_reloadFailed =>
+      'Impossibile ripristinare la stanza sulla radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Stai cambiando il tuo stesso accesso. Se rinunci al ruolo di admin, solo la console della stanza può restituirtelo.';
 }

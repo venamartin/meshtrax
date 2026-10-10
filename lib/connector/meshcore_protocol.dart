@@ -404,6 +404,13 @@ int maxContactMessageBytes() {
   return _minPositive(byFrame, maxTextPayloadBytes);
 }
 
+// Matches room server firmware MAX_POST_TEXT_LEN: a longer post is accepted
+// but silently truncated before it is stored and pushed to other members.
+const int maxRoomPostTextBytes = 151;
+
+int maxRoomMessageBytes() =>
+    _minPositive(maxContactMessageBytes(), maxRoomPostTextBytes);
+
 int maxChannelMessageBytes(String? senderName) {
   final nameLength = _senderNameBytes(senderName);
   final prefixBytes = nameLength + 2; // "<name>: "

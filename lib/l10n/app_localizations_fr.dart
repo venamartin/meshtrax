@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3987,4 +3988,102 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Renvoi via l\'itinéraire défini';
+
+  @override
+  String get room_mute => 'Désactiver les notifications de la room';
+
+  @override
+  String get room_unmute => 'Réactiver les notifications de la room';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'membre';
+
+  @override
+  String get room_roleReadOnly => 'lecture seule';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'L\'horloge de la room décale d\'environ $minutes min — les heures des messages peuvent être fausses';
+  }
+
+  @override
+  String get room_fixClock => 'Régler l\'horloge';
+
+  @override
+  String get room_clockSyncSent =>
+      'Synchronisation de l\'horloge envoyée à la room';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Lecture seule : la room n\'a pas accepté votre mot de passe, vos messages n\'atteindront pas les autres membres.';
+
+  @override
+  String get room_postAnnouncement => 'Publier une annonce';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Envoyer un message au nom de la room à tous les membres';
+
+  @override
+  String get room_announcementSent => 'Annonce publiée';
+
+  @override
+  String get room_announcementFailed => 'Échec de la publication de l\'annonce';
+
+  @override
+  String get room_users => 'Utilisateurs de la room';
+
+  @override
+  String get room_usersSubtitle => 'Voir les admins et définir les rôles';
+
+  @override
+  String get room_usersAdminsNote =>
+      'La room ne liste que ses admins. Les membres utilisant le mot de passe de la room n\'apparaissent pas.';
+
+  @override
+  String get room_usersLoadFailed =>
+      'Impossible de charger la liste des admins';
+
+  @override
+  String get room_setUserRole => 'Définir le rôle';
+
+  @override
+  String get room_removeAccess => 'Retirer l\'accès';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Cet utilisateur n\'est pas dans vos contacts : il peut seulement être retiré, pas modifié.';
+
+  @override
+  String get room_roleUpdated => 'Rôle mis à jour';
+
+  @override
+  String get room_roleUpdateFailed => 'Échec du changement de rôle';
+
+  @override
+  String get room_postsStored => 'Messages stockés';
+
+  @override
+  String get room_postsDelivered => 'Messages distribués';
+
+  @override
+  String get room_reloadPosts => 'Recharger les messages récents';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Demande à la room de renvoyer ses messages récents (elle en garde jusqu\'à 32). Le mot de passe de la room sera demandé. Vos messages existants sont conservés.';
+
+  @override
+  String get room_reloadFailed =>
+      'Impossible de réinitialiser la room sur la radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Vous modifiez votre propre accès. Si vous abandonnez votre rôle d\'admin, seule la console de la room peut le rétablir.';
 }

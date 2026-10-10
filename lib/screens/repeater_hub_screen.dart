@@ -7,8 +7,10 @@ import '../services/app_settings_service.dart';
 import 'repeater_status_screen.dart';
 import 'repeater_cli_screen.dart';
 import 'repeater_settings_screen.dart';
+import 'room_users_screen.dart';
 import 'telemetry_screen.dart';
 import 'neighbors_screen.dart';
+import '../widgets/room_announcement_dialog.dart';
 
 class RepeaterHubScreen extends StatelessWidget {
   final Contact repeater;
@@ -247,24 +249,61 @@ class RepeaterHubScreen extends StatelessWidget {
                   );
                 },
               ),
-            const SizedBox(height: 12),
-            // Neighbors button
-            _buildManagementCard(
-              context,
-              icon: Icons.group,
-              title: l10n.repeater_neighbors,
-              subtitle: l10n.repeater_neighborsSubtitle,
-              color: Colors.orange,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        NeighborsScreen(repeater: repeater, password: password),
-                  ),
-                );
-              },
-            ),
+            // Rooms don't answer the neighbors request, and their member
+            // management goes through the access list instead.
+            if (repeater.type != advTypeRoom) ...[
+              const SizedBox(height: 12),
+              _buildManagementCard(
+                context,
+                icon: Icons.group,
+                title: l10n.repeater_neighbors,
+                subtitle: l10n.repeater_neighborsSubtitle,
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NeighborsScreen(
+                          repeater: repeater, password: password),
+                    ),
+                  );
+                },
+              ),
+            ],
+            if (isAdmin && repeater.type == advTypeRoom) ...[
+              const SizedBox(height: 12),
+              _buildManagementCard(
+                context,
+                icon: Icons.campaign,
+                title: l10n.room_postAnnouncement,
+                subtitle: l10n.room_postAnnouncementSubtitle,
+                color: Colors.purple,
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (context) =>
+                      RoomAnnouncementDialog(room: repeater),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildManagementCard(
+                context,
+                icon: Icons.manage_accounts,
+                title: l10n.room_users,
+                subtitle: l10n.room_usersSubtitle,
+                color: Colors.indigo,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RoomUsersScreen(
+                        room: repeater,
+                        password: password,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
             if (isAdmin) const SizedBox(height: 12),
             // Settings button
             if (isAdmin)

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3981,4 +3982,101 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Újraküldés a beállított útvonalon';
+
+  @override
+  String get room_mute => 'Szoba némítása';
+
+  @override
+  String get room_unmute => 'Szoba némításának feloldása';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'tag';
+
+  @override
+  String get room_roleReadOnly => 'csak olvasás';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'A szoba órája kb. $minutes perccel eltér — az üzenetek időpontjai hibásak lehetnek';
+  }
+
+  @override
+  String get room_fixClock => 'Óra igazítása';
+
+  @override
+  String get room_clockSyncSent => 'Órajel-szinkron elküldve a szobának';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Csak olvasás: a szoba nem fogadta el a jelszavad, az üzeneteid nem jutnak el a többi taghoz.';
+
+  @override
+  String get room_postAnnouncement => 'Közlemény küldése';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Üzenet küldése a szoba nevében minden tagnak';
+
+  @override
+  String get room_announcementSent => 'Közlemény közzétéve';
+
+  @override
+  String get room_announcementFailed => 'A közlemény közzététele nem sikerült';
+
+  @override
+  String get room_users => 'Szoba felhasználói';
+
+  @override
+  String get room_usersSubtitle =>
+      'Adminok megtekintése és szerepek beállítása';
+
+  @override
+  String get room_usersAdminsNote =>
+      'A szoba csak az adminjait listázza. A szobajelszóval belépett tagok nem jelennek meg.';
+
+  @override
+  String get room_usersLoadFailed => 'Az adminlista betöltése nem sikerült';
+
+  @override
+  String get room_setUserRole => 'Szerep beállítása';
+
+  @override
+  String get room_removeAccess => 'Hozzáférés megvonása';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Ez a felhasználó nincs a névjegyeid között — csak eltávolítani lehet, módosítani nem.';
+
+  @override
+  String get room_roleUpdated => 'Szerep frissítve';
+
+  @override
+  String get room_roleUpdateFailed => 'A szerep módosítása nem sikerült';
+
+  @override
+  String get room_postsStored => 'Tárolt bejegyzések';
+
+  @override
+  String get room_postsDelivered => 'Kézbesített bejegyzések';
+
+  @override
+  String get room_reloadPosts => 'Friss bejegyzések újratöltése';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Megkéri a szobát, hogy küldje el újra a friss bejegyzéseket (legfeljebb 32-t tárol). A szoba jelszavát kérni fogja. A meglévő üzenetek megmaradnak.';
+
+  @override
+  String get room_reloadFailed =>
+      'A szobát nem sikerült visszaállítani a rádión';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'A saját hozzáférésedet módosítod. Ha lemondasz az admin szerepről, csak a szoba saját konzolja adhatja vissza.';
 }

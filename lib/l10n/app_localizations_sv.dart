@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3926,4 +3927,100 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => 'Skickar igen via din angivna rutt';
+
+  @override
+  String get room_mute => 'Tysta rummet';
+
+  @override
+  String get room_unmute => 'Slå på ljud för rummet';
+
+  @override
+  String get room_roleAdmin => 'admin';
+
+  @override
+  String get room_roleMember => 'medlem';
+
+  @override
+  String get room_roleReadOnly => 'skrivskyddad';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Rummets klocka avviker cirka $minutes min — meddelandetider kan vara fel';
+  }
+
+  @override
+  String get room_fixClock => 'Ställ klockan';
+
+  @override
+  String get room_clockSyncSent => 'Klocksynk skickad till rummet';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Skrivskyddat: rummet accepterade inte ditt lösenord, dina meddelanden når inte övriga medlemmar.';
+
+  @override
+  String get room_postAnnouncement => 'Publicera meddelande';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Skicka ett meddelande från själva rummet till alla medlemmar';
+
+  @override
+  String get room_announcementSent => 'Meddelandet publicerat';
+
+  @override
+  String get room_announcementFailed =>
+      'Det gick inte att publicera meddelandet';
+
+  @override
+  String get room_users => 'Rummets användare';
+
+  @override
+  String get room_usersSubtitle => 'Se admins och ange roller';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Rummet listar bara sina admins. Medlemmar med rumslösenordet visas inte.';
+
+  @override
+  String get room_usersLoadFailed => 'Kunde inte läsa in adminlistan';
+
+  @override
+  String get room_setUserRole => 'Ange roll';
+
+  @override
+  String get room_removeAccess => 'Ta bort åtkomst';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Den här användaren finns inte bland dina kontakter — den kan bara tas bort, inte ändras.';
+
+  @override
+  String get room_roleUpdated => 'Roll uppdaterad';
+
+  @override
+  String get room_roleUpdateFailed => 'Det gick inte att ändra rollen';
+
+  @override
+  String get room_postsStored => 'Lagrade inlägg';
+
+  @override
+  String get room_postsDelivered => 'Levererade inlägg';
+
+  @override
+  String get room_reloadPosts => 'Läs in senaste inläggen igen';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Ber rummet skicka sina senaste inlägg igen (det sparar upp till 32). Du ombeds ange rummets lösenord. Befintliga meddelanden behålls.';
+
+  @override
+  String get room_reloadFailed => 'Kunde inte återställa rummet på radion';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Du ändrar din egen åtkomst. Om du släpper din adminroll kan bara rummets egen konsol ge tillbaka den.';
 }

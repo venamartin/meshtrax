@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3960,4 +3961,102 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute =>
+      'Повторно изпращане по зададения от вас маршрут';
+
+  @override
+  String get room_mute => 'Заглушаване на стаята';
+
+  @override
+  String get room_unmute => 'Включване на звука за стаята';
+
+  @override
+  String get room_roleAdmin => 'админ';
+
+  @override
+  String get room_roleMember => 'член';
+
+  @override
+  String get room_roleReadOnly => 'само четене';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'Часовникът на стаята се разминава с около $minutes мин — часовете на съобщенията може да са грешни';
+  }
+
+  @override
+  String get room_fixClock => 'Поправи часовника';
+
+  @override
+  String get room_clockSyncSent =>
+      'Синхронизацията на часовника е изпратена към стаята';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Само четене: стаята не прие паролата ви, съобщенията ви няма да стигнат до другите членове.';
+
+  @override
+  String get room_postAnnouncement => 'Публикуване на обявление';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Изпрати съобщение от името на стаята до всички членове';
+
+  @override
+  String get room_announcementSent => 'Обявлението е публикувано';
+
+  @override
+  String get room_announcementFailed =>
+      'Публикуването на обявлението се провали';
+
+  @override
+  String get room_users => 'Потребители на стаята';
+
+  @override
+  String get room_usersSubtitle => 'Преглед на админите и задаване на роли';
+
+  @override
+  String get room_usersAdminsNote =>
+      'Стаята показва само своите админи. Членовете с паролата на стаята не се показват.';
+
+  @override
+  String get room_usersLoadFailed => 'Списъкът с админи не можа да се зареди';
+
+  @override
+  String get room_setUserRole => 'Задай роля';
+
+  @override
+  String get room_removeAccess => 'Премахни достъпа';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Този потребител не е в контактите ви — може само да бъде премахнат, не променен.';
+
+  @override
+  String get room_roleUpdated => 'Ролята е обновена';
+
+  @override
+  String get room_roleUpdateFailed => 'Смяната на ролята се провали';
+
+  @override
+  String get room_postsStored => 'Съхранени съобщения';
+
+  @override
+  String get room_postsDelivered => 'Доставени съобщения';
+
+  @override
+  String get room_reloadPosts => 'Презареди последните съобщения';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Иска от стаята да изпрати отново последните съобщения (пази до 32). Ще бъдете помолени за паролата на стаята. Наличните съобщения се запазват.';
+
+  @override
+  String get room_reloadFailed => 'Стаята не можа да бъде нулирана на радиото';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Променяте собствения си достъп. Ако се откажете от ролята на админ, само конзолата на стаята може да я върне.';
 }

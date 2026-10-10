@@ -231,6 +231,42 @@ enum DeviceClockAction {
   stuckAhead,
 }
 
+/// Outcome of a room server login, observed on the frame stream or implied
+/// by a post arriving from the room (the server only pushes to logged-in
+/// clients, so an incoming post proves the session even when the LOGIN_OK
+/// frame was lost on the air).
+class RoomLoginEvent {
+  final String roomKeyHex;
+  final bool success;
+
+  /// Null for implied events — a pushed post says nothing about permissions.
+  final bool? isAdmin;
+
+  /// Raw ACL permissions byte from the login response (low 2 bits are the
+  /// role: 0 guest, 1 read-only, 2 member, 3 admin). Null for implied
+  /// events and legacy 8-byte responses.
+  final int? permissions;
+
+  /// The room server's own clock when it accepted the login — lets the app
+  /// warn when the room's clock is off (posts carry its timestamps).
+  final DateTime? serverClock;
+  final bool implied;
+  final DateTime at;
+
+  RoomLoginEvent({
+    required this.roomKeyHex,
+    required this.success,
+    required this.isAdmin,
+    this.permissions,
+    this.serverClock,
+    required this.implied,
+    required this.at,
+  });
+
+  /// Role from the low 2 bits of [permissions]; null when unknown.
+  int? get role => permissions == null ? null : permissions! & 0x3;
+}
+
 class MeshCoreConnector extends ChangeNotifier {
   // Message windowing to limit memory usage
 
@@ -310,6 +346,74 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
   String? roomAdminPassword(String pubKeyHex) => _roomAdminPasswords[pubKeyHex];
+
+  // Last login outcome per room, kept connection-scoped like the admin
+  // sessions. A dialog that missed the LOGIN_OK frame reads it here instead
+  // of being stranded on its own frame subscription.
+  final Map<String, RoomLoginEvent> _lastRoomLoginEvents = {};
+  final StreamController<RoomLoginEvent> _roomLoginEventsController =
+      StreamController<RoomLoginEvent>.broadcast();
+
+  Stream<RoomLoginEvent> get roomLoginEvents =>
+      _roomLoginEventsController.stream;
+
+  RoomLoginEvent? lastRoomLoginEvent(String pubKeyHex) =>
+      _lastRoomLoginEvents[pubKeyHex];
+
+  void _recordRoomLoginEvent(RoomLoginEvent event) {
+    _lastRoomLoginEvents[event.roomKeyHex] = event;
+    _roomLoginEventsController.add(event);
+    // The chat screen's role badge and clock-skew banner read the last
+    // event from a Consumer build.
+    notifyListeners();
+  }
+
+  // When a clock sync was last sent per room. The skew banner measures from
+  // the LAST login response, so after a fix it must stay down until a newer
+  // login re-measures — otherwise it re-warns from the stale reading.
+  final Map<String, DateTime> _roomClockSyncSentAt = {};
+
+  void markRoomClockSyncSent(String pubKeyHex) {
+    _roomClockSyncSentAt[pubKeyHex] = DateTime.now();
+  }
+
+  DateTime? roomClockSyncSentAt(String pubKeyHex) =>
+      _roomClockSyncSentAt[pubKeyHex];
+
+  void _handleRoomLoginPush(Uint8List frame) {
+    if (frame.length < 8) return;
+    final prefix = frame.sublist(2, 8);
+    final room = _contacts.cast<Contact?>().firstWhere(
+      (c) => c!.type == advTypeRoom && _matchesPrefix(c.publicKey, prefix),
+      orElse: () => null,
+    );
+    if (room == null) return;
+    // New-style success push (14 bytes) carries the server's clock, the ACL
+    // permissions byte and the firmware version level past the prefix; the
+    // legacy 8-byte form has none of them.
+    int? permissions;
+    DateTime? serverClock;
+    if (frame[0] == pushCodeLoginSuccess && frame.length >= 14) {
+      final secs = frame[8] |
+          (frame[9] << 8) |
+          (frame[10] << 16) |
+          (frame[11] << 24);
+      if (secs > 0) {
+        serverClock = DateTime.fromMillisecondsSinceEpoch(secs * 1000);
+      }
+      permissions = frame[12];
+    }
+    _recordRoomLoginEvent(RoomLoginEvent(
+      roomKeyHex: room.publicKeyHex,
+      success: frame[0] == pushCodeLoginSuccess,
+      // Byte 1 is 1 for admin, 2 for guest, 0 otherwise.
+      isAdmin: frame[1] == 1,
+      permissions: permissions,
+      serverClock: serverClock,
+      implied: false,
+      at: DateTime.now(),
+    ));
+  }
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
@@ -2798,6 +2902,8 @@ class MeshCoreConnector extends ChangeNotifier {
     _contacts.clear();
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
+    _lastRoomLoginEvents.clear();
+    _roomClockSyncSentAt.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
     // queue never redelivers drained messages, flushing requires a fresh
     // CHANNEL_INFO on the next connection, and the node-switch wipe clears
@@ -3884,6 +3990,40 @@ class MeshCoreConnector extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resets the radio's room-post sync cursor by deleting and re-adding the
+  /// contact on the RADIO only — the app keeps its stored messages, and the
+  /// database dedups whatever the server pushes again. The companion has no
+  /// command to write sync_since directly; a freshly added contact starts
+  /// at zero, and the next PASSWORD login (a blank one is ignored by stock
+  /// servers) makes the room re-push its whole backlog, up to 32 posts.
+  Future<bool> resetRoomSyncCursor(Contact room) async {
+    if (!isConnected) return false;
+    final removed =
+        await _sendAndWaitForAck(buildRemoveContactFrame(room.publicKey));
+    if (!removed) return false;
+    final readded = await _sendAndWaitForAck(
+      buildUpdateContactPathFrame(
+        room.publicKey,
+        room.path,
+        room.pathLength,
+        room.pathHashSize,
+        type: room.type,
+        flags: room.flags,
+        name: room.name,
+        lat: room.latitude,
+        lon: room.longitude,
+        lastModified: room.lastSeen,
+      ),
+    );
+    if (!readded) {
+      appLogger.error(
+        'Room ${room.name} removed but re-add failed during history reload',
+        tag: 'Connector',
+      );
+    }
+    return readded;
+  }
+
   Future<bool> importDiscoveredContact(Contact contact) async {
     if (!isConnected) return false;
 
@@ -4916,6 +5056,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case pushCodeLoginSuccess:
       case pushCodeLoginFail:
+        _handleRoomLoginPush(frame);
+        break;
       case pushCodeStatusResponse:
         break;
       case pushCodeLogRxData:
@@ -5694,13 +5836,29 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         orElse: () => null,
       );
       if (contact != null) {
-        message = message.copyWith(
-          pathLength: contact.pathLength < 0 ? -1 : contact.pathLength,
-          pathBytes: contact.pathLength < 0 ? Uint8List(0) : contact.path,
-        );
+        // The frame's path_len is the hops THIS packet traveled — keep it.
+        // Attach our known route's bytes only when its length agrees, so a
+        // repeater-names line never claims hops the packet didn't report.
+        final hops = message.pathLength ?? -1;
+        if (hops > 0 &&
+            contact.pathLength == hops &&
+            contact.path.isNotEmpty) {
+          message = message.copyWith(pathBytes: contact.path);
+        }
       }
       if (contact != null) {
         _updateContactLastMessageAt(contact.publicKeyHex, message.timestamp);
+      }
+      // A room server only pushes posts to logged-in clients, so an incoming
+      // post proves the session even when the LOGIN_OK frame was lost.
+      if (contact?.type == advTypeRoom && !message.isOutgoing) {
+        _recordRoomLoginEvent(RoomLoginEvent(
+          roomKeyHex: contact!.publicKeyHex,
+          success: true,
+          isAdmin: null,
+          implied: true,
+          at: DateTime.now(),
+        ));
       }
       // Dedup is the database's unique constraint; unread eligibility is
       // decided inside the ingest. Captured non-null: promotion of the
@@ -5719,8 +5877,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             !incoming.isCli &&
             _appSettingsService != null) {
           final settings = _appSettingsService!.settings;
-          if (settings.notificationsEnabled && settings.notifyOnNewMessage) {
-            if (contact?.type == advTypeChat) {
+          if (settings.notificationsEnabled) {
+            if (contact?.type == advTypeChat &&
+                settings.notifyOnNewMessage) {
               _notificationService.showMessageNotification(
                 contactName: contact?.name ?? 'Unknown',
                 message: incoming.text,
@@ -5728,12 +5887,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
                 badgeCount: getTotalUnreadCount(),
               );
             } else if (contact?.type == advTypeRoom) {
-              _notificationService.showMessageNotification(
-                contactName: contact?.name ?? 'Unknown Room',
-                message: incoming.text,
-                contactId: incoming.senderKeyHex,
-                badgeCount: getTotalUnreadCount(),
-              );
+              _maybeNotifyRoomMessage(contact!, incoming);
             }
           }
         }
@@ -7418,6 +7572,36 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return contact?.name ?? 'Unknown';
   }
 
+  /// Room post notification, mirroring the channel rules: a mention or
+  /// reply-to-me outranks the new-message toggle and the room's mute; an
+  /// unplaced reaction never notifies (its "{emoji}@[target]" text would
+  /// read as a mention and pierce a mute the user set).
+  void _maybeNotifyRoomMessage(Contact room, Message message) {
+    final settingsService = _appSettingsService;
+    if (settingsService == null) return;
+    final settings = settingsService.settings;
+
+    if (ReactionHelper.parseMeshCoreOneReaction(message.text) != null) return;
+
+    final isMention = settings.notifyOnMention &&
+        ChannelMessage.mentionsUser(message.text, _selfName);
+    if (!isMention && !settings.notifyOnNewMessage) return;
+    if (!isMention && settingsService.isContactMuted(room.publicKeyHex)) {
+      return;
+    }
+
+    // Show the post's author and body, not the raw reply wire text.
+    final body =
+        ChannelMessage.parseReply(message.text)?.actualMessage ?? message.text;
+    final author = _resolveContactSenderName(message, room, true);
+    _notificationService.showMessageNotification(
+      contactName: room.name,
+      message: author != null && author.isNotEmpty ? '$author: $body' : body,
+      contactId: message.senderKeyHex,
+      badgeCount: getTotalUnreadCount(),
+    );
+  }
+
   String? _resolveContactSenderName(
     Message msg,
     Contact? contact,
@@ -8340,6 +8524,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _channelMessageTimers.clear();
     radioStatsNotifier.dispose();
     _receivedFramesController.close();
+    _roomLoginEventsController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();
 

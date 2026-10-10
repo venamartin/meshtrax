@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3949,4 +3950,100 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute =>
+      'Opnieuw verzenden via de ingestelde route';
+
+  @override
+  String get room_mute => 'Ruimte dempen';
+
+  @override
+  String get room_unmute => 'Dempen van ruimte opheffen';
+
+  @override
+  String get room_roleAdmin => 'beheerder';
+
+  @override
+  String get room_roleMember => 'lid';
+
+  @override
+  String get room_roleReadOnly => 'alleen-lezen';
+
+  @override
+  String room_clockOff(int minutes) {
+    return 'De klok van de ruimte wijkt ongeveer $minutes min af — berichttijden kunnen fout zijn';
+  }
+
+  @override
+  String get room_fixClock => 'Klok corrigeren';
+
+  @override
+  String get room_clockSyncSent => 'Kloksynchronisatie naar de ruimte gestuurd';
+
+  @override
+  String get room_readOnlyNotice =>
+      'Alleen-lezen: de ruimte heeft je wachtwoord niet geaccepteerd, je berichten bereiken andere leden niet.';
+
+  @override
+  String get room_postAnnouncement => 'Aankondiging plaatsen';
+
+  @override
+  String get room_postAnnouncementSubtitle =>
+      'Stuur een bericht namens de ruimte zelf naar alle leden';
+
+  @override
+  String get room_announcementSent => 'Aankondiging geplaatst';
+
+  @override
+  String get room_announcementFailed => 'Plaatsen van aankondiging mislukt';
+
+  @override
+  String get room_users => 'Gebruikers van de ruimte';
+
+  @override
+  String get room_usersSubtitle => 'Bekijk beheerders en stel rollen in';
+
+  @override
+  String get room_usersAdminsNote =>
+      'De ruimte toont alleen beheerders. Leden met het ruimtewachtwoord staan er niet bij.';
+
+  @override
+  String get room_usersLoadFailed => 'Beheerderslijst kon niet worden geladen';
+
+  @override
+  String get room_setUserRole => 'Rol instellen';
+
+  @override
+  String get room_removeAccess => 'Toegang verwijderen';
+
+  @override
+  String get room_removeOnlyUnknown =>
+      'Deze gebruiker staat niet in je contacten en kan alleen worden verwijderd, niet gewijzigd.';
+
+  @override
+  String get room_roleUpdated => 'Rol bijgewerkt';
+
+  @override
+  String get room_roleUpdateFailed => 'Rol wijzigen mislukt';
+
+  @override
+  String get room_postsStored => 'Opgeslagen berichten';
+
+  @override
+  String get room_postsDelivered => 'Bezorgde berichten';
+
+  @override
+  String get room_reloadPosts => 'Recente berichten opnieuw laden';
+
+  @override
+  String get room_reloadPostsExplain =>
+      'Vraagt de ruimte om recente berichten opnieuw te sturen (maximaal 32). Je wordt om het ruimtewachtwoord gevraagd. Bestaande berichten blijven bewaard.';
+
+  @override
+  String get room_reloadFailed => 'Kon de ruimte niet resetten op de radio';
+
+  @override
+  String get room_selfDemoteWarning =>
+      'Je wijzigt je eigen toegang. Als je je beheerdersrol opgeeft, kan alleen de console van de ruimte die teruggeven.';
 }

@@ -40,8 +40,10 @@ import '../utils/emoji_utils.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
+import '../widgets/mention_composer.dart';
 import '../widgets/room_login_dialog.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../widgets/swipe_reply_bubble.dart';
 import '../l10n/l10n.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -59,14 +61,37 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _textController = TextEditingController();
+  final _textController = MentionTextEditingController();
   final _textFieldFocusNode = FocusNode();
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
 
+  // Reply/mention state — rooms only; a 1-on-1 DM has no one to address.
+  Message? _replyingToMessage;
+  bool _showMentions = false;
+  String? _mentionSearchText;
+  List<Contact> _filteredMentionContacts = [];
+  // Memoized resolved-author list — rebuilt when the message list changes.
+  Map<String, Contact>? _cachedRoomAuthorMap;
+  int _cachedAuthorMapMessageCount = -1;
+
+  bool get _isRoom => widget.contact.type == advTypeRoom;
+
+  /// Last persisted ACL permissions byte for this room — a restart hint
+  /// until a live login event replaces it.
+  int? _storedRoomPerms;
+  bool _clockBannerDismissed = false;
+
   bool _isLoadingOlder = false;
   MeshCoreConnector? _connector;
   Message? _firstUnreadMessage;
+
+  /// Unread count captured synchronously at screen open. The first database
+  /// emission can land after setActiveContact has already marked the chat
+  /// read, so asking the connector then would always see zero — the race
+  /// that kept the NEW MESSAGES divider from arming on entry paths that
+  /// don't pass an unread count (room login flow, open-chat-with-author).
+  int _unreadAtOpen = 0;
   int _initialScrollIndex = 0;
   bool _isAtBottom = true;
   DateTime? _lastTextSendAt;
@@ -91,12 +116,12 @@ class _ChatScreenState extends State<ChatScreen> {
           _didInitialAnchor = true;
           _previousMessageCount = messages.length;
           final settings = context.read<AppSettingsService>().settings;
-          final unread = widget.unreadCount ??
-              connector
-                  .getUnreadCountForContactKey(widget.contact.publicKeyHex);
-          if (settings.jumpToOldestUnread && unread > 0) {
+          final unread = _unreadAtOpen;
+          if (unread > 0) {
+            // The NEW MESSAGES divider always marks the oldest unread; the
+            // setting only decides whether the list opens scrolled to it.
             _firstUnreadMessage = _findOldestUnreadAnchor(messages, unread);
-            if (_firstUnreadMessage != null) {
+            if (settings.jumpToOldestUnread && _firstUnreadMessage != null) {
               final idx =
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (idx != -1) {
@@ -117,6 +142,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
     final connector = context.read<MeshCoreConnector>();
+    _unreadAtOpen = widget.unreadCount ??
+        connector.getUnreadCountForContactKey(widget.contact.publicKeyHex);
     _subscribeMessages(connector);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -126,7 +153,38 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     if (widget.contact.type == advTypeRoom) {
+      _textController.addListener(_mentionsListener);
       _restoreRoomAdminSession(connector);
+      StorageService().getRoomPermissions(widget.contact.publicKeyHex).then(
+        (perms) {
+          if (mounted && perms != null) {
+            setState(() => _storedRoomPerms = perms);
+          }
+        },
+      );
+    }
+  }
+
+  /// Role in this room (0 guest, 1 read-only, 2 member, 3 admin), from the
+  /// live login event when there is one, else the persisted hint.
+  int? _roomRole(MeshCoreConnector connector) {
+    if (!_isRoom) return null;
+    final live =
+        connector.lastRoomLoginEvent(widget.contact.publicKeyHex)?.role;
+    return live ?? (_storedRoomPerms == null ? null : _storedRoomPerms! & 0x3);
+  }
+
+  String? _roomRoleLabel(int? role) {
+    switch (role) {
+      case 3:
+        return context.l10n.room_roleAdmin;
+      case 2:
+        return context.l10n.room_roleMember;
+      case 1:
+      case 0:
+        return context.l10n.room_roleReadOnly;
+      default:
+        return null;
     }
   }
 
@@ -195,6 +253,155 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _setReplyingTo(Message message) {
+    setState(() {
+      _replyingToMessage = message;
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyingToMessage = null;
+    });
+  }
+
+  /// The `@[name]` a reply or mention of [message] goes on the wire with.
+  /// An unresolved author falls back to the bare hex prefix — "Unknown [..]"
+  /// contains a bracket and would break the wire syntax.
+  String _replyTargetName(Message message, MeshCoreConnector connector) {
+    if (message.isOutgoing) return connector.selfName ?? context.l10n.chat_me;
+    final author =
+        _resolveContactFrom4Bytes(connector, message.fourByteRoomContactKey);
+    if (author != null) return author.name;
+    return message.fourByteRoomContactKey.isNotEmpty
+        ? pubKeyToHex(message.fourByteRoomContactKey).toUpperCase()
+        : '00000000';
+  }
+
+  /// Room members who can be @-mentioned: authors seen in this conversation
+  /// whose adverts we hold. Unresolvable prefixes and the room itself are
+  /// excluded — there is no name to type.
+  List<Contact> _roomMentionCandidates(MeshCoreConnector connector) {
+    if (_cachedRoomAuthorMap == null ||
+        _cachedAuthorMapMessageCount != _messages.length) {
+      final map = <String, Contact>{};
+      final room = _resolveContact(connector);
+      for (final m in _messages) {
+        if (m.isOutgoing || m.fourByteRoomContactKey.length < 4) continue;
+        final hex = pubKeyToHex(m.fourByteRoomContactKey);
+        if (map.containsKey(hex)) continue;
+        final author =
+            _resolveContactFrom4Bytes(connector, m.fourByteRoomContactKey);
+        if (author == null) continue;
+        if (author.publicKeyHex == room.publicKeyHex) continue;
+        map[hex] = author;
+      }
+      _cachedRoomAuthorMap = map;
+      _cachedAuthorMapMessageCount = _messages.length;
+    }
+    return _cachedRoomAuthorMap!.values.toList();
+  }
+
+  void _mentionsListener() {
+    if (!mounted) return;
+    final text = _textController.text;
+    final selection = _textController.selection;
+
+    if (!selection.isValid || selection.baseOffset != selection.extentOffset) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final cursorPosition = selection.baseOffset;
+    if (cursorPosition == 0) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final textBeforeCursor = text.substring(0, cursorPosition);
+    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSignIndex != -1) {
+      final textAfterAt = textBeforeCursor.substring(lastAtSignIndex + 1);
+      final charBeforeAt =
+          lastAtSignIndex > 0 ? textBeforeCursor[lastAtSignIndex - 1] : ' ';
+
+      if (!textAfterAt.contains(' ') &&
+          (charBeforeAt == ' ' || charBeforeAt == '\n')) {
+        final search = textAfterAt.toLowerCase();
+        final connector = context.read<MeshCoreConnector>();
+
+        final filtered = _roomMentionCandidates(connector)
+            .where((c) => c.name.toLowerCase().contains(search))
+            .toList();
+        filtered.sort((a, b) {
+          final aStart = a.name.toLowerCase().startsWith(search);
+          final bStart = b.name.toLowerCase().startsWith(search);
+          if (aStart && !bStart) return -1;
+          if (!aStart && bStart) return 1;
+          return a.name.compareTo(b.name);
+        });
+
+        if (_showMentions != filtered.isNotEmpty ||
+            _mentionSearchText != search) {
+          setState(() {
+            _mentionSearchText = search;
+            _showMentions = filtered.isNotEmpty;
+            _filteredMentionContacts = filtered;
+          });
+        }
+        return;
+      }
+    }
+
+    if (_showMentions) {
+      setState(() => _showMentions = false);
+    }
+  }
+
+  void _insertMention(Contact contact) {
+    final text = _textController.text;
+    final selection = _textController.selection;
+    final cursorPosition = selection.baseOffset;
+    final textBeforeCursor = text.substring(0, cursorPosition);
+    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSignIndex != -1) {
+      final newText = text.replaceRange(
+        lastAtSignIndex,
+        cursorPosition,
+        '@[${contact.name}] ',
+      );
+
+      _textController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: lastAtSignIndex + contact.name.length + 4,
+        ),
+      );
+
+      setState(() => _showMentions = false);
+      _textFieldFocusNode.requestFocus();
+    }
+  }
+
+  /// Inserts "@[name] " at the cursor (or the end) and focuses the composer.
+  /// Used by the message actions sheet and the mention swipe.
+  void _insertMentionOf(String senderName) {
+    final text = _textController.text;
+    final sel = _textController.selection;
+    final start = sel.isValid ? sel.start : text.length;
+    final end = sel.isValid ? sel.end : text.length;
+    final needsSpace =
+        start > 0 && text[start - 1] != ' ' && text[start - 1] != '\n';
+    final mention = '${needsSpace ? ' ' : ''}@[$senderName] ';
+    _textController.value = TextEditingValue(
+      text: text.replaceRange(start, end, mention),
+      selection: TextSelection.collapsed(offset: start + mention.length),
+    );
+    _textFieldFocusNode.requestFocus();
+  }
+
   Future<void> _loadOlderMessages() async {
     if (_isLoadingOlder) return;
     // Paging is a bigger LIMIT on the watched query — SQL does the rest.
@@ -215,6 +422,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
+    _textController.removeListener(_mentionsListener);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -232,8 +440,15 @@ class _ChatScreenState extends State<ChatScreen> {
             final unreadCount = connector.getUnreadCountForContactKey(
               widget.contact.publicKeyHex,
             );
-            final unreadLabel = context.l10n.chat_unread(unreadCount);
             final pathLabel = _currentPathLabel(contact, connector);
+            final roleLabel = _roomRoleLabel(_roomRole(connector));
+            // "Unread: 0" is noise while the chat is open (it marks itself
+            // read) and it ellipsized the role badge off the narrow title.
+            final subtitle = [
+              pathLabel,
+              if (unreadCount > 0) context.l10n.chat_unread(unreadCount),
+              ?roleLabel,
+            ].join(' • ');
 
             // Show path details if we have non-empty path data (from device or override)
             final effectivePath = contact.pathOverrideBytes ?? contact.path;
@@ -256,7 +471,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           )
                       : null,
                   child: Text(
-                    '$pathLabel • $unreadLabel',
+                    subtitle,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
@@ -354,6 +569,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (value == 'clearChat') {
                     connector.clearMessagesForContact(widget.contact);
                   }
+                  if (value == 'reloadPosts') {
+                    _reloadRoomPosts(connector);
+                  }
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(
@@ -386,6 +604,17 @@ class _ChatScreenState extends State<ChatScreen> {
                       ],
                     ),
                   ),
+                  if (_isRoom)
+                    PopupMenuItem(
+                      value: 'reloadPosts',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.history, size: 20),
+                          const SizedBox(width: 12),
+                          Text(context.l10n.room_reloadPosts),
+                        ],
+                      ),
+                    ),
                   PopupMenuItem(
                     value: 'clearChat',
                     child: Row(
@@ -418,6 +647,7 @@ class _ChatScreenState extends State<ChatScreen> {
           return Column(
             children: [
               ?ConnectionStatusBanner.ifDisconnected(context, connector),
+              if (_isRoom) ?_buildClockSkewBanner(connector),
               Expanded(
                 child: Stack(
                   children: [
@@ -453,6 +683,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   ],
                 ),
               ),
+              if (_showMentions)
+                MentionsOverlay(
+                  contacts: _filteredMentionContacts,
+                  onSelect: _insertMention,
+                ),
+              if (_isRoom && _roomRole(connector) == 0)
+                _buildReadOnlyBanner(),
               _buildInputBar(connector),
             ],
           );
@@ -537,17 +774,17 @@ class _ChatScreenState extends State<ChatScreen> {
           final messageIndex = index;
           Contact contact = _resolveContact(connector);
           final message = reversedMessages[messageIndex];
+          Contact? roomAuthor;
           String fourByteHex = '';
           if (contact.type == advTypeRoom) {
-            contact = _resolveContactFrom4Bytes(
+            roomAuthor = _resolveContactFrom4Bytes(
               connector,
-              message.fourByteRoomContactKey.isEmpty
-                  ? Uint8List.fromList([0, 0, 0, 0])
-                  : message.fourByteRoomContactKey,
+              message.fourByteRoomContactKey,
             );
             fourByteHex = message.fourByteRoomContactKey.isNotEmpty
                 ? pubKeyToHex(message.fourByteRoomContactKey).toUpperCase()
                 : "00000000";
+            contact = roomAuthor ?? contact;
           }
 
           return Builder(
@@ -556,22 +793,53 @@ class _ChatScreenState extends State<ChatScreen> {
                 (service) => service.scale,
               );
               final resolvedContact = _resolveContact(connector);
-              final bubble = _MessageBubble(
+              final isRoom = resolvedContact.type == advTypeRoom;
+              final senderName = isRoom
+                  ? (roomAuthor?.name ?? "Unknown [$fourByteHex]")
+                  : contact.name;
+              final isAnnouncement = isRoom &&
+                  roomAuthor != null &&
+                  roomAuthor.publicKeyHex == resolvedContact.publicKeyHex;
+              // Same format as the channel screen: raw hop prefixes, not
+              // resolved names ("via AA,3F").
+              String? viaLabel;
+              if (message.pathBytes.isNotEmpty) {
+                final hexPath = PathHelper.formatPathHex(
+                  message.pathBytes,
+                  stride: resolvedContact.pathHashSize,
+                );
+                if (hexPath.isNotEmpty) viaLabel = hexPath;
+              }
+              Widget bubble = _MessageBubble(
                 message: message,
-                senderName: resolvedContact.type == advTypeRoom
-                    ? (contact.publicKeyHex == resolvedContact.publicKeyHex
-                        ? "Unknown [$fourByteHex]"
-                        : contact.name)
-                    : contact.name,
-                isRoomServer: resolvedContact.type == advTypeRoom,
+                senderName: senderName,
+                isRoomServer: isRoom,
+                replyInfo:
+                    isRoom ? ChannelMessage.parseReply(message.text) : null,
+                viaLabel: viaLabel,
+                isAnnouncement: isAnnouncement,
                 textScale: textScale,
                 onTap: () => message.isOutgoing &&
                         message.status == MessageStatus.failed
                     ? _retryMessage(message)
-                    : _openMessagePath(message, contact),
+                    : _openMessagePath(message),
                 onLongPress: () => _showMessageActions(message, contact),
                 onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
+              if (isRoom && !message.isOutgoing && !PlatformInfo.isDesktop) {
+                bubble = SwipeReplyBubble(
+                  maxSwipeOffset: 64.0,
+                  replySwipeThreshold: 64.0,
+                  onReplyTriggered: () => _setReplyingTo(message),
+                  // No resolved name, nothing to type into the composer.
+                  onMentionTriggered: roomAuthor == null
+                      ? null
+                      : () => _insertMentionOf(roomAuthor!.name),
+                  hintBuilder: ({required mention}) =>
+                      SwipeHint(mention: mention),
+                  child: bubble,
+                );
+              }
               bool showDayMarker = false;
               if (index == reversedMessages.length - 1) {
                 showDayMarker = true;
@@ -651,14 +919,188 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildInputBar(MeshCoreConnector connector) {
-    final maxBytes = maxContactMessageBytes();
+  /// Re-asks the room for its recent backlog (the server holds up to 32
+  /// posts in memory). The radio's sync cursor can only be rewound by
+  /// deleting and re-adding the contact; the login that follows must carry
+  /// the password — stock servers ignore the rewind on a blank re-login.
+  Future<void> _reloadRoomPosts(MeshCoreConnector connector) async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.room_reloadPosts),
+            content: Text(l10n.room_reloadPostsExplain),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.common_cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.room_reloadPosts),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    final ok = await connector.resetRoomSyncCursor(_resolveContact(connector));
+    if (!mounted) return;
+    if (!ok) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(l10n.room_reloadFailed),
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    // The login (with the password) is what makes the server re-push.
+    await showDialog(
+      context: context,
+      builder: (context) => RoomLoginDialog(
+        room: widget.contact,
+        onLogin: (password, isAdmin) {},
+      ),
+    );
+  }
+
+  /// Amber strip when the room server's clock disagrees with ours by more
+  /// than five minutes (its clock stamps every post). Admins get a one-tap
+  /// fix; anyone can dismiss it for this visit.
+  Widget? _buildClockSkewBanner(MeshCoreConnector connector) {
+    if (_clockBannerDismissed) return null;
+    final event =
+        connector.lastRoomLoginEvent(widget.contact.publicKeyHex);
+    final serverClock = event?.serverClock;
+    if (event == null || serverClock == null) return null;
+    // The measurement comes from the last login. After a fix was sent, stay
+    // down until a NEWER login re-measures — re-warning from the stale
+    // reading made the banner look like the fix never worked.
+    final syncSentAt =
+        connector.roomClockSyncSentAt(widget.contact.publicKeyHex);
+    if (syncSentAt != null && event.at.isBefore(syncSentAt)) return null;
+    final skew = serverClock.difference(event.at);
+    if (skew.abs() < const Duration(minutes: 5)) return null;
+    // The firmware only winds a clock FORWARD: a room running behind is
+    // fixable from here, a room running ahead needs its own console.
+    final fixable = skew.isNegative;
+    final isAdmin = fixable &&
+        connector.roomAdminPassword(widget.contact.publicKeyHex) != null;
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: colorScheme.tertiaryContainer,
+      child: Row(
+        children: [
+          Icon(Icons.schedule, size: 18, color: colorScheme.onTertiaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.room_clockOff(skew.abs().inMinutes),
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          if (isAdmin)
+            TextButton(
+              onPressed: () async {
+                final timestampSeconds =
+                    DateTime.now().millisecondsSinceEpoch ~/ 1000;
+                try {
+                  await connector.sendFrame(
+                    buildSendCliCommandFrame(
+                      _resolveContact(connector).publicKey,
+                      'clock sync',
+                      timestampSeconds: timestampSeconds,
+                    ),
+                  );
+                } catch (_) {}
+                connector.markRoomClockSyncSent(widget.contact.publicKeyHex);
+                if (mounted) {
+                  setState(() => _clockBannerDismissed = true);
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(context.l10n.room_clockSyncSent),
+                  );
+                }
+              },
+              child: Text(context.l10n.room_fixClock),
+            ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            color: colorScheme.onTertiaryContainer,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => setState(() => _clockBannerDismissed = true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shown above the composer when the last login came back as a guest:
+  /// the room relays nothing a guest posts (stock firmware never ACKs it).
+  Widget _buildReadOnlyBanner() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: colorScheme.surfaceContainerHigh,
+      child: Row(
+        children: [
+          Icon(
+            Icons.visibility_outlined,
+            size: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.room_readOnlyNotice,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputBar(MeshCoreConnector connector) {
+    // Reserve room for the reply prefix ("@[Name]\n><snippet>..\n") while a
+    // reply is active, so the byte counter and typing limit account for it.
+    final baseMaxBytes =
+        _isRoom ? maxRoomMessageBytes() : maxContactMessageBytes();
+    final reply = _replyingToMessage;
+    final replyOverhead = reply == null
+        ? 0
+        : utf8
+              .encode(
+                '@[${_replyTargetName(reply, connector)}]\n>'
+                '${ChannelMessage.buildReplySnippet(ChannelMessage.parseReply(reply.text)?.actualMessage ?? reply.text, 10)}..\n',
+              )
+              .length;
+    final maxBytes = (baseMaxBytes - replyOverhead).clamp(0, baseMaxBytes);
+    final colorScheme = Theme.of(context).colorScheme;
+    // Same composer treatment as the channel screen: a soft upward shadow,
+    // not the divider line (near-white in dark mode).
+    final inputBar = Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Row(
@@ -806,6 +1248,98 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (reply != null)
+          Builder(
+            builder: (context) {
+              final textScale = context.select<ChatTextScaleService, double>(
+                (service) => service.scale,
+              );
+              return _buildReplyBanner(reply, connector, textScale);
+            },
+          ),
+        inputBar,
+      ],
+    );
+  }
+
+  Widget _buildReplyBanner(
+    Message reply,
+    MeshCoreConnector connector,
+    double textScale,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final previewColor = colorScheme.onPrimaryContainer.withValues(alpha: 0.8);
+    final previewSource =
+        ChannelMessage.parseReply(reply.text)?.actualMessage ?? reply.text;
+    final gifId = GifHelper.parseGif(previewSource);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        border: Border(
+          bottom: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.reply, size: 18, color: colorScheme.onPrimaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n
+                      .chat_replyingTo(_replyTargetName(reply, connector)),
+                  style: TextStyle(
+                    fontSize: 12 * textScale,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                if (gifId != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.gif_box, size: 14, color: previewColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'GIF',
+                        style: TextStyle(
+                          fontSize: 11 * textScale,
+                          color: previewColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Text(
+                    previewSource,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11 * textScale,
+                      color: previewColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: _cancelReply,
+            color: colorScheme.onPrimaryContainer,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showGifPicker(BuildContext context) {
@@ -849,12 +1383,37 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _lastTextSendAt = now;
 
-    final maxBytes = maxContactMessageBytes();
-    final outboundText = connector.prepareContactOutboundText(
-      _resolveContact(connector),
-      text,
-    );
-    if (utf8.encode(outboundText).length > maxBytes) {
+    final contact = _resolveContact(connector);
+    final maxBytes = _isRoom ? maxRoomMessageBytes() : maxContactMessageBytes();
+
+    bool fits(String candidate) {
+      final outbound = connector.prepareContactOutboundText(contact, candidate);
+      return utf8.encode(outbound).length <= maxBytes;
+    }
+
+    String sendText = text;
+    final replyTarget = _replyingToMessage;
+    if (_isRoom && replyTarget != null) {
+      // Build a compatible "@[Name]\n><snippet>..\n<text>" reply, shrinking
+      // the snippet to fit the byte budget. Quoting a reply quotes its body,
+      // not its own reply header.
+      final built = ChannelMessage.buildReplyWireText(
+        targetName: _replyTargetName(replyTarget, connector),
+        quoteText: ChannelMessage.parseReply(replyTarget.text)?.actualMessage ??
+            replyTarget.text,
+        body: text,
+        selfName: connector.selfName ?? '',
+        fits: fits,
+      );
+      if (built == null) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.chat_messageTooLong(maxBytes)),
+        );
+        return;
+      }
+      sendText = built;
+    } else if (!fits(sendText)) {
       showDismissibleSnackBar(
         context,
         content: Text(context.l10n.chat_messageTooLong(maxBytes)),
@@ -863,11 +1422,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _textController.clear();
+    if (_replyingToMessage != null) _cancelReply();
     _textFieldFocusNode.requestFocus();
-    connector.sendMessage(
-      _resolveContact(connector),
-      text,
-    );
+    connector.sendMessage(contact, sendText);
   }
 
   void _showFullPathDialog(BuildContext context, List<int> pathBytes, int hashSize) {
@@ -948,18 +1505,24 @@ class _ChatScreenState extends State<ChatScreen> {
     return connector.contacts[_resolveContactIndex];
   }
 
-  Contact _resolveContactFrom4Bytes(
+  /// Resolves a room post's 4-byte author prefix to a contact, or null when
+  /// no advert from the author has been heard. A match on the room's own key
+  /// is genuine — the room server authors its system posts.
+  Contact? _resolveContactFrom4Bytes(
     MeshCoreConnector connector,
     Uint8List key4Bytes,
   ) {
+    if (key4Bytes.length < 4) return null;
     // Search discovered contacts too — the post author doesn't have to be an
     // active device contact for us to know their name.
-    return connector.allContactsUnfiltered.firstWhere(
-      (c) =>
-          c.publicKey.length >= 4 &&
-          listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
-      orElse: () => widget.contact,
-    );
+    return connector.allContactsUnfiltered
+        .cast<Contact?>()
+        .firstWhere(
+          (c) =>
+              c!.publicKey.length >= 4 &&
+              listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
+          orElse: () => null,
+        );
   }
 
   String _currentPathLabel(Contact contact, MeshCoreConnector connector) {
@@ -1167,16 +1730,16 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _openMessagePath(Message message, Contact contact) {
+  void _openMessagePath(Message message) {
     final connector = context.read<MeshCoreConnector>();
     final fourByteHex = pubKeyToHex(message.fourByteRoomContactKey).toUpperCase();
     final String senderName;
     if (message.isOutgoing) {
       senderName = connector.selfName ?? context.l10n.chat_me;
     } else if (_resolveContact(connector).type == advTypeRoom) {
-      senderName = contact.publicKeyHex == _resolveContact(connector).publicKeyHex
-          ? "Unknown [$fourByteHex]"
-          : contact.name;
+      final author =
+          _resolveContactFrom4Bytes(connector, message.fourByteRoomContactKey);
+      senderName = author?.name ?? "Unknown [$fourByteHex]";
     } else {
       senderName = _resolveContact(connector).name;
     }
@@ -1201,6 +1764,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showMessageActions(Message message, Contact contact) {
+    final chatContact = _resolveContact(context.read<MeshCoreConnector>());
+    final isRoom = chatContact.type == advTypeRoom;
+    // In a room, [contact] is the resolved post author; it falls back to the
+    // room itself when the author is unknown or the room authored the post.
+    final isRoomItself =
+        isRoom && contact.publicKeyHex == chatContact.publicKeyHex;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -1217,13 +1786,32 @@ class _ChatScreenState extends State<ChatScreen> {
                   _showEmojiPicker(message);
                 },
               ),
+            if (isRoom)
+              ListTile(
+                leading: const Icon(Icons.reply),
+                title: Text(context.l10n.chat_reply),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _setReplyingTo(message);
+                  _textFieldFocusNode.requestFocus();
+                },
+              ),
+            if (isRoom && !message.isOutgoing && !isRoomItself)
+              ListTile(
+                leading: const Icon(Icons.alternate_email),
+                title: Text(context.l10n.chat_mention),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _insertMentionOf(contact.name);
+                },
+              ),
             if (PlatformInfo.isDesktop)
               ListTile(
                 leading: const Icon(Icons.route),
                 title: Text(context.l10n.chat_path),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _openMessagePath(message, contact);
+                  _openMessagePath(message);
                 },
               ),
             ListTile(
@@ -1252,8 +1840,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
             if (!message.isOutgoing &&
-                _resolveContact(context.read<MeshCoreConnector>()).type == advTypeRoom &&
-                contact.publicKeyHex != _resolveContact(context.read<MeshCoreConnector>()).publicKeyHex)
+                isRoom &&
+                !isRoomItself &&
+                contact.type == advTypeChat)
               ListTile(
                 leading: const Icon(Icons.chat),
                 title: Text(context.l10n.contacts_openChat),
@@ -1276,22 +1865,25 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: Text('Block ${contact.name}'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await context
-                      .read<AppSettingsService>()
-                      .blockContact(contact.publicKeyHex);
-                  if (mounted) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text('Blocked ${contact.name}'),
-                    );
-                  }
-                },
-              ),
+              // Blocking a room post whose author is the room (or unknown)
+              // would block the room itself and silence every member.
+              if (!isRoomItself)
+                ListTile(
+                  leading: const Icon(Icons.block),
+                  title: Text('Block ${contact.name}'),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await context
+                        .read<AppSettingsService>()
+                        .blockContact(contact.publicKeyHex);
+                    if (mounted) {
+                      showDismissibleSnackBar(
+                        context,
+                        content: Text('Blocked ${contact.name}'),
+                      );
+                    }
+                  },
+                ),
             ],
             ListTile(
               leading: const Icon(Icons.close),
@@ -1323,18 +1915,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _retryMessage(Message message) async {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
+    final contact = _resolveContact(connector);
     // The failed bubble is replaced by the new send, which starts with a
-    // flood: whatever route the last attempt had just failed.
+    // flood — unless the user pinned a route, which outranks the heuristic.
+    final override = contact.pathOverride;
     await connector.deleteMessage(message);
-    await connector.sendMessage(
-      _resolveContact(connector),
-      message.text,
-      floodFirst: true,
-    );
+    await connector.sendMessage(contact, message.text, floodFirst: true);
     if (!mounted) return;
     showDismissibleSnackBar(
       context,
-      content: Text(context.l10n.chat_resendingByFlood),
+      content: Text(override != null && override >= 0
+          ? context.l10n.chat_resendingByRoute
+          : context.l10n.chat_resendingByFlood),
     );
   }
 
@@ -1366,6 +1958,19 @@ class _MessageBubble extends StatelessWidget {
   final Message message;
   final String senderName;
   final bool isRoomServer;
+  /// Parsed reply markup (rooms only): the bubble shows a quote box and the
+  /// reply body instead of the raw wire text.
+  final ReplyInfo? replyInfo;
+
+  /// Hex hop prefixes for this message's path (channel-screen format),
+  /// shown under the body when message tracing is on — outgoing: the route
+  /// the send used; incoming: our known route, only when its length matches
+  /// the hops the packet actually reported.
+  final String? viaLabel;
+
+  /// Post authored by the room server itself (room.post / system post) —
+  /// gets an announcement marker next to the sender name.
+  final bool isAnnouncement;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final void Function(Message message, String emoji)? onRetryReaction;
@@ -1376,6 +1981,9 @@ class _MessageBubble extends StatelessWidget {
     required this.senderName,
     required this.isRoomServer,
     required this.textScale,
+    this.replyInfo,
+    this.viaLabel,
+    this.isAnnouncement = false,
     this.onTap,
     this.onLongPress,
     this.onRetryReaction,
@@ -1398,24 +2006,26 @@ class _MessageBubble extends StatelessWidget {
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final messageText = message.text;
+    final messageText = replyInfo?.actualMessage ?? message.text;
 
     final gifId = GifHelper.parseGif(messageText);
     final poi = _parsePoiMessage(messageText);
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
+    // Same palette as the channel chat screen: warm ChatColors in light
+    // mode, primaryContainer/surfaceContainerHighest in dark.
     final bubbleColor = isFailed
         ? colorScheme.errorContainer
         : warmLight
             ? (isOutgoing ? ChatColors.outgoingBubble : ChatColors.incomingBubble)
             : (isOutgoing
-                  ? colorScheme.primary
+                  ? colorScheme.primaryContainer
                   : colorScheme.surfaceContainerHighest);
     final textColor = isFailed
         ? colorScheme.onErrorContainer
         : warmLight
             ? ChatColors.bubbleText
-            : (isOutgoing ? colorScheme.onPrimary : colorScheme.onSurface);
+            : colorScheme.onSurface;
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1483,16 +2093,44 @@ class _MessageBubble extends StatelessWidget {
                                     bottom: 4,
                                   )
                                 : EdgeInsets.zero,
-                            child: Text(
-                              senderName,
-                              style: TextStyle(
-                                fontSize: 12 * textScale,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isAnnouncement) ...[
+                                  Icon(
+                                    Icons.campaign,
+                                    size: 14 * textScale,
+                                    color: colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    senderName,
+                                    style: TextStyle(
+                                      fontSize: 12 * textScale,
+                                      fontWeight: FontWeight.bold,
+                                      color: settingsService
+                                              .settings.senderNameColors
+                                          ? _getColorForName(senderName)
+                                          : colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                // Heard with zero hops: our radio heard
+                                // theirs, no repeater in between.
+                                if (message.pathLength == 0) ...[
+                                  const SizedBox(width: 6),
+                                  _buildDirectPill(context),
+                                ],
+                              ],
                             ),
                           ),
                           if (gifId == null) const SizedBox(height: 4),
+                        ],
+                        if (replyInfo != null) ...[
+                          _buildReplyQuote(context, replyInfo!, colorScheme),
+                          const SizedBox(height: 4),
                         ],
                         if (poi != null)
                           _buildPoiMessage(
@@ -1621,6 +2259,21 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                           ),
+                        if (enableTracing && viaLabel != null) ...[
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: gifId != null
+                                ? const EdgeInsets.symmetric(horizontal: 8)
+                                : EdgeInsets.zero,
+                            child: Text(
+                              'via $viaLabel',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: displayMetaColor,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (isOutgoing) ...[
                           Builder(
                             builder: (context) {
@@ -1668,6 +2321,15 @@ class _MessageBubble extends StatelessWidget {
                                     color: displayMetaColor,
                                   ),
                                 ),
+                                if (!isOutgoing &&
+                                    _receivedKindLabel(context) != null)
+                                  Text(
+                                    '· ${_receivedKindLabel(context)!}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: displayMetaColor,
+                                    ),
+                                  ),
                                 if (isOutgoing) ...[
                                   const SizedBox(width: 4),
                                   _buildStatusIcon(displayMetaColor),
@@ -1866,6 +2528,64 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
+  /// Compact quote box above a reply's body. Room replies carry only the
+  /// wire snippet, never a resolvable message id, so there is no tap-to-scroll.
+  Widget _buildReplyQuote(
+    BuildContext context,
+    ReplyInfo reply,
+    ColorScheme colorScheme,
+  ) {
+    final warmLight = ChatColors.isLight(context);
+    final headerColor = warmLight
+        ? ChatColors.quoteBorder
+        : colorScheme.onSecondaryContainer;
+    final snippetColor = (warmLight
+            ? ChatColors.bubbleText
+            : colorScheme.onSecondaryContainer)
+        .withValues(alpha: 0.7);
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: warmLight
+            ? ChatColors.quoteBackground
+            : colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: warmLight ? ChatColors.quoteBorder : colorScheme.secondary,
+            width: 3,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.chat_replyTo(reply.mentionedNode),
+            style: TextStyle(
+              fontSize: 11 * textScale,
+              fontWeight: FontWeight.bold,
+              color: headerColor,
+            ),
+          ),
+          if (reply.snippet.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              '${reply.snippet}..',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12 * textScale,
+                color: snippetColor,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildAvatar(String senderName, ColorScheme colorScheme) {
     final initial = _getFirstCharacterOrEmoji(senderName);
     final color = _getColorForName(senderName);
@@ -1916,6 +2636,40 @@ class _MessageBubble extends StatelessWidget {
 
   /// One line that says where the send is in the attempt ladder. Delivered
   /// and failed always show; the in-flight detail only with tracing on.
+  /// How a received packet reached us, from the hop count it reported:
+  /// "route (N hops)". Zero hops wears the Direct pill by the sender name
+  /// instead; null when the frame didn't say (older stored rows).
+  String? _receivedKindLabel(BuildContext context) {
+    final hops = message.pathLength;
+    if (hops == null || hops <= 0) return null;
+    return context.l10n.chat_kindRoute(hops);
+  }
+
+  /// Same pill as the channel screen: this copy of the message was heard
+  /// with zero hops — our radio heard theirs, no repeater in between.
+  Widget _buildDirectPill(BuildContext context) {
+    final green = ChatColors.isLight(context)
+        ? Colors.green.shade700
+        : Colors.green.shade300;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: green.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: green.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Text(
+        context.l10n.chat_direct,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: green,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+
   String? _deliveryStatus(BuildContext context, {required bool detailed}) {
     final l10n = context.l10n;
     final m = message;

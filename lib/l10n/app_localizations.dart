@@ -6850,6 +6850,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resending by flood'**
   String get chat_resendingByFlood;
+
+  /// No description provided for @chat_resendingByRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Resending using your set route'**
+  String get chat_resendingByRoute;
+
+  /// No description provided for @room_mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute room'**
+  String get room_mute;
+
+  /// No description provided for @room_unmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute room'**
+  String get room_unmute;
+
+  /// No description provided for @room_roleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'admin'**
+  String get room_roleAdmin;
+
+  /// No description provided for @room_roleMember.
+  ///
+  /// In en, this message translates to:
+  /// **'member'**
+  String get room_roleMember;
+
+  /// No description provided for @room_roleReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'read-only'**
+  String get room_roleReadOnly;
+
+  /// No description provided for @room_clockOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Room clock is off by about {minutes} min — message times may be wrong'**
+  String room_clockOff(int minutes);
+
+  /// No description provided for @room_fixClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix clock'**
+  String get room_fixClock;
+
+  /// No description provided for @room_clockSyncSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock sync sent to the room'**
+  String get room_clockSyncSent;
+
+  /// No description provided for @room_readOnlyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only: the room hasn\'t accepted your password, so messages you send won\'t reach other members.'**
+  String get room_readOnlyNotice;
+
+  /// No description provided for @room_postAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'Post announcement'**
+  String get room_postAnnouncement;
+
+  /// No description provided for @room_postAnnouncementSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message from the room itself to all members'**
+  String get room_postAnnouncementSubtitle;
+
+  /// No description provided for @room_announcementSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement posted'**
+  String get room_announcementSent;
+
+  /// No description provided for @room_announcementFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting the announcement failed'**
+  String get room_announcementFailed;
+
+  /// No description provided for @room_users.
+  ///
+  /// In en, this message translates to:
+  /// **'Room users'**
+  String get room_users;
+
+  /// No description provided for @room_usersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See admins and set user roles'**
+  String get room_usersSubtitle;
+
+  /// No description provided for @room_usersAdminsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The room only lists its admins. Members who joined with the room password aren\'t shown.'**
+  String get room_usersAdminsNote;
+
+  /// No description provided for @room_usersLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the admin list'**
+  String get room_usersLoadFailed;
+
+  /// No description provided for @room_setUserRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Set user role'**
+  String get room_setUserRole;
+
+  /// No description provided for @room_removeAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove access'**
+  String get room_removeAccess;
+
+  /// No description provided for @room_removeOnlyUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'This user isn\'t in your contacts, so they can only be removed, not changed.'**
+  String get room_removeOnlyUnknown;
+
+  /// No description provided for @room_roleUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Role updated'**
+  String get room_roleUpdated;
+
+  /// No description provided for @room_roleUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the role failed'**
+  String get room_roleUpdateFailed;
+
+  /// No description provided for @room_postsStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts stored'**
+  String get room_postsStored;
+
+  /// No description provided for @room_postsDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts delivered'**
+  String get room_postsDelivered;
+
+  /// No description provided for @room_reloadPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload recent posts'**
+  String get room_reloadPosts;
+
+  /// No description provided for @room_reloadPostsExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks the room to send its recent posts again (it keeps up to 32). You\'ll be asked to log in with the room password. Messages you already have are kept.'**
+  String get room_reloadPostsExplain;
+
+  /// No description provided for @room_reloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reset the room on the radio'**
+  String get room_reloadFailed;
+
+  /// No description provided for @room_selfDemoteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re changing your own access. If you drop your admin role, only the room\'s own console can give it back.'**
+  String get room_selfDemoteWarning;
 }
 
 class _AppLocalizationsDelegate
