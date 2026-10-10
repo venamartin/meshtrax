@@ -8,6 +8,7 @@ import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../models/message.dart';
 import '../utils/app_logger.dart';
+import '../helpers/path_helper.dart';
 import 'app_database.dart';
 import 'arrival_clock.dart';
 import 'prefs_manager.dart';
@@ -573,6 +574,7 @@ class MessageStore {
       'pathBytes': msg.pathBytes.isNotEmpty
           ? base64Encode(msg.pathBytes)
           : null,
+      'pathHashSize': msg.pathHashSize,
       'reactions': msg.reactions,
       'reactionSenders': msg.reactionSenders,
       'reactionStatuses': msg.reactionStatuses.map(
@@ -608,16 +610,15 @@ class MessageStore {
           : null,
       tripTimeMs: json['tripTimeMs'] as int?,
       deliveredLate: json['deliveredLate'] as bool? ?? false,
-      pathLength: () {
-        int? pLen = json['pathLength'] as int?;
-        if (pLen != null && pLen > 0) {
-          pLen = (pLen == 0xFF) ? -1 : (pLen & 0x3F);
-        }
-        return pLen;
-      }(),
+      // Early rows stored the raw path_len byte; decoding a plain hop count
+      // through the same helper is a no-op.
+      pathLength: json['pathLength'] == null
+          ? null
+          : PathHelper.pathLenHops(json['pathLength'] as int),
       pathBytes: json['pathBytes'] != null
           ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
           : Uint8List(0),
+      pathHashSize: json['pathHashSize'] as int?,
       reactions:
           (json['reactions'] as Map<String, dynamic>?)?.map(
             (key, value) => MapEntry(key, value as int),

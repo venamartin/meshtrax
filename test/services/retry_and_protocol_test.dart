@@ -69,6 +69,8 @@ Contact _makeContact({
     type: 1,
     pathLength: pathLength,
     path: Uint8List.fromList(path),
+
+    pathHashSize: 1,
     pathOverride: pathOverride,
     pathOverrideBytes: pathOverrideBytes == null
         ? null

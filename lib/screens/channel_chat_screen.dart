@@ -300,6 +300,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 type: advTypeChat,
                 pathLength: -1,
                 path: Uint8List(0),
+                pathHashSize: connector.pathHashByteWidth,
                 lastSeen: DateTime.now(),
                 isActive: true,
               );

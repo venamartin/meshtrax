@@ -806,7 +806,7 @@ class _ChatScreenState extends State<ChatScreen> {
               if (message.pathBytes.isNotEmpty) {
                 final hexPath = PathHelper.formatPathHex(
                   message.pathBytes,
-                  stride: resolvedContact.pathHashSize,
+                  stride: message.pathHashSize ?? resolvedContact.pathHashSize,
                 );
                 if (hexPath.isNotEmpty) viaLabel = hexPath;
               }
@@ -1753,7 +1753,8 @@ class _ChatScreenState extends State<ChatScreen> {
       repeatCount: 0,
       pathLength: message.pathLength,
       pathBytes: message.pathBytes,
-      pathHashSize: _resolveContact(connector).pathHashSize,
+      pathHashSize:
+          message.pathHashSize ?? _resolveContact(connector).pathHashSize,
     );
     Navigator.push(
       context,

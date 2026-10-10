@@ -17,6 +17,8 @@ Contact _contact({
     type: type,
     pathLength: 0,
     path: Uint8List(0),
+
+    pathHashSize: 1,
     lastSeen: DateTime.now(),
   );
 }

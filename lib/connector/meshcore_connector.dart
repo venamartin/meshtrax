@@ -1055,6 +1055,7 @@ class MeshCoreConnector extends ChangeNotifier {
               contact: contact,
             ),
         getSelfPublicKey: () => _selfPublicKey,
+        pathHashByteWidth: () => _pathHashByteWidth,
         prepareContactOutboundText: prepareContactOutboundText,
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
@@ -3331,12 +3332,14 @@ class MeshCoreConnector extends ChangeNotifier {
       );
     } else {
       // Fallback to old behavior if retry service not initialized
-      final resolved = resolvePathSelection(contact);
+      final resolved =
+          resolvePathSelection(contact, radioWidth: _pathHashByteWidth);
       final message = Message.outgoing(
         contact.publicKey,
         text,
         pathLength: resolved.useFlood ? -1 : resolved.hopCount,
         pathBytes: Uint8List.fromList(resolved.pathBytes),
+        pathHashSize: resolved.hashSize,
       );
       _addMessage(contact.publicKeyHex, message);
       notifyListeners();
@@ -3385,6 +3388,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _contacts[idx] = _contacts[idx].copyWith(
           pathLength: hopCount,
           path: customPath,
+          pathHashSize: _pathHashByteWidth,
         );
         notifyListeners();
       }
@@ -3448,6 +3452,7 @@ class MeshCoreConnector extends ChangeNotifier {
         name: latestContact.name,
         pathLength: latestContact.pathLength,
         path: latestContact.path,
+        pathHashSize: latestContact.pathHashSize,
         flags: updatedFlags,
       );
       notifyListeners();
@@ -3556,7 +3561,8 @@ class MeshCoreConnector extends ChangeNotifier {
   /// override is pushed to the radio; otherwise the firmware's own route is
   /// left alone and simply reported.
   Future<PathSelection> preparePathForContactSend(Contact contact) async {
-    final resolved = resolvePathSelection(contact);
+    final resolved =
+        resolvePathSelection(contact, radioWidth: _pathHashByteWidth);
     if (contact.pathOverride == null) return resolved;
 
     if (resolved.useFlood) {
@@ -4096,6 +4102,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _contacts[existingIndex] = existing.copyWith(
           pathLength: -1,
           path: Uint8List(0),
+          pathHashSize: _pathHashByteWidth,
         );
         notifyListeners();
         unawaited(_persistContacts());
@@ -5812,7 +5819,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (hops > 0 &&
             contact.pathLength == hops &&
             contact.path.isNotEmpty) {
-          message = message.copyWith(pathBytes: contact.path);
+          message = message.copyWith(
+            pathBytes: contact.path,
+            pathHashSize: contact.pathHashSize,
+          );
         }
       }
       if (contact != null) {
@@ -5966,6 +5976,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         isCli: isCli,
         status: MessageStatus.delivered,
         pathLength: PathHelper.pathLenHops(layout.pathLen),
+        pathHashSize: PathHelper.pathLenWidth(layout.pathLen),
         pathBytes: Uint8List(0),
         fourByteRoomContactKey: layout.authorPrefix,
       );
@@ -6421,6 +6432,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               type: advTypeRepeater,
               pathLength: 0,
               path: Uint8List(0),
+              pathHashSize: _pathHashByteWidth,
               lastSeen: DateTime.now(),
               isActive: true, // Set to true since we are adding it as an active contact
             );
@@ -9168,7 +9180,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         latitude: hasLocation ? latitude : existing.latitude,
         longitude: hasLocation ? longitude : existing.longitude,
         name: hasName ? name : existing.name,
-        pathHashSize: hashSize,
         inboundPath: path,
         inboundHopCount: hopCount,
         lastMessageAt: mergedLastMessageAt,
@@ -9312,6 +9323,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         type: contact.type,
         pathLength: contact.pathLength,
         path: contact.path,
+        pathHashSize: contact.pathHashSize,
         inboundPath: contact.inboundPath,
         inboundHopCount: contact.inboundHopCount,
         latitude: contact.latitude,
@@ -9333,6 +9345,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       type: contact.type,
       pathLength: contact.pathLength,
       path: contact.path,
+      pathHashSize: contact.pathHashSize,
       inboundPath: contact.inboundPath,
       inboundHopCount: contact.inboundHopCount,
       latitude: contact.latitude,

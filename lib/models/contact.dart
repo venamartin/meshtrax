@@ -36,7 +36,7 @@ class Contact {
     this.flags = 0,
     required this.pathLength,
     required this.path,
-    this.pathHashSize = 1,
+    required this.pathHashSize,
     Uint8List? inboundPath,
     this.inboundHopCount,
     this.pathOverride,
@@ -297,7 +297,7 @@ class Contact {
       flags: (json['flags'] as num?)?.toInt() ?? 0,
       pathLength: json['pathLength'] as int,
       path: pathHex.isEmpty ? Uint8List(0) : hex2Uint8List(pathHex),
-      pathHashSize: (json['pathHashSize'] as num?)?.toInt() ?? 1,
+      pathHashSize: (json['pathHashSize'] as num).toInt(),
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: (pathOverrideBytesHex != null && pathOverrideBytesHex.isNotEmpty)
           ? hex2Uint8List(pathOverrideBytesHex)

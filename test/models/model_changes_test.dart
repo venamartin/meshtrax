@@ -9,6 +9,7 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 // Frame layout: [respCode(1)][pubKey(32)][type(1)][flags(1)][pathLen(1)][path(64)][name(32)][timestamp(4)][lat(4)][lon(4)]
 Uint8List _buildContactFrame({
   int pathLen = 0,
+  List<int> path = const [],
   Uint8List? pubKey,
   String name = 'TestNode',
 }) {
@@ -20,7 +21,7 @@ Uint8List _buildContactFrame({
   writer.addByte(1); // type
   writer.addByte(0); // flags
   writer.addByte(pathLen);
-  writer.add(Uint8List(64)); // path bytes (zeros)
+  writer.add(Uint8List(64)..setRange(0, path.length, path)); // path, zero padded
   // name (32 bytes, null-padded)
   final nameBytes = Uint8List(32);
   final encoded = name.codeUnits;
@@ -75,6 +76,19 @@ void main() {
   });
 
   group('Contact.fromFrame — corrupt contact guards', () {
+    test('pathLen == 0x42 with 4 path bytes → 2 hops of 2 bytes', () {
+      final frame = _buildContactFrame(
+        pathLen: 0x42,
+        path: const [0xA2, 0x77, 0xBE, 0xEF],
+      );
+      final contact = Contact.fromFrame(frame);
+      expect(contact, isNotNull);
+      expect(contact!.pathHashSize, equals(2));
+      expect(contact.pathLength, equals(2));
+      expect(contact.path, equals([0xA2, 0x77, 0xBE, 0xEF]));
+      expect(contact.displayPathString, 'A277,BEEF');
+    });
+
     test('all-zero public key → returns null', () {
       final zeroPubKey = Uint8List(32); // all zeros
       final frame = _buildContactFrame(pubKey: zeroPubKey);

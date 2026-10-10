@@ -41,6 +41,8 @@ class RetryServiceConfig {
   final int Function(int pathLength, int messageBytes, {Contact? contact})?
   calculateTimeout;
   final Uint8List? Function()? getSelfPublicKey;
+  // The radio's on-air hash width: the width a user override is written at.
+  final int Function()? pathHashByteWidth;
   final String Function(Contact, String)? prepareContactOutboundText;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
@@ -53,6 +55,7 @@ class RetryServiceConfig {
     this.setContactPath,
     this.calculateTimeout,
     this.getSelfPublicKey,
+    this.pathHashByteWidth,
     this.prepareContactOutboundText,
     this.appSettingsService,
     this.debugLogService,
@@ -96,6 +99,9 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, String> _expectedHashToMessageId = {};
 
   RetryServiceConfig? _config;
+
+  int _radioWidth(Contact contact) =>
+      _config?.pathHashByteWidth?.call() ?? contact.pathHashSize;
 
   MessageRetryService();
 
@@ -159,7 +165,11 @@ class MessageRetryService extends ChangeNotifier {
   }) async {
     final messageId = const Uuid().v4();
     if (floodFirst && contact.pathOverride == null) _floodFirst.add(messageId);
-    final resolved = resolvePathSelection(contact, forceFlood: floodFirst);
+    final resolved = resolvePathSelection(
+      contact,
+      radioWidth: _radioWidth(contact),
+      forceFlood: floodFirst,
+    );
     final messagePathBytes =
         pathBytes ?? Uint8List.fromList(resolved.pathBytes);
     final messagePathLength =
@@ -175,6 +185,7 @@ class MessageRetryService extends ChangeNotifier {
       retryCount: 0,
       pathLength: messagePathLength,
       pathBytes: messagePathBytes,
+      pathHashSize: resolved.hashSize,
     );
 
     _pendingMessages[messageId] = message;
@@ -235,12 +246,19 @@ class MessageRetryService extends ChangeNotifier {
 
     final useRoute =
         message.retryCount < routeAttempts && !_floodFirst.contains(messageId);
+    final radioWidth = _radioWidth(contact);
     final selection = useRoute
-        ? resolvePathSelection(contact)
-        : const PathSelection(pathBytes: [], hopCount: -1, useFlood: true);
+        ? resolvePathSelection(contact, radioWidth: radioWidth)
+        : PathSelection(
+            pathBytes: const [],
+            hopCount: -1,
+            hashSize: radioWidth,
+            useFlood: true,
+          );
     _pendingMessages[messageId] = message.copyWith(
       pathLength: selection.useFlood ? -1 : selection.hopCount,
       pathBytes: Uint8List.fromList(selection.pathBytes),
+      pathHashSize: selection.hashSize,
     );
 
     if (selection.useFlood) {

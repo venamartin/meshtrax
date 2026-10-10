@@ -25,6 +25,8 @@ Contact node(
     type: advTypeRepeater,
     pathLength: 0,
     path: Uint8List(0),
+
+    pathHashSize: 1,
     latitude: latitude,
     longitude: longitude,
     lastSeen: DateTime(2026, 1, 1),
