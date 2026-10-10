@@ -1979,5 +1979,6 @@
   "chat_sendMessage": "Skicka meddelande",
   "repeater_guestTools": "Gästverktyg",
   "room_guest": "Information om servern",
-  "settings_multiAck": "Flera bekräftelser"
+  "settings_multiAck": "Flera bekräftelser",
+  "chat_resendingByRoute": "Skickar igen via din angivna rutt"
 }

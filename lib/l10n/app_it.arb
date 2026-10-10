@@ -1979,5 +1979,6 @@
   "repeater_guestTools": "Strumenti per gli ospiti",
   "chat_sendMessage": "Invia messaggio",
   "room_guest": "Informazioni sul server",
-  "settings_multiAck": "ACK multipli"
+  "settings_multiAck": "ACK multipli",
+  "chat_resendingByRoute": "Reinvio tramite il percorso impostato"
 }

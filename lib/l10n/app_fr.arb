@@ -1979,5 +1979,6 @@
   "chat_sendMessage": "Envoyer un message",
   "room_guest": "Informations sur le serveur",
   "repeater_guest": "Informations sur les répéteurs",
-  "settings_multiAck": "Plusieurs accusés de réception"
+  "settings_multiAck": "Plusieurs accusés de réception",
+  "chat_resendingByRoute": "Renvoi via l'itinéraire défini"
 }

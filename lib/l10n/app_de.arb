@@ -2007,5 +2007,6 @@
   "repeater_guestTools": "Gastwerkzeuge",
   "chat_sendMessage": "Nachricht senden",
   "room_guest": "Informationen zum Room Server",
-  "settings_multiAck": "Mehrere Bestätigungen"
+  "settings_multiAck": "Mehrere Bestätigungen",
+  "chat_resendingByRoute": "Erneutes Senden über die festgelegte Route"
 }

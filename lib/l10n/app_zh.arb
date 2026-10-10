@@ -1984,5 +1984,6 @@
   "repeater_guestTools": "访客工具",
   "repeater_guest": "重复器信息",
   "chat_sendMessage": "发送消息",
-  "room_guest": "服务器信息"
+  "room_guest": "服务器信息",
+  "chat_resendingByRoute": "正在通过您设置的路由重新发送"
 }

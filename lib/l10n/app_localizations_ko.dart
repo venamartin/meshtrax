@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3803,4 +3804,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute => '설정한 경로로 다시 전송 중';
 }

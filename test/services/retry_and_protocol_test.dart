@@ -834,6 +834,60 @@ void main() {
       });
     });
 
+    test('floodFirst keeps a manual override on attempt 0, then floods', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathOverride: 1,
+          pathOverrideBytes: const [0x33],
+        );
+
+        h.retryService.sendMessageWithRetry(
+          contact: contact,
+          text: text,
+          floodFirst: true,
+        );
+        async.flushMicrotasks();
+        h.sent(text);
+
+        expect(h.pathPushes, equals([[0x33]]),
+            reason: 'a user-pinned route outranks the flood heuristic');
+        expect(h.pathResets, equals(0));
+        expect(h.lastUpdate!.pathLength, equals(1));
+
+        async.elapse(const Duration(milliseconds: retryGap));
+
+        expect(h.sends.length, equals(2));
+        expect(h.pathPushes.length, equals(1));
+        expect(h.pathResets, equals(1), reason: 'attempt 1 falls back to flood');
+      });
+    });
+
+    test('floodFirst with a forced-flood override still floods', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+          pathOverride: -1,
+        );
+
+        h.retryService.sendMessageWithRetry(
+          contact: contact,
+          text: text,
+          floodFirst: true,
+        );
+        async.flushMicrotasks();
+
+        expect(h.sends.length, equals(1));
+        expect(h.pathResets, equals(1));
+        expect(h.pathPushes, isEmpty);
+        expect(h.lastUpdate!.pathLength, equals(-1));
+      });
+    });
+
     test('an ACK for an earlier attempt delivers while a retry is pending',
         () {
       fakeAsync((async) {

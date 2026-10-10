@@ -1979,5 +1979,6 @@
   "chat_sendMessage": "Odoslať správu",
   "repeater_guest": "Informácie o opakovači",
   "room_guest": "Informácie o serveri",
-  "repeater_guestTools": "Nástroje pre hostí"
+  "repeater_guestTools": "Nástroje pre hostí",
+  "chat_resendingByRoute": "Opätovné odosielanie nastavenou trasou"
 }

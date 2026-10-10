@@ -2017,5 +2017,6 @@
   "chat_sendMessage": "メッセージを送信する",
   "repeater_guest": "繰り返し送信に関する情報",
   "repeater_guestTools": "ゲスト向けツール",
-  "settings_multiAck": "複数のACK（応答）"
+  "settings_multiAck": "複数のACK（応答）",
+  "chat_resendingByRoute": "設定したルートで再送信中"
 }

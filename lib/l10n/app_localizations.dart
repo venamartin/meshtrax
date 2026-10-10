@@ -6850,6 +6850,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resending by flood'**
   String get chat_resendingByFlood;
+
+  /// No description provided for @chat_resendingByRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Resending using your set route'**
+  String get chat_resendingByRoute;
 }
 
 class _AppLocalizationsDelegate

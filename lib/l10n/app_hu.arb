@@ -2017,5 +2017,6 @@
   "room_guest": "Szoba szerver információk",
   "chat_sendMessage": "Üzenet küldése",
   "repeater_guest": "Adatok a repeaterről",
-  "settings_multiAck": "Többszörös visszaigazolások"
+  "settings_multiAck": "Többszörös visszaigazolások",
+  "chat_resendingByRoute": "Újraküldés a beállított útvonalon"
 }

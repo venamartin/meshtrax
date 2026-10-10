@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3949,4 +3950,8 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get chat_resendingByRoute =>
+      'Opnieuw verzenden via de ingestelde route';
 }

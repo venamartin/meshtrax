@@ -1979,5 +1979,6 @@
   "chat_sendMessage": "Pošlji sporočilo",
   "room_guest": "Informacije o strežniku",
   "repeater_guestTools": "Naložila za goste",
-  "settings_multiAck": "Več potrdil"
+  "settings_multiAck": "Več potrdil",
+  "chat_resendingByRoute": "Ponovno pošiljanje po nastavljeni poti"
 }

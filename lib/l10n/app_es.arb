@@ -2007,5 +2007,6 @@
   "chat_sendMessage": "Enviar mensaje",
   "repeater_guestTools": "Herramientas para invitados",
   "room_guest": "Información del servidor",
-  "settings_multiAck": "Múltiples respuestas de confirmación"
+  "settings_multiAck": "Múltiples respuestas de confirmación",
+  "chat_resendingByRoute": "Reenviando por la ruta establecida"
 }

@@ -1979,5 +1979,6 @@
   "repeater_guest": "Інформація про ретранслятор",
   "room_guest": "Інформація про сервер кімнати",
   "chat_sendMessage": "Надіслати повідомлення",
-  "settings_multiAck": "Багато підтверджень"
+  "settings_multiAck": "Багато підтверджень",
+  "chat_resendingByRoute": "Повторне надсилання за заданим маршрутом"
 }

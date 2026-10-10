@@ -1979,5 +1979,6 @@
   "room_guest": "Informações do Servidor",
   "chat_sendMessage": "Enviar mensagem",
   "repeater_guest": "Informações sobre repetidores",
-  "repeater_guestTools": "Ferramentas para hóspedes"
+  "repeater_guestTools": "Ferramentas para hóspedes",
+  "chat_resendingByRoute": "Reenviando pela rota definida"
 }

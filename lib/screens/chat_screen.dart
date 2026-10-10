@@ -1323,18 +1323,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _retryMessage(Message message) async {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
+    final contact = _resolveContact(connector);
     // The failed bubble is replaced by the new send, which starts with a
-    // flood: whatever route the last attempt had just failed.
+    // flood — unless the user pinned a route, which outranks the heuristic.
+    final override = contact.pathOverride;
     await connector.deleteMessage(message);
-    await connector.sendMessage(
-      _resolveContact(connector),
-      message.text,
-      floodFirst: true,
-    );
+    await connector.sendMessage(contact, message.text, floodFirst: true);
     if (!mounted) return;
     showDismissibleSnackBar(
       context,
-      content: Text(context.l10n.chat_resendingByFlood),
+      content: Text(override != null && override >= 0
+          ? context.l10n.chat_resendingByRoute
+          : context.l10n.chat_resendingByFlood),
     );
   }
 

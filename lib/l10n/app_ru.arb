@@ -1253,5 +1253,6 @@
   "repeater_guest": "Информация о ретрансляторе",
   "room_guest": "Информация о сервере",
   "repeater_guestTools": "Инструменты для гостей",
-  "settings_multiAck": "Несколько подтверждений"
+  "settings_multiAck": "Несколько подтверждений",
+  "chat_resendingByRoute": "Повторная отправка по заданному маршруту"
 }

@@ -1979,5 +1979,6 @@
   "room_guest": "Informatie over de server",
   "chat_sendMessage": "Verzend bericht",
   "repeater_guest": "Informatie over herhalingsapparatuur",
-  "settings_multiAck": "Meerdere bevestigingen"
+  "settings_multiAck": "Meerdere bevestigingen",
+  "chat_resendingByRoute": "Opnieuw verzenden via de ingestelde route"
 }
