@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 // frames, which know nothing of the user's route choices. Custom path and
 // Always flood must come through it.
 class _Connector extends MeshCoreConnector {
+  bool failNextSend = false;
+
   @override
   bool get isConnected => true;
 
@@ -19,7 +21,12 @@ class _Connector extends MeshCoreConnector {
     Uint8List data, {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
-  }) async {}
+  }) async {
+    if (failNextSend) {
+      failNextSend = false;
+      throw Exception('write failed');
+    }
+  }
 }
 
 Uint8List _contactFrame(
@@ -117,6 +124,12 @@ void main() {
     c.handleFrameForTest(
       _contactFrame(madonna, 'MADONNA', code: pushCodeNewAdvert),
     );
+    // The advert alone must have added her, with the choice attached.
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
+      -1,
+      reason: 'advert-added contact must carry the stashed override',
+    );
     c.handleFrameForTest(_contactsStart(2));
     c.handleFrameForTest(_contactFrame(madonna, 'MADONNA', pathLen: 0x42));
     c.handleFrameForTest(_contactFrame(other, 'OTHER'));
@@ -159,6 +172,79 @@ void main() {
     expect(
       c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
       isNull,
+    );
+  });
+
+  test('a choice changed after the frame landed beats a later advert',
+      () async {
+    c.handleFrameForTest(
+      Uint8List.fromList([respCodeAutoAddConfig, autoAddRepeaterFlag]),
+    );
+    await c.setPathOverride(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA'),
+      pathLen: -1,
+    );
+
+    await c.getContacts();
+    c.handleFrameForTest(_contactsStart(2));
+    c.handleFrameForTest(_contactFrame(madonna, 'MADONNA'));
+    // MADONNA is back in the list with Always flood; the user clears it
+    // while the download is still running, then her advert arrives.
+    await c.setPathOverride(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA'),
+      pathLen: null,
+    );
+    c.handleFrameForTest(
+      _contactFrame(madonna, 'MADONNA', code: pushCodeNewAdvert),
+    );
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
+      isNull,
+      reason: 'the stale stash entry must not come back through the advert',
+    );
+
+    // And a fresh choice made in-list mid-download survives the advert too.
+    await c.setPathOverride(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA'),
+      pathLen: 0,
+      pathBytes: Uint8List(0),
+    );
+    c.handleFrameForTest(
+      _contactFrame(madonna, 'MADONNA', code: pushCodeNewAdvert),
+    );
+    c.handleFrameForTest(_contactFrame(other, 'OTHER'));
+    c.handleFrameForTest(_endOfContacts());
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
+      0,
+    );
+  });
+
+  test('a download request that fails to send leaves everything in place',
+      () async {
+    await c.setPathOverride(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA'),
+      pathLen: -1,
+    );
+
+    c.failNextSend = true;
+    await expectLater(c.getContacts(), throwsException);
+
+    expect(c.allContacts, hasLength(2), reason: 'the list must be put back');
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
+      -1,
+    );
+    expect(c.isLoadingContacts, isFalse);
+
+    // The next download still carries the choice through.
+    await fullDownload([
+      _contactFrame(madonna, 'MADONNA'),
+      _contactFrame(other, 'OTHER'),
+    ]);
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
+      -1,
     );
   });
 

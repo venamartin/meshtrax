@@ -3275,6 +3275,7 @@ class MeshCoreConnector extends ChangeNotifier {
 
     _isLoadingContacts = true;
     _preserveContactsOnRefresh = preserveExisting;
+    List<Contact>? replaced;
     if (!preserveExisting) {
       // The radio knows nothing of the user's route choices; a full download
       // rebuilds the list from its frames, so carry them across by key.
@@ -3282,6 +3283,7 @@ class MeshCoreConnector extends ChangeNotifier {
         for (final c in _contacts)
           if (c.pathOverride != null) c.publicKeyHex: c,
       };
+      replaced = List.of(_contacts);
       _contacts.clear();
       notifyListeners();
     }
@@ -3291,11 +3293,19 @@ class MeshCoreConnector extends ChangeNotifier {
     try {
       await sendFrame(buildGetContactsFrame(since: since));
     } catch (_) {
-      // Nothing is coming: leave the sync state as END_OF_CONTACTS would,
-      // or persistence and the sync banner stay stuck for the session.
+      // Nothing is coming: put the list back and leave the sync state as
+      // END_OF_CONTACTS would, or the next cache write stores an empty list
+      // and persistence and the sync banner stay stuck for the session.
+      if (replaced != null) {
+        _contacts
+          ..clear()
+          ..addAll(replaced);
+        _overridesAcrossRefresh = {};
+      }
       _isLoadingContacts = false;
       _preserveContactsOnRefresh = false;
       _contactSyncStopwatch = null;
+      notifyListeners();
       rethrow;
     }
   }
@@ -4109,8 +4119,7 @@ class MeshCoreConnector extends ChangeNotifier {
       ),
     );
 
-    // _handleContactAdvert never persists; this is the write (deferred to
-    // END_OF_CONTACTS while a full download is rebuilding the list).
+    // Persist now; during a full download this defers to END_OF_CONTACTS.
     await _persistContacts();
     notifyListeners();
     return true;
@@ -8411,6 +8420,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
+    _overridesAcrossRefresh = {};
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
