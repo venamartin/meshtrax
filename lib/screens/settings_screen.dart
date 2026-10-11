@@ -873,6 +873,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     final l10n = context.l10n;
     final routed = connector.contacts.where((c) => c.pathLength > 0).length;
+    if (routed == 0) {
+      showDismissibleSnackBar(
+        context,
+        content: const Text("The radio holds no learned routes."),
+      );
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -899,18 +906,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed != true || !context.mounted) return;
 
     final navigator = Navigator.of(context);
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Expanded(child: Text("Forgetting routes…")),
-          ],
-        ),
-      ),
+    _showProgressDialog(
+      context,
+      "Forget all routes",
+      ValueNotifier<String>("Forgetting routes…"),
     );
     final done = await connector.forgetAllRoutes();
     navigator.pop();

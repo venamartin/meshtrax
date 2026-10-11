@@ -4163,28 +4163,40 @@ class MeshCoreConnector extends ChangeNotifier {
   /// stored route keeps the width it was learned at, and the firmware never
   /// re-stamps it on a width change. Returns how many routes were forgotten.
   Future<int> forgetAllRoutes() async {
-    if (!isConnected) return 0;
     var done = 0;
     for (final c in List.of(_contacts)) {
       if (c.pathLength <= 0) continue;
-      // A burst of writes can hold the OK behind the firmware's flash flush.
-      final ok = await _sendAndWaitForAck(
-        buildResetPathFrame(c.publicKey),
-        timeout: const Duration(seconds: 10),
-      );
-      if (!ok) continue;
-      done++;
-      final i = _contacts.indexWhere((x) => x.publicKeyHex == c.publicKeyHex);
-      if (i >= 0) {
-        _contacts[i] = _contacts[i].copyWith(
-          pathLength: -1,
-          path: Uint8List(0),
-          pathHashSize: _pathHashByteWidth,
+      // A drop mid-run empties the list; stop, and never persist that.
+      if (!isConnected) return done;
+      // One contact at a time under the same lock as the retry service's
+      // route writes, so the two cannot interleave on a contact.
+      final prev = _pathOpLock;
+      final completer = Completer<void>();
+      _pathOpLock = completer.future;
+      await prev;
+      try {
+        final ok = await _sendAndWaitForAck(
+          buildResetPathFrame(c.publicKey),
+          timeout: const Duration(seconds: 10),
         );
+        if (!ok) continue;
+        done++;
+        final i =
+            _contacts.indexWhere((x) => x.publicKeyHex == c.publicKeyHex);
+        if (i >= 0) {
+          _contacts[i] = _contacts[i].copyWith(
+            pathLength: -1,
+            path: Uint8List(0),
+            pathHashSize: _pathHashByteWidth,
+          );
+          _retryService?.updatePendingContact(_contacts[i]);
+        }
+      } finally {
+        completer.complete();
       }
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
-    if (done > 0) {
+    if (done > 0 && isConnected) {
       notifyListeners();
       await _persistContacts();
     }
