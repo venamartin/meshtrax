@@ -88,6 +88,9 @@ void main() {
     for (final f in report.failures) {
       blog('${radio.label}: ⚠ restore problem: $f');
     }
+    for (final n in report.notes) {
+      blog('${radio.label}: left unchanged: $n');
+    }
     expect(report.identityRestored, isTrue,
         reason: '${radio.label}: identity import failed');
 

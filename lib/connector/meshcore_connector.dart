@@ -17,6 +17,7 @@ import '../models/companion_radio_stats.dart';
 import '../models/contact.dart';
 import '../models/device_backup.dart';
 import '../models/message.dart';
+import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
@@ -521,7 +522,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _autoAddRoomServers = false;
   bool _autoAddSensors = false;
   bool _overwriteOldest = false;
+  int? _autoAddMaxHops;
   bool _manualAddContacts = false;
+  int _manualAddRaw = 0;
   int _telemetryModeBase = 0;
   int _telemetryModeLoc = 0;
   int _telemetryModeEnv = 0;
@@ -721,6 +724,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool? get autoAddRoomServers => _autoAddRoomServers;
   bool? get autoAddSensors => _autoAddSensors;
   bool? get autoAddOverwriteOldest => _overwriteOldest;
+  int? get autoAddMaxHops => _autoAddMaxHops;
   int get telemetryModeBase => _telemetryModeBase;
   int get telemetryModeLoc => _telemetryModeLoc;
   int get telemetryModeEnv => _telemetryModeEnv;
@@ -3010,6 +3014,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
     _firmwareVersion = null;
+    _autoAddUsers = false;
+    _autoAddRepeaters = false;
+    _autoAddRoomServers = false;
+    _autoAddSensors = false;
+    _overwriteOldest = false;
+    _autoAddMaxHops = null;
+    _manualAddContacts = false;
+    _manualAddRaw = 0;
     _batteryMillivolts = null;
     _repeaterBatterySnapshots.clear();
     _batteryRequested = false;
@@ -5263,6 +5275,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeDisabled:
       case respCodeExportContact:
       case respCodeTuningParams:
+      case respCodeDefaultFloodScope:
         break;
       // RESP_CODE_ERR is a defined firmware response (code 1), not an unknown frame.
       case respCodeErr:
@@ -5343,7 +5356,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _telemetryModeLoc = telemetryFlag >> 2 & 0x03;
       _telemetryModeEnv = telemetryFlag >> 4 & 0x03;
 
-      _manualAddContacts = reader.readByte() & 0x01 == 0x00;
+      _manualAddRaw = reader.readByte();
+      _manualAddContacts = _manualAddRaw & 0x01 == 0x00;
 
       _currentFreqHz = reader.readUInt32LE();
       _currentBwHz = reader.readUInt32LE();
@@ -5609,6 +5623,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ),
       );
       _manualAddContacts = false;
+      _manualAddRaw = 1;
     }
   }
 
@@ -8918,6 +8933,31 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
+  /// Null when the radio has no default scope; a (name, key) record otherwise.
+  /// Throws on no reply so the caller can tell "none" from "unknown".
+  Future<({String name, Uint8List key})?> getDefaultFloodScope() async {
+    final frame = await _sendAndWaitForFrame(
+      buildGetDefaultFloodScopeFrame(),
+      (f) => f[0] == respCodeDefaultFloodScope || f[0] == respCodeErr,
+    );
+    if (frame == null || frame[0] != respCodeDefaultFloodScope) {
+      throw StateError('Radio did not report its default flood scope');
+    }
+    return parseDefaultFloodScopeFrame(frame);
+  }
+
+  /// Re-reads CMD_GET_AUTOADD_CONFIG so a backup never relies on the
+  /// connect-time reply, which a dropped BLE frame can leave unanswered.
+  Future<bool> _refreshAutoAddConfig() async {
+    final frame = await _sendAndWaitForFrame(
+      buildGetAutoAddFlagsFrame(),
+      (f) => f[0] == respCodeAutoAddConfig || f[0] == respCodeErr,
+    );
+    if (frame == null || frame[0] != respCodeAutoAddConfig) return false;
+    _handleAutoAddConfig(frame);
+    return true;
+  }
+
   /// The advert timestamp sits after the packet header, path and pubkey in a
   /// raw advert blob (the form CMD_EXPORT/IMPORT_CONTACT use).
   int? _advertTimestampFromBlob(Uint8List blob) {
@@ -8982,8 +9022,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     void Function(int done, int total)? onContactProgress,
   }) async {
     await _settleBeforeBackup();
+    bool has(RadioSetting s) =>
+        firmwareSupports(s, _firmwareVerCode, _firmwareVersion);
     final privateKey = await exportPrivateKey();
     final tuning = await getTuningParams();
+    final hasAutoAdd = has(RadioSetting.autoAdd) && await _refreshAutoAddConfig();
+    ({String name, Uint8List key})? floodScope;
+    var hasFloodScope = false;
+    if (has(RadioSetting.floodScope)) {
+      try {
+        floodScope = await getDefaultFloodScope();
+        hasFloodScope = true;
+      } on StateError catch (e) {
+        appLogger.warn('Backup: $e', tag: 'Connector');
+      }
+    }
 
     final deviceContacts = contacts;
     final backupContacts = <BackupContact>[];
@@ -9017,18 +9070,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       bwHz: _currentBwHz,
       sf: _currentSf,
       cr: _currentCr,
-      clientRepeat: _clientRepeat,
-      pathHashMode: _pathHashByteWidth - 1,
-      multiAcks: _multiAcks,
-      advertLocPolicy: _advertLocPolicy,
-      telemetryBase: _telemetryModeBase,
-      telemetryLoc: _telemetryModeLoc,
-      telemetryEnv: _telemetryModeEnv,
-      autoAddChat: _autoAddUsers,
-      autoAddRepeater: _autoAddRepeaters,
-      autoAddRoomServer: _autoAddRoomServers,
-      autoAddSensor: _autoAddSensors,
-      autoAddOverwriteOldest: _overwriteOldest,
+      clientRepeat: has(RadioSetting.clientRepeat) ? _clientRepeat : null,
+      pathHashMode: has(RadioSetting.pathHash) ? _pathHashByteWidth - 1 : null,
+      multiAcks: has(RadioSetting.multiAcks) ? _multiAcks : null,
+      advertLocPolicy:
+          has(RadioSetting.advertLocPolicy) ? _advertLocPolicy : null,
+      telemetryBase: has(RadioSetting.telemetry) ? _telemetryModeBase : null,
+      telemetryLoc: has(RadioSetting.telemetry) ? _telemetryModeLoc : null,
+      telemetryEnv: has(RadioSetting.telemetry) ? _telemetryModeEnv : null,
+      manualAddContacts: (_firmwareVerCode ?? 0) >= 4 ? _manualAddRaw : null,
+      autoAddChat: hasAutoAdd ? _autoAddUsers : null,
+      autoAddRepeater: hasAutoAdd ? _autoAddRepeaters : null,
+      autoAddRoomServer: hasAutoAdd ? _autoAddRoomServers : null,
+      autoAddSensor: hasAutoAdd ? _autoAddSensors : null,
+      autoAddOverwriteOldest: hasAutoAdd ? _overwriteOldest : null,
+      autoAddMaxHops: hasAutoAdd ? _autoAddMaxHops : null,
+      hasFloodScope: hasFloodScope,
+      floodScopeName: floodScope?.name,
+      floodScopeKeyHex:
+          floodScope != null ? pubKeyToHex(floodScope.key) : null,
       tuning: tuning,
       customVars: Map.of(_currentCustomVars ?? {}),
       channels: [
@@ -9045,6 +9105,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     void Function(RestoreStep step, int done, int total)? onProgress,
   }) async {
     final report = RestoreReport();
+    // Snapshot before the identity import re-points the cached list.
+    final existingKeys = {for (final c in _contacts) c.publicKeyHex};
     const frameGap = Duration(milliseconds: 100);
     // The radio periodically flushes dirty contacts to flash during a bulk
     // write and can sit silent well past the usual 2 s ack window.
@@ -9073,64 +9135,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     onProgress?.call(RestoreStep.identity, 1, 1);
 
-    // 2. Node settings.
-    final settings = <String, Uint8List>{
-      'Name': buildSetAdvertNameFrame(backup.name),
-      if (backup.freqHz != null &&
-          backup.bwHz != null &&
-          backup.sf != null &&
-          backup.cr != null)
-        'Radio settings': buildSetRadioParamsFrame(
-          backup.freqHz!,
-          backup.bwHz!,
-          backup.sf!,
-          backup.cr!,
-          // Omitting the byte on v9+ firmware would turn repeat OFF.
-          clientRepeat: (backup.firmwareVerCode ?? 0) >= 9
-              ? (backup.clientRepeat ?? false)
-              : null,
-        ),
-      if (backup.txPower != null)
-        'Transmit power': buildSetRadioTxPowerFrame(backup.txPower!),
-      if (backup.latitude != null && backup.longitude != null)
-        'Location': buildSetAdvertLatLonFrame(
-          backup.latitude!,
-          backup.longitude!,
-        ),
-      'Path hash size': buildSetPathHashModeFrame(backup.pathHashMode),
-      'Telemetry and advert settings': buildSetOtherParamsFrame(
-        (backup.telemetryEnv << 4) |
-            (backup.telemetryLoc << 2) |
-            backup.telemetryBase,
-        backup.advertLocPolicy,
-        backup.multiAcks,
-      ),
-      'Contact auto-add settings': buildSetAutoAddConfigFrame(
-        autoAddChat: backup.autoAddChat,
-        autoAddRepeater: backup.autoAddRepeater,
-        autoAddRoomServer: backup.autoAddRoomServer,
-        autoAddSensor: backup.autoAddSensor,
-        overwriteOldest: backup.autoAddOverwriteOldest,
-      ),
-      if (backup.tuning != null)
-        'Tuning settings': buildSetTuningParamsFrame(
-          backup.tuning!.rxDelayBase,
-          backup.tuning!.airtimeFactor,
-        ),
-      for (final entry in backup.customVars.entries)
-        'Setting ${entry.key}': buildSetCustomVarFrame(
-          '${entry.key}:${entry.value}',
-        ),
-    };
-    var settingsDone = 0;
-    for (final entry in settings.entries) {
-      onProgress?.call(RestoreStep.settings, settingsDone, settings.length);
-      final ok = await _sendAndWaitForAck(entry.value, timeout: ackTimeout);
-      if (!ok) report.failures.add('${entry.key} was not accepted');
-      settingsDone++;
+    // 2. Node settings: only what the backup has AND this radio understands.
+    final plan = planRestoreSettings(
+      backup,
+      targetVerCode: _firmwareVerCode,
+      targetVersion: _firmwareVersion,
+      currentClientRepeat: _clientRepeat,
+      currentManualAddByte: _manualAddRaw,
+      currentTelemetryByte: (_telemetryModeEnv << 4) |
+          (_telemetryModeLoc << 2) |
+          _telemetryModeBase,
+      currentAdvertLocPolicy: _advertLocPolicy,
+      currentMultiAcks: _multiAcks,
+    );
+    report.notes.addAll(plan.notes);
+    final writes = plan.writes;
+    for (var i = 0; i < writes.length; i++) {
+      onProgress?.call(RestoreStep.settings, i, writes.length);
+      final w = writes[i];
+      var ok = await _sendAndWaitForAck(w.frame, timeout: ackTimeout);
+      if (!ok && w.retry != null) {
+        await Future.delayed(frameGap);
+        ok = await _sendAndWaitForAck(w.retry!, timeout: ackTimeout);
+        if (ok) report.notes.add(w.retryNote!);
+      }
+      if (!ok) report.failures.add('${w.label} was not accepted');
       await Future.delayed(frameGap);
     }
-    onProgress?.call(RestoreStep.settings, settings.length, settings.length);
+    onProgress?.call(RestoreStep.settings, writes.length, writes.length);
 
     // 3. Channels: write every slot the radio has, clearing the ones the
     // backup doesn't fill. Raw frames on purpose — setChannel() refuses
@@ -9176,7 +9208,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               bc.contact.publicKeyHex != selfPublicKeyHex,
         )
         .toList();
-    final hashWidth = backup.pathHashMode + 1;
+    // Contacts the backup doesn't have go first. A full table with
+    // "overwrite oldest" on would otherwise evict restored contacts — a
+    // contact restored without an advert blob keeps its old lastmod and is
+    // exactly the one the firmware picks.
+    final keep = {for (final bc in restorable) bc.contact.publicKeyHex};
+    final stale = existingKeys.where((k) => !keep.contains(k)).toList();
+    for (var i = 0; i < stale.length; i++) {
+      onProgress?.call(RestoreStep.removeContacts, i, stale.length);
+      final ok = await _sendAndWaitForAck(
+        buildRemoveContactFrame(hex2Uint8List(stale[i])),
+        timeout: ackTimeout,
+      );
+      if (ok) report.contactsRemoved++;
+      await Future.delayed(frameGap);
+    }
+    onProgress?.call(RestoreStep.removeContacts, stale.length, stale.length);
+
+    // Null means a pre-1.14 radio, which only had 1-byte path hashes.
+    final hashWidth = (backup.pathHashMode ?? 0) + 1;
     for (var i = 0; i < restorable.length; i++) {
       onProgress?.call(RestoreStep.contacts, i, restorable.length);
       final bc = restorable[i];
@@ -9533,6 +9583,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _autoAddRoomServers = (flags & autoAddRoomServerFlag) != 0;
       _autoAddSensors = (flags & autoAddSensorFlag) != 0;
       _overwriteOldest = (flags & autoAddOverwriteOldestFlag) != 0;
+      _autoAddMaxHops = reader.remaining > 0 ? reader.readByte() : null; // v10+
     } catch (e) {
       appLogger.error('Failed to parse auto-add config: $e', tag: 'Connector');
     }
