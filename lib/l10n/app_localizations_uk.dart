@@ -3575,11 +3575,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'Дані карти експортовані з meshcore-open';
+      'Дані карти експортовані з MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'експорт даних карти meshcore-open у форматі GPX';
+      'експорт даних карти MeshTrax у форматі GPX';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Ближні ретранслятори';

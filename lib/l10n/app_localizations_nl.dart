@@ -3552,11 +3552,11 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'Kaartgegevens geëxporteerd uit meshcore-open';
+      'Kaartgegevens geëxporteerd uit MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open GPX kaartgegevens exporteren';
+      'MeshTrax GPX kaartgegevens exporteren';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Nabije herhalingseenheden';

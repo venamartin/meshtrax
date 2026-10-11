@@ -3580,11 +3580,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'Dane mapy wyeksportowane z meshcore-open';
+      'Dane mapy wyeksportowane z MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'Eksport danych mapy GPX meshcore-open';
+      'Eksport danych mapy GPX MeshTrax';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Pobliskie przekaźniki';

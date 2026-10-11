@@ -3545,11 +3545,11 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'Mapové údaje exportované z meshcore-open';
+      'Mapové údaje exportované z MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open export dát GPX mapových údajov';
+      'MeshTrax export dát GPX mapových údajov';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Miestne opakovače';

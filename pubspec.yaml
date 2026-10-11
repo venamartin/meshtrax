@@ -64,7 +64,6 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   path_provider: ^2.1.5
   share_plus: any
-  build_pipe: ^0.3.1
   material_symbols_icons: ^4.2906.0
   web: ^1.1.1
   flutter_svg: ^2.0.10+1
@@ -180,18 +179,3 @@ msix_config:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-
-
-
-build_pipe:
-  workflows:
-    default:
-      clean_flutter: true          # Optional: Cleans old build artifacts before running
-      generate_log: true           # Optional: Outputs a build log file for debugging
-      platforms:
-        web:
-          build:
-            build_command: flutter build web --release --pwa-strategy=none
-            # Strongly recommended: disables the default service worker which often causes more cache headaches
-            add_version_query_param: true
-            # This is the key flag! It appends ?v=<your pubspec version> to bootstrap/JS files

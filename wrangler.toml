@@ -1,7 +1,0 @@
-#:schema node_modules/wrangler/config-schema.json
-name = "meshcore"
-compatibility_date = "2025-10-08"
-
-[assets]
-directory = "build/web"
-

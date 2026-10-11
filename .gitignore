@@ -99,9 +99,6 @@ meshtrax-graph-*.json
 .vscode/launch.json
 .vscode/settings.json
 
-# Cloudflare Wrangler
-.wrangler
-
 # Scratch files
 scratch/
 MeshCore/

@@ -3425,10 +3425,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_gpxExportAllContacts => '모든 연락처 위치';
 
   @override
-  String get settings_gpxExportShareText => 'meshcore-open에서 추출한 지도 데이터';
+  String get settings_gpxExportShareText => 'MeshTrax에서 추출한 지도 데이터';
 
   @override
-  String get settings_gpxExportShareSubject => 'meshcore-open GPX 지도 데이터 내보내기';
+  String get settings_gpxExportShareSubject => 'MeshTrax GPX 지도 데이터 내보내기';
 
   @override
   String get snrIndicator_nearByRepeaters => '주변의 중계기';

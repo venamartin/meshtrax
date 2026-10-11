@@ -3565,11 +3565,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'Datos del mapa exportados desde meshcore-open';
+      'Datos del mapa exportados desde MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open exportación de datos de mapa GPX';
+      'MeshTrax exportación de datos de mapa GPX';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Repetidores cercanos';
