@@ -144,7 +144,9 @@ class _RoutingDialog extends StatelessWidget {
                   path: Uint8List.fromList(pathBytes),
                   flipPathAround: true,
                   targetContact: c,
-                  pathHashByteWidth: connector.pathHashByteWidth,
+                  // The route carries its own width; the radio may since
+                  // have moved to another.
+                  pathHashByteWidth: c.pathHashSize,
                 ),
               ),
             ),

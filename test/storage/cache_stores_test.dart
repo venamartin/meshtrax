@@ -156,6 +156,29 @@ void main() {
 
       expect(await store.loadContacts(), isEmpty);
     });
+
+    test('the v7 upgrade keeps rows and clears only their routes', () async {
+      // Rows as the app wrote them before any width was persisted.
+      await store.saveContacts([contact(1), routed(2)]);
+      await AppDatabase.instance.customStatement(
+        "UPDATE contact_rows SET payload = json_remove(payload, "
+        "'\$.pathHashSize', '\$.inboundPathHashSize', '\$.pathOverrideHashSize')",
+      );
+
+      await AppDatabase.clearCachedRoutesV7(AppDatabase.instance);
+
+      final byName = {for (final c in await store.loadContacts()) c.name: c};
+      expect(byName.keys, containsAll(['Contact 1', 'Contact 2']));
+      final c2 = byName['Contact 2']!;
+      expect(c2.pathLength, -1);
+      expect(c2.path, isEmpty);
+      expect(c2.inboundPath, isEmpty);
+      expect(c2.inboundHopCount, isNull);
+      expect(c2.pathOverride, 2);
+      expect(c2.pathOverrideBytes, [0xA2, 0x77]);
+      expect(c2.pathOverrideHashSize, isNull);
+      expect(c2.lastMessageAt, routed(2).lastMessageAt);
+    });
   });
 
   group('ContactDiscoveryStore', () {

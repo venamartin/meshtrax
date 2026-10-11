@@ -1474,7 +1474,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   path: Uint8List.fromList(pathBytes),
                   flipPathAround: true,
                   targetContact: widget.contact,
-                  pathHashByteWidth: connector.pathHashByteWidth,
+                  pathHashByteWidth: hashSize,
                 ),
               ),
             ),

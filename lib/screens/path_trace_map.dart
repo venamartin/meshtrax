@@ -70,7 +70,7 @@ class PathTraceMapScreen extends StatefulWidget {
     this.flipPathAround = false,
     this.reversePathAround = false,
     this.targetContact,
-    this.pathHashByteWidth = 1,
+    required this.pathHashByteWidth,
     this.pathContacts,
   });
 

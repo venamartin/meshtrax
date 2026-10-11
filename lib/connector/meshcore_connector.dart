@@ -478,6 +478,9 @@ class MeshCoreConnector extends ChangeNotifier {
   int _contactSyncSince = 0;
   int _contactSyncRadioTotal = 0;
   bool _contactFullResyncPending = false;
+  // Route overrides of the list a full download is replacing, by key; each
+  // is put back on its contact as the radio's frame for it arrives.
+  Map<String, Contact> _overridesAcrossRefresh = {};
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -3272,6 +3275,12 @@ class MeshCoreConnector extends ChangeNotifier {
     _isLoadingContacts = true;
     _preserveContactsOnRefresh = preserveExisting;
     if (!preserveExisting) {
+      // The radio knows nothing of the user's route choices; a full download
+      // rebuilds the list from its frames, so carry them across by key.
+      _overridesAcrossRefresh = {
+        for (final c in _contacts)
+          if (c.pathOverride != null) c.publicKeyHex: c,
+      };
       _contacts.clear();
       notifyListeners();
     }
@@ -5574,7 +5583,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             (_autoAddRoomServers && contact.type == advTypeRoom) ||
             (_autoAddSensors && contact.type == advTypeSensor) ||
             isContact) {
-          _contacts.add(contact);
+          final kept = _overridesAcrossRefresh.remove(contact.publicKeyHex);
+          _contacts.add(
+            kept == null
+                ? contact
+                : contact.copyWith(
+                    pathOverride: kept.pathOverride,
+                    pathOverrideBytes: kept.pathOverrideBytes,
+                    pathOverrideHashSize: kept.pathOverrideHashSize,
+                  ),
+          );
           appLogger.info(
             'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
             tag: 'Connector',
