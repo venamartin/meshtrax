@@ -873,13 +873,16 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                         itemBuilder: (context, index) {
                           final item = chatItems[index];
                     final isChannel = item.channel != null;
-                    final iconColor = isChannel ? Colors.blue : Colors.green;
-                    final bgColor = isChannel
-                        ? Colors.blue.withValues(alpha: 0.2)
-                        : Colors.green.withValues(alpha: 0.2);
+                    final isRoom = item.contact?.type == advTypeRoom;
+                    final iconColor = isChannel
+                        ? Colors.blue
+                        : isRoom
+                            ? Colors.purple
+                            : Colors.green;
+                    final bgColor = iconColor.withValues(alpha: 0.2);
                     IconData iconData = Icons.person;
                     String? emojiIcon;
-                    
+
                     if (isChannel) {
                       if (item.channel!.isPublicChannel) {
                         iconData = Icons.public;
@@ -889,7 +892,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                         iconData = Icons.lock;
                       }
                     } else {
-                      if (item.contact != null && item.contact!.type == advTypeRoom) {
+                      if (isRoom) {
                         iconData = Icons.meeting_room;
                       } else if (item.contact != null) {
                         emojiIcon = firstEmoji(item.contact!.name);
