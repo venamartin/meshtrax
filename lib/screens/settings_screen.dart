@@ -1535,6 +1535,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             RestoreStep.identity => 'Restoring identity...',
             RestoreStep.settings => 'Writing settings ($done of $total)...',
             RestoreStep.channels => 'Writing channels ($done of $total)...',
+            RestoreStep.removeContacts =>
+              'Removing contacts not in the backup ($done of $total)...',
             RestoreStep.contacts => 'Writing contacts ($done of $total)...',
             RestoreStep.resync => 'Re-reading the radio...',
           };
@@ -1580,6 +1582,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'so it keeps its own identity.',
       if (report.identityMissing)
         'The backup has no identity key, so the radio keeps its own identity.',
+      if (report.contactsRemoved > 0)
+        '${report.contactsRemoved} contacts that were not in the backup '
+            'were removed from the radio.',
       if (report.channelsDropped > 0)
         '${report.channelsDropped} channels did not fit on this radio and '
             'were skipped.',

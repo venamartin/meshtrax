@@ -9105,6 +9105,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     void Function(RestoreStep step, int done, int total)? onProgress,
   }) async {
     final report = RestoreReport();
+    // Snapshot before the identity import re-points the cached list.
+    final existingKeys = {for (final c in _contacts) c.publicKeyHex};
     const frameGap = Duration(milliseconds: 100);
     // The radio periodically flushes dirty contacts to flash during a bulk
     // write and can sit silent well past the usual 2 s ack window.
@@ -9206,6 +9208,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               bc.contact.publicKeyHex != selfPublicKeyHex,
         )
         .toList();
+    // Contacts the backup doesn't have go first. A full table with
+    // "overwrite oldest" on would otherwise evict restored contacts — a
+    // contact restored without an advert blob keeps its old lastmod and is
+    // exactly the one the firmware picks.
+    final keep = {for (final bc in restorable) bc.contact.publicKeyHex};
+    final stale = existingKeys.where((k) => !keep.contains(k)).toList();
+    for (var i = 0; i < stale.length; i++) {
+      onProgress?.call(RestoreStep.removeContacts, i, stale.length);
+      final ok = await _sendAndWaitForAck(
+        buildRemoveContactFrame(hex2Uint8List(stale[i])),
+        timeout: ackTimeout,
+      );
+      if (ok) report.contactsRemoved++;
+      await Future.delayed(frameGap);
+    }
+    onProgress?.call(RestoreStep.removeContacts, stale.length, stale.length);
+
     // Null means a pre-1.14 radio, which only had 1-byte path hashes.
     final hashWidth = (backup.pathHashMode ?? 0) + 1;
     for (var i = 0; i < restorable.length; i++) {

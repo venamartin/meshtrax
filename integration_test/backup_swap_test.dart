@@ -76,6 +76,8 @@ void main() {
       problems.addAll(report.failures
           .where((f) => f.startsWith('Channel') || f.startsWith('Contact'))
           .map((f) => '${radio.label}: $f'));
+      blog('${radio.label}: removed ${report.contactsRemoved} contact(s) '
+          'not in the backup');
       blog('${radio.label}: restored ${report.contactsWritten} contact(s) '
           '(${report.advertsReplayed} advert blob(s) replayed), '
           '${report.channelsWritten} channel(s)');

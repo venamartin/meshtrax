@@ -328,7 +328,14 @@ class DeviceBackup {
   }
 }
 
-enum RestoreStep { identity, settings, channels, contacts, resync }
+enum RestoreStep {
+  identity,
+  settings,
+  channels,
+  removeContacts,
+  contacts,
+  resync,
+}
 
 enum PrivateKeyImportResult { ok, error, disabled }
 
@@ -343,6 +350,7 @@ class RestoreReport {
   final List<String> notes = [];
   int channelsWritten = 0;
   int channelsDropped = 0;
+  int contactsRemoved = 0;
   int contactsWritten = 0;
   int advertsReplayed = 0;
 
