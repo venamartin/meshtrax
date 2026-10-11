@@ -478,11 +478,6 @@ class MeshCoreConnector extends ChangeNotifier {
   int _contactSyncSince = 0;
   int _contactSyncRadioTotal = 0;
   bool _contactFullResyncPending = false;
-  // Routes the radio holds at a hash width other than the one it now runs
-  // at; see _queueStaleRouteReset.
-  final Set<String> _staleRouteKeys = {};
-  Timer? _staleRouteDrainTimer;
-  bool _staleRouteDraining = false;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -2948,8 +2943,6 @@ class MeshCoreConnector extends ChangeNotifier {
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
-    _staleRouteKeys.clear();
-    _staleRouteDrainTimer?.cancel();
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
@@ -3435,9 +3428,6 @@ class MeshCoreConnector extends ChangeNotifier {
               : (updatedFlags & ~contactFlagTeleEnv))
         : updatedFlags;
 
-    // The snapshot frame above queues a width-stale route for reset; this
-    // write re-pushes that route first and the reset lands a second later.
-    // The end state is the right one, as the route could not deliver anyway.
     await sendFrame(
       buildUpdateContactPathFrame(
         latestContact.publicKey,
@@ -4032,91 +4022,8 @@ class MeshCoreConnector extends ChangeNotifier {
     return readded;
   }
 
-  /// A stored route whose hash width differs from the radio's current mode.
-  /// The firmware sends it exactly as stored, so the first repeater strips
-  /// the wrong number of bytes and nothing downstream matches: it can never
-  /// deliver.
-  @visibleForTesting
-  static bool routeWidthStale(Contact c, int radioWidth) =>
-      c.pathLength > 0 && c.path.isNotEmpty && c.pathHashSize != radioWidth;
-
-  /// Forgets a stale route on the radio once the current burst of contact
-  /// frames has settled: a sync queues every such contact and one drain
-  /// resets them one acknowledged frame at a time, after which the next
-  /// flood relearns the route at the radio's width. A contact the user
-  /// routes by hand is left alone.
-  void _queueStaleRouteReset(Contact contact) {
-    _staleRouteKeys.add(contact.publicKeyHex);
-    _staleRouteDrainTimer?.cancel();
-    _staleRouteDrainTimer = Timer(const Duration(seconds: 1), () {
-      unawaited(_drainStaleRouteResets());
-    });
-  }
-
-  Future<void> _drainStaleRouteResets() async {
-    if (_staleRouteDraining) return;
-    _staleRouteDraining = true;
-    final total = _staleRouteKeys.length;
-    var done = 0;
-    try {
-      while (_staleRouteKeys.isNotEmpty && isConnected) {
-        final key = _staleRouteKeys.first;
-        _staleRouteKeys.remove(key);
-        final idx = _contacts.indexWhere((c) => c.publicKeyHex == key);
-        if (idx < 0) continue;
-        final c = _contacts[idx];
-        if (c.pathOverride != null ||
-            !routeWidthStale(c, _pathHashByteWidth)) {
-          continue;
-        }
-        appLogger.info(
-          'Forgetting ${c.name}: ${c.pathLength} hops at width '
-          '${c.pathHashSize}, radio at $_pathHashByteWidth',
-          tag: 'Connector',
-        );
-        // The flash flush behind a burst of writes holds the OK well past
-        // the usual ack window.
-        final ok = await _sendAndWaitForAck(
-          buildResetPathFrame(c.publicKey),
-          timeout: const Duration(seconds: 10),
-        );
-        if (!ok) continue;
-        done++;
-        final i = _contacts.indexWhere((x) => x.publicKeyHex == key);
-        if (i >= 0) {
-          _contacts[i] = _contacts[i].copyWith(
-            pathLength: -1,
-            path: Uint8List(0),
-            pathHashSize: _pathHashByteWidth,
-          );
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-      }
-    } finally {
-      _staleRouteDraining = false;
-    }
-    if (total > 0) {
-      _appDebugLogService?.info(
-        'Route width repair: reset $done/$total routes stored at a width '
-        'other than $_pathHashByteWidth',
-        tag: 'Connector',
-      );
-      notifyListeners();
-      unawaited(_persistContacts());
-    }
-  }
-
   Future<bool> importDiscoveredContact(Contact contact) async {
     if (!isConnected) return false;
-    if (routeWidthStale(contact, _pathHashByteWidth)) {
-      // A route at the wrong width would only be written and forgotten a
-      // second later; import the contact route-less instead.
-      contact = contact.copyWith(
-        pathLength: -1,
-        path: Uint8List(0),
-        pathHashSize: _pathHashByteWidth,
-      );
-    }
 
     final success = await _sendAndWaitForAck(
       buildUpdateContactPathFrame(
@@ -5616,13 +5523,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final existingIndex = _contacts.indexWhere(
         (c) => c.publicKeyHex == contact.publicKeyHex,
       );
-
-      if (_hasReceivedDeviceInfo &&
-          routeWidthStale(contact, _pathHashByteWidth) &&
-          (existingIndex < 0 ||
-              _contacts[existingIndex].pathOverride == null)) {
-        _queueStaleRouteReset(contact);
-      }
 
       if (existingIndex >= 0) {
         final existing = _contacts[existingIndex];
@@ -8433,8 +8333,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
-    _staleRouteKeys.clear();
-    _staleRouteDrainTimer?.cancel();
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
