@@ -137,4 +137,33 @@ void main() {
       expect(ChannelMessage.parseReaction('hello'), isNull);
     });
   });
+
+  group('snippetMatches', () {
+    test('plain prefix', () {
+      expect(ChannelMessage.snippetMatches('hello world', 'hello worl'), isTrue);
+      expect(ChannelMessage.snippetMatches('hello world', 'goodbye'), isFalse);
+    });
+
+    test('ignores case and collapses whitespace', () {
+      expect(
+        ChannelMessage.snippetMatches('Hello   World\nagain', 'hello world ag'),
+        isTrue,
+      );
+    });
+
+    test('strips leading mentions on both sides', () {
+      expect(
+        ChannelMessage.snippetMatches('@[Bob] hello world', 'hello worl'),
+        isTrue,
+      );
+      expect(
+        ChannelMessage.snippetMatches('hello world', '@[Bob] hello worl'),
+        isTrue,
+      );
+    });
+
+    test('empty snippet matches anything', () {
+      expect(ChannelMessage.snippetMatches('whatever', ''), isTrue);
+    });
+  });
 }

@@ -8257,21 +8257,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     String mentionedNode,
     String snippet,
   ) {
-    // Compare with leading mentions stripped from BOTH sides: the replying
-    // app builds its snippet from the parent as it displays it (mention
-    // stripped), while our stored text keeps the mention — so a reply to
-    // "@[Bob] hello" carried a snippet the raw text could never start with.
-    // Comparison-time copies only; stored text and display are untouched.
-    String norm(String s) => ChannelMessage.stripLeadingMentions(s)
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim()
-        .toLowerCase();
-    final needle = norm(snippet);
     for (int i = messages.length - 1; i >= 0; i--) {
       final m = messages[i];
       if (m.senderName != mentionedNode) continue;
-      if (needle.isEmpty) return m;
-      if (norm(m.text).startsWith(needle)) return m;
+      if (ChannelMessage.snippetMatches(m.text, snippet)) return m;
     }
     return null;
   }

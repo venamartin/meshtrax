@@ -75,6 +75,12 @@ class _ChatScreenState extends State<ChatScreen> {
   Map<String, Contact>? _cachedRoomAuthorMap;
   int _cachedAuthorMapMessageCount = -1;
 
+  /// Reply row id → index of the quoted post in the displayed (reversed)
+  /// list, -1 when it isn't loaded. Rebuilt when the message list changes.
+  final Map<String, int> _replyTargetCache = {};
+  List<Message>? _replyTargetCacheSource;
+  int _replyTargetCacheLength = -1;
+
   bool get _isRoom => widget.contact.type == advTypeRoom;
 
   /// Last persisted ACL permissions byte for this room — a restart hint
@@ -276,6 +282,63 @@ class _ChatScreenState extends State<ChatScreen> {
     return message.fourByteRoomContactKey.isNotEmpty
         ? pubKeyToHex(message.fourByteRoomContactKey).toUpperCase()
         : '00000000';
+  }
+
+  /// Index in [reversed] of the post that [reply] (shown at [index]) quotes,
+  /// or -1. Rooms store wire text, so the original is resolved at display
+  /// time by sender name + snippet prefix, the same match the connector makes
+  /// for channel replies. Only posts already loaded on screen can be found.
+  int _findReplyTargetIndex(
+    List<Message> reversed,
+    int index,
+    ReplyInfo reply,
+    MeshCoreConnector connector,
+  ) {
+    if (!identical(_replyTargetCacheSource, _messages) ||
+        _replyTargetCacheLength != reversed.length) {
+      _replyTargetCache.clear();
+      _replyTargetCacheSource = _messages;
+      _replyTargetCacheLength = reversed.length;
+    }
+    final cached = _replyTargetCache[reversed[index].messageId];
+    if (cached != null) return cached;
+
+    var found = -1;
+    for (var j = index + 1; j < reversed.length; j++) {
+      final m = reversed[j];
+      final body = ChannelMessage.parseReply(m.text)?.actualMessage ?? m.text;
+      if (!ChannelMessage.snippetMatches(body, reply.snippet)) continue;
+      if (_replyTargetName(m, connector) == reply.mentionedNode ||
+          (_isOwnPost(m, connector) &&
+              reply.mentionedNode == connector.selfName)) {
+        found = j;
+        break;
+      }
+    }
+    _replyTargetCache[reversed[index].messageId] = found;
+    return found;
+  }
+
+  /// Our own post as it comes back from a history reload: an incoming row
+  /// under our key prefix. Self is never in contacts, so [_replyTargetName]
+  /// alone would only ever see the hex.
+  bool _isOwnPost(Message message, MeshCoreConnector connector) {
+    if (message.isOutgoing) return true;
+    final key = message.fourByteRoomContactKey;
+    if (key.length < 4 || connector.selfPublicKey == null) return false;
+    return connector.selfPublicKeyHex
+        .toLowerCase()
+        .startsWith(pubKeyToHex(key).toLowerCase());
+  }
+
+  void _scrollToIndex(int index) {
+    if (!_itemScrollController.isAttached) return;
+    _itemScrollController.scrollTo(
+      index: index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      alignment: 0.3,
+    );
   }
 
   /// Room members who can be @-mentioned: authors seen in this conversation
@@ -812,12 +875,26 @@ class _ChatScreenState extends State<ChatScreen> {
                 );
                 if (hexPath.isNotEmpty) viaLabel = hexPath;
               }
+              final replyInfo =
+                  isRoom ? ChannelMessage.parseReply(message.text) : null;
+              final replyTargetIndex = replyInfo == null
+                  ? -1
+                  : _findReplyTargetIndex(
+                      reversedMessages, index, replyInfo, connector);
+              final replyTarget = replyTargetIndex == -1
+                  ? null
+                  : reversedMessages[replyTargetIndex];
               Widget bubble = _MessageBubble(
                 message: message,
                 senderName: senderName,
                 isRoomServer: isRoom,
-                replyInfo:
-                    isRoom ? ChannelMessage.parseReply(message.text) : null,
+                replyInfo: replyInfo,
+                replyTarget: replyTarget,
+                replyTargetIsSelf:
+                    replyTarget != null && _isOwnPost(replyTarget, connector),
+                onReplyTap: replyTarget == null
+                    ? null
+                    : () => _scrollToIndex(replyTargetIndex),
                 viaLabel: viaLabel,
                 isAnnouncement: isAnnouncement,
                 textScale: textScale,
@@ -1965,6 +2042,12 @@ class _MessageBubble extends StatelessWidget {
   /// reply body instead of the raw wire text.
   final ReplyInfo? replyInfo;
 
+  /// The quoted post when it is loaded on screen: the quote shows its full
+  /// body and tapping it scrolls there. Null falls back to the wire snippet.
+  final Message? replyTarget;
+  final bool replyTargetIsSelf;
+  final VoidCallback? onReplyTap;
+
   /// Hex hop prefixes for this message's path (channel-screen format),
   /// shown under the body when message tracing is on — outgoing: the route
   /// the send used; incoming: our known route, only when its length matches
@@ -1985,6 +2068,9 @@ class _MessageBubble extends StatelessWidget {
     required this.isRoomServer,
     required this.textScale,
     this.replyInfo,
+    this.replyTarget,
+    this.replyTargetIsSelf = false,
+    this.onReplyTap,
     this.viaLabel,
     this.isAnnouncement = false,
     this.onTap,
@@ -2132,7 +2218,12 @@ class _MessageBubble extends StatelessWidget {
                           if (gifId == null) const SizedBox(height: 4),
                         ],
                         if (replyInfo != null) ...[
-                          _buildReplyQuote(context, replyInfo!, colorScheme),
+                          _buildReplyQuote(
+                            context,
+                            replyInfo!,
+                            colorScheme,
+                            uiState,
+                          ),
                           const SizedBox(height: 4),
                         ],
                         if (poi != null)
@@ -2531,60 +2622,125 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  /// Compact quote box above a reply's body. Room replies carry only the
-  /// wire snippet, never a resolvable message id, so there is no tap-to-scroll.
+  /// Compact quote box above a reply's body — same shape as the channel
+  /// screen's reply preview. With a resolved [replyTarget] it shows the
+  /// original's full body (GIF thumbnail / location label for those) and
+  /// taps scroll to it; otherwise only the wire snippet, not tappable.
   Widget _buildReplyQuote(
     BuildContext context,
     ReplyInfo reply,
     ColorScheme colorScheme,
+    UiViewStateService uiState,
   ) {
     final warmLight = ChatColors.isLight(context);
-    final headerColor = warmLight
-        ? ChatColors.quoteBorder
-        : colorScheme.onSecondaryContainer;
+    final connector = context.read<MeshCoreConnector>();
+    final isOwnNode =
+        replyTargetIsSelf || reply.mentionedNode == connector.selfName;
+    final senderNameColors =
+        context.read<AppSettingsService>().settings.senderNameColors;
+    final headerColor = isOwnNode
+        ? colorScheme.secondary
+        : senderNameColors
+            ? _getColorForName(reply.mentionedNode)
+            : warmLight
+                ? ChatColors.quoteBorder
+                : colorScheme.onSecondaryContainer;
     final snippetColor = (warmLight
             ? ChatColors.bubbleText
             : colorScheme.onSecondaryContainer)
         .withValues(alpha: 0.7);
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: warmLight
-            ? ChatColors.quoteBackground
-            : colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(8),
-        border: Border(
-          left: BorderSide(
-            color: warmLight ? ChatColors.quoteBorder : colorScheme.secondary,
-            width: 3,
+
+    final target = replyTarget;
+    final quoteText = target == null
+        ? (reply.snippet.isEmpty ? '' : '${reply.snippet}..')
+        : (ChannelMessage.parseReply(target.text)?.actualMessage ??
+            target.text);
+    final gifId = target == null ? null : GifHelper.parseGif(quoteText);
+    final poi = target == null ? null : _parsePoiMessage(quoteText);
+
+    Widget? preview;
+    if (gifId != null) {
+      preview = ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: uiState.renderGifs
+            ? GifMessage(
+                url: 'https://media.giphy.com/media/$gifId/giphy.gif',
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                fallbackTextColor: snippetColor,
+                maxSize: 80,
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.gif_box, size: 14, color: snippetColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    'GIF',
+                    style: TextStyle(
+                      fontSize: 12 * textScale,
+                      color: snippetColor,
+                    ),
+                  ),
+                ],
+              ),
+      );
+    } else if (poi != null) {
+      preview = Row(
+        children: [
+          Icon(Icons.location_on_outlined, size: 14, color: snippetColor),
+          const SizedBox(width: 4),
+          Text(
+            context.l10n.chat_location,
+            style: TextStyle(fontSize: 12 * textScale, color: snippetColor),
+          ),
+        ],
+      );
+    } else if (quoteText.isNotEmpty) {
+      preview = Text(
+        quoteText,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12 * textScale,
+          color: snippetColor,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onReplyTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: warmLight
+              ? ChatColors.quoteBackground
+              : colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+          border: Border(
+            left: BorderSide(
+              color: warmLight ? ChatColors.quoteBorder : colorScheme.secondary,
+              width: 3,
+            ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.l10n.chat_replyTo(reply.mentionedNode),
-            style: TextStyle(
-              fontSize: 11 * textScale,
-              fontWeight: FontWeight.bold,
-              color: headerColor,
-            ),
-          ),
-          if (reply.snippet.isNotEmpty) ...[
-            const SizedBox(height: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              '${reply.snippet}..',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              context.l10n.chat_replyTo(reply.mentionedNode),
               style: TextStyle(
-                fontSize: 12 * textScale,
-                color: snippetColor,
-                fontStyle: FontStyle.italic,
+                fontSize: 11 * textScale,
+                fontWeight: FontWeight.bold,
+                color: headerColor,
               ),
             ),
+            if (preview != null) ...[
+              const SizedBox(height: 2),
+              preview,
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

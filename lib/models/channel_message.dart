@@ -311,6 +311,20 @@ class ChannelMessage {
     return flat.length <= chars ? flat : flat.substring(0, chars);
   }
 
+  /// Whether a stored message [text] is the one a reply [snippet] quotes.
+  /// Leading mentions are stripped from BOTH sides: the replying app builds
+  /// its snippet from the parent as it displays it (mention stripped), while
+  /// stored text keeps the mention. Whitespace-collapsed, case-insensitive
+  /// prefix test; an empty snippet matches anything.
+  static bool snippetMatches(String text, String snippet) {
+    String norm(String s) => stripLeadingMentions(s)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .toLowerCase();
+    final needle = norm(snippet);
+    return needle.isEmpty || norm(text).startsWith(needle);
+  }
+
   /// Whether [text] mentions [name] via the `@[Name]` wire syntax anywhere —
   /// plain mentions and reply headers alike (a reply to me always carries my
   /// mention). Case-insensitive: other apps let senders type names by hand.
