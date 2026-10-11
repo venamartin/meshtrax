@@ -29,7 +29,7 @@ class UiViewStateService extends ChangeNotifier {
   String _channelsSearchText = '';
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
   bool _renderGifs = true;
-  bool _sendGifsAsLinks = false;
+  bool _sendGifsAsLinks = true;
 
   String get contactsSelectedGroupName => _contactsSelectedGroupName;
   String get contactsSearchText => _contactsSearchText;
@@ -70,7 +70,7 @@ class UiViewStateService extends ChangeNotifier {
     }
 
     _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
-    _sendGifsAsLinks = prefs.getBool(_keySendGifsAsLinks) ?? false;
+    _sendGifsAsLinks = prefs.getBool(_keySendGifsAsLinks) ?? true;
 
     final channelSortStr = prefs.getString(_keyChannelsSortOption);
     if (channelSortStr != null) {

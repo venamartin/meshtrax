@@ -4158,6 +4158,39 @@ class MeshCoreConnector extends ChangeNotifier {
   }
 
 
+  /// Forgets every stored route on the radio so the next send to each
+  /// contact floods and relearns it at the radio's current hash width. A
+  /// stored route keeps the width it was learned at, and the firmware never
+  /// re-stamps it on a width change. Returns how many routes were forgotten.
+  Future<int> forgetAllRoutes() async {
+    if (!isConnected) return 0;
+    var done = 0;
+    for (final c in List.of(_contacts)) {
+      if (c.pathLength <= 0) continue;
+      // A burst of writes can hold the OK behind the firmware's flash flush.
+      final ok = await _sendAndWaitForAck(
+        buildResetPathFrame(c.publicKey),
+        timeout: const Duration(seconds: 10),
+      );
+      if (!ok) continue;
+      done++;
+      final i = _contacts.indexWhere((x) => x.publicKeyHex == c.publicKeyHex);
+      if (i >= 0) {
+        _contacts[i] = _contacts[i].copyWith(
+          pathLength: -1,
+          path: Uint8List(0),
+          pathHashSize: _pathHashByteWidth,
+        );
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    if (done > 0) {
+      notifyListeners();
+      await _persistContacts();
+    }
+    return done;
+  }
+
   /// How far the radio's clock sat from the phone's at the last check
   /// (positive = radio ahead). Null until a connection checks it.
   Duration? get deviceClockSkew => _lastDeviceClockSkew;

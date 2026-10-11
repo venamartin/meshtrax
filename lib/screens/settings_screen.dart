@@ -376,6 +376,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _editPathHashSize(context, connector),
           ),
           const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.route_outlined),
+            title: const Text("Forget all routes"),
+            subtitle: const Text(
+              "Relearn every route at the current path hash size. "
+              "The next message to each contact floods once.",
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _forgetAllRoutes(context, connector),
+          ),
+          const Divider(height: 1),
 
           ListTile(
             leading: const Icon(Icons.visibility_off_outlined),
@@ -853,6 +864,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _forgetAllRoutes(
+    BuildContext context,
+    MeshCoreConnector connector,
+  ) async {
+    final l10n = context.l10n;
+    final routed = connector.contacts.where((c) => c.pathLength > 0).length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Forget all routes"),
+        content: Text(
+          "The radio keeps $routed learned route${routed == 1 ? '' : 's'}, "
+          "each at the hash size it was learned with. Forgetting them makes "
+          "the next message to each contact flood once and relearn the route "
+          "at ${connector.pathHashByteWidth} byte"
+          "${connector.pathHashByteWidth == 1 ? '' : 's'}.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.common_cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Forget"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final navigator = Navigator.of(context);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Expanded(child: Text("Forgetting routes…")),
+          ],
+        ),
+      ),
+    );
+    final done = await connector.forgetAllRoutes();
+    navigator.pop();
+    if (!context.mounted) return;
+    showDismissibleSnackBar(
+      context,
+      content: Text("Forgot $done route${done == 1 ? '' : 's'}."),
     );
   }
 
