@@ -2897,6 +2897,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _deviceDisplayName = null;
     _deviceId = null;
     _contacts.clear();
+    _overridesAcrossRefresh = {};
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
@@ -4959,6 +4960,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case respCodeEndOfContacts:
         debugPrint('Got END_OF_CONTACTS');
+        // Whatever the radio did not re-send no longer exists there.
+        _overridesAcrossRefresh = {};
         final syncElapsedMs = _contactSyncStopwatch?.elapsedMilliseconds;
         _contactSyncStopwatch = null;
         final syncSince = _contactSyncSince;
