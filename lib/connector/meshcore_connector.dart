@@ -6,6 +6,8 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:pointycastle/export.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart';
 
@@ -259,7 +261,7 @@ class RoomLoginEvent {
   int? get role => permissions == null ? null : permissions! & 0x3;
 }
 
-class MeshCoreConnector extends ChangeNotifier {
+class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Message windowing to limit memory usage
 
   MeshCoreConnectionState _state = MeshCoreConnectionState.disconnected;
@@ -1037,6 +1039,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _backgroundService = backgroundService;
     _usbManager.setDebugLogService(_appDebugLogService);
     _tcpConnector.setDebugLogService(_appDebugLogService);
+    WidgetsBinding.instance.addObserver(this);
 
     // Initialize notification service
     _notificationService.initialize();
@@ -1552,6 +1555,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _resetConnectionHandshakeState();
     _activeTransport = MeshCoreTransportType.tcp;
     _setState(MeshCoreConnectionState.connecting);
+    unawaited(_backgroundService?.start(wifiLock: true));
 
     try {
       Future<void> handleTcpConnectAbort({required String message}) async {
@@ -2821,6 +2825,85 @@ class MeshCoreConnector extends ChangeNotifier {
         _scheduleTcpReconnect();
       }
     });
+  }
+
+  /// Timers don't run while the OS has the app frozen or suspended, so a
+  /// TCP drop in the background surfaces on return either as a reconnect
+  /// still waiting out its backoff (up to 30s), or as a socket that looks
+  /// open but is dead: iOS tears sockets down on suspend and the stall only
+  /// shows once something is written. Both are fixed up here.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (_activeTransport == MeshCoreTransportType.tcp &&
+        _state == MeshCoreConnectionState.connected) {
+      unawaited(_probeTcpAfterResume());
+      return;
+    }
+    if (shouldRetryTcpReconnectOnResume(
+      state: _state,
+      manualDisconnect: _manualDisconnect,
+      lastTransport: _lastTransport,
+      reconnectTimerActive: _reconnectTimer?.isActive ?? false,
+    )) {
+      _appDebugLogService?.info(
+        'App resumed: retrying TCP reconnect now',
+        tag: 'TCP',
+      );
+      _cancelReconnectTimer();
+      _scheduleTcpReconnect();
+    }
+  }
+
+  /// Only a reconnect that is already pending is brought forward. The last
+  /// TCP endpoint is remembered across launches, so "TCP endpoint known and
+  /// not manually disconnected" alone would reconnect on every resume of a
+  /// session that never connected.
+  @visibleForTesting
+  static bool shouldRetryTcpReconnectOnResume({
+    required MeshCoreConnectionState state,
+    required bool manualDisconnect,
+    required String? lastTransport,
+    required bool reconnectTimerActive,
+  }) {
+    return state == MeshCoreConnectionState.disconnected &&
+        !manualDisconnect &&
+        lastTransport == 'tcp' &&
+        reconnectTimerActive;
+  }
+
+  bool _tcpResumeProbeInFlight = false;
+
+  Future<void> _probeTcpAfterResume() async {
+    if (_tcpResumeProbeInFlight || _awaitingSelfInfo) return;
+    _tcpResumeProbeInFlight = true;
+    _appDebugLogService?.info('App resumed: probing TCP link', tag: 'TCP');
+    try {
+      await refreshDeviceInfo();
+      final deadline = DateTime.now().add(const Duration(seconds: 3));
+      while (_awaitingSelfInfo &&
+          isConnected &&
+          _activeTransport == MeshCoreTransportType.tcp &&
+          DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      if (_awaitingSelfInfo &&
+          isConnected &&
+          _activeTransport == MeshCoreTransportType.tcp) {
+        _appDebugLogService?.warn(
+          'TCP link dead after resume: no reply to probe',
+          tag: 'TCP',
+        );
+        await disconnect(manual: false);
+      }
+    } catch (e) {
+      _appDebugLogService?.warn('TCP probe failed after resume: $e', tag: 'TCP');
+      if (_activeTransport == MeshCoreTransportType.tcp && isConnected) {
+        await disconnect(manual: false);
+      }
+    } finally {
+      _tcpResumeProbeInFlight = false;
+    }
   }
 
   Future<void> disconnect({
@@ -8623,6 +8706,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     _usbFrameSubscription?.cancel();
