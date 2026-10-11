@@ -68,7 +68,31 @@ MeshTrax is a **client** — it requires a compatible **MeshCore** device (a sup
 - **Google Play:** [Get MeshTrax on Google Play](https://play.google.com/store/apps/details?id=com.vena.meshtrax)
 - **App Store (iPhone/iPad):** [Download MeshTrax on the App Store](https://apps.apple.com/us/app/meshtrax/id6799214428)
 - **Microsoft Store (Windows):** [Get MeshTrax from the Microsoft Store](https://apps.microsoft.com/detail/9N0DM90LRH49)
+- **Linux (Raspberry Pi & desktop):** one-line installer, see below.
 - **Build from source:** see below.
+
+### Linux (Raspberry Pi & desktop)
+
+Install — or upgrade — with one command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash
+```
+
+This installs MeshTrax under `~/.local/share/meshtrax`, adds it to your applications menu, and puts a `meshtrax` command on your `PATH`. No root required. Re-run the same command any time to upgrade — it checks the latest release and does nothing if you are already up to date.
+
+Requires a **64-bit** OS: `uname -m` should print `aarch64` or `x86_64`. 32-bit Raspberry Pi OS is not supported — reflash with the 64-bit image. For USB-serial radios, add yourself to the `dialout` group:
+
+```bash
+sudo usermod -aG dialout $USER   # then log out and back in
+```
+
+To pin a specific version, or to remove MeshTrax:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash -s -- --version v1.7.22
+curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash -s -- --uninstall
+```
 
 ### Build from source
 
