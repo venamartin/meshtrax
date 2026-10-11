@@ -22,9 +22,14 @@ class _Connector extends MeshCoreConnector {
   }) async {}
 }
 
-Uint8List _contactFrame(Uint8List pubKey, String name, {int pathLen = 0xFF}) {
+Uint8List _contactFrame(
+  Uint8List pubKey,
+  String name, {
+  int pathLen = 0xFF,
+  int code = respCodeContact,
+}) {
   final w = BytesBuilder();
-  w.addByte(respCodeContact);
+  w.addByte(code);
   w.add(pubKey);
   w.addByte(advTypeRepeater);
   w.addByte(0); // flags
@@ -92,6 +97,67 @@ void main() {
     expect(after.pathHashSize, 2);
     expect(
       c.allContacts.firstWhere((x) => x.name == 'OTHER').pathOverride,
+      isNull,
+    );
+  });
+
+  test('an advert landing before CONTACTS_START keeps the override', () async {
+    // Auto-add repeaters, so a live advert adds the contact on its own.
+    c.handleFrameForTest(
+      Uint8List.fromList([respCodeAutoAddConfig, autoAddRepeaterFlag]),
+    );
+    await c.setPathOverride(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA'),
+      pathLen: -1,
+    );
+
+    await c.getContacts();
+    // The advert adds MADONNA to the just-emptied list; CONTACTS_START then
+    // empties it again and her own frame must still find the override.
+    c.handleFrameForTest(
+      _contactFrame(madonna, 'MADONNA', code: pushCodeNewAdvert),
+    );
+    c.handleFrameForTest(_contactsStart(2));
+    c.handleFrameForTest(_contactFrame(madonna, 'MADONNA', pathLen: 0x42));
+    c.handleFrameForTest(_contactFrame(other, 'OTHER'));
+    c.handleFrameForTest(_endOfContacts());
+
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
+      -1,
+    );
+  });
+
+  test('a choice made mid-download waits for the contact frame', () async {
+    final m = c.allContacts.firstWhere((x) => x.name == 'MADONNA');
+    await c.setPathOverride(m, pathLen: -1);
+
+    await c.getContacts();
+    c.handleFrameForTest(_contactsStart(2));
+    // Custom path set while MADONNA's frame is still on its way, replacing
+    // the stashed Always flood.
+    await c.setPathOverride(
+      m,
+      pathLen: 1,
+      pathBytes: Uint8List.fromList([0xA2]),
+    );
+    c.handleFrameForTest(_contactFrame(madonna, 'MADONNA'));
+    c.handleFrameForTest(_contactFrame(other, 'OTHER'));
+    c.handleFrameForTest(_endOfContacts());
+
+    final after = c.allContacts.firstWhere((x) => x.name == 'MADONNA');
+    expect(after.pathOverride, 1);
+    expect(after.pathOverrideBytes, [0xA2]);
+    expect(after.pathOverrideHashSize, c.pathHashByteWidth);
+
+    // And a clear made mid-download must not be undone by the frame.
+    await c.getContacts();
+    c.handleFrameForTest(_contactsStart(1));
+    await c.setPathOverride(after, pathLen: null);
+    c.handleFrameForTest(_contactFrame(madonna, 'MADONNA'));
+    c.handleFrameForTest(_endOfContacts());
+    expect(
+      c.allContacts.firstWhere((x) => x.name == 'MADONNA').pathOverride,
       isNull,
     );
   });

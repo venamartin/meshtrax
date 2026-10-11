@@ -3288,7 +3288,16 @@ class MeshCoreConnector extends ChangeNotifier {
 
     _contactSyncSince = since ?? 0;
     _contactSyncStopwatch = Stopwatch()..start();
-    await sendFrame(buildGetContactsFrame(since: since));
+    try {
+      await sendFrame(buildGetContactsFrame(since: since));
+    } catch (_) {
+      // Nothing is coming: leave the sync state as END_OF_CONTACTS would,
+      // or persistence and the sync banner stay stuck for the session.
+      _isLoadingContacts = false;
+      _preserveContactsOnRefresh = false;
+      _contactSyncStopwatch = null;
+      rethrow;
+    }
   }
 
   Future<void> refreshContacts() async {
@@ -3524,42 +3533,49 @@ class MeshCoreConnector extends ChangeNotifier {
       tag: 'Connector',
     );
 
-    // Find contact in list
     final index = _contacts.indexWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
-    if (index == -1) {
-      appLogger.warn(
-        'setPathOverride: Contact not found in list: ${contact.name}',
-        tag: 'Connector',
-      );
-      return;
-    }
-
-    appLogger.info(
-      'Found contact at index $index. Current override: ${_contacts[index].pathOverride}',
-      tag: 'Connector',
-    );
-
-    // Update contact with new path override
-    _contacts[index] = _contacts[index].copyWith(
+    final updated = (index == -1 ? contact : _contacts[index]).copyWith(
       pathOverride: pathLen,
       pathOverrideBytes: pathBytes,
       pathOverrideHashSize: pathBytes != null ? _pathHashByteWidth : null,
       clearPathOverride: pathLen == null, // Clear if pathLen is null
     );
 
+    final fullDownloadInFlight =
+        _isLoadingContacts && !_preserveContactsOnRefresh;
+    if (fullDownloadInFlight) {
+      // The list is being rebuilt from the radio's frames; the choice must
+      // be waiting for this contact's frame, in place of any older one.
+      if (pathLen == null) {
+        _overridesAcrossRefresh.remove(contact.publicKeyHex);
+      } else {
+        _overridesAcrossRefresh[contact.publicKeyHex] = updated;
+      }
+    }
+    if (index == -1) {
+      if (!fullDownloadInFlight) {
+        appLogger.warn(
+          'setPathOverride: Contact not found in list: ${contact.name}',
+          tag: 'Connector',
+        );
+        return;
+      }
+    } else {
+      _contacts[index] = updated;
+    }
+
     appLogger.info(
-      'Updated contact. New override: ${_contacts[index].pathOverride}, bytesLen: ${_contacts[index].pathOverrideBytes?.length}',
+      'Override for ${contact.name}: ${updated.pathOverride}, '
+      'bytesLen: ${updated.pathOverrideBytes?.length}',
       tag: 'Connector',
     );
 
-    // Save to storage
-    await _contactStore.saveContacts(_contacts);
-    appLogger.info('Saved contacts to storage', tag: 'Connector');
+    await _persistContacts();
 
     // Update any in-flight retries so they use the new path override
-    _retryService?.updatePendingContact(_contacts[index]);
+    _retryService?.updatePendingContact(updated);
 
     // If setting a specific path (not flood, not auto), also sync with device
     if (pathLen != null && pathLen >= 0 && pathBytes != null) {
@@ -4093,8 +4109,8 @@ class MeshCoreConnector extends ChangeNotifier {
       ),
     );
 
-    // Always persist immediately — _handleContactAdvert skips persist
-    // when _isLoadingContacts is true, which would lose this contact on restart.
+    // _handleContactAdvert never persists; this is the write (deferred to
+    // END_OF_CONTACTS while a full download is rebuilding the list).
     await _persistContacts();
     notifyListeners();
     return true;
@@ -5711,7 +5727,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// the radio just re-sent, unless it already has one. Both the contact
   /// frame and a live advert can be the first to add a contact mid-download.
   Contact _restoreKeptOverride(Contact c) {
-    final kept = _overridesAcrossRefresh.remove(c.publicKeyHex);
+    // Look up, never pop: a live advert can add the contact before
+    // CONTACTS_START clears the list again, and the contact's own frame
+    // still needs the entry. END_OF_CONTACTS empties the stash.
+    final kept = _overridesAcrossRefresh[c.publicKeyHex];
     if (kept == null || c.pathOverride != null) return c;
     return c.copyWith(
       pathOverride: kept.pathOverride,
