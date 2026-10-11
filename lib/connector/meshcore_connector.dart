@@ -1047,7 +1047,8 @@ class MeshCoreConnector extends ChangeNotifier {
         addMessage: _addMessage,
         updateMessage: _updateMessage,
         clearContactPath: clearContactPath,
-        setContactPath: setContactPath,
+        setContactPath: (contact, path, hops, width) =>
+            setContactPath(contact, path, hops, hashSize: width),
         calculateTimeout: (pathLength, messageBytes, {Contact? contact}) =>
             calculateTimeout(
               pathLength: pathLength,
@@ -3245,6 +3246,7 @@ class MeshCoreConnector extends ChangeNotifier {
       longitude: tmp.longitude,
       inboundPath: tmp.inboundPath,
       inboundHopCount: tmp.inboundHopCount,
+      inboundPathHashSize: tmp.inboundPathHashSize,
     );
   }
 
@@ -3348,11 +3350,15 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
+  /// Writes [customPath] as the contact's route on the radio. [hashSize] is
+  /// the width the bytes are grouped at; omitted, the radio's current width.
   Future<void> setContactPath(
     Contact contact,
     Uint8List customPath,
-    int hopCount,
-  ) async {
+    int hopCount, {
+    int? hashSize,
+  }) async {
+    final width = hashSize ?? _pathHashByteWidth;
     // Serialize path operations to prevent interleaved async calls from
     // leaving in-memory state inconsistent with the device.
     final prev = _pathOpLock;
@@ -3367,7 +3373,7 @@ class MeshCoreConnector extends ChangeNotifier {
           contact.publicKey,
           customPath,
           hopCount,
-          _pathHashByteWidth,
+          width,
           type: contact.type,
           flags: contact.flags,
           name: contact.name,
@@ -3388,7 +3394,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _contacts[idx] = _contacts[idx].copyWith(
           pathLength: hopCount,
           path: customPath,
-          pathHashSize: _pathHashByteWidth,
+          pathHashSize: width,
         );
         notifyListeners();
       }
@@ -3529,6 +3535,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _contacts[index] = _contacts[index].copyWith(
       pathOverride: pathLen,
       pathOverrideBytes: pathBytes,
+      pathOverrideHashSize: pathBytes != null ? _pathHashByteWidth : null,
       clearPathOverride: pathLen == null, // Clear if pathLen is null
     );
 
@@ -3572,6 +3579,7 @@ class MeshCoreConnector extends ChangeNotifier {
         contact,
         Uint8List.fromList(resolved.pathBytes),
         resolved.hopCount,
+        hashSize: resolved.hashSize,
       );
     }
     return resolved;
@@ -4064,12 +4072,14 @@ class MeshCoreConnector extends ChangeNotifier {
         pathHashSize: contact.pathHashSize, // preserve hash size
         inboundPath: contact.inboundPath,
         inboundHopCount: contact.inboundHopCount,
+        inboundPathHashSize: contact.inboundPathHashSize,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
         flags: contact.flags,
         pathOverride: contact.pathOverride,
         pathOverrideBytes: contact.pathOverrideBytes,
+        pathOverrideHashSize: contact.pathOverrideHashSize,
       ),
     );
 
@@ -5542,6 +5552,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           lastMessageAt: mergedLastMessageAt,
           pathOverride: existing.pathOverride, // Preserve user's path choice
           pathOverrideBytes: existing.pathOverrideBytes,
+          pathOverrideHashSize: existing.pathOverrideHashSize,
           latitude: contact.latitude ?? existing.latitude,
           longitude: contact.longitude ?? existing.longitude,
           // Device DB rows can be legitimately old, so skew is only assessed
@@ -5550,6 +5561,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device frames carry no inbound advert path.
           inboundPath: existing.inboundPath,
           inboundHopCount: existing.inboundHopCount,
+          inboundPathHashSize: existing.inboundPathHashSize,
         );
 
         appLogger.info(
@@ -5628,10 +5640,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        pathOverrideHashSize: existing.pathOverrideHashSize,
         inboundPath: contact.inboundHopCount == null
             ? existing.inboundPath
             : contact.inboundPath,
         inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
+        inboundPathHashSize:
+            contact.inboundPathHashSize ?? existing.inboundPathHashSize,
       );
 
       appLogger.info(
@@ -5713,6 +5728,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     String senderName,
     DateTime timestamp, {
     Uint8List? pathBytes,
+    int? pathHashSize,
     bool notify = false,
   }) {
     final normalized = senderName.trim().toLowerCase();
@@ -5736,7 +5752,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       for (var i = 0; i < _contacts.length; i++) {
         final contact = _contacts[i];
         if (contact.type != advTypeChat) continue;
-        if (_pathMatchesContact(pathBytes, contact.publicKey)) {
+        if (_pathMatchesContact(
+          pathBytes,
+          contact.publicKey,
+          stride: pathHashSize ?? _pathHashByteWidth,
+        )) {
           matches.add(i);
         }
       }
@@ -5753,10 +5773,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
-  bool _pathMatchesContact(Uint8List pathBytes, Uint8List publicKey) {
-    final w = _pathHashByteWidth;
-    if (publicKey.length < w) return false;
-    return PathHelper.getHops(pathBytes, stride: w)
+  bool _pathMatchesContact(
+    Uint8List pathBytes,
+    Uint8List publicKey, {
+    required int stride,
+  }) {
+    if (publicKey.length < stride) return false;
+    return PathHelper.getHops(pathBytes, stride: stride)
         .any((hop) => _matchesPrefix(publicKey, hop));
   }
 
@@ -6189,6 +6212,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         message.senderName,
         message.timestamp,
         pathBytes: message.pathBytes,
+        pathHashSize: message.pathHashSize,
       );
 
       // Never file a message under a slot whose identity is unknown — the
@@ -6308,6 +6332,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             parsed.senderName,
             message.timestamp,
             pathBytes: message.pathBytes,
+            pathHashSize: message.pathHashSize,
           );
           final label = channel.displayName;
           unawaited(() async {
@@ -8564,7 +8589,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contact.publicKey,
         contact.pathOverrideBytes ?? contact.path,
         contact.pathOverride ?? contact.pathLength,
-        contact.pathOverrideBytes != null ? _pathHashByteWidth : contact.pathHashSize,
+        contact.pathOverrideBytes != null
+            ? contact.overrideHashSize(_pathHashByteWidth)
+            : contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,
@@ -8954,7 +8981,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contact.publicKey,
         contact.pathOverrideBytes ?? contact.path,
         contact.pathOverride ?? contact.pathLength,
-        contact.pathOverrideBytes != null ? hashWidth : contact.pathHashSize,
+        contact.pathOverrideBytes != null
+            ? contact.overrideHashSize(hashWidth)
+            : contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,
@@ -9136,6 +9165,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         path: Uint8List(0),
         inboundPath: path,
         inboundHopCount: hopCount,
+        inboundPathHashSize: hashSize,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -9182,11 +9212,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         name: hasName ? name : existing.name,
         inboundPath: path,
         inboundHopCount: hopCount,
+        inboundPathHashSize: hashSize,
         lastMessageAt: mergedLastMessageAt,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        pathOverrideHashSize: existing.pathOverrideHashSize,
       );
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
@@ -9326,6 +9358,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathHashSize: contact.pathHashSize,
         inboundPath: contact.inboundPath,
         inboundHopCount: contact.inboundHopCount,
+        inboundPathHashSize: contact.inboundPathHashSize,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: contact.lastSeen,
@@ -9348,6 +9381,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       pathHashSize: contact.pathHashSize,
       inboundPath: contact.inboundPath,
       inboundHopCount: contact.inboundHopCount,
+      inboundPathHashSize: contact.inboundPathHashSize,
       latitude: contact.latitude,
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,

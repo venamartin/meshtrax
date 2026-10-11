@@ -36,10 +36,11 @@ class PathHelper {
   }
 
   /// Packs a hop count and width into a path_len byte; a negative count is
-  /// "no route" (0xFF).
+  /// "no route" (0xFF). Widths above 3 are clamped: the firmware rejects a
+  /// width-4 path (Packet.cpp isValidPathLen).
   static int encodePathLen(int hopCount, int width) {
     if (hopCount < 0 || hopCount >= 0xFF) return 0xFF;
-    return (hopCount & 0x3F) | ((width - 1).clamp(0, 3) << 6);
+    return (hopCount & 0x3F) | ((width - 1).clamp(0, 2) << 6);
   }
 
   /// Flags byte for CMD_SEND_TRACE_PATH, or null when the width has no trace

@@ -39,6 +39,12 @@ void main() {
         pathLength: 2,
         path: Uint8List.fromList([0xA2, 0x77, 0xBE, 0xEF]),
         pathHashSize: 2,
+        inboundPath: Uint8List.fromList([0x10, 0x00]),
+        inboundHopCount: 1,
+        inboundPathHashSize: 2,
+        pathOverride: 2,
+        pathOverrideBytes: Uint8List.fromList([0xA2, 0x77]),
+        pathOverrideHashSize: 1,
       );
 
   // Rewrites cached rows the way the app wrote them before the width was
@@ -138,8 +144,10 @@ void main() {
 
       expect(loaded.pathHashSize, 2);
       expect(loaded.pathLength, 2);
-      expect(loaded.pathLabel, '2 hops');
       expect(loaded.displayPathString, 'A277,BEEF');
+      expect(loaded.inboundPathHashSize, 2);
+      expect(loaded.pathOverrideHashSize, 1);
+      expect(loaded.pathLabel, '2 hops (forced)');
     });
 
     test('skips a row saved without a width', () async {

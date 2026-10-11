@@ -12,6 +12,7 @@ void main() {
     int pathHashSize = 2,
     int? pathOverride,
     Uint8List? pathOverrideBytes,
+    int? pathOverrideHashSize,
   }) {
     return Contact(
       publicKey: Uint8List.fromList(List.filled(32, 9)),
@@ -22,6 +23,7 @@ void main() {
       pathHashSize: pathHashSize,
       pathOverride: pathOverride,
       pathOverrideBytes: pathOverrideBytes,
+      pathOverrideHashSize: pathOverrideHashSize,
       lastSeen: DateTime(2026, 10, 10),
     );
   }
@@ -35,7 +37,23 @@ void main() {
     expect(sel.pathBytes, route);
   });
 
-  test('a user override is at the radio width', () {
+  test('a user override keeps the width it was set at', () {
+    // Set as two 1-byte hops; the radio has since moved to 2 bytes. The
+    // override must not be re-read as one 2-byte hop.
+    final sel = resolvePathSelection(
+      contact(
+        pathOverride: 2,
+        pathOverrideBytes: Uint8List.fromList([0xA2, 0x77]),
+        pathOverrideHashSize: 1,
+      ),
+      radioWidth: 2,
+    );
+
+    expect(sel.hopCount, 2);
+    expect(sel.hashSize, 1);
+  });
+
+  test('an override saved without a width is at the radio width', () {
     final sel = resolvePathSelection(
       contact(pathOverride: 1, pathOverrideBytes: Uint8List.fromList([0xA2, 0x77])),
       radioWidth: 2,

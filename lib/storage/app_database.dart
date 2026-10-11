@@ -259,13 +259,17 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       if (from < 7) {
-        // Cached contact rows predate the persisted route width, and a
-        // guessed width is how 2-byte routes read as four 1-byte hops. The
-        // radio is the source of truth: an empty cache makes the next
-        // connect a full download. User route overrides live only in this
-        // cache and reset to Automatic once.
-        await customStatement('DELETE FROM contact_rows');
-        await customStatement('DELETE FROM discovered_contact_rows');
+        // Cached routes predate the persisted hash width, and a guessed
+        // width is how 2-byte routes read as four 1-byte hops. Clear only
+        // the route (the radio re-sends it on the next full download, see
+        // ContactStore's cursor rename); everything else in the row —
+        // discovered repeaters, inbound paths, overrides — is kept.
+        for (final table in ['contact_rows', 'discovered_contact_rows']) {
+          await customStatement(
+            "UPDATE $table SET payload = json_set(payload, "
+            "'\$.pathLength', -1, '\$.path', '', '\$.pathHashSize', 1)",
+          );
+        }
       }
     },
     beforeOpen: (details) async {

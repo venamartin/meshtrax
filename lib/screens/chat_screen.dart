@@ -466,7 +466,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             context,
                             effectivePath,
                             contact.pathOverrideBytes != null
-                                ? connector.pathHashByteWidth
+                                ? contact.overrideHashSize(
+                                    connector.pathHashByteWidth,
+                                  )
                                 : contact.pathHashSize,
                           )
                       : null,
@@ -1536,7 +1538,7 @@ class _ChatScreenState extends State<ChatScreen> {
           contact.pathOverrideBytes!.isNotEmpty) {
         final hopCount = PathHelper.getHopCount(
           contact.pathOverrideBytes!,
-          stride: connector.pathHashByteWidth,
+          stride: contact.overrideHashSize(connector.pathHashByteWidth),
         );
         if (hopCount == 0) return context.l10n.chat_directForced;
         return context.l10n.chat_hopsForced(hopCount);

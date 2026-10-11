@@ -73,10 +73,12 @@ class ContactDiscoveryStore {
       'pathHashSize': contact.pathHashSize,
       'inboundPath': base64Encode(contact.inboundPath),
       'inboundHopCount': contact.inboundHopCount,
+      'inboundPathHashSize': contact.inboundPathHashSize,
       'pathOverride': contact.pathOverride,
       'pathOverrideBytes': contact.pathOverrideBytes != null
           ? base64Encode(contact.pathOverrideBytes!)
           : null,
+      'pathOverrideHashSize': contact.pathOverrideHashSize,
       'latitude': contact.latitude,
       'longitude': contact.longitude,
       'lastSeen': contact.lastSeen.millisecondsSinceEpoch,
@@ -103,12 +105,14 @@ class ContactDiscoveryStore {
           ? Uint8List.fromList(base64Decode(json['inboundPath'] as String))
           : null,
       inboundHopCount: json['inboundHopCount'] as int?,
+      inboundPathHashSize: json['inboundPathHashSize'] as int?,
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: json['pathOverrideBytes'] != null
           ? Uint8List.fromList(
               base64Decode(json['pathOverrideBytes'] as String),
             )
           : null,
+      pathOverrideHashSize: json['pathOverrideHashSize'] as int?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       lastSeen: DateTime.fromMillisecondsSinceEpoch(lastSeenMs),

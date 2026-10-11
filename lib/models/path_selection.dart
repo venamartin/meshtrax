@@ -19,9 +19,10 @@ class PathSelection {
   });
 }
 
-/// The route a send to [contact] goes out on. A user override is written at
-/// the radio's current width ([radioWidth]); the firmware's own route carries
-/// the width it was learned at.
+/// The route a send to [contact] goes out on. Every route carries the width
+/// it was made at: an override the radio width when the user set it, the
+/// firmware's own route the width it was learned at. [radioWidth] is only
+/// for floods and for overrides saved before their width was recorded.
 PathSelection resolvePathSelection(
   Contact contact, {
   required int radioWidth,
@@ -40,7 +41,7 @@ PathSelection resolvePathSelection(
     return PathSelection(
       pathBytes: contact.pathOverrideBytes ?? Uint8List(0),
       hopCount: contact.pathOverride!,
-      hashSize: radioWidth,
+      hashSize: contact.overrideHashSize(radioWidth),
       useFlood: false,
     );
   }

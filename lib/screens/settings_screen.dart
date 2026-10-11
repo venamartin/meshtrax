@@ -898,9 +898,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await connector.setPathHashMode(currentMode);
                 await Future.delayed(const Duration(milliseconds: 200));
                 await connector.refreshDeviceInfo();
-                // Routes learned at the old width are forgotten on this
-                // sync rather than at the next connect.
-                await connector.refreshContacts();
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,

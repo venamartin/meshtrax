@@ -25,7 +25,10 @@ class ContactStore {
   /// contact list, per radio. Sent back as `since` so the radio streams only
   /// contacts changed after it. Comes only from END_OF_CONTACTS; the Contact
   /// model folds lastmod into lastSeen, which adverts overwrite.
-  static const String _cursorKeyPrefix = 'contact_sync_cursor_';
+  // Renamed with the v7 cache migration on purpose: the orphaned pre-v7
+  // cursor would have let an incremental sync skip the untouched contacts
+  // whose cached routes the migration cleared.
+  static const String _cursorKeyPrefix = 'contact_sync_cursor_v7_';
 
   int loadSyncCursor() {
     if (publicKeyHex.isEmpty) return 0;
@@ -103,10 +106,12 @@ class ContactStore {
       'pathHashSize': contact.pathHashSize,
       'inboundPath': base64Encode(contact.inboundPath),
       'inboundHopCount': contact.inboundHopCount,
+      'inboundPathHashSize': contact.inboundPathHashSize,
       'pathOverride': contact.pathOverride,
       'pathOverrideBytes': contact.pathOverrideBytes != null
           ? base64Encode(contact.pathOverrideBytes!)
           : null,
+      'pathOverrideHashSize': contact.pathOverrideHashSize,
       'latitude': contact.latitude,
       'longitude': contact.longitude,
       'lastSeen': contact.lastSeen.millisecondsSinceEpoch,
@@ -135,12 +140,14 @@ class ContactStore {
           ? Uint8List.fromList(base64Decode(json['inboundPath'] as String))
           : null,
       inboundHopCount: json['inboundHopCount'] as int?,
+      inboundPathHashSize: json['inboundPathHashSize'] as int?,
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: json['pathOverrideBytes'] != null
           ? Uint8List.fromList(
               base64Decode(json['pathOverrideBytes'] as String),
             )
           : null,
+      pathOverrideHashSize: json['pathOverrideHashSize'] as int?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       lastSeen: DateTime.fromMillisecondsSinceEpoch(lastSeenMs),

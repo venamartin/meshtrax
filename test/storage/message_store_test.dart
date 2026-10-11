@@ -71,6 +71,17 @@ void main() {
     expect(byId['o1']!.pathHashSize, isNull);
   });
 
+  test('a legacy row holding the raw path_len byte decodes to hops', () async {
+    await store.saveMessages(contactA, [msg('old', id: 'o1')]);
+    await AppDatabase.instance.customStatement(
+      "UPDATE contact_message_rows SET payload = json_set(payload, '\$.pathLength', 66)",
+    );
+
+    final loaded = (await store.loadMessages(contactA)).single;
+    expect(loaded.pathLength, 2); // 0x42 = 2 hops at 2 bytes
+    expect(loaded.pathHashSize, isNull);
+  });
+
   test('conversations are isolated per contact', () async {
     await store.saveMessages(contactA, [msg('hello A')]);
 

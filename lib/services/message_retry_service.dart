@@ -37,7 +37,8 @@ class RetryServiceConfig {
   final void Function(String, Message) addMessage;
   final void Function(Message) updateMessage;
   final Function(Contact)? clearContactPath;
-  final Function(Contact, Uint8List, int)? setContactPath;
+  // (contact, path bytes, hop count, hash width of the bytes)
+  final Function(Contact, Uint8List, int, int)? setContactPath;
   final int Function(int pathLength, int messageBytes, {Contact? contact})?
   calculateTimeout;
   final Uint8List? Function()? getSelfPublicKey;
@@ -268,6 +269,7 @@ class MessageRetryService extends ChangeNotifier {
         contact,
         Uint8List.fromList(selection.pathBytes),
         selection.hopCount,
+        selection.hashSize,
       );
     }
 

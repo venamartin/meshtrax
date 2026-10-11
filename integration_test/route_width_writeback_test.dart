@@ -14,12 +14,14 @@ import 'harness/bench.dart';
 import 'harness/bench_config.dart';
 
 /// Proves on the bench radio that a 2-byte route is written to the radio
-/// with its width (path_len 0x42, never 0x04), and that a route stored at a
-/// width the radio no longer runs at is forgotten (0xFF) on the next sync.
+/// with its width (path_len 0x42, never 0x04), and that the route keeps
+/// that width — on the radio and in the app — after the radio is switched
+/// to 1-byte hashes. Repeaters forward by the width bits in each packet, so
+/// such a route still delivers; nothing may "repair" it.
 ///
-/// USB only, zero RF: add/get/reset contact and set-hash-mode never
-/// transmit. A synthetic repeater contact is added and removed again; the
-/// radio's hash width is put back to what it was.
+/// USB only, zero RF: add/get contact and set-hash-mode never transmit. A
+/// synthetic repeater contact is added and removed again; the radio's hash
+/// width is put back to what it was.
 ///
 /// Run with:
 ///   flutter test integration_test/route_width_writeback_test.dart -d windows
@@ -63,7 +65,19 @@ void main() {
       .cast<Contact?>()
       .firstWhere((c) => listEquals(c!.publicKey, probeKey), orElse: () => null);
 
-  testWidgets('a 2-byte route is written as 0x42 and a stale one is forgotten',
+  void expectStoredRoute(Uint8List? frame, String when) {
+    expect(frame, isNotNull, reason: 'contact fetch timed out ($when)');
+    blog('$when: stored path_len 0x${frame![35].toRadixString(16)} '
+        'path ${PathHelper.formatPathHex(frame.sublist(36, 40), stride: 2)}');
+    expect(frame[35], 0x42, reason: '$when: radio must hold 2 hops × 2 bytes');
+    expect(frame.sublist(36, 40), route);
+    final inMemory = probe();
+    expect(inMemory, isNotNull);
+    expect(inMemory!.pathLabel, '2 hops');
+    expect(inMemory.displayPathString, 'A277,BEEF');
+  }
+
+  testWidgets('a 2-byte route is written as 0x42 and survives a mode switch',
       (tester) async {
     await beginScenario(tester, 'route width write-back');
     await PrefsManager.initialize();
@@ -101,38 +115,16 @@ void main() {
         lastSeen: DateTime.now(),
       ));
       expect(imported, isTrue, reason: 'CMD_ADD_UPDATE_CONTACT not acked');
+      expectStoredRoute(await fetchRawContactFrame(probeKey), 'at width 2');
 
-      final stored = await fetchRawContactFrame(probeKey);
-      expect(stored, isNotNull, reason: 'contact fetch timed out');
-      blog('stored path_len 0x${stored![35].toRadixString(16)} '
-          'path ${PathHelper.formatPathHex(stored.sublist(36, 40), stride: 2)}');
-      expect(stored[35], 0x42, reason: 'radio must hold 2 hops × 2 bytes');
-      expect(stored.sublist(36, 40), route);
-
-      final inMemory = probe();
-      expect(inMemory, isNotNull);
-      expect(inMemory!.pathLabel, '2 hops');
-      expect(inMemory.displayPathString, 'A277,BEEF');
-
-      // Now the radio runs at 1 byte: the 2-byte route can no longer
-      // deliver, so the next contact frame must get it forgotten.
+      // The radio now runs at 1 byte. The route is still 2 hops of 2 bytes
+      // everywhere; nothing re-reads it as four 1-byte hops.
       await setWidth(1);
-      blog('re-reading WIDTH-PROBE at width 1; expecting the route reset');
+      blog('re-reading WIDTH-PROBE with the radio at width 1');
       await c.getContactByKey(probeKey);
-      await waitUntil(() => probe()?.pathLength == -1,
-          'stale route forgotten in memory',
-          timeout: const Duration(seconds: 15));
-
-      final after = await fetchRawContactFrame(probeKey);
-      expect(after, isNotNull, reason: 'contact fetch timed out');
-      blog('stored path_len after repair 0x${after![35].toRadixString(16)}');
-      expect(after[35], 0xFF, reason: 'radio must hold no route');
-      expect(
-        debugLog.entries.any((e) => e.message.contains('Forgetting WIDTH-PROBE')),
-        isTrue,
-        reason: 'the repair must be logged',
-      );
-      blog('PASS: 0x42 written, stale route reset to 0xFF');
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expectStoredRoute(await fetchRawContactFrame(probeKey), 'at width 1');
+      blog('PASS: 0x42 written and kept across the mode switch');
     } finally {
       final leftover = probe();
       if (leftover != null) {
