@@ -1348,8 +1348,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'The file contains the radio\'s private key, channel keys, and '
           'saved repeater passwords. Anyone with the file can read your '
           'messages and send as this radio, so store it somewhere safe.\n\n'
-          'Settings that only exist on the radio\'s own screen (such as the '
-          'buzzer) are not included.',
+          'Only settings this radio\'s firmware reports are saved. Settings '
+          'that only exist on the radio\'s own screen (such as the buzzer) '
+          'are not included.',
         ),
         actions: [
           TextButton(
@@ -1368,8 +1369,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final progress = ValueNotifier<String>('Reading radio settings...');
     _showProgressDialog(context, 'Backing up', progress);
     final String json;
+    final DeviceBackup backup;
     try {
-      final backup = await connector.gatherDeviceBackup(
+      backup = await connector.gatherDeviceBackup(
         onContactProgress: (done, total) =>
             progress.value = 'Reading contact $done of $total...',
       );
@@ -1404,17 +1406,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       content: Text('Backup saved to: $savedPath'),
     );
-    if (connector.privateKeyExportDisabled) {
+    final notSaved = backup.notSaved;
+    if (connector.privateKeyExportDisabled || notSaved.isNotEmpty) {
+      final noKey = connector.privateKeyExportDisabled;
+      final firmware = backup.firmwareVersion ?? 'unknown version';
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Backup saved without identity key'),
-          content: const Text(
-            'This radio\'s firmware does not allow exporting its identity '
-            'key. Restoring this backup will set up a radio with a new '
-            'identity, and your contacts will need to hear from it before '
-            'they can message it.',
+          title: Text(
+            noKey ? 'Backup saved without identity key' : 'Backup saved',
           ),
+          content: Text([
+            if (noKey)
+              'This radio\'s firmware does not allow exporting its identity '
+                  'key. Restoring this backup will set up a radio with a new '
+                  'identity, and your contacts will need to hear from it '
+                  'before they can message it.',
+            if (notSaved.isNotEmpty)
+              'This radio\'s firmware ($firmware) does not report these '
+                  'settings, so they were not saved: ${notSaved.join(', ')}. '
+                  'Restoring this backup leaves them as they are on the '
+                  'radio.',
+          ].join('\n\n')),
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(context),
@@ -1467,32 +1480,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final device = backup.device;
     final created = backup.createdAt?.toLocal().toString().split('.')[0];
     final hasIdentity = device.privateKeyHex != null;
-    final proceed = await showDialog<bool>(
+    final hasAppSettings = backup.appSettings.isNotEmpty;
+    final newerBackup =
+        (device.firmwareVerCode ?? 0) > (connector.firmwareVerCode ?? 0);
+    // null = cancel, false = radio only, true = radio + app settings.
+    final includeApp = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Restore this radio?'),
-        content: Text(
+        content: Text([
           'Backup of "${device.name}"${created != null ? ', made $created' : ''}, '
-          'with ${device.contacts.length} contacts and '
-          '${device.channels.length} channels.\n\n'
+              'with ${device.contacts.length} contacts and '
+              '${device.channels.length} channels.',
           'This replaces everything on the connected radio — its identity, '
-          'name, radio settings, channels, and contacts — and overwrites '
-          'this app\'s settings. This can\'t be undone.'
-          '${hasIdentity ? '' : '\n\nThis backup has no identity key, so the radio keeps its current identity.'}',
-        ),
+              'name, radio settings, channels, and contacts. '
+              '${hasAppSettings ? 'You can also overwrite this app\'s settings with the ones in the backup. ' : ''}'
+              'This can\'t be undone.',
+          if (!hasIdentity)
+            'This backup has no identity key, so the radio keeps its '
+                'current identity.',
+          if (newerBackup)
+            'The backup came from a radio with newer firmware '
+                '(${device.firmwareVersion ?? ''}) than this one '
+                '(${connector.firmwareVersion ?? ''}). Settings this radio '
+                'does not have are left as they are.',
+        ].join('\n\n')),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(context),
             child: Text(context.l10n.common_cancel),
           ),
+          if (hasAppSettings)
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Radio only'),
+            ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Restore'),
+            onPressed: () => Navigator.pop(context, hasAppSettings),
+            child: Text(hasAppSettings ? 'Radio + app settings' : 'Restore'),
           ),
         ],
       ),
     );
-    if (proceed != true || !context.mounted) return;
+    if (includeApp == null || !context.mounted) return;
 
     final progress = ValueNotifier<String>('Starting...');
     _showProgressDialog(context, 'Restoring', progress);
@@ -1510,9 +1540,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           };
         },
       );
-      await BackupService.restoreAppSettings(backup.appSettings);
-      if (context.mounted) {
-        await context.read<AppSettingsService>().loadSettings();
+      if (includeApp) {
+        await BackupService.restoreAppSettings(backup.appSettings);
+        if (context.mounted) {
+          await context.read<AppSettingsService>().loadSettings();
+        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -1523,14 +1555,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     if (!context.mounted) return;
     Navigator.pop(context);
-    await _showRestoreSummary(context, connector, report);
+    await _showRestoreSummary(
+      context,
+      connector,
+      report,
+      appSettingsRestored: includeApp,
+    );
   }
 
   Future<void> _showRestoreSummary(
     BuildContext context,
     MeshCoreConnector connector,
-    RestoreReport report,
-  ) {
+    RestoreReport report, {
+    required bool appSettingsRestored,
+  }) {
     final lines = <String>[
       '${report.contactsWritten} contacts and ${report.channelsWritten} '
           'channels restored.',
@@ -1547,7 +1585,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'were skipped.',
       if (report.hasFailures)
         'Problems:\n${report.failures.map((f) => '• $f').join('\n')}',
-      'Restart the app to apply all restored app settings.',
+      if (report.notes.isNotEmpty)
+        'Left unchanged:\n${report.notes.map((n) => '• $n').join('\n')}',
+      if (appSettingsRestored)
+        'Restart the app to apply all restored app settings.',
     ];
     return showDialog<void>(
       context: context,

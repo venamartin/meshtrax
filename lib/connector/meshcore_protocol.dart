@@ -1027,6 +1027,36 @@ Uint8List buildSetAutoAddConfigFrame({
   return writer.toBytes();
 }
 
+// Build CMD_GET_DEFAULT_FLOOD_SCOPE frame (v11+)
+// Format: [cmd]
+// Reply: [RESP_CODE_DEFAULT_FLOOD_SCOPE] alone when none is set, else
+// [resp][name x31][key x16]
+Uint8List buildGetDefaultFloodScopeFrame() {
+  return Uint8List.fromList([cmdGetDefaultFloodScope]);
+}
+
+// Build CMD_SET_DEFAULT_FLOOD_SCOPE frame (v11+)
+// Format: [cmd][name x31][key x16]; a bare [cmd] clears the default scope.
+Uint8List buildSetDefaultFloodScopeFrame(String? name, Uint8List? key) {
+  final writer = BufferWriter();
+  writer.writeByte(cmdSetDefaultFloodScope);
+  if (name != null && name.isNotEmpty && key != null) {
+    writer.writeCString(name, 31);
+    writer.writeBytesPadded(key, 16);
+  }
+  return writer.toBytes();
+}
+
+/// Parses RESP_CODE_DEFAULT_FLOOD_SCOPE. Null when the radio has no default
+/// scope set.
+({String name, Uint8List key})? parseDefaultFloodScopeFrame(Uint8List frame) {
+  if (frame.length < 1 + 31 + 16) return null;
+  final reader = BufferReader(frame)..skipBytes(1);
+  final name = reader.readCStringGreedy(31);
+  final key = reader.readBytes(16);
+  return name.isEmpty ? null : (name: name, key: key);
+}
+
 // Build CMD_EXPORT_PRIVATE_KEY frame
 // Format: [cmd]
 // Reply: [RESP_CODE_PRIVATE_KEY][key x64] or [RESP_CODE_DISABLED]

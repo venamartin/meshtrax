@@ -68,6 +68,8 @@ void main() {
       for (final f in report.failures) {
         blog('${radio.label}: ⚠ restore problem: $f');
       }
+      // Same firmware on both bench radios: nothing may be left unchanged.
+      problems.addAll(report.notes.map((n) => '${radio.label}: unexpected note: $n'));
       if (!report.identityRestored) {
         problems.add('${radio.label}: identity import failed');
       }
@@ -127,6 +129,11 @@ void main() {
         reason: '${radio.label}: telemetry loc mismatch — bit-order bug?');
     expect(c.telemetryModeEnv, backup.telemetryEnv,
         reason: '${radio.label}: telemetry env mismatch — bit-order bug?');
+    expect(c.autoAddMaxHops, backup.autoAddMaxHops,
+        reason: '${radio.label}: auto-add hop limit mismatch');
+    final scope = await c.getDefaultFloodScope();
+    expect(scope?.name, backup.floodScopeName,
+        reason: '${radio.label}: default flood scope mismatch');
 
     // Channels: every backed-up channel sits in its slot; no extras.
     final liveBySlot = {for (final ch in c.channels) ch.index: ch};
