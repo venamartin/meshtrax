@@ -3581,11 +3581,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'A meshcore-open-ból exportált térkéadatumok';
+      'A MeshTrax-ból exportált térkéadatumok';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open GPX formátumú térképi adatok export';
+      'MeshTrax GPX formátumú térképi adatok export';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Helyszíni erősítők';

@@ -3527,12 +3527,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get settings_gpxExportAllContacts => 'Alla kontakters platser';
 
   @override
-  String get settings_gpxExportShareText =>
-      'Kartdata exporterad från meshcore-open';
+  String get settings_gpxExportShareText => 'Kartdata exporterad från MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open export av GPX-kartdata';
+      'MeshTrax export av GPX-kartdata';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Närliggande uppreparstationer';

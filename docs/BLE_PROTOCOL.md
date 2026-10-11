@@ -189,8 +189,8 @@ Registers the application with the device.
 
 **Example**:
 ```dart
-buildAppStartFrame(appName: 'MeshCoreOpen', appVersion: 1)
-// [0x01][0x01][0x00 x6]["MeshCoreOpen"][0x00]
+buildAppStartFrame(appName: 'MeshTrax', appVersion: 1)
+// [0x01][0x01][0x00 x6]["MeshTrax"][0x00]
 ```
 
 ### CMD_SEND_TXT_MSG (0x02)

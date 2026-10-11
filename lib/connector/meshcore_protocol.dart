@@ -605,7 +605,7 @@ Uint8List buildRemoveContactFrame(Uint8List pubKey) {
 // Build CMD_APP_START frame
 // Format: [cmd][app_ver][reserved x6][app_name...]
 Uint8List buildAppStartFrame({
-  String appName = 'MeshCoreOpen',
+  String appName = 'MeshTrax',
   int appVersion = 1,
 }) {
   final writer = BufferWriter();

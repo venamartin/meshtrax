@@ -3585,11 +3585,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'Données de carte exportées à partir de meshcore-open';
+      'Données de carte exportées à partir de MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open exporter les données de carte GPX';
+      'MeshTrax exporter les données de carte GPX';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Répéteurs à proximité';

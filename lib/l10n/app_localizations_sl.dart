@@ -3548,12 +3548,11 @@ class AppLocalizationsSl extends AppLocalizations {
   String get settings_gpxExportAllContacts => 'Lokacije vseh stikov';
 
   @override
-  String get settings_gpxExportShareText =>
-      'Podatki kart izvoženi iz meshcore-open';
+  String get settings_gpxExportShareText => 'Podatki kart izvoženi iz MeshTrax';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'meshcore-open izvoz podatkov GPX karte';
+      'MeshTrax izvoz podatkov GPX karte';
 
   @override
   String get snrIndicator_nearByRepeaters => 'Bližnji ponovitelji';

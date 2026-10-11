@@ -3572,11 +3572,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_gpxExportShareText =>
-      'GPX-Kartendaten aus meshcore-open exportiert';
+      'GPX-Kartendaten aus MeshTrax exportiert';
 
   @override
   String get settings_gpxExportShareSubject =>
-      'GPX-Kartendaten aus meshcore-open exportieren';
+      'GPX-Kartendaten aus MeshTrax exportieren';
 
   @override
   String get snrIndicator_nearByRepeaters => 'In der Nähe befindliche Repeater';
