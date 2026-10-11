@@ -79,7 +79,7 @@ class RepeaterHubScreen extends StatelessWidget {
                       child: Icon(
                         repeater.type == advTypeRepeater
                             ? Icons.cell_tower
-                            : Icons.group,
+                            : Icons.meeting_room,
                         size: 40,
                         color: Colors.white,
                       ),

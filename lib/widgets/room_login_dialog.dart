@@ -278,7 +278,7 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.group, color: Colors.purple),
+          const Icon(Icons.meeting_room, color: Colors.purple),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

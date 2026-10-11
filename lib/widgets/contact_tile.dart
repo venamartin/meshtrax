@@ -143,7 +143,7 @@ class ContactTile extends StatelessWidget {
   }
 
   Widget _buildContactAvatar(Contact contact, Color iconColor) {
-    final emoji = _firstEmoji(contact.name);
+    final emoji = contact.type == advTypeRoom ? null : _firstEmoji(contact.name);
     if (emoji != null) {
       return Text(emoji, style: const TextStyle(fontSize: 18));
     }
@@ -157,7 +157,7 @@ class ContactTile extends StatelessWidget {
       case advTypeRepeater:
         return Icons.cell_tower;
       case advTypeRoom:
-        return Icons.group;
+        return Icons.meeting_room;
       case advTypeSensor:
         return Icons.sensors;
       default:
