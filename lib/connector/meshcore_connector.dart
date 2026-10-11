@@ -64,10 +64,7 @@ class DirectRepeater {
     DateTime? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now();
 
-  String get prefixHex => pubkeyPrefix
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join()
-      .toUpperCase();
+  String get prefixHex => PathHelper.hopHex(pubkeyPrefix);
 
   /// True when [hash] (a hop hash or public key) agrees with this repeater's
   /// prefix on their common leading bytes.
@@ -80,11 +77,6 @@ class DirectRepeater {
     return true;
   }
 
-  /// True when this repeater is the first hop of [pathBytes].
-  bool matchesFirstHopOf(List<int> pathBytes, {int stride = 1}) {
-    if (pathBytes.isEmpty) return false;
-    return matchesHash(pathBytes.sublist(0, math.min(stride, pathBytes.length)));
-  }
 
   void update(double newSNR) {
     snr = newSNR;
@@ -486,6 +478,9 @@ class MeshCoreConnector extends ChangeNotifier {
   int _contactSyncSince = 0;
   int _contactSyncRadioTotal = 0;
   bool _contactFullResyncPending = false;
+  // Route overrides of the list a full download is replacing, by key; each
+  // is put back on its contact as the radio's frame for it arrives.
+  Map<String, Contact> _overridesAcrossRefresh = {};
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -1055,7 +1050,8 @@ class MeshCoreConnector extends ChangeNotifier {
         addMessage: _addMessage,
         updateMessage: _updateMessage,
         clearContactPath: clearContactPath,
-        setContactPath: setContactPath,
+        setContactPath: (contact, path, hops, width) =>
+            setContactPath(contact, path, hops, hashSize: width),
         calculateTimeout: (pathLength, messageBytes, {Contact? contact}) =>
             calculateTimeout(
               pathLength: pathLength,
@@ -1063,6 +1059,7 @@ class MeshCoreConnector extends ChangeNotifier {
               contact: contact,
             ),
         getSelfPublicKey: () => _selfPublicKey,
+        pathHashByteWidth: () => _pathHashByteWidth,
         prepareContactOutboundText: prepareContactOutboundText,
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
@@ -2900,6 +2897,7 @@ class MeshCoreConnector extends ChangeNotifier {
     _deviceDisplayName = null;
     _deviceId = null;
     _contacts.clear();
+    _overridesAcrossRefresh = {};
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
@@ -3252,6 +3250,7 @@ class MeshCoreConnector extends ChangeNotifier {
       longitude: tmp.longitude,
       inboundPath: tmp.inboundPath,
       inboundHopCount: tmp.inboundHopCount,
+      inboundPathHashSize: tmp.inboundPathHashSize,
     );
   }
 
@@ -3276,14 +3275,39 @@ class MeshCoreConnector extends ChangeNotifier {
 
     _isLoadingContacts = true;
     _preserveContactsOnRefresh = preserveExisting;
+    List<Contact>? replaced;
     if (!preserveExisting) {
+      // The radio knows nothing of the user's route choices; a full download
+      // rebuilds the list from its frames, so carry them across by key.
+      _overridesAcrossRefresh = {
+        for (final c in _contacts)
+          if (c.pathOverride != null) c.publicKeyHex: c,
+      };
+      replaced = List.of(_contacts);
       _contacts.clear();
       notifyListeners();
     }
 
     _contactSyncSince = since ?? 0;
     _contactSyncStopwatch = Stopwatch()..start();
-    await sendFrame(buildGetContactsFrame(since: since));
+    try {
+      await sendFrame(buildGetContactsFrame(since: since));
+    } catch (_) {
+      // Nothing is coming: put the list back and leave the sync state as
+      // END_OF_CONTACTS would, or the next cache write stores an empty list
+      // and persistence and the sync banner stay stuck for the session.
+      if (replaced != null) {
+        _contacts
+          ..clear()
+          ..addAll(replaced);
+        _overridesAcrossRefresh = {};
+      }
+      _isLoadingContacts = false;
+      _preserveContactsOnRefresh = false;
+      _contactSyncStopwatch = null;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> refreshContacts() async {
@@ -3339,12 +3363,14 @@ class MeshCoreConnector extends ChangeNotifier {
       );
     } else {
       // Fallback to old behavior if retry service not initialized
-      final resolved = resolvePathSelection(contact);
+      final resolved =
+          resolvePathSelection(contact, radioWidth: _pathHashByteWidth);
       final message = Message.outgoing(
         contact.publicKey,
         text,
         pathLength: resolved.useFlood ? -1 : resolved.hopCount,
         pathBytes: Uint8List.fromList(resolved.pathBytes),
+        pathHashSize: resolved.hashSize,
       );
       _addMessage(contact.publicKeyHex, message);
       notifyListeners();
@@ -3353,11 +3379,15 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
+  /// Writes [customPath] as the contact's route on the radio. [hashSize] is
+  /// the width the bytes are grouped at; omitted, the radio's current width.
   Future<void> setContactPath(
     Contact contact,
     Uint8List customPath,
-    int hopCount,
-  ) async {
+    int hopCount, {
+    int? hashSize,
+  }) async {
+    final width = hashSize ?? _pathHashByteWidth;
     // Serialize path operations to prevent interleaved async calls from
     // leaving in-memory state inconsistent with the device.
     final prev = _pathOpLock;
@@ -3372,7 +3402,7 @@ class MeshCoreConnector extends ChangeNotifier {
           contact.publicKey,
           customPath,
           hopCount,
-          _pathHashByteWidth,
+          width,
           type: contact.type,
           flags: contact.flags,
           name: contact.name,
@@ -3393,6 +3423,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _contacts[idx] = _contacts[idx].copyWith(
           pathLength: hopCount,
           path: customPath,
+          pathHashSize: width,
         );
         notifyListeners();
       }
@@ -3456,6 +3487,7 @@ class MeshCoreConnector extends ChangeNotifier {
         name: latestContact.name,
         pathLength: latestContact.pathLength,
         path: latestContact.path,
+        pathHashSize: latestContact.pathHashSize,
         flags: updatedFlags,
       );
       notifyListeners();
@@ -3511,41 +3543,49 @@ class MeshCoreConnector extends ChangeNotifier {
       tag: 'Connector',
     );
 
-    // Find contact in list
     final index = _contacts.indexWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
-    if (index == -1) {
-      appLogger.warn(
-        'setPathOverride: Contact not found in list: ${contact.name}',
-        tag: 'Connector',
-      );
-      return;
-    }
-
-    appLogger.info(
-      'Found contact at index $index. Current override: ${_contacts[index].pathOverride}',
-      tag: 'Connector',
-    );
-
-    // Update contact with new path override
-    _contacts[index] = _contacts[index].copyWith(
+    final updated = (index == -1 ? contact : _contacts[index]).copyWith(
       pathOverride: pathLen,
       pathOverrideBytes: pathBytes,
+      pathOverrideHashSize: pathBytes != null ? _pathHashByteWidth : null,
       clearPathOverride: pathLen == null, // Clear if pathLen is null
     );
 
+    final fullDownloadInFlight =
+        _isLoadingContacts && !_preserveContactsOnRefresh;
+    if (fullDownloadInFlight) {
+      // The list is being rebuilt from the radio's frames; the choice must
+      // be waiting for this contact's frame, in place of any older one.
+      if (pathLen == null) {
+        _overridesAcrossRefresh.remove(contact.publicKeyHex);
+      } else {
+        _overridesAcrossRefresh[contact.publicKeyHex] = updated;
+      }
+    }
+    if (index == -1) {
+      if (!fullDownloadInFlight) {
+        appLogger.warn(
+          'setPathOverride: Contact not found in list: ${contact.name}',
+          tag: 'Connector',
+        );
+        return;
+      }
+    } else {
+      _contacts[index] = updated;
+    }
+
     appLogger.info(
-      'Updated contact. New override: ${_contacts[index].pathOverride}, bytesLen: ${_contacts[index].pathOverrideBytes?.length}',
+      'Override for ${contact.name}: ${updated.pathOverride}, '
+      'bytesLen: ${updated.pathOverrideBytes?.length}',
       tag: 'Connector',
     );
 
-    // Save to storage
-    await _contactStore.saveContacts(_contacts);
-    appLogger.info('Saved contacts to storage', tag: 'Connector');
+    await _persistContacts();
 
     // Update any in-flight retries so they use the new path override
-    _retryService?.updatePendingContact(_contacts[index]);
+    _retryService?.updatePendingContact(updated);
 
     // If setting a specific path (not flood, not auto), also sync with device
     if (pathLen != null && pathLen >= 0 && pathBytes != null) {
@@ -3564,7 +3604,8 @@ class MeshCoreConnector extends ChangeNotifier {
   /// override is pushed to the radio; otherwise the firmware's own route is
   /// left alone and simply reported.
   Future<PathSelection> preparePathForContactSend(Contact contact) async {
-    final resolved = resolvePathSelection(contact);
+    final resolved =
+        resolvePathSelection(contact, radioWidth: _pathHashByteWidth);
     if (contact.pathOverride == null) return resolved;
 
     if (resolved.useFlood) {
@@ -3574,6 +3615,7 @@ class MeshCoreConnector extends ChangeNotifier {
         contact,
         Uint8List.fromList(resolved.pathBytes),
         resolved.hopCount,
+        hashSize: resolved.hashSize,
       );
     }
     return resolved;
@@ -4066,17 +4108,18 @@ class MeshCoreConnector extends ChangeNotifier {
         pathHashSize: contact.pathHashSize, // preserve hash size
         inboundPath: contact.inboundPath,
         inboundHopCount: contact.inboundHopCount,
+        inboundPathHashSize: contact.inboundPathHashSize,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: DateTime.now(),
         flags: contact.flags,
         pathOverride: contact.pathOverride,
         pathOverrideBytes: contact.pathOverrideBytes,
+        pathOverrideHashSize: contact.pathOverrideHashSize,
       ),
     );
 
-    // Always persist immediately — _handleContactAdvert skips persist
-    // when _isLoadingContacts is true, which would lose this contact on restart.
+    // Persist now; during a full download this defers to END_OF_CONTACTS.
     await _persistContacts();
     notifyListeners();
     return true;
@@ -4104,6 +4147,7 @@ class MeshCoreConnector extends ChangeNotifier {
         _contacts[existingIndex] = existing.copyWith(
           pathLength: -1,
           path: Uint8List(0),
+          pathHashSize: _pathHashByteWidth,
         );
         notifyListeners();
         unawaited(_persistContacts());
@@ -4113,23 +4157,50 @@ class MeshCoreConnector extends ChangeNotifier {
     }
   }
 
-  void updateContactInMemory(
-    String publicKeyHex, {
-    Uint8List? pathBytes,
-    int? pathLength,
-  }) {
-    final existingIndex = _contacts.indexWhere(
-      (c) => c.publicKeyHex == publicKeyHex,
-    );
-    if (existingIndex >= 0) {
-      final existing = _contacts[existingIndex];
-      _contacts[existingIndex] = existing.copyWith(
-        pathLength: pathLength,
-        path: pathBytes,
-      );
-      notifyListeners();
-      unawaited(_persistContacts());
+
+  /// Forgets every stored route on the radio so the next send to each
+  /// contact floods and relearns it at the radio's current hash width. A
+  /// stored route keeps the width it was learned at, and the firmware never
+  /// re-stamps it on a width change. Returns how many routes were forgotten.
+  Future<int> forgetAllRoutes() async {
+    var done = 0;
+    for (final c in List.of(_contacts)) {
+      if (c.pathLength <= 0) continue;
+      // A drop mid-run empties the list; stop, and never persist that.
+      if (!isConnected) return done;
+      // One contact at a time under the same lock as the retry service's
+      // route writes, so the two cannot interleave on a contact.
+      final prev = _pathOpLock;
+      final completer = Completer<void>();
+      _pathOpLock = completer.future;
+      await prev;
+      try {
+        final ok = await _sendAndWaitForAck(
+          buildResetPathFrame(c.publicKey),
+          timeout: const Duration(seconds: 10),
+        );
+        if (!ok) continue;
+        done++;
+        final i =
+            _contacts.indexWhere((x) => x.publicKeyHex == c.publicKeyHex);
+        if (i >= 0) {
+          _contacts[i] = _contacts[i].copyWith(
+            pathLength: -1,
+            path: Uint8List(0),
+            pathHashSize: _pathHashByteWidth,
+          );
+          _retryService?.updatePendingContact(_contacts[i]);
+        }
+      } finally {
+        completer.complete();
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     }
+    if (done > 0 && isConnected) {
+      notifyListeners();
+      await _persistContacts();
+    }
+    return done;
   }
 
   /// How far the radio's clock sat from the phone's at the last check
@@ -4883,6 +4954,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await getChannels(force: true);
   }
 
+  /// Feeds one radio frame through the normal dispatch, for tests that
+  /// drive the contact handlers without a transport.
+  @visibleForTesting
+  void handleFrameForTest(List<int> data) => _handleFrame(data);
+
   void _handleFrame(List<int> data) {
     if (data.isEmpty) return;
 
@@ -4959,6 +5035,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case respCodeEndOfContacts:
         debugPrint('Got END_OF_CONTACTS');
+        // Whatever the radio did not re-send no longer exists there.
+        _overridesAcrossRefresh = {};
         final syncElapsedMs = _contactSyncStopwatch?.elapsedMilliseconds;
         _contactSyncStopwatch = null;
         final syncSince = _contactSyncSince;
@@ -5557,10 +5635,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
         // Preserve user-selected path settings and previously known GPS when
         // refreshed frames omit coordinates (lat/lon encoded as 0,0).
-        _contacts[existingIndex] = contact.copyWith(
+        _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
           lastMessageAt: mergedLastMessageAt,
           pathOverride: existing.pathOverride, // Preserve user's path choice
           pathOverrideBytes: existing.pathOverrideBytes,
+          pathOverrideHashSize: existing.pathOverrideHashSize,
           latitude: contact.latitude ?? existing.latitude,
           longitude: contact.longitude ?? existing.longitude,
           // Device DB rows can be legitimately old, so skew is only assessed
@@ -5569,7 +5648,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device frames carry no inbound advert path.
           inboundPath: existing.inboundPath,
           inboundHopCount: existing.inboundHopCount,
-        );
+          inboundPathHashSize: existing.inboundPathHashSize,
+        ));
 
         appLogger.info(
           'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
@@ -5581,7 +5661,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             (_autoAddRoomServers && contact.type == advTypeRoom) ||
             (_autoAddSensors && contact.type == advTypeSensor) ||
             isContact) {
-          _contacts.add(contact);
+          _contacts.add(_restoreKeptOverride(contact));
           appLogger.info(
             'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
             tag: 'Connector',
@@ -5643,22 +5723,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
 
       // CRITICAL: Preserve user's path override when contact is refreshed from device
-      _contacts[existingIndex] = contact.copyWith(
+      _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        pathOverrideHashSize: existing.pathOverrideHashSize,
         inboundPath: contact.inboundHopCount == null
             ? existing.inboundPath
             : contact.inboundPath,
         inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
-      );
+        inboundPathHashSize:
+            contact.inboundPathHashSize ?? existing.inboundPathHashSize,
+      ));
 
       appLogger.info(
         'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
         tag: 'Connector',
       );
     } else {
-      _contacts.add(contact);
+      _contacts.add(_restoreKeptOverride(contact));
       appLogger.info(
         'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
         tag: 'Connector',
@@ -5687,7 +5770,27 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   Future<void> _persistContacts() async {
+    // A full download rebuilds the list from empty; writing the partial list
+    // would replace the cache with a truncated one if the link dropped
+    // mid-way. END_OF_CONTACTS persists the complete list.
+    if (_isLoadingContacts && !_preserveContactsOnRefresh) return;
     await _contactStore.saveContacts(_contacts);
+  }
+
+  /// Puts a route override stashed by a full download back on the contact
+  /// the radio just re-sent, unless it already has one. Both the contact
+  /// frame and a live advert can be the first to add a contact mid-download.
+  Contact _restoreKeptOverride(Contact c) {
+    // Look up, never pop: a live advert can add the contact before
+    // CONTACTS_START clears the list again, and the contact's own frame
+    // still needs the entry. END_OF_CONTACTS empties the stash.
+    final kept = _overridesAcrossRefresh[c.publicKeyHex];
+    if (kept == null || c.pathOverride != null) return c;
+    return c.copyWith(
+      pathOverride: kept.pathOverride,
+      pathOverrideBytes: kept.pathOverrideBytes,
+      pathOverrideHashSize: kept.pathOverrideHashSize,
+    );
   }
 
   // Discovered contacts have no radio backstop, so the store is append-only
@@ -5732,6 +5835,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     String senderName,
     DateTime timestamp, {
     Uint8List? pathBytes,
+    int? pathHashSize,
     bool notify = false,
   }) {
     final normalized = senderName.trim().toLowerCase();
@@ -5755,7 +5859,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       for (var i = 0; i < _contacts.length; i++) {
         final contact = _contacts[i];
         if (contact.type != advTypeChat) continue;
-        if (_pathMatchesContact(pathBytes, contact.publicKey)) {
+        if (_pathMatchesContact(
+          pathBytes,
+          contact.publicKey,
+          stride: pathHashSize ?? _pathHashByteWidth,
+        )) {
           matches.add(i);
         }
       }
@@ -5772,16 +5880,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
-  bool _pathMatchesContact(Uint8List pathBytes, Uint8List publicKey) {
-    final w = _pathHashByteWidth;
-    if (pathBytes.isEmpty || publicKey.length < w) return false;
-    for (int i = 0; i + w <= pathBytes.length; i += w) {
-      final prefix = pathBytes.sublist(i, i + w);
-      if (_matchesPrefix(publicKey, prefix)) {
-        return true;
-      }
-    }
-    return false;
+  bool _pathMatchesContact(
+    Uint8List pathBytes,
+    Uint8List publicKey, {
+    required int stride,
+  }) {
+    if (publicKey.length < stride) return false;
+    return PathHelper.getHops(pathBytes, stride: stride)
+        .any((hop) => _matchesPrefix(publicKey, hop));
   }
 
   void _handleIncomingMessage(Uint8List frame) async {
@@ -5843,7 +5949,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (hops > 0 &&
             contact.pathLength == hops &&
             contact.path.isNotEmpty) {
-          message = message.copyWith(pathBytes: contact.path);
+          message = message.copyWith(
+            pathBytes: contact.path,
+            pathHashSize: contact.pathHashSize,
+          );
         }
       }
       if (contact != null) {
@@ -5996,7 +6105,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         isOutgoing: false,
         isCli: isCli,
         status: MessageStatus.delivered,
-        pathLength: extractPathHopCount(layout.pathLen),
+        pathLength: PathHelper.pathLenHops(layout.pathLen),
+        pathHashSize: PathHelper.pathLenWidth(layout.pathLen),
         pathBytes: Uint8List(0),
         fourByteRoomContactKey: layout.authorPrefix,
       );
@@ -6209,6 +6319,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         message.senderName,
         message.timestamp,
         pathBytes: message.pathBytes,
+        pathHashSize: message.pathHashSize,
       );
 
       // Never file a message under a slot whose identity is unknown — the
@@ -6328,6 +6439,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             parsed.senderName,
             message.timestamp,
             pathBytes: message.pathBytes,
+            pathHashSize: message.pathHashSize,
           );
           final label = channel.displayName;
           unawaited(() async {
@@ -6452,6 +6564,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               type: advTypeRepeater,
               pathLength: 0,
               path: Uint8List(0),
+              pathHashSize: _pathHashByteWidth,
               lastSeen: DateTime.now(),
               isActive: true, // Set to true since we are adding it as an active contact
             );
@@ -7634,7 +7747,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         reader.skipBytes(4);
       }
       final pathLenRaw = reader.readByte();
-      final pathByteLen = extractPathByteLen(pathLenRaw);
+      final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
       final pathBytes = reader.readBytes(pathByteLen);
       final payload = reader.readBytes(reader.remaining);
 
@@ -8352,6 +8465,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
+    _overridesAcrossRefresh = {};
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -8547,7 +8661,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       //final payloadVer = (header >> 6) & 0x03;
       final pathLenRaw = packet.readByte();
-      final pathByteLen = extractPathByteLen(pathLenRaw);
+      final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
       final pathBytes = packet.readBytes(pathByteLen);
       final payload = packet.readBytes(packet.remaining);
 
@@ -8583,7 +8697,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contact.publicKey,
         contact.pathOverrideBytes ?? contact.path,
         contact.pathOverride ?? contact.pathLength,
-        contact.pathOverrideBytes != null ? _pathHashByteWidth : contact.pathHashSize,
+        contact.pathOverrideBytes != null
+            ? contact.overrideHashSize(_pathHashByteWidth)
+            : contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,
@@ -8719,7 +8835,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         packet.skipBytes(4);
       }
       final pathLenRaw = packet.readByte();
-      packet.skipBytes(extractPathByteLen(pathLenRaw));
+      packet.skipBytes(PathHelper.pathLenBytes(pathLenRaw));
       packet.skipBytes(32); // pubkey
       return packet.readUInt32LE();
     } catch (_) {
@@ -8973,7 +9089,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contact.publicKey,
         contact.pathOverrideBytes ?? contact.path,
         contact.pathOverride ?? contact.pathLength,
-        contact.pathOverrideBytes != null ? hashWidth : contact.pathHashSize,
+        contact.pathOverrideBytes != null
+            ? contact.overrideHashSize(hashWidth)
+            : contact.pathHashSize,
         type: contact.type,
         flags: contact.flags,
         name: contact.name,
@@ -9136,8 +9254,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contactKeyHex);
 
-    final hopCount = extractPathHopCount(pathLenRaw);
-    final hashSize = extractPathHashSize(pathLenRaw);
+    final hopCount = PathHelper.pathLenHops(pathLenRaw);
+    final hashSize = PathHelper.pathLenWidth(pathLenRaw);
     final advertTime = _parseAdvertTimestamp(timestamp);
 
     if (!_isLoadingContacts) {
@@ -9155,6 +9273,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         path: Uint8List(0),
         inboundPath: path,
         inboundHopCount: hopCount,
+        inboundPathHashSize: hashSize,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
@@ -9199,14 +9318,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         latitude: hasLocation ? latitude : existing.latitude,
         longitude: hasLocation ? longitude : existing.longitude,
         name: hasName ? name : existing.name,
-        pathHashSize: hashSize,
         inboundPath: path,
         inboundHopCount: hopCount,
+        inboundPathHashSize: hashSize,
         lastMessageAt: mergedLastMessageAt,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
+        pathOverrideHashSize: existing.pathOverrideHashSize,
       );
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
@@ -9224,12 +9344,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List path,
     int pathLenRaw,
   ) {
-    final hashSize = extractPathHashSize(pathLenRaw);
+    final hashSize = PathHelper.pathLenWidth(pathLenRaw);
     // The direct (last) hop's full hash identifies the repeater we heard.
-    final lastHopTake = math.min(hashSize, path.length);
-    final pubkeyPrefix = path.isNotEmpty
-        ? Uint8List.fromList(path.sublist(path.length - lastHopTake))
-        : PathHelper.pubKeyPrefix(contact.publicKey, stride: hashSize);
+    final pubkeyPrefix = PathHelper.lastHop(path, stride: hashSize) ??
+        PathHelper.pubKeyPrefix(contact.publicKey, stride: hashSize);
 
     _directRepeaters.removeWhere((r) => r.isStale());
 
@@ -9345,8 +9463,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         type: contact.type,
         pathLength: contact.pathLength,
         path: contact.path,
+        pathHashSize: contact.pathHashSize,
         inboundPath: contact.inboundPath,
         inboundHopCount: contact.inboundHopCount,
+        inboundPathHashSize: contact.inboundPathHashSize,
         latitude: contact.latitude,
         longitude: contact.longitude,
         lastSeen: contact.lastSeen,
@@ -9366,8 +9486,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       type: contact.type,
       pathLength: contact.pathLength,
       path: contact.path,
+      pathHashSize: contact.pathHashSize,
       inboundPath: contact.inboundPath,
       inboundHopCount: contact.inboundHopCount,
+      inboundPathHashSize: contact.inboundPathHashSize,
       latitude: contact.latitude,
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,
@@ -9528,9 +9650,9 @@ class _RawPacket {
   bool get isFlood =>
       routeType == _routeFlood || routeType == _routeTransportFlood;
 
-  int get hopCount => extractPathHopCount(pathLenRaw);
+  int get hopCount => PathHelper.pathLenHops(pathLenRaw);
 
-  int get hashSize => extractPathHashSize(pathLenRaw);
+  int get hashSize => PathHelper.pathLenWidth(pathLenRaw);
 }
 
 class _ParsedText {

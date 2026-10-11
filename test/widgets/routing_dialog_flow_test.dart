@@ -111,6 +111,9 @@ Future<void> _openCustomPathDialog(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.text('Routing'), findsOneWidget);
 
+  // The 2-byte fixture must read as two hops, never A2,77,BE,EF.
+  expect(find.textContaining('A277,BEEF'), findsOneWidget);
+
   await tester.tap(find.text('Custom path'));
   await tester.pumpAndSettle();
   expect(find.text('Enter Custom Path'), findsOneWidget);

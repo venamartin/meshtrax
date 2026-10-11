@@ -134,8 +134,7 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
       return;
     }
 
-    // Check max path length (64 bytes)
-    if (pathBytesList.length > 64) {
+    if (pathBytesList.length > maxPathSize) {
       showDismissibleSnackBar(
         context,
         content: Text(l10n.path_tooLong),
@@ -210,10 +209,10 @@ class _PathSelectionDialogState extends State<PathSelectionDialog> {
                   labelText: l10n.path_labelHexPrefixes,
                   hintText: widget.pathHashByteWidth == 1 ? 'e.g. A1, F2' : 'e.g. A1B2, C3D4',
                   border: const OutlineInputBorder(),
-                  helperText: 'Max ${64 ~/ widget.pathHashByteWidth} hops. Each prefix is ${widget.pathHashByteWidth * 2} hex characters (${widget.pathHashByteWidth} byte(s))',
+                  helperText: 'Max ${PathHelper.maxHops(widget.pathHashByteWidth)} hops. Each prefix is ${widget.pathHashByteWidth * 2} hex characters (${widget.pathHashByteWidth} byte(s))',
                 ),
                 textCapitalization: TextCapitalization.characters,
-                maxLength: 191, // 64 hops * 2 chars + 63 commas
+                maxLength: PathHelper.maxPathInputChars(widget.pathHashByteWidth),
               ),
               const SizedBox(height: 16),
               const Divider(),

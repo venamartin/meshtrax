@@ -4,7 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../models/contact.dart';
 import '../utils/app_logger.dart';
-import '../helpers/path_helper.dart';
+
 import 'app_database.dart';
 import 'prefs_manager.dart';
 
@@ -25,7 +25,10 @@ class ContactStore {
   /// contact list, per radio. Sent back as `since` so the radio streams only
   /// contacts changed after it. Comes only from END_OF_CONTACTS; the Contact
   /// model folds lastmod into lastSeen, which adverts overwrite.
-  static const String _cursorKeyPrefix = 'contact_sync_cursor_';
+  // Renamed with the v7 cache migration on purpose: the orphaned pre-v7
+  // cursor would have let an incremental sync skip the untouched contacts
+  // whose cached routes the migration cleared.
+  static const String _cursorKeyPrefix = 'contact_sync_cursor_v7_';
 
   int loadSyncCursor() {
     if (publicKeyHex.isEmpty) return 0;
@@ -44,11 +47,15 @@ class ContactStore {
       appLogger.warn('Public key hex is not set. Cannot load contacts.');
       return [];
     }
-    await _importLegacyBlobs();
     final rows =
         await (_db.select(_db.contactRows)
               ..where((r) => r.nodeScope.equals(publicKeyHex)))
             .get();
+    if (rows.isEmpty) {
+      // No cache, no cursor: the next sync is a full download, which is
+      // also how the one-time v7 wipe gets rebuilt.
+      await PrefsManager.instance.remove('$_cursorKeyPrefix$publicKeyHex');
+    }
     final contacts = <Contact>[];
     for (final row in rows) {
       try {
@@ -88,47 +95,6 @@ class ContactStore {
     });
   }
 
-  /// One-time import of the prefs JSON blobs (scoped first, then the
-  /// ancient unscoped key); the keys are removed either way.
-  Future<void> _importLegacyBlobs() async {
-    final prefs = PrefsManager.instance;
-    for (final key in [keyFor, _keyPrefix]) {
-      final jsonString = prefs.getString(key);
-      if (jsonString != null && jsonString.isNotEmpty) {
-        final existing =
-            await (_db.select(_db.contactRows)
-                  ..where((r) => r.nodeScope.equals(publicKeyHex))
-                  ..limit(1))
-                .getSingleOrNull();
-        if (existing == null) {
-          try {
-            final jsonList = jsonDecode(jsonString) as List<dynamic>;
-            await _db.batch((b) {
-              b.insertAll(
-                _db.contactRows,
-                [
-                  for (final entry in jsonList)
-                    ContactRowsCompanion.insert(
-                      nodeScope: publicKeyHex,
-                      publicKeyHex: _fromJson(
-                        entry as Map<String, dynamic>,
-                      ).publicKeyHex,
-                      payload: jsonEncode(entry),
-                    ),
-                ],
-                mode: InsertMode.insertOrIgnore,
-              );
-            });
-            appLogger.info('Imported contact cache from legacy key $key');
-          } catch (e) {
-            appLogger.warn('Failed contact cache import from $key: $e');
-          }
-        }
-      }
-      await prefs.remove(key);
-    }
-  }
-
   Map<String, dynamic> _toJson(Contact contact) {
     return {
       'publicKey': base64Encode(contact.publicKey),
@@ -137,12 +103,15 @@ class ContactStore {
       'flags': contact.flags,
       'pathLength': contact.pathLength,
       'path': base64Encode(contact.path),
+      'pathHashSize': contact.pathHashSize,
       'inboundPath': base64Encode(contact.inboundPath),
       'inboundHopCount': contact.inboundHopCount,
+      'inboundPathHashSize': contact.inboundPathHashSize,
       'pathOverride': contact.pathOverride,
       'pathOverrideBytes': contact.pathOverrideBytes != null
           ? base64Encode(contact.pathOverrideBytes!)
           : null,
+      'pathOverrideHashSize': contact.pathOverrideHashSize,
       'latitude': contact.latitude,
       'longitude': contact.longitude,
       'lastSeen': contact.lastSeen.millisecondsSinceEpoch,
@@ -157,38 +126,28 @@ class ContactStore {
   Contact _fromJson(Map<String, dynamic> json) {
     final lastSeenMs = json['lastSeen'] as int? ?? 0;
     final lastMessageMs = json['lastMessageAt'] as int?;
-    final pathBytes = json['path'] != null
-        ? Uint8List.fromList(base64Decode(json['path'] as String))
-        : Uint8List(0);
-    final pathHashSize = json['pathHashSize'] as int? ?? 1;
-
     return Contact(
       publicKey: Uint8List.fromList(base64Decode(json['publicKey'] as String)),
       name: json['name'] as String? ?? 'Unknown',
       type: json['type'] as int? ?? 0,
       flags: json['flags'] as int? ?? 0,
-      pathLength: () {
-        if (pathBytes.isNotEmpty) {
-          return PathHelper.getHopCount(pathBytes, stride: pathHashSize);
-        }
-        int pLen = json['pathLength'] as int? ?? -1;
-        if (pLen > 0) {
-          pLen = (pLen == 0xFF) ? -1 : (pLen & 0x3F);
-        }
-        return pLen;
-      }(),
-      path: pathBytes,
-      pathHashSize: pathHashSize,
+      pathLength: json['pathLength'] as int,
+      path: Uint8List.fromList(base64Decode(json['path'] as String)),
+      // Rows without a width predate it and are unreadable on purpose: a
+      // guessed width is how 2-byte routes once read as four 1-byte hops.
+      pathHashSize: json['pathHashSize'] as int,
       inboundPath: json['inboundPath'] != null
           ? Uint8List.fromList(base64Decode(json['inboundPath'] as String))
           : null,
       inboundHopCount: json['inboundHopCount'] as int?,
+      inboundPathHashSize: json['inboundPathHashSize'] as int?,
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: json['pathOverrideBytes'] != null
           ? Uint8List.fromList(
               base64Decode(json['pathOverrideBytes'] as String),
             )
           : null,
+      pathOverrideHashSize: json['pathOverrideHashSize'] as int?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       lastSeen: DateTime.fromMillisecondsSinceEpoch(lastSeenMs),

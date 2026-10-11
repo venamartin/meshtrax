@@ -99,7 +99,9 @@ class _RoutingDialog extends StatelessWidget {
     }
     return PathHelper.formatPathHex(
       bytes,
-      stride: context.read<MeshCoreConnector>().pathHashByteWidth,
+      stride: c.overrideHashSize(
+        context.read<MeshCoreConnector>().pathHashByteWidth,
+      ),
     );
   }
 
@@ -142,7 +144,9 @@ class _RoutingDialog extends StatelessWidget {
                   path: Uint8List.fromList(pathBytes),
                   flipPathAround: true,
                   targetContact: c,
-                  pathHashByteWidth: connector.pathHashByteWidth,
+                  // The route carries its own width; the radio may since
+                  // have moved to another.
+                  pathHashByteWidth: c.pathHashSize,
                 ),
               ),
             ),
@@ -165,15 +169,15 @@ class _RoutingDialog extends StatelessWidget {
     if (c.pathLength > 0 && c.path.isEmpty && connector.isConnected) {
       connector.getContacts();
     }
-    // Overrides are always written at the connector's width; the device
-    // path carries its own hash width and is only a usable seed when the
-    // two agree — regrouping it at a different stride fabricates hops.
+    // The editor works at the connector's width; a saved path is only a
+    // usable seed when its own width agrees — regrouping it at a different
+    // stride fabricates hops.
+    final width = connector.pathHashByteWidth;
     final current = c.pathOverrideBytes != null
-        ? PathHelper.formatPathHex(
-            c.pathOverrideBytes!,
-            stride: connector.pathHashByteWidth,
-          )
-        : (c.pathHashSize == connector.pathHashByteWidth ? c.pathIdList : '');
+        ? (c.overrideHashSize(width) == width
+            ? PathHelper.formatPathHex(c.pathOverrideBytes!, stride: width)
+            : '')
+        : (c.pathHashSize == width ? c.pathIdList : '');
     final result = await PathSelectionDialog.show(
       context,
       availableContacts: connector.allContacts

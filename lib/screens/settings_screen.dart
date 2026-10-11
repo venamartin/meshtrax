@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../l10n/l10n.dart';
 import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
@@ -373,6 +374,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text("Configure the path hash size (1-2 bytes)"),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _editPathHashSize(context, connector),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.route_outlined),
+            title: const Text("Forget all routes"),
+            subtitle: const Text(
+              "Relearn every route at the current path hash size. "
+              "The next message to each contact floods once.",
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _forgetAllRoutes(context, connector),
           ),
           const Divider(height: 1),
 
@@ -855,8 +867,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _forgetAllRoutes(
+    BuildContext context,
+    MeshCoreConnector connector,
+  ) async {
+    final l10n = context.l10n;
+    final routed = connector.contacts.where((c) => c.pathLength > 0).length;
+    if (routed == 0) {
+      showDismissibleSnackBar(
+        context,
+        content: const Text("The radio holds no learned routes."),
+      );
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Forget all routes"),
+        content: Text(
+          "The radio keeps $routed learned route${routed == 1 ? '' : 's'}, "
+          "each at the hash size it was learned with. Forgetting them makes "
+          "the next message to each contact flood once and relearn the route "
+          "at ${connector.pathHashByteWidth} byte"
+          "${connector.pathHashByteWidth == 1 ? '' : 's'}.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.common_cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Forget"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final navigator = Navigator.of(context);
+    _showProgressDialog(
+      context,
+      "Forget all routes",
+      ValueNotifier<String>("Forgetting routes…"),
+    );
+    final done = await connector.forgetAllRoutes();
+    navigator.pop();
+    if (!context.mounted) return;
+    showDismissibleSnackBar(
+      context,
+      content: Text("Forgot $done route${done == 1 ? '' : 's'}."),
+    );
+  }
+
   void _editPathHashSize(BuildContext context, MeshCoreConnector connector) {
-    int currentMode = pathHashModeFromWidth(connector.pathHashByteWidth)
+    int currentMode = PathHelper.hashModeFromWidth(connector.pathHashByteWidth)
         .clamp(0, 1); // dialog only offers 1- and 2-byte widths
     final l10n = context.l10n;
     showDialog(

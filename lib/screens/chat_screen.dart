@@ -466,7 +466,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             context,
                             effectivePath,
                             contact.pathOverrideBytes != null
-                                ? connector.pathHashByteWidth
+                                ? contact.overrideHashSize(
+                                    connector.pathHashByteWidth,
+                                  )
                                 : contact.pathHashSize,
                           )
                       : null,
@@ -806,7 +808,7 @@ class _ChatScreenState extends State<ChatScreen> {
               if (message.pathBytes.isNotEmpty) {
                 final hexPath = PathHelper.formatPathHex(
                   message.pathBytes,
-                  stride: resolvedContact.pathHashSize,
+                  stride: message.pathHashSize ?? resolvedContact.pathHashSize,
                 );
                 if (hexPath.isNotEmpty) viaLabel = hexPath;
               }
@@ -1472,7 +1474,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   path: Uint8List.fromList(pathBytes),
                   flipPathAround: true,
                   targetContact: widget.contact,
-                  pathHashByteWidth: connector.pathHashByteWidth,
+                  pathHashByteWidth: hashSize,
                 ),
               ),
             ),
@@ -1536,7 +1538,7 @@ class _ChatScreenState extends State<ChatScreen> {
           contact.pathOverrideBytes!.isNotEmpty) {
         final hopCount = PathHelper.getHopCount(
           contact.pathOverrideBytes!,
-          stride: connector.pathHashByteWidth,
+          stride: contact.overrideHashSize(connector.pathHashByteWidth),
         );
         if (hopCount == 0) return context.l10n.chat_directForced;
         return context.l10n.chat_hopsForced(hopCount);
@@ -1753,7 +1755,8 @@ class _ChatScreenState extends State<ChatScreen> {
       repeatCount: 0,
       pathLength: message.pathLength,
       pathBytes: message.pathBytes,
-      pathHashSize: _resolveContact(connector).pathHashSize,
+      pathHashSize:
+          message.pathHashSize ?? _resolveContact(connector).pathHashSize,
     );
     Navigator.push(
       context,

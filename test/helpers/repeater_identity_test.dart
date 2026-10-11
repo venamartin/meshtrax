@@ -20,6 +20,8 @@ Contact repeater(String name, Uint8List publicKey, {int type = advTypeRepeater})
     type: type,
     pathLength: 0,
     path: Uint8List(0),
+
+    pathHashSize: 1,
     lastSeen: DateTime(2026, 1, 1),
   );
 }

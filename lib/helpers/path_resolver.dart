@@ -38,9 +38,10 @@ class PathResolver {
     List<Contact> allContacts, {
     LatLng? startLocation,
     LatLng? endLocation,
-    int stride = 1,
+    required int stride,
   }) {
-    if (pathBytes.isEmpty) return const [];
+    final hops = PathHelper.getHops(pathBytes, stride: stride);
+    if (hops.isEmpty) return const [];
 
     // Group contacts by their full hex prefix
     final candidatesByPrefix = <String, List<Contact>>{};
@@ -71,8 +72,7 @@ class PathResolver {
     ) {
       if (++visits > _maxSearchVisits && best != null) return;
 
-      final slotStart = depth * stride;
-      if (slotStart >= pathBytes.length || pathBytes[slotStart] == 0x00) {
+      if (depth >= hops.length) {
         if (endLocation != null && lastLocation != null) {
           length += distance(lastLocation, endLocation);
           segments++;
@@ -85,11 +85,7 @@ class PathResolver {
         return;
       }
 
-      final slotEnd = (slotStart + stride).clamp(0, pathBytes.length);
-      final fullPrefix = pathBytes
-          .sublist(slotStart, slotEnd)
-          .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
-          .join();
+      final fullPrefix = PathHelper.hopHex(hops[depth]);
 
       var matched = false;
       for (final candidate in candidatesByPrefix[fullPrefix] ?? const <Contact>[]) {

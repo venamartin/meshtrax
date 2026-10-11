@@ -845,11 +845,8 @@ class ChannelMessageStore {
         if (pathBytes.isNotEmpty) {
           return PathHelper.getHopCount(pathBytes, stride: pathHashSize);
         }
-        int? pLen = json['pathLength'] as int?;
-        if (pLen != null && pLen > 0) {
-          pLen = (pLen == 0xFF) ? -1 : (pLen & 0x3F);
-        }
-        return pLen;
+        final pLen = json['pathLength'] as int?;
+        return pLen == null ? null : PathHelper.pathLenHops(pLen);
       }(),
       pathBytes: pathBytes,
       pathHashSize: pathHashSize,

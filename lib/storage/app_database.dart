@@ -193,7 +193,25 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
+
+  /// v7: cached routes predate the persisted hash width, and a guessed width
+  /// is how 2-byte routes read as four 1-byte hops. Clear every cached route
+  /// (the firmware's, and the advert's inbound path) and keep the rest of the
+  /// row — discovered repeaters, overrides, last-message times. The radio
+  /// re-sends its routes on the next full download (ContactStore renames its
+  /// sync cursor for that); inbound paths return with the next advert.
+  @visibleForTesting
+  static Future<void> clearCachedRoutesV7(AppDatabase db) async {
+    for (final table in ['contact_rows', 'discovered_contact_rows']) {
+      await db.customStatement(
+        "UPDATE $table SET payload = json_set(payload, "
+        "'\$.pathLength', -1, '\$.path', '', '\$.pathHashSize', 1, "
+        "'\$.inboundPath', '', '\$.inboundHopCount', NULL) "
+        'WHERE json_valid(payload)',
+      );
+    }
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -257,6 +275,9 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'UPDATE contact_read_marks SET last_read_seq = last_read_ms * 1000',
         );
+      }
+      if (from < 7) {
+        await clearCachedRoutesV7(this);
       }
     },
     beforeOpen: (details) async {

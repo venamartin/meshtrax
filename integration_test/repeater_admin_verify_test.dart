@@ -244,7 +244,7 @@ void main() {
         reason: 'a CLI round trip cleared the Direct override');
 
     // The same resolution a second screen would perform.
-    final again = resolvePathSelection(live());
+    final again = resolvePathSelection(live(), radioWidth: c.pathHashByteWidth);
     blog('re-resolved: useFlood=${again.useFlood} hops=${again.hopCount}');
     expect(again.useFlood, isFalse);
     expect(again.hopCount, 0);
@@ -288,7 +288,7 @@ void main() {
 
     void dump(String when) {
       final x = live();
-      final sel = resolvePathSelection(x);
+      final sel = resolvePathSelection(x, radioWidth: c.pathHashByteWidth);
       blog('$when: override=${x.pathOverride} '
           'overrideBytes=${x.pathOverrideBytes?.length ?? 0}B '
           'devicePath=${x.pathLength} pathBytes=${x.path.length}B '

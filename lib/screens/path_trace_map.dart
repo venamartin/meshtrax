@@ -70,7 +70,7 @@ class PathTraceMapScreen extends StatefulWidget {
     this.flipPathAround = false,
     this.reversePathAround = false,
     this.targetContact,
-    this.pathHashByteWidth = 1,
+    required this.pathHashByteWidth,
     this.pathContacts,
   });
 
@@ -205,7 +205,18 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     );
 
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final flags = encodeTraceFlags(widget.pathHashByteWidth);
+    final flags = PathHelper.traceFlags(widget.pathHashByteWidth);
+    if (flags == null) {
+      appLogger.warn(
+        'Path trace has no encoding for a ${widget.pathHashByteWidth}-byte hash width',
+        tag: 'PathTraceMapScreen',
+      );
+      _markTraceFailed(
+        reason:
+            'Path trace needs a 1- or 2-byte hash width; this radio uses ${widget.pathHashByteWidth} bytes.',
+      );
+      return;
+    }
     final frame = buildTraceReq(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       0, //auth
@@ -219,7 +230,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   // surface a toast so a failed trace is visible even when a previous trace
   // is already on screen (a refresh/edit that fails). Guards against stacking
   // duplicate toasts within a single attempt.
-  void _markTraceFailed() {
+  void _markTraceFailed({String? reason}) {
     if (!mounted) return;
     final alreadyFailed = _failed2Loaded;
     setState(() {
@@ -236,7 +247,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     if (!alreadyFailed) {
       showDismissibleSnackBar(
         context,
-        content: Text(context.l10n.pathTrace_failed),
+        content: Text(reason ?? context.l10n.pathTrace_failed),
       );
     }
   }

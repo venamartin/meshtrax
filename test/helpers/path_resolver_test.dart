@@ -25,6 +25,8 @@ Contact node(
     type: advTypeRepeater,
     pathLength: 0,
     path: Uint8List(0),
+
+    pathHashSize: 1,
     latitude: latitude,
     longitude: longitude,
     lastSeen: DateTime(2026, 1, 1),
@@ -70,6 +72,7 @@ void main() {
           PathResolver.buildPathHops(
             Uint8List.fromList(pathBytes),
             repeatersBoth + repeatersNorth + repeatersSouth,
+            stride: 1,
           ).map((hop) => hop.contact!.name),
           [
             'Solar Heltec v4 Test',
@@ -90,6 +93,7 @@ void main() {
           Uint8List.fromList([0xc5, 0xbe, 0x10, 0x69]),
           repeatersBoth + repeatersNorth + repeatersSouth,
           endLocation: myLocation,
+          stride: 1,
         ).map((hop) => hop.contact!.name),
         [
           'Solar Heltec v4 Test',
@@ -106,6 +110,7 @@ void main() {
           Uint8List.fromList([0x69, 0x10, 0xbe, 0xc5]),
           repeatersBoth + repeatersNorth + repeatersSouth,
           startLocation: myLocation,
+          stride: 1,
         ).map((hop) => hop.contact!.name),
         [
           'PL@W Williams Hill',
@@ -121,6 +126,7 @@ void main() {
         PathResolver.buildPathHops(
           Uint8List.fromList(pathBytes),
           repeatersBoth + repeatersNorth + repeatersSouth,
+          stride: 1,
         ).map((hop) => hop.index),
         [1, 2, 3, 4, 5, 6, 7],
       );
@@ -138,6 +144,7 @@ void main() {
         final hops = PathResolver.buildPathHops(
           Uint8List.fromList(pathBytes),
           repeaters,
+          stride: 1,
         );
 
         expect(hops.length, 32);
@@ -160,6 +167,7 @@ void main() {
           Uint8List.fromList(pathBytes),
           repeaters,
           startLocation: LatLng(29.0, -120.0),
+          stride: 1,
         ).map((hop) => hop.contact!.name),
         [
           'Repeater A',
@@ -183,6 +191,7 @@ void main() {
         Uint8List.fromList(pathBytes),
         repeaters,
         startLocation: myLocation,
+        stride: 1,
       );
 
       expect(hops.map((hop) => hop.contact), [null, null, null]);
@@ -200,6 +209,7 @@ void main() {
       final hops = PathResolver.buildPathHops(
         Uint8List.fromList(pathBytes),
         repeaters,
+        stride: 1,
       );
 
       expect(
@@ -219,6 +229,7 @@ void main() {
       final hops = PathResolver.buildPathHops(
         Uint8List.fromList(pathBytes),
         repeaters,
+        stride: 1,
       );
 
       expect(hops.map((hop) => hop.contact?.name), ['Repeater A', null]);

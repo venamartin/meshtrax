@@ -86,6 +86,7 @@ class ContactImportHelper {
         type: type,
         pathLength: -1,
         path: Uint8List(0),
+        pathHashSize: connector.pathHashByteWidth,
         lastSeen: DateTime.now(),
       );
       connector.importDiscoveredContact(contact);

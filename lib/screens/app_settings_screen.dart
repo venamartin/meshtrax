@@ -486,8 +486,18 @@ class AppSettingsScreen extends StatelessWidget {
               );
             },
           ),
+          const Divider(height: 1),
+          SwitchListTile(
+            secondary: const Icon(Icons.sync_outlined),
+            title: Text(context.l10n.appSettings_incrementalContactSync),
+            subtitle: Text(
+              context.l10n.appSettings_incrementalContactSyncSubtitle,
+            ),
+            value: settingsService.settings.incrementalContactSync,
+            onChanged: settingsService.setIncrementalContactSync,
+          ),
         ],
-),
+      ),
     );
   }
 
@@ -1141,16 +1151,6 @@ class AppSettingsScreen extends StatelessWidget {
                 duration: const Duration(seconds: 2),
               );
             },
-          ),
-          const Divider(height: 1),
-          SwitchListTile(
-            secondary: const Icon(Icons.sync_outlined),
-            title: Text(context.l10n.appSettings_incrementalContactSync),
-            subtitle: Text(
-              context.l10n.appSettings_incrementalContactSyncSubtitle,
-            ),
-            value: settingsService.settings.incrementalContactSync,
-            onChanged: settingsService.setIncrementalContactSync,
           ),
         ],
       ),

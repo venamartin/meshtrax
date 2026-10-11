@@ -344,6 +344,8 @@ class _SNRIndicatorState extends State<SNRIndicator> {
                                   type: advTypeRepeater,
                                   pathLength: -1,
                                   path: Uint8List(0),
+                                  pathHashSize:
+                                      widget.connector.pathHashByteWidth,
                                   lastSeen: DateTime.now(),
                                   pathOverride: 0,
                                 );

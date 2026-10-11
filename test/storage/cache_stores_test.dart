@@ -15,8 +15,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 // state, so whole-list replacement is the correct write. The discovery store
 // is NOT a mirror — nothing can regenerate it — so its contract is
 // upsert-per-key plus targeted deletes, and no write may erase rows the
-// caller didn't name. These tests pin roundtrip fidelity, node-scope
-// isolation, those write semantics, and one-time legacy prefs import.
+// caller didn't name. These tests pin roundtrip fidelity (including the
+// route width), node-scope isolation, those write semantics, and the channel
+// store's one-time legacy prefs import.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -27,9 +28,30 @@ void main() {
       type: 1,
       pathLength: -1,
       path: Uint8List(0),
+      pathHashSize: 1,
       lastSeen: DateTime.fromMillisecondsSinceEpoch(1753000000000 + seed),
     );
   }
+
+  // A 2-hop route at 2-byte width: A277 → BEEF. Read at 1 byte, the same
+  // bytes looked like four hops — the cache once dropped the width.
+  Contact routed(int seed) => contact(seed).copyWith(
+        pathLength: 2,
+        path: Uint8List.fromList([0xA2, 0x77, 0xBE, 0xEF]),
+        pathHashSize: 2,
+        inboundPath: Uint8List.fromList([0x10, 0x00]),
+        inboundHopCount: 1,
+        inboundPathHashSize: 2,
+        pathOverride: 2,
+        pathOverrideBytes: Uint8List.fromList([0xA2, 0x77]),
+        pathOverrideHashSize: 1,
+      );
+
+  // Rewrites cached rows the way the app wrote them before the width was
+  // persisted.
+  Future<void> stripWidth(String table) => AppDatabase.instance.customStatement(
+        "UPDATE $table SET payload = json_remove(payload, '\$.pathHashSize')",
+      );
 
   Channel channel(int index, {String? name}) {
     return Channel(
@@ -37,22 +59,6 @@ void main() {
       name: name ?? 'Channel $index',
       psk: Uint8List.fromList(List.filled(16, index + 1)),
     );
-  }
-
-  String contactBlob(List<Contact> contacts) {
-    return jsonEncode([
-      for (final c in contacts)
-        {
-          'publicKey': base64Encode(c.publicKey),
-          'name': c.name,
-          'type': c.type,
-          'flags': c.flags,
-          'pathLength': c.pathLength,
-          'path': base64Encode(c.path),
-          'lastSeen': c.lastSeen.millisecondsSinceEpoch,
-          'lastMessageAt': c.lastMessageAt.millisecondsSinceEpoch,
-        },
-    ]);
   }
 
   String channelBlob(List<Channel> channels) {
@@ -119,38 +125,59 @@ void main() {
       expect(await unscoped.loadContacts(), isEmpty);
     });
 
-    test('imports legacy scoped blob once and removes the key', () async {
-      final prefs = PrefsManager.instance;
-      await prefs.setString(store.keyFor, contactBlob([contact(1)]));
-
-      final loaded = await store.loadContacts();
-
-      expect(loaded.single.name, 'Contact 1');
-      expect(prefs.getString(store.keyFor), isNull);
-
-      // A second load must not duplicate or resurrect anything.
-      expect(await store.loadContacts(), hasLength(1));
-    });
-
-    test('imports legacy unscoped blob when scoped key is absent', () async {
-      final prefs = PrefsManager.instance;
-      await prefs.setString('contacts', contactBlob([contact(3)]));
-
-      final loaded = await store.loadContacts();
-
-      expect(loaded.single.name, 'Contact 3');
-      expect(prefs.getString('contacts'), isNull);
-    });
-
-    test('legacy blob never overwrites existing rows', () async {
+    test('an empty cache drops the sync cursor, a populated one keeps it',
+        () async {
+      await store.saveSyncCursor(1234);
       await store.saveContacts([contact(1)]);
-      final prefs = PrefsManager.instance;
-      await prefs.setString(store.keyFor, contactBlob([contact(9)]));
+      await store.loadContacts();
+      expect(store.loadSyncCursor(), 1234);
 
-      final loaded = await store.loadContacts();
+      await store.saveContacts([]);
+      await store.loadContacts();
+      expect(store.loadSyncCursor(), 0);
+    });
 
-      expect(loaded.single.name, 'Contact 1');
-      expect(prefs.getString(store.keyFor), isNull);
+    test('keeps the route width, so a 2-byte route stays 2 hops', () async {
+      await store.saveContacts([routed(1)]);
+
+      final loaded = (await store.loadContacts()).single;
+
+      expect(loaded.pathHashSize, 2);
+      expect(loaded.pathLength, 2);
+      expect(loaded.displayPathString, 'A277,BEEF');
+      expect(loaded.inboundPathHashSize, 2);
+      expect(loaded.pathOverrideHashSize, 1);
+      expect(loaded.pathLabel, '2 hops (forced)');
+    });
+
+    test('skips a row saved without a width', () async {
+      await store.saveContacts([contact(1), routed(2)]);
+      await stripWidth('contact_rows');
+
+      expect(await store.loadContacts(), isEmpty);
+    });
+
+    test('the v7 upgrade keeps rows and clears only their routes', () async {
+      // Rows as the app wrote them before any width was persisted.
+      await store.saveContacts([contact(1), routed(2)]);
+      await AppDatabase.instance.customStatement(
+        "UPDATE contact_rows SET payload = json_remove(payload, "
+        "'\$.pathHashSize', '\$.inboundPathHashSize', '\$.pathOverrideHashSize')",
+      );
+
+      await AppDatabase.clearCachedRoutesV7(AppDatabase.instance);
+
+      final byName = {for (final c in await store.loadContacts()) c.name: c};
+      expect(byName.keys, containsAll(['Contact 1', 'Contact 2']));
+      final c2 = byName['Contact 2']!;
+      expect(c2.pathLength, -1);
+      expect(c2.path, isEmpty);
+      expect(c2.inboundPath, isEmpty);
+      expect(c2.inboundHopCount, isNull);
+      expect(c2.pathOverride, 2);
+      expect(c2.pathOverrideBytes, [0xA2, 0x77]);
+      expect(c2.pathOverrideHashSize, isNull);
+      expect(c2.lastMessageAt, routed(2).lastMessageAt);
     });
   });
 
@@ -207,15 +234,21 @@ void main() {
       expect(loaded, hasLength(2));
     });
 
-    test('imports legacy blob once and removes the key', () async {
-      final prefs = PrefsManager.instance;
-      await prefs.setString('discovered_contacts', contactBlob([contact(6)]));
+    test('keeps the route width, so a 2-byte route stays 2 hops', () async {
+      await store.upsertContacts([routed(6)]);
 
-      final loaded = await store.loadContacts();
+      final loaded = (await store.loadContacts()).single;
 
-      expect(loaded.single.name, 'Contact 6');
-      expect(prefs.getString('discovered_contacts'), isNull);
-      expect(await store.loadContacts(), hasLength(1));
+      expect(loaded.pathHashSize, 2);
+      expect(loaded.pathLength, 2);
+      expect(loaded.displayPathString, 'A277,BEEF');
+    });
+
+    test('skips a row saved without a width', () async {
+      await store.upsertContacts([routed(6)]);
+      await stripWidth('discovered_contact_rows');
+
+      expect(await store.loadContacts(), isEmpty);
     });
   });
 

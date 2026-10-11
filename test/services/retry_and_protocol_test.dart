@@ -69,6 +69,8 @@ Contact _makeContact({
     type: 1,
     pathLength: pathLength,
     path: Uint8List.fromList(path),
+
+    pathHashSize: 1,
     pathOverride: pathOverride,
     pathOverrideBytes: pathOverrideBytes == null
         ? null
@@ -95,7 +97,7 @@ class _Harness {
         addMessage: (_, message) => lastUpdate = message,
         updateMessage: (message) => lastUpdate = message,
         clearContactPath: (_) => pathResets++,
-        setContactPath: (_, bytes, _) => pathPushes.add(bytes.toList()),
+        setContactPath: (_, bytes, _, _) => pathPushes.add(bytes.toList()),
         calculateTimeout: (_, _, {contact}) => timeoutMs,
         getSelfPublicKey: () => selfKey,
       ),
@@ -619,7 +621,7 @@ void main() {
             addMessage: (_, message) => addedMessage = message,
             updateMessage: (_) {},
             clearContactPath: (_) {},
-            setContactPath: (_, _, _) {},
+            setContactPath: (_, _, _, _) {},
           ),
         );
 
@@ -652,7 +654,7 @@ void main() {
           addMessage: (_, message) => addedMessage = message,
           updateMessage: (_) {},
           clearContactPath: (_) {},
-          setContactPath: (_, _, _) {},
+          setContactPath: (_, _, _, _) {},
         ),
       );
 

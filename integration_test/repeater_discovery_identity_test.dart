@@ -220,6 +220,8 @@ void main() {
       type: advTypeRepeater,
       pathLength: 0,
       path: Uint8List(0),
+
+      pathHashSize: 1,
       latitude: 34.0,
       longitude: -118.0,
       lastSeen: DateTime.now(), // most recently seen — the old tie-break winner
@@ -281,6 +283,8 @@ void main() {
       type: advTypeRepeater,
       pathLength: 0,
       path: Uint8List(0),
+
+      pathHashSize: 1,
       lastSeen: DateTime.now(),
     );
 

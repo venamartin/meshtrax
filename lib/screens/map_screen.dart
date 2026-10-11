@@ -637,24 +637,25 @@ class _MapScreenState extends State<MapScreen> {
       // Anchor on the repeater nearest the contact: the first hop of its
       // inbound advert path, or the last hop of the firmware's route to it.
       // Hops nearer our side would anchor against our own network.
-      final repeaterByHash = getRepeaterMapForStride(contact.pathHashSize);
-
+      // The two paths carry their own widths: the advert's path is at the
+      // contact's flood width, the route at the width it was learned at.
+      final inboundWidth = contact.inboundPathHashSize ?? contact.pathHashSize;
       final lastHopBytes = <String>{};
       final inboundHops = PathHelper.getHops(
         contact.inboundPath,
-        stride: contact.pathHashSize,
+        stride: inboundWidth,
       );
       final routeHops = PathHelper.getHops(
         contact.path,
         stride: contact.pathHashSize,
       );
-      for (final hop in [
-        if (inboundHops.isNotEmpty) inboundHops.first,
-        if (routeHops.isNotEmpty) routeHops.last,
+      for (final (hop, width) in [
+        if (inboundHops.isNotEmpty) (inboundHops.first, inboundWidth),
+        if (routeHops.isNotEmpty) (routeHops.last, contact.pathHashSize),
       ]) {
         final prefix = PathHelper.hopHex(hop);
         lastHopBytes.add(prefix);
-        final r = repeaterByHash[prefix];
+        final r = getRepeaterMapForStride(width)[prefix];
         if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
       }
 

@@ -18,8 +18,12 @@ class Contact {
   // repeater nearest to it.
   final Uint8List inboundPath;
   final int? inboundHopCount; // null = no advert seen yet
+  final int? inboundPathHashSize; // width of inboundPath; null = no advert
   final int? pathOverride; // User's path override: -1 = force flood, null = auto
   final Uint8List? pathOverrideBytes; // User's path override bytes
+  // Width of pathOverrideBytes. Null for overrides saved before it was
+  // recorded; those were written at the radio's width of the day.
+  final int? pathOverrideHashSize;
   final double? latitude;
   final double? longitude;
   final DateTime lastSeen;
@@ -36,11 +40,13 @@ class Contact {
     this.flags = 0,
     required this.pathLength,
     required this.path,
-    this.pathHashSize = 1,
+    required this.pathHashSize,
     Uint8List? inboundPath,
     this.inboundHopCount,
+    this.inboundPathHashSize,
     this.pathOverride,
     this.pathOverrideBytes,
+    this.pathOverrideHashSize,
     this.latitude,
     this.longitude,
     required this.lastSeen,
@@ -53,6 +59,10 @@ class Contact {
        lastMessageAt = lastMessageAt ?? lastSeen;
 
   String get publicKeyHex => pubKeyToHex(publicKey);
+
+  /// Width of the override bytes, falling back to [radioWidth] for an
+  /// override saved before its width was recorded.
+  int overrideHashSize(int radioWidth) => pathOverrideHashSize ?? radioWidth;
 
   String get displayPathString => PathHelper.formatPathHex(path, stride: pathHashSize);
 
@@ -110,8 +120,10 @@ class Contact {
     Uint8List? path,
     Uint8List? inboundPath,
     int? inboundHopCount,
+    int? inboundPathHashSize,
     int? pathOverride,
     Uint8List? pathOverrideBytes,
+    int? pathOverrideHashSize,
     bool clearPathOverride = false,
     double? latitude,
     double? longitude,
@@ -132,12 +144,16 @@ class Contact {
       pathHashSize: pathHashSize ?? this.pathHashSize,
       inboundPath: inboundPath ?? this.inboundPath,
       inboundHopCount: inboundHopCount ?? this.inboundHopCount,
+      inboundPathHashSize: inboundPathHashSize ?? this.inboundPathHashSize,
       pathOverride: clearPathOverride
           ? null
           : (pathOverride ?? this.pathOverride),
       pathOverrideBytes: clearPathOverride
           ? null
           : (pathOverrideBytes ?? this.pathOverrideBytes),
+      pathOverrideHashSize: clearPathOverride
+          ? null
+          : (pathOverrideHashSize ?? this.pathOverrideHashSize),
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       lastSeen: lastSeen ?? this.lastSeen,
@@ -156,11 +172,11 @@ class Contact {
 
   String get pathIdList => pathFormattedIdList(pathHashSize);
 
-  /// The repeater's own identity hash prefix (the first hop equivalent) based on its public key
-  /// formatted with the provided [stride] width.
+  /// The node's own identity hash prefix (how it appears in a path) at the
+  /// given [stride] width.
   String hashPrefixWithStride(int stride) {
     if (publicKey.isEmpty) return '';
-    return PathHelper.formatPathHex(publicKey, stride: stride > 0 ? stride : 1).split(',').first;
+    return PathHelper.hopHex(PathHelper.pubKeyPrefix(publicKey, stride: stride));
   }
 
   /// The repeater's own identity hash prefix using the contact's saved pathHashSize.
@@ -196,8 +212,8 @@ class Contact {
       final type = reader.readByte();
       final flags = reader.readByte();
       final pathLenByte = reader.readByte();
-      final hopCount = extractPathHopCount(pathLenByte);
-      final hashSize = extractPathHashSize(pathLenByte);
+      final hopCount = PathHelper.pathLenHops(pathLenByte);
+      final hashSize = PathHelper.pathLenWidth(pathLenByte);
       
       final actualPathBytesLen = hopCount > 0 ? hopCount * hashSize : 0;
       final safePathLen = actualPathBytesLen > maxPathSize ? maxPathSize : actualPathBytesLen;
@@ -274,9 +290,10 @@ class Contact {
       'path': pubKeyToHex(effectivePath),
       'pathHashSize': pathHashSize,
       'pathOverride': pathOverride,
-      'pathOverrideBytes': (pathOverrideBytes != null && pathOverrideBytes!.isNotEmpty) 
-          ? pubKeyToHex(pathOverrideBytes!) 
+      'pathOverrideBytes': (pathOverrideBytes != null && pathOverrideBytes!.isNotEmpty)
+          ? pubKeyToHex(pathOverrideBytes!)
           : null,
+      'pathOverrideHashSize': pathOverrideHashSize,
       'latitude': latitude,
       'longitude': longitude,
       'lastSeen': lastSeen.millisecondsSinceEpoch,
@@ -290,18 +307,25 @@ class Contact {
   factory Contact.fromJson(Map<String, dynamic> json) {
     final pathHex = json['path'] as String? ?? '';
     final pathOverrideBytesHex = json['pathOverrideBytes'] as String?;
+    // A backup written before the width was recorded cannot say how its
+    // route bytes are grouped, so the route is dropped; the radio relearns
+    // it. The contact itself is still worth restoring.
+    final width = (json['pathHashSize'] as num?)?.toInt();
     return Contact(
       publicKey: hex2Uint8List(json['publicKey'] as String),
       name: json['name'] as String,
       type: json['type'] as int,
       flags: (json['flags'] as num?)?.toInt() ?? 0,
-      pathLength: json['pathLength'] as int,
-      path: pathHex.isEmpty ? Uint8List(0) : hex2Uint8List(pathHex),
-      pathHashSize: (json['pathHashSize'] as num?)?.toInt() ?? 1,
+      pathLength: width == null ? -1 : json['pathLength'] as int,
+      path: width == null || pathHex.isEmpty
+          ? Uint8List(0)
+          : hex2Uint8List(pathHex),
+      pathHashSize: width ?? 1,
       pathOverride: json['pathOverride'] as int?,
       pathOverrideBytes: (pathOverrideBytesHex != null && pathOverrideBytesHex.isNotEmpty)
           ? hex2Uint8List(pathOverrideBytesHex)
           : null,
+      pathOverrideHashSize: (json['pathOverrideHashSize'] as num?)?.toInt(),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       lastSeen: DateTime.fromMillisecondsSinceEpoch(json['lastSeen'] as int),
