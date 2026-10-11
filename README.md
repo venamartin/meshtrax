@@ -109,10 +109,10 @@ flutter run
 flutter build apk
 
 # Run on Windows
-flutter run Windows
+flutter run -d windows
 
 # Run on Linux
-flutter run linux
+flutter run -d linux
 ```
 
 ---
