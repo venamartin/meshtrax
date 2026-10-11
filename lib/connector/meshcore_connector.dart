@@ -425,6 +425,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
   int _reconnectAttempts = 0;
+  // Which transport the live _reconnectTimer belongs to: the resume hook
+  // only brings a TCP retry forward and must leave a BLE one alone.
+  bool _tcpReconnectPending = false;
+  bool _tcpResumeProbeInFlight = false;
+  bool _lifecycleObserved = false;
 
   // TCP auto-reconnect: endpoint of the last session that completed a
   // handshake, and whether the current session got that far. Only an
@@ -1039,7 +1044,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _backgroundService = backgroundService;
     _usbManager.setDebugLogService(_appDebugLogService);
     _tcpConnector.setDebugLogService(_appDebugLogService);
-    WidgetsBinding.instance.addObserver(this);
+    if (!_lifecycleObserved) {
+      WidgetsBinding.instance.addObserver(this);
+      _lifecycleObserved = true;
+    }
 
     // Initialize notification service
     _notificationService.initialize();
@@ -1446,6 +1454,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     await stopScan();
     _cancelReconnectTimer();
+    // A service left up by a pending BLE/TCP reconnect has nothing to keep
+    // alive now.
+    unawaited(_backgroundService?.stop());
     _manualDisconnect = false;
     _resetConnectionHandshakeState();
     _activeTransport = MeshCoreTransportType.usb;
@@ -1555,7 +1566,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _resetConnectionHandshakeState();
     _activeTransport = MeshCoreTransportType.tcp;
     _setState(MeshCoreConnectionState.connecting);
-    unawaited(_backgroundService?.start(wifiLock: true));
 
     try {
       Future<void> handleTcpConnectAbort({required String message}) async {
@@ -1613,6 +1623,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       );
 
       _setState(MeshCoreConnectionState.connected);
+      // Only once the socket is up: a wrong address must not leave a
+      // WiFi-locked foreground service running with nothing connected.
+      unawaited(_backgroundService?.start(wifiLock: true));
       // Arm auto-reconnect for this endpoint. Set before the SELF_INFO wait
       // on purpose: on a lossy link the handshake frames are exactly what
       // gets eaten, and a drop there must retry like any other drop.
@@ -2699,6 +2712,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _reconnectAttempts = 0;
+    _tcpReconnectPending = false;
   }
 
   /// Explicit user intent to use another transport (the USB port picker
@@ -2756,6 +2770,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (_reconnectTimer?.isActive == true) return;
 
     final delayMs = _nextReconnectDelayMs();
+    _tcpReconnectPending = false;
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
       if (!_shouldAutoReconnect) return;
       if (_state == MeshCoreConnectionState.connecting ||
@@ -2791,18 +2806,25 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// non-manual drops retry the last established endpoint with the shared
   /// backoff (1s doubling to a 30s cap) until reconnected or the user
   /// expresses other intent (manual disconnect, scan, USB, another connect).
-  void _scheduleTcpReconnect() {
+  ///
+  /// [onResume] replaces a timer that sat out the app's suspension with one
+  /// at the 1s floor (a moment for WiFi to reassociate) and leaves the
+  /// backoff counter alone, so a radio that is still unreachable keeps
+  /// backing off instead of restarting at 1s on every app switch.
+  void _scheduleTcpReconnect({bool onResume = false}) {
     if (!_shouldAutoReconnectTcp) return;
-    if (_reconnectTimer?.isActive == true) return;
+    if (!onResume && _reconnectTimer?.isActive == true) return;
     final host = _lastTcpHost;
     final port = _lastTcpPort;
     if (host == null || port == null) return;
 
-    final delayMs = _nextReconnectDelayMs();
+    _reconnectTimer?.cancel();
+    final delayMs = onResume ? 1000 : _nextReconnectDelayMs();
     _appDebugLogService?.info(
       'Auto-reconnect in ${delayMs}ms endpoint=$host:$port',
       tag: 'TCP',
     );
+    _tcpReconnectPending = true;
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
       if (!_shouldAutoReconnectTcp) return;
       if (_state == MeshCoreConnectionState.connecting ||
@@ -2843,15 +2865,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (shouldRetryTcpReconnectOnResume(
       state: _state,
       manualDisconnect: _manualDisconnect,
-      lastTransport: _lastTransport,
-      reconnectTimerActive: _reconnectTimer?.isActive ?? false,
+      tcpReconnectPending: _tcpReconnectPending,
     )) {
       _appDebugLogService?.info(
         'App resumed: retrying TCP reconnect now',
         tag: 'TCP',
       );
-      _cancelReconnectTimer();
-      _scheduleTcpReconnect();
+      _scheduleTcpReconnect(onResume: true);
     }
   }
 
@@ -2863,42 +2883,32 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   static bool shouldRetryTcpReconnectOnResume({
     required MeshCoreConnectionState state,
     required bool manualDisconnect,
-    required String? lastTransport,
-    required bool reconnectTimerActive,
+    required bool tcpReconnectPending,
   }) {
     return state == MeshCoreConnectionState.disconnected &&
         !manualDisconnect &&
-        lastTransport == 'tcp' &&
-        reconnectTimerActive;
+        tcpReconnectPending;
   }
 
-  bool _tcpResumeProbeInFlight = false;
-
+  /// One cheap command, satisfied by any inbound frame. Not a device query:
+  /// a SELF_INFO reply re-runs the whole post-handshake pipeline (store
+  /// re-pointing, contact and channel resync) and would do so on every
+  /// resume of a healthy link. The 5s is generous for a companion-local
+  /// command over WiFi; a half-open socket never answers at all.
   Future<void> _probeTcpAfterResume() async {
-    if (_tcpResumeProbeInFlight || _awaitingSelfInfo) return;
+    if (_tcpResumeProbeInFlight) return;
     _tcpResumeProbeInFlight = true;
     _appDebugLogService?.info('App resumed: probing TCP link', tag: 'TCP');
     try {
-      await refreshDeviceInfo();
-      final deadline = DateTime.now().add(const Duration(seconds: 3));
-      while (_awaitingSelfInfo &&
-          isConnected &&
-          _activeTransport == MeshCoreTransportType.tcp &&
-          DateTime.now().isBefore(deadline)) {
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-      }
-      if (_awaitingSelfInfo &&
-          isConnected &&
-          _activeTransport == MeshCoreTransportType.tcp) {
+      final reply = receivedFrames.first.timeout(const Duration(seconds: 5));
+      await requestBatteryStatus(force: true);
+      await reply;
+    } catch (e) {
+      if (_activeTransport == MeshCoreTransportType.tcp && isConnected) {
         _appDebugLogService?.warn(
-          'TCP link dead after resume: no reply to probe',
+          'TCP link dead after resume: $e',
           tag: 'TCP',
         );
-        await disconnect(manual: false);
-      }
-    } catch (e) {
-      _appDebugLogService?.warn('TCP probe failed after resume: $e', tag: 'TCP');
-      if (_activeTransport == MeshCoreTransportType.tcp && isConnected) {
         await disconnect(manual: false);
       }
     } finally {
@@ -2933,7 +2943,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (manual) {
       _manualDisconnect = true;
       _cancelReconnectTimer();
-      unawaited(_backgroundService?.stop());
     } else {
       _manualDisconnect = false;
     }
@@ -3050,6 +3059,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       sessionWasEstablished: tcpSessionWasEstablished,
     )) {
       _scheduleTcpReconnect();
+    }
+    // The service only has a job while a reconnect is pending.
+    if (_reconnectTimer?.isActive != true) {
+      unawaited(_backgroundService?.stop());
     }
   }
 
@@ -8706,7 +8719,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    if (_lifecycleObserved) WidgetsBinding.instance.removeObserver(this);
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     _usbFrameSubscription?.cancel();

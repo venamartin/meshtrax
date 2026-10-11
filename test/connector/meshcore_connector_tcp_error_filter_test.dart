@@ -144,21 +144,20 @@ void main() {
       final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
         state: MeshCoreConnectionState.disconnected,
         manualDisconnect: false,
-        lastTransport: 'tcp',
-        reconnectTimerActive: true,
+        tcpReconnectPending: true,
       );
 
       expect(result, isTrue);
     });
 
-    test('does nothing when no reconnect is pending', () {
-      // The last TCP endpoint survives relaunch; resume alone must not
-      // start connecting in a session that never connected.
+    test('does nothing when no TCP reconnect is pending', () {
+      // Covers both a fresh session (the last TCP endpoint survives
+      // relaunch, so resume alone must not start connecting) and a pending
+      // BLE reconnect, which must be left alone.
       final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
         state: MeshCoreConnectionState.disconnected,
         manualDisconnect: false,
-        lastTransport: 'tcp',
-        reconnectTimerActive: false,
+        tcpReconnectPending: false,
       );
 
       expect(result, isFalse);
@@ -168,19 +167,7 @@ void main() {
       final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
         state: MeshCoreConnectionState.disconnected,
         manualDisconnect: true,
-        lastTransport: 'tcp',
-        reconnectTimerActive: true,
-      );
-
-      expect(result, isFalse);
-    });
-
-    test('leaves a pending BLE reconnect alone', () {
-      final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
-        state: MeshCoreConnectionState.disconnected,
-        manualDisconnect: false,
-        lastTransport: 'ble',
-        reconnectTimerActive: true,
+        tcpReconnectPending: true,
       );
 
       expect(result, isFalse);
@@ -195,8 +182,7 @@ void main() {
         final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
           state: state,
           manualDisconnect: false,
-          lastTransport: 'tcp',
-          reconnectTimerActive: true,
+          tcpReconnectPending: true,
         );
 
         expect(result, isFalse, reason: 'state=$state');
