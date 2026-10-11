@@ -138,4 +138,55 @@ void main() {
       }
     });
   });
+
+  group('shouldRetryTcpReconnectOnResume', () {
+    test('brings a pending TCP reconnect forward', () {
+      final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
+        state: MeshCoreConnectionState.disconnected,
+        manualDisconnect: false,
+        tcpReconnectPending: true,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('does nothing when no TCP reconnect is pending', () {
+      // Covers both a fresh session (the last TCP endpoint survives
+      // relaunch, so resume alone must not start connecting) and a pending
+      // BLE reconnect, which must be left alone.
+      final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
+        state: MeshCoreConnectionState.disconnected,
+        manualDisconnect: false,
+        tcpReconnectPending: false,
+      );
+
+      expect(result, isFalse);
+    });
+
+    test('does nothing after a manual disconnect', () {
+      final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
+        state: MeshCoreConnectionState.disconnected,
+        manualDisconnect: true,
+        tcpReconnectPending: true,
+      );
+
+      expect(result, isFalse);
+    });
+
+    test('does nothing unless disconnected', () {
+      for (final state in [
+        MeshCoreConnectionState.connecting,
+        MeshCoreConnectionState.connected,
+        MeshCoreConnectionState.disconnecting,
+      ]) {
+        final result = MeshCoreConnector.shouldRetryTcpReconnectOnResume(
+          state: state,
+          manualDisconnect: false,
+          tcpReconnectPending: true,
+        );
+
+        expect(result, isFalse, reason: 'state=$state');
+      }
+    });
+  });
 }
