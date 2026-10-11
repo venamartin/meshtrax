@@ -4884,6 +4884,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await getChannels(force: true);
   }
 
+  /// Feeds one radio frame through the normal dispatch, for tests that
+  /// drive the contact handlers without a transport.
+  @visibleForTesting
+  void handleFrameForTest(List<int> data) => _handleFrame(data);
+
   void _handleFrame(List<int> data) {
     if (data.isEmpty) return;
 
@@ -5560,7 +5565,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
         // Preserve user-selected path settings and previously known GPS when
         // refreshed frames omit coordinates (lat/lon encoded as 0,0).
-        _contacts[existingIndex] = contact.copyWith(
+        _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
           lastMessageAt: mergedLastMessageAt,
           pathOverride: existing.pathOverride, // Preserve user's path choice
           pathOverrideBytes: existing.pathOverrideBytes,
@@ -5574,7 +5579,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           inboundPath: existing.inboundPath,
           inboundHopCount: existing.inboundHopCount,
           inboundPathHashSize: existing.inboundPathHashSize,
-        );
+        ));
 
         appLogger.info(
           'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
@@ -5586,16 +5591,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             (_autoAddRoomServers && contact.type == advTypeRoom) ||
             (_autoAddSensors && contact.type == advTypeSensor) ||
             isContact) {
-          final kept = _overridesAcrossRefresh.remove(contact.publicKeyHex);
-          _contacts.add(
-            kept == null
-                ? contact
-                : contact.copyWith(
-                    pathOverride: kept.pathOverride,
-                    pathOverrideBytes: kept.pathOverrideBytes,
-                    pathOverrideHashSize: kept.pathOverrideHashSize,
-                  ),
-          );
+          _contacts.add(_restoreKeptOverride(contact));
           appLogger.info(
             'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
             tag: 'Connector',
@@ -5657,7 +5653,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
 
       // CRITICAL: Preserve user's path override when contact is refreshed from device
-      _contacts[existingIndex] = contact.copyWith(
+      _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
@@ -5668,14 +5664,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
         inboundPathHashSize:
             contact.inboundPathHashSize ?? existing.inboundPathHashSize,
-      );
+      ));
 
       appLogger.info(
         'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
         tag: 'Connector',
       );
     } else {
-      _contacts.add(contact);
+      _contacts.add(_restoreKeptOverride(contact));
       appLogger.info(
         'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
         tag: 'Connector',
@@ -5704,7 +5700,24 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   Future<void> _persistContacts() async {
+    // A full download rebuilds the list from empty; writing the partial list
+    // would replace the cache with a truncated one if the link dropped
+    // mid-way. END_OF_CONTACTS persists the complete list.
+    if (_isLoadingContacts && !_preserveContactsOnRefresh) return;
     await _contactStore.saveContacts(_contacts);
+  }
+
+  /// Puts a route override stashed by a full download back on the contact
+  /// the radio just re-sent, unless it already has one. Both the contact
+  /// frame and a live advert can be the first to add a contact mid-download.
+  Contact _restoreKeptOverride(Contact c) {
+    final kept = _overridesAcrossRefresh.remove(c.publicKeyHex);
+    if (kept == null || c.pathOverride != null) return c;
+    return c.copyWith(
+      pathOverride: kept.pathOverride,
+      pathOverrideBytes: kept.pathOverrideBytes,
+      pathOverrideHashSize: kept.pathOverrideHashSize,
+    );
   }
 
   // Discovered contacts have no radio backstop, so the store is append-only
