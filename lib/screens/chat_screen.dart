@@ -2061,7 +2061,13 @@ class _ChatScreenState extends State<ChatScreen> {
     // emoji table — any emoji goes.
     connector.sendMessage(
       _resolveContact(connector),
-      MeshCoreConnector.contactReactionText(message, emoji),
+      MeshCoreConnector.contactReactionText(
+        message,
+        emoji,
+        // Rooms have many voices: name the author so the reaction reads
+        // "@[author]👍" on every client, decoded or not.
+        targetSender: _isRoom ? _replyTargetName(message, connector) : null,
+      ),
     );
   }
 }

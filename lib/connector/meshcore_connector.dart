@@ -357,6 +357,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   RoomLoginEvent? lastRoomLoginEvent(String pubKeyHex) =>
       _lastRoomLoginEvents[pubKeyHex];
 
+  /// The room server's clock minus ours, in seconds, from the last LOGIN_OK
+  /// that carried a clock; 0 for a room not yet measured this session; null
+  /// for anything that isn't a room. The server stamps every post it stores
+  /// with this clock, so it is the offset between our own post's row time
+  /// and the stamp every other member holds for it.
+  int? roomSkewSecs(Contact? contact) {
+    if (contact?.type != advTypeRoom) return null;
+    final event = _lastRoomLoginEvents[contact!.publicKeyHex];
+    final clock = event?.serverClock;
+    return clock == null ? 0 : clock.difference(event!.at).inSeconds;
+  }
+
   void _recordRoomLoginEvent(RoomLoginEvent event) {
     _lastRoomLoginEvents[event.roomKeyHex] = event;
     _roomLoginEventsController.add(event);
@@ -457,6 +469,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       implied: false,
       at: DateTime.now(),
     ));
+    // The skew just became known (or changed): reactions parked against
+    // our own posts may now hash into the widened stamp window.
+    if (serverClock != null) {
+      unawaited(_rescanRoomOrphans(room.publicKeyHex));
+    }
   }
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
@@ -7324,6 +7341,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
         return true;
       }
+      unawaited(_logParkedContactReaction(
+        pubKeyHex,
+        processedMessage,
+        reactionInfo,
+        reactorName,
+        history,
+      ));
     }
 
     // The unique constraint is the dedup authority; a duplicate id is a
@@ -7364,6 +7388,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
     final isRoomServer = contact?.type == advTypeRoom;
     final isOne = reactionInfo.format == ReactionFormat.one;
+    final skew = roomSkewSecs(contact);
 
     return ReactionHelper.applyReaction<Message>(
       messages: messages,
@@ -7374,7 +7399,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // clients may react to any message, so don't restrict those.
       shouldSkip: (msg) => !isOne && isRoomServer != true && !msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      getWireTimestampSecs: _contactWireSecsCandidates,
+      getWireTimestampSecs: (msg) =>
+          contactWireSecsCandidates(msg, roomSkewSecs: skew),
       getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
@@ -7403,12 +7429,51 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return message.timestamp.millisecondsSinceEpoch ~/ 1000;
   }
 
+  /// Slack either side of a room post's estimated server stamp, in seconds:
+  /// the measured skew lags the truth by the login's return trip.
+  static const int _roomStampSlackSecs = 5;
+
+  /// Widest stamp span searched for one of our own room posts.
+  static const int _roomStampWindowSecs = 120;
+
+  /// A post whose ACK never came may still have reached the server up to
+  /// this long after its last attempt went out (about one attempt timeout).
+  static const int _roomUndeliveredGraceSecs = 30;
+
   /// Every wire timestamp a DM row may have carried, for MeshCore One hash
-  /// matching. Outgoing rows get a small forward window: the frame is
-  /// stamped after send delays, past the row's construction clock.
-  static List<int> _contactWireSecsCandidates(Message msg) {
+  /// matching. Outgoing DMs get a small forward window: the frame is stamped
+  /// after send delays, past the row's construction clock.
+  ///
+  /// [roomSkewSecs] (non-null for a room contact, see
+  /// [MeshCoreConnector.roomSkewSecs]) changes the rule for our OWN posts. A
+  /// room server re-stamps a post with its own clock when it arrives and
+  /// never pushes it back to the author, so every other member — and every
+  /// reaction they send — holds a stamp this phone never saw. It lies
+  /// between the moment we built the row and the moment its ACK came back,
+  /// shifted by the server's clock skew; try every second of that span.
+  /// Incoming room rows carry the server stamp verbatim and need only
+  /// themselves.
+  static List<int> contactWireSecsCandidates(
+    Message msg, {
+    int? roomSkewSecs,
+  }) {
     final secs = _messageWireSecs(msg);
-    return msg.isOutgoing ? [secs, secs + 1, secs + 2, secs + 3] : [secs];
+    if (!msg.isOutgoing) return [secs];
+    if (roomSkewSecs == null) return [secs, secs + 1, secs + 2, secs + 3];
+    final deliveredMs = msg.deliveredAt?.millisecondsSinceEpoch;
+    final sentMs = msg.sentAt?.millisecondsSinceEpoch;
+    final lastArrival = deliveredMs != null
+        ? deliveredMs ~/ 1000
+        : sentMs != null
+            ? sentMs ~/ 1000 + _roomUndeliveredGraceSecs
+            : secs + 2 * _roomUndeliveredGraceSecs;
+    final from = secs + roomSkewSecs - _roomStampSlackSecs;
+    var to = lastArrival + roomSkewSecs + _roomStampSlackSecs;
+    if (to < secs + roomSkewSecs + _roomStampSlackSecs) {
+      to = secs + roomSkewSecs + _roomStampSlackSecs;
+    }
+    if (to - from > _roomStampWindowSecs) to = from + _roomStampWindowSecs;
+    return [for (var s = from; s <= to; s++) s];
   }
 
   /// Every wire timestamp a channel row may have carried. Outgoing rows try
@@ -7436,15 +7501,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// plain messages; [wireText] covers rows whose display text was rewritten
   /// (replies) — the 2026-08-12 #mtdebug capture showed MC1 hashing the raw
   /// reply markup, which no display-text variant can reproduce.
-  static List<String> _mc1TextVariants(String text, [String? wireText]) => {
-        text,
-        ChannelMessage.mc1DisplayText(text),
-        ChannelMessage.stripLeadingMentions(text),
-        if (wireText != null) ...{
-          wireText,
-          ChannelMessage.mc1DisplayText(wireText),
-        },
-      }.toList();
+  static List<String> _mc1TextVariants(String text, [String? wireText]) =>
+      _mc1TextVariantsNamed(text, wireText).values.toList();
+
+  /// [_mc1TextVariants] keyed by the name each form goes by in the parked-
+  /// reaction log. A form equal to an earlier one is dropped, so every text
+  /// is hashed once.
+  static Map<String, String> _mc1TextVariantsNamed(
+    String text, [
+    String? wireText,
+  ]) {
+    final out = <String, String>{};
+    void add(String name, String value) {
+      if (!out.containsValue(value)) out[name] = value;
+    }
+
+    add('raw', text);
+    add('display', ChannelMessage.mc1DisplayText(text));
+    add('stripped', ChannelMessage.stripLeadingMentions(text));
+    if (wireText != null) {
+      add('wire', wireText);
+      add('wire-display', ChannelMessage.mc1DisplayText(wireText));
+    }
+    return out;
+  }
 
   /// Reaction wire text for a channel message — MeshCore One dialect,
   /// readable on every client. The hash commits to ONE text form (the raw
@@ -7467,14 +7547,181 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  /// Reaction wire text for a DM message — MeshCore One DM shape, which
-  /// names no sender: the hash alone identifies the target.
-  static String contactReactionText(Message target, String emoji) {
+  /// Reaction wire text for a DM or room message — MeshCore One shape. A
+  /// 1:1 DM names no sender: the hash alone identifies the target. A room
+  /// has many voices, so the caller passes the target post's author as
+  /// [targetSender] and the reaction reads `@[author]👍` on any client,
+  /// decoded or not. Receivers match on the hash either way.
+  static String contactReactionText(
+    Message target,
+    String emoji, {
+    String? targetSender,
+  }) {
     final hash = ReactionHelper.computeMeshCoreOneHash(
       ChannelMessage.mc1DisplayText(target.text),
       _messageWireSecs(target),
     );
-    return ReactionHelper.encodeMeshCoreOne(emoji, hash);
+    return ReactionHelper.encodeMeshCoreOne(
+      emoji,
+      hash,
+      targetSender: targetSender,
+    );
+  }
+
+  /// A clocked LOGIN_OK just measured (or re-measured) this room's skew:
+  /// reactions parked against our own posts may now hash into the widened
+  /// window. The first call per session scans history anyway; a later login
+  /// re-runs the scan against a fresh load.
+  Future<void> _rescanRoomOrphans(String pubKeyHex) async {
+    final scanned = _contactOrphansScanned.contains(pubKeyHex);
+    final orphans = await _contactOrphans(pubKeyHex);
+    if (!scanned || orphans.isEmpty) return;
+    await _resolveContactOrphansAgainstHistory(
+      pubKeyHex,
+      await _messageStore.loadMessages(pubKeyHex),
+    );
+  }
+
+  // ── Why a reaction attached to nothing ─────────────────────────────────
+  //
+  // A parked MeshCore One reaction is a field puzzle: the hash commits to
+  // one text form and one stamp, and either can differ between phones. The
+  // exported debug log is all we get from a user's device, so when a
+  // reaction lands on nothing, brute-force the nearby rows over a wide stamp
+  // window and write down which row and offset WOULD have matched — or
+  // everything that was tried. CPU-heavy, rare, off the UI isolate; the
+  // ingest never waits on it and nothing acts on the answer.
+
+  static const int _parkedReactionCandidateRows = 20;
+
+  /// The [_parkedReactionCandidateRows] rows nearest the reaction's own
+  /// stamp — a target is normally just before its reaction, but a skewed
+  /// room clock can put it on either side.
+  static List<ReactionCandidate> _parkedReactionCandidates<T>(
+    Iterable<T> rows,
+    int reactionSecs,
+    int Function(T) secsOf,
+    ReactionCandidate Function(T) build,
+  ) {
+    final sorted = rows.toList()
+      ..sort(
+        (a, b) => (secsOf(a) - reactionSecs)
+            .abs()
+            .compareTo((secsOf(b) - reactionSecs).abs()),
+      );
+    return [
+      for (final row in sorted.take(_parkedReactionCandidateRows)) build(row),
+    ];
+  }
+
+  static String _parkedReactionPreview(String text) {
+    final flat = text.replaceAll('\n', '⏎');
+    return flat.length <= 24 ? flat : '${flat.substring(0, 24)}…';
+  }
+
+  Future<void> _logParkedContactReaction(
+    String pubKeyHex,
+    Message reaction,
+    ReactionInfo info,
+    String reactorName,
+    List<Message> history,
+  ) async {
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => c?.publicKeyHex == pubKeyHex,
+      orElse: () => null,
+    );
+    final isRoom = contact?.type == advTypeRoom;
+    final skew = roomSkewSecs(contact);
+    final login = isRoom ? _lastRoomLoginEvents[pubKeyHex] : null;
+    final reactionSecs = _messageWireSecs(reaction);
+    final candidates = _parkedReactionCandidates<Message>(
+      history.where(
+        (m) =>
+            m.messageId != reaction.messageId &&
+            ReactionHelper.parseMeshCoreOneReaction(m.text) == null,
+      ),
+      reactionSecs,
+      _messageWireSecs,
+      (m) {
+        final secs = _messageWireSecs(m);
+        final delivered = m.deliveredAt == null
+            ? 'never'
+            : '+${m.deliveredAt!.millisecondsSinceEpoch ~/ 1000 - secs} s';
+        final own = m.isOutgoing
+            ? 'OWN $secs delivered $delivered, attempt ${m.retryCount + 1}'
+            : 'IN $secs';
+        return ReactionCandidate(
+          label: '$own "${_parkedReactionPreview(m.text)}"',
+          wireSecs: secs,
+          texts: _mc1TextVariantsNamed(m.text),
+          triedSecs: contactWireSecsCandidates(m, roomSkewSecs: skew),
+        );
+      },
+    );
+    final clockNote = !isRoom
+        ? '1:1 DM'
+        : login?.serverClock == null
+            ? 'room skew unknown (no clocked login this session)'
+            : 'room skew $skew s (login at ${login!.at.toIso8601String()})';
+    final verdict = await compute(
+      ReactionHelper.explainUnmatched,
+      ReactionExplainRequest(
+        targetHash: info.targetHash,
+        candidates: candidates,
+      ),
+    );
+    appLogger.warn(
+      'Parked reaction ${info.emoji} by $reactorName in '
+      '${contact?.name ?? pubKeyHex}: hash ${info.targetHash}, named target '
+      '${info.targetSender ?? '(none)'}, reaction stamp $reactionSecs, '
+      '$clockNote. $verdict',
+      tag: 'Reactions',
+    );
+  }
+
+  Future<void> _logParkedChannelReaction(
+    Channel channel,
+    ChannelMessage reaction,
+    ReactionInfo info,
+    List<ChannelMessage> history,
+  ) async {
+    final reactionSecs = wireTimestampMs(reaction) ~/ 1000;
+    final candidates = _parkedReactionCandidates<ChannelMessage>(
+      history.where(
+        (m) =>
+            m.messageId != reaction.messageId &&
+            ReactionHelper.parseMeshCoreOneReaction(m.text) == null,
+      ),
+      reactionSecs,
+      (m) => wireTimestampMs(m) ~/ 1000,
+      (m) {
+        final secs = wireTimestampMs(m) ~/ 1000;
+        final stamps = m.sentWireSecs.isEmpty
+            ? ''
+            : ', heard stamps ${m.sentWireSecs.join(',')}';
+        return ReactionCandidate(
+          label: '${m.isOutgoing ? 'OWN' : 'IN'} $secs ${m.senderName}$stamps '
+              '"${_parkedReactionPreview(m.text)}"',
+          wireSecs: secs,
+          texts: _mc1TextVariantsNamed(m.text, m.wireText),
+          triedSecs: _channelWireSecsCandidates(m),
+        );
+      },
+    );
+    final verdict = await compute(
+      ReactionHelper.explainUnmatched,
+      ReactionExplainRequest(
+        targetHash: info.targetHash,
+        candidates: candidates,
+      ),
+    );
+    appLogger.warn(
+      'Parked reaction ${info.emoji} by ${reaction.senderName} in '
+      '#${channel.name}: hash ${info.targetHash}, named target '
+      '${info.targetSender ?? '(none)'}, reaction stamp $reactionSecs. '
+      '$verdict',
+      tag: 'Reactions',
+    );
   }
 
   // ── Parked MeshCore One reactions ──────────────────────────────────────
@@ -7607,6 +7854,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final isRoomServer = contact?.type == advTypeRoom;
+    final skew = roomSkewSecs(contact);
     final windowSecs = _retroactiveOrphanWindow.inSeconds;
     var landed = false;
     for (final orphan in List.of(orphans)) {
@@ -7624,7 +7872,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             m.messageId == orphan.messageId ||
             ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
         getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
-        getWireTimestampSecs: _contactWireSecsCandidates,
+        getWireTimestampSecs: (m) =>
+            contactWireSecsCandidates(m, roomSkewSecs: skew),
         getMessageTextVariants: (m) => _mc1TextVariants(m.text),
         getSenderName: (m) => contact == null
             ? null
@@ -7726,9 +7975,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   ) async {
     final orphans = await _contactOrphans(pubKeyHex);
     if (orphans.isEmpty) return;
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => c?.publicKeyHex == pubKeyHex,
+      orElse: () => null,
+    );
     final hashes = _mc1HashesFor(
       _mc1TextVariants(target.text),
-      _contactWireSecsCandidates(target),
+      contactWireSecsCandidates(target, roomSkewSecs: roomSkewSecs(contact)),
     );
     var landed = false;
     for (final orphan in List.of(orphans)) {
@@ -7763,6 +8016,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   ) {
     final isRoomServer = contact.type == advTypeRoom;
     final isOne = reactionInfo.format == ReactionFormat.one;
+    final skew = roomSkewSecs(contact);
 
     ReactionHelper.applyReaction<Message>(
       messages: messages,
@@ -7772,7 +8026,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // MeshCore One hash is strong enough to trust against any row.
       shouldSkip: (msg) => !isOne && !isRoomServer && msg.isOutgoing,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      getWireTimestampSecs: _contactWireSecsCandidates,
+      getWireTimestampSecs: (msg) =>
+          contactWireSecsCandidates(msg, roomSkewSecs: skew),
       getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer),
@@ -7799,6 +8054,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final isRoomServer = contact?.type == advTypeRoom;
+    final skew = roomSkewSecs(contact);
     // The same matcher that applied the reaction finds its status row — the
     // formats hash differently, and re-deriving only one of them here is
     // exactly how MC1 chips would get stuck at "pending" forever.
@@ -7807,7 +8063,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       reactionInfo: reactionInfo,
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      getWireTimestampSecs: _contactWireSecsCandidates,
+      getWireTimestampSecs: (msg) =>
+          contactWireSecsCandidates(msg, roomSkewSecs: skew),
       getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
@@ -8135,6 +8392,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _processedChannelReactions[idKey]!.add(reactionIdentifier);
         notifyListeners();
         return false;
+      }
+      if (!sanitizedMessage.isOutgoing) {
+        unawaited(_logParkedChannelReaction(
+          channel,
+          sanitizedMessage,
+          reactionInfo,
+          history,
+        ));
       }
     }
 

@@ -27,7 +27,83 @@ class ReactionInfo {
   });
 }
 
+/// One stored row offered to [ReactionHelper.explainUnmatched]: what the
+/// matcher tried for it, and every text form the brute force may hash.
+class ReactionCandidate {
+  /// Human label for the log, e.g. `OWN 1791823192 "@[Bob] hello…" delivered +30 s, attempt 2`.
+  final String label;
+  final int wireSecs;
+
+  /// Text forms by name (raw, display, stripped, wire…), already de-duplicated.
+  final Map<String, String> texts;
+
+  /// The stamps the live matcher actually tried for this row.
+  final List<int> triedSecs;
+
+  const ReactionCandidate({
+    required this.label,
+    required this.wireSecs,
+    required this.texts,
+    required this.triedSecs,
+  });
+}
+
+/// Input for [ReactionHelper.explainUnmatched] — a plain object so the search
+/// can run in a background isolate.
+class ReactionExplainRequest {
+  final String targetHash;
+  final List<ReactionCandidate> candidates;
+
+  /// Half-width of the stamp search around each row, in seconds.
+  final int searchSecs;
+
+  const ReactionExplainRequest({
+    required this.targetHash,
+    required this.candidates,
+    this.searchSecs = 900,
+  });
+}
+
 class ReactionHelper {
+  /// Why a MeshCore One reaction attached to nothing: brute-force every
+  /// candidate row's text forms over a wide stamp window and report the
+  /// first row that reproduces [ReactionExplainRequest.targetHash] (a 40-bit
+  /// hash makes an accidental hit negligible), or list everything that was
+  /// tried. Pure and CPU-bound — ~100k SHA-256s at 20 rows — so callers run
+  /// it off the UI isolate. Field diagnostics only; nothing acts on it.
+  static String explainUnmatched(ReactionExplainRequest req) {
+    final tried = StringBuffer();
+    for (final c in req.candidates) {
+      final stamps = c.triedSecs.isEmpty
+          ? 'nothing'
+          : c.triedSecs.length == 1
+              ? '${c.triedSecs.first}'
+              : '${c.triedSecs.first}..${c.triedSecs.last} '
+                  '(${c.triedSecs.length} stamps)';
+      tried.write(
+        ' [${c.label} tried $stamps over ${c.texts.keys.join('/')}]',
+      );
+    }
+    for (final c in req.candidates) {
+      for (final entry in c.texts.entries) {
+        for (var d = -req.searchSecs; d <= req.searchSecs; d++) {
+          if (computeMeshCoreOneHash(entry.value, c.wireSecs + d) !=
+              req.targetHash) {
+            continue;
+          }
+          final offset = d >= 0 ? '+$d' : '$d';
+          final inTried = c.triedSecs.contains(c.wireSecs + d);
+          return 'Would match ${c.label} at stamp $offset s '
+              '(${c.wireSecs + d}) via ${entry.key} text'
+              '${inTried ? ' — that stamp was tried live, so the row was skipped or stored later' : ''}.'
+              ' Tried:$tried';
+        }
+      }
+    }
+    return 'No row within ±${req.searchSecs} s hashes to it '
+        '(checked ${req.candidates.length} rows). Tried:$tried';
+  }
+
   /// Apply a reaction to a list of messages by matching the reaction hash.
   ///
   /// [messages] - the message list to search

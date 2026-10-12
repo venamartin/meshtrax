@@ -1201,5 +1201,84 @@ void main() {
         isFalse,
       );
     });
+
+    // Room field case 2026-10-12: the server stamped our post 28 s after
+    // the row clock (attempt 0 unacked, attempt 1 confirmed +30 s). The
+    // connector now feeds row-5..deliveredAt+5 for own room posts.
+    test('a room stamp 28 s past the row lands via the delivery window', () {
+      final messages = [_FakeMessage(rowSecs, 'GWQ∆🍓', text)];
+      final hash = ReactionHelper.computeMeshCoreOneHash(text, rowSecs + 28);
+      expect(
+        reactWithCandidates(
+          messages,
+          '❤️\n$hash',
+          (m) => [for (var i = -5; i <= 35; i++) m.timestampSecs + i],
+        ),
+        isTrue,
+      );
+      expect(
+        reactWithCandidates(
+          [_FakeMessage(rowSecs, 'GWQ∆🍓', text)],
+          '❤️\n$hash',
+          (m) => [for (var i = 0; i <= 3; i++) m.timestampSecs + i],
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('explainUnmatched', () {
+    const rowSecs = 1791823192;
+    ReactionCandidate own(int secs, Map<String, String> texts) =>
+        ReactionCandidate(
+          label: 'OWN $secs delivered +30 s, attempt 2 "post"',
+          wireSecs: secs,
+          texts: texts,
+          triedSecs: [for (var i = 0; i <= 3; i++) secs + i],
+        );
+
+    test('names the row, offset and text form that would have matched', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('post', rowSecs + 28);
+      final verdict = ReactionHelper.explainUnmatched(ReactionExplainRequest(
+        targetHash: hash,
+        candidates: [
+          own(rowSecs - 400, {'raw': 'other'}),
+          own(rowSecs, {'raw': '@[Bob] post', 'display': 'post'}),
+        ],
+      ));
+      expect(verdict, startsWith('Would match OWN $rowSecs'));
+      expect(verdict, contains('at stamp +28 s (${rowSecs + 28}) via display text'));
+      expect(verdict, contains('Tried:'));
+      expect(verdict, contains('$rowSecs..${rowSecs + 3} (4 stamps) over raw/display'));
+    });
+
+    test('a skewed room clock shows as a negative offset', () {
+      final hash =
+          ReactionHelper.computeMeshCoreOneHash('post', rowSecs + 28 - 600);
+      final verdict = ReactionHelper.explainUnmatched(ReactionExplainRequest(
+        targetHash: hash,
+        candidates: [own(rowSecs, {'raw': 'post'})],
+      ));
+      expect(verdict, contains('at stamp -572 s'));
+    });
+
+    test('flags a hit on a stamp the live matcher already tried', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('post', rowSecs + 1);
+      final verdict = ReactionHelper.explainUnmatched(ReactionExplainRequest(
+        targetHash: hash,
+        candidates: [own(rowSecs, {'raw': 'post'})],
+      ));
+      expect(verdict, contains('that stamp was tried live'));
+    });
+
+    test('lists everything tried when nothing hashes to it', () {
+      final hash = ReactionHelper.computeMeshCoreOneHash('post', rowSecs + 1200);
+      final verdict = ReactionHelper.explainUnmatched(ReactionExplainRequest(
+        targetHash: hash,
+        candidates: [own(rowSecs, {'raw': 'post'})],
+      ));
+      expect(verdict, startsWith('No row within ±900 s hashes to it (checked 1 rows)'));
+      expect(verdict, contains('[OWN $rowSecs delivered +30 s, attempt 2 "post" tried'));
+    });
   });
 }
