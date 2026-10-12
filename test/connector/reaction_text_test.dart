@@ -231,6 +231,113 @@ void main() {
         isNull,
       );
     });
+
+    test('room shape: names the author, same hash as the bare form', () {
+      final target = Message(
+        senderKey: Uint8List(32),
+        text: 'Hi there',
+        timestamp: DateTime.fromMillisecondsSinceEpoch(1111111111000),
+        isOutgoing: false,
+        messageId: '1234567890123_ab_1',
+      );
+      final wire = MeshCoreConnector.contactReactionText(
+        target,
+        '👍',
+        targetSender: 'GWQ∆🍓',
+      );
+      final expectedHash =
+          ReactionHelper.computeMeshCoreOneHash('Hi there', 1234567890);
+      expect(wire, '@[GWQ∆🍓]👍\n$expectedHash');
+      final parsed = ReactionHelper.parseIncomingReaction(wire)!;
+      expect(parsed.targetSender, 'GWQ∆🍓');
+      expect(parsed.emoji, '👍');
+      expect(parsed.targetHash, expectedHash);
+    });
+  });
+
+  group('contactWireSecsCandidates', () {
+    // A room server stamps our post with ITS clock when it arrives and never
+    // sends it back, so the stamp everyone else hashes lies between the row
+    // clock and the ACK, shifted by the room's clock skew. Field case
+    // 2026-10-12: row 09:59:52, attempt 0 unacked, attempt 1 confirmed
+    // 10:00:22 — the old t..t+3 window could never hold +6 or +28.
+    const row = 1791823192;
+    Message outgoing({DateTime? deliveredAt, DateTime? sentAt}) => Message(
+          senderKey: Uint8List(32),
+          text: 'post',
+          timestamp: DateTime.fromMillisecondsSinceEpoch(row * 1000),
+          isOutgoing: true,
+          deliveredAt: deliveredAt,
+          sentAt: sentAt,
+        );
+    final delivered30 =
+        outgoing(deliveredAt: DateTime.fromMillisecondsSinceEpoch((row + 30) * 1000));
+
+    test('plain DM: the t..t+3 window is unchanged', () {
+      expect(
+        MeshCoreConnector.contactWireSecsCandidates(delivered30),
+        [row, row + 1, row + 2, row + 3],
+      );
+    });
+
+    test('room, incoming row: only its own server stamp', () {
+      final incoming = Message(
+        senderKey: Uint8List(32),
+        text: 'post',
+        timestamp: DateTime.fromMillisecondsSinceEpoch(row * 1000),
+        isOutgoing: false,
+      );
+      expect(
+        MeshCoreConnector.contactWireSecsCandidates(incoming, roomSkewSecs: -600),
+        [row],
+      );
+    });
+
+    test('room, own post: row-5 .. deliveredAt+5 at skew 0', () {
+      final secs = MeshCoreConnector.contactWireSecsCandidates(
+        delivered30,
+        roomSkewSecs: 0,
+      );
+      expect(secs.first, row - 5);
+      expect(secs.last, row + 35);
+      expect(secs, contains(row + 6));
+      expect(secs, contains(row + 28));
+      expect(secs, isNot(contains(row + 36)));
+    });
+
+    test('room, own post: the skew shifts the whole window', () {
+      final secs = MeshCoreConnector.contactWireSecsCandidates(
+        delivered30,
+        roomSkewSecs: -600,
+      );
+      expect(secs, contains(row + 28 - 600));
+      expect(secs, isNot(contains(row + 28)));
+    });
+
+    test('room, own post: the window is capped', () {
+      final late = outgoing(
+        deliveredAt: DateTime.fromMillisecondsSinceEpoch((row + 1000) * 1000),
+      );
+      expect(
+        MeshCoreConnector.contactWireSecsCandidates(late, roomSkewSecs: 0).length,
+        121,
+      );
+    });
+
+    test('room, undelivered post: sentAt + grace, else row + 60', () {
+      final sentOnly = outgoing(
+        sentAt: DateTime.fromMillisecondsSinceEpoch((row + 20) * 1000),
+      );
+      expect(
+        MeshCoreConnector.contactWireSecsCandidates(sentOnly, roomSkewSecs: 0).last,
+        row + 20 + 30 + 5,
+      );
+      expect(
+        MeshCoreConnector.contactWireSecsCandidates(outgoing(), roomSkewSecs: 0)
+            .last,
+        row + 60 + 5,
+      );
+    });
   });
 }
 
