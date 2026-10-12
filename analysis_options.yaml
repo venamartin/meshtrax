@@ -13,6 +13,7 @@ analyzer:
   exclude:
     # Vendored third-party code (framing fix only) keeps upstream style.
     - tools/win_ble_patched/**
+    - tools/flutter_blue_plus_winrt_patched/**
     - build/**
     - android/**
     - ios/**
