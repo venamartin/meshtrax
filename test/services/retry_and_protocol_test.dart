@@ -86,6 +86,8 @@ class _Harness {
   final sends = <({int attempt, int timestamp})>[];
   final pathPushes = <List<int>>[];
   int pathResets = 0;
+  // Contacts whose message was reported delivered by a flood attempt.
+  final floodDeliveries = <String>[];
   Message? lastUpdate;
   static const timeoutMs = 2000;
 
@@ -100,6 +102,7 @@ class _Harness {
         setContactPath: (_, bytes, _, _) => pathPushes.add(bytes.toList()),
         calculateTimeout: (_, _, {contact}) => timeoutMs,
         getSelfPublicKey: () => selfKey,
+        onFloodDelivered: (c) => floodDeliveries.add(c.publicKeyHex),
       ),
     );
   }
@@ -663,6 +666,96 @@ void main() {
       expect(addedMessage, isNotNull);
       expect(addedMessage!.pathLength, equals(-1));
       expect(addedMessage!.pathBytes, isEmpty);
+    });
+  });
+
+  group('flood delivery hook', () {
+    const text = 'hello';
+    const retryGap = _Harness.timeoutMs + MessageRetryService.retryBackoffMs;
+
+    test('an ACK for a flood attempt reports the delivery once', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        expect(h.retryService.hasMessagesInFlight, isTrue);
+
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 3000);
+        expect(h.floodDeliveries, equals([contact.publicKeyHex]));
+        expect(h.retryService.hasMessagesInFlight, isFalse);
+
+        // A duplicate ACK is not a second delivery.
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 3000);
+        expect(h.floodDeliveries.length, equals(1));
+      });
+    });
+
+    test('an ACK for a route attempt reports nothing', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+        );
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 3000);
+
+        expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
+        expect(h.floodDeliveries, isEmpty);
+      });
+    });
+
+    test('a late ACK for a flood attempt still reports the delivery', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+          publicKey: recipientKey,
+          pathLength: 2,
+          path: const [0x10, 0x20],
+        );
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: _Harness.timeoutMs + 1));
+        expect(h.lastUpdate!.status, equals(MessageStatus.failed));
+        expect(h.retryService.hasMessagesInFlight, isFalse);
+
+        h.retryService.handleAckReceived(h.ackHashFor(2, text), 40000);
+        expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
+        expect(h.lastUpdate!.pathLength, equals(-1));
+        expect(h.floodDeliveries, equals([contact.publicKeyHex]));
+      });
+    });
+
+    test('a queued message keeps sends in flight after the first ACK', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        h.retryService.sendMessageWithRetry(contact: contact, text: 'again');
+        async.flushMicrotasks();
+        h.sent(text);
+
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 3000);
+        async.flushMicrotasks();
+
+        expect(h.floodDeliveries.length, equals(1));
+        expect(h.retryService.hasMessagesInFlight, isTrue,
+            reason: 'the second message has started');
+      });
     });
   });
 

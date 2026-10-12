@@ -1,13 +1,12 @@
-import 'dart:async';
 import '../utils/platform_info.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
+import '../services/server_login_service.dart';
 import '../services/storage_service.dart';
 import '../services/map_tile_cache_service.dart';
 import '../connector/meshcore_connector.dart';
@@ -122,70 +121,21 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
         tag: 'RepeaterLogin',
       );
 
-      // Push the contact's current path (or flood if unknown) to the companion radio
-      // BEFORE sending the login frame. The companion firmware's sendLogin() will then
-      // automatically use sendDirect() if a path is set, or sendFloodScoped() if not.
-      // This means if the user has a saved direct path (e.g. a 2-byte repeater hash),
-      // the login packet goes direct without flooding the whole network.
-      final selection = await _connector.preparePathForContactSend(repeater);
-      final loginFrame = buildSendLoginFrame(repeater.publicKey, password);
-      final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
-      final responseBytes = loginFrame.length > maxFrameSize
-          ? loginFrame.length
-          : maxFrameSize;
-      final timeoutMs = _connector.calculateTimeout(
-        pathLength: pathLengthValue,
-        messageBytes: responseBytes,
+      // The ladder sends direct when the radio has a route and floods when it
+      // has none; a route that times out is reset so the next attempt floods,
+      // since a flooded login is what teaches the radio a route.
+      final outcome = await ServerLoginService(_connector).login(
+        repeater,
+        password,
+        maxAttempts: _maxAttempts,
+        tag: 'RepeaterLogin',
+        onAttempt: (attempt) {
+          if (mounted) setState(() => _currentAttempt = attempt);
+        },
       );
-      final timeoutSeconds = (timeoutMs / 1000).ceil();
-      final timeout = Duration(milliseconds: timeoutMs + 2000);
-      final selectionLabel = selection.useFlood
-          ? 'flood'
-          : '${selection.hopCount} hops (direct)';
-      appLogger.info('Login routing: $selectionLabel', tag: 'RepeaterLogin');
-      bool? loginResult;
-      bool isAdmin = false;
-      for (int attempt = 0; attempt < _maxAttempts; attempt++) {
-        if (!mounted) return;
-        setState(() {
-          _currentAttempt = attempt + 1;
-        });
+      final isAdmin = outcome.isAdmin ?? false;
 
-        appLogger.info(
-          'Sending login attempt ${attempt + 1}/$_maxAttempts',
-          tag: 'RepeaterLogin',
-        );
-        await _connector.sendFrame(loginFrame);
-
-        (loginResult, isAdmin) = await _awaitLoginResponse(timeout);
-        if (loginResult == true) {
-          appLogger.info(
-            'Login succeeded for ${repeater.name}',
-            tag: 'RepeaterLogin',
-          );
-          break;
-        }
-        if (loginResult == false) {
-          appLogger.warn(
-            'Login failed for ${repeater.name}',
-            tag: 'RepeaterLogin',
-          );
-          break;
-        }
-        appLogger.warn(
-          'Login attempt ${attempt + 1} timed out after ${timeoutSeconds}s',
-          tag: 'RepeaterLogin',
-        );
-      }
-
-      if (loginResult == null) {
-        appLogger.warn(
-          'Login timed out for ${repeater.name}',
-          tag: 'RepeaterLogin',
-        );
-      }
-
-      if (loginResult != true) {
+      if (outcome.success != true) {
         if (mounted) {
           setState(() {
             _isLoggingIn = false;
@@ -254,42 +204,6 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
         });
       }
     }
-  }
-
-  // _awaitLoginResponse returns a record of bool, for success and if the client is an admin
-  Future<(bool?, bool)> _awaitLoginResponse(Duration timeout) async {
-    final completer = Completer<bool?>();
-    Timer? timer;
-    StreamSubscription<Uint8List>? subscription;
-    final targetPrefix = widget.repeater.publicKey.sublist(0, 6);
-    bool isAdmin = false;
-    subscription = _connector.receivedFrames.listen((frame) {
-      if (frame.isEmpty) return;
-      final code = frame[0];
-      if (code != pushCodeLoginSuccess && code != pushCodeLoginFail) return;
-      if (frame.length < 8) return;
-      // NOTE: a bug in the repeater firmware only ever sends 1 or 0 back, not the
-      // expected client permissions
-      isAdmin = (frame[1] == 1);
-      final prefix = frame.sublist(2, 8);
-      if (!listEquals(prefix, targetPrefix)) return;
-
-      completer.complete(code == pushCodeLoginSuccess);
-      subscription?.cancel();
-      timer?.cancel();
-    });
-
-    timer = Timer(timeout, () {
-      if (!completer.isCompleted) {
-        completer.complete(null);
-        subscription?.cancel();
-      }
-    });
-
-    final result = await completer.future;
-    timer.cancel();
-    await subscription.cancel();
-    return (result, isAdmin);
   }
 
   @override

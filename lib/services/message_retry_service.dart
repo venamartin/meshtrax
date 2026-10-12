@@ -45,6 +45,8 @@ class RetryServiceConfig {
   // The radio's on-air hash width: the width a user override is written at.
   final int Function()? pathHashByteWidth;
   final String Function(Contact, String)? prepareContactOutboundText;
+  // A message to this contact was just delivered by a flood attempt.
+  final Function(Contact)? onFloodDelivered;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
 
@@ -58,6 +60,7 @@ class RetryServiceConfig {
     this.getSelfPublicKey,
     this.pathHashByteWidth,
     this.prepareContactOutboundText,
+    this.onFloodDelivered,
     this.appSettingsService,
     this.debugLogService,
   });
@@ -444,6 +447,13 @@ class MessageRetryService extends ChangeNotifier {
 
   bool get hasPendingMessages => _pendingMessages.isNotEmpty;
 
+  /// A message is queued, on the air or awaiting its ACK. Failed messages
+  /// kept for a late ACK do not count.
+  bool get hasMessagesInFlight => _pendingMessages.values.any(
+        (m) =>
+            m.status == MessageStatus.pending || m.status == MessageStatus.sent,
+      );
+
   /// Update the stored contact snapshot for all pending messages to this contact.
   /// Call this when the contact's pathOverride changes so retries use the new path.
   void updatePendingContact(Contact contact) {
@@ -651,6 +661,12 @@ class MessageRetryService extends ChangeNotifier {
 
       if (contact != null && !wasAlreadyResolved) {
         _onMessageResolved(matchedMessageId, contact.publicKeyHex);
+      }
+
+      // After the queue has moved on, so the listener can tell whether
+      // another send is already in flight.
+      if (contact != null && deliveredMessage.pathLength == -1) {
+        config?.onFloodDelivered?.call(contact);
       }
 
       notifyListeners();
