@@ -1,14 +1,12 @@
-import 'dart:async';
 import '../utils/platform_info.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
+import '../services/server_login_service.dart';
 import '../services/storage_service.dart';
 import '../connector/meshcore_connector.dart';
-import '../connector/meshcore_protocol.dart';
 import '../utils/app_logger.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'routing_dialog.dart';
@@ -25,11 +23,10 @@ class RoomLoginDialog extends StatefulWidget {
 
 class _RoomLoginDialogState extends State<RoomLoginDialog> {
   final TextEditingController _passwordController = TextEditingController();
-  final StorageService _storage = StorageService();
-  bool _savePassword = false;
   bool _isLoading = true;
   bool _obscurePassword = true;
   late MeshCoreConnector _connector;
+  late ServerLoginService _login;
   int _currentAttempt = 0;
   static const int _maxAttempts = 5;
 
@@ -37,24 +34,21 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
   void initState() {
     super.initState();
     _connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    _loadSavedPassword();
+    _login = ServerLoginService(_connector);
+    _loadRememberedPassword();
   }
 
-  Future<void> _loadSavedPassword() async {
-    final savedPassword = await _storage.getRepeaterPassword(
+  /// Rooms remember the password that last worked; the field starts with it
+  /// so logging in again, or with a different password, is one tap away.
+  Future<void> _loadRememberedPassword() async {
+    final remembered = await StorageService().getRepeaterPassword(
       widget.room.publicKeyHex,
     );
-    if (savedPassword != null) {
-      setState(() {
-        _passwordController.text = savedPassword;
-        _savePassword = true;
-        _isLoading = false;
-      });
-    } else {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      if (remembered != null) _passwordController.text = remembered;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -98,107 +92,20 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
         'Login started for ${room.name} (${room.publicKeyHex})',
         tag: 'RoomLogin',
       );
-      final selection = await _connector.preparePathForContactSend(room);
-      final loginFrame = buildSendLoginFrame(room.publicKey, password);
-      final pathLengthValue = selection.useFlood ? -1 : selection.hopCount;
-      final responseBytes = loginFrame.length > maxFrameSize
-          ? loginFrame.length
-          : maxFrameSize;
-      final timeoutMs = _connector.calculateTimeout(
-        pathLength: pathLengthValue,
-        messageBytes: responseBytes,
+      final outcome = await _login.login(
+        room,
+        password,
+        maxAttempts: _maxAttempts,
+        tag: 'RoomLogin',
+        onAttempt: (attempt) {
+          if (mounted) setState(() => _currentAttempt = attempt);
+        },
       );
-      final timeoutSeconds = (timeoutMs / 1000).ceil();
-      final timeout = Duration(milliseconds: timeoutMs + 2000);
-      final selectionLabel = selection.useFlood
-          ? 'flood'
-          : '${selection.hopCount} hops';
-      appLogger.info('Login routing: $selectionLabel', tag: 'RoomLogin');
-      final loginStartedAt = DateTime.now();
-      bool? loginResult;
-      bool? isAdminResult;
-      for (int attempt = 0; attempt < _maxAttempts; attempt++) {
-        if (!mounted) return;
-        setState(() {
-          _currentAttempt = attempt + 1;
-        });
-
-        // A response (or a post proving the session) that landed between
-        // attempts, outside our subscription window.
-        final recorded = _connector.lastRoomLoginEvent(room.publicKeyHex);
-        if (recorded != null && recorded.at.isAfter(loginStartedAt)) {
-          loginResult = recorded.success;
-          isAdminResult = recorded.isAdmin;
-          if (loginResult == true) {
-            appLogger.info(
-              'Login already confirmed for ${room.name}'
-              '${recorded.implied ? ' (post arrived)' : ''}',
-              tag: 'RoomLogin',
-            );
-            break;
-          }
-          appLogger.warn('Login failed for ${room.name}', tag: 'RoomLogin');
-          throw Exception('Wrong password or node is unreachable');
-        }
-
-        appLogger.info(
-          'Sending login attempt ${attempt + 1}/$_maxAttempts',
-          tag: 'RoomLogin',
-        );
-        await _connector.sendFrame(loginFrame);
-
-        (loginResult, isAdminResult) = await _awaitLoginResponse(timeout);
-        if (loginResult == true) {
-          appLogger.info('Login succeeded for ${room.name}', tag: 'RoomLogin');
-          break;
-        }
-        if (loginResult == false) {
-          appLogger.warn('Login failed for ${room.name}', tag: 'RoomLogin');
-          throw Exception('Wrong password or node is unreachable');
-        }
-        appLogger.warn(
-          'Login attempt ${attempt + 1} timed out after ${timeoutSeconds}s',
-          tag: 'RoomLogin',
-        );
-      }
-
-      if (loginResult == null) {
-        appLogger.warn('Login timed out for ${room.name}', tag: 'RoomLogin');
-      }
-
-      if (loginResult != true) {
+      if (outcome.success != true) {
         throw Exception('Wrong password or node is unreachable');
       }
 
-      // An implied success (a post arrived, no response frame) says nothing
-      // about permissions — keep whatever admin outcome we last stored.
-      final isAdmin =
-          isAdminResult ?? await _storage.isRoomAdmin(widget.room.publicKeyHex);
-
-      // Remember the role byte from an explicit response so the room's
-      // badge survives app restarts; implied successes don't carry one.
-      final event = _connector.lastRoomLoginEvent(widget.room.publicKeyHex);
-      if (event != null && !event.implied && event.permissions != null) {
-        await _storage.setRoomPermissions(
-          widget.room.publicKeyHex,
-          event.permissions,
-        );
-      }
-
-      // If we got a response, login succeeded
-      // Save password if requested
-      if (_savePassword) {
-        await _storage.saveRepeaterPassword(widget.room.publicKeyHex, password);
-        // Remember the admin outcome so the manage entry survives restarts
-        // (the room's ACL persists admin clients server-side).
-        await _storage.setRoomAdminFlag(widget.room.publicKeyHex, isAdmin);
-      } else {
-        // Remove saved password if user unchecked the box
-        await _storage.removeRepeaterPassword(widget.room.publicKeyHex);
-        await _storage.setRoomAdminFlag(widget.room.publicKeyHex, false);
-      }
-
-      _connector.recordRoomLogin(widget.room.publicKeyHex, password, isAdmin);
+      final isAdmin = await _login.rememberRoomLogin(room, password, outcome);
 
       if (mounted) {
         Navigator.pop(context, password);
@@ -218,56 +125,6 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
         );
       }
     }
-  }
-
-  Future<(bool?, bool?)> _awaitLoginResponse(Duration timeout) async {
-    final completer = Completer<bool?>();
-    Timer? timer;
-    StreamSubscription<Uint8List>? subscription;
-    StreamSubscription<RoomLoginEvent>? eventSubscription;
-    final targetPrefix = widget.room.publicKey.sublist(0, 6);
-    bool? isAdmin;
-
-    subscription = _connector.receivedFrames.listen((frame) {
-      if (frame.isEmpty) return;
-      final code = frame[0];
-      if (code != pushCodeLoginSuccess && code != pushCodeLoginFail) return;
-      if (frame.length < 8) return;
-      final prefix = frame.sublist(2, 8);
-      if (!listEquals(prefix, targetPrefix)) return;
-      // NOTE: a bug in the repeater firmware only ever sends 1 or 0 back, not the
-      // expected client permissions. Read only after the prefix matched —
-      // another node's login push must not overwrite our result.
-      isAdmin = (frame[1] == 1);
-
-      if (!completer.isCompleted) {
-        completer.complete(code == pushCodeLoginSuccess);
-      }
-    });
-
-    // The connector also records login outcomes, including ones implied by a
-    // post arriving from this room — the server only pushes to logged-in
-    // clients, so the dialog must not sit on retries while messages flow in
-    // behind it.
-    eventSubscription = _connector.roomLoginEvents
-        .where((e) => e.roomKeyHex == widget.room.publicKeyHex)
-        .listen((event) {
-      if (completer.isCompleted) return;
-      isAdmin = event.isAdmin;
-      completer.complete(event.success);
-    });
-
-    timer = Timer(timeout, () {
-      if (!completer.isCompleted) {
-        completer.complete(null);
-      }
-    });
-
-    final result = await completer.future;
-    timer.cancel();
-    await subscription.cancel();
-    await eventSubscription.cancel();
-    return (result, isAdmin);
   }
 
   @override
@@ -342,24 +199,6 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
                         _passwordController.text.isEmpty,
                   ),
                   const SizedBox(height: 12),
-                  CheckboxListTile(
-                    value: _savePassword,
-                    onChanged: (value) {
-                      setState(() {
-                        _savePassword = value ?? false;
-                      });
-                    },
-                    title: Text(
-                      l10n.login_savePassword,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    // subtitle: Text(
-                    //   l10n.login_savePasswordSubtitle,
-                    //   style: const TextStyle(fontSize: 12),
-                    // ),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                  ),
                   const Divider(),
                   Row(
                     children: [

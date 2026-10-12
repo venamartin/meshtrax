@@ -31,6 +31,8 @@ import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
     if (dart.library.io) '../services/linux_ble_pairing_service.dart';
 import '../services/message_retry_service.dart';
+import '../services/server_login_service.dart';
+import '../services/storage_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
 import '../services/notification_service.dart';
@@ -361,6 +363,53 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // The chat screen's role badge and clock-skew banner read the last
     // event from a Consumer build.
     notifyListeners();
+  }
+
+  /// A message is queued, on the air or awaiting its ACK, on any contact or
+  /// channel. Logins sent while this is true would have their RESP_CODE_SENT
+  /// taken for a message's.
+  bool get hasSendsInFlight =>
+      (_retryService?.hasMessagesInFlight ?? false) ||
+      _pendingChannelSentQueue.isNotEmpty;
+
+  // When a room's route was last relearned after a flooded post.
+  final Map<String, DateTime> _roomRouteRelearnAt = {};
+  static const _roomRouteRelearnCooldown = Duration(minutes: 5);
+
+  /// A room server answers a posted message with a plain ACK, never a PATH,
+  /// so a post delivered by flood teaches the radio no route and the room
+  /// would stay on flood until the next login. A login sent by flood IS
+  /// answered with a PATH return, so send one: the last password that
+  /// worked, or a blank one, which the room accepts from a client it knows,
+  /// and it knows us, since it just ACKed our post.
+  void _relearnRoomRouteAfterFlood(Contact snapshot) {
+    final room = _contacts.cast<Contact?>().firstWhere(
+      (c) => c!.publicKeyHex == snapshot.publicKeyHex,
+      orElse: () => null,
+    );
+    if (room == null || room.type != advTypeRoom) return;
+    if (room.pathOverride != null || room.pathLength >= 0) return;
+    if (!isConnected || hasSendsInFlight) return;
+    final last = _roomRouteRelearnAt[room.publicKeyHex];
+    if (last != null &&
+        DateTime.now().difference(last) < _roomRouteRelearnCooldown) {
+      return;
+    }
+    _roomRouteRelearnAt[room.publicKeyHex] = DateTime.now();
+    unawaited(() async {
+      final password =
+          await StorageService().getRepeaterPassword(room.publicKeyHex) ?? '';
+      appLogger.info(
+        'Relearning route to ${room.name}: login by flood',
+        tag: 'Routing',
+      );
+      await ServerLoginService(this).login(
+        room,
+        password,
+        maxAttempts: 1,
+        tag: 'Routing',
+      );
+    }());
   }
 
   // When a clock sync was last sent per room. The skew banner measures from
@@ -1076,6 +1125,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         getSelfPublicKey: () => _selfPublicKey,
         pathHashByteWidth: () => _pathHashByteWidth,
         prepareContactOutboundText: prepareContactOutboundText,
+        onFloodDelivered: _relearnRoomRouteAfterFlood,
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
       ),
@@ -2997,6 +3047,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
+    _roomRouteRelearnAt.clear();
     _roomClockSyncSentAt.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
     // queue never redelivers drained messages, flushing requires a fresh
@@ -4148,21 +4199,24 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// servers) makes the room re-push its whole backlog, up to 32 posts.
   Future<bool> resetRoomSyncCursor(Contact room) async {
     if (!isConnected) return false;
+    // Re-add from the radio's own copy: the cached route may be stale, and a
+    // stale "no route" written back would wipe one the radio has learned.
+    final live = await _fetchContactSnapshotFromDevice(room.publicKey) ?? room;
     final removed =
         await _sendAndWaitForAck(buildRemoveContactFrame(room.publicKey));
     if (!removed) return false;
     final readded = await _sendAndWaitForAck(
       buildUpdateContactPathFrame(
         room.publicKey,
-        room.path,
-        room.pathLength,
-        room.pathHashSize,
-        type: room.type,
-        flags: room.flags,
-        name: room.name,
-        lat: room.latitude,
-        lon: room.longitude,
-        lastModified: room.lastSeen,
+        live.path,
+        live.pathLength,
+        live.pathHashSize,
+        type: live.type,
+        flags: live.flags,
+        name: live.name,
+        lat: live.latitude,
+        lon: live.longitude,
+        lastModified: live.lastSeen,
       ),
     );
     if (!readded) {
@@ -8524,6 +8578,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       entry.timeout?.cancel();
     }
     _pendingRepeaterAcks.clear();
+    _roomRouteRelearnAt.clear();
 
     _notifySubscription?.cancel();
     _notifySubscription = null;

@@ -26,6 +26,7 @@ import '../models/message.dart';
 import '../services/app_settings_service.dart';
 import '../services/message_retry_service.dart';
 import '../services/chat_text_scale_service.dart';
+import '../services/server_login_service.dart';
 import '../services/storage_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
@@ -168,6 +169,37 @@ class _ChatScreenState extends State<ChatScreen> {
           }
         },
       );
+      _autoLoginRoom(connector);
+    }
+  }
+
+  static const _roomLoginFreshFor = Duration(minutes: 10);
+
+  /// The stock app logs in each time a room is opened; so do we, silently,
+  /// with the password that last worked. A login is also how the radio
+  /// learns a route to a room (a flooded login is answered with a PATH), so
+  /// this is what brings a room back from "Flood (auto)" after a lost route.
+  Future<void> _autoLoginRoom(MeshCoreConnector connector) async {
+    final keyHex = widget.contact.publicKeyHex;
+    final last = connector.lastRoomLoginEvent(keyHex);
+    if (last != null &&
+        last.success &&
+        DateTime.now().difference(last.at) < _roomLoginFreshFor) {
+      return;
+    }
+    final password = await StorageService().getRepeaterPassword(keyHex);
+    if (password == null || !mounted) return;
+    if (!connector.isConnected || connector.hasSendsInFlight) return;
+    final room = _resolveContact(connector);
+    final login = ServerLoginService(connector);
+    final outcome = await login.login(
+      room,
+      password,
+      maxAttempts: 2,
+      tag: 'RoomAutoLogin',
+    );
+    if (outcome.success == true) {
+      await login.rememberRoomLogin(room, password, outcome);
     }
   }
 
