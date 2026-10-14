@@ -354,8 +354,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<RoomLoginEvent> get roomLoginEvents =>
       _roomLoginEventsController.stream;
 
+  // Last full (14-byte) LOGIN_OK per room: the server's clock and the
+  // permissions byte. Kept apart from the session events: a pushed post
+  // proves the session but carries neither, and must not erase them.
+  final Map<String, RoomLoginEvent> _lastMeasuredRoomLogins = {};
+
   RoomLoginEvent? lastRoomLoginEvent(String pubKeyHex) =>
       _lastRoomLoginEvents[pubKeyHex];
+
+  /// The last LOGIN_OK from this room that carried its clock and
+  /// permissions, this session.
+  RoomLoginEvent? lastMeasuredRoomLogin(String pubKeyHex) =>
+      _lastMeasuredRoomLogins[pubKeyHex];
 
   /// The room server's clock minus ours, in seconds, from the last LOGIN_OK
   /// that carried a clock; 0 for a room not yet measured this session; null
@@ -364,13 +374,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// and the stamp every other member holds for it.
   int? roomSkewSecs(Contact? contact) {
     if (contact?.type != advTypeRoom) return null;
-    final event = _lastRoomLoginEvents[contact!.publicKeyHex];
+    final event = _lastMeasuredRoomLogins[contact!.publicKeyHex];
     final clock = event?.serverClock;
     return clock == null ? 0 : clock.difference(event!.at).inSeconds;
   }
 
   void _recordRoomLoginEvent(RoomLoginEvent event) {
     _lastRoomLoginEvents[event.roomKeyHex] = event;
+    if (event.success && event.permissions != null) {
+      _lastMeasuredRoomLogins[event.roomKeyHex] = event;
+    }
     _roomLoginEventsController.add(event);
     // The chat screen's role badge and clock-skew banner read the last
     // event from a Consumer build.
@@ -3064,6 +3077,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
+    _lastMeasuredRoomLogins.clear();
     _roomRouteRelearnAt.clear();
     _roomClockSyncSentAt.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
