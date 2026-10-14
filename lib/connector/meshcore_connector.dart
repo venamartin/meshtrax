@@ -83,9 +83,25 @@ class DirectRepeater {
   }
 
 
+  /// How this repeater heard ME, as it reported in its answer to a
+  /// Discover. Null when it was only ever overheard: [snr] is always how I
+  /// heard it.
+  double? uplinkSnr;
+
+  /// The Discover it last answered ([MeshCoreConnector.discoverScan]), and
+  /// when. Only an answer carrying that request's tag sets these.
+  int? answeredScan;
+  DateTime? answeredAt;
+
   void update(double newSNR) {
     snr = newSNR;
     lastUpdated = DateTime.now();
+  }
+
+  void markAnswered(double uplink, int scan) {
+    uplinkSnr = uplink;
+    answeredScan = scan;
+    answeredAt = DateTime.now();
   }
 
   /// The entry in [tracked] that a newly heard node refers to, or null when a
@@ -540,6 +556,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final List<DirectRepeater> _directRepeaters = List.empty(growable: true);
   int? _pendingDiscoverTag;
   Timer? _discoverTimer;
+  int _discoverScan = 0;
+  DateTime? _discoverStartedAt;
+  String? _nearbyRadioKey;
+  int? _pendingTraceTag;
+  Timer? _traceTagTimer;
   bool _isDiscovering = false;
   bool _isLoadingContacts = false;
   int _expectedContactsCount = 0;
@@ -764,6 +785,29 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   double? get selfLongitude => _selfLongitude;
   List<DirectRepeater> get directRepeaters => _directRepeaters;
   bool get isDiscovering => _isDiscovering;
+
+  /// Counts Discover requests sent; a repeater whose
+  /// [DirectRepeater.answeredScan] equals it answered the latest one.
+  int get discoverScan => _discoverScan;
+  DateTime? get discoverStartedAt => _discoverStartedAt;
+
+  /// How long a Discover listens for answers.
+  static const discoverWindow = Duration(seconds: 30);
+  int? get pendingDiscoverTag => _pendingDiscoverTag;
+
+  /// Tag of the trace this app last sent; replies with any other tag are
+  /// someone else's trace the radio happened to hear. Forgotten after a
+  /// minute, longer than any trace can take.
+  int? get pendingTraceTag => _pendingTraceTag;
+  set pendingTraceTag(int? tag) {
+    _pendingTraceTag = tag;
+    _traceTagTimer?.cancel();
+    if (tag != null) {
+      _traceTagTimer = Timer(const Duration(seconds: 60), () {
+        _pendingTraceTag = null;
+      });
+    }
+  }
   int? get currentTxPower => _currentTxPower;
   int? get maxTxPower => _maxTxPower;
 
@@ -1143,6 +1187,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         pathHashByteWidth: () => _pathHashByteWidth,
         prepareContactOutboundText: prepareContactOutboundText,
         onFloodDelivered: _relearnRoomRouteAfterFlood,
+        graphRoutes: (contact) => graphRouteCandidates?.call(contact),
+        onAttemptResult: (contact, selection, delivered, tripMs) =>
+            onSendAttemptResult?.call(contact, selection, delivered, tripMs),
+        onAttemptStarted: (contact, selection, attempt) =>
+            onSendAttemptStarted?.call(contact, selection, attempt),
+        onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
       ),
@@ -1296,6 +1346,83 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       appLogger.error('Failed to send message: $e', tag: 'Connector');
     }
   }
+
+  /// Pathfinder hooks. The radio reported PATH_UPDATED for a contact and
+  /// this is the contact as it now holds it; a direct DM attempt ended;
+  /// the retry ladder asks for ranked routes (null while Pathfinder is off).
+  void Function(Contact contact)? onFirmwarePathLearned;
+  void Function(Contact, PathSelection, bool delivered, int? tripMs)?
+      onSendAttemptResult;
+  void Function(Contact, PathSelection, int attempt)? onSendAttemptStarted;
+  void Function(Contact, int ackHash)? onAckHeard;
+  List<PathSelection>? Function(Contact contact)? graphRouteCandidates;
+
+  /// Routes this app wrote into the radio ("width:hex" per contact): a
+  /// graph route or a user override. The contact list carries them back
+  /// looking like the firmware's own, and they must not be taken as its
+  /// word. The width travels with the bytes: the same bytes at another
+  /// width are a different route.
+  final Map<String, String> _appWrittenPath = {};
+
+  static String _writtenKey(int width, Uint8List path) =>
+      '$width:${_hexOf(path)}';
+
+  bool wroteContactPath(Contact contact) =>
+      _appWrittenPath[contact.publicKeyHex] ==
+      _writtenKey(contact.pathHashSize, contact.path);
+
+  /// Channel sends this app put on air (channel, wire stamp, exact text):
+  /// only an echo of one of these is my own echo. Newest last, bounded.
+  final List<({int channel, int secs, String text})> _ownChannelSends = [];
+
+  void _rememberOwnChannelSend(int channel, int secs, String text) {
+    _ownChannelSends.add((channel: channel, secs: secs, text: text));
+    if (_ownChannelSends.length > 32) _ownChannelSends.removeAt(0);
+  }
+
+  /// A key for the send this echo repeats, or null when it is not mine.
+  /// The firmware forwards the app's timestamp unchanged.
+  String? _ownChannelSendKey(int channel, int secs, String text) {
+    for (final s in _ownChannelSends.reversed) {
+      if (s.channel == channel && s.secs == secs && s.text == text) {
+        return '$channel:$secs';
+      }
+    }
+    return null;
+  }
+
+  /// First hops already credited per channel packet: copies of one packet
+  /// via the same first repeater count once. Insertion-ordered, bounded.
+  final Map<String, Set<String>> _channelCopyHops = {};
+
+  bool _firstChannelCopyVia(String packetKey, String firstHop) {
+    final hops = _channelCopyHops.putIfAbsent(packetKey, () => <String>{});
+    if (_channelCopyHops.length > 128) {
+      _channelCopyHops.remove(_channelCopyHops.keys.first);
+    }
+    return hops.add(firstHop.toUpperCase());
+  }
+
+  static String _hexOf(Uint8List bytes) =>
+      bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+  /// A channel packet this app decrypted from the radio's raw RX log:
+  /// the sender's display name and the path it arrived on (the path
+  /// graph hook — a channel message carries a name, not a pubkey).
+  void Function(String senderName, Uint8List pathBytes, int pathHashSize)?
+      onChannelPacketHeard;
+
+  /// An echo of this radio's own channel message, heard back from the
+  /// mesh with the path it travelled. Its first hop is a repeater that
+  /// heard this radio directly (the path graph hook).
+  void Function(Uint8List pathBytes, int pathHashSize)? onOwnEchoHeard;
+
+  /// A DM or room post the radio decrypted, resolved to a contact: the
+  /// frame's raw path_len byte (0xFF = direct) and its signed SNR byte
+  /// (null on the pre-V3 frame). The path graph hook — it matches the
+  /// message to the raw packet the radio logged a moment earlier.
+  void Function(String contactPubkeyHex, int pathLenRaw, int? snrByte)?
+      onContactMessageHeard;
 
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
@@ -2996,6 +3123,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoverTimer?.cancel();
     _isDiscovering = false;
     _pendingDiscoverTag = null;
+    _traceTagTimer?.cancel();
+    _pendingTraceTag = null;
 
     final transportAtDisconnect = _activeTransport;
     final tcpSessionWasEstablished = _tcpSessionEstablished;
@@ -3573,20 +3702,33 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     try {
       if (!isConnected) return;
 
-      await sendFrame(
-        buildUpdateContactPathFrame(
-          contact.publicKey,
-          customPath,
-          hopCount,
-          width,
-          type: contact.type,
-          flags: contact.flags,
-          name: contact.name,
-          lat: contact.latitude,
-          lon: contact.longitude,
-          lastModified: contact.lastSeen,
-        ),
-      );
+      // Marked before the write: a PATH_UPDATED snapshot fetched while the
+      // write is in flight must already read as the app's route.
+      final previousMark = _appWrittenPath[contact.publicKeyHex];
+      _appWrittenPath[contact.publicKeyHex] = _writtenKey(width, customPath);
+      try {
+        await sendFrame(
+          buildUpdateContactPathFrame(
+            contact.publicKey,
+            customPath,
+            hopCount,
+            width,
+            type: contact.type,
+            flags: contact.flags,
+            name: contact.name,
+            lat: contact.latitude,
+            lon: contact.longitude,
+            lastModified: contact.lastSeen,
+          ),
+        );
+      } catch (_) {
+        if (previousMark == null) {
+          _appWrittenPath.remove(contact.publicKeyHex);
+        } else {
+          _appWrittenPath[contact.publicKeyHex] = previousMark;
+        }
+        rethrow;
+      }
       // USB writes return instantly (no BLE flow control), so give the firmware
       // time to persist the path change before subsequent commands.
       if (_activeTransport == MeshCoreTransportType.usb) {
@@ -3999,8 +4141,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+      final reactionSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      _rememberOwnChannelSend(channel.index, reactionSecs, text);
       await sendFrame(
-        buildSendChannelTextMsgFrame(channel.index, text),
+        buildSendChannelTextMsgFrame(channel.index, text,
+            timestampSecs: reactionSecs),
         channelSendQueueId: reactionQueueId,
         expectsGenericAck: true,
       );
@@ -4034,6 +4179,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // construction clock, and MeshCore One reaction hashes are computed
     // over the wire value. Transmitted bytes are unchanged.
     final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _rememberOwnChannelSend(channel.index, wireSecs, outboundText);
     await sendFrame(
       buildSendChannelTextMsgFrame(
         channel.index,
@@ -4133,6 +4279,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // mesh dedup); record this stamp too so reactions to the retry copy
     // still hash-match our row.
     final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _rememberOwnChannelSend(channelIndex, wireSecs, outboundText);
     await sendFrame(
       buildSendChannelTextMsgFrame(
         channelIndex,
@@ -4317,6 +4464,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       if (_activeTransport == MeshCoreTransportType.usb) {
         await Future<void>.delayed(const Duration(milliseconds: 100));
       }
+      _appWrittenPath.remove(contact.publicKeyHex);
       final existingIndex = _contacts.indexWhere(
         (c) => c.publicKeyHex == contact.publicKeyHex,
       );
@@ -4645,7 +4793,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     final rand = math.Random();
     final tag = rand.nextInt(0xFFFFFFFF);
+    final previousScan = (_discoverScan, _discoverStartedAt);
     _pendingDiscoverTag = tag;
+    _discoverScan++;
+    _discoverStartedAt = DateTime.now();
     _isDiscovering = true;
     notifyListeners();
 
@@ -4653,7 +4804,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // Repeater firmware answers with a randomized anti-collision delay
     // (sendZeroHop with getRetransmitDelay x4, simple_repeater/MyMesh.cpp) —
     // a 10s window dropped legitimate late responses on the bench.
-    _discoverTimer = Timer(const Duration(seconds: 30), () {
+    _discoverTimer = Timer(discoverWindow, () {
       _isDiscovering = false;
       _pendingDiscoverTag = null;
       notifyListeners();
@@ -4669,6 +4820,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _discoverTimer?.cancel();
       _isDiscovering = false;
       _pendingDiscoverTag = null;
+      _discoverScan = previousScan.$1;
+      _discoverStartedAt = previousScan.$2;
       notifyListeners();
     }
   }
@@ -5386,8 +5539,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (known) {
         // Refresh just this specific contact instead of all contacts.
         // This avoids race conditions with _preserveContactsOnRefresh flag
-        // that can occur when using refreshContactsSinceLastmod().
-        getContactByKey(pubKey);
+        // that can occur when using refreshContactsSinceLastmod(). The
+        // reply is the route the firmware just learned — Pathfinder's one
+        // true source of firmware proof.
+        unawaited(_fetchContactSnapshotFromDevice(pubKey).then((snapshot) {
+          if (snapshot != null) onFirmwarePathLearned?.call(snapshot);
+        }));
       }
     }
   }
@@ -5417,6 +5574,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _currentTxPower = reader.readInt8();
       _maxTxPower = reader.readInt8();
       _selfPublicKey = reader.readBytes(pubKeySize);
+      _forgetNearbyOfOtherRadio(pubKeyToHex(_selfPublicKey!));
       _selfLatitude = reader.readInt32LE() / 1000000.0;
       _selfLongitude = reader.readInt32LE() / 1000000.0;
       _multiAcks = reader.readByte();
@@ -6124,6 +6282,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         orElse: () => null,
       );
       if (contact != null) {
+        // Before the route bytes below replace the packet's own width.
+        final layout = parseContactMsgLayout(frame);
+        if (layout != null) {
+          onContactMessageHeard?.call(
+            contact.publicKeyHex,
+            layout.pathLen,
+            frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
+          );
+        }
         // The frame's path_len is the hops THIS packet traveled — keep it.
         // Attach our known route's bytes only when its length agrees, so a
         // repeater-names line never claims hops the packet didn't report.
@@ -6623,6 +6790,24 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             pathBytes: message.pathBytes,
             pathHashSize: message.pathHashSize,
           );
+          // Pathfinder: my own echo only when it is a send this app made
+          // (channel + wire stamp + text); a namesake's post is neither my
+          // echo nor a usable sighting. Each first hop counts once per packet.
+          final firstHop = PathHelper.firstHopHex(packet.pathBytes,
+                  stride: packet.hashSize) ??
+              '';
+          if (parsed.senderName.trim() == (_selfName?.trim() ?? '')) {
+            final send = _ownChannelSendKey(
+                channel.index, timestampRaw, parsed.text);
+            if (send != null &&
+                packet.isFlood &&
+                _firstChannelCopyVia('own:$send', firstHop)) {
+              onOwnEchoHeard?.call(packet.pathBytes, packet.hashSize);
+            }
+          } else if (_firstChannelCopyVia(pktHash, firstHop)) {
+            onChannelPacketHeard?.call(
+                parsed.senderName, packet.pathBytes, packet.hashSize);
+          }
           final label = channel.displayName;
           unawaited(() async {
             final isNew = await _ingestChannelMessage(channel.index, message);
@@ -6643,8 +6828,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleControlData(Uint8List frame) {
     if (frame.length < 5) return;
     try {
-      final snrRaw = frame[1];
-      final snr = (snrRaw > 127 ? snrRaw - 256 : snrRaw) / 4.0;
+      double quarterDb(int raw) => (raw > 127 ? raw - 256 : raw) / 4.0;
+      final snr = quarterDb(frame[1]);
       final rssiRaw = frame[2]; // ignore: unused_local_variable
       final pathLen = frame[3]; // ignore: unused_local_variable
 
@@ -6703,27 +6888,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           hashPrefix: pubkeyPrefix,
         );
 
+        // How the repeater heard my request (it reports it, signed, x4).
+        final uplink = quarterDb(ctlPayload[1]);
         if (existing != null) {
           existing.update(snr);
+          existing.markAnswered(uplink, _discoverScan);
           existing.publicKey ??= pubKey;
           if (parsedName != null && parsedName.isNotEmpty) {
             existing.name = parsedName;
           }
-        } else {
-          if (_directRepeaters.length >= 5) {
-            final sorted = List<DirectRepeater>.from(_directRepeaters)..sort(DirectRepeater.compare);
-            if (sorted.isNotEmpty) {
-              _directRepeaters.remove(sorted.last);
-            }
-          }
-          if (_directRepeaters.length < 5) {
-            _directRepeaters.add(DirectRepeater(
-              pubkeyPrefix: pubkeyPrefix,
-              publicKey: pubKey,
-              name: parsedName,
-              snr: snr,
-            ));
-          }
+        } else if (_makeRoomForDirectRepeater(answer: true)) {
+          _directRepeaters.add(DirectRepeater(
+            pubkeyPrefix: pubkeyPrefix,
+            publicKey: pubKey,
+            name: parsedName,
+            snr: snr,
+          )..markAnswered(uplink, _discoverScan));
         }
 
         if (pubKey != null && hex != null) {
@@ -9843,25 +10023,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       hashPrefix: pubkeyPrefix,
     );
 
-    final sortedRepeaters = List<DirectRepeater>.from(_directRepeaters)
-      ..sort(DirectRepeater.compare);
-    final weakestRepeater = sortedRepeaters.isNotEmpty
-        ? sortedRepeaters.last
-        : null;
-
-    if (_directRepeaters.length >= 5 &&
-        weakestRepeater != null &&
-        tracked == null) {
-      _directRepeaters.remove(weakestRepeater);
-    }
-
     if (tracked != null) {
       final repeater = tracked;
       repeater.update(snr);
       if (repeater.publicKey == null && lastHopPublicKey != null) {
         repeater.publicKey = lastHopPublicKey;
       }
-    } else if (_directRepeaters.length < 5) {
+    } else if (_makeRoomForDirectRepeater(answer: false)) {
       _directRepeaters.add(
         DirectRepeater(
           pubkeyPrefix: pubkeyPrefix,
@@ -9871,6 +10039,32 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
     }
     notifyListeners();
+  }
+
+  /// Room for one more nearby repeater: five at most, weakest out first —
+  /// but a repeater that answered the latest Discover is never pushed out
+  /// by one only overheard, and an answer to it is always kept. A list
+  /// left long by a busy Discover shrinks back once its answers are old.
+  bool _makeRoomForDirectRepeater({required bool answer}) {
+    final evictable = _directRepeaters
+        .where((r) => r.answeredScan != _discoverScan)
+        .toList()
+      ..sort(DirectRepeater.compare);
+    while (_directRepeaters.length >= 5 && evictable.isNotEmpty) {
+      _directRepeaters.remove(evictable.removeLast());
+    }
+    return _directRepeaters.length < 5 || answer;
+  }
+
+  /// Nearby repeaters and their Discover answers belong to the radio that
+  /// heard them: a different radio starts with an empty list.
+  void _forgetNearbyOfOtherRadio(String radioKey) {
+    if (_nearbyRadioKey == radioKey) return;
+    if (_nearbyRadioKey != null) {
+      _directRepeaters.clear();
+      _discoverStartedAt = null;
+    }
+    _nearbyRadioKey = radioKey;
   }
 
   DirectRepeater? _findTrackedRepeater({

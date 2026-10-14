@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
+import 'package:meshtrax/services/path_graph/path_graph_service.dart';
+import 'package:path_graph/path_graph.dart'
+    show PathGraph, RouteResult, FloodResult;
 import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +32,8 @@ import 'chats_screen.dart';
 import '../widgets/path_selection_dialog.dart';
 import '../widgets/repeater_login_dialog.dart';
 import '../widgets/room_login_dialog.dart';
+import '../widgets/routing_dialog.dart';
+import 'path_graph_screen.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
@@ -1470,6 +1475,9 @@ class _MapScreenState extends State<MapScreen> {
     LatLng? guessedPosition,
   }) {
     final connector = context.read<MeshCoreConnector>();
+    final pathGraph = context.read<PathGraphService>();
+    final graph = pathGraph.isRunning ? pathGraph.graph : null;
+    final amber = RoutingIcon.pathfinderColor(context);
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1483,28 +1491,64 @@ class _MapScreenState extends State<MapScreen> {
             Expanded(child: SelectableText(contact.name)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Type', contact.typeLabel),
-            _buildInfoRow('Path', contact.pathLabel),
-            if (contact.hasLocation)
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInfoRow('Type', contact.typeLabel),
+              _buildInfoRow('Path', contact.pathLabel),
+              if (contact.hasLocation)
+                _buildInfoRow(
+                  'Location',
+                  '${contact.latitude!.toStringAsFixed(6)}, ${contact.longitude!.toStringAsFixed(6)}',
+                )
+              else if (guessedPosition != null)
+                _buildInfoRow(
+                  'Est. Location',
+                  '~${guessedPosition.latitude.toStringAsFixed(6)}, ${guessedPosition.longitude.toStringAsFixed(6)}',
+                ),
               _buildInfoRow(
-                'Location',
-                '${contact.latitude!.toStringAsFixed(6)}, ${contact.longitude!.toStringAsFixed(6)}',
-              )
-            else if (guessedPosition != null)
-              _buildInfoRow(
-                'Est. Location',
-                '~${guessedPosition.latitude.toStringAsFixed(6)}, ${guessedPosition.longitude.toStringAsFixed(6)}',
+                context.l10n.map_lastSeen,
+                _formatLastSeen(contact.lastSeen),
               ),
-            _buildInfoRow(
-              context.l10n.map_lastSeen,
-              _formatLastSeen(contact.lastSeen),
-            ),
-            _buildInfoRow('Public Key', contact.publicKeyHex),
-          ],
+              _buildInfoRow('Public Key', contact.publicKeyHex),
+              if (graph != null) ...[
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(RoutingIcon.icon, color: amber),
+                  title: Text(context.l10n.routing_pathfinder),
+                  subtitle: Text(context.l10n.routing_pathfinderSubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PathGraphScreen(
+                            initialTargetKey: contact.publicKeyHex),
+                      ),
+                    );
+                  },
+                ),
+                if (contact.type == advTypeRepeater &&
+                    graph.findPathToRepeater(_graphHash(graph, contact))
+                        is RouteResult)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(RoutingIcon.icon, color: amber),
+                    title: Text(context.l10n.map_pathfinderTrace),
+                    subtitle: Text(context.l10n.map_pathfinderTraceSubtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.pop(dialogContext);
+                      _routeAndTrace(context, contact, contact);
+                    },
+                  ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -2214,6 +2258,82 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  /// Asks the path graph for a route from me through the first tapped
+  /// repeater to the second, and for its best route from there back to
+  /// me, then traces out and back. With no route back known it returns
+  /// the same way. The trace result feeds the graph, so a route the graph
+  /// believed is proven or refuted hop by hop on the air.
+  Future<void> _routeAndTrace(
+      BuildContext context, Contact a, Contact b) async {
+    final connector = context.read<MeshCoreConnector>();
+    final graph = context.read<PathGraphService>().graph;
+    final l10n = context.l10n;
+    if (graph == null) return;
+    final stride = connector.pathHashByteWidth;
+
+    final result =
+        graph.findRouteVia(_graphHash(graph, a), _graphHash(graph, b));
+    if (result is! RouteResult) {
+      final reason = result is FloodResult ? result.reason.name : 'direct';
+      showDismissibleSnackBar(
+        context,
+        content: Text('${l10n.map_routeAndTrace}: $reason'),
+      );
+      return;
+    }
+
+    // The graph identifies hops at its own width; the radio routes at
+    // its path hash size, and a hash is a pubkey prefix, so truncating
+    // each hop is lossless.
+    List<List<int>> wireHops(RouteResult route) => [
+          for (final hop in PathHelper.getHops(route.pathBytes,
+              stride: graph.hashWidthBytes))
+            hop
+                .take(stride < graph.hashWidthBytes
+                    ? stride
+                    : graph.hashWidthBytes)
+                .toList()
+        ];
+    final out = [for (final hop in wireHops(result)) ...hop];
+
+    // The way back starts at B, already the last hop out.
+    final back = graph.findReturnPathFromRepeater(_graphHash(graph, b));
+    final Uint8List roundTrip;
+    if (back is RouteResult) {
+      roundTrip = Uint8List.fromList([
+        ...out,
+        for (final hop in wireHops(back).skip(1)) ...hop,
+      ]);
+    } else {
+      roundTrip = PathHelper.roundTripPath(out, stride: stride);
+      showDismissibleSnackBar(
+        context,
+        content: Text(l10n.map_routeBackMirrored),
+      );
+    }
+
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PathTraceMapScreen(
+          title: a.publicKeyHex == b.publicKeyHex
+              ? '${l10n.map_routeAndTrace} → ${b.name}'
+              : '${l10n.map_routeAndTrace} ${a.name} → ${b.name}',
+          path: roundTrip,
+          pathHashByteWidth: stride,
+          pathContacts: connector.allContacts,
+        ),
+      ),
+    );
+    setState(() {
+      _isBuildingPathTrace = false;
+    });
+  }
+
+  String _graphHash(PathGraph graph, Contact c) => PathHelper.hopHex(
+      PathHelper.pubKeyPrefix(c.publicKey, stride: graph.hashWidthBytes));
+
   void _startPath(LatLng position) {
     setState(() {
       _isBuildingPathTrace = true;
@@ -2274,6 +2394,52 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  void _showTraceHelp() {
+    final l10n = context.l10n;
+    final pathfinder = context.read<PathGraphService>().isRunning;
+    Widget row(Widget icon, String title, String subtitle) => ListTile(
+          leading: icon,
+          title: Text(title),
+          subtitle: Text(subtitle),
+          contentPadding: EdgeInsets.zero,
+        );
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.map_traceHelpTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              row(const Icon(Icons.edit_road), l10n.chat_setCustomPath,
+                  l10n.map_traceHelpCustom),
+              row(const Icon(Icons.arrow_forward_outlined), l10n.map_runTrace,
+                  l10n.map_traceHelpRun),
+              row(const Icon(Icons.replay), l10n.map_traceHelpThereAndBack,
+                  l10n.map_traceHelpThereAndBackSubtitle),
+              if (pathfinder)
+                row(
+                    Icon(RoutingIcon.icon,
+                        color: RoutingIcon.pathfinderColor(context)),
+                    l10n.map_routeAndTrace,
+                    l10n.map_traceHelpPathfinder),
+              row(const Icon(Icons.undo), l10n.map_removeLast,
+                  l10n.map_traceHelpRemoveLast),
+              row(const Icon(Icons.close), l10n.common_cancel,
+                  l10n.map_traceHelpCancel),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.common_close),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPathTraceOverlay() {
     final l10n = context.l10n;
     final isImperial =
@@ -2289,9 +2455,23 @@ class _MapScreenState extends State<MapScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                l10n.contacts_pathTrace,
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  const SizedBox(width: 40),
+                  Expanded(
+                    child: Text(
+                      l10n.contacts_pathTrace,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _showTraceHelp,
+                    tooltip: l10n.map_traceHelpTitle,
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.info_outline, size: 20),
+                  ),
+                ],
               ),
               if (_pathTrace.isEmpty) const SizedBox(height: 8),
               if (_pathTrace.isEmpty)
@@ -2363,6 +2543,17 @@ class _MapScreenState extends State<MapScreen> {
                       },
                       tooltip: l10n.map_runTraceWithReturnPath,
                       icon: const Icon(Icons.replay),
+                    ),
+                  if (_pathTraceContacts.length >= 2 &&
+                      context.watch<PathGraphService>().isRunning)
+                    IconButton(
+                      onPressed: () => _routeAndTrace(
+                          context,
+                          _pathTraceContacts[_pathTraceContacts.length - 2],
+                          _pathTraceContacts.last),
+                      tooltip: l10n.map_routeAndTrace,
+                      icon: Icon(RoutingIcon.icon,
+                          color: RoutingIcon.pathfinderColor(context)),
                     ),
                   if (_pathTrace.isNotEmpty)
                     IconButton(

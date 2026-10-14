@@ -332,13 +332,6 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     final l10n = context.l10n;
     final connector = context.watch<MeshCoreConnector>();
     final repeater = _resolveRepeater(connector);
-    final isFloodMode = repeater.pathOverride == -1;
-    final isDirectMode = repeater.pathOverride == 0;
-    final activeMode = isFloodMode
-        ? 'flood'
-        : isDirectMode
-        ? 'direct'
-        : 'auto';
 
     return Scaffold(
       appBar: AppBar(
@@ -358,93 +351,9 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
         ),
         centerTitle: false,
         actions: [
-          PopupMenuButton<String>(
-            icon: Icon(isFloodMode ? Icons.waves : (isDirectMode ? Icons.settings_ethernet : Icons.route)),
-            tooltip: l10n.repeater_routingMode,
-            onSelected: (mode) async {
-              if (mode == 'flood') {
-                await connector.setPathOverride(repeater, pathLen: -1);
-              } else if (mode == 'direct') {
-                await connector.setPathOverride(repeater, pathLen: 0, pathBytes: Uint8List(0));
-              } else {
-                await connector.setPathOverride(repeater, pathLen: null);
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'auto',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.auto_mode,
-                      size: 20,
-                      color: activeMode == 'auto'
-                          ? Theme.of(context).primaryColor
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.repeater_autoUseSavedPath,
-                      style: TextStyle(
-                        fontWeight: activeMode == 'auto'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'direct',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.settings_ethernet,
-                      size: 20,
-                      color: activeMode == 'direct'
-                          ? Theme.of(context).primaryColor
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.repeater_forceDirectMode,
-                      style: TextStyle(
-                        fontWeight: activeMode == 'direct'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'flood',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.waves,
-                      size: 20,
-                      color: activeMode == 'flood'
-                          ? Theme.of(context).primaryColor
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.repeater_forceFloodMode,
-                      style: TextStyle(
-                        fontWeight: activeMode == 'flood'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
           IconButton(
-            icon: const Icon(Icons.timeline),
-            tooltip: l10n.repeater_pathManagement,
+            icon: const RoutingIcon(),
+            tooltip: l10n.routing_title,
             onPressed: () =>
                 RoutingDialog.show(context, contact: repeater),
           ),

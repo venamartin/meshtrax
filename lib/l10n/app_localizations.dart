@@ -1537,7 +1537,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_maxMessageRetriesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Send attempts before a message is marked failed. The known route gets one try (two at 4 or more); the rest flood.'**
+  /// **'Send attempts before a message is marked failed. Known routes get the first tries; the rest flood.'**
   String get appSettings_maxMessageRetriesSubtitle;
 
   /// No description provided for @appSettings_maxChannelMessageRetries.
@@ -3932,36 +3932,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Repeater Status'**
   String get repeater_statusTitle;
-
-  /// No description provided for @repeater_routingMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Routing mode'**
-  String get repeater_routingMode;
-
-  /// No description provided for @repeater_autoUseSavedPath.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto (use saved path)'**
-  String get repeater_autoUseSavedPath;
-
-  /// No description provided for @repeater_forceFloodMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Force Flood Mode'**
-  String get repeater_forceFloodMode;
-
-  /// No description provided for @repeater_forceDirectMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Force Direct Mode'**
-  String get repeater_forceDirectMode;
-
-  /// No description provided for @repeater_pathManagement.
-  ///
-  /// In en, this message translates to:
-  /// **'Path management'**
-  String get repeater_pathManagement;
 
   /// No description provided for @repeater_refresh.
   ///
@@ -6704,7 +6674,7 @@ abstract class AppLocalizations {
   /// No description provided for @routing_route.
   ///
   /// In en, this message translates to:
-  /// **'Route: {route}'**
+  /// **'Stored path: {route}'**
   String routing_route(String route);
 
   /// No description provided for @routing_noRoute.
@@ -6722,8 +6692,14 @@ abstract class AppLocalizations {
   /// No description provided for @routing_autoSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Use the route the radio learned. Recommended.'**
+  /// **'Use the radio\'s stored path. Recommended.'**
   String get routing_autoSubtitle;
+
+  /// No description provided for @routing_pathfinderOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Pathfinder on: tries learned routes first'**
+  String get routing_pathfinderOn;
 
   /// No description provided for @routing_flood.
   ///
@@ -6752,14 +6728,26 @@ abstract class AppLocalizations {
   /// No description provided for @routing_forget.
   ///
   /// In en, this message translates to:
-  /// **'Forget route'**
+  /// **'Reset path'**
   String get routing_forget;
 
   /// No description provided for @routing_forgetDone.
   ///
   /// In en, this message translates to:
-  /// **'Route forgotten. The next message floods and learns a fresh one.'**
+  /// **'Path reset. The next message floods and learns a fresh one.'**
   String get routing_forgetDone;
+
+  /// No description provided for @routing_pathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'What Pathfinder knows'**
+  String get routing_pathfinder;
+
+  /// No description provided for @routing_pathfinderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeaters that hear you and them, and learned routes there and back'**
+  String get routing_pathfinderSubtitle;
 
   /// No description provided for @path_direct.
   ///
@@ -6850,6 +6838,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resending by flood'**
   String get chat_resendingByFlood;
+
+  /// No description provided for @settings_pathGraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Pathfinder (experimental)'**
+  String get settings_pathGraph;
+
+  /// No description provided for @settings_pathGraphSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.'**
+  String get settings_pathGraphSubtitle;
+
+  /// No description provided for @map_routeAndTrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Route & trace'**
+  String get map_routeAndTrace;
+
+  /// No description provided for @map_pathfinderTrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace there and back'**
+  String get map_pathfinderTrace;
+
+  /// No description provided for @map_pathfinderTraceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Out on Pathfinder\'s best route, back on its best route back'**
+  String get map_pathfinderTraceSubtitle;
+
+  /// No description provided for @map_routeBackMirrored.
+  ///
+  /// In en, this message translates to:
+  /// **'No route back known yet — coming back the same way'**
+  String get map_routeBackMirrored;
+
+  /// No description provided for @map_traceHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Path trace buttons'**
+  String get map_traceHelpTitle;
+
+  /// No description provided for @map_traceHelpCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Type or pick the repeaters yourself.'**
+  String get map_traceHelpCustom;
+
+  /// No description provided for @map_traceHelpRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends a trace out along the repeaters you tapped, one way.'**
+  String get map_traceHelpRun;
+
+  /// No description provided for @map_traceHelpThereAndBack.
+  ///
+  /// In en, this message translates to:
+  /// **'There and back'**
+  String get map_traceHelpThereAndBack;
+
+  /// No description provided for @map_traceHelpThereAndBackSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends the trace out, then back over the same repeaters in reverse.'**
+  String get map_traceHelpThereAndBackSubtitle;
+
+  /// No description provided for @map_traceHelpPathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.'**
+  String get map_traceHelpPathfinder;
+
+  /// No description provided for @map_traceHelpRemoveLast.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes the last repeater off the path.'**
+  String get map_traceHelpRemoveLast;
+
+  /// No description provided for @map_traceHelpCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops building the trace. Shown before any repeater is tapped.'**
+  String get map_traceHelpCancel;
 
   /// No description provided for @chat_resendingByRoute.
   ///

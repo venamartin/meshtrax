@@ -217,12 +217,19 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       );
       return;
     }
+    // Random tag, not a seconds timestamp: repeaters drop packets they
+    // have already seen, so two traces of the same route within a second
+    // were byte-identical and the second was silently dropped mid-path.
+    final tag = Random().nextInt(0xFFFFFFFF);
     final frame = buildTraceReq(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      tag,
       0, //auth
       flags, //flags
       payload: path,
     );
+    // The radio pushes every finished trace it hears, including other
+    // people's; the tag is how the path graph tells mine apart.
+    connector.pendingTraceTag = tag;
     connector.sendFrame(frame);
   }
 

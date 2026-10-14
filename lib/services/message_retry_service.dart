@@ -47,6 +47,15 @@ class RetryServiceConfig {
   final String Function(Contact, String)? prepareContactOutboundText;
   // A message to this contact was just delivered by a flood attempt.
   final Function(Contact)? onFloodDelivered;
+  // Pathfinder's ranked routes to a contact, best first; null while it is off.
+  final List<PathSelection>? Function(Contact)? graphRoutes;
+  // How one direct attempt ended: the route it went on, whether its ACK came.
+  final void Function(Contact, PathSelection, bool delivered, int? tripTimeMs)?
+      onAttemptResult;
+  // An attempt is about to go out: Pathfinder gates my own echoes on it.
+  final void Function(Contact, PathSelection, int attempt)? onAttemptStarted;
+  // The radio confirmed an ACK for a message to this contact (uint32 hash).
+  final void Function(Contact, int ackHash)? onAckMatched;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
 
@@ -61,6 +70,10 @@ class RetryServiceConfig {
     this.pathHashByteWidth,
     this.prepareContactOutboundText,
     this.onFloodDelivered,
+    this.graphRoutes,
+    this.onAttemptResult,
+    this.onAttemptStarted,
+    this.onAckMatched,
     this.appSettingsService,
     this.debugLogService,
   });
@@ -68,14 +81,14 @@ class RetryServiceConfig {
 
 /// Sends a contact message and retries it until an ACK arrives.
 ///
-/// The first attempts go however the contact resolves: a user override,
-/// else the firmware's own route, else flood. The rest reset the path and
-/// flood, which is also how the firmware re-learns the route (the reply to
-/// a flood carries the path back). With up to 3 attempts the route gets one
-/// try; with 4 or more it gets two, since one lost ACK on a good route is
-/// common and a route retry costs only that route's repeaters. Two floods
-/// always remain at the end. The app never writes a route to the radio on
-/// its own; only a user override is pushed.
+/// The ladder is planned once per message by [planAttempts]: routes first,
+/// floods last. With Pathfinder on, the graph's routes lead and the
+/// firmware's learned route follows only if the graph did not name it;
+/// otherwise the known route (a user override, else the firmware's) gets
+/// one try, two at 4 or more attempts. A flood resets the path, which is
+/// also how the firmware re-learns the route. The app writes a route to
+/// the radio only for a graph route or a user override, never for the
+/// firmware's own.
 class MessageRetryService extends ChangeNotifier {
   static const int maxAckHistorySize = 100;
   static const int retryBackoffMs = 5000;
@@ -87,19 +100,17 @@ class MessageRetryService extends ChangeNotifier {
       (_config?.appSettingsService?.settings.maxMessageRetries ?? _maxRetries)
           .clamp(1, 5);
 
-  /// Attempts that use the contact's route before the ladder floods.
-  int get routeAttempts => maxRetries >= 4 ? 2 : 1;
-
   final Map<String, Timer> _timeoutTimers = {};
   final Map<String, Message> _pendingMessages = {};
   final Map<String, Contact> _pendingContacts = {};
+  // The attempt ladder, by attempt index.
+  final Map<String, List<PathSelection>> _plans = {};
   final Map<String, AckHashMapping> _ackHashToMessageId = {};
   final Map<String, List<int>> _expectedAckHashes = {};
   final List<_AckHistoryEntry> _ackHistory = [];
   final Map<String, List<String>> _sendQueue = {};
   final Set<String> _activeMessages = {};
   final Set<String> _resolvedMessages = {};
-  final Set<String> _floodFirst = {};
   final Map<String, String> _expectedHashToMessageId = {};
 
   RetryServiceConfig? _config;
@@ -156,10 +167,9 @@ class MessageRetryService extends ChangeNotifier {
       _pendingMessages.containsKey(messageId) &&
       !_activeMessages.contains(messageId);
 
-  /// [floodFirst] makes attempt 0 flood, for resending a message whose route
+  /// [floodFirst] floods every attempt, for resending a message whose route
   /// just failed. Ignored when the contact has a manual route override — a
-  /// user-pinned route outranks the flood heuristic and still falls back to
-  /// flood after [routeAttempts].
+  /// user-pinned route outranks the flood heuristic.
   Future<void> sendMessageWithRetry({
     required Contact contact,
     required String text,
@@ -168,16 +178,18 @@ class MessageRetryService extends ChangeNotifier {
     bool floodFirst = false,
   }) async {
     final messageId = const Uuid().v4();
-    if (floodFirst && contact.pathOverride == null) _floodFirst.add(messageId);
-    final resolved = resolvePathSelection(
+    final plan = planAttempts(
       contact,
       radioWidth: _radioWidth(contact),
-      forceFlood: floodFirst,
+      budget: maxRetries,
+      graphRoutes: _config?.graphRoutes?.call(contact),
+      floodFirst: floodFirst,
     );
-    final messagePathBytes =
-        pathBytes ?? Uint8List.fromList(resolved.pathBytes);
+    _plans[messageId] = plan;
+    final first = plan.first;
+    final messagePathBytes = pathBytes ?? Uint8List.fromList(first.pathBytes);
     final messagePathLength =
-        pathLength ?? (resolved.useFlood ? -1 : resolved.hopCount);
+        pathLength ?? (first.useFlood ? -1 : first.hopCount);
     final message = Message(
       senderKey: contact.publicKey,
       text: text,
@@ -189,7 +201,8 @@ class MessageRetryService extends ChangeNotifier {
       retryCount: 0,
       pathLength: messagePathLength,
       pathBytes: messagePathBytes,
-      pathHashSize: resolved.hashSize,
+      pathHashSize: first.hashSize,
+      routeSource: first.source ?? RouteSource.firmware,
     );
 
     _pendingMessages[messageId] = message;
@@ -248,26 +261,20 @@ class MessageRetryService extends ChangeNotifier {
 
     if (message == null || contact == null || config == null) return;
 
-    final useRoute =
-        message.retryCount < routeAttempts && !_floodFirst.contains(messageId);
-    final radioWidth = _radioWidth(contact);
-    final selection = useRoute
-        ? resolvePathSelection(contact, radioWidth: radioWidth)
-        : PathSelection(
-            pathBytes: const [],
-            hopCount: -1,
-            hashSize: radioWidth,
-            useFlood: true,
-          );
+    final plan = _plans[messageId] ?? const <PathSelection>[];
+    final selection = message.retryCount < plan.length
+        ? plan[message.retryCount]
+        : PathSelection.flood(_radioWidth(contact));
     _pendingMessages[messageId] = message.copyWith(
       pathLength: selection.useFlood ? -1 : selection.hopCount,
       pathBytes: Uint8List.fromList(selection.pathBytes),
       pathHashSize: selection.hashSize,
+      routeSource: selection.source ?? RouteSource.firmware,
     );
 
     if (selection.useFlood) {
       await config.clearContactPath?.call(contact);
-    } else if (contact.pathOverride != null) {
+    } else if (selection.source != RouteSource.firmware) {
       await config.setContactPath?.call(
         contact,
         Uint8List.fromList(selection.pathBytes),
@@ -320,6 +327,7 @@ class MessageRetryService extends ChangeNotifier {
       );
     }
 
+    config.onAttemptStarted?.call(contact, selection, attempt);
     config.sendMessage(contact, message.text, attempt, timestampSeconds);
 
     // Safety timer: if RESP_CODE_SENT never arrives (silent BLE failure, device
@@ -473,6 +481,32 @@ class MessageRetryService extends ChangeNotifier {
     });
   }
 
+  /// Tells the graph how each direct attempt ended, once: the acked one
+  /// delivered, those that timed out before it failed. An attempt still on
+  /// the air when an earlier one is acked is left unjudged.
+  void _reportAttempts(String messageId,
+      {int? ackedAttempt, int? tripTimeMs}) {
+    final report = _config?.onAttemptResult;
+    final message = _pendingMessages[messageId];
+    final contact = _pendingContacts[messageId];
+    final plan = _plans[messageId];
+    if (report == null || message == null || contact == null || plan == null) {
+      return;
+    }
+    final timedOut = message.status == MessageStatus.failed
+        ? message.retryCount + 1
+        : message.retryCount;
+    for (var i = 0; i < plan.length; i++) {
+      final selection = plan[i];
+      if (selection.useFlood) continue;
+      if (i == ackedAttempt) {
+        report(contact, selection, true, tripTimeMs);
+      } else if (i < timedOut) {
+        report(contact, selection, false, null);
+      }
+    }
+  }
+
   void _cleanupMessage(String messageId) {
     _moveAckHashesToHistory(messageId);
     _ackHashToMessageId.removeWhere(
@@ -481,9 +515,9 @@ class MessageRetryService extends ChangeNotifier {
     _expectedHashToMessageId.removeWhere((_, msgId) => msgId == messageId);
     _pendingMessages.remove(messageId);
     _pendingContacts.remove(messageId);
+    _plans.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
-    _floodFirst.remove(messageId);
   }
 
   void _handleTimeout(String messageId) {
@@ -543,6 +577,7 @@ class MessageRetryService extends ChangeNotifier {
       // Keep the message matchable so a late ACK from any attempt still
       // flips it to delivered; the firmware holds 8 expected ACKs itself.
       _timeoutTimers[messageId] = Timer(lateAckGrace, () {
+        _reportAttempts(messageId);
         _cleanupMessage(messageId);
       });
     }
@@ -631,6 +666,7 @@ class MessageRetryService extends ChangeNotifier {
       }
       final contact = _pendingContacts[matchedMessageId];
       final ackedAttempt = matchedAttemptIndex ?? message.retryCount;
+      if (contact != null) config?.onAckMatched?.call(contact, ackHash);
 
       final shortText = message.text.length > 20
           ? '${message.text.substring(0, 20)}...'
@@ -643,18 +679,31 @@ class MessageRetryService extends ChangeNotifier {
       _timeoutTimers[matchedMessageId]?.cancel();
 
       // Record the attempt that was actually acknowledged, not the one
-      // that happened to be in flight.
+      // that happened to be in flight — its route too, since a later
+      // attempt may have overwritten the message's.
+      final plan = _plans[matchedMessageId];
+      final acked = plan != null && ackedAttempt < plan.length
+          ? plan[ackedAttempt]
+          : null;
       final deliveredMessage = message.copyWith(
         status: MessageStatus.delivered,
         deliveredAt: DateTime.now(),
         tripTimeMs: tripTimeMs,
         retryCount: ackedAttempt,
-        pathLength: matchedPathLength ?? message.pathLength,
+        pathLength: acked == null
+            ? (matchedPathLength ?? message.pathLength)
+            : (acked.useFlood ? -1 : acked.hopCount),
+        pathBytes:
+            acked == null ? null : Uint8List.fromList(acked.pathBytes),
+        pathHashSize: acked?.hashSize,
+        routeSource: acked?.source ?? RouteSource.firmware,
         deliveredLate: message.status == MessageStatus.failed,
       );
 
       final wasAlreadyResolved = _resolvedMessages.contains(matchedMessageId);
 
+      _reportAttempts(matchedMessageId,
+          ackedAttempt: ackedAttempt, tripTimeMs: tripTimeMs);
       _cleanupMessage(matchedMessageId);
 
       config?.updateMessage(deliveredMessage);
@@ -706,6 +755,7 @@ class MessageRetryService extends ChangeNotifier {
     _timeoutTimers.clear();
     _pendingMessages.clear();
     _pendingContacts.clear();
+    _plans.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();

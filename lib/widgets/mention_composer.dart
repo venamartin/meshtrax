@@ -60,40 +60,46 @@ class MentionTextEditingController extends TextEditingController {
   }
 }
 
-/// The @-autocomplete list shown above the composer while a mention is being
-/// typed. The caller owns filtering and insertion.
-class MentionsOverlay extends StatelessWidget {
-  final List<Contact> contacts;
-  final ValueChanged<Contact> onSelect;
+/// The avatar a mention row shows: the name's first emoji, else the type
+/// icon, on a tinted circle.
+Widget mentionAvatar(Contact contact, ColorScheme colorScheme) {
+  final emoji = firstEmoji(contact.name);
+  return CircleAvatar(
+    radius: 16,
+    backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
+    child: emoji != null
+        ? Text(emoji, style: const TextStyle(fontSize: 16))
+        : Icon(_typeIcon(contact.type), color: colorScheme.primary, size: 16),
+  );
+}
 
-  const MentionsOverlay({
+IconData _typeIcon(int type) {
+  switch (type) {
+    case advTypeChat:
+      return Icons.chat_bubble;
+    case advTypeRepeater:
+      return Icons.cell_tower;
+    case advTypeRoom:
+      return Icons.group;
+    case advTypeSensor:
+      return Icons.sensors;
+    default:
+      return Icons.device_unknown;
+  }
+}
+
+/// The rounded, shadowed, height-bounded list the mention picker sits in,
+/// placed in the screen's own Column (it is not an Overlay). Any screen
+/// that wants the same picker look builds its rows through [itemBuilder].
+class MentionsPanel extends StatelessWidget {
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+
+  const MentionsPanel({
     super.key,
-    required this.contacts,
-    required this.onSelect,
+    required this.itemCount,
+    required this.itemBuilder,
   });
-
-  Widget _buildAvatar(Contact contact, Color iconColor) {
-    final emoji = firstEmoji(contact.name);
-    if (emoji != null) {
-      return Text(emoji, style: const TextStyle(fontSize: 16));
-    }
-    return Icon(_typeIcon(contact.type), color: iconColor, size: 16);
-  }
-
-  IconData _typeIcon(int type) {
-    switch (type) {
-      case advTypeChat:
-        return Icons.chat_bubble;
-      case advTypeRepeater:
-        return Icons.cell_tower;
-      case advTypeRoom:
-        return Icons.group;
-      case advTypeSensor:
-        return Icons.sensors;
-      default:
-        return Icons.device_unknown;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,29 +120,51 @@ class MentionsOverlay extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: ListView.separated(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          itemCount: contacts.length,
-          separatorBuilder: (context, index) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final contact = contacts[index];
-            return ListTile(
-              leading: CircleAvatar(
-                radius: 16,
-                backgroundColor:
-                    colorScheme.primaryContainer.withValues(alpha: 0.5),
-                child: _buildAvatar(contact, colorScheme.primary),
-              ),
-              title: Text(
-                contact.name,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-              onTap: () => onSelect(contact),
-            );
-          },
+        // Rows paint their ink on the nearest Material; without this one
+        // they would paint under the decorated box.
+        child: Material(
+          type: MaterialType.transparency,
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: itemCount,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: itemBuilder,
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// The @-autocomplete list shown above the composer while a mention is being
+/// typed. The caller owns filtering and insertion.
+class MentionsOverlay extends StatelessWidget {
+  final List<Contact> contacts;
+  final ValueChanged<Contact> onSelect;
+
+  const MentionsOverlay({
+    super.key,
+    required this.contacts,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return MentionsPanel(
+      itemCount: contacts.length,
+      itemBuilder: (context, index) {
+        final contact = contacts[index];
+        return ListTile(
+          leading: mentionAvatar(contact, colorScheme),
+          title: Text(
+            contact.name,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          onTap: () => onSelect(contact),
+        );
+      },
     );
   }
 }

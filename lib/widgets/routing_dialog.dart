@@ -9,6 +9,8 @@ import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../screens/path_graph_screen.dart';
+import '../services/app_settings_service.dart';
 import 'path_selection_dialog.dart';
 
 enum RoutingMode { auto, flood, custom }
@@ -20,15 +22,29 @@ RoutingMode routingModeOf(Contact contact) {
   return RoutingMode.custom;
 }
 
-IconData routingIconOf(Contact contact) {
-  switch (routingModeOf(contact)) {
-    case RoutingMode.auto:
-      return Icons.auto_mode;
-    case RoutingMode.flood:
-      return Icons.waves;
-    case RoutingMode.custom:
-      return Icons.route;
-  }
+bool _pathfinderOn(BuildContext context) =>
+    context.watch<AppSettingsService?>()?.settings.pathGraphEnabled ?? false;
+
+/// The one path icon: opens routing everywhere, and marks what Pathfinder
+/// chose. Amber while Pathfinder is on.
+class RoutingIcon extends StatelessWidget {
+  static const icon = Icons.alt_route;
+
+  static Color pathfinderColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.amber
+          : Colors.amber.shade800;
+
+  final double? size;
+
+  const RoutingIcon({super.key, this.size});
+
+  @override
+  Widget build(BuildContext context) => Icon(
+        icon,
+        size: size,
+        color: _pathfinderOn(context) ? pathfinderColor(context) : null,
+      );
 }
 
 /// The one place a contact's routing is chosen: automatic (the radio's own
@@ -205,6 +221,8 @@ class _RoutingDialog extends StatelessWidget {
         final c = _live(connector);
         final mode = routingModeOf(c);
         final customLabel = _customLabel(context, c);
+        final pathfinderOn = _pathfinderOn(context);
+        final amber = RoutingIcon.pathfinderColor(context);
 
         Future<void> select(RoutingMode? next) async {
           switch (next) {
@@ -252,7 +270,27 @@ class _RoutingDialog extends StatelessWidget {
                       RadioListTile<RoutingMode>(
                         value: RoutingMode.auto,
                         title: Text(l10n.routing_auto),
-                        subtitle: Text(l10n.routing_autoSubtitle),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(l10n.routing_autoSubtitle),
+                            if (pathfinderOn) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(RoutingIcon.icon, size: 16, color: amber),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.routing_pathfinderOn,
+                                      style: TextStyle(color: amber),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                       RadioListTile<RoutingMode>(
                         value: RoutingMode.flood,
@@ -276,6 +314,25 @@ class _RoutingDialog extends StatelessWidget {
                     ],
                   ),
                 ),
+                // What the graph knows about this contact, one tap from the
+                // place the route is chosen. Only while Pathfinder is on
+                // (the service is optional so the dialog's tests need none).
+                if (pathfinderOn) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(RoutingIcon.icon, color: amber),
+                    title: Text(l10n.routing_pathfinder),
+                    subtitle: Text(l10n.routing_pathfinderSubtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PathGraphScreen(initialTargetKey: c.publicKeyHex),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

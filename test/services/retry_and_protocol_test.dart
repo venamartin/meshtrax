@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
+import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -88,10 +89,13 @@ class _Harness {
   int pathResets = 0;
   // Contacts whose message was reported delivered by a flood attempt.
   final floodDeliveries = <String>[];
+  // How each direct attempt was reported to the graph.
+  final attempts = <({String bytes, bool delivered})>[];
   Message? lastUpdate;
   static const timeoutMs = 2000;
 
-  _Harness() {
+  /// [graphRoutes] non-null turns Pathfinder on with those ranked routes.
+  _Harness({List<PathSelection>? graphRoutes}) {
     retryService.initialize(
       RetryServiceConfig(
         sendMessage: (_, _, attempt, ts) =>
@@ -103,6 +107,9 @@ class _Harness {
         calculateTimeout: (_, _, {contact}) => timeoutMs,
         getSelfPublicKey: () => selfKey,
         onFloodDelivered: (c) => floodDeliveries.add(c.publicKeyHex),
+        graphRoutes: graphRoutes == null ? null : (_) => graphRoutes,
+        onAttemptResult: (_, selection, delivered, _) => attempts
+            .add((bytes: selection.pathBytes.join(","), delivered: delivered)),
       ),
     );
   }
@@ -1004,6 +1011,160 @@ void main() {
         async.elapse(const Duration(minutes: 10));
         expect(h.sends.length, equals(2), reason: 'no further attempts');
         expect(h.retryService.hasPendingMessages, isFalse);
+      });
+    });
+  });
+
+  group('attempt ladder — Pathfinder', () {
+    const text = 'hello';
+    const retryGap = _Harness.timeoutMs + MessageRetryService.retryBackoffMs;
+    const g1 = PathSelection(
+      pathBytes: [0xA2, 0x77, 0x10, 0x00],
+      hopCount: 2,
+      hashSize: 2,
+      useFlood: false,
+      source: RouteSource.graph,
+      estDelivery: 0.8,
+    );
+    const g2 = PathSelection(
+      pathBytes: [0xBE, 0xEF, 0x10, 0x00],
+      hopCount: 2,
+      hashSize: 2,
+      useFlood: false,
+      source: RouteSource.graph,
+      estDelivery: 0.5,
+    );
+
+    test('a graph route is written first, then the ladder floods', () {
+      fakeAsync((async) {
+        final h = _Harness(graphRoutes: const [g1]);
+        final contact = _makeContact(
+            publicKey: recipientKey, pathLength: 1, path: const [0x10]);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+
+        expect(h.pathPushes, equals([g1.pathBytes]));
+        expect(h.lastUpdate!.pathLength, equals(2));
+        expect(h.lastUpdate!.routeSource, equals(RouteSource.graph));
+
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+
+        expect(h.pathResets, equals(1));
+        expect(h.lastUpdate!.pathLength, equals(-1));
+        expect(h.lastUpdate!.routeSource, equals(RouteSource.firmware));
+      });
+    });
+
+    test('with nothing from the graph it floods; the stored route is never sent',
+        () {
+      // Owner rule 2026-10-14: with Pathfinder on, the radio's stored route
+      // is never a rung.
+      fakeAsync((async) {
+        final h = _Harness(graphRoutes: const []);
+        final contact = _makeContact(
+            publicKey: recipientKey, pathLength: 1, path: const [0x10]);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        expect(h.pathPushes, isEmpty);
+        expect(h.pathResets, equals(1));
+        expect(h.lastUpdate!.pathLength, equals(-1));
+
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 1200);
+        expect(h.attempts.where((a) => a.bytes == '16'), isEmpty);
+      });
+    });
+
+    test('with Pathfinder off the stored route still goes first', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        final contact = _makeContact(
+            publicKey: recipientKey, pathLength: 1, path: const [0x10]);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        expect(h.pathResets, equals(0));
+        expect(h.lastUpdate!.routeSource, equals(RouteSource.firmware));
+        expect(h.lastUpdate!.pathLength, equals(1));
+      });
+    });
+
+    test('a late ACK for the graph attempt credits its route, not the flood',
+        () {
+      fakeAsync((async) {
+        final h = _Harness(graphRoutes: const [g1]);
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        expect(h.lastUpdate!.pathLength, equals(-1), reason: 'flooding now');
+
+        h.retryService.handleAckReceived(h.ackHashFor(0, text), 9000);
+
+        expect(h.lastUpdate!.status, equals(MessageStatus.delivered));
+        expect(h.lastUpdate!.pathLength, equals(2));
+        expect(h.lastUpdate!.pathBytes, equals(g1.pathBytes));
+        expect(h.lastUpdate!.routeSource, equals(RouteSource.graph));
+        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: true)]),
+            reason: 'the flood in flight is not judged');
+      });
+    });
+
+    test('a timed-out route is reported failed once, the acked one delivered',
+        () {
+      fakeAsync((async) {
+        final h = _Harness(graphRoutes: const [g1, g2]);
+        h.retryService.setMaxRetries(4);
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        expect(h.pathPushes, equals([g1.pathBytes, g2.pathBytes]));
+        expect(h.attempts, isEmpty, reason: 'judged when the message resolves');
+
+        h.retryService.handleAckReceived(h.ackHashFor(1, text), 1500);
+        expect(
+            h.attempts,
+            equals([
+              (bytes: g1.pathBytes.join(","), delivered: false),
+              (bytes: g2.pathBytes.join(","), delivered: true),
+            ]));
+
+        async.elapse(const Duration(minutes: 10));
+        expect(h.attempts.length, equals(2));
+      });
+    });
+
+    test('a message that fails outright reports its routes after the grace',
+        () {
+      fakeAsync((async) {
+        final h = _Harness(graphRoutes: const [g1]);
+        final contact = _makeContact(publicKey: recipientKey);
+
+        h.retryService.sendMessageWithRetry(contact: contact, text: text);
+        async.flushMicrotasks();
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        async.elapse(const Duration(milliseconds: _Harness.timeoutMs + 1));
+        expect(h.lastUpdate!.status, equals(MessageStatus.failed));
+        expect(h.attempts, isEmpty);
+
+        async.elapse(MessageRetryService.lateAckGrace);
+        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]));
       });
     });
   });

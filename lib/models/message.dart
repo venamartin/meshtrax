@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/reaction_helper.dart';
+import 'path_selection.dart';
 
 
 enum MessageStatus { pending, sent, delivered, failed }
@@ -27,6 +28,9 @@ class Message {
   // Hash width of pathBytes. Null for messages stored before it was recorded;
   // their bytes can only be shown at the contact's current width.
   final int? pathHashSize;
+  // Who chose the route of the attempt pathLength describes. Rows stored
+  // before Pathfinder read as firmware.
+  final RouteSource routeSource;
   // The ACK arrived after every attempt had timed out and the message had
   // already been marked failed.
   final bool deliveredLate;
@@ -59,6 +63,7 @@ class Message {
     Map<String, MessageStatus>? reactionStatuses,
     this.pathLength,
     this.pathHashSize,
+    this.routeSource = RouteSource.firmware,
     this.deliveredLate = false,
   }) : messageId = messageId ??
            '${timestamp.millisecondsSinceEpoch}_${pubKeyToHex(senderKey)}_${text.hashCode}',
@@ -82,6 +87,7 @@ class Message {
     int? pathLength,
     Uint8List? pathBytes,
     int? pathHashSize,
+    RouteSource? routeSource,
     bool? isCli,
     bool? deliveredLate,
 
@@ -108,6 +114,7 @@ class Message {
       pathLength: pathLength ?? this.pathLength,
       pathBytes: pathBytes ?? this.pathBytes,
       pathHashSize: pathHashSize ?? this.pathHashSize,
+      routeSource: routeSource ?? this.routeSource,
       deliveredLate: deliveredLate ?? this.deliveredLate,
       reactions: reactions ?? this.reactions,
       reactionSenders: reactionSenders ?? this.reactionSenders,

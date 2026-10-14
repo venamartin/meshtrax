@@ -39,6 +39,7 @@ class AppSettings {
   final String themeMode;
   final String? languageOverride; // null = system default
   final bool appDebugLogEnabled;
+  final bool pathGraphEnabled;
   final Map<String, String> batteryChemistryByDeviceId;
   final Map<String, String> batteryChemistryByRepeaterId;
   final UnitSystem unitSystem;
@@ -100,6 +101,7 @@ class AppSettings {
     this.themeMode = 'dark',
     this.languageOverride,
     this.appDebugLogEnabled = false,
+    this.pathGraphEnabled = false,
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
@@ -149,6 +151,7 @@ class AppSettings {
       'theme_mode': themeMode,
       'language_override': languageOverride,
       'app_debug_log_enabled': appDebugLogEnabled,
+      'path_graph_enabled': pathGraphEnabled,
       'battery_chemistry_by_device_id': batteryChemistryByDeviceId,
       'battery_chemistry_by_repeater_id': batteryChemistryByRepeaterId,
       'unit_system': unitSystem.value,
@@ -206,6 +209,7 @@ class AppSettings {
       themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
+      pathGraphEnabled: json['path_graph_enabled'] as bool? ?? false,
       batteryChemistryByDeviceId:
           (json['battery_chemistry_by_device_id'] as Map?)?.map(
             (key, value) => MapEntry(key.toString(), value.toString()),
@@ -278,6 +282,7 @@ class AppSettings {
     String? themeMode,
     Object? languageOverride = _unset,
     bool? appDebugLogEnabled,
+    bool? pathGraphEnabled,
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     UnitSystem? unitSystem,
@@ -326,6 +331,7 @@ class AppSettings {
           ? this.languageOverride
           : languageOverride as String?,
       appDebugLogEnabled: appDebugLogEnabled ?? this.appDebugLogEnabled,
+      pathGraphEnabled: pathGraphEnabled ?? this.pathGraphEnabled,
       batteryChemistryByDeviceId:
           batteryChemistryByDeviceId ?? this.batteryChemistryByDeviceId,
       batteryChemistryByRepeaterId:
