@@ -1495,6 +1495,7 @@
   "contacts_clipboardEmpty": "Urklipp är tomt.",
   "appSettings_languageRu": "Ryska",
   "contacts_contactImportFailed": "Kontakt kunde inte importeras.",
+  "contacts_alreadyInContacts": "{name} finns redan bland dina kontakter.",
   "contacts_zeroHopAdvert": "Reklam med nollhopp",
   "contacts_floodAdvert": "Översvämningsannons",
   "contacts_copyAdvertToClipboard": "Kopiera annons till urklipp",

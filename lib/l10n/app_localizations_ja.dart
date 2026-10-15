@@ -3283,6 +3283,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contacts_contactImportFailed => '連絡先のインポートに失敗しました。';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name はすでに連絡先にあります。';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'ゼロホップ広告';
 
   @override

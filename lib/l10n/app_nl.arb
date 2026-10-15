@@ -1495,6 +1495,7 @@
   "appSettings_languageUk": "Oekraïens",
   "contacts_invalidAdvertFormat": "Ongeldige contactgegevens",
   "contacts_contactImportFailed": "Contact kon niet geïmporteerd worden.",
+  "contacts_alreadyInContacts": "{name} staat al in je contacten.",
   "contacts_zeroHopAdvert": "Zero Hop Reclame",
   "contacts_floodAdvert": "Overstromingsadvertentie",
   "contacts_copyAdvertToClipboard": "Advert naar klembord kopiëren",

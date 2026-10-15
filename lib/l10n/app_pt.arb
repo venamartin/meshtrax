@@ -1504,6 +1504,7 @@
   "appSettings_enableMessageTracingSubtitle": "Mostrar metadados detalhados de roteamento e tempo para as mensagens",
   "contacts_ShareContact": "Copiar contato para Área de Transferência",
   "contacts_contactImportFailed": "Contato falhou ao ser importado.",
+  "contacts_alreadyInContacts": "{name} já está nos seus contatos.",
   "contacts_zeroHopContactAdvertSent": "Enviou contato por anúncio.",
   "contacts_contactAdvertCopied": "Anúncio copiado para a Área de Transferência.",
   "contacts_floodAdvert": "Anúncio de Inundação",

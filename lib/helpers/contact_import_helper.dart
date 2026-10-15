@@ -80,6 +80,21 @@ class ContactImportHelper {
         );
         return;
       }
+      // The radio applies an import in place: a blank record built from a
+      // scanned key would wipe a saved contact's route, flags, location,
+      // name and type.
+      final hexLower = pubKeyHex.toLowerCase();
+      final saved = connector.contacts.cast<Contact?>().firstWhere(
+            (c) => c!.publicKeyHex.toLowerCase() == hexLower,
+            orElse: () => null,
+          );
+      if (saved != null) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_alreadyInContacts(saved.name)),
+        );
+        return;
+      }
       final contact = Contact(
         publicKey: pubKey,
         name: name,

@@ -3421,6 +3421,11 @@ class AppLocalizationsPl extends AppLocalizations {
       'Kontakt nie został zaimportowany.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name jest już w Twoich kontaktach.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Rozgłoszenie zero-hop';
 
   @override

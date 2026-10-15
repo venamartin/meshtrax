@@ -1501,6 +1501,7 @@
   "contacts_contactImported": "Контактът е импортиран.",
   "contacts_zeroHopAdvert": "Реклама без скок",
   "contacts_contactImportFailed": "Контактът не е успешно импортиран.",
+  "contacts_alreadyInContacts": "{name} вече е в контактите ви.",
   "contacts_floodAdvert": "Потопна реклама",
   "contacts_addContactFromClipboard": "Добави контакт от клипборда",
   "contacts_copyAdvertToClipboard": "Копирай обявата в клипборда",
