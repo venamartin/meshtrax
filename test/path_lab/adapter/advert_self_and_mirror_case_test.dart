@@ -51,6 +51,7 @@ void main() {
   test('(a) Bob\'s signed advert doorstep is filed under the key routing reads',
       () {
     adapter.handleFrame(_rxFrame([0xA2, 0x77], _chatAdvert(bobKey, 'Bob')));
+    adapter.handleFrame(Uint8List.fromList([0x80, ...bobKey])); // verified
     expect(graph.ingressCandidates(bobHex).map((c) => c.repeaterHash),
         contains('A277'),
         reason: 'owners with ingress rows: ${graph.contactsWithIngress()}');
@@ -59,6 +60,7 @@ void main() {
   test('(b) after Bob\'s advert, a Public post from "Bob" still credits Bob',
       () {
     adapter.handleFrame(_rxFrame([0xA2, 0x77], _chatAdvert(bobKey, 'Bob')));
+    adapter.handleFrame(Uint8List.fromList([0x80, ...bobKey])); // verified
     graph.observeChannelSender('Bob', Uint8List.fromList([0x13, 0x12]), 2);
     expect(graph.ingressCandidates(bobHex).map((c) => c.repeaterHash),
         contains('1312'),

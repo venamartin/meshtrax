@@ -15,6 +15,7 @@ import '../../utils/app_logger.dart';
 
 // Packet header (Packet.h).
 const int _phRouteMask = 0x03;
+const int _maxPathBytes = 64; // MAX_PATH_SIZE
 const int _phTypeShift = 2;
 const int _phTypeMask = 0x0F;
 const int _routeTransportFlood = 0x00;
@@ -76,6 +77,8 @@ const int _advFeat2Mask = 0x40;
 const int _advNameMask = 0x80;
 
 // Companion push codes.
+const int pushAdvert = 0x80;
+const int pushNewAdvert = 0x8A;
 const int pushLogRxData = 0x88;
 const int pushTraceData = 0x89;
 const int pushPathDiscoveryResponse = 0x8D;
@@ -112,6 +115,13 @@ class _FloodAck {
   final int snrByte;
   final Uint8List pathBytes;
   final int stride;
+}
+
+class _HeldAdvert {
+  _HeldAdvert(this.at, this.advert, this.packet);
+  final DateTime at;
+  final ParsedAdvert advert;
+  final RawPacket packet;
 }
 
 class _Attempt {
@@ -155,15 +165,22 @@ RawPacket? parseRawPacket(Uint8List raw) {
   if (raw.length < 2) return null;
   var i = 0;
   final header = raw[i++];
+  // The firmware drops these before anything else sees them
+  // (Dispatcher::tryParsePacket): a newer payload version, the reserved
+  // path mode, and a path longer than it can hold.
+  if (header >> 6 != 0) return null;
   final routeType = header & _phRouteMask;
   if (routeType == _routeTransportFlood || routeType == _routeTransportDirect) {
     i += 4;
   }
   if (i >= raw.length) return null;
   final pathLenRaw = raw[i++];
+  if (pathLenRaw >> 6 == 3) return null;
   final stride = PathHelper.pathLenWidth(pathLenRaw);
   final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
-  if (i + pathByteLen > raw.length) return null;
+  if (pathByteLen > _maxPathBytes || i + pathByteLen > raw.length) {
+    return null;
+  }
   final path = Uint8List.sublistView(raw, i, i + pathByteLen);
   i += pathByteLen;
   return RawPacket(routeType, (header >> _phTypeShift) & _phTypeMask, stride,
@@ -188,8 +205,9 @@ class ParsedAdvert {
 }
 
 /// pubkey(32) + timestamp(4) + signature(64) + app_data (flags, latlon?,
-/// feats?, name). Signature NOT verified here — the firmware already
-/// verified it before forwarding (Mesh.cpp advert case).
+/// feats?, name). Signature NOT verified here, and the radio logs the raw
+/// packet before it verifies anything: who sent an advert is trusted only
+/// once the radio pushes PUSH_CODE_ADVERT / NEW_ADVERT for that key.
 ParsedAdvert? parseAdvert(Uint8List payload) {
   if (payload.length < 32 + 4 + 64 + 1) return null;
   final pubkey = Uint8List.fromList(payload.sublist(0, 32));
@@ -479,6 +497,9 @@ class PathLabAdapter {
       }
     }
     switch (frame[0]) {
+      case pushAdvert:
+      case pushNewAdvert:
+        _onAdvertVerified(frame);
       case pushLogRxData:
         _handleRawRx(frame);
       case pushTraceData:
@@ -805,32 +826,95 @@ class PathLabAdapter {
   void _observe(RawPacket packet, double rxSnr) {
     if (packet.payloadType == _payloadTypeAdvert) {
       final advert = parseAdvert(packet.payload);
-      if (advert != null) {
-        if (advert.type == _advTypeRepeater || advert.type == _advTypeRoom) {
-          graph.ingestNode(advert.nodeHash(graph.hashWidthBytes),
-              name: advert.name,
-              pubkey: advert.pubkeyHex,
-              lat: advert.lat,
-              lon: advert.lon);
-        } else if (advert.type == _advTypeChat && advert.name != null) {
-          graph.ingestContact(advert.pubkeyHex, advert.name!);
-        }
-        // The advert's own path is a normal RF-heard observation with
-        // cryptographic attribution.
+      // My own advert gets no push (the firmware ignores its own key); it
+      // is filed as an echo of my flood, as before.
+      if (advert != null && advert.pubkeyHex == graph.selfPubkey) {
         graph.observePath(packet.pathBytes, packet.stride,
             ObservationOrigin.pubkeyConfirmed(advert.pubkeyHex),
-            rxSnr: rxSnr,
-            messageId: payloadFingerprint(packet.payload));
+            rxSnr: rxSnr, messageId: payloadFingerprint(packet.payload));
         return;
       }
+      if (advert != null) _holdAdvert(advert, packet);
     }
 
-    // Everything else: anonymous edge harvest (paths are cleartext even
+    // Every path, adverts included: anonymous edge harvest (paths are cleartext even
     // when payloads aren't decryptable). Attribution upgrades (channel
     // name resolution, DM correlation) come later in the harness.
     graph.observePath(packet.pathBytes, packet.stride,
         const ObservationOrigin.anonymous(),
         rxSnr: rxSnr, messageId: payloadFingerprint(packet.payload));
+  }
+
+  /// Adverts logged but not yet verified, by pubkey: the path is already
+  /// filed as an anonymous corridor; who sent it waits for the radio.
+  final Map<String, List<_HeldAdvert>> _heldAdverts = {};
+
+  /// Payloads the radio verified, by pubkey: later flood copies of the
+  /// same advert (the radio drops duplicates without a second push) are
+  /// attributed when their bytes match exactly.
+  final Map<String, ({Uint8List payload, DateTime at})> _verifiedAdverts = {};
+  static const Duration _advertVerifyWindow = Duration(seconds: 5);
+  static const Duration _advertCopyWindow = Duration(seconds: 60);
+
+  void _holdAdvert(ParsedAdvert advert, RawPacket packet) {
+    final key = advert.pubkeyHex;
+    final now = DateTime.now();
+    final verified = _verifiedAdverts[key];
+    if (verified != null &&
+        now.difference(verified.at) <= _advertCopyWindow &&
+        _sameBytes(verified.payload, packet.payload)) {
+      _attributeAdvert(advert, packet);
+      return;
+    }
+    _heldAdverts.removeWhere((_, held) =>
+        held.every((h) => now.difference(h.at) > _advertVerifyWindow));
+    (_heldAdverts[key] ??= []).add(_HeldAdvert(now, advert, packet));
+  }
+
+  /// [PUSH_CODE_ADVERT][pubkey ×32] or [PUSH_CODE_NEW_ADVERT][contact…]:
+  /// the radio checked the signature (and that it is not a replay).
+  void _onAdvertVerified(Uint8List frame) {
+    if (frame.length < 33) return;
+    final key = _hex(frame.sublist(1, 33)).toLowerCase();
+    final held = _heldAdverts.remove(key);
+    if (held == null) return;
+    final now = DateTime.now();
+    final fresh =
+        held.where((h) => now.difference(h.at) <= _advertVerifyWindow).toList();
+    if (fresh.isEmpty) return;
+    // The radio verified one advert; copies with other bytes are not it.
+    final payload = fresh.first.packet.payload;
+    _verifiedAdverts[key] = (payload: Uint8List.fromList(payload), at: now);
+    if (_verifiedAdverts.length > 64) {
+      _verifiedAdverts.remove(_verifiedAdverts.keys.first);
+    }
+    for (final h in fresh) {
+      if (_sameBytes(payload, h.packet.payload)) {
+        _attributeAdvert(h.advert, h.packet);
+      }
+    }
+  }
+
+  void _attributeAdvert(ParsedAdvert advert, RawPacket packet) {
+    if (advert.type == _advTypeRepeater || advert.type == _advTypeRoom) {
+      graph.ingestNode(advert.nodeHash(graph.hashWidthBytes),
+          name: advert.name,
+          pubkey: advert.pubkeyHex,
+          lat: advert.lat,
+          lon: advert.lon);
+    } else if (advert.type == _advTypeChat && advert.name != null) {
+      graph.ingestContact(advert.pubkeyHex, advert.name!);
+    }
+    graph.observeContactSender(
+        advert.pubkeyHex, packet.pathBytes, packet.stride, confirmed: true);
+  }
+
+  static bool _sameBytes(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   /// Wire layout (verified against the connector's own handler):

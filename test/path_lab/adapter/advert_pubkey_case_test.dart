@@ -58,6 +58,7 @@ void main() {
   test('signed advert doorstep reaches the key routing looks up', () {
     adapter.handleFrame(_rxFrame(
         payloadType: 0x04, path: [0xBE, 0xEF], payload: _chatAdvert(bobKey, 'Bob')));
+    adapter.handleFrame(Uint8List.fromList([0x80, ...bobKey])); // verified
     expect(graph.ingressCandidates(bobHex).map((c) => c.repeaterHash),
         contains('BEEF'),
         reason: 'advert credited BEEF under owner '
@@ -67,6 +68,7 @@ void main() {
   test('a chat advert does not make the contact name ambiguous', () {
     adapter.handleFrame(_rxFrame(
         payloadType: 0x04, path: [0xBE, 0xEF], payload: _chatAdvert(bobKey, 'Bob')));
+    adapter.handleFrame(Uint8List.fromList([0x80, ...bobKey])); // verified
     final origin = graph.resolveName('Bob');
     expect(origin, isA<UniqueNameOrigin>(),
         reason: 'two knownContacts entries (lower + upper) now match Bob');

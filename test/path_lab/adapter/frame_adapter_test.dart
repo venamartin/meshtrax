@@ -75,11 +75,11 @@ void main() {
       payload: advertPayload(
           pubkey32: pubkey, advType: 2, name: 'Alpha', lat: 36.9, lon: -121.7),
     ));
+    adapter.handleFrame(Uint8List.fromList([0x80, ...pubkey])); // verified
     final snap = graph.snapshot();
     expect(snap.nodes['A277']!.name, 'Alpha');
     expect(snap.nodes['A277']!.lat, closeTo(36.9, 1e-5));
     expect(snap.edges.containsKey(('1312', '5CBB')), isTrue);
-    expect(graph.counters.observationsApplied, 1);
   });
 
   test('chat advert feeds the contact mirror', () {
@@ -88,7 +88,61 @@ void main() {
       path: [0x13, 0x12],
       payload: advertPayload(pubkey32: pubkey, advType: 1, name: 'Bob'),
     ));
+    adapter.handleFrame(Uint8List.fromList([0x8A, ...pubkey])); // new contact
     expect(graph.resolveName('Bob'), isA<UniqueNameOrigin>());
+  });
+
+  group('adverts are trusted only once the radio verified them', () {
+    Uint8List advert({String name = 'Alpha', List<int> path = const [0x13, 0x12]}) =>
+        rxFrame(
+          payloadType: 0x04,
+          path: path,
+          payload: advertPayload(pubkey32: pubkey, advType: 2, name: name),
+        );
+    final verified = Uint8List.fromList([0x80, ...pubkey]);
+    final owner = 'a277${'11' * 30}';
+
+    test('no push: the path is a corridor, nobody is named or credited', () {
+      adapter.handleFrame(advert(path: [0x13, 0x12, 0x5C, 0xBB]));
+      final snap = graph.snapshot();
+      expect(snap.edges.containsKey(('1312', '5CBB')), isTrue);
+      expect(snap.nodes['A277']?.name, isNull);
+      expect(graph.contactsWithIngress(), isEmpty);
+    });
+
+    test('a push for another key credits nothing', () {
+      adapter.handleFrame(advert());
+      adapter.handleFrame(Uint8List.fromList([0x80, ...List.filled(32, 0x42)]));
+      expect(graph.snapshot().nodes['A277']?.name, isNull);
+    });
+
+    test('a later copy with the same bytes is credited, one with other bytes is not',
+        () {
+      adapter.handleFrame(advert());
+      adapter.handleFrame(verified);
+      adapter.handleFrame(advert(path: [0xBE, 0xEF]));
+      adapter.handleFrame(advert(name: 'Forged', path: [0xAD, 0x77]));
+      final doorsteps =
+          graph.ingressCandidates(owner).map((c) => c.repeaterHash).toSet();
+      expect(doorsteps, {'1312', 'BEEF'});
+      expect(graph.snapshot().nodes['A277']!.name, 'Alpha');
+    });
+
+    test('the firmware\'s rejects are rejected here too', () {
+      final ok = Uint8List.fromList([(0x05 << 2) | 0x01, 0x41, 0xA2, 0x77, 9]);
+      expect(parseRawPacket(ok), isNotNull);
+      // Payload version 1.
+      expect(parseRawPacket(Uint8List.fromList([0x40 | ok[0], ...ok.sublist(1)])),
+          isNull);
+      // Path mode 3 (reserved width).
+      expect(parseRawPacket(Uint8List.fromList([ok[0], 0xC1, 0xA2, 0x77, 0, 0, 9])),
+          isNull);
+      // 33 two-byte hops = 66 path bytes, more than the 64 a packet holds.
+      expect(
+          parseRawPacket(Uint8List.fromList(
+              [ok[0], 0x40 | 33, ...List.filled(66, 0x11), 9])),
+          isNull);
+    });
   });
 
   test('group text harvests edges anonymously with variant dedup', () {
