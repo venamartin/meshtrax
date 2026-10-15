@@ -242,7 +242,7 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const RoutingIcon(),
+            icon: RoutingIcon(contact: repeater),
             tooltip: l10n.routing_title,
             onPressed: () =>
                 RoutingDialog.show(context, contact: repeater),

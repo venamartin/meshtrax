@@ -202,7 +202,7 @@ class _RoomLoginDialogState extends State<RoomLoginDialog> {
                   const Divider(),
                   Row(
                     children: [
-                      const RoutingIcon(size: 18),
+                      RoutingIcon(contact: repeater, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

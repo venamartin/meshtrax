@@ -589,7 +589,7 @@ class _ChatScreenState extends State<ChatScreen> {
             builder: (context, connector, _) {
               final contact = _resolveContact(connector);
               return IconButton(
-                icon: const RoutingIcon(),
+                icon: RoutingIcon(contact: contact),
                 tooltip: context.l10n.routing_title,
                 onPressed: () => RoutingDialog.show(context, contact: contact),
               );

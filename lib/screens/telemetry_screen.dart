@@ -166,7 +166,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const RoutingIcon(),
+            icon: RoutingIcon(contact: widget.contact),
             tooltip: l10n.routing_title,
             onPressed: () =>
                 RoutingDialog.show(context, contact: widget.contact),

@@ -352,7 +352,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const RoutingIcon(),
+            icon: RoutingIcon(contact: repeater),
             tooltip: l10n.routing_title,
             onPressed: () =>
                 RoutingDialog.show(context, contact: repeater),

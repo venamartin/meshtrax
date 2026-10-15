@@ -25,8 +25,9 @@ RoutingMode routingModeOf(Contact contact) {
 bool _pathfinderOn(BuildContext context) =>
     context.watch<AppSettingsService?>()?.settings.pathGraphEnabled ?? false;
 
-/// The one path icon: opens routing everywhere, and marks what Pathfinder
-/// chose. Amber while Pathfinder is on.
+/// The one path icon: opens routing everywhere and shows the [contact]'s
+/// mode — Automatic (amber while Pathfinder chooses the route), always
+/// flood, direct, or a custom path.
 class RoutingIcon extends StatelessWidget {
   static const icon = Icons.alt_route;
 
@@ -35,16 +36,32 @@ class RoutingIcon extends StatelessWidget {
           ? Colors.amber
           : Colors.amber.shade800;
 
+  final Contact? contact;
   final double? size;
 
-  const RoutingIcon({super.key, this.size});
+  const RoutingIcon({super.key, this.contact, this.size});
 
   @override
-  Widget build(BuildContext context) => Icon(
-        icon,
-        size: size,
-        color: _pathfinderOn(context) ? pathfinderColor(context) : null,
-      );
+  Widget build(BuildContext context) {
+    final c = contact;
+    var live = c;
+    if (c != null) {
+      for (final x in context.watch<MeshCoreConnector?>()?.contacts ??
+          const <Contact>[]) {
+        if (x.publicKeyHex == c.publicKeyHex) live = x;
+      }
+    }
+    final mode = live == null ? RoutingMode.auto : routingModeOf(live);
+    final glyph = switch (mode) {
+      RoutingMode.auto => icon,
+      RoutingMode.flood => Icons.waves,
+      RoutingMode.custom =>
+        live!.pathOverride == 0 ? Icons.settings_ethernet : Icons.route,
+    };
+    final amber = mode == RoutingMode.auto && _pathfinderOn(context);
+    return Icon(glyph,
+        size: size, color: amber ? pathfinderColor(context) : null);
+  }
 }
 
 /// The one place a contact's routing is chosen: automatic (the radio's own

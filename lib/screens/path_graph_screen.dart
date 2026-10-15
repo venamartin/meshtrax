@@ -22,9 +22,11 @@ import 'path_graph_diagnostics_screen.dart';
 import 'path_trace_map.dart';
 
 /// Pathfinder: the repeaters around this radio, and how it would reach
-/// whoever is picked. Laid out like the room server screen. Observe only
-/// — nothing here changes how a message is sent. Strings are deliberately
-/// not localized; this is a lab screen.
+/// whoever is picked. Laid out like the room server screen. While the
+/// switch is on, the routes shown here are the ones DMs, logins and
+/// repeater commands try first; the screen itself only reads the graph
+/// (Discover and the backup tools aside). Strings are deliberately not
+/// localized; this is a lab screen.
 class PathGraphScreen extends StatefulWidget {
   const PathGraphScreen({super.key, this.initialTargetKey});
 
