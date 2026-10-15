@@ -2398,6 +2398,7 @@
     }
   },
   "contact_remoteCliAllow": "Allow",
+  "connection_secondApp": "Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.",
   "wifi_title": "WiFi",
   "wifi_settingsSubtitle": "Network, password and connection",
   "wifi_use": "Use WiFi",

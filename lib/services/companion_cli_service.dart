@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
@@ -50,6 +51,16 @@ class CompanionCliService {
   final MeshCoreConnector _connector;
   int _counter;
   Future<void> _tail = Future.value();
+  // Tokens sent lately: a reply that arrives after its command timed out is
+  // still ours, not another app's.
+  final List<String> _recentTokens = [];
+
+  /// Whether a CLI_REPLY frame answers one of our recent commands.
+  bool isOwnReply(Uint8List frame) {
+    if (frame.length < 4) return false;
+    final token = utf8.decode(frame.sublist(1, 4), allowMalformed: true);
+    return _recentTokens.contains(token);
+  }
 
   static const Duration attemptTimeout = Duration(seconds: 3);
 
@@ -85,6 +96,8 @@ class CompanionCliService {
   Future<String> _runOnce(String command) async {
     final token =
         '${(_counter++ & 0xFF).toRadixString(16).padLeft(2, '0').toUpperCase()}|';
+    _recentTokens.add(token);
+    if (_recentTokens.length > 16) _recentTokens.removeAt(0);
     final completer = Completer<String>();
     final sub = _connector.receivedFrames.listen((frame) {
       if (frame.isEmpty || frame[0] != respCodeCliReply) return;

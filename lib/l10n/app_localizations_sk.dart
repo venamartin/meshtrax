@@ -4224,6 +4224,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contact_remoteCliAllow => 'Allow';
 
   @override
+  String get connection_secondApp =>
+      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+
+  @override
   String get wifi_title => 'WiFi';
 
   @override
