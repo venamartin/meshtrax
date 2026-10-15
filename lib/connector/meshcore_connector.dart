@@ -565,6 +565,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _contactSyncSince = 0;
   int _contactSyncRadioTotal = 0;
   bool _contactFullResyncPending = false;
+  // A full contact download asked for while a partial one was streaming.
+  bool _fullContactSyncAfterStream = false;
   // Route overrides of the list a full download is replacing, by key; each
   // is put back on its contact as the radio's frame for it arrives.
   Map<String, Contact> _overridesAcrossRefresh = {};
@@ -3134,6 +3136,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
+    _fullContactSyncAfterStream = false;
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
@@ -3462,6 +3465,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> getContacts({int? since, bool preserveExisting = false}) async {
     if (!isConnected) return;
+    // The radio streams one contact list at a time and refuses a second
+    // request mid-stream (ERR_CODE_BAD_STATE) while the first keeps coming.
+    // Clearing here would cut that list short and drop the route choices
+    // stashed for it. A full download already streaming covers this call;
+    // during a partial one, a full request runs when it ends.
+    if (_isLoadingContacts) {
+      if (!preserveExisting && _preserveContactsOnRefresh) {
+        _fullContactSyncAfterStream = true;
+      }
+      return;
+    }
 
     _isLoadingContacts = true;
     _preserveContactsOnRefresh = preserveExisting;
@@ -5265,6 +5279,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
         _isLoadingContacts = false;
         _preserveContactsOnRefresh = false;
+        if (_fullContactSyncAfterStream) {
+          _fullContactSyncAfterStream = false;
+          unawaited(getContacts());
+        }
         unawaited(updateKnownDiscovered());
         notifyListeners();
         unawaited(_persistContacts());
@@ -8899,6 +8917,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
+    _fullContactSyncAfterStream = false;
     _overridesAcrossRefresh = {};
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
