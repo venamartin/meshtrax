@@ -121,7 +121,10 @@ List<PathSelection> planAttempts(
     ];
   }
 
-  String key(PathSelection s) => '${s.hashSize}:${s.pathBytes.join(',')}';
+  // A zero-hop route is "no repeater" at any width: one slot.
+  String key(PathSelection s) => s.hopCount == 0
+      ? 'direct'
+      : '${s.hashSize}:${s.pathBytes.join(',')}';
   final seen = <String>{};
   final routes = <PathSelection>[
     for (final g in graphRoutes)

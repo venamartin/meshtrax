@@ -161,6 +161,19 @@ void main() {
       expect(ladder.first.pathBytes, g2.pathBytes);
     });
 
+    test('zero-hop routes at two widths take one slot', () {
+      PathSelection direct(int width) => PathSelection(
+          pathBytes: const [],
+          hopCount: 0,
+          hashSize: width,
+          useFlood: false,
+          source: RouteSource.graph);
+      final ladder =
+          plan(contact(), budget: 4, graphRoutes: [direct(2), direct(1), g2]);
+      expect([for (final s in ladder) s.useFlood ? 'flood' : s.hopCount],
+          [0, 2, 'flood', 'flood']);
+    });
+
     test('a graph direct hit is a zero-hop route, not a flood', () {
       final direct = const PathSelection(
           pathBytes: [],
