@@ -21,6 +21,8 @@ import '../helpers/snack_bar_builder.dart';
 import 'app_settings_screen.dart';
 import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
+import 'companion_cli_screen.dart';
+import 'wifi_settings_screen.dart';
 import '../widgets/radio_stats_entry.dart';
 
 /// Convert device coding-rate value (1-4 on some firmware, 5-8 on others)
@@ -352,6 +354,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => pushCompanionRadioStatsScreen(context),
           ),
           const Divider(height: 1),
+          if (connector.isConnected && connector.supportsCompanionCli) ...[
+            ListTile(
+              leading: const Icon(Icons.terminal),
+              title: Text(l10n.companionCli_title),
+              subtitle: Text(l10n.companionCli_settingsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CompanionCliScreen()),
+              ),
+            ),
+            const Divider(height: 1),
+          ],
+          if (connector.isConnected && connector.hasWifi == true) ...[
+            ListTile(
+              leading: const Icon(Icons.wifi),
+              title: Text(l10n.wifi_title),
+              subtitle: Text(l10n.wifi_settingsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WifiSettingsScreen()),
+              ),
+            ),
+            const Divider(height: 1),
+          ],
           ListTile(
             leading: const Icon(Icons.location_on_outlined),
             title: Text(l10n.settings_location),
