@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +37,18 @@ import '../helpers/snack_bar_builder.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
+
+/// The trace path for Route & trace: [out] (me → … → B) then [back]
+/// (B → … → a repeater I hear) without B a second time, or [out] mirrored
+/// when no way back is known. Everything stays at the graph's [width].
+@visibleForTesting
+Uint8List routeTracePath(List<int> out, List<int>? back, int width) {
+  if (back == null) return PathHelper.roundTripPath(out, stride: width);
+  return Uint8List.fromList([
+    ...out,
+    for (final hop in PathHelper.getHops(back, stride: width).skip(1)) ...hop,
+  ]);
+}
 
 class MapScreen extends StatefulWidget {
   final LatLng? highlightPosition;
@@ -2261,15 +2272,16 @@ class _MapScreenState extends State<MapScreen> {
   /// Asks the path graph for a route from me through the first tapped
   /// repeater to the second, and for its best route from there back to
   /// me, then traces out and back. With no route back known it returns
-  /// the same way. The trace result feeds the graph, so a route the graph
-  /// believed is proven or refuted hop by hop on the air.
+  /// the same way. The trace runs at the graph's own hash width (a trace
+  /// carries its width in its flags, so the radio's path hash size does
+  /// not matter), and its result is filed at that width.
   Future<void> _routeAndTrace(
       BuildContext context, Contact a, Contact b) async {
     final connector = context.read<MeshCoreConnector>();
     final graph = context.read<PathGraphService>().graph;
     final l10n = context.l10n;
     if (graph == null) return;
-    final stride = connector.pathHashByteWidth;
+    final width = graph.hashWidthBytes;
 
     final result =
         graph.findRouteVia(_graphHash(graph, a), _graphHash(graph, b));
@@ -2282,30 +2294,10 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
 
-    // The graph identifies hops at its own width; the radio routes at
-    // its path hash size, and a hash is a pubkey prefix, so truncating
-    // each hop is lossless.
-    List<List<int>> wireHops(RouteResult route) => [
-          for (final hop in PathHelper.getHops(route.pathBytes,
-              stride: graph.hashWidthBytes))
-            hop
-                .take(stride < graph.hashWidthBytes
-                    ? stride
-                    : graph.hashWidthBytes)
-                .toList()
-        ];
-    final out = [for (final hop in wireHops(result)) ...hop];
-
-    // The way back starts at B, already the last hop out.
     final back = graph.findReturnPathFromRepeater(_graphHash(graph, b));
-    final Uint8List roundTrip;
-    if (back is RouteResult) {
-      roundTrip = Uint8List.fromList([
-        ...out,
-        for (final hop in wireHops(back).skip(1)) ...hop,
-      ]);
-    } else {
-      roundTrip = PathHelper.roundTripPath(out, stride: stride);
+    final roundTrip = routeTracePath(result.pathBytes,
+        back is RouteResult ? back.pathBytes : null, width);
+    if (back is! RouteResult) {
       showDismissibleSnackBar(
         context,
         content: Text(l10n.map_routeBackMirrored),
@@ -2321,7 +2313,7 @@ class _MapScreenState extends State<MapScreen> {
               ? '${l10n.map_routeAndTrace} → ${b.name}'
               : '${l10n.map_routeAndTrace} ${a.name} → ${b.name}',
           path: roundTrip,
-          pathHashByteWidth: stride,
+          pathHashByteWidth: width,
           pathContacts: connector.allContacts,
         ),
       ),
