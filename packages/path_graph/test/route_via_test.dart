@@ -102,10 +102,24 @@ void main() {
           const ObservationOrigin.anonymous());
       final alts = graph.findReturnAlternativesFromRepeater('5CBB');
       expect(alts.map((r) => r.pathBytes.toList()).toSet(), hasLength(alts.length));
-      expect(alts, isNotEmpty);
       for (final r in alts) {
         expect(r.pathBytes.take(2), [0x5C, 0xBB]);
       }
+      // I hear 5CBB directly, and the trunk is a second way back.
+      expect(alts.map((r) => r.pathBytes.toList()), [
+        [0x5C, 0xBB],
+        [0x5C, 0xBB, 0x13, 0x12, 0xA2, 0x77],
+      ]);
+    });
+
+    test('a one-hop route to a repeater leaves room for the corridor', () {
+      // 5CBB proved it hears me too: it is a doorstep and the target.
+      graph.reportSendResult(path([0x5C, 0xBB]), true);
+      final alts = graph.findAlternativesToRepeater('5CBB');
+      expect(alts.map((r) => r.pathBytes.toList()), [
+        [0x5C, 0xBB],
+        [0xA2, 0x77, 0x13, 0x12, 0x5C, 0xBB],
+      ]);
     });
 
     test('nothing heard yet has no route back', () {

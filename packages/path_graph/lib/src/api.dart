@@ -914,6 +914,8 @@ class PathGraph {
     required int now,
   }) {
     if (egress.isEmpty || ingress.isEmpty) return const [];
+    egress = List.of(egress);
+    ingress = List.of(ingress);
 
     final finder = PathFinder(estimator.config, estimator);
     final penalties = <(String, String), double>{};
@@ -930,6 +932,16 @@ class PathGraph {
       if (route == null) break;
       final key = route.hops.join('>');
       if (seen.add(key)) results.add(_toResult(route));
+      if (route.hops.length == 1) {
+        // A one-hop route has no edge to penalise: the next search would
+        // find it again. Take the hop off whichever end has others.
+        final hop = route.hops.single;
+        bool drop(List<Candidate> end) =>
+            end.length > 1 &&
+            (end..removeWhere((c) => c.repeaterHash == hop)).isNotEmpty;
+        if (!drop(ingress) && !drop(egress)) break;
+        continue;
+      }
       for (var h = 0; h < route.hops.length - 1; h++) {
         final k = (route.hops[h], route.hops[h + 1]);
         penalties[k] = (penalties[k] ?? 0) + 1.4; // ≈ ×4 in probability
