@@ -317,7 +317,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         _routeList(graph, _forwardRoutes(graph, target), back: false),
         if (throughDoorsteps) ...[
           const SizedBox(height: 8),
-          _probeButtons(contact, service.adapter),
+          _probeButtons(graph, contact, service.adapter),
           const SizedBox(height: 24),
           _sectionTitle('Routes back from ${contact.name}'),
           const SizedBox(height: 8),
@@ -847,11 +847,34 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
-  Widget _probeButtons(Contact contact, PathLabAdapter? adapter) {
-    // A delivered message proves the forward direction only; a round-trip
-    // trace along the same route proves the way back.
-    final hasFirmwareRoute =
-        contact.pathLength > 0 && contact.path.isNotEmpty;
+  Widget _probeButtons(
+      PathGraph graph, Contact contact, PathLabAdapter? adapter) {
+    // A trace goes out on Pathfinder's best route, turns around at its last
+    // repeater (a companion never forwards a trace) and comes back on
+    // Pathfinder's best route back from there, or the same way reversed
+    // when none is known. The radio's own route is never traced: Pathfinder
+    // exists because it does not work.
+    final width = graph.hashWidthBytes;
+    final out = graph.findPath(contact.publicKeyHex);
+    final turn = out is RouteResult
+        ? PathHelper.lastHopHex(out.pathBytes, stride: width)
+        : null;
+    final back = turn == null ? null : graph.findReturnPathFromRepeater(turn);
+    final backBytes = back is RouteResult ? back.pathBytes : null;
+    final String note;
+    if (out is! RouteResult || turn == null) {
+      note = out is FloodResult
+          ? 'No trace: ${floodReasonText(out.reason)}.'
+          : 'No trace: they are heard directly, with no repeater between.';
+    } else if (backBytes == null) {
+      note = "Trace goes out on Pathfinder's best route "
+          '${_fmtPath(out.pathBytes, width)} and back the same way reversed. '
+          'No way back from $turn is known yet, so the way back is a guess.';
+    } else {
+      note = "Trace goes out on Pathfinder's best route "
+          '${_fmtPath(out.pathBytes, width)} and back on its best route back '
+          '${_fmtPath(backBytes, width)}.';
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -863,35 +886,28 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             icon: const Icon(Icons.travel_explore),
             label: const Text('Discover'),
           ),
-          if (hasFirmwareRoute)
+          if (out is RouteResult && turn != null)
             OutlinedButton.icon(
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PathTraceMapScreen(
                     title: '${context.l10n.contacts_pathTrace} ${contact.name}',
-                    path: contact.path,
-                    flipPathAround: true,
-                    targetContact: contact,
-                    pathHashByteWidth: contact.pathHashSize,
+                    path: PathHelper.outAndBackPath(out.pathBytes, backBytes,
+                        stride: width),
+                    pathHashByteWidth: width,
                     pathContacts: context.read<MeshCoreConnector>().allContacts,
                   ),
                 ),
               ),
               icon: const Icon(Icons.radar),
-              label: Text('Trace (${contact.pathLength} hops)'),
+              label: const Text('Trace'),
             ),
         ]),
-        if (hasFirmwareRoute)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-                "Trace goes out on the radio's route "
-                '${_fmtPath(contact.path, contact.pathHashSize)} and back the '
-                "same way reversed. The way back is a guess: links don't "
-                'always work both ways.',
-                style: Theme.of(context).textTheme.bodySmall),
-          ),
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(note, style: Theme.of(context).textTheme.bodySmall),
+        ),
         if (adapter?.discoveryStatus[contact.publicKeyHex.toLowerCase()]
             case final status?)
           Padding(

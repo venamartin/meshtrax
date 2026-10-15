@@ -58,7 +58,10 @@ void main() {
   });
 
   Future<void> pump(WidgetTester tester,
-      {required double width, double textScale = 1, Contact? target}) async {
+      {required double width,
+      double textScale = 1,
+      Contact? target,
+      void Function(PathGraph graph)? seed}) async {
     late AppSettingsService settings;
     final contact = target ?? _bob;
     final connector = _Connector([contact]);
@@ -68,6 +71,7 @@ void main() {
       service = PathGraphService();
       await service.start(connector, database: NativeDatabase.memory());
       service.graph!.ingestNode('A277', name: 'HILL');
+      seed?.call(service.graph!);
     });
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = Size(width, 6000);
@@ -127,19 +131,50 @@ void main() {
     await tester.runAsync(() => service.stop());
   });
 
-  testWidgets('Trace says which route goes out and that the way back is a guess',
-      (tester) async {
-    final routed = _bob.copyWith(
-      pathLength: 3,
-      path: Uint8List.fromList([0xA2, 0x77, 0x5B, 0x98, 0x88, 0x02]),
-      pathHashSize: 2,
-    );
-    await pump(tester, width: 1200, target: routed);
-    expect(find.text('Trace (3 hops)'), findsOneWidget);
-    expect(find.textContaining("radio's route A277 › 5B98 › 8802"),
-        findsOneWidget);
-    expect(find.textContaining('back the same way reversed'), findsOneWidget);
-    await tester.runAsync(() => service.stop());
+  group('Trace', () {
+    // Delivered on A277 › 1000 › 4F77: Pathfinder's route out to Bob.
+    void routeOut(PathGraph g) => g.reportSendResult(
+        Uint8List.fromList([0xA2, 0x77, 0x10, 0x00, 0x4F, 0x77]), true,
+        contactPubkey: _bob.publicKeyHex, stride: 2);
+
+    testWidgets("goes out and back on Pathfinder's best routes",
+        (tester) async {
+      // The radio holds another route; it is never traced.
+      final routed = _bob.copyWith(
+        pathLength: 3,
+        path: Uint8List.fromList([0xA2, 0x77, 0x5B, 0x98, 0x88, 0x02]),
+        pathHashSize: 2,
+      );
+      await pump(tester, width: 1200, target: routed, seed: (g) {
+        routeOut(g);
+        // Heard: a packet that went 4F77 → 1000 → A277 → me.
+        g.observePath(Uint8List.fromList([0x4F, 0x77, 0x10, 0x00, 0xA2, 0x77]),
+            2, const ObservationOrigin.anonymous());
+      });
+      expect(find.text('Trace'), findsOneWidget);
+      expect(
+          find.textContaining("Pathfinder's best route A277 › 1000 › 4F77 "
+              'and back on its best route back 4F77 › 1000 › A277'),
+          findsOneWidget);
+      expect(find.textContaining('5B98'), findsNothing);
+      await tester.runAsync(() => service.stop());
+    });
+
+    testWidgets('no way back known: the way out reversed, and it says so',
+        (tester) async {
+      await pump(tester, width: 1200, seed: routeOut);
+      expect(find.text('Trace'), findsOneWidget);
+      expect(find.textContaining('back the same way reversed'), findsOneWidget);
+      expect(find.textContaining('No way back from 4F77'), findsOneWidget);
+      await tester.runAsync(() => service.stop());
+    });
+
+    testWidgets('no Pathfinder route: no trace, and why', (tester) async {
+      await pump(tester, width: 1200);
+      expect(find.text('Trace'), findsNothing);
+      expect(find.textContaining('No trace:'), findsOneWidget);
+      await tester.runAsync(() => service.stop());
+    });
   });
 
   test('every no-route reason has plain words, in every direction', () {

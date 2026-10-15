@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshtrax/screens/map_screen.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
 
 // The map's Route & trace builds its trace at the graph's width. It used to
 // regroup the graph's 2-byte hops at the radio's path hash size: ambiguous
@@ -11,14 +11,14 @@ void main() {
   const back = [0x5C, 0xBB, 0x13, 0x12, 0xAD, 0x77];
 
   test('out then back, B once, every hop 2 bytes', () {
-    expect(routeTracePath(out, back, 2), [
+    expect(PathHelper.outAndBackPath(out, back, stride: 2), [
       0xA2, 0x77, 0x13, 0x12, 0x5C, 0xBB, //
       0x13, 0x12, 0xAD, 0x77,
     ]);
   });
 
   test('no way back known: the way out, mirrored', () {
-    expect(routeTracePath(out, null, 2), [
+    expect(PathHelper.outAndBackPath(out, null, stride: 2), [
       0xA2, 0x77, 0x13, 0x12, 0x5C, 0xBB, //
       0x13, 0x12, 0xA2, 0x77,
     ]);

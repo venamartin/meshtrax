@@ -38,18 +38,6 @@ import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
 
-/// The trace path for Route & trace: [out] (me → … → B) then [back]
-/// (B → … → a repeater I hear) without B a second time, or [out] mirrored
-/// when no way back is known. Everything stays at the graph's [width].
-@visibleForTesting
-Uint8List routeTracePath(List<int> out, List<int>? back, int width) {
-  if (back == null) return PathHelper.roundTripPath(out, stride: width);
-  return Uint8List.fromList([
-    ...out,
-    for (final hop in PathHelper.getHops(back, stride: width).skip(1)) ...hop,
-  ]);
-}
-
 class MapScreen extends StatefulWidget {
   final LatLng? highlightPosition;
   final String? highlightLabel;
@@ -2297,8 +2285,9 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     final back = graph.findReturnPathFromRepeater(_graphHash(graph, b));
-    final roundTrip = routeTracePath(result.pathBytes,
-        back is RouteResult ? back.pathBytes : null, width);
+    final roundTrip = PathHelper.outAndBackPath(
+        result.pathBytes, back is RouteResult ? back.pathBytes : null,
+        stride: width);
     if (back is! RouteResult) {
       showDismissibleSnackBar(
         context,
