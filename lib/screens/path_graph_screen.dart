@@ -21,6 +21,48 @@ import '../widgets/routing_dialog.dart';
 import 'path_graph_diagnostics_screen.dart';
 import 'path_trace_map.dart';
 
+/// Why Pathfinder has no route, in plain words. [back]: the way back from
+/// a contact; [fromRepeater]: the way back from a repeater. Every reason
+/// has its text in every case, so a new one cannot reach the screen as a
+/// code name.
+String floodReasonText(FloodReason reason,
+    {bool back = false, bool fromRepeater = false}) {
+  if (back && fromRepeater) {
+    return switch (reason) {
+      FloodReason.noEvidence => 'no repeater this radio hears is known yet',
+      FloodReason.noProvenEndpoint =>
+        'no repeater this radio hears is confirmed yet',
+      FloodReason.noCorridor =>
+        'no chain of repeaters joins it to one this radio hears',
+      FloodReason.belowThreshold => 'the links back are too weak',
+      FloodReason.overBudget => 'the way back is too long',
+    };
+  }
+  if (back) {
+    return switch (reason) {
+      FloodReason.noEvidence =>
+        'nothing flooded by them has been heard yet — direct replies carry no path',
+      FloodReason.noProvenEndpoint =>
+        'no repeater that hears them is confirmed yet',
+      FloodReason.noCorridor =>
+        'a repeater hears them and one hears me, but no chain of repeaters '
+            'joins them',
+      FloodReason.belowThreshold => 'the links back are too weak',
+      FloodReason.overBudget => 'the way back is too long',
+    };
+  }
+  return switch (reason) {
+    FloodReason.noEvidence => 'nothing known on one side yet',
+    FloodReason.noProvenEndpoint =>
+      'no repeater that hears me is confirmed yet — a delivery, trace or '
+          'Discover confirms one',
+    FloodReason.noCorridor =>
+      'no chain of repeaters joins one that hears me to one that hears them',
+    FloodReason.belowThreshold => 'links too weak',
+    FloodReason.overBudget => 'route too long',
+  };
+}
+
 /// Pathfinder: the repeaters around this radio, and how it would reach
 /// whoever is picked. Laid out like the room server screen. While the
 /// switch is on, the routes shown here are the ones DMs, logins and
@@ -390,10 +432,13 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
                 Icon(RoutingIcon.icon,
                     size: 16, color: RoutingIcon.pathfinderColor(context)),
                 const SizedBox(width: 4),
-                Text(
-                    'Pathfinder sends: ${service.graphDelivered} delivered · '
-                    '${service.graphFailed} failed',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                Flexible(
+                  child: Text(
+                      'Pathfinder sends: ${service.graphDelivered} delivered · '
+                      '${service.graphFailed} failed',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                ),
               ],
             ),
           ],
@@ -501,8 +546,8 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             Row(children: [
               const SizedBox(width: 28),
               Expanded(child: Text('Repeater', style: small)),
-              cell('↑ Up', style: small),
-              cell('↓ Down', style: small),
+              cell('Heard me', style: small),
+              cell('I heard', style: small),
               cell('Score', width: 56, align: TextAlign.right, style: small),
             ]),
             const Divider(),
@@ -538,13 +583,22 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
                 ),
               ),
             const Divider(),
-            Row(children: [
-              const Icon(Icons.verified, size: 14, color: Colors.green),
-              Text(isSelf ? ' they hear me · ' : ' reaches $who · ',
-                  style: small),
-              const Icon(Icons.hearing, size: 14, color: Colors.grey),
-              Text(isSelf ? ' heard only · SNR in dB' : ' hears $who · SNR in dB',
-                  style: small),
+            Wrap(spacing: 12, runSpacing: 4, children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.verified, size: 14, color: Colors.green),
+                Flexible(
+                  child: Text(isSelf ? ' they hear me' : ' reaches $who',
+                      style: small),
+                ),
+              ]),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.hearing, size: 14, color: Colors.grey),
+                Flexible(
+                  child: Text(isSelf ? ' heard only' : ' hears $who',
+                      style: small),
+                ),
+              ]),
+              Text('signal in dB', style: small),
             ]),
           ],
         ),
@@ -606,8 +660,8 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
                 '${c.finalCount}'),
             _infoRow(isSelf ? 'Times it heard me' : 'Times it reached $who',
                 '${c.provenCount}'),
-            _infoRow('Uplink SNR', '${_db(c.uplinkSnr)} dB'),
-            _infoRow('Downlink SNR', '${_db(c.downlinkSnr)} dB'),
+            _infoRow('How it heard me', '${_db(c.uplinkSnr)} dB'),
+            _infoRow('How I heard it', '${_db(c.downlinkSnr)} dB'),
             _infoRow('Last seen', _timeOf(c.lastSeen)),
             _infoRow('Last proof', c.provenAt == null ? 'never' : _timeOf(c.provenAt!)),
             _infoRow('Evidence', tier),
@@ -655,7 +709,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     final rows = <Widget>[
       for (final c in matches.take(shown))
         ListTile(
-          leading: mentionAvatar(c, Theme.of(context).colorScheme),
+          leading: c.type == advTypeRoom
+              ? CircleAvatar(child: _typeIcon(c.type))
+              : mentionAvatar(c, Theme.of(context).colorScheme),
           title: Text(c.name,
               style: const TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text(_hashOf(graph, c),
@@ -780,7 +836,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           rows.add(ListTile(
             dense: true,
             leading: const Icon(Icons.waves, size: 18),
-            title: Text('Flood — ${_floodReason(reason, back: back, fromRepeater: fromRepeater)}'),
+            title: Text('Flood — ${floodReasonText(reason, back: back, fromRepeater: fromRepeater)}'),
           ));
       }
     }
@@ -789,37 +845,6 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           ? const Padding(padding: EdgeInsets.all(16), child: Text('nothing yet'))
           : Column(children: rows),
     );
-  }
-
-  String _floodReason(FloodReason reason,
-      {required bool back, bool fromRepeater = false}) {
-    if (back && fromRepeater) {
-      return switch (reason) {
-        FloodReason.noEvidence => 'no repeater this radio hears is known yet',
-        FloodReason.noCorridor =>
-          'no corridor joins it to a repeater this radio hears',
-        _ => reason.name,
-      };
-    }
-    if (back) {
-      return switch (reason) {
-        FloodReason.noEvidence =>
-          'nothing flooded by them has been heard yet — direct replies carry no path',
-        FloodReason.noCorridor =>
-          'a repeater hears them and one hears me, but no corridor joins them',
-        _ => reason.name,
-      };
-    }
-    return switch (reason) {
-      FloodReason.noEvidence => 'nothing known on one side yet',
-      FloodReason.noProvenEndpoint =>
-        'no repeater that hears me is confirmed yet — a delivery, trace or '
-            'Discover confirms one',
-      FloodReason.noCorridor =>
-        'no corridor joins a repeater that hears me to one that hears them',
-      FloodReason.belowThreshold => 'links too weak',
-      FloodReason.overBudget => 'route too long',
-    };
   }
 
   Widget _probeButtons(Contact contact, PathLabAdapter? adapter) {
@@ -901,6 +926,30 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
               subtitle: const Text('Start again from nothing'),
               onTap: () async {
                 Navigator.pop(sheet);
+                final sure = await showDialog<bool>(
+                  context: context,
+                  builder: (dialog) => AlertDialog(
+                    title: const Text('Clear learned data?'),
+                    content: const Text(
+                        'Everything Pathfinder learned about the repeaters '
+                        'around this radio is deleted. It starts learning '
+                        'again from the next packet. This cannot be undone.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialog, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                            foregroundColor:
+                                Theme.of(dialog).colorScheme.error),
+                        onPressed: () => Navigator.pop(dialog, true),
+                        child: const Text('Clear'),
+                      ),
+                    ],
+                  ),
+                );
+                if (sure != true) return;
                 await graph.clearLearnedData();
                 if (mounted) setState(() {});
               },

@@ -2286,7 +2286,9 @@ class _MapScreenState extends State<MapScreen> {
     final result =
         graph.findRouteVia(_graphHash(graph, a), _graphHash(graph, b));
     if (result is! RouteResult) {
-      final reason = result is FloodResult ? result.reason.name : 'direct';
+      final reason = result is FloodResult
+          ? floodReasonText(result.reason)
+          : l10n.chat_direct;
       showDismissibleSnackBar(
         context,
         content: Text('${l10n.map_routeAndTrace}: $reason'),
