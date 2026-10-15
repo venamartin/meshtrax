@@ -30,6 +30,14 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   MeshCoreConnector? _connector;
   StreamSubscription<Uint8List>? _frames;
   Timer? _discoverWindow;
+  Timer? _sweepTimer;
+
+  // start() and stop() only record what is wanted; the open and close run
+  // one at a time on [_op], so a switch flipped during a slow open is
+  // never lost and two opens never overlap.
+  bool _wantRunning = false;
+  Future<void> _op = Future.value();
+  Object? _lastError;
 
   int _graphDelivered = 0;
   int _graphFailed = 0;
@@ -38,18 +46,49 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   PathLabAdapter? get adapter => _adapter;
   bool get isRunning => _graph != null;
 
+  /// Why the last start failed (the graph database would not open), or
+  /// null. The app runs without Pathfinder rather than not at all.
+  Object? get lastError => _lastError;
+
   /// Direct DM attempts sent on a graph route since the service started.
   int get graphDelivered => _graphDelivered;
   int get graphFailed => _graphFailed;
 
-  /// Opens the graph on `path_graph.db` and starts listening. Idempotent.
-  /// The bench passes its own [database] (in memory) so a run starts from
-  /// nothing and leaves nothing behind.
-  Future<void> start(MeshCoreConnector connector,
-      {QueryExecutor? database}) async {
-    if (_graph != null) return;
-    final graph = PathGraph(database ?? driftDatabase(name: 'path_graph'));
-    await graph.init();
+  /// Opens the graph on `path_graph.db` and starts listening. Idempotent,
+  /// and never throws: a database that will not open leaves Pathfinder
+  /// off with [lastError] set. The bench passes its own [database] (in
+  /// memory) so a run starts from nothing and leaves nothing behind.
+  Future<void> start(MeshCoreConnector connector, {QueryExecutor? database}) {
+    _wantRunning = true;
+    return _op = _op.then((_) => _open(connector, database));
+  }
+
+  Future<void> stop() {
+    _wantRunning = false;
+    return _op = _op.then((_) => _close());
+  }
+
+  Future<void> _open(MeshCoreConnector connector, QueryExecutor? database) async {
+    if (!_wantRunning || _graph != null) return;
+    PathGraph? graph;
+    try {
+      graph = PathGraph(database ?? driftDatabase(name: 'path_graph'));
+      await graph.init();
+    } catch (e) {
+      _lastError = e;
+      appLogger.error('path graph did not start: $e', tag: 'PathGraph');
+      try {
+        await graph?.dispose();
+      } catch (_) {}
+      notifyListeners();
+      return;
+    }
+    if (!_wantRunning) {
+      // Switched off while the database was opening.
+      await graph.dispose();
+      return;
+    }
+    _lastError = null;
     _graph = graph;
     _adapter = PathLabAdapter(graph)..onPathDiscovery = notifyListeners;
     _connector = connector;
@@ -66,13 +105,28 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _onConnectorChanged();
     appLogger.info('path graph started', tag: 'PathGraph');
+    _sweep();
+    _sweepTimer = Timer.periodic(const Duration(days: 1), (_) => _sweep());
     notifyListeners();
   }
 
-  Future<void> stop() async {
+  /// Forget idle hearsay and enforce the growth caps: on every open and
+  /// once a day after.
+  void _sweep() {
+    final report = _graph?.sweepStale();
+    if (report == null || report.isEmpty) return;
+    appLogger.info(
+        'path graph sweep: removed ${report.totalRemoved}, '
+        'cleared ${report.positionsCleared} positions',
+        tag: 'PathGraph');
+  }
+
+  Future<void> _close() async {
     final graph = _graph;
     if (graph == null) return;
     WidgetsBinding.instance.removeObserver(this);
+    _sweepTimer?.cancel();
+    _sweepTimer = null;
     _discoverWindow?.cancel();
     _notifyThrottle?.cancel();
     _notifyThrottle = null;
@@ -89,7 +143,11 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector = null;
     _adapter = null;
     _graph = null;
-    await graph.dispose();
+    try {
+      await graph.dispose();
+    } catch (e) {
+      appLogger.warn('path graph close failed: $e', tag: 'PathGraph');
+    }
     appLogger.info('path graph stopped', tag: 'PathGraph');
     notifyListeners();
   }

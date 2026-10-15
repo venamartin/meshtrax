@@ -174,10 +174,14 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             ),
             const SizedBox(height: 16),
             if (graph == null)
-              const Card(
+              Card(
                 child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Graph is off. Turn it on and connect a radio.'),
+                  padding: const EdgeInsets.all(16),
+                  child: Text(service.lastError == null
+                      ? 'Graph is off. Turn it on and connect a radio.'
+                      : 'Pathfinder could not open its database, so it is '
+                          'off. Messages still send the normal way. '
+                          'Details: ${service.lastError}'),
                 ),
               )
             else
