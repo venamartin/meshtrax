@@ -139,9 +139,13 @@ class _Attempt {
 
 class _FloodMessage {
   _FloodMessage(this.at, this.payloadType, this.srcHash, this.snrByte,
-      this.pathBytes, this.stride);
+      this.pathBytes, this.stride, this.payload);
   final DateTime at;
   final int payloadType;
+
+  /// Identical in every copy of one flood (only the path grows), so it
+  /// tells copies of one packet from a different packet.
+  final Uint8List payload;
   // The sender's first key byte and the frame's signed SNR byte: with the
   // hop count and width, the keys the decoded message is matched on.
   final int srcHash;
@@ -336,6 +340,17 @@ class PathLabAdapter {
   /// contact before telling us). Ten seconds covers a slow link; a longer
   /// window would let a same-first-byte stranger's reply be filed as theirs.
   static const Duration _pathReplyWindow = Duration(seconds: 10);
+
+  /// Sender byte → until when: copies of a PATH reply already attributed
+  /// (or refused) are not kept for the next one.
+  final Map<int, DateTime> _consumedPathReplies = {};
+
+  /// Why the graph filed nothing for a matched packet, in plain words.
+  String _notFiled(List<int> pathBytes, int stride) =>
+      stride < graph.hashWidthBytes
+          ? 'dropped — $stride-byte hashes, the graph needs '
+              '${graph.hashWidthBytes}'
+          : 'malformed — path is not a whole number of hops';
 
   /// Flooded ACKs, oldest first, keyed by their hash: an ACK carries no
   /// address, so only the hash the radio later confirms can say whose it is.
@@ -663,10 +678,15 @@ class PathLabAdapter {
     // echo to them: it says nothing about whose doorstep it crossed.
     if (packet.payload[1] == myByte) return;
     final now = DateTime.now();
+    if (packet.payloadType == _payloadTypePath) {
+      final until = _consumedPathReplies[packet.payload[1]];
+      if (until != null && now.isBefore(until)) return;
+    }
     _floodMessages.removeWhere(
         (m) => now.difference(m.at) > _floodMessageWindow);
     _floodMessages.add(_FloodMessage(now, packet.payloadType,
-        packet.payload[1], snrByte, packet.pathBytes, packet.stride));
+        packet.payload[1], snrByte, packet.pathBytes, packet.stride,
+        Uint8List.fromList(packet.payload)));
     if (_floodMessages.length > _floodMessageCap) _floodMessages.removeAt(0);
   }
 
@@ -690,9 +710,15 @@ class PathLabAdapter {
       return;
     }
     final first = matches.first;
-    graph.observeContactSender(contactPubkeyHex, first.pathBytes, first.stride,
-        confirmed: true);
     _floodAcks.removeWhere(matches.contains);
+    if (!graph.observeContactSender(
+        contactPubkeyHex, first.pathBytes, first.stride,
+        confirmed: true)) {
+      _log('ack', _fmtHops(first.pathBytes, first.stride),
+          'from $who — ${_notFiled(first.pathBytes, first.stride)}',
+          first.snrByte / 4.0);
+      return;
+    }
     messagesAttributed++;
     final others = matches.skip(1).map((m) => _fmtHops(m.pathBytes, m.stride));
     _log(
@@ -732,9 +758,32 @@ class PathLabAdapter {
       return;
     }
     final first = matches.first;
-    graph.observeContactSender(contactPubkeyHex, first.pathBytes, first.stride,
-        confirmed: true);
+    // Later copies of this reply are the same reply: never a second one.
     _floodMessages.removeWhere(matches.contains);
+    _consumedPathReplies[srcHash] = now.add(_pathReplyWindow);
+    // A logged reply shows only the sender's first key byte: exact or
+    // nothing. Copies of one reply share their payload (each first hop
+    // heard them; the earliest is credited); different payloads are
+    // different replies, and only one is theirs.
+    final packets = {for (final m in matches) payloadFingerprint(m.payload)};
+    final why = packets.length > 1
+        ? '${packets.length} different replies carry that byte'
+        : graph.sharesFirstByte(contactPubkeyHex)
+            ? 'another contact\'s key starts with the same byte'
+            : null;
+    if (why != null) {
+      _log('path reply', _fmtHops(first.pathBytes, first.stride),
+          'from $who — $why, credited nobody', first.snrByte / 4.0);
+      return;
+    }
+    if (!graph.observeContactSender(
+        contactPubkeyHex, first.pathBytes, first.stride,
+        confirmed: true)) {
+      _log('path reply', _fmtHops(first.pathBytes, first.stride),
+          'from $who — ${_notFiled(first.pathBytes, first.stride)}',
+          first.snrByte / 4.0);
+      return;
+    }
     messagesAttributed++;
     final others = matches.skip(1).map((m) => _fmtHops(m.pathBytes, m.stride));
     _log(
@@ -792,9 +841,15 @@ class PathLabAdapter {
           first.snrByte / 4.0);
       return;
     }
-    graph.observeContactSender(contactPubkeyHex, first.pathBytes, first.stride,
-        confirmed: true);
     _floodMessages.removeWhere(matches.contains);
+    if (!graph.observeContactSender(
+        contactPubkeyHex, first.pathBytes, first.stride,
+        confirmed: true)) {
+      _log('dm', _fmtHops(first.pathBytes, first.stride),
+          'from $who — ${_notFiled(first.pathBytes, first.stride)}',
+          first.snrByte / 4.0);
+      return;
+    }
     messagesAttributed++;
     _log(
         'dm',

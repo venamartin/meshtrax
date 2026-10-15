@@ -455,6 +455,54 @@ void main() {
     expect(adapter.packetLog.first.verdict, contains('no logged flood'));
   });
 
+  group('a PATH reply is credited exactly or not at all', () {
+    final roomPk = '3f' * 32;
+    Uint8List reply(List<int> path, int tag) => rxFrame(
+        payloadType: 0x08, path: path, payload: [0xAB, 0x3F, tag, tag]);
+
+    test('two different replies carrying the room\'s byte: nobody', () {
+      adapter.handleFrame(reply([0xBE, 0xEF], 1));
+      adapter.handleFrame(reply([0x10, 0x00], 2));
+      adapter.attributePathReply(roomPk);
+      expect(graph.ingressCandidates(roomPk), isEmpty);
+      expect(adapter.packetLog.first.verdict, contains('different replies'));
+      expect(adapter.messagesAttributed, 0);
+    });
+
+    test('another contact shares the room\'s first byte: nobody', () {
+      graph.ingestContact('3f${'00' * 31}', 'Other');
+      adapter.handleFrame(reply([0xBE, 0xEF], 1));
+      adapter.attributePathReply(roomPk);
+      expect(graph.ingressCandidates(roomPk), isEmpty);
+      expect(adapter.packetLog.first.verdict, contains('same byte'));
+    });
+
+    test('a copy arriving after the credit is not kept for the next reply',
+        () {
+      adapter.handleFrame(reply([0xBE, 0xEF], 1));
+      adapter.attributePathReply(roomPk);
+      adapter.handleFrame(reply([0x10, 0x00, 0xBE, 0xEF], 1));
+      adapter.attributePathReply(roomPk);
+      expect(adapter.packetLog.first.verdict, contains('no logged flood'));
+      expect(graph.ingressCandidates(roomPk).single.repeaterHash, 'BEEF');
+    });
+  });
+
+  test('a matched DM with 1-byte hashes is logged as dropped, not credited',
+      () {
+    final sender = '5b' * 32;
+    adapter.handleFrame(rxFrame(
+        payloadType: 0x02,
+        path: [0xA2, 0x13],
+        payload: [0xAB, 0x5B, 1, 2, 3],
+        stride: 1));
+    adapter.attributeContactMessage(sender, 0x02, 32); // 2 hops, 1 byte
+    expect(adapter.messagesAttributed, 0);
+    expect(adapter.packetLog.first.verdict, startsWith('from'));
+    expect(adapter.packetLog.first.verdict, contains('1-byte hashes'));
+    expect(graph.ingressCandidates(sender), isEmpty);
+  });
+
   test('a discovery reply with 1-byte paths mints no 2-byte repeater', () {
     // Field: "A2AA" appeared as a proven doorstep for months. It was the
     // 1-byte route A2,AA from a reply, handed to the graph without its

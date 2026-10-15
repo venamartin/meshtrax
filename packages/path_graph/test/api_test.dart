@@ -167,4 +167,19 @@ void main() {
         everyElement(hasLength(4)));
     expect(graph.ingressCandidates('b0' * 32).single.repeaterHash, 'A277');
   });
+
+  test('a name-matched zero-hop sender is not DIRECT; a proven key is', () {
+    graph.setRadioIdentity('ab' * 32, 2);
+    final bob = 'b0' * 32;
+    graph.ingestContact(bob, 'Bob');
+
+    expect(graph.observeContactSender(bob, Uint8List(0), 2, confirmed: false),
+        isFalse);
+    expect(graph.findPath(bob), isNot(isA<DirectResult>()),
+        reason: 'a channel name says nothing about who was in range');
+
+    expect(graph.observeContactSender(bob, Uint8List(0), 2, confirmed: true),
+        isTrue);
+    expect(graph.findPath(bob), isA<DirectResult>());
+  });
 }

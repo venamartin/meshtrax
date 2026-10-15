@@ -401,31 +401,45 @@ class PathGraph {
   /// channel message matched by name. Attribution only — the same packet
   /// already reached [observePath] anonymously through the raw feed, so
   /// edges and my own last-hop prior are not counted again here. An
-  /// empty path means they reached me with no repeater in between.
-  void observeContactSender(
+  /// empty path means they reached me with no repeater in between, which
+  /// only a proven key may claim. Returns whether anything was filed.
+  bool observeContactSender(
       String contactPubkey, Uint8List pathBytes, int stride,
       {required bool confirmed}) {
     contactPubkey = contactPubkey.toLowerCase();
     if (contactPubkey == _selfPubkey) {
       observeOwnEcho(pathBytes, stride);
-      return;
+      return true;
     }
     final arrival = _arrivalMillis;
     if (pathBytes.isEmpty) {
+      // A name match proves nothing about who was in range: DIRECT would
+      // route every send without a repeater for half an hour.
+      if (!confirmed) return false;
       _evidence.recordDirect(contactPubkey, arrival);
       _observationsApplied++;
       _scheduleFlush();
-      return;
+      return true;
     }
     if (stride < hashWidthBytes) {
       _droppedNarrow++;
-      return;
+      return false;
     }
-    if (pathBytes.length % stride != 0) return;
+    if (pathBytes.length % stride != 0) return false;
     _creditContactDoorstep(contactPubkey, _hopHex(pathBytes, stride, 0),
         confirmed: confirmed, arrival: arrival);
     _observationsApplied++;
     _scheduleFlush();
+    return true;
+  }
+
+  /// Whether another known contact's key starts with the same byte as
+  /// [contactPubkey]: a packet carrying only that byte could be either's.
+  bool sharesFirstByte(String contactPubkey) {
+    final pk = contactPubkey.toLowerCase();
+    final byte = pk.substring(0, 2);
+    return _evidence.knownContacts.keys
+        .any((k) => k != pk && k.toLowerCase().startsWith(byte));
   }
 
   /// An echo of my own flood, heard back with the path it travelled.
