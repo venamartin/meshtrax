@@ -1213,7 +1213,10 @@ class PathGraph {
             ..downlinkSnr = (i['downlink_snr'] as num?)?.toDouble()
             ..finalCount = (i['final_count'] as num?)?.toInt() ?? 0
             ..penultimateCount = (i['penultimate_count'] as num?)?.toInt() ?? 0
-            ..provenCount = (i['proven_count'] as num?)?.toInt() ?? 0;
+            // A checkpoint from before the count: a proven row was proven
+            // at least once.
+            ..provenCount = (i['proven_count'] as num?)?.toInt() ??
+                (i['proven_at'] == null ? 0 : 1);
     }
     for (final raw in (document['contacts'] as List?) ?? const []) {
       final c = raw as Map;

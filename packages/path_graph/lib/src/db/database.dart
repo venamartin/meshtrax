@@ -34,14 +34,28 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // An older build reopening the file stamps its own (lower)
+          // version back, and early v1 files already had some columns:
+          // adding a column that exists throws, so add only what is
+          // missing.
+          final columns = {
+            for (final row in await customSelect(
+                    'PRAGMA table_info(contact_ingress)')
+                .get())
+              row.read<String>('name'),
+          };
+          Future<void> addIfMissing(GeneratedColumn column) async {
+            if (!columns.add(column.name)) return;
+            await m.addColumn(contactIngress, column);
+          }
+
           if (from < 2) {
-            await m.addColumn(contactIngress, contactIngress.uplinkSnr);
-            await m.addColumn(contactIngress, contactIngress.downlinkSnr);
+            await addIfMissing(contactIngress.uplinkSnr);
+            await addIfMissing(contactIngress.downlinkSnr);
           }
           if (from < 4) {
-            await m.addColumn(contactIngress, contactIngress.finalCount);
-            await m.addColumn(
-                contactIngress, contactIngress.penultimateCount);
+            await addIfMissing(contactIngress.finalCount);
+            await addIfMissing(contactIngress.penultimateCount);
           }
           if (from < 5) {
             await customStatement(
@@ -52,10 +66,15 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             // region from graph_nodes).
             await m.alterTable(TableMigration(graphNodes));
             await m.alterTable(TableMigration(graphEdges));
-            await m.addColumn(contactIngress, contactIngress.provenAt);
+            await addIfMissing(contactIngress.provenAt);
           }
           if (from < 6) {
-            await m.addColumn(contactIngress, contactIngress.provenCount);
+            await addIfMissing(contactIngress.provenCount);
+            // Rows proven before the count existed were proven at least
+            // once.
+            await customStatement(
+                'UPDATE contact_ingress SET proven_count = 1 '
+                'WHERE proven_at IS NOT NULL AND proven_count = 0');
           }
         },
       );

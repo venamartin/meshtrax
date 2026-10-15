@@ -205,7 +205,7 @@ void main() {
     await g.dispose();
   });
 
-  test('proven_count rides the session and an old checkpoint reads as 0',
+  test('proven_count rides the session; an old checkpoint reads proven rows as 1',
       () async {
     final source = await populated();
     final before = source.egressCandidates().first;
@@ -226,7 +226,8 @@ void main() {
     final old = PathGraph(NativeDatabase.memory());
     await old.init();
     await old.loadSession(doc);
-    expect(old.egressCandidates().first.provenCount, 0);
+    expect(old.egressCandidates().first.provenCount, 1,
+        reason: 'a proven row was proven at least once');
     await old.dispose();
   });
 }

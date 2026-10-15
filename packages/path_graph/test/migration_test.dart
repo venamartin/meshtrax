@@ -200,7 +200,8 @@ void main() {
     await graph.init();
     graph.setRadioIdentity(self, 2);
     var a277 = graph.egressCandidates().single;
-    expect(a277.provenCount, 0, reason: 'the column arrives empty');
+    expect(a277.provenCount, 1,
+        reason: 'the row was proven (proven_at set): proven once at least');
     expect(a277.finalCount, 4, reason: 'older columns survive');
 
     graph.reportSendResult(Uint8List.fromList([0xA2, 0x77]), true);
@@ -211,8 +212,56 @@ void main() {
     await reopened.init();
     reopened.setRadioIdentity(self, 2);
     a277 = reopened.egressCandidates().single;
-    expect(a277.provenCount, 1, reason: 'the new column is written and read');
+    expect(a277.provenCount, 2, reason: 'the new column is written and read');
     await reopened.dispose();
     dir.deleteSync(recursive: true);
+  });
+
+  /// Opens a fresh file at the current schema, runs [setup] on it, then
+  /// rewinds user_version so the next open migrates from [version].
+  Future<File> atVersion(int version,
+      [Future<void> Function(PathGraphDatabase db)? setup]) async {
+    final dir = Directory.systemTemp.createTempSync('path_graph_rewind');
+    final file = File('${dir.path}/g.db');
+    final db = PathGraphDatabase(NativeDatabase(file));
+    await setup?.call(db);
+    await db.customStatement('PRAGMA user_version = $version');
+    await db.close();
+    return file;
+  }
+
+  test('an older build stamping v5 back over a v6 file reopens cleanly',
+      () async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // proven_count already exists; a v5 row proven before it was counted.
+    final file = await atVersion(5, (db) => db.customStatement(
+        'INSERT INTO contact_ingress (owner_pubkey, repeater_hash, weight, '
+        "last_seen, evidence, proven_at, proven_count) VALUES ('me', 'A277', "
+        "3.0, $now, 'proven', $now, 0)"));
+
+    final graph = PathGraph(NativeDatabase(file));
+    await graph.init();
+    graph.setRadioIdentity('me', 2);
+
+    final a277 = graph.egressCandidates().single;
+    expect(a277.provenCount, 1,
+        reason: 'a row proven before the count existed was proven once');
+    await graph.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
+
+  test('a v1 file that already has the SNR columns migrates', () async {
+    final file = await atVersion(1);
+
+    final graph = PathGraph(NativeDatabase(file));
+    await graph.init();
+    graph.setRadioIdentity('me', 2);
+    graph.observeDiscoverResults(
+        [const DiscoverResponse(repeaterHash: 'A277', uplinkSnr: 9, rxSnr: 8)],
+        failureEpisode: false);
+    await graph.flush();
+    expect(graph.egressCandidates().single.uplinkSnr, 9);
+    await graph.dispose();
+    file.parent.deleteSync(recursive: true);
   });
 }
