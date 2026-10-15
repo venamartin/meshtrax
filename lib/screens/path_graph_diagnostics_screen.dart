@@ -3,6 +3,7 @@ import 'package:path_graph/path_graph.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
+import '../connector/meshcore_protocol.dart';
 import '../services/path_graph/frame_adapter.dart';
 import '../services/path_graph/path_graph_service.dart';
 
@@ -166,6 +167,10 @@ class PathGraphDiagnosticsScreen extends StatelessWidget {
     final nodes = snap.nodes.entries.toList()
       ..sort((a, b) =>
           (b.value.lastHeard ?? 0).compareTo(a.value.lastHeard ?? 0));
+    final roomKeys = {
+      for (final c in context.read<MeshCoreConnector>().allContacts)
+        if (c.type == advTypeRoom) c.publicKeyHex.toLowerCase(),
+    };
     const shown = 30;
     return [
       _sectionTitle('Repeaters the graph knows (${nodes.length})'),
@@ -181,11 +186,15 @@ class PathGraphDiagnosticsScreen extends StatelessWidget {
                   for (final n in nodes.take(shown))
                     ListTile(
                       dense: true,
-                      leading: Icon(
-                          n.value.source == NodeSource.advert
-                              ? Icons.cell_tower
-                              : Icons.alt_route,
-                          size: 18),
+                      // Rooms keep their purple door here too.
+                      leading: roomKeys.contains(n.value.pubkey?.toLowerCase())
+                          ? const Icon(Icons.meeting_room,
+                              color: Colors.purple, size: 18)
+                          : Icon(
+                              n.value.source == NodeSource.advert
+                                  ? Icons.cell_tower
+                                  : Icons.alt_route,
+                              size: 18),
                       title: Text.rich(TextSpan(children: [
                         TextSpan(
                             text: n.key,

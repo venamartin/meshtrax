@@ -47,11 +47,12 @@ typedef GraphSnapshot = ({
 /// What the search box resolved to: a contact, or a bare repeater hash
 /// the graph met only as a hop. [isNode] says the search routes TO it
 /// (a repeater) rather than through its doorsteps (a person or room).
+/// [alsoHop]: a chat contact whose hash the graph also met as a hop.
 typedef _Target = ({
   Contact? contact,
   String? hash,
   bool isNode,
-  bool treatedAsNode,
+  bool alsoHop,
 });
 
 class _PathGraphScreenState extends State<PathGraphScreen> {
@@ -59,6 +60,10 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
   /// Resolved on every build so a refreshed contact list or a cleared
   /// graph never leaves the picker pointing at a vanished object.
   String? _targetKey;
+
+  /// A chat contact also seen as a hop, shown in the repeater view on
+  /// request (the contact view is what DMs use, so it is the default).
+  String? _repeaterViewKey;
   String _query = '';
   final _search = TextEditingController();
 
@@ -314,33 +319,44 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
 
   _Target _resolveTarget(
       List<Contact> contacts, PathGraph graph, GraphSnapshot snap) {
-    final key = _targetKey;
-    final contact = key == null
+    final key = _targetKey?.toLowerCase();
+    Contact? byKey(String? pk) => pk == null
         ? null
         : contacts.cast<Contact?>().firstWhere(
-            (c) => c!.publicKeyHex == key,
+            (c) => c!.publicKeyHex.toLowerCase() == pk.toLowerCase(),
             orElse: () => null);
-    final bareHash =
-        contact == null && key != null && snap.nodes.containsKey(key)
-            ? key
-            : null;
+    var contact = byKey(key);
+    String? bareHash;
+    if (contact == null && key != null) {
+      // A hash picked from the graph's own list: back to its contact by
+      // the key the graph stored for it, else by a hash only one contact
+      // has.
+      final nodeKey = snap.nodes.keys.cast<String?>().firstWhere(
+          (k) => k!.toLowerCase() == key, orElse: () => null);
+      if (nodeKey != null) {
+        contact = byKey(snap.nodes[nodeKey]!.pubkey);
+        if (contact == null) {
+          final same = contacts
+              .where((c) => _hashOf(graph, c).toLowerCase() == key)
+              .toList();
+          if (same.length == 1) contact = same.single;
+        }
+        if (contact == null) bareHash = nodeKey;
+      }
+    }
     // Only a repeater forwards packets, so only a repeater is a node the
     // search can route TO. A room or sensor is reached through its
     // doorsteps like a chat contact (it never appears as a hop). A chat
-    // contact the graph has already met as a hop is a repeater filed
-    // under the wrong type (field: it answered "nothing yet" right after
-    // a round-trip trace had proven it).
+    // contact the graph has also met as a hop opens as a contact too,
+    // since that is how DMs reach it; the repeater view is one tap away.
     final hash = contact != null ? _hashOf(graph, contact) : bareHash;
-    final knownNode = contact != null && snap.nodes.containsKey(hash);
+    final alsoHop = contact != null &&
+        contact.type == advTypeChat &&
+        snap.nodes.containsKey(hash);
     final isNode = contact == null ||
         contact.type == advTypeRepeater ||
-        (contact.type == advTypeChat && knownNode);
-    return (
-      contact: contact,
-      hash: hash,
-      isNode: isNode,
-      treatedAsNode: contact != null && isNode && contact.type == advTypeChat,
-    );
+        (alsoHop && _repeaterViewKey == contact.publicKeyHex);
+    return (contact: contact, hash: hash, isNode: isNode, alsoHop: alsoHop);
   }
 
   // ---------------------------------------------------------------- header
@@ -668,26 +684,42 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
   Widget _targetHeader(_Target t) {
     final contact = t.contact;
     final notes = [
-      if (t.treatedAsNode)
-        'treated as a repeater — the graph knows this hash as a hop',
+      if (t.alsoHop) 'also seen as a repeater hop',
       if (contact == null)
         'known only as a hop in other people\'s paths — no contact record, '
             'so nothing to trace against; use Route & trace on the map once '
             'it has adverted',
     ];
     return Card(
-      child: ListTile(
-        leading: contact != null
-            ? _typeIcon(contact.type)
-            : const Icon(Icons.alt_route, size: 20),
-        title: Text(contact?.name ?? t.hash!,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text([t.hash!, ...notes].join('\n'),
-            style: const TextStyle(fontFamily: 'monospace')),
-        trailing: IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () => setState(() => _targetKey = null),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: contact != null
+                ? _typeIcon(contact.type)
+                : const Icon(Icons.alt_route, size: 20),
+            title: Text(contact?.name ?? t.hash!,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text([t.hash!, ...notes].join('\n'),
+                style: const TextStyle(fontFamily: 'monospace')),
+            trailing: IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () => setState(() => _targetKey = null),
+            ),
+          ),
+          if (t.alsoHop)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, bottom: 8),
+              child: TextButton.icon(
+                icon: Icon(t.isNode ? Icons.person : Icons.cell_tower),
+                label: Text(t.isNode
+                    ? 'Show as a contact'
+                    : 'Show as a repeater'),
+                onPressed: () => setState(() => _repeaterViewKey =
+                    t.isNode ? null : contact!.publicKeyHex),
+              ),
+            ),
+        ],
       ),
     );
   }
