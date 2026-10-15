@@ -508,7 +508,7 @@ void main() {
     // 1-byte route A2,AA from a reply, handed to the graph without its
     // width and read as one 2-byte hash. The width travels with the bytes.
     final contact = 'b0' * 32;
-    adapter.pendingDiscoveryPubkey = contact;
+    adapter.beginDiscovery(contact, 'asking');
     const pathLen = (0 << 6) | 2; // stride 1, 2 hops
     adapter.handleFrame(Uint8List.fromList([
       0x8D, 0, 0xB0, 0xB0, 0xB0, 0xB0, 0xB0, 0xB0,
@@ -522,36 +522,79 @@ void main() {
         reason: 'both paths dropped as narrower than the graph');
   });
 
-  test('path discovery feeds both proven paths', () {
+  group('path discovery', () {
     final contact = 'b0' * 32;
-    adapter.pendingDiscoveryPubkey = contact;
+    final pathLen = (1 << 6) | 2; // stride 2, 2 hops
     // [0x8D][rsv][prefix x6][out_len][out][in_len][in]
     // out = A277,1312 (us->them); in = 5CBB,249F (them->us)
-    final pathLen = (1 << 6) | 2; // stride 2, 2 hops
-    adapter.handleFrame(Uint8List.fromList([
-      0x8D, 0, 0xB0, 0xB0, 0xB0, 0xB0, 0xB0, 0xB0,
-      pathLen, 0xA2, 0x77, 0x13, 0x12,
-      pathLen, 0x5C, 0xBB, 0x24, 0x9F,
-    ]));
+    Uint8List reply({int prefixByte = 0xB0, int inLen = -1, List<int>? inPath}) =>
+        Uint8List.fromList([
+          0x8D, 0, ...List.filled(6, prefixByte),
+          pathLen, 0xA2, 0x77, 0x13, 0x12,
+          inLen < 0 ? pathLen : inLen, ...(inPath ?? [0x5C, 0xBB, 0x24, 0x9F]),
+        ]);
+    final sent = Uint8List.fromList([6, 0, 0, 0, 0, 0, 0x30, 0x75, 0, 0]);
 
-    final snap = graph.snapshot();
-    // Forward path proven as a delivered send.
-    expect(snap.edges[('A277', '1312')]!.s, 1);
-    // Return path proven in reverse.
-    expect(snap.edges[('5CBB', '249F')]!.n, greaterThanOrEqualTo(0));
-    expect(snap.edges.containsKey(('5CBB', '249F')), isTrue);
-    // The outbound path's last hop reached them: proven ingress. The
-    // return path's first hop only heard them: a guess, kept as inferred.
-    final ingress = {
-      for (final c in graph.ingressCandidates(contact)) c.repeaterHash: c
-    };
-    expect(ingress['1312']!.proven, isTrue);
-    expect(ingress['5CBB']!.proven, isFalse);
-    expect(ingress['5CBB']!.tier, EvidenceTier.inferred);
-    // My doorstep proven from the outbound first hop.
-    expect(graph.egressCandidates().map((c) => c.repeaterHash),
-        contains('A277'));
-    expect(adapter.lastPathDiscovery, contains('B0B0B0B0B0B0'));
+    test('feeds both paths, once each, without tallying the corridor', () {
+      adapter.beginDiscovery(contact, 'asking');
+      adapter.handleFrame(reply());
+
+      final snap = graph.snapshot();
+      // One answered exchange is not an attempt count on every link.
+      final out = snap.edges[('A277', '1312')]!;
+      expect((out.s, out.n), (0, 0));
+      // The return path's links came in through the raw feed, not here.
+      expect(snap.edges.containsKey(('5CBB', '249F')), isFalse);
+      // The outbound path's last hop reached them: proven ingress. The
+      // return path's first hop only heard them: a guess, kept as inferred.
+      final ingress = {
+        for (final c in graph.ingressCandidates(contact)) c.repeaterHash: c
+      };
+      expect(ingress['1312']!.proven, isTrue);
+      expect(ingress['5CBB']!.proven, isFalse);
+      expect(ingress['5CBB']!.tier, EvidenceTier.inferred);
+      expect(ingress['5CBB']!.finalCount, 1);
+      // My doorstep proven from the outbound first hop.
+      expect(graph.egressCandidates().map((c) => c.repeaterHash),
+          contains('A277'));
+      expect(adapter.discoveryStatus[contact], contains('B0B0B0B0B0B0'));
+      expect(adapter.pendingDiscoveryPubkey, isNull);
+    });
+
+    test('a reply for another contact is not credited to the one asked', () {
+      adapter.beginDiscovery(contact, 'asking');
+      adapter.handleFrame(reply(prefixByte: 0xC0));
+      expect(graph.ingressCandidates(contact), isEmpty);
+      expect(graph.ingressCandidates('c0' * 32), isEmpty);
+      // It answered my flood all the same: its first hop heard me.
+      expect(graph.egressCandidates().map((c) => c.repeaterHash),
+          contains('A277'));
+      expect(adapter.pendingDiscoveryPubkey, contact, reason: 'still waiting');
+    });
+
+    test('only the first SENT or ERR answers the request', () {
+      adapter.beginDiscovery(contact, 'asking');
+      adapter.handleFrame(sent);
+      adapter.handleFrame(Uint8List.fromList([1, 3])); // another command's
+      expect(adapter.pendingDiscoveryPubkey, contact);
+      expect(adapter.discoveryStatus[contact], startsWith('accepted'));
+    });
+
+    test('a refused request: a reply after it credits nobody', () {
+      adapter.beginDiscovery(contact, 'asking');
+      adapter.handleFrame(Uint8List.fromList([1, 2]));
+      expect(adapter.discoveryStatus[contact], startsWith('REJECTED'));
+      adapter.handleFrame(reply());
+      expect(graph.ingressCandidates(contact), isEmpty);
+    });
+
+    test('a narrow return path drops only that side', () {
+      adapter.beginDiscovery(contact, 'asking');
+      adapter.handleFrame(reply(inLen: 2, inPath: [0x5C, 0x24])); // 1-byte
+      expect(graph.ingressCandidates(contact).map((c) => c.repeaterHash),
+          ['1312']);
+      expect(graph.counters.droppedNarrow, 1);
+    });
   });
 
   test('discover responses parse uplink SNR and commit as egress', () {

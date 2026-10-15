@@ -117,6 +117,16 @@ class _FloodAck {
   final int stride;
 }
 
+class _PendingDiscovery {
+  _PendingDiscovery(this.pubkey, this.expiresAt);
+  final String pubkey;
+  DateTime expiresAt;
+
+  /// The radio already answered the request with SENT or ERR; any later
+  /// one belongs to another command.
+  bool ackSeen = false;
+}
+
 class _HeldAdvert {
   _HeldAdvert(this.at, this.advert, this.packet);
   final DateTime at;
@@ -477,37 +487,76 @@ class PathLabAdapter {
   ({List<String> hops, List<double> snrs})? lastTrace;
   void Function()? onTrace;
 
-  /// Last path-discovery result (formatted), for the harness to show.
-  String? lastPathDiscovery;
+  /// Path-discovery status per contact (lowercase pubkey), for the
+  /// Pathfinder screen to show under that contact.
+  final Map<String, String> discoveryStatus = {};
   void Function()? onPathDiscovery;
 
-  /// Full pubkey of the contact we probed — the 0x8D push carries only
-  /// a 6-byte prefix, and ingress attribution needs the whole key.
-  String? pendingDiscoveryPubkey;
+  /// The contact we probed: the 0x8D push carries only a 6-byte prefix,
+  /// and ingress attribution needs the whole key.
+  _PendingDiscovery? _pendingDiscovery;
+
+  /// Until the radio acknowledges the request; then its own estimate.
+  static const Duration _discoveryAckWait = Duration(seconds: 10);
+
+  String? get pendingDiscoveryPubkey => _liveDiscovery()?.pubkey;
+
+  _PendingDiscovery? _liveDiscovery() {
+    final p = _pendingDiscovery;
+    if (p != null && DateTime.now().isAfter(p.expiresAt)) {
+      _pendingDiscovery = null;
+      if (discoveryStatus[p.pubkey]?.startsWith('asking') == true ||
+          discoveryStatus[p.pubkey]?.startsWith('accepted') == true) {
+        discoveryStatus[p.pubkey] = 'no answer — try again later';
+      }
+      return null;
+    }
+    return p;
+  }
+
+  /// Call right after the CMD 52 frame for [pubkey] is written.
+  void beginDiscovery(String pubkey, String status) {
+    final pk = pubkey.toLowerCase();
+    _pendingDiscovery =
+        _PendingDiscovery(pk, DateTime.now().add(_discoveryAckWait));
+    discoveryStatus[pk] = status;
+  }
+
+  /// The request never went out, or the link dropped.
+  void cancelDiscovery([String? status]) {
+    final p = _pendingDiscovery;
+    _pendingDiscovery = null;
+    if (p != null && status != null) discoveryStatus[p.pubkey] = status;
+  }
 
   void handleFrame(Uint8List frame) {
     if (frame.isEmpty) return;
-    // Command acks while a path discovery is outstanding: the firmware
-    // answers RESP_CODE_SENT (accepted, with the estimated timeout) or
-    // an error — most usefully ERR_CODE_NOT_FOUND, which means the
-    // radio has no such contact in its own list (auto-add off).
-    if (pendingDiscoveryPubkey != null) {
+    // The radio's answer to the discovery request itself, the first SENT
+    // or ERR after it: RESP_CODE_SENT (accepted, with the estimated
+    // timeout) or an error — most usefully ERR_CODE_NOT_FOUND, which means
+    // the radio has no such contact in its own list (auto-add off). Later
+    // ones belong to other commands.
+    final pending = _liveDiscovery();
+    if (pending != null && !pending.ackSeen) {
       if (frame[0] == 6 && frame.length >= 10) {
+        pending.ackSeen = true;
         final estTimeout =
             ByteData.sublistView(frame, 6, 10).getUint32(0, Endian.little);
-        lastPathDiscovery =
+        pending.expiresAt = DateTime.now()
+            .add(Duration(milliseconds: estTimeout) + const Duration(seconds: 5));
+        discoveryStatus[pending.pubkey] =
             'accepted — waiting up to ${(estTimeout / 1000).round()}s for '
             'the contact to answer';
         onPathDiscovery?.call();
       } else if (frame[0] == 1) {
         final err = frame.length > 1 ? frame[1] : 0;
-        lastPathDiscovery = switch (err) {
+        discoveryStatus[pending.pubkey] = switch (err) {
           2 => 'REJECTED: contact not in the radio\'s list — add the '
               'contact on the radio first (auto-add is off)',
           3 => 'REJECTED: radio request table full — retry shortly',
           _ => 'REJECTED by radio (err $err)',
         };
-        pendingDiscoveryPubkey = null;
+        _pendingDiscovery = null;
         onPathDiscovery?.call();
       }
     }
@@ -526,46 +575,50 @@ class PathLabAdapter {
     }
   }
 
-  /// Both paths land through existing module inputs, no new API needed:
-  ///  * out_path is a *delivered* send (they answered) → reportSendResult
-  ///    gives forward attempt counts and proves hop 0 heard us.
-  ///  * in_path was physically received → observePath with confirmed
-  ///    attribution gives reverse edges, their doorstep (path[0]) as
-  ///    contact ingress, and our last-hop egress prior.
+  /// The radio answers only its own pending request (matched by tag), so
+  /// both paths are this app's exchange:
+  ///  * out_path is the route my flood took to them, and they answered:
+  ///    its first hop heard me and its last hop reached them. One
+  ///    exchange is not a tally of the corridor's links.
+  ///  * in_path came back as a flood the raw feed already filed (links
+  ///    and the hop I heard last); here only their doorstep is credited.
+  /// The contact is the one asked only when the reply's key prefix is
+  /// theirs.
   void _handlePathDiscovery(Uint8List frame) {
     final parsed = parsePathDiscovery(frame);
     if (parsed == null) return;
-    final contact = pendingDiscoveryPubkey;
+    final pending = _liveDiscovery();
+    final contact = pending != null &&
+            pending.pubkey.startsWith(parsed.pubkeyPrefix.toLowerCase())
+        ? pending.pubkey
+        : null;
 
     if (parsed.outPath.isNotEmpty) {
-      // out_path was delivered end to end: first hop heard us, last hop
-      // reached them.
       graph.reportSendResult(parsed.outPath, true,
-          contactPubkey: contact, stride: parsed.outStride);
+          contactPubkey: contact, stride: parsed.outStride, tally: false);
     }
-    if (parsed.inPath.isNotEmpty) {
-      graph.observePath(
-        parsed.inPath,
-        parsed.inStride,
-        contact == null
-            ? const ObservationOrigin.anonymous()
-            : ObservationOrigin.pubkeyConfirmed(contact),
-        messageId: 'pathdisc:${parsed.pubkeyPrefix}',
-      );
+    if (contact != null) {
+      graph.observeContactSender(contact, parsed.inPath, parsed.inStride,
+          confirmed: true);
     }
 
     String fmt(Uint8List p, int stride) =>
         p.isEmpty ? '(direct)' : PathHelper.formatPathHex(p, stride: stride);
 
-    lastPathDiscovery = 'to ${parsed.pubkeyPrefix}: '
+    final summary = 'to ${parsed.pubkeyPrefix}: '
         'out ${fmt(parsed.outPath, parsed.outStride)} · '
         'back ${fmt(parsed.inPath, parsed.inStride)}';
-    pendingDiscoveryPubkey = null;
+    if (contact != null) {
+      discoveryStatus[contact] = summary;
+      _pendingDiscovery = null;
+    }
     // Every event that can prove a doorstep leaves a trail: the first
     // hop of out_path is credited as hearing me.
     _log('discover path', fmt(parsed.outPath, parsed.outStride),
         'their reply: out = the route my flood took to them · back = the route their reply took', 0);
-    appLogger.info('path discovery $lastPathDiscovery', tag: 'PathGraph');
+    appLogger.info(
+        'path discovery $summary${contact == null ? ' (not the contact asked)' : ''}',
+        tag: 'PathGraph');
     onPathDiscovery?.call();
   }
 

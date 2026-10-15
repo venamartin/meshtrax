@@ -90,13 +90,14 @@ class _PathLabScreenState extends State<PathLabScreen> {
   List<RouteResult> _routes = const [];
   int _selectedRoute = 0;
   double _beta = 0.95;
+  String _discoverPk = '';
 
   @override
   void initState() {
     super.initState();
     adapter.onPathDiscovery = () {
       if (!mounted) return;
-      setState(() => _status = adapter.lastPathDiscovery ?? '');
+      setState(() => _status = adapter.discoveryStatus[_discoverPk] ?? '');
     };
     adapter.onTrace = () {
       final t = adapter.lastTrace;
@@ -138,10 +139,10 @@ class _PathLabScreenState extends State<PathLabScreen> {
     final bytes = Uint8List.fromList([
       for (var i = 0; i < 64; i += 2) int.parse(pk.substring(i, i + 2), radix: 16)
     ]);
-    adapter.pendingDiscoveryPubkey = pk;
-    adapter.lastPathDiscovery = null;
-    setState(() => _status = 'path discovery sent (flood pair)…');
     await connector.sendFrame(buildPathDiscoveryReq(bytes));
+    _discoverPk = pk.toLowerCase();
+    adapter.beginDiscovery(_discoverPk, 'path discovery sent (flood pair)…');
+    setState(() => _status = adapter.discoveryStatus[_discoverPk]!);
   }
 
   /// Round-trip so the trace measures BOTH directions of every link.

@@ -135,10 +135,22 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     final adapter = context.read<PathGraphService>().adapter;
     final connector = context.read<MeshCoreConnector>();
     if (adapter == null) return;
-    adapter.pendingDiscoveryPubkey = target.publicKeyHex;
-    adapter.lastPathDiscovery = 'asking ${target.name} for both routes…';
-    setState(() {});
-    await connector.sendFrame(buildPathDiscoveryReq(target.publicKey));
+    final key = target.publicKeyHex.toLowerCase();
+    // The radio drops a pending request's answer when another request or
+    // send starts, and a send's SENT could be read as this one's.
+    if (!connector.isConnected || connector.hasSendsInFlight) {
+      setState(() => adapter.discoveryStatus[key] =
+          'busy — wait for messages in flight to finish, then ask again');
+      return;
+    }
+    try {
+      await connector.sendFrame(buildPathDiscoveryReq(target.publicKey));
+      adapter.beginDiscovery(key, 'asking ${target.name} for both routes…');
+    } catch (e) {
+      adapter.cancelDiscovery();
+      adapter.discoveryStatus[key] = 'could not send: $e';
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -786,7 +798,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       children: [
         Wrap(spacing: 8, children: [
           OutlinedButton.icon(
-            onPressed: () => _discover(contact),
+            onPressed: adapter?.pendingDiscoveryPubkey == null
+                ? () => _discover(contact)
+                : null,
             icon: const Icon(Icons.travel_explore),
             label: const Text('Discover'),
           ),
@@ -809,11 +823,11 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
               label: Text('Trace (${contact.pathLength} hops)'),
             ),
         ]),
-        if (adapter?.lastPathDiscovery != null)
+        if (adapter?.discoveryStatus[contact.publicKeyHex.toLowerCase()]
+            case final status?)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(adapter!.lastPathDiscovery!,
-                style: Theme.of(context).textTheme.bodySmall),
+            child: Text(status, style: Theme.of(context).textTheme.bodySmall),
           ),
       ],
     );

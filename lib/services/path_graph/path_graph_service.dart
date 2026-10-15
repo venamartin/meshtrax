@@ -189,6 +189,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     final graph = _graph;
     final connector = _connector;
     if (graph == null || connector == null) return;
+    // A dropped link loses the radio's pending request with it.
+    if (!connector.isConnected && _adapter?.pendingDiscoveryPubkey != null) {
+      _adapter!.cancelDiscovery('link lost — ask again');
+    }
 
     final self = connector.selfPublicKeyHex;
     // The radio's Path Hash Size can change without a new key; the graph
