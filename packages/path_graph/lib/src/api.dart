@@ -433,15 +433,6 @@ class PathGraph {
     return true;
   }
 
-  /// Whether another known contact's key starts with the same byte as
-  /// [contactPubkey]: a packet carrying only that byte could be either's.
-  bool sharesFirstByte(String contactPubkey) {
-    final pk = contactPubkey.toLowerCase();
-    final byte = pk.substring(0, 2);
-    return _evidence.knownContacts.keys
-        .any((k) => k != pk && k.toLowerCase().startsWith(byte));
-  }
-
   /// An echo of my own flood, heard back with the path it travelled.
   /// Only the FIRST hop proves anything about me: it heard me directly,
   /// in the sending direction, so it is a confirmed doorstep. The hops

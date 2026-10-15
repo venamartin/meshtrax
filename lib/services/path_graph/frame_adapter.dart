@@ -355,6 +355,12 @@ class PathLabAdapter {
   /// (or refused) are not kept for the next one.
   final Map<int, DateTime> _consumedPathReplies = {};
 
+  /// PATH packets addressed to me that came direct (a reciprocal path, a
+  /// return-path retry). They carry no hops to credit, but the radio
+  /// decodes them too: one beside a flooded reply means two packets.
+  final List<({DateTime at, int srcHash, Uint8List payload})> _directPaths =
+      [];
+
   /// Why the graph filed nothing for a matched packet, in plain words.
   String _notFiled(List<int> pathBytes, int stride) =>
       stride < graph.hashWidthBytes
@@ -686,6 +692,7 @@ class PathLabAdapter {
     // the plan it carries is the originator's stored route — a guess some
     // app may have written. File nothing.
     if (!_isFlood(packet)) {
+      _rememberDirectPath(packet);
       _log(kind, _fmtHops(packet.pathBytes, packet.stride),
           'direct — carries the hops ahead, not the ones travelled; nothing '
           'to learn',
@@ -741,6 +748,23 @@ class PathLabAdapter {
         packet.payload[1], snrByte, packet.pathBytes, packet.stride,
         Uint8List.fromList(packet.payload)));
     if (_floodMessages.length > _floodMessageCap) _floodMessages.removeAt(0);
+  }
+
+  void _rememberDirectPath(RawPacket packet) {
+    final self = graph.selfPubkey;
+    if (self == null ||
+        packet.payloadType != _payloadTypePath ||
+        packet.payload.length < 2 ||
+        packet.payload[0] != int.parse(self.substring(0, 2), radix: 16)) {
+      return;
+    }
+    final now = DateTime.now();
+    _directPaths.removeWhere((p) => now.difference(p.at) > _pathReplyWindow);
+    _directPaths.add((
+      at: now,
+      srcHash: packet.payload[1],
+      payload: Uint8List.fromList(packet.payload),
+    ));
   }
 
   /// The radio confirmed delivery to [contactPubkeyHex] with [ackHash]
@@ -804,6 +828,11 @@ class PathLabAdapter {
             m.srcHash == srcHash &&
             now.difference(m.at) <= _pathReplyWindow)
         .toList();
+    final direct = _directPaths
+        .where((p) =>
+            p.srcHash == srcHash && now.difference(p.at) <= _pathReplyWindow)
+        .toList();
+    _directPaths.removeWhere(direct.contains);
     if (matches.isEmpty) {
       _log('path reply', '',
           'from $who — no logged flood to match (decoded while the app '
@@ -814,19 +843,27 @@ class PathLabAdapter {
     // Later copies of this reply are the same reply: never a second one.
     _floodMessages.removeWhere(matches.contains);
     _consumedPathReplies[srcHash] = now.add(_pathReplyWindow);
-    // A logged reply shows only the sender's first key byte: exact or
-    // nothing. Copies of one reply share their payload (each first hop
-    // heard them; the earliest is credited); different payloads are
-    // different replies, and only one is theirs.
-    final packets = {for (final m in matches) payloadFingerprint(m.payload)};
-    final why = packets.length > 1
-        ? '${packets.length} different replies carry that byte'
-        : graph.sharesFirstByte(contactPubkeyHex)
-            ? 'another contact\'s key starts with the same byte'
-            : null;
-    if (why != null) {
-      _log('path reply', _fmtHops(first.pathBytes, first.stride),
-          'from $who — $why, credited nobody', first.snrByte / 4.0);
+    // A logged reply shows only the sender's first key byte, but the
+    // radio logs every packet before it decodes one (Dispatcher.cpp
+    // checkRecv), so the reply it just decoded is among those logged,
+    // flooded or direct. Copies of one reply share their payload (each
+    // first hop heard them; the earliest is credited). Two different
+    // packets carrying that byte: only one is theirs, so nobody is
+    // credited. Other contacts merely sharing the byte change nothing
+    // unless they sent one too; on a full contact list nearly every byte
+    // is shared (field: 9 of 2,037 known contacts shared one sender's
+    // byte, and every reply from them was refused).
+    final packets = {
+      for (final m in matches) payloadFingerprint(m.payload),
+      for (final p in direct) payloadFingerprint(p.payload),
+    };
+    if (packets.length > 1) {
+      _log(
+          'path reply',
+          _fmtHops(first.pathBytes, first.stride),
+          'from $who — ${packets.length} different replies carry that byte, '
+          'credited nobody',
+          first.snrByte / 4.0);
       return;
     }
     if (!graph.observeContactSender(

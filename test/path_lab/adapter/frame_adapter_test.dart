@@ -469,12 +469,31 @@ void main() {
       expect(adapter.messagesAttributed, 0);
     });
 
-    test('another contact shares the room\'s first byte: nobody', () {
+    test('other contacts sharing the room\'s byte do not block the credit',
+        () {
+      // Field 2026-10-14: 9 of 2,037 known contacts shared one sender's
+      // first byte, and refusing on that refused every reply. Only a
+      // second packet carrying the byte makes the match unsure.
       graph.ingestContact('3f${'00' * 31}', 'Other');
+      graph.ingestContact('3f${'11' * 31}', 'Another');
       adapter.handleFrame(reply([0xBE, 0xEF], 1));
       adapter.attributePathReply(roomPk);
+      expect(graph.ingressCandidates(roomPk).single.repeaterHash, 'BEEF');
+    });
+
+    test('a direct packet carrying the room\'s byte beside a flood: nobody',
+        () {
+      // The radio decodes direct PATH packets too (a reciprocal path): the
+      // flooded one may be somebody else's.
+      adapter.handleFrame(reply([0xBE, 0xEF], 1));
+      adapter.handleFrame(rxFrame(
+          payloadType: 0x08,
+          path: [],
+          payload: [0xAB, 0x3F, 2, 2],
+          routeType: 0x02));
+      adapter.attributePathReply(roomPk);
       expect(graph.ingressCandidates(roomPk), isEmpty);
-      expect(adapter.packetLog.first.verdict, contains('same byte'));
+      expect(adapter.packetLog.first.verdict, contains('different replies'));
     });
 
     test('a copy arriving after the credit is not kept for the next reply',
