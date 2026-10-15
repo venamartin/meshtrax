@@ -105,7 +105,7 @@ void main() {
       final packets = decoder.ingest(
         Uint8List.fromList(<int>[
           usbSerialRxFrameStart,
-          0xAD,
+          0xB1, // 177: one past the firmware's MAX_FRAME_SIZE
           0x00,
           0x99,
           usbSerialRxFrameStart,
@@ -118,6 +118,22 @@ void main() {
       expect(packets, hasLength(1));
       expect(packets.single.isRxFrame, isTrue);
       expect(packets.single.payload, orderedEquals(<int>[0x44]));
+    },
+  );
+
+  test(
+    'UsbSerialFrameDecoder accepts a full 176-byte frame (V3 DM with 160 text bytes)',
+    () {
+      final decoder = UsbSerialFrameDecoder();
+      final payload = Uint8List(176)..fillRange(0, 176, 0x41);
+
+      final packets = decoder.ingest(
+        Uint8List.fromList(<int>[usbSerialRxFrameStart, 176, 0x00, ...payload]),
+      );
+
+      expect(packets, hasLength(1));
+      expect(packets.single.payload, orderedEquals(payload));
+      expect(wrapUsbSerialTxFrame(payload), hasLength(179));
     },
   );
 

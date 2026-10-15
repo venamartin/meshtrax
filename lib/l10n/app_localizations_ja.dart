@@ -1567,6 +1567,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get debugFrame_textTypeCli => 'CLI（コマンドラインインターフェース）';
 
   @override
+  String get debugFrame_textTypeCliCommand => 'CLI command';
+
+  @override
   String get debugFrame_textTypePlain => 'シンプルな';
 
   @override
