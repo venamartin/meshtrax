@@ -81,6 +81,17 @@ class ContactIngress extends Table {
   /// rows, "times it reached them" on a contact's.
   IntColumn get provenCount => integer().withDefault(const Constant(0))();
 
+  /// Self rows: arrival millis of the last echo of my own flood through
+  /// this repeater. Only repeaters that once forwarded my floods are
+  /// marked down when another one echoes instead; one that refuses
+  /// floods but carries my direct sends never echoes to recover.
+  IntColumn get floodProvenAt => integer().nullable()();
+
+  /// Arrival millis of the last time this row was HEARD (its hop carried
+  /// the owner's packet to me). A proof refreshes lastSeen but says
+  /// nothing about hearing; the heard list ages from this.
+  IntColumn get lastHeardAt => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {ownerPubkey, repeaterHash};
 }

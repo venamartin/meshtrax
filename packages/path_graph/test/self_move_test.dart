@@ -127,8 +127,9 @@ void main() {
   });
 
   test('moving away hands the route to the doorstep that hears me now', () {
-    // Home: A277 traced at 11.9 dB with a measured link to AA77, and a
-    // delivered DM proves AA77 reaches Bob.
+    // Home: A277 echoes my floods and is traced at 11.9 dB with a
+    // measured link to AA77, and a delivered DM proves AA77 reaches Bob.
+    echo([0xA2, 0x77]);
     for (var i = 0; i < 10; i++) {
       graph.observeTrace(['A277', 'AA77'], [11.9, 11.75, 11.0]);
       graph.reportSendResult(path([0xA2, 0x77, 0xAA, 0x77]), true,
@@ -160,5 +161,63 @@ void main() {
     expect(firstHop(), '8802',
         reason: 'A277 has proved nothing for an hour while 8802 keeps proving');
     expect(graph.egressCandidates().first.repeaterHash, '8802');
+  });
+
+  test('a doorstep that never echoed my floods is not marked down by echoes '
+      'elsewhere', () {
+    // B carries my direct sends but refuses unscoped floods.
+    graph.reportSendResult(path([0xBE, 0xEF]), true, contactPubkey: bobPk);
+    final before = egress('BEEF')!.weight;
+
+    nowMillis += 20 * minute;
+    echo([0xA2, 0x77]);
+    nowMillis += 20 * minute;
+    echo([0xA2, 0x77]);
+
+    // 40 minutes of half-life alone leave about 0.86 of it; the supersede
+    // would halve it on top.
+    expect(egress('BEEF')!.weight, greaterThan(before * 0.8),
+        reason: 'only half-life ages it; its silence on floods is no evidence');
+  });
+
+  test('a doorstep that once echoed my floods is still marked down', () {
+    echo([0xBE, 0xEF]);
+    final before = egress('BEEF')!.weight;
+
+    nowMillis += 20 * minute;
+    echo([0xA2, 0x77]);
+
+    expect(egress('BEEF')!.weight, lessThan(before * 0.75));
+  });
+
+  test("the first proof starts from the proof weight, not the hearing tally",
+      () {
+    for (var i = 0; i < 12; i++) {
+      graph.observePath(path([0x13, 0x12, 0xBE, 0xEF]), 2,
+          const ObservationOrigin.anonymous(),
+          messageId: 'heard$i');
+    }
+    graph.reportSendResult(path([0xBE, 0xEF]), true, contactPubkey: bobPk);
+
+    final b = egress('BEEF')!;
+    expect(b.weight, 3, reason: 'one proof');
+    expect(b.finalCount, 12, reason: 'the hearing tally is kept');
+  });
+
+  test('a proof does not make a repeater look freshly heard', () {
+    // Both hear 1312's packets reach me: BEEF two hours ago, AD77 just now.
+    graph.observePath(path([0x13, 0x12, 0xBE, 0xEF]), 2,
+        const ObservationOrigin.anonymous());
+    nowMillis += 115 * minute;
+    graph.observePath(path([0x13, 0x12, 0xAD, 0x77]), 2,
+        const ObservationOrigin.anonymous());
+    // Then BEEF proves it hears ME, which says nothing about hearing it.
+    nowMillis += 5 * minute;
+    graph.reportSendResult(path([0xBE, 0xEF]), true, contactPubkey: bobPk);
+
+    final back = graph.findReturnPathFromRepeater('1312') as RouteResult;
+    final last = back.pathBytes.sublist(back.pathBytes.length - 2);
+    expect(last, [0xAD, 0x77],
+        reason: 'the way home ends at the repeater I heard most recently');
   });
 }

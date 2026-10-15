@@ -42,6 +42,15 @@ class IngressEntry {
 
   /// Every proof in the sending direction, all owners.
   int provenCount = 0;
+
+  /// Self rows: last echo of my flood through this hop. Null = it never
+  /// showed it forwards my floods, so a flood echo elsewhere says
+  /// nothing against it.
+  int? floodProvenAt;
+
+  /// Last time this row was heard (not proven); null on rows from before
+  /// the clocks were split, which fall back to [lastSeen].
+  int? lastHeardAt;
 }
 
 class Candidate {
@@ -136,7 +145,8 @@ class EvidenceStore {
     // in the return direction, that this repeater hears them.
     _upsert(contactPubkey, repeaterHash, EvidenceTier.inferred,
             pubkeyConfirmed ? 3.0 : 1.0, arrival)
-        .finalCount++;
+      ..finalCount += 1
+      ..lastHeardAt = arrival;
   }
 
   /// Doorsteps proven for the RETURN direction: repeaters that were
@@ -153,7 +163,7 @@ class EvidenceStore {
       // My rows: ranked by how often I hear them, not by the weight that
       // ranks them as hearing ME — proof and supersede move that one.
       final w = _decayedWeight(owner, e, now, isSelf,
-          base: isSelf ? e.finalCount.toDouble() : null);
+          sinceHeard: true, base: isSelf ? e.finalCount.toDouble() : null);
       if (w > 0.05) {
         out.add(Candidate(entry.key.$2, w, e.tier,
             uplinkSnr: e.uplinkSnr,
@@ -164,7 +174,7 @@ class EvidenceStore {
             penultimateCount: e.penultimateCount,
             provenCount: e.provenCount,
             provenAt: e.provenAt,
-            lastSeen: e.lastSeen));
+            lastSeen: e.lastHeardAt ?? e.lastSeen));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
@@ -218,7 +228,9 @@ class EvidenceStore {
     final e = _upsert(selfPubkey, repeaterHash, EvidenceTier.inferred,
         proven ? 0.0 : 1.0, arrival);
     _capSelf(e);
-    e.finalCount++;
+    e
+      ..finalCount += 1
+      ..lastHeardAt = arrival;
     if (lat != null) e.observedLat = lat;
     if (lon != null) e.observedLon = lon;
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
@@ -254,14 +266,26 @@ class EvidenceStore {
   void recordProvenEgress(String selfPubkey, String repeaterHash, int arrival,
       {double? uplinkSnr, double? downlinkSnr, bool supersede = false}) {
     _undoSlash((selfPubkey, repeaterHash), arrival);
-    final e =
-        _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
-          ..provenAt = arrival
-          ..provenCount += 1;
-    _capSelf(e);
+    final e = _proveSelf(selfPubkey, repeaterHash, 3.0, arrival);
+    if (supersede) e.floodProvenAt = arrival;
     if (uplinkSnr != null) e.uplinkSnr = _blend(e.uplinkSnr, uplinkSnr);
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
     if (supersede) _supersedeStaleSelf(selfPubkey, arrival);
+  }
+
+  /// A proof that this hop hears me. The first proof starts from the
+  /// proof weight: the hearing tally on an unproven row measures how
+  /// well I hear it, which says nothing about how well it hears me.
+  IngressEntry _proveSelf(
+      String selfPubkey, String repeaterHash, double weight, int arrival) {
+    final firstProof = entries[(selfPubkey, repeaterHash)]?.provenAt == null;
+    final e =
+        _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, weight, arrival)
+          ..provenAt = arrival
+          ..provenCount += 1;
+    if (firstProof) e.weight = weight;
+    _capSelf(e);
+    return e;
   }
 
   void _capSelf(IngressEntry e) {
@@ -289,6 +313,8 @@ class EvidenceStore {
       final e = entry.value;
       final provenAt = e.provenAt;
       if (provenAt == null || arrival - provenAt <= staleMs) continue;
+      // Never echoed a flood of mine: its silence now is no evidence.
+      if (e.floodProvenAt == null) continue;
       _slashedThisEpoch[entry.key] = e.weight;
       e.weight =
           math.min(e.weight, config.selfWeightCap) * config.selfSupersedeFactor;
@@ -335,11 +361,9 @@ class EvidenceStore {
                   (config.snrFullQualityDb - config.snrZeroQualityDb))
               .clamp(0.0, 1.0);
       _undoSlash((selfPubkey, r.hash), arrival);
-      final entry = _upsert(
-          selfPubkey, r.hash, EvidenceTier.proven, 1.0 + 2.0 * quality, arrival)
-        ..provenAt = arrival // it answered: it heard us
-        ..provenCount += 1;
-      _capSelf(entry);
+      // It answered: it heard us.
+      final entry =
+          _proveSelf(selfPubkey, r.hash, 1.0 + 2.0 * quality, arrival);
       // Keep the measured dB, both directions — a Discover exchange is
       // the best-measured link we ever get (fresh, bidirectional, and
       // it's the first hop).
@@ -356,7 +380,7 @@ class EvidenceStore {
   /// repeater that hears me. Hearing still refreshes the heard list.
   /// [base] replaces the stored weight.
   double _decayedWeight(String owner, IngressEntry e, int now, bool isSelf,
-      {bool sinceProof = false, double? base}) {
+      {bool sinceProof = false, bool sinceHeard = false, double? base}) {
     // Proven egress (Discover, delivered send, trace) is a measurement,
     // not a guess — it outlives an inferred last-hop tally.
     final provenBoost = (isSelf && e.tier != EvidenceTier.inferred)
@@ -368,7 +392,11 @@ class EvidenceStore {
     // Rows saved before the cap existed are capped on read.
     final raw = base ?? e.weight;
     final weight = isSelf ? math.min(raw, config.selfWeightCap) : raw;
-    final since = sinceProof ? (e.provenAt ?? e.lastSeen) : e.lastSeen;
+    final since = sinceProof
+        ? (e.provenAt ?? e.lastSeen)
+        : sinceHeard
+            ? (e.lastHeardAt ?? e.lastSeen)
+            : e.lastSeen;
     final dt = now - since;
     if (dt <= 0) return weight;
     return weight * math.pow(0.5, dt / halfLifeMs);
@@ -499,6 +527,12 @@ class EvidenceStore {
         if ((ghost.provenAt ?? 0) > (target.provenAt ?? 0)) {
           target.provenAt = ghost.provenAt;
         }
+        if ((ghost.floodProvenAt ?? 0) > (target.floodProvenAt ?? 0)) {
+          target.floodProvenAt = ghost.floodProvenAt;
+        }
+        if ((ghost.lastHeardAt ?? 0) > (target.lastHeardAt ?? 0)) {
+          target.lastHeardAt = ghost.lastHeardAt;
+        }
         if (ghost.lastSeen > target.lastSeen) {
           target.lastSeen = ghost.lastSeen;
           target.observedLat = ghost.observedLat ?? target.observedLat;
@@ -537,7 +571,9 @@ class EvidenceStore {
         ..downlinkSnr = row.downlinkSnr
         ..finalCount = row.finalCount
         ..penultimateCount = row.penultimateCount
-        ..provenCount = row.provenCount;
+        ..provenCount = row.provenCount
+        ..floodProvenAt = row.floodProvenAt
+        ..lastHeardAt = row.lastHeardAt;
     }
     for (final row in await _db.select(_db.knownContacts).get()) {
       knownContacts[row.contactPubkey] =
@@ -582,6 +618,8 @@ class EvidenceStore {
             finalCount: Value(e.finalCount),
             penultimateCount: Value(e.penultimateCount),
             provenCount: Value(e.provenCount),
+            floodProvenAt: Value(e.floodProvenAt),
+            lastHeardAt: Value(e.lastHeardAt),
           ),
           mode: InsertMode.insertOrReplace,
         );

@@ -1140,6 +1140,10 @@ class PathGraph {
             'final_count': e.value.finalCount,
             'penultimate_count': e.value.penultimateCount,
             'proven_count': e.value.provenCount,
+            if (e.value.floodProvenAt != null)
+              'flood_proven_at': e.value.floodProvenAt,
+            if (e.value.lastHeardAt != null)
+              'last_heard_at': e.value.lastHeardAt,
           }
       ],
       'contacts': [
@@ -1216,7 +1220,9 @@ class PathGraph {
             // A checkpoint from before the count: a proven row was proven
             // at least once.
             ..provenCount = (i['proven_count'] as num?)?.toInt() ??
-                (i['proven_at'] == null ? 0 : 1);
+                (i['proven_at'] == null ? 0 : 1)
+            ..floodProvenAt = (i['flood_proven_at'] as num?)?.toInt()
+            ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt();
     }
     for (final raw in (document['contacts'] as List?) ?? const []) {
       final c = raw as Map;

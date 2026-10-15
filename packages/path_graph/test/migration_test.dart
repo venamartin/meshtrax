@@ -264,4 +264,31 @@ void main() {
     await graph.dispose();
     file.parent.deleteSync(recursive: true);
   });
+
+  test('v6 to v7: heard rows get their heard clock from last_seen', () async {
+    final seen = DateTime.now().millisecondsSinceEpoch - 3600 * 1000;
+    final file = await atVersion(6, (db) async {
+      await db.customStatement(
+          'INSERT INTO contact_ingress (owner_pubkey, repeater_hash, weight, '
+          "last_seen, evidence, final_count) VALUES ('me', 'A277', 1.0, "
+          "$seen, 'inferred', 3)");
+      await db.customStatement(
+          'INSERT INTO contact_ingress (owner_pubkey, repeater_hash, weight, '
+          "last_seen, evidence, proven_at, proven_count) VALUES ('me', "
+          "'BEEF', 3.0, $seen, 'proven', $seen, 1)");
+    });
+
+    final graph = PathGraph(NativeDatabase(file));
+    await graph.init();
+    final rows = {
+      for (final r in graph.saveSession()['ingress'] as List)
+        (r as Map)['repeater']: r,
+    };
+    expect(rows['A277']!['last_heard_at'], seen);
+    expect(rows['BEEF']!.containsKey('last_heard_at'), isFalse,
+        reason: 'only ever proven, never heard');
+    expect(rows['BEEF']!.containsKey('flood_proven_at'), isFalse);
+    await graph.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
 }

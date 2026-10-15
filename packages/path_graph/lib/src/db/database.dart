@@ -27,8 +27,10 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// direction.
   /// v6 (2026-10-13): contact_ingress gains provenCount — how many times
   /// the row was proven, for the Pathfinder screen's row detail.
+  /// v7 (2026-10-14): contact_ingress gains floodProvenAt (a flood echo
+  /// proved it) and lastHeardAt (the heard clock, apart from proofs).
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +77,14 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             await customStatement(
                 'UPDATE contact_ingress SET proven_count = 1 '
                 'WHERE proven_at IS NOT NULL AND proven_count = 0');
+          }
+          if (from < 7) {
+            await addIfMissing(contactIngress.floodProvenAt);
+            await addIfMissing(contactIngress.lastHeardAt);
+            // Best guess for rows heard before the clock was split.
+            await customStatement(
+                'UPDATE contact_ingress SET last_heard_at = last_seen '
+                'WHERE final_count > 0 AND last_heard_at IS NULL');
           }
         },
       );
