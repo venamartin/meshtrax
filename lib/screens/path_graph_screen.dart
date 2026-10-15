@@ -882,6 +882,16 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
               label: Text('Trace (${contact.pathLength} hops)'),
             ),
         ]),
+        if (hasFirmwareRoute)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+                "Trace goes out on the radio's route "
+                '${_fmtPath(contact.path, contact.pathHashSize)} and back the '
+                "same way reversed. The way back is a guess: links don't "
+                'always work both ways.',
+                style: Theme.of(context).textTheme.bodySmall),
+          ),
         if (adapter?.discoveryStatus[contact.publicKeyHex.toLowerCase()]
             case final status?)
           Padding(

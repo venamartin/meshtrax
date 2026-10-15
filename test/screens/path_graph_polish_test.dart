@@ -58,9 +58,10 @@ void main() {
   });
 
   Future<void> pump(WidgetTester tester,
-      {required double width, double textScale = 1}) async {
+      {required double width, double textScale = 1, Contact? target}) async {
     late AppSettingsService settings;
-    final connector = _Connector([_bob]);
+    final contact = target ?? _bob;
+    final connector = _Connector([contact]);
     await tester.runAsync(() async {
       settings = AppSettingsService();
       await settings.loadSettings();
@@ -86,7 +87,7 @@ void main() {
               .copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
-        home: PathGraphScreen(initialTargetKey: _bob.publicKeyHex),
+        home: PathGraphScreen(initialTargetKey: contact.publicKeyHex),
       ),
     ));
     await tester.pump();
@@ -123,6 +124,21 @@ void main() {
     });
     await tester.pumpAndSettle();
     expect(service.graph!.snapshot().nodes, isEmpty);
+    await tester.runAsync(() => service.stop());
+  });
+
+  testWidgets('Trace says which route goes out and that the way back is a guess',
+      (tester) async {
+    final routed = _bob.copyWith(
+      pathLength: 3,
+      path: Uint8List.fromList([0xA2, 0x77, 0x5B, 0x98, 0x88, 0x02]),
+      pathHashSize: 2,
+    );
+    await pump(tester, width: 1200, target: routed);
+    expect(find.text('Trace (3 hops)'), findsOneWidget);
+    expect(find.textContaining("radio's route A277 › 5B98 › 8802"),
+        findsOneWidget);
+    expect(find.textContaining('back the same way reversed'), findsOneWidget);
     await tester.runAsync(() => service.stop());
   });
 
