@@ -4186,6 +4186,44 @@ class AppLocalizationsSk extends AppLocalizations {
       'Forgets the WiFi network. Applies after a restart.';
 
   @override
+  String get companionCli_remoteNoReply =>
+      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+
+  @override
+  String get companionCli_remoteSentNoAnswer =>
+      'Sent. A radio does not answer a restart or power-off.';
+
+  @override
+  String companionCli_blocked(String name, String command) {
+    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+  }
+
+  @override
+  String companionCli_blockedBody(String command) {
+    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+  }
+
+  @override
+  String get contact_remoteCli => 'Allow remote command line';
+
+  @override
+  String get contact_remoteCliSubtitle =>
+      'Lets this contact run commands on your radio';
+
+  @override
+  String contact_remoteCliWarningTitle(String name) {
+    return 'Let $name control your radio?';
+  }
+
+  @override
+  String contact_remoteCliWarning(String name) {
+    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+  }
+
+  @override
+  String get contact_remoteCliAllow => 'Allow';
+
+  @override
   String get wifi_title => 'WiFi';
 
   @override

@@ -97,6 +97,19 @@ void main() {
     expect(c.writes.single[contactFlagsOffset], contactFlagRemoteCli);
   });
 
+  test('granting and revoking touch only that bit', () async {
+    c.radioFlags = contactFlagFavorite | contactFlagTeleLoc;
+    await c.setContactFlags(peer(), remoteCli: true);
+    expect(c.writes.last[contactFlagsOffset],
+        contactFlagFavorite | contactFlagTeleLoc | contactFlagRemoteCli);
+    expect(peer().remoteCliAllowed, isTrue);
+
+    c.radioFlags = contactFlagFavorite | contactFlagRemoteCli;
+    await c.setContactFlags(peer(), remoteCli: false);
+    expect(c.writes.last[contactFlagsOffset], contactFlagFavorite);
+    expect(peer().remoteCliAllowed, isFalse);
+  });
+
   test('a route write keeps the grant', () async {
     await c.setContactPath(peer(), Uint8List.fromList([0xA2]), 1, hashSize: 1);
 

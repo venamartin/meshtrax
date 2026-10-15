@@ -2358,6 +2358,46 @@
   "companionCli_helpWifiPwd": "Sets the WiFi password. Applies after a restart.",
   "companionCli_helpWifiEnabled": "Turns WiFi on (1) or off (0). Applies after a restart.",
   "companionCli_helpWifiClear": "Forgets the WiFi network. Applies after a restart.",
+  "companionCli_remoteNoReply": "No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.",
+  "companionCli_remoteSentNoAnswer": "Sent. A radio does not answer a restart or power-off.",
+  "companionCli_blocked": "{name} tried to use your radio's command line: \"{command}\". It was not allowed.",
+  "@companionCli_blocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "command": {
+        "type": "String"
+      }
+    }
+  },
+  "companionCli_blockedBody": "Tried to use your radio's command line: \"{command}\". It was not allowed.",
+  "@companionCli_blockedBody": {
+    "placeholders": {
+      "command": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_remoteCli": "Allow remote command line",
+  "contact_remoteCliSubtitle": "Lets this contact run commands on your radio",
+  "contact_remoteCliWarningTitle": "Let {name} control your radio?",
+  "@contact_remoteCliWarningTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_remoteCliWarning": "{name} will be able to change your radio's settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.",
+  "@contact_remoteCliWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_remoteCliAllow": "Allow",
   "wifi_title": "WiFi",
   "wifi_settingsSubtitle": "Network, password and connection",
   "wifi_use": "Use WiFi",

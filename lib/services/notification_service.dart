@@ -412,6 +412,18 @@ class NotificationService {
     );
   }
 
+  /// A contact tried to use our radio's command line without permission.
+  Future<void> showBlockedCliNotification({
+    required String contactName,
+    required String command,
+    String? contactId,
+  }) =>
+      showMessageNotification(
+        contactName: contactName,
+        message: _l10n.companionCli_blockedBody(command),
+        contactId: contactId,
+      );
+
   Future<void> showAdvertNotification({
     required String contactName,
     required String contactType,
