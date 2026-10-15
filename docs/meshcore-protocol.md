@@ -2,11 +2,13 @@
 
 > **Purpose:** Reference for humans and AI agents working on MeshTrax. Read this BEFORE opening
 > any `MeshCore/` C++ files. Everything here is verified directly against the firmware source in
-> `./MeshCore` (companion radio `FIRMWARE_VER_CODE 13`, v1.16.0). When you discover new protocol
+> `./MeshCore` (companion radio `FIRMWARE_VER_CODE 14`, v1.18.0). When you discover new protocol
 > details, update this file instead of leaving the knowledge in a chat log.
 >
 > **Last full verification:** 2026-07-12, against `MeshCore/examples/companion_radio/MyMesh.cpp`
-> and `MeshCore/src/`.
+> and `MeshCore/src/`. **1.18.0 delta (ver code 13 → 14) verified 2026-10-15** against tag
+> `companion-v1.18.0`: companion CLI (CMD 66 / RESP 29, `TXT_TYPE_CLI_COMMAND`), contact flag
+> 0x10, unsolicited 0x8C, nameless channel slots, multi-interface builds — see §5 "Companion CLI".
 
 There are **two distinct protocols** described here — don't mix them up:
 
@@ -116,6 +118,13 @@ The app declares which protocol version it speaks via `CMD_DEVICE_QUERY` byte 1
 (`app_target_ver` in firmware). **MeshTrax sends 3**, which selects the V3 message frames
 (codes 16/17) over the legacy ones (codes 7/8).
 
+**Multi-interface builds (v1.17+, widespread in v1.18):** BLE+WiFi companions run one
+`MultiSerialInterface`. Every response and push is written to **every** connected interface, and
+a request does not remember which interface it came from. The offline message queue, contact
+iterator, `app_target_ver` and pending request tags are shared. So with two apps connected (e.g.
+phone on BLE, PC on WiFi) each app sees the other's replies, and "the next SENT is mine" stops
+being true. These builds have no USB interface (USB is the debug log).
+
 ### 4.1 Commands (App → Companion)
 
 Commands implemented by MeshTrax are **bold**. `✗` = firmware replies `RESP_CODE_DISABLED` or
@@ -124,7 +133,7 @@ Commands implemented by MeshTrax are **bold**. `✗` = firmware replies `RESP_CO
 | Code | Constant | Frame after cmd byte | Notes |
 |------|----------|----------------------|-------|
 | 1 | **`CMD_APP_START`** | `[app_ver][reserved x6][app_name…]` | Reply: SELF_INFO. Bytes 1–7 are ignored/reserved |
-| 2 | **`CMD_SEND_TXT_MSG`** | `[txt_type][attempt][timestamp x4][pubkey_prefix x6][text…]` | Min len 14. Reply: SENT or ERR |
+| 2 | **`CMD_SEND_TXT_MSG`** | `[txt_type][attempt][timestamp x4][pubkey_prefix x6][text…]` | Min len 14. Reply: SENT or ERR. txt_type 3 needs fw v14+ (older: ERR 1) |
 | 3 | **`CMD_SEND_CHANNEL_TXT_MSG`** | `[txt_type][channel_idx][timestamp x4][text…]` | **No null terminator** — every byte after the header counts as text and is transmitted |
 | 4 | **`CMD_GET_CONTACTS`** | `[since x4]?` | Optional `since` filters by `lastmod`. Replies: CONTACTS_START, CONTACT…, END_OF_CONTACTS |
 | 5 | **`CMD_GET_DEVICE_TIME`** | — | Reply: CURR_TIME |
@@ -147,14 +156,14 @@ Commands implemented by MeshTrax are **bold**. `✗` = firmware replies `RESP_CO
 | 22 | **`CMD_DEVICE_QUERY`** | `[app_target_ver]` | Reply: DEVICE_INFO. Sets protocol version for message frames |
 | 23 | `CMD_EXPORT_PRIVATE_KEY` ✗ | — | Disabled unless built with `ENABLE_PRIVATE_KEY_EXPORT` |
 | 24 | `CMD_IMPORT_PRIVATE_KEY` ✗ | `[key x64]` | Disabled unless built with `ENABLE_PRIVATE_KEY_IMPORT` |
-| 25 | `CMD_SEND_RAW_DATA` | `[path_len][path…][payload x4+]` | Direct only |
+| 25 | `CMD_SEND_RAW_DATA` | `[path_len][path…][payload x4+]` | Direct only. v14+: `path_len` is the §1 encoding (width bits honoured); before, a raw byte count |
 | 26 | **`CMD_SEND_LOGIN`** | `[pub_key x32][password…]` | Reply: SENT, then push LOGIN_SUCCESS/FAIL |
 | 27 | **`CMD_SEND_STATUS_REQ`** | `[pub_key x32]` | Reply: SENT, then push STATUS_RESPONSE |
 | 28 | `CMD_HAS_CONNECTION` | `[pub_key x32]` | OK if keep-alive connection active |
 | 29 | **`CMD_LOGOUT`** | `[pub_key x32]` | Stops keep-alive connection |
 | 30 | **`CMD_GET_CONTACT_BY_KEY`** | `[pub_key x32]` | Reply: CONTACT frame |
 | 31 | **`CMD_GET_CHANNEL`** | `[channel_idx]` | Reply: CHANNEL_INFO |
-| 32 | **`CMD_SET_CHANNEL`** | `[channel_idx][name x32][psk x16]` | Only 128-bit PSKs; 32-byte PSK frames are rejected |
+| 32 | **`CMD_SET_CHANNEL`** | `[channel_idx][name x32][psk x16]` | Only 128-bit PSKs; 32-byte PSK frames are rejected. v14+: a slot with an empty name receives nothing, so never write a keyed slot nameless |
 | 33–35 | `CMD_SIGN_START/DATA/FINISH` | | Multi-frame Ed25519 signing of up to 8 KB |
 | 36 | **`CMD_SEND_TRACE_PATH`** | `[tag x4][auth x4][flags][path…]` | `flags & 0x03` = hash width − 1. Path must be non-empty |
 | 37 | `CMD_SET_DEVICE_PIN` | `[pin x4]` | 0 or 100000–999999 |
@@ -175,10 +184,11 @@ Commands implemented by MeshTrax are **bold**. `✗` = firmware replies `RESP_CO
 | 59 | **`CMD_GET_AUTOADD_CONFIG`** | — | Reply: AUTOADD_CONFIG |
 | 60 | `CMD_GET_ALLOWED_REPEAT_FREQ` | — | Reply: list of `[lower x4][upper x4]` kHz ranges |
 | 61 | **`CMD_SET_PATH_HASH_MODE`** | `[0][mode]` | mode 0–2 → (mode+1)-byte path hashes on air |
-| 62 | `CMD_SEND_CHANNEL_DATA` | `[channel_idx][path_len][path…][data_type x2][payload…]` | `path_len = 0xFF` for flood |
+| 62 | `CMD_SEND_CHANNEL_DATA` | `[channel_idx][path_len][path…][data_type x2][payload…]` | `path_len = 0xFF` for flood. v14+: payload > 165 bytes → ERR 6 |
 | 63 | **`CMD_SET_DEFAULT_FLOOD_SCOPE`** | `[name x31][key x16]` or empty | Empty payload clears the default scope |
 | 64 | **`CMD_GET_DEFAULT_FLOOD_SCOPE`** | — | Reply: DEFAULT_FLOOD_SCOPE |
 | 65 | `CMD_SEND_RAW_PACKET` | `[priority][raw_packet…]` | Injects a pre-built wire packet |
+| 66 | `CMD_RUN_CLI_COMMAND` | `[ascii command…]` | fw v14+. Min 2 chars, no NUL needed. Reply: CLI_REPLY. Older firmware: ERR 1. See §5 "Companion CLI" |
 
 ### 4.2 Responses (Companion → App)
 
@@ -212,6 +222,7 @@ Commands implemented by MeshTrax are **bold**. `✗` = firmware replies `RESP_CO
 | 25 | `RESP_CODE_AUTOADD_CONFIG` | `[flags][max_hops]` |
 | 27 | `RESP_CODE_CHANNEL_DATA_RECV` | `[snr][res][res][channel_idx][path_len][data_type x2][data_len][data…]` |
 | 28 | `RESP_CODE_DEFAULT_FLOOD_SCOPE` | `[name x31][key x16]`, or 1 byte if unset |
+| 29 | `RESP_CODE_CLI_REPLY` | fw v14+. `[ascii reply…]`, no NUL, ≤ 165 chars, always one frame (§5 "Companion CLI") |
 
 ### 4.3 Push Codes (Companion → App, unsolicited)
 
@@ -229,7 +240,7 @@ Commands implemented by MeshTrax are **bold**. `✗` = firmware replies `RESP_CO
 | `0x89` | `PUSH_CODE_TRACE_DATA` | `[reserved][path_len][flags][tag x4][auth x4][hashes…][snrs…][final_snr]` |
 | `0x8A` | `PUSH_CODE_NEW_ADVERT` | Full contact frame (§5) — newly discovered node |
 | `0x8B` | `PUSH_CODE_TELEMETRY_RESPONSE` | `[reserved][pubkey_prefix x6][CayenneLPP data…]` |
-| `0x8C` | `PUSH_CODE_BINARY_RESPONSE` | `[reserved][tag x4][data…]` — match tag to RESP_CODE_SENT |
+| `0x8C` | `PUSH_CODE_BINARY_RESPONSE` | `[reserved][tag x4][data…]` — match tag to RESP_CODE_SENT. v14+: also sent **unsolicited** for any response matching no pending request (late replies, sensor telemetry pushes) — always match by tag and drop unknown tags |
 | `0x8D` | `PUSH_CODE_PATH_DISCOVERY_RESPONSE` | `[reserved][pubkey_prefix x6][out_path_len][out_path…][in_path_len][in_path…]` |
 | `0x8E` | `PUSH_CODE_CONTROL_DATA` | `[snr×4 i8][rssi i8][path_len][control payload…]` |
 | `0x8F` | `PUSH_CODE_CONTACT_DELETED` | `[pub_key x32]` — evicted by overwrite-oldest |
@@ -257,7 +268,10 @@ cmd byte at [0]; on write, lat/lon and lastmod are optional trailing fields.
 [0]         code
 [1..32]     pub_key (32 bytes)
 [33]        type  (ADV_TYPE_*)
-[34]        flags (bit0 favourite; bit1 telem base; bit2 telem loc; bit3 telem env)
+[34]        flags (bit0 favourite; bit1 telem base; bit2 telem loc; bit3 telem env;
+                   bit4 0x10 = may run CLI commands on this radio, v14+)
+                   CMD 9 overwrites ALL bits: always write back the radio's byte,
+                   changing only the bit you mean to.
 [35]        out_path_len  ← path_len byte encoding (§1). 0xFF = no path, 0x00 = 0-hop direct.
                             AUTHORITATIVE hop count = low 6 bits. Do not scan path bytes.
 [36..99]    out_path (64 bytes, zero-padded)
@@ -269,11 +283,12 @@ cmd byte at [0]; on write, lat/lon and lastmod are optional trailing fields.
 ```
 Total: 148 bytes.
 
-### `CMD_SEND_TXT_MSG` (2) — also used for repeater CLI commands
+### `CMD_SEND_TXT_MSG` (2) — also used for repeater and companion CLI commands
 ```
 [0]       = 2
 [1]       = txt_type: 0 = TXT_TYPE_PLAIN (ACK expected), 1 = TXT_TYPE_CLI_DATA (no ACK),
-            2 = TXT_TYPE_SIGNED_PLAIN
+            2 = TXT_TYPE_SIGNED_PLAIN, 3 = TXT_TYPE_CLI_COMMAND (no ACK, fw v14+;
+            command to another COMPANION — keep 1 for repeaters/rooms/sensors)
 [2]       = attempt (0–3; the on-air payload only keeps 2 bits)
 [3..6]    = timestamp (uint32 LE, epoch secs) — for CLI the firmware substitutes its own RTC
 [7..12]   = destination pub_key prefix (first 6 bytes)
@@ -313,7 +328,8 @@ Total: 148 bytes.
 ### `RESP_CODE_DEVICE_INFO` (13) — reply to CMD_DEVICE_QUERY
 ```
 [0]      = 13
-[1]      = FIRMWARE_VER_CODE (13 for v1.16.0)
+[1]      = FIRMWARE_VER_CODE (13 for v1.16–1.17, 14 for v1.18.0) — the only capability
+           signal; layout unchanged in v14 (no WiFi/CLI flag)
 [2]      = max contacts ÷ 2
 [3]      = max group channels
 [4..7]   = ble_pin (uint32 LE, 0 = unset)
@@ -336,7 +352,8 @@ The app polls SYNC_NEXT_MESSAGE (usually after a `PUSH_CODE_MSG_WAITING` tickle)
 [2..3]   = reserved (0)
 [4..9]   = sender pub_key prefix (6 bytes)
 [10]     = path_len byte (§1 encoding) — 0xFF if the packet arrived Direct
-[11]     = txt_type (0 plain, 1 CLI data, 2 signed)
+[11]     = txt_type (0 plain, 1 CLI data, 2 signed, 3 CLI command — v14+: a contact
+           WITHOUT flag 0x10 tried to run this command on our radio; it was not run)
 [12..15] = sender_timestamp (uint32 LE)
 [16+]    = text — NOT null-terminated, runs to end of frame
            For txt_type 2 (signed, i.e. a room server post): [16..19] = 4-byte
@@ -399,6 +416,61 @@ bit 0 (0x01) = overwrite oldest non-favourite when contacts full
 bit 1 (0x02) = auto-add Chat        bit 2 (0x04) = auto-add Repeater
 bit 3 (0x08) = auto-add Room server bit 4 (0x10) = auto-add Sensor
 ```
+
+### Companion CLI (fw v14+, `MyMesh::handleCommand`)
+
+One text CLI, reachable three ways: locally with `CMD_RUN_CLI_COMMAND` (66), remotely by another
+companion with `CMD_SEND_TXT_MSG` txt_type 3, and on the USB rescue console.
+
+**Local:** `[66][ascii]` → `RESP_CODE_CLI_REPLY` `[29][ascii]`. The reply is written
+synchronously, one frame, ≤ 165 chars, no NUL. It can still be lost: the ESP32 BLE and WiFi send
+queues hold 4 frames and drop on overflow — use a timeout. `reboot`, `poweroff` and `shutdown`
+never reply (use `CMD_REBOOT` for a reboot: it flushes pending contact writes, the CLI one
+doesn't).
+
+**Correlation prefix:** a command longer than 4 chars with `|` at index 2 (e.g. `"0a|get name"`)
+has its first 3 chars echoed at the start of the reply (`"0a|> MyNode"`). Same convention as
+repeaters. On multi-interface builds this is the only way to tell your reply from another app's.
+
+**Reply conventions** (inconsistent upstream): `"> value"` = a value, `"OK…"` = success,
+`Error, …` / `ERROR: …` / `Error: …` = failure (match case-insensitively), `"Unknown command"` =
+not supported by this build. Leading spaces are skipped; matching is exact and case-sensitive, so
+no trailing spaces or CR/LF on `get` commands. `set key ` with exactly one trailing space sets an
+empty value.
+
+**Remote (txt_type 3):** the sender gets `RESP_CODE_SENT` with ack 0 (no ACK ever). On the
+receiving 1.18 companion:
+- sender's contact has flag 0x10 → the command runs; the reply comes back as a **txt_type 1** DM
+  after 600 ms (`CLI_REPLY_DELAY_MILLIS`), direct if a route is known else scoped flood. Nothing
+  is pushed to the receiver's app. No replay protection (repeaters check timestamps; companions
+  don't).
+- no flag 0x10 → nothing runs, nothing goes back; the receiver's app gets the command as a
+  txt_type 3 contact message.
+- ≤1.17 receiver → dropped silently. A companion that receives txt_type 1 treats it as a reply
+  and shows it to its app, so never send type 1 to a companion.
+
+**Keys (v1.18.0):** radio — `get radio`, `set radio f,bw,sf,cr` (reboot to apply), `get freq`,
+`af`, `dutycycle`, `int.thresh`, `cad`, `radio.rxgain`, `tx` (no range check via CLI), `rxdelay`,
+`agc.reset.interval`, `path.hash.mode`, `multi.acks`, `txdelay`, `direct.txdelay`. Companion —
+`get/set name`, `set pin` (unvalidated), `get/set tz.offset` (−12…14, only the ThinkNode M8
+clock uses it), `board`, `ver`, `reboot`, `poweroff`/`shutdown`. Board-specific —
+`radio.fem.rxgain/txgain`, T-Beam 1W `fan`. **No `help`, no capability list.**
+
+**CLI-only prefs:** `txdelay`, `direct.txdelay`, `cad`, `int.thresh`, `agc.reset.interval`,
+`radio.rxgain`, `tz.offset` and `wifi.*` have no binary command. CLI writes also change fields the
+binary frames report (name, pin, tx, radio, multi.acks, path.hash.mode) **without a push** —
+re-query DEVICE_INFO / SELF_INFO afterwards.
+
+**WiFi (only `ENABLE_WIFI_INTERFACE` builds — BLE-only builds answer `Unknown command`):**
+`set wifi.ssid X` (≤32), `set wifi.pwd X` (≤63), `get wifi.pwd` (**plain text**, also to remote
+CLI users), `get wifi.ssid` (`> (not set)` if empty), `get/set wifi.enabled 0|1` (atoi: "on" =
+0), `get wifi.status` (`> connected` / `> disconnected`, nothing more), `get wifi.ip`
+(`> a.b.c.d` / `> (not connected)`), `set wifi.clear`. Every `set` needs a reboot. WiFi starts
+only when enabled AND an SSID is set; it is station-only, DHCP, no mDNS, no hostname. It serves
+TCP on **port 5000** (compile-time), one client at a time (a new client kicks the old), **no
+authentication**, same `<`/`>` + u16 LE length framing as USB. Wrong password: retries every 10 s
+forever (ESP32), BLE keeps working. WiFi on ESP32 inhibits sleep. Probe for WiFi with
+`get wifi.enabled` — the protocol has no capability bit.
 
 ---
 
@@ -564,7 +636,7 @@ California-scoped ones.
 
 | Constant | Value | Meaning |
 |----------|-------|---------|
-| `MAX_FRAME_SIZE` | 176 | Serial frame size, including code byte |
+| `MAX_FRAME_SIZE` | 176 | Serial frame size, including code byte. The USB/TCP codec must accept all 176 (it capped at 172 until 2026-10) |
 | `MAX_PACKET_PAYLOAD` | 184 | On-air payload size |
 | `MAX_PATH_SIZE` | 64 | Path buffer, bytes |
 | `MAX_TEXT_LEN` | 160 | Max message text (10 × CIPHER_BLOCK_SIZE) |
@@ -641,6 +713,13 @@ direct after the first flood login.
 ## 12. Known Bugs and Gotchas (Do Not Re-introduce)
 
 Previously debugged issues. Check here before touching related code.
+
+### Bug (fixed 2026-10): USB/TCP decoder dropped 173–176-byte frames
+**File:** `lib/services/usb_serial_frame_codec.dart`
+**Symptom:** over USB or WiFi/TCP, a DM with 157–160 text bytes, long channel messages and big
+RX-log frames vanished; the decoder skipped the header and rescanned inside the payload.
+**Cause:** the codec capped payloads at 172 after the firmware's `MAX_FRAME_SIZE` grew to 176.
+**Rule:** the cap is `maxFrameSize`, nothing else.
 
 ### Bug (fixed 2026-07): contact hop count derived by scanning path bytes
 **File:** `lib/models/contact.dart`

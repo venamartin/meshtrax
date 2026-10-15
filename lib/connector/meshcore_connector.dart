@@ -27,6 +27,7 @@ import '../helpers/smaz.dart';
 import '../helpers/timeout_helper.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/ble_debug_log_service.dart';
+import '../services/companion_cli_service.dart';
 import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
     if (dart.library.io) '../services/linux_ble_pairing_service.dart';
@@ -849,6 +850,29 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   CompanionRadioStats? get latestRadioStats => _latestRadioStats;
 
   bool get supportsCompanionRadioStats => (_firmwareVerCode ?? 0) >= 8;
+
+  bool get supportsCompanionCli => (_firmwareVerCode ?? 0) >= 14;
+
+  late final CompanionCliService companionCli = CompanionCliService(this);
+
+  /// Null until probed. Only BLE+WiFi builds of firmware 1.18+ know the
+  /// wifi.* CLI keys; the protocol has no capability bit for it.
+  bool? get hasWifi => _hasWifi;
+  bool? _hasWifi;
+
+  @visibleForTesting
+  Future<void> probeWifiForTest() => _probeWifi();
+
+  Future<void> _probeWifi() async {
+    if (!supportsCompanionCli) return;
+    try {
+      final reply = CliReply(await companionCli.run('get wifi.enabled'));
+      _hasWifi = reply.kind == CliReplyKind.value;
+    } catch (_) {
+      return; // No answer: stays unknown until the next connect.
+    }
+    notifyListeners();
+  }
 
   bool get radioStatsAirActivityPulse {
     final sw = _airtimeBumpStopwatch;
@@ -3252,6 +3276,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
     _firmwareVersion = null;
+    _hasWifi = null;
     _autoAddUsers = false;
     _autoAddRepeaters = false;
     _autoAddRoomServers = false;
@@ -9296,6 +9321,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingDeferredChannelSyncAfterContacts &&
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
+      unawaited(_probeWifi());
       if (_contactFullResyncPending) {
         _contactFullResyncPending = false;
         _appDebugLogService?.info(

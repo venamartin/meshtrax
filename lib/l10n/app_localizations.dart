@@ -2968,6 +2968,12 @@ abstract class AppLocalizations {
   /// **'CLI'**
   String get debugFrame_textTypeCli;
 
+  /// No description provided for @debugFrame_textTypeCliCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI command'**
+  String get debugFrame_textTypeCliCommand;
+
   /// No description provided for @debugFrame_textTypePlain.
   ///
   /// In en, this message translates to:
@@ -7096,6 +7102,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t reset the room on the radio'**
   String get room_reloadFailed;
+
+  /// No description provided for @companionCli_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Command line'**
+  String get companionCli_title;
+
+  /// No description provided for @companionCli_settingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Type text commands for this radio'**
+  String get companionCli_settingsSubtitle;
+
+  /// No description provided for @companionCli_rebooting.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting the radio…'**
+  String get companionCli_rebooting;
+
+  /// No description provided for @companionCli_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get companionCli_cancelled;
+
+  /// No description provided for @companionCli_poweringOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning the radio off…'**
+  String get companionCli_poweringOff;
+
+  /// No description provided for @companionCli_noReply.
+  ///
+  /// In en, this message translates to:
+  /// **'No reply from the radio. Try again.'**
+  String get companionCli_noReply;
+
+  /// No description provided for @companionCli_powerOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn the radio off?'**
+  String get companionCli_powerOffTitle;
+
+  /// No description provided for @companionCli_powerOffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It stays off until you press its button or plug it in.'**
+  String get companionCli_powerOffBody;
+
+  /// No description provided for @companionCli_powerOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get companionCli_powerOff;
+
+  /// No description provided for @companionCli_quickBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Board'**
+  String get companionCli_quickBoard;
+
+  /// No description provided for @companionCli_quickWifiStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi status'**
+  String get companionCli_quickWifiStatus;
+
+  /// No description provided for @companionCli_quickWifiAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi address'**
+  String get companionCli_quickWifiAddress;
+
+  /// No description provided for @companionCli_helpBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the board\'s maker and model.'**
+  String get companionCli_helpBoard;
+
+  /// No description provided for @companionCli_helpReboot.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarts the radio.'**
+  String get companionCli_helpReboot;
+
+  /// No description provided for @companionCli_helpPowerOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns the radio off.'**
+  String get companionCli_helpPowerOff;
+
+  /// No description provided for @companionCli_helpSetPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the Bluetooth pairing PIN. Applies after a restart.'**
+  String get companionCli_helpSetPin;
+
+  /// No description provided for @companionCli_helpSetTzOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).'**
+  String get companionCli_helpSetTzOffset;
+
+  /// No description provided for @companionCli_helpSetTx.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the transmit power in dBm. Applies at once.'**
+  String get companionCli_helpSetTx;
+
+  /// No description provided for @companionCli_helpSetIntThresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the interference threshold in dB. 0 turns interference detection off.'**
+  String get companionCli_helpSetIntThresh;
+
+  /// No description provided for @companionCli_helpSetCad.
+  ///
+  /// In en, this message translates to:
+  /// **'Listens for other radios before sending (channel activity detection).'**
+  String get companionCli_helpSetCad;
+
+  /// No description provided for @companionCli_helpSetRxGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Boosted receive gain, on SX126x radios.'**
+  String get companionCli_helpSetRxGain;
+
+  /// No description provided for @companionCli_helpSetPathHashMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.'**
+  String get companionCli_helpSetPathHashMode;
+
+  /// No description provided for @companionCli_helpWifiStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows whether the radio is on the WiFi network.'**
+  String get companionCli_helpWifiStatus;
+
+  /// No description provided for @companionCli_helpWifiIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the radio\'s address on the WiFi network.'**
+  String get companionCli_helpWifiIp;
+
+  /// No description provided for @companionCli_helpWifiSsid.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the WiFi network name. Applies after a restart.'**
+  String get companionCli_helpWifiSsid;
+
+  /// No description provided for @companionCli_helpWifiPwd.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the WiFi password. Applies after a restart.'**
+  String get companionCli_helpWifiPwd;
+
+  /// No description provided for @companionCli_helpWifiEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns WiFi on (1) or off (0). Applies after a restart.'**
+  String get companionCli_helpWifiEnabled;
+
+  /// No description provided for @companionCli_helpWifiClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgets the WiFi network. Applies after a restart.'**
+  String get companionCli_helpWifiClear;
+
+  /// No description provided for @wifi_title.
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi'**
+  String get wifi_title;
+
+  /// No description provided for @wifi_settingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Network, password and connection'**
+  String get wifi_settingsSubtitle;
+
+  /// No description provided for @wifi_use.
+  ///
+  /// In en, this message translates to:
+  /// **'Use WiFi'**
+  String get wifi_use;
+
+  /// No description provided for @wifi_networkName.
+  ///
+  /// In en, this message translates to:
+  /// **'Network name'**
+  String get wifi_networkName;
+
+  /// No description provided for @wifi_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get wifi_password;
+
+  /// No description provided for @wifi_passwordUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Unchanged'**
+  String get wifi_passwordUnchanged;
+
+  /// No description provided for @wifi_showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get wifi_showPassword;
+
+  /// No description provided for @wifi_nameMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the network name'**
+  String get wifi_nameMissing;
+
+  /// No description provided for @wifi_nameTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The network name is too long (32 bytes at most)'**
+  String get wifi_nameTooLong;
+
+  /// No description provided for @wifi_passwordTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The password is too long (63 bytes at most)'**
+  String get wifi_passwordTooLong;
+
+  /// No description provided for @wifi_savedRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. WiFi changes apply after the radio restarts.'**
+  String get wifi_savedRestart;
+
+  /// No description provided for @wifi_forget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget network'**
+  String get wifi_forget;
+
+  /// No description provided for @wifi_forgetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this WiFi network? The radio stops using WiFi after it restarts.'**
+  String get wifi_forgetConfirm;
+
+  /// No description provided for @wifi_notAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio did not accept that: {reply}'**
+  String wifi_notAccepted(String reply);
+
+  /// No description provided for @wifi_noReply.
+  ///
+  /// In en, this message translates to:
+  /// **'No reply from the radio. Try again.'**
+  String get wifi_noReply;
+
+  /// No description provided for @wifi_restartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart the radio?'**
+  String get wifi_restartTitle;
+
+  /// No description provided for @wifi_later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get wifi_later;
+
+  /// No description provided for @wifi_loadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the WiFi settings from the radio.'**
+  String get wifi_loadFailed;
+
+  /// No description provided for @wifi_connectedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected · {address}'**
+  String wifi_connectedTo(String address);
+
+  /// No description provided for @wifi_notConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to WiFi'**
+  String get wifi_notConnected;
+
+  /// No description provided for @wifi_portNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps on the same network can connect on port {port}'**
+  String wifi_portNote(int port);
+
+  /// No description provided for @wifi_connectOverWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect over WiFi'**
+  String get wifi_connectOverWifi;
+
+  /// No description provided for @wifi_connectOverWifiBody.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax will disconnect from this radio and open the TCP screen with {address}, port {port} filled in. Tap Connect there.'**
+  String wifi_connectOverWifiBody(String address, int port);
+
+  /// No description provided for @wifi_noteRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes apply after the radio restarts.'**
+  String get wifi_noteRestart;
+
+  /// No description provided for @wifi_noteSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.'**
+  String get wifi_noteSecurity;
+
+  /// No description provided for @wifi_noteBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi keeps the radio awake, so the battery runs down faster.'**
+  String get wifi_noteBattery;
+
+  /// No description provided for @wifi_noteWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.'**
+  String get wifi_noteWrongPassword;
 
   /// No description provided for @room_selfDemoteWarning.
   ///
