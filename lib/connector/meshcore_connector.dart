@@ -650,6 +650,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Serializes path operations (setContactPath/clearContactPath) to prevent
   // interleaved async calls from leaving in-memory state inconsistent with device.
   Future<void> _pathOpLock = Future.value();
+  // Holders plus waiters: at zero the lock is free and is taken at once.
+  int _pathLockUsers = 0;
+  static final Object _pathLockZoneKey = Object();
   Map<String, String>? _currentCustomVars;
 
   // Channel syncing state (sequential pattern)
@@ -1172,6 +1175,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _retryService?.initialize(
       RetryServiceConfig(
         sendMessage: _sendMessageDirect,
+        sendOnRoute: sendOnRoute,
         addMessage: _addMessage,
         updateMessage: _updateMessage,
         clearContactPath: clearContactPath,
@@ -3693,13 +3697,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     int? hashSize,
   }) async {
     final width = hashSize ?? _pathHashByteWidth;
-    // Serialize path operations to prevent interleaved async calls from
-    // leaving in-memory state inconsistent with the device.
-    final prev = _pathOpLock;
-    final completer = Completer<void>();
-    _pathOpLock = completer.future;
-    await prev;
-    try {
+    await withPathLock(() async {
       if (!isConnected) return;
 
       // Marked before the write: a PATH_UPDATED snapshot fetched while the
@@ -3745,9 +3743,74 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         );
         notifyListeners();
       }
+    });
+  }
+
+  /// Runs [body] with no other route write in between. Re-entrant: a route
+  /// write inside [body] runs at once instead of waiting on itself.
+  Future<T> withPathLock<T>(Future<T> Function() body) async {
+    if (Zone.current[_pathLockZoneKey] == true) return body();
+    final prev = _pathOpLock;
+    final completer = Completer<void>();
+    _pathOpLock = completer.future;
+    if (_pathLockUsers++ > 0) await prev;
+    try {
+      return await runZoned(body, zoneValues: {_pathLockZoneKey: true});
     } finally {
+      _pathLockUsers--;
       completer.complete();
     }
+  }
+
+  /// Puts [selection] on the radio as [contact]'s route and runs [send],
+  /// with no other route write in between, so the packet goes out on the
+  /// route chosen for it: a flood clears the stored route, a Pathfinder or
+  /// user route is written (unless this app already wrote exactly it), and
+  /// the radio's own route is left as it is.
+  Future<void> sendOnRoute(
+    Contact contact,
+    PathSelection selection,
+    Future<void> Function() send,
+  ) =>
+      withPathLock(() async {
+        final live = _contacts.cast<Contact?>().firstWhere(
+                  (c) => c!.publicKeyHex == contact.publicKeyHex,
+                  orElse: () => null,
+                ) ??
+            contact;
+        if (selection.useFlood) {
+          if (live.pathLength >= 0) await clearContactPath(contact);
+        } else if (selection.source != RouteSource.firmware) {
+          final bytes = Uint8List.fromList(selection.pathBytes);
+          final written = _appWrittenPath[contact.publicKeyHex] ==
+              _writtenKey(selection.hashSize, bytes);
+          if (!written || !wroteContactPath(live)) {
+            await setContactPath(contact, bytes, selection.hopCount,
+                hashSize: selection.hashSize);
+          }
+        }
+        await send();
+      });
+
+  /// The route each of [attempts] tries of a one-shot request (login,
+  /// repeater command, status, telemetry) goes out on. With Pathfinder
+  /// able to route and no user override it is the DM ladder's own rule
+  /// ([planAttempts]): Pathfinder's routes, best first, then floods.
+  /// Otherwise every try uses the contact's resolved route, as before.
+  List<PathSelection> planRequestAttempts(Contact contact, int attempts) {
+    final width = _pathHashByteWidth;
+    final routes = contact.pathOverride == null
+        ? graphRouteCandidates?.call(contact)
+        : null;
+    if (routes == null) {
+      return List.filled(
+          attempts < 1 ? 1 : attempts,
+          resolvePathSelection(contact, radioWidth: width));
+    }
+    return planAttempts(contact,
+        radioWidth: width,
+        budget: attempts < 1 ? 1 : attempts,
+        graphRoutes: routes);
   }
 
   Future<void> setContactFlags(
@@ -3916,27 +3979,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       'Set path override for ${contact.name}: pathLen=$pathLen, bytes=${pathBytes?.length ?? 0}',
     );
     notifyListeners();
-  }
-
-  /// Resolves how the next send to [contact] will route. Only a user path
-  /// override is pushed to the radio; otherwise the firmware's own route is
-  /// left alone and simply reported.
-  Future<PathSelection> preparePathForContactSend(Contact contact) async {
-    final resolved =
-        resolvePathSelection(contact, radioWidth: _pathHashByteWidth);
-    if (contact.pathOverride == null) return resolved;
-
-    if (resolved.useFlood) {
-      await clearContactPath(contact);
-    } else {
-      await setContactPath(
-        contact,
-        Uint8List.fromList(resolved.pathBytes),
-        resolved.hopCount,
-        hashSize: resolved.hashSize,
-      );
-    }
-    return resolved;
   }
 
   void trackRepeaterAck({
@@ -4452,12 +4494,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> clearContactPath(Contact contact) async {
-    // Serialize path operations to prevent interleaved async calls.
-    final prev = _pathOpLock;
-    final completer = Completer<void>();
-    _pathOpLock = completer.future;
-    await prev;
-    try {
+    await withPathLock(() async {
       if (!isConnected) return;
 
       await sendFrame(buildResetPathFrame(contact.publicKey));
@@ -4479,9 +4516,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         notifyListeners();
         unawaited(_persistContacts());
       }
-    } finally {
-      completer.complete();
-    }
+    });
   }
 
 
@@ -4497,17 +4532,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       if (!isConnected) return done;
       // One contact at a time under the same lock as the retry service's
       // route writes, so the two cannot interleave on a contact.
-      final prev = _pathOpLock;
-      final completer = Completer<void>();
-      _pathOpLock = completer.future;
-      await prev;
-      try {
+      final ok = await withPathLock(() async {
         final ok = await _sendAndWaitForAck(
           buildResetPathFrame(c.publicKey),
           timeout: const Duration(seconds: 10),
         );
-        if (!ok) continue;
-        done++;
+        if (!ok) return false;
+        _appWrittenPath.remove(c.publicKeyHex);
         final i =
             _contacts.indexWhere((x) => x.publicKeyHex == c.publicKeyHex);
         if (i >= 0) {
@@ -4518,9 +4549,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           );
           _retryService?.updatePendingContact(_contacts[i]);
         }
-      } finally {
-        completer.complete();
-      }
+        return true;
+      });
+      if (ok) done++;
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
     if (done > 0 && isConnected) {

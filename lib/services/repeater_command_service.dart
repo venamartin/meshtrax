@@ -56,22 +56,24 @@ class RepeaterCommandService {
 
   /// Send a CLI command to a repeater with automatic retries
   /// Returns a future that completes when a response is received or after max retries
-  /// Resolves the send path once for a batch of commands. Each
-  /// [sendCommand] otherwise re-derives it, and that writes a contact-path
-  /// frame to the radio (plus a settle delay) every single time — for a
-  /// ten-command save, ten pushes of a path that never changed.
-  Future<PathSelection> preparePath(Contact repeater) =>
-      _connector.preparePathForContactSend(repeater);
+  /// Plans the route of each attempt once for a batch of commands: with
+  /// Pathfinder, its routes best first then floods; otherwise the
+  /// contact's route for every attempt. A route the app already wrote is
+  /// not written again, so a ten-command save does not push the same path
+  /// ten times.
+  List<PathSelection> preparePath(Contact repeater,
+          {int attempts = maxRetries}) =>
+      _connector.planRequestAttempts(repeater, attempts);
 
-  /// Pass [selection] from [preparePath] when sending several commands in
-  /// a row; omit it for one-offs and the path is resolved per call.
+  /// Pass [plan] from [preparePath] when sending several commands in a
+  /// row; omit it for one-offs and it is planned per call.
   Future<String> sendCommand(
     Contact repeater,
     String command, {
     Function(String)? onResponse,
     Function(int)? onAttempt,
     int retries = maxRetries,
-    PathSelection? selection,
+    List<PathSelection>? plan,
   }) async {
     final repeaterKey = repeater.publicKeyHex;
     final hasPending = _pendingCommands.keys.any(
@@ -82,8 +84,7 @@ class RepeaterCommandService {
     }
 
     final attemptCount = retries < 1 ? 1 : retries;
-    final resolved =
-        selection ?? await _connector.preparePathForContactSend(repeater);
+    final routes = plan ?? preparePath(repeater, attempts: attemptCount);
 
     for (int attempt = 0; attempt < attemptCount; attempt++) {
       onAttempt?.call(attempt + 1);
@@ -91,7 +92,7 @@ class RepeaterCommandService {
         final response = await _sendCommandAttempt(
           repeater,
           command,
-          resolved,
+          _routeFor(routes, attempt),
           attempt,
           attemptCount,
         );
@@ -147,7 +148,8 @@ class RepeaterCommandService {
       );
       final timeoutMs = attemptTimeoutMs(baseTimeoutMs, attempt, attemptCount);
       final timeoutSeconds = (timeoutMs / 1000).ceil();
-      await _connector.sendFrame(frame);
+      await _connector.sendOnRoute(
+          repeater, selection, () => _connector.sendFrame(frame));
       _commandTimeouts[commandId]?.cancel();
       _commandTimeouts[commandId] = Timer(
         Duration(milliseconds: timeoutMs),
@@ -196,7 +198,7 @@ class RepeaterCommandService {
     Uint8List requestPayload, {
     int retries = maxBinaryRequestAttempts,
     void Function(int attempt)? onAttempt,
-    PathSelection? selection,
+    List<PathSelection>? plan,
   }) {
     return _requestWithRetries(
       repeater: repeater,
@@ -211,7 +213,7 @@ class RepeaterCommandService {
       },
       retries: retries,
       onAttempt: onAttempt,
-      selection: selection,
+      plan: plan,
     );
   }
 
@@ -222,7 +224,7 @@ class RepeaterCommandService {
     Contact repeater, {
     int retries = maxBinaryRequestAttempts,
     void Function(int attempt)? onAttempt,
-    PathSelection? selection,
+    List<PathSelection>? plan,
   }) {
     return _requestWithRetries(
       repeater: repeater,
@@ -238,7 +240,7 @@ class RepeaterCommandService {
       },
       retries: retries,
       onAttempt: onAttempt,
-      selection: selection,
+      plan: plan,
     );
   }
 
@@ -249,7 +251,7 @@ class RepeaterCommandService {
     Contact contact, {
     int retries = maxBinaryRequestAttempts,
     void Function(int attempt)? onAttempt,
-    PathSelection? selection,
+    List<PathSelection>? plan,
   }) {
     if (contact.type != advTypeChat) {
       return sendBinaryRequest(
@@ -257,7 +259,7 @@ class RepeaterCommandService {
         Uint8List.fromList([reqTypeGetTelemetry]),
         retries: retries,
         onAttempt: onAttempt,
-        selection: selection,
+        plan: plan,
       );
     }
     return _requestWithRetries(
@@ -274,9 +276,13 @@ class RepeaterCommandService {
       },
       retries: retries,
       onAttempt: onAttempt,
-      selection: selection,
+      plan: plan,
     );
   }
+
+  /// A plan shorter than the attempts keeps its last route.
+  static PathSelection _routeFor(List<PathSelection> plan, int attempt) =>
+      attempt < plan.length ? plan[attempt] : plan.last;
 
   static bool _prefixMatches(Uint8List prefix, Uint8List pubKey) {
     if (pubKey.length < 6 || prefix.length < 6) return false;
@@ -292,11 +298,10 @@ class RepeaterCommandService {
     required Uint8List? Function(Uint8List frame, Uint8List? tag) match,
     required int retries,
     void Function(int attempt)? onAttempt,
-    PathSelection? selection,
+    List<PathSelection>? plan,
   }) async {
-    final resolved =
-        selection ?? await _connector.preparePathForContactSend(repeater);
     final attemptCount = retries < 1 ? 1 : retries;
+    final routes = plan ?? preparePath(repeater, attempts: attemptCount);
     for (var attempt = 0; attempt < attemptCount; attempt++) {
       onAttempt?.call(attempt + 1);
       try {
@@ -304,7 +309,7 @@ class RepeaterCommandService {
           repeater: repeater,
           frame: buildFrame(),
           match: match,
-          selection: resolved,
+          selection: _routeFor(routes, attempt),
           attempt: attempt,
           attemptCount: attemptCount,
         );
@@ -354,7 +359,8 @@ class RepeaterCommandService {
       }
     });
     try {
-      await _connector.sendFrame(frame);
+      await _connector.sendOnRoute(
+          repeater, selection, () => _connector.sendFrame(frame));
       return await completer.future
           .timeout(Duration(milliseconds: timeoutMs));
     } finally {

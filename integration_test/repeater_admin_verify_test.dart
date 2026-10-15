@@ -207,9 +207,11 @@ void main() {
         'label="${live().pathLabel}"');
     expect(live().pathOverride, 0, reason: 'override did not take at all');
 
-    // What every management screen calls before it sends anything.
-    final selection = await c.preparePathForContactSend(live());
-    blog('preparePathForContactSend -> useFlood=${selection.useFlood} '
+    // What every management screen does before it sends anything: plan
+    // the route and put it on the radio.
+    final selection = c.planRequestAttempts(live(), 1).first;
+    await c.sendOnRoute(live(), selection, () async {});
+    blog('planRequestAttempts -> useFlood=${selection.useFlood} '
         'hops=${selection.hopCount} bytes=${selection.pathBytes.length}');
     expect(selection.useFlood, isFalse,
         reason: 'Direct override resolved to FLOOD');

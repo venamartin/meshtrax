@@ -33,7 +33,12 @@ typedef AckHashMapping = ({
 });
 
 class RetryServiceConfig {
-  final void Function(Contact, String, int, int) sendMessage;
+  final FutureOr<void> Function(Contact, String, int, int) sendMessage;
+  // Writes the attempt's route and runs the send with no other route write
+  // in between (the connector's sendOnRoute). Without it the service writes
+  // the route itself and then sends.
+  final Future<void> Function(
+      Contact, PathSelection, Future<void> Function() send)? sendOnRoute;
   final void Function(String, Message) addMessage;
   final void Function(Message) updateMessage;
   final Function(Contact)? clearContactPath;
@@ -61,6 +66,7 @@ class RetryServiceConfig {
 
   const RetryServiceConfig({
     required this.sendMessage,
+    this.sendOnRoute,
     required this.addMessage,
     required this.updateMessage,
     this.clearContactPath,
@@ -81,14 +87,15 @@ class RetryServiceConfig {
 
 /// Sends a contact message and retries it until an ACK arrives.
 ///
-/// The ladder is planned once per message by [planAttempts]: routes first,
-/// floods last. With Pathfinder on, the graph's routes lead and the
-/// firmware's learned route follows only if the graph did not name it;
-/// otherwise the known route (a user override, else the firmware's) gets
-/// one try, two at 4 or more attempts. A flood resets the path, which is
-/// also how the firmware re-learns the route. The app writes a route to
-/// the radio only for a graph route or a user override, never for the
-/// firmware's own.
+/// With Pathfinder able to route, the ladder is planned once per message
+/// by [planAttempts]: Pathfinder's routes, best first, then floods; the
+/// radio's stored route is never tried. Otherwise (Pathfinder off, a user
+/// override, a manual resend) each attempt is resolved from the live
+/// contact: the known route (the override, else the firmware's) gets one
+/// try, two at 4 or more attempts, then floods. A flood resets the path,
+/// which is also how the firmware re-learns the route. The app writes a
+/// route to the radio only for a Pathfinder route or a user override,
+/// never for the firmware's own.
 class MessageRetryService extends ChangeNotifier {
   static const int maxAckHistorySize = 100;
   static const int retryBackoffMs = 5000;
@@ -324,36 +331,54 @@ class MessageRetryService extends ChangeNotifier {
       routeSource: selection.source ?? RouteSource.firmware,
     );
 
-    if (selection.useFlood) {
-      await config.clearContactPath?.call(contact);
-    } else if (selection.source != RouteSource.firmware) {
-      await config.setContactPath?.call(
-        contact,
-        Uint8List.fromList(selection.pathBytes),
-        selection.hopCount,
-        selection.hashSize,
-      );
-    }
-
-    // Re-validate after async gap — a timer or ACK could have resolved/retried
-    // this message while we were awaiting the path callback.
-    final currentMessage = _pendingMessages[messageId];
-    if (currentMessage == null || _resolvedMessages.contains(messageId)) {
-      debugPrint(
-        '_attemptSend: message $messageId resolved during path sync, aborting',
-      );
-      return;
-    }
-    if (currentMessage.retryCount != message.retryCount) {
-      debugPrint(
-        '_attemptSend: message $messageId retryCount changed during path sync, aborting',
-      );
-      return;
-    }
-
     final attempt = message.retryCount;
     final timestampSeconds = message.timestamp.millisecondsSinceEpoch ~/ 1000;
+    Future<void> send() async {
+      // Re-validate after the route write — a timer or ACK could have
+      // resolved/retried this message while it waited.
+      final currentMessage = _pendingMessages[messageId];
+      if (currentMessage == null || _resolvedMessages.contains(messageId)) {
+        debugPrint(
+          '_attemptSend: message $messageId resolved during path sync, aborting',
+        );
+        return;
+      }
+      if (currentMessage.retryCount != attempt) {
+        debugPrint(
+          '_attemptSend: message $messageId retryCount changed during path sync, aborting',
+        );
+        return;
+      }
+      _registerExpectedAck(messageId, message, contact, attempt, timestampSeconds);
+      config.onAttemptStarted?.call(contact, selection, attempt);
+      // Before the send, as always: its RESP_CODE_SENT replaces this timer
+      // with the real one, and can arrive while the send is awaited.
+      _startPreSentTimer(messageId);
+      await config.sendMessage(contact, message.text, attempt, timestampSeconds);
+    }
 
+    final onRoute = config.sendOnRoute;
+    if (onRoute != null) {
+      await onRoute(contact, selection, send);
+    } else {
+      if (selection.useFlood) {
+        await config.clearContactPath?.call(contact);
+      } else if (selection.source != RouteSource.firmware) {
+        await config.setContactPath?.call(
+          contact,
+          Uint8List.fromList(selection.pathBytes),
+          selection.hopCount,
+          selection.hashSize,
+        );
+      }
+      await send();
+    }
+  }
+
+  void _registerExpectedAck(String messageId, Message message, Contact contact,
+      int attempt, int timestampSeconds) {
+    final config = _config;
+    if (config == null) return;
     // Compute expected ACK hash that device will return in RESP_CODE_SENT
     // IMPORTANT: Use the transformed text (with SMAZ encoding if enabled) to match device's hash
     final selfPubKey = config.getSelfPublicKey?.call();
@@ -378,9 +403,10 @@ class MessageRetryService extends ChangeNotifier {
         tag: 'AckHash',
       );
     }
+  }
 
-    config.onAttemptStarted?.call(contact, selection, attempt);
-    config.sendMessage(contact, message.text, attempt, timestampSeconds);
+  void _startPreSentTimer(String messageId) {
+    final config = _config;
 
     // Safety timer: if RESP_CODE_SENT never arrives (silent BLE failure, device
     // busy, etc.) the message would stay at 'pending' forever.  Start a fallback
@@ -393,7 +419,7 @@ class MessageRetryService extends ChangeNotifier {
       () {
         // Only act if the message is still pending (no RESP_CODE_SENT received yet)
         if (_pendingMessages[messageId]?.status == MessageStatus.pending) {
-          config.debugLogService?.warn(
+          config?.debugLogService?.warn(
             'No RESP_CODE_SENT received within ${preSentTimeoutMs}ms for message $messageId — triggering retry',
             tag: 'AckHash',
           );

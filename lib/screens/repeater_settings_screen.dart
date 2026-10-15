@@ -465,14 +465,15 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     final repeater = _resolveRepeater(connector);
     // Once for the batch, not once per command.
-    final selection = await _commandService!.preparePath(repeater);
+    final plan = _commandService!
+        .preparePath(repeater, attempts: _settingsRetries);
     for (final command in commands) {
       try {
         final response = await _commandService!.sendCommand(
           repeater,
           command,
           retries: _settingsRetries,
-          selection: selection,
+          plan: plan,
         );
         _applySettingResponse(command, response);
         successCount += 1;
@@ -686,7 +687,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     final failures = <String>[];
     var sent = 0;
     // Once for the whole save, not once per command.
-    final selection = await service.preparePath(repeater);
+    final plan = service.preparePath(repeater, attempts: _settingsRetries);
 
     // One command at a time, waiting for the repeater's reply, exactly as
     // the refresh buttons already do. The old version fired everything
@@ -700,7 +701,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
       }
       try {
         final response = await service.sendCommand(repeater, command,
-            retries: _settingsRetries, selection: selection);
+            retries: _settingsRetries, plan: plan);
         final trimmed = response.trim();
         if (trimmed.startsWith('Err') ||
             trimmed.startsWith('Error') ||
@@ -1378,7 +1379,7 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
     }
 
     try {
-      final selection = await connector.preparePathForContactSend(repeater);
+      final selection = connector.planRequestAttempts(repeater, 1).first;
       final timestampSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       connector.trackRepeaterAck(
         contact: repeater,
@@ -1391,7 +1392,8 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
         command,
         timestampSeconds: timestampSeconds,
       );
-      await connector.sendFrame(frame);
+      await connector.sendOnRoute(
+          repeater, selection, () => connector.sendFrame(frame));
 
       if (mounted) {
         showDismissibleSnackBar(
