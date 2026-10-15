@@ -22,6 +22,7 @@ import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/quick_switch_bar.dart';
+import '../widgets/routing_dialog.dart';
 import '../widgets/unread_badge.dart';
 import 'package:flutter/services.dart';
 import 'channel_chat_screen.dart';
@@ -30,6 +31,7 @@ import 'chat_screen.dart';
 import 'contact_share_screen.dart';
 import 'map_screen.dart';
 import 'new_chat_screen.dart';
+import 'path_graph_screen.dart';
 import 'repeaters_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_screen.dart';
@@ -822,6 +824,26 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                       ),
                     ),
                   ),
+                  if (context
+                      .read<AppSettingsService>()
+                      .settings
+                      .pathGraphEnabled)
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          Icon(RoutingIcon.icon,
+                              color: RoutingIcon.pathfinderColor(context)),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.settings_pathGraph),
+                        ],
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PathGraphScreen(),
+                        ),
+                      ),
+                    ),
                   PopupMenuItem(
                     child: Row(
                       children: [

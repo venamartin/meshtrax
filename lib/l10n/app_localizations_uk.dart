@@ -2171,22 +2171,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get repeater_statusTitle => 'Статус ретранслятора';
 
   @override
-  String get repeater_routingMode => 'Режим маршрутизації';
-
-  @override
-  String get repeater_autoUseSavedPath =>
-      'Авто (використовувати збережений шлях)';
-
-  @override
-  String get repeater_forceFloodMode => 'Примусово на всю мережу';
-
-  @override
-  String get repeater_forceDirectMode => 'Force Direct Mode';
-
-  @override
-  String get repeater_pathManagement => 'Керування шляхами';
-
-  @override
   String get repeater_refresh => 'Оновити';
 
   @override
@@ -3875,7 +3859,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String routing_route(String route) {
-    return 'Route: $route';
+    return 'Stored path: $route';
   }
 
   @override
@@ -3887,7 +3871,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get routing_autoSubtitle =>
-      'Use the route the radio learned. Recommended.';
+      'Use the radio\'s stored path. Recommended.';
+
+  @override
+  String get routing_pathfinderOn =>
+      'Pathfinder on: tries learned routes first';
 
   @override
   String get routing_flood => 'Always flood';
@@ -3902,11 +3890,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get routing_customSubtitle => 'Choose the repeaters yourself';
 
   @override
-  String get routing_forget => 'Forget route';
+  String get routing_forget => 'Reset path';
 
   @override
   String get routing_forgetDone =>
-      'Route forgotten. The next message floods and learns a fresh one.';
+      'Path reset. The next message floods and learns a fresh one.';
+
+  @override
+  String get routing_pathfinder => 'What Pathfinder knows';
+
+  @override
+  String get routing_pathfinderSubtitle =>
+      'Repeaters that hear you and them, and learned routes there and back';
 
   @override
   String get path_direct => 'Direct — no repeaters';
@@ -3981,6 +3976,55 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get chat_resendingByFlood => 'Resending by flood';
+
+  @override
+  String get settings_pathGraph => 'Pathfinder (experimental)';
+
+  @override
+  String get settings_pathGraphSubtitle =>
+      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+
+  @override
+  String get map_routeAndTrace => 'Route & trace';
+
+  @override
+  String get map_pathfinderTrace => 'Trace there and back';
+
+  @override
+  String get map_pathfinderTraceSubtitle =>
+      'Out on Pathfinder\'s best route, back on its best route back';
+
+  @override
+  String get map_routeBackMirrored =>
+      'No route back known yet — coming back the same way';
+
+  @override
+  String get map_traceHelpTitle => 'Path trace buttons';
+
+  @override
+  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+
+  @override
+  String get map_traceHelpRun =>
+      'Sends a trace out along the repeaters you tapped, one way.';
+
+  @override
+  String get map_traceHelpThereAndBack => 'There and back';
+
+  @override
+  String get map_traceHelpThereAndBackSubtitle =>
+      'Sends the trace out, then back over the same repeaters in reverse.';
+
+  @override
+  String get map_traceHelpPathfinder =>
+      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+
+  @override
+  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+
+  @override
+  String get map_traceHelpCancel =>
+      'Stops building the trace. Shown before any repeater is tapped.';
 
   @override
   String get chat_resendingByRoute =>

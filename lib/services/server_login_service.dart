@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../models/contact.dart';
+import '../models/path_selection.dart';
 import '../utils/app_logger.dart';
 import 'storage_service.dart';
 
@@ -18,9 +19,12 @@ typedef LoginOutcome = ({bool? success, bool? isAdmin});
 /// post all send through here.
 ///
 /// A login is also how a server teaches the radio a route: a login sent by
-/// flood is answered with a PATH return, a login sent direct is not. So when
-/// the contact is on Automatic, the first attempt went by the radio's route
-/// and timed out, the ladder resets that route and floods the rest.
+/// flood is answered with a PATH return, a login sent direct is not. On
+/// Automatic the first attempt goes by Pathfinder's best route when it can
+/// route (else the radio's own), and once that times out the ladder resets
+/// the route and floods the rest. A user's Custom or Flood choice is kept
+/// for every attempt. Each attempt's route is written and its login sent
+/// with no other route write in between.
 class ServerLoginService {
   final MeshCoreConnector _connector;
   final StorageService _storage;
@@ -35,7 +39,8 @@ class ServerLoginService {
     void Function(int attempt)? onAttempt,
     String tag = 'Login',
   }) async {
-    final selection = await _connector.preparePathForContactSend(server);
+    final selection = _connector.planRequestAttempts(server, 1).first;
+    final flood = PathSelection.flood(_connector.pathHashByteWidth);
     final frame = buildSendLoginFrame(server.publicKey, password);
     final responseBytes =
         frame.length > maxFrameSize ? frame.length : maxFrameSize;
@@ -80,7 +85,8 @@ class ServerLoginService {
         'Sending login attempt ${attempt + 1}/$maxAttempts',
         tag: tag,
       );
-      await _connector.sendFrame(frame);
+      await _connector.sendOnRoute(server, flooding ? flood : selection,
+          () => _connector.sendFrame(frame));
       (result, isAdmin) = await _awaitResponse(server, timeout, isRoom: isRoom);
       if (result != null) {
         appLogger.info(
@@ -96,7 +102,6 @@ class ServerLoginService {
       );
 
       if (!flooding && server.pathOverride == null && attempt + 1 < maxAttempts) {
-        await _connector.clearContactPath(server);
         flooding = true;
         timeout = timeoutFor(-1);
         appLogger.info('Login routing: flood (route reset)', tag: tag);

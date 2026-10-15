@@ -217,10 +217,13 @@ Future<void> verifyUserChannelsIntact(BenchRadio radio) async {
 }
 
 /// Builds a connector wired exactly like main.dart does, minus UI services.
-Future<MeshCoreConnector> buildConnector() async {
+/// Pass [appSettings] to control the settings it reads (e.g. send budget).
+Future<MeshCoreConnector> buildConnector({AppSettingsService? appSettings}) async {
   final connector = MeshCoreConnector();
-  final appSettings = AppSettingsService();
-  await appSettings.loadSettings();
+  if (appSettings == null) {
+    appSettings = AppSettingsService();
+    await appSettings.loadSettings();
+  }
   connector.initialize(
     retryService: MessageRetryService(),
     appSettingsService: appSettings,

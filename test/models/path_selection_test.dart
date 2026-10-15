@@ -35,6 +35,7 @@ void main() {
     expect(sel.hopCount, 2);
     expect(sel.hashSize, 2);
     expect(sel.pathBytes, route);
+    expect(sel.source, RouteSource.firmware);
   });
 
   test('a user override keeps the width it was set at', () {
@@ -51,6 +52,7 @@ void main() {
 
     expect(sel.hopCount, 2);
     expect(sel.hashSize, 1);
+    expect(sel.source, RouteSource.custom);
   });
 
   test('an override saved without a width is at the radio width', () {
@@ -69,5 +71,171 @@ void main() {
     expect(sel.useFlood, isTrue);
     expect(sel.hashSize, 1);
     expect(sel.pathBytes, isEmpty);
+    expect(sel.source, isNull);
+  });
+
+  group('planAttempts', () {
+    PathSelection graph(List<int> bytes, double est) => PathSelection(
+          pathBytes: bytes,
+          hopCount: bytes.length ~/ 2,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: est,
+        );
+    final g1 = graph([0xA2, 0x77, 0xA1, 0x77, 0x10, 0x00], 0.8);
+    final g2 = graph([0xA2, 0x77, 0x10, 0x00], 0.5);
+    final g3 = graph([0xBE, 0xEF, 0x10, 0x00], 0.3);
+
+    List<String> kinds(List<PathSelection> plan) =>
+        [for (final s in plan) s.useFlood ? 'flood' : s.source!.name];
+
+    List<PathSelection> plan(
+      Contact c, {
+      required int budget,
+      List<PathSelection>? graphRoutes,
+      bool floodFirst = false,
+    }) =>
+        planAttempts(c,
+            radioWidth: 2,
+            budget: budget,
+            graphRoutes: graphRoutes,
+            floodFirst: floodFirst);
+
+    test('graph routes first, best first, two floods close the ladder', () {
+      final all = [g1, g2, g3];
+      expect(kinds(plan(contact(), budget: 5, graphRoutes: all)),
+          ['graph', 'graph', 'graph', 'flood', 'flood']);
+      expect(kinds(plan(contact(), budget: 4, graphRoutes: all)),
+          ['graph', 'graph', 'flood', 'flood']);
+      expect(kinds(plan(contact(), budget: 3, graphRoutes: all)),
+          ['graph', 'flood', 'flood']);
+      expect(plan(contact(), budget: 3, graphRoutes: all).first.pathBytes,
+          g1.pathBytes);
+    });
+
+    test('a slot the graph left free floods; the stored route is never tried',
+        () {
+      // Owner rule 2026-10-14: with Pathfinder on, the radio's stored route
+      // is never a rung.
+      expect(kinds(plan(contact(), budget: 4, graphRoutes: [g1])),
+          ['graph', 'flood', 'flood', 'flood']);
+      expect(kinds(plan(contact(), budget: 5, graphRoutes: [g1])),
+          ['graph', 'flood', 'flood', 'flood', 'flood']);
+    });
+
+    test('a stored route never appears in a Pathfinder ladder', () {
+      for (final budget in [1, 2, 3, 4, 5]) {
+        for (final routes in [<PathSelection>[], [g1], [g1, g2, g3]]) {
+          expect(kinds(plan(contact(), budget: budget, graphRoutes: routes)),
+              isNot(contains('firmware')));
+        }
+      }
+    });
+
+    test('Pathfinder has nothing: every attempt floods', () {
+      expect(kinds(plan(contact(), budget: 4, graphRoutes: [])),
+          ['flood', 'flood', 'flood', 'flood']);
+      expect(kinds(plan(contact(), budget: 3, graphRoutes: [])),
+          ['flood', 'flood', 'flood']);
+    });
+
+    test('no route of any kind floods every attempt', () {
+      expect(kinds(plan(contact(pathLength: -1), budget: 3, graphRoutes: [])),
+          ['flood', 'flood', 'flood']);
+    });
+
+    test('budgets of 1 and 2', () {
+      expect(kinds(plan(contact(), budget: 1, graphRoutes: [g1])), ['graph']);
+      expect(kinds(plan(contact(), budget: 2, graphRoutes: [g1])),
+          ['graph', 'flood']);
+      expect(kinds(plan(contact(pathLength: -1), budget: 1, graphRoutes: [])),
+          ['flood']);
+      expect(kinds(plan(contact(), budget: 2, graphRoutes: [])),
+          ['flood', 'flood']);
+    });
+
+    test('the best route is tried whatever its score', () {
+      // Field 2026-10-14: three links nobody had sent on scored the best
+      // route to a contact 14%, its alternatives 7% and 4%, and every
+      // message flooded. The best is tried; the weak alternatives are not.
+      final best = graph([0xA2, 0x77, 0x10, 0x00, 0x88, 0x02], 0.14);
+      final alt1 = graph([0xA2, 0x77, 0xAD, 0x77, 0x10, 0x00, 0x88, 0x02], 0.07);
+      final alt2 = graph([0xA2, 0x77, 0x44, 0x4A, 0x88, 0x02], 0.035);
+      final routes = [best, alt1, alt2];
+      expect(kinds(plan(contact(), budget: 3, graphRoutes: routes)),
+          ['graph', 'flood', 'flood']);
+      expect(plan(contact(), budget: 3, graphRoutes: routes).first.pathBytes,
+          best.pathBytes);
+      // 7% clears the 5% cutoff; 3.5% does not.
+      expect(
+          [
+            for (final s in plan(contact(), budget: 5, graphRoutes: routes))
+              s.useFlood ? 'flood' : s.pathBytes
+          ],
+          [best.pathBytes, alt1.pathBytes, 'flood', 'flood', 'flood']);
+    });
+
+    test('later routes below the delivery threshold are skipped', () {
+      final weak = graph([0x11, 0x11, 0x10, 0x00], 0.04);
+      final ladder = plan(contact(), budget: 5, graphRoutes: [g1, weak, g2]);
+      expect([for (final s in ladder) s.useFlood ? 'flood' : s.pathBytes], [
+        g1.pathBytes,
+        g2.pathBytes,
+        'flood',
+        'flood',
+        'flood',
+      ]);
+    });
+
+    test('zero-hop routes at two widths take one slot', () {
+      PathSelection direct(int width) => PathSelection(
+          pathBytes: const [],
+          hopCount: 0,
+          hashSize: width,
+          useFlood: false,
+          source: RouteSource.graph);
+      final ladder =
+          plan(contact(), budget: 4, graphRoutes: [direct(2), direct(1), g2]);
+      expect([for (final s in ladder) s.useFlood ? 'flood' : s.hopCount],
+          [0, 2, 'flood', 'flood']);
+    });
+
+    test('a graph direct hit is a zero-hop route, not a flood', () {
+      final direct = const PathSelection(
+          pathBytes: [],
+          hopCount: 0,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph);
+      final ladder = plan(contact(), budget: 3, graphRoutes: [direct]);
+      expect(ladder.first.useFlood, isFalse);
+      expect(ladder.first.hopCount, 0);
+      expect(kinds(ladder), ['graph', 'flood', 'flood']);
+    });
+
+    test('Pathfinder off keeps the firmware ladder', () {
+      expect(kinds(plan(contact(), budget: 4)),
+          ['firmware', 'firmware', 'flood', 'flood']);
+      expect(kinds(plan(contact(), budget: 3)), ['firmware', 'flood', 'flood']);
+      expect(kinds(plan(contact(pathLength: -1), budget: 3)),
+          ['flood', 'flood', 'flood']);
+    });
+
+    test('a user override keeps its ladder and ignores the graph', () {
+      final c = contact(
+          pathOverride: 1, pathOverrideBytes: Uint8List.fromList([0x33]));
+      expect(kinds(plan(c, budget: 4, graphRoutes: [g1])),
+          ['custom', 'custom', 'flood', 'flood']);
+      expect(kinds(plan(c, budget: 3, graphRoutes: [g1], floodFirst: true)),
+          ['custom', 'flood', 'flood']);
+    });
+
+    test('a manual resend floods every attempt', () {
+      expect(kinds(plan(contact(), budget: 3, graphRoutes: [g1], floodFirst: true)),
+          ['flood', 'flood', 'flood']);
+      expect(kinds(plan(contact(), budget: 3, floodFirst: true)),
+          ['flood', 'flood', 'flood']);
+    });
   });
 }

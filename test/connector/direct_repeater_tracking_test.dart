@@ -71,20 +71,33 @@ void main() {
 
   group('a node heard by hash alone', () {
     test('refreshes the one entry that answers to it, keyed or not', () {
-      final keyed = entry(publicKey: farKey, prefix: [0xA2]);
-      final other = entry(publicKey: key([0x5B]), prefix: [0x5B]);
+      final keyed = entry(publicKey: farKey, prefix: [0xA2, 0x77]);
+      final other = entry(publicKey: key([0x5B]), prefix: [0x5B, 0x01]);
 
       expect(
-        DirectRepeater.findTracked([keyed, other], hashPrefix: [0xA2]),
+        DirectRepeater.findTracked([keyed, other], hashPrefix: [0xA2, 0x77]),
         same(keyed),
       );
+    });
+
+    test('a 1-byte hash never refreshes a keyed entry', () {
+      // One byte names a quarter of the band: the level would be another
+      // repeater's, shown next to this one's own Discover answer.
+      final keyed = entry(publicKey: farKey, prefix: [0xA2, 0x77]);
+      expect(DirectRepeater.findTracked([keyed], hashPrefix: [0xA2]), isNull);
+      final hashOnly = entry(prefix: [0xA2]);
+      expect(DirectRepeater.findTracked([keyed, hashOnly], hashPrefix: [0xA2]),
+          same(hashOnly));
     });
 
     test('refreshes nothing when the hash is shared', () {
       expect(
         DirectRepeater.findTracked(
-          [entry(publicKey: farKey, prefix: [0xA2]), entry(prefix: [0xA2])],
-          hashPrefix: [0xA2],
+          [
+            entry(publicKey: farKey, prefix: [0xA2, 0x77]),
+            entry(prefix: [0xA2, 0x77]),
+          ],
+          hashPrefix: [0xA2, 0x77],
         ),
         isNull,
       );

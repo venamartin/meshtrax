@@ -64,7 +64,7 @@ void main() {
 
   RepeaterCommandService? service;
   StreamSubscription<Uint8List>? replySub;
-  PathSelection? selection;
+  List<PathSelection>? plan;
 
   /// Read at W1, put back at W5. Null means "never successfully read", and
   /// W5 refuses to write a value it never confirmed.
@@ -124,7 +124,7 @@ void main() {
     try {
       response = await service!.sendCommand(live(), command,
           retries: retries,
-          selection: selection,
+          plan: plan,
           onAttempt: (n) => attempts = n);
     } catch (e) {
       response = null;
@@ -262,9 +262,9 @@ void main() {
       }
       service!.handleResponse(live(), parsed.text);
     });
-    selection = await service!.preparePath(live());
-    blog('preparePath -> useFlood=${selection!.useFlood} '
-        'hops=${selection!.hopCount}');
+    plan = service!.preparePath(live());
+    blog('preparePath -> useFlood=${plan!.first.useFlood} '
+        'hops=${plan!.first.hopCount}');
     ready = true;
   }, timeout: rf);
 

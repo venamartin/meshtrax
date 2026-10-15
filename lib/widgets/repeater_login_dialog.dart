@@ -379,7 +379,7 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                   const Divider(),
                   Row(
                     children: [
-                      Icon(routingIconOf(repeater), size: 18),
+                      RoutingIcon(contact: repeater, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

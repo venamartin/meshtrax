@@ -274,7 +274,9 @@ void main() {
     var screenWouldTimeout = 0;
 
     for (var i = 1; i <= 12; i++) {
-      final selection = await ble.connector.preparePathForContactSend(rep);
+      final selection = ble.connector.planRequestAttempts(rep, 1).first;
+      // Puts the route on the radio, as every management screen's send does.
+      await ble.connector.sendOnRoute(rep, selection, () async {});
       final pathLen = selection.useFlood ? -1 : selection.hopCount;
       final reqFrame = buildSendBinaryReq(
         rep.publicKey,

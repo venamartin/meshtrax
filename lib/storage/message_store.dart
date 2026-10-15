@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import '../helpers/reaction_helper.dart';
 import '../helpers/smaz.dart';
 import '../models/message.dart';
+import '../models/path_selection.dart';
 import '../utils/app_logger.dart';
 import '../helpers/path_helper.dart';
 import 'app_database.dart';
@@ -575,6 +576,7 @@ class MessageStore {
           ? base64Encode(msg.pathBytes)
           : null,
       'pathHashSize': msg.pathHashSize,
+      'routeSource': msg.routeSource.name,
       'reactions': msg.reactions,
       'reactionSenders': msg.reactionSenders,
       'reactionStatuses': msg.reactionStatuses.map(
@@ -619,6 +621,9 @@ class MessageStore {
           ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
           : Uint8List(0),
       pathHashSize: json['pathHashSize'] as int?,
+      routeSource: RouteSource.values
+              .asNameMap()[json['routeSource'] as String?] ??
+          RouteSource.firmware,
       reactions:
           (json['reactions'] as Map<String, dynamic>?)?.map(
             (key, value) => MapEntry(key, value as int),

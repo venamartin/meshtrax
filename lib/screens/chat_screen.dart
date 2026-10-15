@@ -23,6 +23,7 @@ import '../helpers/link_handler.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
+import '../models/path_selection.dart';
 import '../services/app_settings_service.dart';
 import '../services/message_retry_service.dart';
 import '../services/chat_text_scale_service.dart';
@@ -588,7 +589,7 @@ class _ChatScreenState extends State<ChatScreen> {
             builder: (context, connector, _) {
               final contact = _resolveContact(connector);
               return IconButton(
-                icon: Icon(routingIconOf(contact)),
+                icon: RoutingIcon(contact: contact),
                 tooltip: context.l10n.routing_title,
                 onPressed: () => RoutingDialog.show(context, contact: contact),
               );
@@ -2414,20 +2415,50 @@ class _MessageBubble extends StatelessWidget {
                                 detailed: enableTracing,
                               );
                               if (line == null) return const SizedBox.shrink();
+                              final style = TextStyle(
+                                fontSize: 10,
+                                color: displayMetaColor,
+                                fontWeight: FontWeight.w500,
+                              );
+                              // A Pathfinder route is marked by the amber
+                              // path icon, just before the route kind (or
+                              // the trip time when the kind isn't shown).
+                              final mark =
+                                  message.routeSource == RouteSource.graph
+                                      ? line.indexOf(enableTracing
+                                          ? _routeKind(context)
+                                          : _tripSecs)
+                                      : -1;
                               return Padding(
                                 padding: EdgeInsets.only(
                                   top: 4,
                                   left: gifId != null ? 8 : 0,
                                   right: gifId != null ? 8 : 0,
                                 ),
-                                child: Text(
-                                  line,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: displayMetaColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                child: mark < 0
+                                    ? Text(line, style: style)
+                                    : Text.rich(
+                                        TextSpan(
+                                          style: style,
+                                          children: [
+                                            TextSpan(
+                                                text: line.substring(0, mark)),
+                                            WidgetSpan(
+                                              alignment:
+                                                  PlaceholderAlignment.middle,
+                                              child: Icon(
+                                                RoutingIcon.icon,
+                                                size: 12,
+                                                color: RoutingIcon
+                                                    .pathfinderColor(context),
+                                              ),
+                                            ),
+                                            TextSpan(
+                                                text:
+                                                    ' ${line.substring(mark)}'),
+                                          ],
+                                        ),
+                                      ),
                               );
                             },
                           ),
@@ -2867,17 +2898,22 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
+  String _routeKind(BuildContext context) {
+    final l10n = context.l10n;
+    final hops = message.pathLength;
+    if (hops == null || hops < 0) return l10n.chat_kindFlood;
+    if (hops == 0) return l10n.chat_kindDirect;
+    return l10n.chat_kindRoute(hops);
+  }
+
+  String get _tripSecs =>
+      ((message.tripTimeMs ?? 0) / 1000).toStringAsFixed(1);
+
   String? _deliveryStatus(BuildContext context, {required bool detailed}) {
     final l10n = context.l10n;
     final m = message;
-    String kind() {
-      final hops = m.pathLength;
-      if (hops == null || hops < 0) return l10n.chat_kindFlood;
-      if (hops == 0) return l10n.chat_kindDirect;
-      return l10n.chat_kindRoute(hops);
-    }
-
-    final secs = ((m.tripTimeMs ?? 0) / 1000).toStringAsFixed(1);
+    String kind() => _routeKind(context);
+    final secs = _tripSecs;
     switch (m.status) {
       case MessageStatus.delivered:
         if (!detailed) return l10n.chat_statusDeliveredShort(secs);

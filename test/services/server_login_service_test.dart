@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/contact.dart';
-import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/server_login_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -30,12 +29,6 @@ class _Connector extends MeshCoreConnector {
   }) async {
     frames.add(data);
   }
-
-  // The real one writes a user override to the radio; the ladder only needs
-  // the resolution.
-  @override
-  Future<PathSelection> preparePathForContactSend(Contact contact) async =>
-      resolvePathSelection(contact, radioWidth: contact.pathHashSize);
 
   @override
   Future<void> clearContactPath(Contact contact) async {

@@ -163,6 +163,21 @@ class PathHelper {
     return writer.toBytes();
   }
 
+  /// A trace out on [out] (me → … → the turnaround) and back on [back],
+  /// which starts at the turnaround, named once. With no way back known
+  /// ([back] null) the way out reversed.
+  static Uint8List outAndBackPath(
+    List<int> out,
+    List<int>? back, {
+    required int stride,
+  }) {
+    if (back == null) return roundTripPath(out, stride: stride);
+    return Uint8List.fromList([
+      ...out,
+      for (final hop in getHops(back, stride: stride).skip(1)) ...hop,
+    ]);
+  }
+
   /// Whether [pathBytes] is already a complete round trip: a palindrome of at
   /// least three hops (e.g. A2 → F5 → A2). Such a path must be sent verbatim;
   /// passing it through [roundTripPath] would append a second return trip and

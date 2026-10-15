@@ -12,8 +12,10 @@ import '../services/notification_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
+import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'map_cache_screen.dart';
+import 'path_graph_screen.dart';
 
 class AppSettingsScreen extends StatelessWidget {
   const AppSettingsScreen({super.key});
@@ -589,6 +591,17 @@ class AppSettingsScreen extends StatelessWidget {
                       settingsService.setMaxChannelMessageRetries(value.toInt()),
                 ),
               ],
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const RoutingIcon(),
+            title: Text(context.l10n.settings_pathGraph),
+            subtitle: Text(context.l10n.settings_pathGraphSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PathGraphScreen()),
             ),
           ),
         ],

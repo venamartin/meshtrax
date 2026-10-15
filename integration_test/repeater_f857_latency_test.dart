@@ -272,7 +272,7 @@ void main() {
 
     final service = RepeaterCommandService(usb.connector);
     try {
-      final selection = await service.preparePath(live());
+      final selection = service.preparePath(live()).first;
       blog('preparePath -> useFlood=${selection.useFlood} '
           'hops=${selection.hopCount}');
       blog('contact after preparePath: pathLen=${live().pathLength} '
@@ -313,7 +313,7 @@ void main() {
     });
 
     try {
-      final selection = await service.preparePath(live());
+      final plan = service.preparePath(live(), attempts: 2);
       var crossed = 0;
       for (var round = 1; round <= 3; round++) {
         // A reply carrying a token that matches nothing pending. That is
@@ -328,7 +328,7 @@ void main() {
         String? answer;
         try {
           answer = await service.sendCommand(live(), 'get tx',
-              retries: 2, selection: selection);
+              retries: 2, plan: plan);
         } catch (e) {
           answer = null;
         }
@@ -373,9 +373,9 @@ void main() {
     try {
       // Exactly _refreshRadioSettings: one preparePath for the batch, the
       // screen's retry count, 200 ms between commands.
-      final selection = await service.preparePath(live());
-      blog('preparePath -> useFlood=${selection.useFlood} '
-          'hops=${selection.hopCount}');
+      final plan = service.preparePath(live(), attempts: 3);
+      blog('preparePath -> useFlood=${plan.first.useFlood} '
+          'hops=${plan.first.hopCount}');
 
       final batchStarted = DateTime.now();
       final answers = <String, String?>{};
@@ -385,7 +385,7 @@ void main() {
         String? response;
         try {
           response = await service.sendCommand(live(), command,
-              retries: 3, selection: selection, onAttempt: (n) => attempts = n);
+              retries: 3, plan: plan, onAttempt: (n) => attempts = n);
         } catch (e) {
           response = null;
           blog('  "$command" FAILED: $e');
