@@ -1172,69 +1172,88 @@ class PathGraph {
           'checkpoint was saved at hash width $docWidth, this graph runs '
           'at $hashWidthBytes — widths cannot mix');
     }
+    // Parse everything before touching anything: one bad row must not
+    // leave the graph wiped and the restore failed.
+    final nodes = <String, NodeState>{};
+    final edges = <(String, String), EdgeState>{};
+    final ingress = <(String, String), IngressEntry>{};
+    final contacts = <String, ({String name, int lastRefreshed})>{};
+    try {
+      for (final raw in (document['nodes'] as List?) ?? const []) {
+        final n = raw as Map;
+        // Checkpoints from before imports were removed may carry
+        // 'imported' nodes; they are plain observed nodes now.
+        nodes[n['hash'] as String] = NodeState(
+          source: n['source'] == 'advert' ? NodeSource.advert : NodeSource.observed,
+          name: n['name'] as String?,
+          role: n['role'] as String?,
+          lat: (n['lat'] as num?)?.toDouble(),
+          lon: (n['lon'] as num?)?.toDouble(),
+          lastHeard: (n['last_heard'] as num?)?.toInt(),
+          pubkey: n['pubkey'] as String?,
+        );
+      }
+      for (final raw in (document['edges'] as List?) ?? const []) {
+        final e = raw as Map;
+        edges[(e['from'] as String, e['to'] as String)] =
+            EdgeState(source: e['source'] as String? ?? 'observed')
+              ..s = (e['s'] as num?)?.toInt() ?? 0
+              ..n = (e['n'] as num?)?.toInt() ?? 0
+              ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
+              ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
+              ..lastObserved = (e['last_observed'] as num?)?.toInt()
+              ..measuredSnr = (e['measured_snr'] as num?)?.toDouble();
+      }
+      for (final raw in (document['ingress'] as List?) ?? const []) {
+        final i = raw as Map;
+        ingress[(i['owner'] as String, i['repeater'] as String)] =
+            IngressEntry(
+          weight: (i['weight'] as num).toDouble(),
+          lastSeen: (i['last_seen'] as num).toInt(),
+          tier: EvidenceTier.values.byName(i['tier'] as String),
+          observedLat: (i['lat'] as num?)?.toDouble(),
+          observedLon: (i['lon'] as num?)?.toDouble(),
+        )
+              ..provenAt = (i['proven_at'] as num?)?.toInt()
+              ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()
+              ..downlinkSnr = (i['downlink_snr'] as num?)?.toDouble()
+              ..finalCount = (i['final_count'] as num?)?.toInt() ?? 0
+              ..penultimateCount = (i['penultimate_count'] as num?)?.toInt() ?? 0
+              // A checkpoint from before the count: a proven row was proven
+              // at least once.
+              ..provenCount = (i['proven_count'] as num?)?.toInt() ??
+                  (i['proven_at'] == null ? 0 : 1)
+              ..floodProvenAt = (i['flood_proven_at'] as num?)?.toInt()
+              ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt();
+      }
+      for (final raw in (document['contacts'] as List?) ?? const []) {
+        final c = raw as Map;
+        contacts[c['pubkey'] as String] = (
+          name: c['name'] as String,
+          lastRefreshed: (c['last_refreshed'] as num).toInt(),
+        );
+      }
+    } on TypeError catch (e) {
+      throw FormatException('bad row in checkpoint: $e');
+    } on ArgumentError catch (e) {
+      throw FormatException('bad row in checkpoint: $e');
+    }
+
     _flushTimer?.cancel();
     _flushTimer = null;
     await _store.clear();
     await _evidence.clear();
+    _store.nodes.addAll(nodes);
+    _store.edges.addAll(edges);
+    _evidence.entries.addAll(ingress);
+    _evidence.knownContacts.addAll(contacts);
 
-    for (final raw in (document['nodes'] as List?) ?? const []) {
-      final n = raw as Map;
-      // Checkpoints from before imports were removed may carry
-      // 'imported' nodes; they are plain observed nodes now.
-      _store.nodes[n['hash'] as String] = NodeState(
-        source: n['source'] == 'advert' ? NodeSource.advert : NodeSource.observed,
-        name: n['name'] as String?,
-        role: n['role'] as String?,
-        lat: (n['lat'] as num?)?.toDouble(),
-        lon: (n['lon'] as num?)?.toDouble(),
-        lastHeard: (n['last_heard'] as num?)?.toInt(),
-        pubkey: n['pubkey'] as String?,
-      );
-    }
-    for (final raw in (document['edges'] as List?) ?? const []) {
-      final e = raw as Map;
-      _store.edges[(e['from'] as String, e['to'] as String)] =
-          EdgeState(source: e['source'] as String? ?? 'observed')
-            ..s = (e['s'] as num?)?.toInt() ?? 0
-            ..n = (e['n'] as num?)?.toInt() ?? 0
-            ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
-            ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
-            ..lastObserved = (e['last_observed'] as num?)?.toInt()
-            ..measuredSnr = (e['measured_snr'] as num?)?.toDouble();
-    }
-    for (final raw in (document['ingress'] as List?) ?? const []) {
-      final i = raw as Map;
-      _evidence.entries[(i['owner'] as String, i['repeater'] as String)] =
-          IngressEntry(
-        weight: (i['weight'] as num).toDouble(),
-        lastSeen: (i['last_seen'] as num).toInt(),
-        tier: EvidenceTier.values.byName(i['tier'] as String),
-        observedLat: (i['lat'] as num?)?.toDouble(),
-        observedLon: (i['lon'] as num?)?.toDouble(),
-      )
-            ..provenAt = (i['proven_at'] as num?)?.toInt()
-            ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()
-            ..downlinkSnr = (i['downlink_snr'] as num?)?.toDouble()
-            ..finalCount = (i['final_count'] as num?)?.toInt() ?? 0
-            ..penultimateCount = (i['penultimate_count'] as num?)?.toInt() ?? 0
-            // A checkpoint from before the count: a proven row was proven
-            // at least once.
-            ..provenCount = (i['proven_count'] as num?)?.toInt() ??
-                (i['proven_at'] == null ? 0 : 1)
-            ..floodProvenAt = (i['flood_proven_at'] as num?)?.toInt()
-            ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt();
-    }
-    for (final raw in (document['contacts'] as List?) ?? const []) {
-      final c = raw as Map;
-      _evidence.knownContacts[c['pubkey'] as String] = (
-        name: c['name'] as String,
-        lastRefreshed: (c['last_refreshed'] as num).toInt(),
-      );
-    }
-
+    // The live radio's identity wins: a checkpoint from another radio,
+    // or saved at another stride, must not become it. Without a radio
+    // (bench, offline) the checkpoint's is all there is.
     final self = (document['self'] as Map?) ?? const {};
     final pubkey = self['pubkey'] as String?;
-    if (pubkey != null) {
+    if (pubkey != null && _selfPubkey == null) {
       setRadioIdentity(pubkey, (self['stride'] as num?)?.toInt() ?? 2);
     }
     final counters = (document['counters'] as Map?) ?? const {};

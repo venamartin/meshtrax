@@ -230,4 +230,37 @@ void main() {
         reason: 'a proven row was proven at least once');
     await old.dispose();
   });
+
+  test('one bad row fails the restore and leaves the graph as it was',
+      () async {
+    final source = await populated();
+    final doc = jsonDecode(jsonEncode(source.saveSession()))
+        as Map<String, dynamic>;
+    await source.dispose();
+    (doc['ingress'] as List).add({'owner': selfPk, 'repeater': 'DEAD'});
+
+    final target = await populated();
+    final before = target.egressCandidates().length;
+    await expectLater(target.loadSession(doc), throwsFormatException);
+    expect(target.egressCandidates().length, before,
+        reason: 'nothing was cleared before the parse failed');
+    expect(target.snapshot().edges, isNotEmpty);
+    await target.dispose();
+  });
+
+  test('a checkpoint from another radio never replaces the live identity',
+      () async {
+    final source = await populated();
+    final doc = source.saveSession();
+    await source.dispose();
+
+    const livePk = 'cd' 'cd' 'cd';
+    final target = PathGraph(NativeDatabase.memory());
+    await target.init();
+    target.setRadioIdentity(livePk, 2);
+    await target.loadSession(doc);
+    expect(target.selfPubkey, livePk);
+    expect(target.selfStride, 2);
+    await target.dispose();
+  });
 }
