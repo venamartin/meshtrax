@@ -442,7 +442,12 @@ const int contactFrameSize = 148;
 class ParsedContactText {
   final Uint8List senderPrefix;
   final String text;
-  const ParsedContactText({required this.senderPrefix, required this.text});
+  final int txtType;
+  const ParsedContactText({
+    required this.senderPrefix,
+    required this.text,
+    required this.txtType,
+  });
 }
 
 ParsedContactText? parseContactMessageText(Uint8List frame) {
@@ -474,7 +479,11 @@ ParsedContactText? parseContactMessageText(Uint8List frame) {
     final text = message.readCString();
     if (text.isEmpty) return null;
 
-    return ParsedContactText(senderPrefix: senderPrefix, text: text);
+    return ParsedContactText(
+      senderPrefix: senderPrefix,
+      text: text,
+      txtType: textType,
+    );
   } catch (e) {
     debugPrint('Error parsing contact message text: $e');
     return null;
@@ -930,17 +939,20 @@ int calculateMessageTimeout({
 
 // Build CLI command text message frame (companion_radio format)
 // Format: [cmd][txt_type][attempt][timestamp x4][pub_key_prefix x6][text...]\0
+// [txtType] is txtTypeCliData for repeaters, rooms and sensors, and
+// txtTypeCliCommand for another companion (firmware 1.18+ on both ends).
 Uint8List buildSendCliCommandFrame(
   Uint8List repeaterPubKey,
   String command, {
   int attempt = 0,
   int? timestampSeconds,
+  int txtType = txtTypeCliData,
 }) {
   final timestamp =
       timestampSeconds ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
   final writer = BufferWriter();
   writer.writeByte(cmdSendTxtMsg);
-  writer.writeByte(txtTypeCliData);
+  writer.writeByte(txtType);
   writer.writeByte(attempt.clamp(0, 255));
   writer.writeUInt32LE(timestamp);
   writer.writeBytes(repeaterPubKey.sublist(0, 6));

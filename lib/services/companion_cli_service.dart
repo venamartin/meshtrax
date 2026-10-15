@@ -7,6 +7,20 @@ import '../connector/meshcore_protocol.dart';
 
 enum CliReplyKind { value, ok, error, unknown }
 
+/// A CLI command a contact tried to run on our radio without the remote-CLI
+/// permission. Firmware 1.18 hands it to the app instead of running it.
+class BlockedCliCommand {
+  final String contactName;
+  final String? contactKeyHex;
+  final String command;
+
+  const BlockedCliCommand({
+    required this.contactName,
+    required this.contactKeyHex,
+    required this.command,
+  });
+}
+
 /// A companion CLI reply. The firmware's wording is not uniform ("Error, …",
 /// "ERROR: …", "Error: …"), so it is classified loosely.
 class CliReply {

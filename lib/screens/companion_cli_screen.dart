@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,24 +7,95 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
+import '../models/contact.dart';
 import '../services/companion_cli_service.dart';
+import '../services/repeater_command_service.dart';
 import '../widgets/cli_console.dart';
+import '../widgets/routing_dialog.dart';
 
-/// Text command line for the connected radio (firmware 1.18+).
-class CompanionCliScreen extends StatelessWidget {
-  const CompanionCliScreen({super.key});
+/// Text command line for a firmware 1.18+ companion: the connected radio,
+/// or with [contact], another companion that lets us use its command line.
+class CompanionCliScreen extends StatefulWidget {
+  final Contact? contact;
 
-  Future<String> _send(BuildContext context, String command) async {
+  const CompanionCliScreen({super.key, this.contact});
+
+  @override
+  State<CompanionCliScreen> createState() => _CompanionCliScreenState();
+}
+
+class _CompanionCliScreenState extends State<CompanionCliScreen> {
+  RepeaterCommandService? _remote;
+  StreamSubscription<Uint8List>? _replySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    final contact = widget.contact;
+    if (contact == null) return;
+    final connector = context.read<MeshCoreConnector>();
+    final remote = _remote = RepeaterCommandService(connector);
+    // The reply is a CLI_DATA DM from that companion. A companion also
+    // chats, and the service hands an untokened message to the pending
+    // command, so plain messages must not reach it.
+    _replySubscription = connector.receivedFrames.listen((frame) {
+      final parsed = parseContactMessageText(frame);
+      if (parsed == null || parsed.txtType != txtTypeCliData) return;
+      for (var i = 0; i < 6; i++) {
+        if (parsed.senderPrefix[i] != contact.publicKey[i]) return;
+      }
+      remote.handleResponse(contact, parsed.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _replySubscription?.cancel();
+    _remote?.dispose();
+    super.dispose();
+  }
+
+  Contact? _resolveContact(MeshCoreConnector connector) {
+    final contact = widget.contact;
+    if (contact == null) return null;
+    return connector.contacts.firstWhere(
+      (c) => c.publicKeyHex == contact.publicKeyHex,
+      orElse: () => contact,
+    );
+  }
+
+  Future<String> _send(String command) async {
     final l10n = context.l10n;
     final connector = context.read<MeshCoreConnector>();
+    final contact = _resolveContact(connector);
+    final isPowerOff = command == 'poweroff' || command == 'shutdown';
+    if (isPowerOff && !await _confirmPowerOff()) {
+      return l10n.companionCli_cancelled;
+    }
+
+    if (contact != null) {
+      try {
+        // One attempt, as for a repeater: a retry would run it twice.
+        return await _remote!.sendCommand(
+          contact,
+          command,
+          retries: 1,
+          txtType: txtTypeCliCommand,
+        );
+      } catch (_) {
+        return command == 'reboot' || isPowerOff
+            ? l10n.companionCli_remoteSentNoAnswer
+            : l10n.companionCli_remoteNoReply;
+      }
+    }
+
     // CMD_REBOOT flushes pending contact writes first; the CLI reboot
     // doesn't. Neither answers.
     if (command == 'reboot') {
       await connector.rebootDevice();
       return l10n.companionCli_rebooting;
     }
-    if (command == 'poweroff' || command == 'shutdown') {
-      if (!await _confirmPowerOff(context)) return l10n.companionCli_cancelled;
+    if (isPowerOff) {
       await connector.companionCli.sendWithoutReply(command);
       return l10n.companionCli_poweringOff;
     }
@@ -42,7 +114,7 @@ class CompanionCliScreen extends StatelessWidget {
     }
   }
 
-  Future<bool> _confirmPowerOff(BuildContext context) async {
+  Future<bool> _confirmPowerOff() async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -68,20 +140,36 @@ class CompanionCliScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final connector = context.watch<MeshCoreConnector>();
-    final hasWifi = connector.hasWifi == true;
+    final contact = _resolveContact(connector);
+    // Whether another companion has WiFi is unknown; its help lists it.
+    final hasWifi = contact != null || connector.hasWifi == true;
 
     return CliConsole(
       title: l10n.companionCli_title,
-      subtitle: connector.selfName ?? '',
-      onSend: (command) => _send(context, command),
-      debugFrameFor: buildRunCliCommandFrame,
+      subtitle: contact?.name ?? connector.selfName ?? '',
+      onSend: _send,
+      actions: [
+        if (contact != null)
+          IconButton(
+            icon: RoutingIcon(contact: contact),
+            tooltip: l10n.routing_title,
+            onPressed: () => RoutingDialog.show(context, contact: contact),
+          ),
+      ],
+      debugFrameFor: contact == null
+          ? buildRunCliCommandFrame
+          : (command) => buildSendCliCommandFrame(
+              contact.publicKey,
+              command,
+              txtType: txtTypeCliCommand,
+            ),
       quickCommands: [
         CliQuickCommand(l10n.repeater_cliQuickVersion, 'ver'),
         CliQuickCommand(l10n.companionCli_quickBoard, 'board'),
         CliQuickCommand(l10n.repeater_cliQuickGetName, 'get name'),
         CliQuickCommand(l10n.repeater_cliQuickGetRadio, 'get radio'),
         CliQuickCommand(l10n.repeater_cliQuickGetTx, 'get tx'),
-        if (hasWifi) ...[
+        if (contact == null && hasWifi) ...[
           CliQuickCommand(l10n.companionCli_quickWifiStatus, 'get wifi.status'),
           CliQuickCommand(l10n.companionCli_quickWifiAddress, 'get wifi.ip'),
         ],

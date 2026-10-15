@@ -377,6 +377,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<RoomLoginEvent> get roomLoginEvents =>
       _roomLoginEventsController.stream;
 
+  final StreamController<BlockedCliCommand> _blockedCliCommandsController =
+      StreamController<BlockedCliCommand>.broadcast();
+
+  Stream<BlockedCliCommand> get blockedCliCommands =>
+      _blockedCliCommandsController.stream;
+
   // Last full (14-byte) LOGIN_OK per room: the server's clock and the
   // permissions byte. Kept apart from the session events: a pushed post
   // proves the session but carries neither, and must not erase them.
@@ -3893,6 +3899,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool? teleBase,
     bool? teleLoc,
     bool? teleEnv,
+    bool? remoteCli,
   }) async {
     if (!isConnected) return;
     final latestContact =
@@ -3916,6 +3923,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         ? (teleEnv
               ? (updatedFlags | contactFlagTeleEnv)
               : (updatedFlags & ~contactFlagTeleEnv))
+        : updatedFlags;
+    updatedFlags = remoteCli != null
+        ? (remoteCli
+              ? (updatedFlags | contactFlagRemoteCli)
+              : (updatedFlags & ~contactFlagRemoteCli))
         : updatedFlags;
 
     await sendFrame(
@@ -6344,6 +6356,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleIncomingMessage(Uint8List frame) async {
     if (_selfPublicKey == null) return;
 
+    final layout = parseContactMsgLayout(frame);
+    if (layout != null && layout.txtType == txtTypeCliCommand) {
+      _reportBlockedCliCommand(layout.senderPrefix, layout.text);
+      _handleQueuedMessageReceived();
+      return;
+    }
+
     var message = _parseContactMessage(frame);
 
     // If message parsing failed due to unknown contact, refresh contacts and retry
@@ -6465,6 +6484,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _handleQueuedMessageReceived();
     } else if (_isSyncingQueuedMessages) {
       _handleQueuedMessageReceived();
+    }
+  }
+
+  /// Firmware 1.18 queues a CLI command a contact tried to run on our radio
+  /// without the remote-CLI permission. It did not run, so it is reported,
+  /// never shown as a chat message.
+  void _reportBlockedCliCommand(Uint8List senderPrefix, String command) {
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => _matchesPrefix(c!.publicKey, senderPrefix),
+      orElse: () => null,
+    );
+    final name = contact?.name ?? pubKeyToHex(senderPrefix);
+    _appDebugLogService?.warn(
+      'Blocked a command line request from $name: "$command"',
+      tag: 'Connector',
+    );
+    _blockedCliCommandsController.add(BlockedCliCommand(
+      contactName: name,
+      contactKeyHex: contact?.publicKeyHex,
+      command: command,
+    ));
+    if (_appSettingsService?.settings.notificationsEnabled ?? false) {
+      _notificationService.showBlockedCliNotification(
+        contactName: name,
+        command: command,
+        contactId: contact?.publicKeyHex,
+      );
     }
   }
 
@@ -9353,6 +9399,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     radioStatsNotifier.dispose();
     _receivedFramesController.close();
     _roomLoginEventsController.close();
+    _blockedCliCommandsController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();
 
