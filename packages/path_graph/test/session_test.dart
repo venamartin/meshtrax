@@ -263,4 +263,27 @@ void main() {
     expect(target.selfStride, 2);
     await target.dispose();
   });
+
+  test('re-feeding an unchanged contact writes nothing; a rename does',
+      () async {
+    var now = 1000000;
+    final g = PathGraph(NativeDatabase.memory(),
+        now: () => DateTime.fromMillisecondsSinceEpoch(now));
+    await g.init();
+    Map contact() => (g.saveSession()['contacts'] as List)
+        .cast<Map>()
+        .singleWhere((c) => c['pubkey'] == bobPk);
+
+    g.ingestContact(bobPk, 'Bob');
+    now += 60000;
+    g.ingestContact(bobPk, 'Bob');
+    expect(contact()['last_refreshed'], 1000000,
+        reason: 'the same name is not re-stamped, so it is not rewritten');
+
+    now += 60000;
+    g.ingestContact(bobPk, 'Bobby');
+    expect(contact()['name'], 'Bobby');
+    expect(contact()['last_refreshed'], now);
+    await g.dispose();
+  });
 }

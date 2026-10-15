@@ -458,6 +458,9 @@ class EvidenceStore {
   }
 
   void ingestContact(String pubkey, String name, int arrival) {
+    // The app re-feeds its whole contact list on every change; only a new
+    // contact or a new name needs writing.
+    if (knownContacts[pubkey]?.name == name) return;
     knownContacts[pubkey] = (name: name, lastRefreshed: arrival);
     _dirtyContacts.add(pubkey);
   }
