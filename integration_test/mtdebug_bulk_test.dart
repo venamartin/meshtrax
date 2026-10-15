@@ -106,8 +106,16 @@ void main() {
     // Only messages that ARRIVE from here on count. #mtdebug rows persist
     // across runs, so without this gate the tally replays every capture
     // session ever recorded (first run reported "And" via A277 — a live
-    // mesh repeater that cannot exist on the bench frequency).
-    final since = DateTime.now();
+    // mesh repeater that cannot exist on the bench frequency). The gate is
+    // the rows already stored, not the sender's clock: a phone whose clock
+    // runs behind stamps real replies "before" now.
+    final stored = <String>{};
+    final before = liveByIdKey(usb.connector, idKey);
+    if (before != null) {
+      for (final m in await usb.connector.loadChannelMessagesFor(before)) {
+        stored.add(m.messageId);
+      }
+    }
     final seen = <String>{};
     final deadline = DateTime.now().add(Duration(minutes: rxMinutes));
     var lastReport = 0;
@@ -116,7 +124,7 @@ void main() {
       if (live != null) {
         for (final m in await usb.connector.loadChannelMessagesFor(live)) {
           if (m.isOutgoing) continue;
-          if (m.timestamp.isBefore(since)) continue; // stored history
+          if (stored.contains(m.messageId)) continue; // stored history
           if (sent.contains(m.text)) continue; // our own, echoed back
           if (!seen.add('${m.senderName}|${m.text}')) continue;
           blog('<-- #${seen.length} from ${m.senderName}: "${m.text}"'

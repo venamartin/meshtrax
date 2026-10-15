@@ -114,7 +114,10 @@ void main() {
 
   void logStoredRoute(String when, Uint8List frame) {
     final pathLenByte = frame[35];
-    final byteLen = PathHelper.pathLenBytes(pathLenByte);
+    // 0xFF is "no route": the 64 bytes after it are stale, not a path.
+    final byteLen = PathHelper.pathLenHops(pathLenByte) < 0
+        ? 0
+        : PathHelper.pathLenBytes(pathLenByte);
     final pathBytes = frame
         .sublist(36, 36 + maxPathSize)
         .sublist(0, byteLen.clamp(0, maxPathSize));
