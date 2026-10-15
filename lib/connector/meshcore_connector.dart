@@ -9730,6 +9730,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     }
 
+    final cliSettings = <String, String>{};
+    if (has(RadioSetting.cliSettings)) {
+      for (final key in [
+        ...backupCliKeys,
+        if (_hasWifi == true) ...backupWifiKeys,
+      ]) {
+        try {
+          final reply = CliReply(await companionCli.run('get $key'));
+          if (reply.kind == CliReplyKind.value && reply.value != '(not set)') {
+            cliSettings[key] = reply.value;
+          }
+        } catch (e) {
+          appLogger.warn('Backup: get $key: $e', tag: 'Connector');
+        }
+      }
+    }
+
     final deviceContacts = contacts;
     final backupContacts = <BackupContact>[];
     for (var i = 0; i < deviceContacts.length; i++) {
@@ -9783,6 +9800,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           floodScope != null ? pubKeyToHex(floodScope.key) : null,
       tuning: tuning,
       customVars: Map.of(_currentCustomVars ?? {}),
+      cliSettings: cliSettings,
       channels: [
         for (final ch in channels)
           if (!ch.isEmpty)
@@ -9853,6 +9871,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       if (!ok) report.failures.add('${w.label} was not accepted');
       await Future.delayed(frameGap);
+    }
+    final cliPlan = planRestoreCliSettings(
+      backup,
+      targetVerCode: _firmwareVerCode,
+      targetVersion: _firmwareVersion,
+      targetHasWifi: _hasWifi == true,
+    );
+    report.notes.addAll(cliPlan.notes);
+    for (final command in cliPlan.commands) {
+      try {
+        final kind = CliReply(await companionCli.run(command)).kind;
+        if (kind == CliReplyKind.error || kind == CliReplyKind.unknown) {
+          report.failures.add('"$command" was not accepted');
+        }
+      } catch (_) {
+        report.failures.add('"$command" got no reply');
+      }
     }
     onProgress?.call(RestoreStep.settings, writes.length, writes.length);
 
