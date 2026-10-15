@@ -32,10 +32,11 @@ class _TcpScreenState extends State<TcpScreen> {
     _hostController = TextEditingController(
       text: context.read<AppSettingsService>().settings.tcpServerAddress,
     );
+    // The companion firmware's TCP port is fixed at 5000.
     _portController = TextEditingController(
       text: context.read<AppSettingsService>().settings.tcpServerPort > 0
           ? context.read<AppSettingsService>().settings.tcpServerPort.toString()
-          : '',
+          : '5000',
     );
     _connector = context.read<MeshCoreConnector>();
     // Opening the TCP screen is explicit intent to use TCP, same as the
