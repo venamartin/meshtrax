@@ -155,10 +155,32 @@ void main() {
           ['flood', 'flood']);
     });
 
-    test('routes below the delivery threshold are skipped', () {
+    test('the best route is tried whatever its score', () {
+      // Field 2026-10-14: three links nobody had sent on scored the best
+      // route to a contact 14%, its alternatives 7% and 4%, and every
+      // message flooded. The best is tried; the weak alternatives are not.
+      final best = graph([0xA2, 0x77, 0x10, 0x00, 0x88, 0x02], 0.14);
+      final alt1 = graph([0xA2, 0x77, 0xAD, 0x77, 0x10, 0x00, 0x88, 0x02], 0.07);
+      final alt2 = graph([0xA2, 0x77, 0x44, 0x4A, 0x88, 0x02], 0.035);
+      final routes = [best, alt1, alt2];
+      expect(kinds(plan(contact(), budget: 3, graphRoutes: routes)),
+          ['graph', 'flood', 'flood']);
+      expect(plan(contact(), budget: 3, graphRoutes: routes).first.pathBytes,
+          best.pathBytes);
+      expect(kinds(plan(contact(), budget: 5, graphRoutes: routes)),
+          ['graph', 'flood', 'flood', 'flood', 'flood']);
+    });
+
+    test('later routes below the delivery threshold are skipped', () {
       final weak = graph([0x11, 0x11, 0x10, 0x00], 0.1);
-      final ladder = plan(contact(), budget: 3, graphRoutes: [weak, g2]);
-      expect(ladder.first.pathBytes, g2.pathBytes);
+      final ladder = plan(contact(), budget: 5, graphRoutes: [g1, weak, g2]);
+      expect([for (final s in ladder) s.useFlood ? 'flood' : s.pathBytes], [
+        g1.pathBytes,
+        g2.pathBytes,
+        'flood',
+        'flood',
+        'flood',
+      ]);
     });
 
     test('zero-hop routes at two widths take one slot', () {

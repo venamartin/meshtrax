@@ -4,7 +4,8 @@ import 'contact.dart';
 
 const int recentAttemptDiversityWindow = 2;
 
-/// Pathfinder routes below this delivery estimate are not tried.
+/// Pathfinder's second and later routes below this delivery estimate are
+/// not tried; its best route always is.
 const double minRouteDelivery = 0.2;
 
 /// Who chose a route: the firmware's learned `out_path`, the path graph
@@ -92,7 +93,11 @@ PathSelection resolvePathSelection(
 /// With Pathfinder ([graphRoutes] non-null) the ladder is Pathfinder's
 /// routes, best first and never repeated, then floods: two close the
 /// ladder (one at a budget of 2, none at 1) and an unfilled route slot
-/// floods. The radio's stored route is never tried — Pathfinder exists
+/// floods. The best route is tried whatever its score: a link only
+/// overheard, never sent on, scores low until a send proves it, so a cutoff
+/// on the best route would keep Pathfinder from ever learning (field
+/// 2026-10-14: a 3-hop route at 14% was never tried). Later routes must
+/// reach [minDelivery]. The radio's stored route is never tried — Pathfinder exists
 /// because firmware routing doesn't work (owner rule, 2026-10-14). An empty
 /// [graphRoutes] means Pathfinder knows nothing: every attempt floods. When
 /// Pathfinder cannot route at all the caller passes null instead.
@@ -128,7 +133,9 @@ List<PathSelection> planAttempts(
   final seen = <String>{};
   final routes = <PathSelection>[
     for (final g in graphRoutes)
-      if ((g.estDelivery ?? 1) >= minDelivery && seen.add(key(g))) g,
+      if ((seen.isEmpty || (g.estDelivery ?? 1) >= minDelivery) &&
+          seen.add(key(g)))
+        g,
   ];
 
   final floods = budget <= 2 ? budget - 1 : 2;
