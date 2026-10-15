@@ -167,12 +167,17 @@ void main() {
           ['graph', 'flood', 'flood']);
       expect(plan(contact(), budget: 3, graphRoutes: routes).first.pathBytes,
           best.pathBytes);
-      expect(kinds(plan(contact(), budget: 5, graphRoutes: routes)),
-          ['graph', 'flood', 'flood', 'flood', 'flood']);
+      // 7% clears the 5% cutoff; 3.5% does not.
+      expect(
+          [
+            for (final s in plan(contact(), budget: 5, graphRoutes: routes))
+              s.useFlood ? 'flood' : s.pathBytes
+          ],
+          [best.pathBytes, alt1.pathBytes, 'flood', 'flood', 'flood']);
     });
 
     test('later routes below the delivery threshold are skipped', () {
-      final weak = graph([0x11, 0x11, 0x10, 0x00], 0.1);
+      final weak = graph([0x11, 0x11, 0x10, 0x00], 0.04);
       final ladder = plan(contact(), budget: 5, graphRoutes: [g1, weak, g2]);
       expect([for (final s in ladder) s.useFlood ? 'flood' : s.pathBytes], [
         g1.pathBytes,

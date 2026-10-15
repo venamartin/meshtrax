@@ -5,8 +5,10 @@ import 'contact.dart';
 const int recentAttemptDiversityWindow = 2;
 
 /// Pathfinder's second and later routes below this delivery estimate are
-/// not tried; its best route always is.
-const double minRouteDelivery = 0.2;
+/// not tried; its best route always is. Low on purpose: a route Pathfinder
+/// knows beats a flood, and links nobody has sent on score 0.5 each, so a
+/// four-hop route starts near 7% (owner, 2026-10-14).
+const double minRouteDelivery = 0.05;
 
 /// Who chose a route: the firmware's learned `out_path`, the path graph
 /// (Pathfinder), or the user's override.
