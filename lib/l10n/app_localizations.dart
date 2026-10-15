@@ -2968,6 +2968,12 @@ abstract class AppLocalizations {
   /// **'CLI'**
   String get debugFrame_textTypeCli;
 
+  /// No description provided for @debugFrame_textTypeCliCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI command'**
+  String get debugFrame_textTypeCliCommand;
+
   /// No description provided for @debugFrame_textTypePlain.
   ///
   /// In en, this message translates to:

@@ -227,11 +227,13 @@ const int cmdSendChannelData = 62;
 const int cmdSetDefaultFloodScope = 63;
 const int cmdGetDefaultFloodScope = 64;
 const int cmdSendRawPacket = 65;
+const int cmdRunCliCommand = 66; // firmware ver 14+
 
 // Text message types
 const int txtTypePlain = 0;
-const int txtTypeCliData = 1;
+const int txtTypeCliData = 1; // command to a repeater/room/sensor, or any CLI reply
 const int txtTypeSigned = 2;
+const int txtTypeCliCommand = 3; // command to a companion, firmware ver 14+
 
 // Repeater request types (for server requests)
 const int reqTypeGetStatus = 0x01;
@@ -269,6 +271,7 @@ const int respCodeStats = 24;
 const int respCodeAutoAddConfig = 25;
 const int respCodeChannelDataRecv = 27;
 const int respCodeDefaultFloodScope = 28;
+const int respCodeCliReply = 29;
 
 const int errCodeTableFull = 3;
 
@@ -426,6 +429,7 @@ const int contactFlagFavorite = 0x01;
 const int contactFlagTeleBase = 0x02; // 'base' permission includes battery
 const int contactFlagTeleLoc = 0x04;
 const int contactFlagTeleEnv = 0x08; //access environment sensors
+const int contactFlagRemoteCli = 0x10; // may run CLI commands on our radio, ver 14+
 const int contactPathLenOffset = 35;
 const int contactPathOffset = 36;
 const int contactNameOffset = 100;
@@ -706,11 +710,15 @@ Uint8List buildGetChannelFrame(int channelIndex) {
 
 // Build CMD_SET_CHANNEL frame
 // Format: [cmd][idx][name x32][psk x16]
+// Firmware 1.18+ treats a nameless slot as empty and drops its incoming
+// traffic, so a slot that holds a key is never written without a name.
 Uint8List buildSetChannelFrame(int channelIndex, String name, Uint8List psk) {
+  final hasKey = psk.any((b) => b != 0);
   final writer = BufferWriter();
   writer.writeByte(cmdSetChannel);
   writer.writeByte(channelIndex);
-  writer.writeCString(name, 32);
+  writer.writeCString(
+      name.isEmpty && hasKey ? 'Channel $channelIndex' : name, 32);
   // Write PSK (16 bytes, zero-padded)
   final pskPadded = Uint8List(16);
   for (int i = 0; i < 16 && i < psk.length; i++) {

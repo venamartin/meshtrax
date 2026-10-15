@@ -1551,6 +1551,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get debugFrame_textTypeCli => '命令行';
 
   @override
+  String get debugFrame_textTypeCliCommand => 'CLI command';
+
+  @override
   String get debugFrame_textTypePlain => '纯文本';
 
   @override

@@ -850,6 +850,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   bool get supportsCompanionRadioStats => (_firmwareVerCode ?? 0) >= 8;
 
+  bool get supportsCompanionCli => (_firmwareVerCode ?? 0) >= 14;
+
   bool get radioStatsAirActivityPulse {
     final sw = _airtimeBumpStopwatch;
     if (sw == null || !sw.isRunning) return false;

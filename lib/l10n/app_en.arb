@@ -837,6 +837,7 @@
     }
   },
   "debugFrame_textTypeCli": "CLI",
+  "debugFrame_textTypeCliCommand": "CLI command",
   "debugFrame_textTypePlain": "Plain",
   "debugFrame_text": "- Text: \"{text}\"",
   "@debugFrame_text": {
