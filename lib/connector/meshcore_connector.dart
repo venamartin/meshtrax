@@ -508,6 +508,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
   bool _tcpReconnectPending = false;
+  // A TCP retry's connect attempt is running: its timer is already spent,
+  // so a failed attempt's disconnect must leave the background service to
+  // the retry loop, which re-arms or ends right after.
+  bool _tcpRetryInFlight = false;
   bool _tcpResumeProbeInFlight = false;
   bool _lifecycleObserved = false;
 
@@ -2922,15 +2926,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // backoff counter — remember it so a failed retry keeps backing off
       // instead of hammering at the floor delay.
       final priorAttempts = _reconnectAttempts;
+      _tcpRetryInFlight = true;
       try {
         await connectTcp(host: host, port: port);
       } catch (_) {
         // Already logged by connectTcp; rescheduling handled below.
+      } finally {
+        _tcpRetryInFlight = false;
       }
       if (_state != MeshCoreConnectionState.connected &&
           _reconnectTimer?.isActive != true) {
         _reconnectAttempts = priorAttempts;
         _scheduleTcpReconnect();
+        if (_reconnectTimer?.isActive != true) {
+          unawaited(_backgroundService?.stop());
+        }
       }
     });
   }
@@ -3158,7 +3168,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _scheduleTcpReconnect();
     }
     // The service only has a job while a reconnect is pending.
-    if (_reconnectTimer?.isActive != true) {
+    if (_reconnectTimer?.isActive != true && (manual || !_tcpRetryInFlight)) {
       unawaited(_backgroundService?.stop());
     }
   }
