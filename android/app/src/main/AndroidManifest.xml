@@ -16,6 +16,11 @@
     <!-- Foreground service permission for background BLE -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <!-- Android 14+ refuses a connectedDevice service unless the app also
+         holds one of a few permissions. Bluetooth is granted only after a
+         scan, so a TCP-only user would have none: this normal permission
+         (granted at install) covers them. -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- Camera permission for QR code scanning -->
     <uses-permission android:name="android.permission.CAMERA"/>

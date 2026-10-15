@@ -1,3 +1,4 @@
+import '../utils/app_logger.dart';
 import '../utils/platform_info.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
@@ -41,12 +42,16 @@ class BackgroundService {
     // without the lock; restart it with the right options.
     if (running) await FlutterForegroundTask.stopService();
     await initialize(wifiLock: wifiLock);
-    await FlutterForegroundTask.startService(
+    final result = await FlutterForegroundTask.startService(
       notificationTitle: 'MeshTrax running',
       notificationText: 'Keeping radio connected',
       notificationIcon: const NotificationIcon(metaDataName: 'com.meshtrax.notification.icon'),
       callback: startCallback,
     );
+    if (result is ServiceRequestFailure) {
+      appLogger.warn('Background service did not start: ${result.error}',
+          tag: 'Background');
+    }
   }
 
   Future<void> stop() async {
