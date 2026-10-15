@@ -277,6 +277,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _onAttemptStarted(Contact contact, PathSelection selection, int attempt) {
+    // A direct send never comes back as a flood echo.
+    if (!selection.useFlood) return;
     _adapter?.noteAttempt(
         int.parse(contact.publicKeyHex.substring(0, 2), radix: 16), attempt);
   }

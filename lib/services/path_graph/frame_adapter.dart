@@ -120,6 +120,11 @@ class _Attempt {
   final int contactByte;
   final int index;
   final Set<String> credited = {};
+
+  /// A newer attempt to the same contact started, or their ACK arrived:
+  /// no further echo is credited to this one. What it already credited
+  /// still counts for [PathLabAdapter.echoAlreadyProved].
+  bool closed = false;
 }
 
 class _FloodMessage {
@@ -331,13 +336,21 @@ class PathLabAdapter {
   /// that follows must not prove the same hop a second time.
   final Map<String, DateTime> _loginEchoCredited = {};
 
-  /// The retry ladder is about to send [attemptIndex] to the contact whose
-  /// first key byte is [contactByte].
+  /// The retry ladder is about to flood [attemptIndex] to the contact
+  /// whose first key byte is [contactByte]. Only floods come back as
+  /// echoes; a direct send never opens a window.
   void noteAttempt(int contactByte, int attemptIndex) {
     final now = DateTime.now();
     _attempts.removeWhere((a) => now.difference(a.at) > _attemptWindow);
+    _closeAttempts(contactByte);
     _attempts.add(_Attempt(now, contactByte, attemptIndex));
     if (_attempts.length > _attemptCap) _attempts.removeAt(0);
+  }
+
+  void _closeAttempts(int contactByte) {
+    for (final a in _attempts) {
+      if (a.contactByte == contactByte) a.closed = true;
+    }
   }
 
   /// Did an echo already prove [hopHex] hears me for a send to
@@ -397,9 +410,12 @@ class PathLabAdapter {
 
     if (packet.payloadType != _payloadTypeTxtMsg) return;
     if (packet.payload.length < 2 || packet.payload[1] != myByte) return;
+    // [X][X]: a contact sharing my first byte sends me the same two bytes
+    // as I send them. It cannot be told apart, so it proves nothing.
+    if (packet.payload[0] == myByte) return;
     _attempts.removeWhere((a) => now.difference(a.at) > _attemptWindow);
     final attempt = _attempts
-        .where((a) => a.contactByte == packet.payload[0])
+        .where((a) => a.contactByte == packet.payload[0] && !a.closed)
         .lastOrNull;
     if (attempt == null || attempt.credited.contains(firstHop)) return;
     attempt.credited.add(firstHop);
@@ -620,10 +636,11 @@ class PathLabAdapter {
         packet.payloadType != _payloadTypePath) {
       return;
     }
-    if (packet.payload.length < 2 ||
-        packet.payload[0] != int.parse(self.substring(0, 2), radix: 16)) {
-      return;
-    }
+    final myByte = int.parse(self.substring(0, 2), radix: 16);
+    if (packet.payload.length < 2 || packet.payload[0] != myByte) return;
+    // From a contact sharing my first byte it looks exactly like my own
+    // echo to them: it says nothing about whose doorstep it crossed.
+    if (packet.payload[1] == myByte) return;
     final now = DateTime.now();
     _floodMessages.removeWhere(
         (m) => now.difference(m.at) > _floodMessageWindow);
@@ -641,6 +658,8 @@ class PathLabAdapter {
   void attributeAck(String contactPubkeyHex, int ackHash) {
     final who = contactPubkeyHex.substring(0, 12).toUpperCase();
     final now = DateTime.now();
+    // Delivered: later floods matching these bytes are not this send.
+    _closeAttempts(int.parse(contactPubkeyHex.substring(0, 2), radix: 16));
     _floodAcks.removeWhere((a) => now.difference(a.at) > _floodMessageWindow);
     final matches = _floodAcks.where((a) => a.hash == ackHash).toList();
     if (matches.isEmpty) {

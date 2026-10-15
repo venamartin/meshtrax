@@ -280,6 +280,33 @@ void main() {
       expect(graph.egressCandidates(), isEmpty);
     });
 
+    test('a contact sharing my first byte: [X][X] proves nothing', () {
+      // My key and theirs both start 0xAB: my DM to them and theirs to me
+      // carry the same two address bytes.
+      adapter.noteAttempt(0xAB, 0);
+      adapter.handleFrame(rxFrame(
+          payloadType: 0x02, path: [0xA2, 0x77], payload: [0xAB, 0xAB, 7, 7]));
+      expect(mine()['A277']!.proven, isFalse);
+    });
+
+    test('their ACK closes the window: a later matching flood is not mine',
+        () {
+      adapter.noteAttempt(0x5B, 0);
+      adapter.attributeAck(bobPk, 0x12345678);
+      adapter.handleFrame(rxFrame(
+          payloadType: 0x02, path: [0xA2, 0x77], payload: [0x5B, 0xAB, 7, 7]));
+      expect(mine()['A277']!.proven, isFalse);
+    });
+
+    test('a closed attempt still remembers what it proved', () {
+      adapter.noteAttempt(0x5B, 0);
+      adapter.handleFrame(rxFrame(
+          payloadType: 0x02, path: [0xA2, 0x77], payload: [0x5B, 0xAB, 7, 7]));
+      adapter.noteAttempt(0x5B, 1);
+      expect(adapter.echoAlreadyProved(bobPk, 'A277'), isTrue,
+          reason: 'the delivery that follows must not prove A277 again');
+    });
+
     test('my own login echo is mine by its full key, no gate needed', () {
       final me = List<int>.filled(32, 0xAB);
       adapter.handleFrame(rxFrame(
@@ -490,6 +517,14 @@ void main() {
       adapter.attributeContactMessage(sender, 0x42, 32);
       expect(weightOf('A277'), closeTo(3.0, 0.01), reason: 'the packet was consumed');
       expect(adapter.packetLog.first.verdict, contains('no logged packet'));
+    });
+
+    test('a sender sharing my first byte is not credited from [X][X]', () {
+      final twin = 'ab' * 31 + 'cd';
+      // Could be my own echo to them, or theirs to me: not kept.
+      adapter.handleFrame(dm(path: [0xA2, 0x77, 0x13, 0x12], src: 0xAB));
+      adapter.attributeContactMessage(twin, 0x42, 32);
+      expect(graph.ingressCandidates(twin), isEmpty);
     });
 
     test('a weak signal (negative SNR) still matches', () {
