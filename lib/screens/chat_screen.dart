@@ -767,7 +767,8 @@ class _ChatScreenState extends State<ChatScreen> {
               : visibleMessages.toList();
           return Column(
             children: [
-              ?ConnectionStatusBanner.ifDisconnected(context, connector),
+              ?ConnectionStatusBanner.ifDisconnected(context, connector) ??
+                  ConnectionStatusBanner.ifSecondApp(context, connector),
               if (_isRoom) ?_buildClockSkewBanner(connector),
               Expanded(
                 child: Stack(

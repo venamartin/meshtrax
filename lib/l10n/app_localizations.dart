@@ -7325,6 +7325,12 @@ abstract class AppLocalizations {
   /// **'Allow'**
   String get contact_remoteCliAllow;
 
+  /// No description provided for @connection_secondApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.'**
+  String get connection_secondApp;
+
   /// No description provided for @wifi_title.
   ///
   /// In en, this message translates to:
