@@ -837,6 +837,7 @@
     }
   },
   "debugFrame_textTypeCli": "CLI",
+  "debugFrame_textTypeCliCommand": "CLI command",
   "debugFrame_textTypePlain": "Plain",
   "debugFrame_text": "- Text: \"{text}\"",
   "@debugFrame_text": {
@@ -2329,5 +2330,131 @@
   "room_reloadPosts": "Reload recent posts",
   "room_reloadPostsExplain": "Asks the room to send its recent posts again (it keeps up to 32). You'll be asked to log in with the room password. Messages you already have are kept.",
   "room_reloadFailed": "Couldn't reset the room on the radio",
+  "companionCli_title": "Command line",
+  "companionCli_settingsSubtitle": "Type text commands for this radio",
+  "companionCli_rebooting": "Restarting the radio…",
+  "companionCli_cancelled": "Cancelled",
+  "companionCli_poweringOff": "Turning the radio off…",
+  "companionCli_noReply": "No reply from the radio. Try again.",
+  "companionCli_powerOffTitle": "Turn the radio off?",
+  "companionCli_powerOffBody": "It stays off until you press its button or plug it in.",
+  "companionCli_powerOff": "Turn off",
+  "companionCli_quickBoard": "Board",
+  "companionCli_quickWifiStatus": "WiFi status",
+  "companionCli_quickWifiAddress": "WiFi address",
+  "companionCli_helpBoard": "Shows the board's maker and model.",
+  "companionCli_helpReboot": "Restarts the radio.",
+  "companionCli_helpPowerOff": "Turns the radio off.",
+  "companionCli_helpSetPin": "Sets the Bluetooth pairing PIN. Applies after a restart.",
+  "companionCli_helpSetTzOffset": "Sets the hours added to UTC for the clock on the radio's own screen (-12 to +14).",
+  "companionCli_helpSetTx": "Sets the transmit power in dBm. Applies at once.",
+  "companionCli_helpSetIntThresh": "Sets the interference threshold in dB. 0 turns interference detection off.",
+  "companionCli_helpSetCad": "Listens for other radios before sending (channel activity detection).",
+  "companionCli_helpSetRxGain": "Boosted receive gain, on SX126x radios.",
+  "companionCli_helpSetPathHashMode": "Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.",
+  "companionCli_helpWifiStatus": "Shows whether the radio is on the WiFi network.",
+  "companionCli_helpWifiIp": "Shows the radio's address on the WiFi network.",
+  "companionCli_helpWifiSsid": "Sets the WiFi network name. Applies after a restart.",
+  "companionCli_helpWifiPwd": "Sets the WiFi password. Applies after a restart.",
+  "companionCli_helpWifiEnabled": "Turns WiFi on (1) or off (0). Applies after a restart.",
+  "companionCli_helpWifiClear": "Forgets the WiFi network. Applies after a restart.",
+  "companionCli_remoteNoReply": "No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.",
+  "companionCli_remoteSentNoAnswer": "Sent. A radio does not answer a restart or power-off.",
+  "companionCli_blocked": "{name} tried to use your radio's command line: \"{command}\". It was not allowed.",
+  "@companionCli_blocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "command": {
+        "type": "String"
+      }
+    }
+  },
+  "companionCli_blockedBody": "Tried to use your radio's command line: \"{command}\". It was not allowed.",
+  "@companionCli_blockedBody": {
+    "placeholders": {
+      "command": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_remoteCli": "Allow remote command line",
+  "contact_remoteCliSubtitle": "Lets this contact run commands on your radio",
+  "contact_remoteCliWarningTitle": "Let {name} control your radio?",
+  "@contact_remoteCliWarningTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_remoteCliWarning": "{name} will be able to change your radio's settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.",
+  "@contact_remoteCliWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_remoteCliAllow": "Allow",
+  "wifi_title": "WiFi",
+  "wifi_settingsSubtitle": "Network, password and connection",
+  "wifi_use": "Use WiFi",
+  "wifi_networkName": "Network name",
+  "wifi_password": "Password",
+  "wifi_passwordUnchanged": "Unchanged",
+  "wifi_showPassword": "Show password",
+  "wifi_nameMissing": "Enter the network name",
+  "wifi_nameTooLong": "The network name is too long (32 bytes at most)",
+  "wifi_passwordTooLong": "The password is too long (63 bytes at most)",
+  "wifi_savedRestart": "Saved. WiFi changes apply after the radio restarts.",
+  "wifi_forget": "Forget network",
+  "wifi_forgetConfirm": "Forget this WiFi network? The radio stops using WiFi after it restarts.",
+  "wifi_notAccepted": "The radio did not accept that: {reply}",
+  "@wifi_notAccepted": {
+    "placeholders": {
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "wifi_noReply": "No reply from the radio. Try again.",
+  "wifi_restartTitle": "Restart the radio?",
+  "wifi_later": "Later",
+  "wifi_loadFailed": "Could not read the WiFi settings from the radio.",
+  "wifi_connectedTo": "Connected · {address}",
+  "@wifi_connectedTo": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "wifi_notConnected": "Not connected to WiFi",
+  "wifi_portNote": "Apps on the same network can connect on port {port}",
+  "@wifi_portNote": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "wifi_connectOverWifi": "Connect over WiFi",
+  "wifi_connectOverWifiBody": "MeshTrax will disconnect from this radio and open the TCP screen with {address}, port {port} filled in. Tap Connect there.",
+  "@wifi_connectOverWifiBody": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      },
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "wifi_noteRestart": "Changes apply after the radio restarts.",
+  "wifi_noteSecurity": "Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.",
+  "wifi_noteBattery": "WiFi keeps the radio awake, so the battery runs down faster.",
+  "wifi_noteWrongPassword": "If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.",
   "room_selfDemoteWarning": "You're changing your own access. If you drop your admin role, only the room's own console can give it back."
 }
