@@ -3399,6 +3399,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get contacts_contactImportFailed => 'Контакт не вдалося імпортувати';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name вже є у ваших контактах.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Реклама без перехоплення';
 
   @override

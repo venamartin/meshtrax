@@ -209,7 +209,7 @@ class _ChatScreenState extends State<ChatScreen> {
   int? _roomRole(MeshCoreConnector connector) {
     if (!_isRoom) return null;
     final live =
-        connector.lastRoomLoginEvent(widget.contact.publicKeyHex)?.role;
+        connector.lastMeasuredRoomLogin(widget.contact.publicKeyHex)?.role;
     return live ?? (_storedRoomPerms == null ? null : _storedRoomPerms! & 0x3);
   }
 
@@ -1083,7 +1083,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget? _buildClockSkewBanner(MeshCoreConnector connector) {
     if (_clockBannerDismissed) return null;
     final event =
-        connector.lastRoomLoginEvent(widget.contact.publicKeyHex);
+        connector.lastMeasuredRoomLogin(widget.contact.publicKeyHex);
     final serverClock = event?.serverClock;
     if (event == null || serverClock == null) return null;
     // The measurement comes from the last login. After a fix was sent, stay

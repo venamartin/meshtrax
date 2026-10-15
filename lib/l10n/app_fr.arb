@@ -1497,6 +1497,7 @@
   "contacts_contactImported": "Le contact a été importé.",
   "contacts_floodAdvert": "Annonce à tout le réseau",
   "contacts_contactImportFailed": "Échec de l'importation du contact.",
+  "contacts_alreadyInContacts": "{name} est déjà dans vos contacts.",
   "contacts_zeroHopAdvert": "Annonce Zero saut",
   "contacts_copyAdvertToClipboard": "Copier l'annonce dans le presse-papiers",
   "contacts_addContactFromClipboard": "Ajouter un contact depuis le presse-papiers",

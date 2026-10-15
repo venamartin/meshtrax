@@ -1501,6 +1501,7 @@
   "contacts_ShareContact": "Copia contatto negli Appunti",
   "contacts_contactImported": "Il contatto è stato importato.",
   "contacts_contactImportFailed": "Contatto non importato con successo.",
+  "contacts_alreadyInContacts": "{name} è già nei tuoi contatti.",
   "contacts_zeroHopContactAdvertSent": "Inviato contatto tramite annuncio.",
   "contacts_contactAdvertCopyFailed": "Copia dell'annuncio nella Clipboard non riuscita.",
   "contacts_ShareContactZeroHop": "Condividi contatto tramite annuncio",

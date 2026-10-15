@@ -1497,6 +1497,7 @@
   "contacts_floodAdvert": "Anuncio de inundación",
   "contacts_contactImported": "El contacto ha sido importado.",
   "contacts_contactImportFailed": "Contacto no se importó correctamente.",
+  "contacts_alreadyInContacts": "{name} ya está en tus contactos.",
   "contacts_zeroHopAdvert": "Anuncio de Zero Hop",
   "contacts_ShareContactZeroHop": "Compartir contacto por anuncio",
   "contacts_ShareContact": "Copiar contacto al Portapapeles",

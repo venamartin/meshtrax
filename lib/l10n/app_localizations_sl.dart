@@ -3378,6 +3378,11 @@ class AppLocalizationsSl extends AppLocalizations {
   String get contacts_contactImportFailed => 'Kontakt ni bil uspešno uvožen.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name je že med vašimi stiki.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Reklama brez posrednikov';
 
   @override

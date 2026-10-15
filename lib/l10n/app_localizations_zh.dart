@@ -3207,6 +3207,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contacts_contactImportFailed => '导入联系人失败。';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name 已在你的联系人中。';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => '发送零跳广播';
 
   @override

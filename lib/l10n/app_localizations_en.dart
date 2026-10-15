@@ -3347,6 +3347,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contacts_contactImportFailed => 'Failed to import contact.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name is already in your contacts.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Zero Hop Advert';
 
   @override

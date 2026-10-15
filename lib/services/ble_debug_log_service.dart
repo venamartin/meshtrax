@@ -54,13 +54,22 @@ class BleDebugLogService extends ChangeNotifier {
   void logFrame(Uint8List frame, {required bool outgoing, String? note}) {
     if (frame.isEmpty) return;
     final code = frame[0];
-    final description = _describeFrame(code, frame, outgoing, note);
+    // The log is copied into bug reports: secrets never enter it.
+    final keep = _secretOffset(code, frame.length, outgoing);
+    final redacted = keep != null;
+    final stored = redacted ? frame.sublist(0, keep) : frame;
+    final description = _describeFrame(
+      code,
+      stored,
+      outgoing,
+      redacted ? [?note, 'secret redacted'].join(' • ') : note,
+    );
     _entries.add(
       BleDebugLogEntry(
         timestamp: DateTime.now(),
         outgoing: outgoing,
         description: description,
-        payload: Uint8List.fromList(frame),
+        payload: Uint8List.fromList(stored),
       ),
     );
 
@@ -81,6 +90,21 @@ class BleDebugLogService extends ChangeNotifier {
     }
 
     _notifyListenersSafely();
+  }
+
+  /// Where the secret starts in a frame that carries one, or null. The
+  /// radio's private key follows the code byte; a channel's 16-byte secret
+  /// follows its index and 32-byte name.
+  static int? _secretOffset(int code, int length, bool outgoing) {
+    final isKey = outgoing
+        ? code == cmdImportPrivateKey
+        : code == respCodePrivateKey;
+    if (isKey) return 1;
+    final isChannel = outgoing
+        ? code == cmdSetChannel
+        : code == respCodeChannelInfo;
+    if (isChannel && length > 34) return 34;
+    return null;
   }
 
   void clear() {
@@ -176,6 +200,10 @@ class BleDebugLogService extends ChangeNotifier {
         return 'CMD_SET_CUSTOM_VAR';
       case cmdSendTracePath:
         return 'CMD_SEND_TRACE_PATH';
+      case cmdExportPrivateKey:
+        return 'CMD_EXPORT_PRIVATE_KEY';
+      case cmdImportPrivateKey:
+        return 'CMD_IMPORT_PRIVATE_KEY';
       default:
         return null;
     }
@@ -215,6 +243,8 @@ class BleDebugLogService extends ChangeNotifier {
         return 'RESP_CODE_CHANNEL_INFO';
       case respCodeAutoAddConfig:
         return 'RESP_CODE_AUTO_ADD_CONFIG';
+      case respCodePrivateKey:
+        return 'RESP_CODE_PRIVATE_KEY';
       case pushCodeTraceData:
         return 'PUSH_CODE_TRACE_DATA';
       default:

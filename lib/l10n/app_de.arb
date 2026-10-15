@@ -1499,6 +1499,7 @@
   "appSettings_enableMessageTracingSubtitle": "Detaillierte Routing- und Timing-Metadaten für Nachrichten anzeigen",
   "contacts_contactImported": "Kontakt wurde importiert.",
   "contacts_contactImportFailed": "Kontakt konnte nicht importiert werden",
+  "contacts_alreadyInContacts": "{name} ist bereits in Ihren Kontakten.",
   "contacts_zeroHopAdvert": "Zero-Hop-Ankündigung",
   "contacts_floodAdvert": "Flut-Ankündigung",
   "contacts_addContactFromClipboard": "Kontakt aus Zwischenablage hinzufügen",

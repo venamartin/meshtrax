@@ -3396,6 +3396,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get contacts_contactImportFailed => 'Contato falhou ao ser importado.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name já está nos seus contatos.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Anúncio Zero Hop';
 
   @override

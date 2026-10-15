@@ -1775,6 +1775,7 @@
   "contacts_invalidAdvertFormat": "Érvénytelen kontaktinformáció",
   "contacts_contactImported": "Kapcsolat létrejött.",
   "contacts_contactImportFailed": "Nem sikerült a kapcsolatot importálni.",
+  "contacts_alreadyInContacts": "{name} már szerepel a névjegyeid között.",
   "contacts_zeroHopAdvert": "Zero Hop reklám",
   "contacts_floodAdvert": "Árvízre vonatkozó hirdetés",
   "contacts_copyAdvertToClipboard": "Másolja a hirdetést a kiválasztási ablakba",

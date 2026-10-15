@@ -1961,6 +1961,12 @@
   "contacts_invalidAdvertFormat": "Invalid contact data",
   "contacts_contactImported": "Contact has been imported.",
   "contacts_contactImportFailed": "Failed to import contact.",
+  "contacts_alreadyInContacts": "{name} is already in your contacts.",
+  "@contacts_alreadyInContacts": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
   "contacts_zeroHopAdvert": "Zero Hop Advert",
   "contacts_floodAdvert": "Flood Advert",
   "contacts_copyAdvertToClipboard": "Copy Advert to Clipboard",
