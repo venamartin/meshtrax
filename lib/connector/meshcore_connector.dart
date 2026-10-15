@@ -113,10 +113,12 @@ class DirectRepeater {
   /// hash, because then the hash names neither of them.
   ///
   /// A node heard by hash alone may refresh any single entry that answers to
-  /// it, keyed or not. That only moves an SNR and a timestamp; identity is
-  /// never written from a hash, and requiring a collision *within the handful
-  /// of neighbours we can hear directly* is a far stronger test than requiring
-  /// one across a whole contact book.
+  /// it. That only moves an SNR and a timestamp; identity is never written
+  /// from a hash, and requiring a collision *within the handful of
+  /// neighbours we can hear directly* is a far stronger test than requiring
+  /// one across a whole contact book. A keyed entry needs a hash of at least
+  /// two bytes: one byte names a quarter of the band, and refreshing a keyed
+  /// row from it put another repeater's level next to its own answer.
   static DirectRepeater? findTracked(
     List<DirectRepeater> tracked, {
     Uint8List? fullKey,
@@ -132,7 +134,11 @@ class DirectRepeater {
           .toList();
       return adoptable.length == 1 ? adoptable.first : null;
     }
-    final matches = tracked.where((r) => r.matchesHash(hashPrefix)).toList();
+    final matches = tracked
+        .where((r) =>
+            r.matchesHash(hashPrefix) &&
+            (r.publicKey == null || hashPrefix.length >= 2))
+        .toList();
     return matches.length == 1 ? matches.first : null;
   }
 
@@ -792,6 +798,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// Counts Discover requests sent; a repeater whose
   /// [DirectRepeater.answeredScan] equals it answered the latest one.
   int get discoverScan => _discoverScan;
+
+  /// Whether [r] was on the nearby list when the latest Discover went out:
+  /// only those rows can have "not answered" it.
+  bool wasAskedByLatestDiscover(DirectRepeater r) => _discoverAsked.contains(r);
+  Set<DirectRepeater> _discoverAsked = Set.identity();
   DateTime? get discoverStartedAt => _discoverStartedAt;
 
   /// How long a Discover listens for answers.
@@ -4824,9 +4835,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     final rand = math.Random();
     final tag = rand.nextInt(0xFFFFFFFF);
-    final previousScan = (_discoverScan, _discoverStartedAt);
+    final previousScan = (_discoverScan, _discoverStartedAt, _discoverAsked);
     _pendingDiscoverTag = tag;
     _discoverScan++;
+    _discoverAsked = Set.identity()..addAll(_directRepeaters);
     _discoverStartedAt = DateTime.now();
     _isDiscovering = true;
     notifyListeners();
@@ -4853,6 +4865,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _pendingDiscoverTag = null;
       _discoverScan = previousScan.$1;
       _discoverStartedAt = previousScan.$2;
+      _discoverAsked = previousScan.$3;
       notifyListeners();
     }
   }

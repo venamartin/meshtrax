@@ -11,11 +11,17 @@ import 'package:meshtrax/widgets/nearby_repeaters_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Connector extends MeshCoreConnector {
-  _Connector(this.rows, {this.scan = 0, this.startedAt});
+  _Connector(this.rows, {this.scan = 0, this.startedAt, Set<DirectRepeater>? asked})
+      : asked = asked ?? rows.toSet();
 
   final List<DirectRepeater> rows;
   final int scan;
   final DateTime? startedAt;
+  // Rows on the list when the latest Discover went out (all, by default).
+  final Set<DirectRepeater> asked;
+
+  @override
+  bool wasAskedByLatestDiscover(DirectRepeater r) => asked.contains(r);
 
   @override
   List<DirectRepeater> get directRepeaters => rows;
@@ -92,6 +98,25 @@ void main() {
         .toList();
     expect(names.first, 'R${0x30}');
 
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a row first heard after the Discover is not counted as silent',
+      (tester) async {
+    final answered = _repeater(0x30, 2.0, up: 6.5, scan: 2);
+    final silent = _repeater(0x10, 9.0);
+    final later = _repeater(0x50, 4.0);
+    final c = _Connector(
+      [answered, silent, later],
+      scan: 2,
+      startedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      asked: {answered, silent},
+    );
+    await _open(tester, c);
+    expect(
+      find.text("1 repeater answered your Discover (1m ago) · 1 didn't answer"),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox());
   });
 

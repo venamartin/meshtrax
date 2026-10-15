@@ -83,7 +83,9 @@ class NearbyRepeatersDialog extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _status(context, answered.length, others.length),
+        // Only rows that were there to be asked can have not answered.
+        _status(context, answered.length,
+            others.where(connector.wasAskedByLatestDiscover).length),
         const SizedBox(height: 12),
         Row(
           children: [
