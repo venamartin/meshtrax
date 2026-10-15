@@ -1779,6 +1779,7 @@
   "contacts_invalidAdvertFormat": "無効な連絡先情報",
   "contacts_contactImported": "連絡先が登録されました。",
   "contacts_contactImportFailed": "連絡先のインポートに失敗しました。",
+  "contacts_alreadyInContacts": "{name} はすでに連絡先にあります。",
   "contacts_zeroHopAdvert": "ゼロホップ広告",
   "contacts_floodAdvert": "洪水に関する広告",
   "contacts_copyAdvertToClipboard": "広告をクリップボードにコピー",

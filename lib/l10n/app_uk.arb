@@ -1496,6 +1496,7 @@
   "contacts_invalidAdvertFormat": "Недійсні контактні дані",
   "contacts_contactImported": "Контакт було імпортовано.",
   "contacts_contactImportFailed": "Контакт не вдалося імпортувати",
+  "contacts_alreadyInContacts": "{name} вже є у ваших контактах.",
   "contacts_zeroHopAdvert": "Реклама без перехоплення",
   "contacts_floodAdvert": "Залив реклами",
   "contacts_copyAdvertToClipboard": "Копіювати оголошення в буфер обміну",

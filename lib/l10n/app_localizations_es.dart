@@ -3414,6 +3414,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Contacto no se importó correctamente.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name ya está en tus contactos.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Anuncio de Zero Hop';
 
   @override

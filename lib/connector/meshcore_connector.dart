@@ -354,8 +354,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<RoomLoginEvent> get roomLoginEvents =>
       _roomLoginEventsController.stream;
 
+  // Last full (14-byte) LOGIN_OK per room: the server's clock and the
+  // permissions byte. Kept apart from the session events: a pushed post
+  // proves the session but carries neither, and must not erase them.
+  final Map<String, RoomLoginEvent> _lastMeasuredRoomLogins = {};
+
   RoomLoginEvent? lastRoomLoginEvent(String pubKeyHex) =>
       _lastRoomLoginEvents[pubKeyHex];
+
+  /// The last LOGIN_OK from this room that carried its clock and
+  /// permissions, this session.
+  RoomLoginEvent? lastMeasuredRoomLogin(String pubKeyHex) =>
+      _lastMeasuredRoomLogins[pubKeyHex];
 
   /// The room server's clock minus ours, in seconds, from the last LOGIN_OK
   /// that carried a clock; 0 for a room not yet measured this session; null
@@ -364,13 +374,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// and the stamp every other member holds for it.
   int? roomSkewSecs(Contact? contact) {
     if (contact?.type != advTypeRoom) return null;
-    final event = _lastRoomLoginEvents[contact!.publicKeyHex];
+    final event = _lastMeasuredRoomLogins[contact!.publicKeyHex];
     final clock = event?.serverClock;
     return clock == null ? 0 : clock.difference(event!.at).inSeconds;
   }
 
   void _recordRoomLoginEvent(RoomLoginEvent event) {
     _lastRoomLoginEvents[event.roomKeyHex] = event;
+    if (event.success && event.permissions != null) {
+      _lastMeasuredRoomLogins[event.roomKeyHex] = event;
+    }
     _roomLoginEventsController.add(event);
     // The chat screen's role badge and clock-skew banner read the last
     // event from a Consumer build.
@@ -495,6 +508,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
   bool _tcpReconnectPending = false;
+  // A TCP retry's connect attempt is running: its timer is already spent,
+  // so a failed attempt's disconnect must leave the background service to
+  // the retry loop, which re-arms or ends right after.
+  bool _tcpRetryInFlight = false;
   bool _tcpResumeProbeInFlight = false;
   bool _lifecycleObserved = false;
 
@@ -552,6 +569,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _contactSyncSince = 0;
   int _contactSyncRadioTotal = 0;
   bool _contactFullResyncPending = false;
+  // A full contact download asked for while a partial one was streaming.
+  bool _fullContactSyncAfterStream = false;
   // Route overrides of the list a full download is replacing, by key; each
   // is put back on its contact as the radio's frame for it arrives.
   Map<String, Contact> _overridesAcrossRefresh = {};
@@ -2907,15 +2926,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // backoff counter — remember it so a failed retry keeps backing off
       // instead of hammering at the floor delay.
       final priorAttempts = _reconnectAttempts;
+      _tcpRetryInFlight = true;
       try {
         await connectTcp(host: host, port: port);
       } catch (_) {
         // Already logged by connectTcp; rescheduling handled below.
+      } finally {
+        _tcpRetryInFlight = false;
       }
       if (_state != MeshCoreConnectionState.connected &&
           _reconnectTimer?.isActive != true) {
         _reconnectAttempts = priorAttempts;
         _scheduleTcpReconnect();
+        if (_reconnectTimer?.isActive != true) {
+          unawaited(_backgroundService?.stop());
+        }
       }
     });
   }
@@ -3064,6 +3089,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
+    _lastMeasuredRoomLogins.clear();
     _roomRouteRelearnAt.clear();
     _roomClockSyncSentAt.clear();
     // Connection-scoped channel state. Pending buffers are KEPT: the radio's
@@ -3120,6 +3146,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
+    _fullContactSyncAfterStream = false;
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
@@ -3141,7 +3168,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _scheduleTcpReconnect();
     }
     // The service only has a job while a reconnect is pending.
-    if (_reconnectTimer?.isActive != true) {
+    if (_reconnectTimer?.isActive != true && (manual || !_tcpRetryInFlight)) {
       unawaited(_backgroundService?.stop());
     }
   }
@@ -3448,6 +3475,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> getContacts({int? since, bool preserveExisting = false}) async {
     if (!isConnected) return;
+    // The radio streams one contact list at a time and refuses a second
+    // request mid-stream (ERR_CODE_BAD_STATE) while the first keeps coming.
+    // Clearing here would cut that list short and drop the route choices
+    // stashed for it. A full download already streaming covers this call;
+    // during a partial one, a full request runs when it ends.
+    if (_isLoadingContacts) {
+      if (!preserveExisting && _preserveContactsOnRefresh) {
+        _fullContactSyncAfterStream = true;
+      }
+      return;
+    }
 
     _isLoadingContacts = true;
     _preserveContactsOnRefresh = preserveExisting;
@@ -5251,6 +5289,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
         _isLoadingContacts = false;
         _preserveContactsOnRefresh = false;
+        if (_fullContactSyncAfterStream) {
+          _fullContactSyncAfterStream = false;
+          unawaited(getContacts());
+        }
         unawaited(updateKnownDiscovered());
         notifyListeners();
         unawaited(_persistContacts());
@@ -8885,6 +8927,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncSince = 0;
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
+    _fullContactSyncAfterStream = false;
     _overridesAcrossRefresh = {};
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a

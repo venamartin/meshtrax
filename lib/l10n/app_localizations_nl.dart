@@ -3400,6 +3400,11 @@ class AppLocalizationsNl extends AppLocalizations {
       'Contact kon niet geïmporteerd worden.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name staat al in je contacten.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Zero Hop Reclame';
 
   @override

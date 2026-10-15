@@ -5987,6 +5987,12 @@ abstract class AppLocalizations {
   /// **'Failed to import contact.'**
   String get contacts_contactImportFailed;
 
+  /// No description provided for @contacts_alreadyInContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already in your contacts.'**
+  String contacts_alreadyInContacts(String name);
+
   /// No description provided for @contacts_zeroHopAdvert.
   ///
   /// In en, this message translates to:

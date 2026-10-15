@@ -1498,6 +1498,7 @@
   "appSettings_enableMessageTracingSubtitle": "Prikaži podrobne metapodatke o usmerjanju in časovnem usklajevanju sporočil",
   "contacts_contactImported": "Kontakt je bil uvožen.",
   "contacts_contactImportFailed": "Kontakt ni bil uspešno uvožen.",
+  "contacts_alreadyInContacts": "{name} je že med vašimi stiki.",
   "contacts_zeroHopAdvert": "Reklama brez posrednikov",
   "contacts_floodAdvert": "Poplavna oglás",
   "contacts_invalidAdvertFormat": "Neveljavni kontaktne podatke",

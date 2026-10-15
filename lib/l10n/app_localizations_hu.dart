@@ -3426,6 +3426,11 @@ class AppLocalizationsHu extends AppLocalizations {
       'Nem sikerült a kapcsolatot importálni.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name már szerepel a névjegyeid között.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Zero Hop reklám';
 
   @override

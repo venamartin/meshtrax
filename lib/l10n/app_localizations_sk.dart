@@ -3392,6 +3392,11 @@ class AppLocalizationsSk extends AppLocalizations {
       'Kontakt sa nepodarilo importovať.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name už je vo vašich kontaktoch.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Inzerát Zero Hop';
 
   @override

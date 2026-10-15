@@ -1779,6 +1779,7 @@
   "contacts_invalidAdvertFormat": "유효하지 않은 연락 정보",
   "contacts_contactImported": "연락이 수신되었습니다.",
   "contacts_contactImportFailed": "연락처를 가져오지 못했습니다.",
+  "contacts_alreadyInContacts": "{name}은(는) 이미 연락처에 있습니다.",
   "contacts_zeroHopAdvert": "제로 홉 광고",
   "contacts_floodAdvert": "홍수 광고",
   "contacts_copyAdvertToClipboard": "광고 텍스트를 클립보드에 복사",

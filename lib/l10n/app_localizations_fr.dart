@@ -3427,6 +3427,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Échec de l\'importation du contact.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name est déjà dans vos contacts.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Annonce Zero saut';
 
   @override

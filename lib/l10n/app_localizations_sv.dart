@@ -3377,6 +3377,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contacts_contactImportFailed => 'Kontakt kunde inte importeras.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name finns redan bland dina kontakter.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Reklam med nollhopp';
 
   @override

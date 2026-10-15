@@ -3411,6 +3411,11 @@ class AppLocalizationsBg extends AppLocalizations {
       'Контактът не е успешно импортиран.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name вече е в контактите ви.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => 'Реклама без скок';
 
   @override

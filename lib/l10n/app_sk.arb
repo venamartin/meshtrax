@@ -1495,6 +1495,7 @@
   "contacts_clipboardEmpty": "Schránka je prázdna.",
   "appSettings_languageUk": "Ukrajinská",
   "contacts_contactImportFailed": "Kontakt sa nepodarilo importovať.",
+  "contacts_alreadyInContacts": "{name} už je vo vašich kontaktoch.",
   "contacts_zeroHopAdvert": "Inzerát Zero Hop",
   "contacts_floodAdvert": "Inzerát povodní",
   "contacts_copyAdvertToClipboard": "Kopírovať reklamu do schránky",

@@ -3282,6 +3282,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_contactImportFailed => '연락처를 가져오지 못했습니다.';
 
   @override
+  String contacts_alreadyInContacts(String name) {
+    return '$name은(는) 이미 연락처에 있습니다.';
+  }
+
+  @override
   String get contacts_zeroHopAdvert => '제로 홉 광고';
 
   @override

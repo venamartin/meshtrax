@@ -769,6 +769,7 @@
   "contacts_pathTraceTo": "Показать маршрут к {name}",
   "contacts_contactImported": "Контакт был импортирован",
   "contacts_contactImportFailed": "Контакт не удалось импортировать",
+  "contacts_alreadyInContacts": "{name} уже есть в ваших контактах.",
   "contacts_invalidAdvertFormat": "Недействительные контактные данные",
   "contacts_zeroHopAdvert": "Реклама Zero Hop",
   "appSettings_languageUk": "Українська",
