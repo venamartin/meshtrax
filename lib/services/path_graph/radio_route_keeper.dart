@@ -93,12 +93,15 @@ class RadioRouteKeeper {
     } else {
       appLogger.info(
           '${contact.name} sent the same message again, so my last ACK '
-          '(${episode.newestDirect ? "on the stored route" : "a flood"}) '
+          '(${episode.newestAckOnRoute ? "on the stored route" : "a flood"}) '
           'never reached them',
           tag: 'PathGraph');
     }
     if (direct) episode.directCopies++;
     episode.newestDirect = direct;
+    // The radio ACKs a direct copy on its stored route, or floods the ACK
+    // when it has none.
+    episode.newestAckOnRoute = direct && contact.pathLength >= 0;
     episode.expiry?.cancel();
     episode.expiry = Timer(episodeWindow, () {
       _episodes.remove(key);
@@ -237,5 +240,6 @@ class _Episode {
   List<PathSelection>? ladder;
   int directCopies = 0;
   bool newestDirect = false;
+  bool newestAckOnRoute = false;
   Timer? expiry;
 }
