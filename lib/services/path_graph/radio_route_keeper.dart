@@ -85,12 +85,11 @@ class RadioRouteKeeper {
     var episode = _episodes[key];
     if (episode == null || episode.message != id) {
       episode?.expiry?.cancel();
-      final ladder = _ladderFor(contact);
-      if (ladder == null) {
+      if (routesFor(contact) == null) {
         _episodes.remove(key);
         return;
       }
-      episode = _episodes[key] = _Episode(id, ladder);
+      episode = _episodes[key] = _Episode(id);
     } else {
       appLogger.info(
           '${contact.name} sent the same message again, so my last ACK '
@@ -196,15 +195,19 @@ class RadioRouteKeeper {
     }
   }
 
+  /// Pathfinder's current best until a retry shows an ACK lost; from the
+  /// first step on, the ladder planned at that step.
   PathSelection? _wanted(Contact contact) {
     final episode = _episodes[_key(contact.publicKeyHex)];
-    if (episode == null) return _ladderFor(contact)?.first;
-    final rung = rungFor(
-        directCopies: episode.directCopies,
-        newestDirect: episode.newestDirect);
-    return rung < episode.ladder.length
-        ? episode.ladder[rung]
-        : PathSelection.flood(radioWidth());
+    final rung = episode == null
+        ? 0
+        : rungFor(
+            directCopies: episode.directCopies,
+            newestDirect: episode.newestDirect);
+    if (rung == 0) return _ladderFor(contact)?.first;
+    final ladder = episode!.ladder ??= _ladderFor(contact);
+    if (ladder == null) return null;
+    return rung < ladder.length ? ladder[rung] : PathSelection.flood(radioWidth());
   }
 
   List<PathSelection>? _ladderFor(Contact contact) {
@@ -227,11 +230,11 @@ class RadioRouteKeeper {
 
 /// The copies of one message from one contact.
 class _Episode {
-  _Episode(this.message, this.ladder);
+  _Episode(this.message);
 
   final String message;
-  // Decided at the first copy, like a send's ladder.
-  final List<PathSelection> ladder;
+  // Planned at the first step down, then kept, like a send's ladder.
+  List<PathSelection>? ladder;
   int directCopies = 0;
   bool newestDirect = false;
   Timer? expiry;

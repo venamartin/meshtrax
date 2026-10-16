@@ -155,6 +155,21 @@ void main() {
     });
   });
 
+  // Field 2026-10-16: the first DM came while Pathfinder knew nothing; my
+  // reply's PATH reply taught it "direct" a second later, but the stored
+  // route stayed cleared for the 3-minute wait.
+  test('a route Pathfinder learns before any retry is used at once', () {
+    fakeAsync((async) {
+      final radio = _Radio([_contact(stored: _pf1)])..routes = [];
+      final carol = radio.contacts.first;
+      radio.copy(async, carol);
+      radio.routes = [_pf1, _pf2];
+      radio.keeper.reassert(carol.publicKeyHex);
+      async.flushMicrotasks();
+      expect(radio.writes, ['CAROL:flood', 'CAROL:PF1']);
+    });
+  });
+
   test('a new message starts again from the best route', () {
     fakeAsync((async) {
       final radio = _Radio([_contact(stored: _pf1)]);
