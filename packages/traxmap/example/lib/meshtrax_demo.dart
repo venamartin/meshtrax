@@ -72,8 +72,10 @@ class _MeshTraxDemoState extends State<MeshTraxDemo> {
   bool _pathMode = false;
   final _path = <_Contact>[];
 
-  String _styleId = Platform.environment['OVM_STYLE'] ?? 'outdoor';
-  bool _dark = false;
+  final MapType _mapType =
+      MapType.parse(Platform.environment['OVM_MAP']) ?? MapType.osm;
+  bool _dark = Platform.environment['OVM_THEME'] == 'dark';
+  String? _styleId;
   double _zoom = 0;
   MapStyleState? _styleState;
   late List<MapOverlay> _overlays = _buildOverlays();
@@ -123,9 +125,7 @@ class _MeshTraxDemoState extends State<MeshTraxDemo> {
   @override
   void initState() {
     super.initState();
-    widget.styles.info(_styleId).then((info) {
-      if (mounted) setState(() => _dark = info.isDark);
-    });
+    _applyStyle();
   }
 
   void _refresh() => setState(() => _overlays = _buildOverlays());
@@ -294,12 +294,15 @@ class _MeshTraxDemoState extends State<MeshTraxDemo> {
     ),
   );
 
-  Future<void> _toggleDark() async {
-    final id = await widget.styles.forBrightness(
-      _dark ? Brightness.light : Brightness.dark,
-      preferred: _dark ? 'outdoor' : 'dark',
-    );
+  /// MeshTrax would follow its own theme here: styleForBrightness(...).
+  Future<void> _applyStyle() async {
+    final id = await widget.styles.styleFor(_mapType, dark: _dark);
     if (mounted) setState(() => _styleId = id);
+  }
+
+  void _toggleDark() {
+    setState(() => _dark = !_dark);
+    _applyStyle();
   }
 
   void _toast(String msg) => ScaffoldMessenger.of(context)
@@ -342,63 +345,67 @@ class _MeshTraxDemoState extends State<MeshTraxDemo> {
             ),
           ],
         ),
-        body: Stack(
-          children: [
-            MapChrome(
-              state: _styleState,
-              map: OfflineMapView(
-                styleId: _styleId,
-                packs: widget.packs,
-                units: widget.units,
-                styleRegistry: widget.styles,
-                controller: _controller,
-                // MeshTrax: CameraFit.bounds(padding 64, maxZoom 16) in
-                // flutter_map zoom, i.e. package maxZoom 15.
-                initialCamera: _envCamera,
-                initialFit: _envCamera != null
-                    ? null
-                    : MapFit.points(
-                        _nodePositions,
-                        padding: const EdgeInsets.all(64),
-                        maxZoom: 15,
-                      ),
-                minZoom: 1,
-                maxZoom: 17,
-                overlays: _overlays,
-                onTap: (_) {
-                  if (_highlight != null) {
-                    _highlight = null;
-                    _refresh();
-                  }
-                },
-                onLongPress: _onLongPress,
-                onCameraChanged: (c) => setState(() => _zoom = c.zoom),
-                onStyleLoaded: (s) => setState(() {
-                  _styleState = s;
-                  _dark = s.info.isDark;
-                }),
-                extraLayers: [
-                  // Escape hatch: a raw flutter_map layer (range ring).
-                  fm.CircleLayer(
-                    circles: [
-                      fm.CircleMarker(
-                        point: _self.toLatLong2(),
-                        radius: 8000,
-                        useRadiusInMeter: true,
-                        color: Colors.teal.withValues(alpha: 0.08),
-                        borderColor: Colors.teal,
-                        borderStrokeWidth: 1.5,
-                      ),
-                    ],
+        body: _styleId == null
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  MapChrome(
+                    state: _styleState,
+                    map: OfflineMapView(
+                      styleId: _styleId!,
+                      packs: widget.packs,
+                      units: widget.units,
+                      styleRegistry: widget.styles,
+                      controller: _controller,
+                      // MeshTrax: CameraFit.bounds(padding 64, maxZoom 16) in
+                      // flutter_map zoom, i.e. package maxZoom 15.
+                      initialCamera: _envCamera,
+                      initialFit: _envCamera != null
+                          ? null
+                          : MapFit.points(
+                              _nodePositions,
+                              padding: const EdgeInsets.all(64),
+                              maxZoom: 15,
+                            ),
+                      minZoom: 1,
+                      maxZoom: 17,
+                      overlays: _overlays,
+                      onTap: (_) {
+                        if (_highlight != null) {
+                          _highlight = null;
+                          _refresh();
+                        }
+                      },
+                      onLongPress: _onLongPress,
+                      onCameraChanged: (c) => setState(() => _zoom = c.zoom),
+                      onStyleLoaded: (s) => setState(() => _styleState = s),
+                      extraLayers: [
+                        // Escape hatch: a raw flutter_map layer (range ring).
+                        fm.CircleLayer(
+                          circles: [
+                            fm.CircleMarker(
+                              point: _self.toLatLong2(),
+                              radius: 8000,
+                              useRadiusInMeter: true,
+                              color: Colors.teal.withValues(alpha: 0.08),
+                              borderColor: Colors.teal,
+                              borderStrokeWidth: 1.5,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
+                  Positioned(left: 8, top: 8, child: _readout()),
+                  if (_pathMode)
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      bottom: 32,
+                      child: _pathCard(),
+                    ),
                 ],
               ),
-            ),
-            Positioned(left: 8, top: 8, child: _readout()),
-            if (_pathMode)
-              Positioned(left: 8, right: 8, bottom: 32, child: _pathCard()),
-          ],
-        ),
       ),
     );
   }

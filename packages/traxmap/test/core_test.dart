@@ -38,11 +38,14 @@ void main() {
     final registry = StyleRegistry(
       DirectoryStyleSource(Directory('assets/styles')),
     );
-    expect(await registry.available(), containsAll(['topo', 'dark', 'chart']));
-    expect(await registry.forDark(true), 'dark');
-    expect((await registry.info('chart')).disclaimer, 'Not for navigation');
-    final topo = await registry.load('topo', const StyleContext());
-    expect(topo['version'], 8);
+    expect(await registry.available(), hasLength(6));
+    expect(await registry.styleFor(MapType.charts, dark: true), 'charts-dark');
+    expect(
+      (await registry.info('charts-light')).disclaimer,
+      'Not for navigation',
+    );
+    final usgs = await registry.load('usgs-light', const StyleContext());
+    expect(usgs['version'], 8);
   });
 
   test('PackManager reports installs and deletes', () async {

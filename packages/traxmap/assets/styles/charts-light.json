@@ -1,0 +1,549 @@
+{
+  "version": 8,
+  "name": "NOAA Charts",
+  "metadata": {
+    "ovm:status": "Starter style; Phase 3 replaces it. Simplified symbology, not S-52.",
+    "ovm:disclaimer": "Not for navigation",
+    "ovm:map": "charts",
+    "ovm:theme": "light",
+    "ovm:family": "standard"
+  },
+  "glyphs": "{glyphs}",
+  "sources": {
+    "charts": {
+      "type": "vector",
+      "url": "pmtiles://{pack:charts}",
+      "attribution": "NOAA Office of Coast Survey"
+    },
+    "base": {
+      "type": "vector",
+      "url": "pmtiles://{pack:base}",
+      "attribution": "USGS The National Map"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f3ead0"
+      }
+    },
+    {
+      "id": "depth-area",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "depth_area",
+      "paint": {
+        "fill-color": [
+          "step",
+          [
+            "get",
+            "drval1"
+          ],
+          "#c3d69f",
+          0,
+          "#8ec4ec",
+          5,
+          "#b7dbf5",
+          18,
+          "#dcedf9",
+          30,
+          "#ffffff"
+        ],
+        "fill-antialias": false
+      }
+    },
+    {
+      "id": "dredged-outline",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "depth_area",
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "dredged"
+      ],
+      "paint": {
+        "line-color": "#6a8fb0",
+        "line-width": 1,
+        "line-dasharray": [
+          3,
+          2
+        ]
+      }
+    },
+    {
+      "id": "land",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "land",
+      "filter": [
+        "==",
+        "$type",
+        "Polygon"
+      ],
+      "paint": {
+        "fill-color": "#f3ead0"
+      }
+    },
+    {
+      "id": "road",
+      "type": "line",
+      "source": "base",
+      "source-layer": "road",
+      "filter": [
+        "match",
+        [
+          "get",
+          "kind"
+        ],
+        [
+          "motorway",
+          "major",
+          "minor"
+        ],
+        true,
+        false
+      ],
+      "paint": {
+        "line-color": "#c9bea4",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.4,
+          14,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "depth-contour",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "depth_contour",
+      "paint": {
+        "line-color": "#6fa3cc",
+        "line-width": 0.7
+      }
+    },
+    {
+      "id": "coastline",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "coastline",
+      "paint": {
+        "line-color": "#5b4a2c",
+        "line-width": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "construction",
+          1.5,
+          1
+        ]
+      }
+    },
+    {
+      "id": "islet",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "land",
+      "filter": [
+        "==",
+        "$type",
+        "Point"
+      ],
+      "paint": {
+        "circle-radius": 2,
+        "circle-color": "#f3ead0",
+        "circle-stroke-color": "#5b4a2c",
+        "circle-stroke-width": 1
+      }
+    },
+    {
+      "id": "hazard-area",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "hazard",
+      "filter": [
+        "==",
+        "$type",
+        "Polygon"
+      ],
+      "paint": {
+        "line-color": "#333333",
+        "line-width": 1,
+        "line-dasharray": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "hazard",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "hazard",
+      "filter": [
+        "==",
+        "$type",
+        "Point"
+      ],
+      "minzoom": 10,
+      "paint": {
+        "circle-radius": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "wreck",
+          4,
+          2.5
+        ],
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "wreck",
+          "#7a1f5c",
+          "#222222"
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": [
+          "case",
+          [
+            "has",
+            "dangerous"
+          ],
+          2,
+          0.8
+        ]
+      }
+    },
+    {
+      "id": "light-flare",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "light",
+      "minzoom": 9,
+      "paint": {
+        "circle-radius": 8,
+        "circle-color": "#c71585",
+        "circle-opacity": 0.35
+      }
+    },
+    {
+      "id": "nav-aid",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "minzoom": 9,
+      "paint": {
+        "circle-radius": 5,
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "colour"
+          ],
+          "red",
+          "#d7263d",
+          "green",
+          "#2a9d4b",
+          "yellow",
+          "#f2c200",
+          "white",
+          "#ffffff",
+          "black",
+          "#222222",
+          "orange",
+          "#f28c28",
+          "#888888"
+        ],
+        "circle-stroke-color": "#222222",
+        "circle-stroke-width": 1
+      }
+    },
+    {
+      "id": "depth-contour-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "depth_contour",
+      "minzoom": 12,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "depth_ft"
+            ]
+          ],
+          " ft"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#4f7fa8",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "depth-contour-label-m",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "depth_contour",
+      "minzoom": 12,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "depth_m"
+            ]
+          ],
+          " m"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#4f7fa8",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "sounding",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "sounding",
+      "minzoom": 11,
+      "layout": {
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "depth_ft"
+          ]
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-padding": 1
+      },
+      "paint": {
+        "text-color": "#3f5f80"
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "sounding-m",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "sounding",
+      "minzoom": 11,
+      "layout": {
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "depth_m"
+          ]
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-padding": 1
+      },
+      "paint": {
+        "text-color": "#3f5f80"
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "hazard-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "hazard",
+      "minzoom": 13,
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "wreck"
+      ],
+      "layout": {
+        "text-field": "Wk",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.1
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#7a1f5c",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "light-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "light",
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "label"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0.9,
+          -0.9
+        ],
+        "text-anchor": "bottom-left"
+      },
+      "paint": {
+        "text-color": "#a0106a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "nav-aid-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top",
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "sea-name",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "sea_name",
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 13,
+        "text-letter-spacing": 0.1
+      },
+      "paint": {
+        "text-color": "#3a6ea5",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "place-label",
+      "type": "symbol",
+      "source": "base",
+      "source-layer": "place",
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "populated_place"
+      ],
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 12
+      },
+      "paint": {
+        "text-color": "#5b4a2c",
+        "text-halo-color": "#f3ead0",
+        "text-halo-width": 1.5
+      }
+    }
+  ]
+}

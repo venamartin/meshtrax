@@ -48,9 +48,12 @@ class _MapScreenState extends State<MapScreen> {
   final _styles = bundledStyles();
   PackManager? _manager;
   List<Pack> _packs = const [];
-  List<String> _styleIds = const [];
-  // OVM_STYLE=chart picks the starting style (handy for desktop testing).
-  String _styleId = Platform.environment['OVM_STYLE'] ?? 'topo';
+  // OVM_MAP=osm|usgs|charts and OVM_THEME=dark set the starting map
+  // (handy for desktop testing).
+  MapType _mapType =
+      MapType.parse(Platform.environment['OVM_MAP']) ?? MapType.usgs;
+  bool _dark = Platform.environment['OVM_THEME'] == 'dark';
+  String? _styleId;
   String? _error;
   bool _loading = true;
   bool _stressOverlays = false;
@@ -96,16 +99,9 @@ class _MapScreenState extends State<MapScreen> {
       final docs = await getApplicationDocumentsDirectory();
       final manager = PackManager(Directory('${docs.path}/traxmap/packs'));
       await _installBundledPacks(manager);
-      final styleIds = await _styles.available();
-      setState(() {
-        _manager = manager;
-        _styleIds = styleIds;
-        if (!styleIds.contains(_styleId) && styleIds.isNotEmpty) {
-          _styleId = styleIds.first;
-        }
-      });
+      setState(() => _manager = manager);
       await _refresh();
-      await _selectStyle(_styleId);
+      await _applyStyle();
       // OVM_SCREEN=meshtrax opens the demo straight away (desktop testing).
       if (Platform.environment['OVM_SCREEN'] == 'meshtrax' &&
           _packs.isNotEmpty) {
@@ -218,9 +214,9 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Styles can declare metadata["ovm:dark"]; match the app chrome to them.
+    // The app chrome follows the chosen light/dark mode.
     return Theme(
-      data: _darkStyle
+      data: _dark
           ? ThemeData(
               colorSchemeSeed: Colors.brown,
               brightness: Brightness.dark,
@@ -230,14 +226,19 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  bool _darkStyle = false;
   MapStyleState? _styleState;
 
-  Future<void> _selectStyle(String id) async {
-    setState(() => _styleId = id);
-    final dark = (await _styles.info(id)).isDark;
-    if (mounted && _styleId == id) setState(() => _darkStyle = dark);
+  /// Picks the bundled style for the chosen map and light/dark mode.
+  Future<void> _applyStyle() async {
+    final id = await _styles.styleFor(_mapType, dark: _dark);
+    if (mounted) setState(() => _styleId = id);
   }
+
+  static const _mapLabels = {
+    MapType.osm: 'OSM',
+    MapType.usgs: 'USGS',
+    MapType.charts: 'NOAA Charts',
+  };
 
   void _openMeshTraxDemo() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -251,25 +252,36 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('TraxMap'),
         actions: [
-          if (_styleIds.isNotEmpty)
-            DropdownButton<String>(
-              value: _styleId,
-              underline: const SizedBox(),
-              items: [
-                for (final id in _styleIds)
-                  DropdownMenuItem(value: id, child: Text(id)),
-              ],
-              onChanged: (id) => _selectStyle(id!),
-            ),
-          IconButton(
-            tooltip: _contours ? 'Hide contours' : 'Show contours',
-            icon: Icon(_contours ? Icons.terrain : Icons.terrain_outlined),
-            color: _contours ? null : Colors.black38,
-            onPressed: () => setState(() {
-              _contours = !_contours;
-              _updateMapPacks();
-            }),
+          DropdownButton<MapType>(
+            value: _mapType,
+            underline: const SizedBox(),
+            items: [
+              for (final t in MapType.values)
+                DropdownMenuItem(value: t, child: Text(_mapLabels[t]!)),
+            ],
+            onChanged: (t) {
+              setState(() => _mapType = t!);
+              _applyStyle();
+            },
           ),
+          IconButton(
+            tooltip: _dark ? 'Light mode' : 'Dark mode',
+            icon: Icon(_dark ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () {
+              setState(() => _dark = !_dark);
+              _applyStyle();
+            },
+          ),
+          if (_mapType != MapType.charts)
+            IconButton(
+              tooltip: _contours ? 'Hide contours' : 'Show contours',
+              icon: Icon(_contours ? Icons.terrain : Icons.terrain_outlined),
+              color: _contours ? null : Colors.black38,
+              onPressed: () => setState(() {
+                _contours = !_contours;
+                _updateMapPacks();
+              }),
+            ),
           TextButton(
             onPressed: () => setState(
               () => _units = _units == Units.imperial
@@ -322,6 +334,9 @@ class _MapScreenState extends State<MapScreen> {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text(_error!));
     if (_packs.isEmpty) return _EmptyState(onInstall: _installFromPath);
+    if (_styleId == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         _viewSize = constraints.biggest;
@@ -331,7 +346,7 @@ class _MapScreenState extends State<MapScreen> {
               state: _styleState,
               map: OfflineMapView(
                 controller: _controller,
-                styleId: _styleId,
+                styleId: _styleId!,
                 packs: _mapPacks,
                 units: _units,
                 initialCamera: _camera,

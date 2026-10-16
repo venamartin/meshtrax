@@ -1,8 +1,12 @@
 {
   "version": 8,
-  "name": "Topo",
+  "name": "USGS (dark)",
   "metadata": {
-    "ovm:status": "Starter style; Phase 3 replaces it. Layer names follow pipeline/SCHEMA.md v1."
+    "ovm:status": "Generated from usgs-light.json by tool/make_dark_variants.py.",
+    "ovm:map": "usgs",
+    "ovm:theme": "dark",
+    "ovm:family": "standard",
+    "ovm:dark": true
   },
   "glyphs": "{glyphs}",
   "sources": {
@@ -22,7 +26,7 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#f6f3ec"
+        "background-color": "#1a1e22"
       }
     },
     {
@@ -41,19 +45,19 @@
             "band_ft"
           ],
           500,
-          "#efe8d6",
+          "#1d2226",
           1000,
-          "#e8dec6",
+          "#20262a",
           1500,
-          "#e1d3b5",
+          "#242a2c",
           2000,
-          "#d9c7a4",
+          "#282d2e",
           3000,
-          "#cdb68e",
+          "#2d3130",
           5000,
-          "#bba07a",
+          "#333533",
           8000,
-          "#ffffff"
+          "#3d3f3d"
         ],
         "fill-antialias": false
       }
@@ -64,7 +68,7 @@
       "source": "base",
       "source-layer": "woodland",
       "paint": {
-        "fill-color": "#cfe3c1",
+        "fill-color": "#1f2d24",
         "fill-opacity": 0.8
       }
     },
@@ -85,7 +89,7 @@
             0
           ],
           "#ffffff",
-          "#3d342b"
+          "#000000"
         ],
         "fill-opacity": [
           "match",
@@ -94,15 +98,15 @@
             "level"
           ],
           -1,
-          0.28,
+          0.05,
           1,
-          0.06,
-          2,
           0.12,
+          2,
+          0.22,
           3,
-          0.19,
+          0.32,
           4,
-          0.27,
+          0.42,
           0
         ],
         "fill-antialias": false
@@ -114,7 +118,7 @@
       "source": "base",
       "source-layer": "reserve",
       "paint": {
-        "line-color": "#6a9a5a",
+        "line-color": "#3f6b4a",
         "line-width": 1.5,
         "line-dasharray": [
           3,
@@ -135,8 +139,8 @@
             "kind"
           ],
           "marsh",
-          "#bcd9cf",
-          "#a6cbea"
+          "#17302c",
+          "#13283a"
         ]
       }
     },
@@ -154,7 +158,7 @@
         "coastline"
       ],
       "paint": {
-        "line-color": "#5b9bd5",
+        "line-color": "#2b5578",
         "line-width": [
           "interpolate",
           [
@@ -184,7 +188,7 @@
         "coastline"
       ],
       "paint": {
-        "line-color": "#3d7fbf",
+        "line-color": "#3c6d96",
         "line-width": 1
       }
     },
@@ -194,7 +198,7 @@
       "source": "contours",
       "source-layer": "contour",
       "paint": {
-        "line-color": "#b5835a",
+        "line-color": "#6b5a47",
         "line-opacity": 0.8,
         "line-width": [
           "case",
@@ -217,7 +221,7 @@
       "source": "base",
       "source-layer": "rail",
       "paint": {
-        "line-color": "#777",
+        "line-color": "#555b63",
         "line-width": 1.2,
         "line-dasharray": [
           4,
@@ -242,12 +246,12 @@
             "kind"
           ],
           "motorway",
-          "#e07b39",
+          "#9a7440",
           "major",
-          "#f0a050",
+          "#7a6748",
           "track",
-          "#a08060",
-          "#999"
+          "#5e5040",
+          "#4a4f55"
         ],
         "line-width": [
           "interpolate",
@@ -295,7 +299,7 @@
       "source": "base",
       "source-layer": "trail",
       "paint": {
-        "line-color": "#c0392b",
+        "line-color": "#d0705f",
         "line-width": [
           "interpolate",
           [
@@ -322,7 +326,7 @@
       "source-layer": "poi",
       "paint": {
         "circle-radius": 3,
-        "circle-color": "#7d3c98"
+        "circle-color": "#9b6fb3"
       }
     },
     {
@@ -358,8 +362,8 @@
         "text-size": 10
       },
       "paint": {
-        "text-color": "#8a5a33",
-        "text-halo-color": "#fff",
+        "text-color": "#a08c72",
+        "text-halo-color": "#161b20",
         "text-halo-width": 1.5
       },
       "metadata": {
@@ -399,8 +403,8 @@
         "text-size": 10
       },
       "paint": {
-        "text-color": "#8a5a33",
-        "text-halo-color": "#fff",
+        "text-color": "#a08c72",
+        "text-halo-color": "#161b20",
         "text-halo-width": 1.5
       },
       "metadata": {
@@ -432,8 +436,8 @@
         "text-size": 11
       },
       "paint": {
-        "text-color": "#333",
-        "text-halo-color": "#fff",
+        "text-color": "#c9d0d8",
+        "text-halo-color": "#161b20",
         "text-halo-width": 1.5
       }
     },
@@ -459,8 +463,8 @@
         "text-size": 11
       },
       "paint": {
-        "text-color": "#c0392b",
-        "text-halo-color": "#fff",
+        "text-color": "#e08a7a",
+        "text-halo-color": "#161b20",
         "text-halo-width": 1.5
       }
     },
@@ -486,8 +490,8 @@
         "text-anchor": "top"
       },
       "paint": {
-        "text-color": "#333",
-        "text-halo-color": "#fff",
+        "text-color": "#aab3bd",
+        "text-halo-color": "#161b20",
         "text-halo-width": 1.5
       }
     },
@@ -516,8 +520,8 @@
         ]
       },
       "paint": {
-        "text-color": "#333",
-        "text-halo-color": "#fff",
+        "text-color": "#e6eaef",
+        "text-halo-color": "#161b20",
         "text-halo-width": 1.5
       }
     }

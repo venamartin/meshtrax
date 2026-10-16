@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'style_info.dart';
 import 'style_registry.dart';
 
 /// The styles bundled with this package (`assets/styles/`), read from the
@@ -47,7 +48,11 @@ StyleRegistry bundledStyles({AssetBundle? bundle}) =>
     StyleRegistry(AssetStyleSource(bundle: bundle));
 
 extension StyleRegistryBrightness on StyleRegistry {
-  /// A style matching the app's [brightness]; see [StyleRegistry.forDark].
-  Future<String> forBrightness(Brightness brightness, {String? preferred}) =>
-      forDark(brightness == Brightness.dark, preferred: preferred);
+  /// The style for [type] matching the app's [brightness]; see
+  /// [StyleRegistry.styleFor].
+  Future<String?> styleForBrightness(
+    MapType type,
+    Brightness brightness, {
+    String family = StyleFamily.standard,
+  }) => styleFor(type, dark: brightness == Brightness.dark, family: family);
 }

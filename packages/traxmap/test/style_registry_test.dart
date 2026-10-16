@@ -95,48 +95,49 @@ void main() {
   // testWidgets fake-async zone never completes when awaited from another.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('chart style: disclaimer, and works without a charts pack', () async {
-    final chart = await bundledStyles().load(
-      'chart',
-      StyleContext(packs: {PackKind.base: base}),
-    );
-    expect(
-      StyleInfo.fromStyle("chart", chart).disclaimer,
-      'Not for navigation',
-    );
-    expect((chart['sources'] as Map).keys, ['base']);
-    for (final layer in chart['layers'] as List) {
-      expect((layer as Map)['source'], anyOf(isNull, 'base'));
+  test('chart styles: disclaimer, and work without a charts pack', () async {
+    for (final id in ['charts-light', 'charts-dark']) {
+      final chart = await bundledStyles().load(
+        id,
+        StyleContext(packs: {PackKind.base: base}),
+      );
+      expect(StyleInfo.fromStyle(id, chart).disclaimer, 'Not for navigation');
+      expect((chart['sources'] as Map).keys, ['base']);
+      for (final layer in chart['layers'] as List) {
+        expect((layer as Map)['source'], anyOf(isNull, 'base'));
+      }
     }
-    final topo = await bundledStyles().load('topo', const StyleContext());
-    expect(StyleInfo.fromStyle("topo", topo).disclaimer, isNull);
+    final usgs = await bundledStyles().load('usgs-light', const StyleContext());
+    expect(StyleInfo.fromStyle('usgs-light', usgs).disclaimer, isNull);
   });
 
-  test('style info and picking a style for the app brightness', () async {
+  test('every map type has a light and a dark standard style', () async {
     final registry = bundledStyles();
-    expect((await registry.info('dark')).isDark, isTrue);
-    expect((await registry.info('topo')).isDark, isFalse);
-    expect((await registry.info('chart')).disclaimer, 'Not for navigation');
-
-    expect(await registry.forBrightness(Brightness.dark), 'dark');
+    expect(await registry.mapTypes(), MapType.values);
+    for (final type in MapType.values) {
+      final light = await registry.styleFor(type);
+      final dark = await registry.styleFor(type, dark: true);
+      expect(light, '${type.name}-light');
+      expect(dark, '${type.name}-dark');
+      expect((await registry.info(dark!)).isDark, isTrue);
+      expect((await registry.info(light!)).isDark, isFalse);
+      expect(await registry.families(type), [StyleFamily.standard]);
+    }
     expect(
-      await registry.forBrightness(Brightness.light, preferred: 'topo'),
-      'topo',
+      await registry.styleForBrightness(MapType.usgs, Brightness.dark),
+      'usgs-dark',
     );
-    // A dark preference in light mode falls back to a light,
-    // general-purpose style (never the chart).
-    final light = await registry.forBrightness(
-      Brightness.light,
-      preferred: 'dark',
+    // A family that doesn't exist yet falls back to the standard look.
+    expect(
+      await registry.styleFor(MapType.osm, dark: true, family: 'outdoor'),
+      'osm-dark',
     );
-    expect((await registry.info(light)).isDark, isFalse);
-    expect(light, isNot('chart'));
   });
 
   test('bundled styles load and resolve', () async {
     final registry = bundledStyles();
     final ids = await registry.available();
-    expect(ids, contains('topo'));
+    expect(ids, hasLength(6));
     for (final id in ids) {
       final s = await registry.load(id, const StyleContext());
       expect(s['version'], 8);

@@ -105,21 +105,37 @@ class StyleRegistry {
   Future<List<StyleInfo>> all() async =>
       Future.wait([for (final id in await available()) info(id)]);
 
-  /// A style id that is [dark] (or light): [preferred] if it already
-  /// matches, otherwise the first matching general-purpose style (styles with
-  /// a disclaimer, like charts, are only used when preferred). Flutter apps
-  /// can use `forBrightness` instead.
-  Future<String> forDark(bool dark, {String? preferred}) async {
-    if (preferred != null && (await info(preferred)).isDark == dark) {
-      return preferred;
-    }
-    final match = (await all()).where(
-      (s) => s.isDark == dark && s.disclaimer == null,
-    );
-    return match.isNotEmpty
-        ? match.first.id
-        : (preferred ?? (await available()).first);
+  /// The style id for [type] in light or [dark] mode, from [family].
+  ///
+  /// Falls back to the other mode, then to the [StyleFamily.standard]
+  /// family, if the exact combination isn't bundled. Returns null when no
+  /// style exists for [type] at all.
+  Future<String?> styleFor(
+    MapType type, {
+    bool dark = false,
+    String family = StyleFamily.standard,
+  }) async {
+    final styles = (await all()).where((s) => s.mapType == type).toList();
+    StyleInfo? pick(bool Function(StyleInfo) test) =>
+        styles.where(test).firstOrNull;
+    return (pick((s) => s.family == family && s.isDark == dark) ??
+            pick((s) => s.family == family) ??
+            pick((s) => s.family == StyleFamily.standard && s.isDark == dark) ??
+            pick((_) => true))
+        ?.id;
   }
+
+  /// The map types that have at least one style.
+  Future<List<MapType>> mapTypes() async => [
+    for (final t in MapType.values)
+      if ((await all()).any((s) => s.mapType == t)) t,
+  ];
+
+  /// The style families available for [type] (only "standard" today).
+  Future<List<String>> families(MapType type) async => {
+    for (final s in await all())
+      if (s.mapType == type) s.family,
+  }.toList();
 
   /// The style for [id] with placeholders resolved against [context].
   Future<Map<String, Object?>> load(String id, StyleContext context) async =>

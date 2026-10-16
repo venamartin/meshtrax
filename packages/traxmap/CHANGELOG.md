@@ -23,3 +23,15 @@ First version, split out of the `vectormaps` prototype.
   - unit-tagged label layers.
 - **`package:traxmap/core.dart`:** the pure-Dart part, with no Flutter
   imports.
+
+## Unreleased
+
+**Breaking: the bundled styles are now three maps × light/dark:**
+- **Styles:** `osm-light/dark`, `usgs-light/dark` and `charts-light/dark`.
+  They replace Topo, Dark, Modern, Outdoor, OSM Topo and Chart.
+- **New dark styles:** `usgs-dark` and `charts-dark`.
+- **API:**
+  - `MapType`, `StyleFamily`;
+  - `StyleInfo.mapType` and `.family`;
+  - `StyleRegistry.styleFor` / `styleForBrightness`, `mapTypes()` and
+    `families()`. These replace `forDark` / `forBrightness`.
