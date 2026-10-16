@@ -26,6 +26,8 @@ class PathGraphConfig {
     this.selfWeightCap = 12,
     this.doorstepWeight = 3,
     this.directFreshMinutes = 30,
+    this.relayedCopyGraceSeconds = 60,
+    this.liveRouteMinutes = 10,
     this.slashEpochMinutes = 2,
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
@@ -130,8 +132,23 @@ class PathGraphConfig {
   /// its corridor was a hop shorter).
   final double doorstepWeight;
 
-  /// Zero-hop direct wins while direct-reception evidence is this fresh.
+  /// Zero-hop direct wins while direct-reception evidence is this fresh,
+  /// and until a later packet of theirs reaches me only through a
+  /// repeater (field 2026-10-16: walking away from home, "direct" won for
+  /// half an hour while their DMs arrived over 2-5 hops).
   final double directFreshMinutes;
+
+  /// Copies of one flood land within seconds of each other: a relayed
+  /// copy this soon after a direct one is the same packet, not a move.
+  final double relayedCopyGraceSeconds;
+
+  /// A route a flood of mine just took to them, named in their PATH
+  /// reply (or a path discovery), leads for this long, until a send on
+  /// it fails or a newer one replaces it. It is the one corridor proven
+  /// end to end this minute; history ranks it only after (field
+  /// 2026-10-16: an older favourite that had stopped working replaced it
+  /// within milliseconds, and the ACKs that followed were lost).
+  final double liveRouteMinutes;
 
   /// Supersede slash: epoch-limited, floored (proven keeps ≥ this).
   final double slashEpochMinutes;
@@ -167,6 +184,8 @@ class PathGraphConfig {
         selfWeightCap: selfWeightCap,
         doorstepWeight: doorstepWeight ?? this.doorstepWeight,
         directFreshMinutes: directFreshMinutes,
+        relayedCopyGraceSeconds: relayedCopyGraceSeconds,
+        liveRouteMinutes: liveRouteMinutes,
         slashEpochMinutes: slashEpochMinutes,
         slashFactorProven: slashFactorProven,
         slashFactorInferred: slashFactorInferred,

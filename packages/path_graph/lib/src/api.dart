@@ -201,6 +201,9 @@ class PathGraph {
   int _droppedNarrow = 0;
   // (messageId|first hop) of own echoes already proved; insertion-ordered.
   final Set<String> _ownEchoSeen = <String>{};
+  // Per contact: the route their latest PATH reply named, and when
+  // (see PathGraphConfig.liveRouteMinutes). Memory only.
+  final Map<String, ({List<String> hops, int at})> _liveRoutes = {};
 
   /// Loads persisted state into the in-memory working set.
   Future<void> init() async {
@@ -488,6 +491,7 @@ class PathGraph {
     }
     _evidence.recordIngress(pk, hash,
         pubkeyConfirmed: confirmed, arrival: arrival);
+    if (confirmed) _evidence.recordRelayedSighting(pk, arrival);
   }
 
   bool _movedFar(String fromHash, String toHash) {
@@ -532,7 +536,9 @@ class PathGraph {
   /// race won on hop count, not reliability. It still proves both
   /// doorsteps, but the corridor links are only marked as seen in the
   /// forward direction — no success tally, and the return direction is
-  /// not inferred.
+  /// not inferred. It is also the live route to them: it leads
+  /// [findPath] for [PathGraphConfig.liveRouteMinutes], until a send on
+  /// it fails.
   ///
   /// [stride] is the hash width the path was written at — a contact's
   /// stored route keeps the width of the packet that built it, which
@@ -565,6 +571,17 @@ class PathGraph {
     }
     if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
+    if (contactPubkey != null) {
+      final hops = [
+        for (var i = 0; i < hopCount; i++) _hopHex(pathBytes, stride, i)
+      ];
+      if (!tally && success && hopCount <= config.maxHops) {
+        _liveRoutes[contactPubkey] = (hops: hops, at: arrival);
+      } else if (!success &&
+          _liveRoutes[contactPubkey]?.hops.join('>') == hops.join('>')) {
+        _liveRoutes.remove(contactPubkey);
+      }
+    }
     for (var i = 0; i < hopCount - 1; i++) {
       final from = _hopHex(pathBytes, stride, i);
       final to = _hopHex(pathBytes, stride, i + 1);
@@ -1303,7 +1320,11 @@ class PathGraph {
       return const PathResult.direct();
     }
 
-    // Tier 2: bidirectional route over candidate lists.
+    // Tier 2: the route a flood of mine just took to them.
+    final live = _liveRoute(contactPubkey, now);
+    if (live != null) return live;
+
+    // Tier 3: bidirectional route over candidate lists.
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
     final egress = _egressCandidates(self, now);
@@ -1325,6 +1346,27 @@ class PathGraph {
       return const PathResult.flood(FloodReason.noCorridor);
     }
     return _toResult(route);
+  }
+
+  /// Their latest PATH reply's route while it leads, priced like any
+  /// other route.
+  RouteResult? _liveRoute(String contactPubkey, int now) {
+    final live = _liveRoutes[contactPubkey];
+    if (live == null) return null;
+    if (now - live.at > config.liveRouteMinutes * 60 * 1000) {
+      _liveRoutes.remove(contactPubkey);
+      return null;
+    }
+    final self = _selfPubkey;
+    return _toResult(PathFinder(estimator.config, estimator).score(
+      live.hops,
+      egress: self == null
+          ? const []
+          : _evidence.candidatesFor(self, now, isSelf: true),
+      ingress: _evidence.candidatesFor(contactPubkey, now, isSelf: false),
+      edges: _store.edges,
+      nowMillis: now,
+    ));
   }
 
   PathGraphCounters get counters => PathGraphCounters(

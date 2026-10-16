@@ -145,16 +145,26 @@ class PathFinder {
       hops.insert(0, cur);
       cur = prev[cur];
     }
+    return score(hops,
+        egress: sources, ingress: targets, edges: edges, nowMillis: nowMillis);
+  }
 
-    // est. delivery: doorstep confidence × forward-edge p × far-side
-    // confidence. Without the candidate terms a 1-hop route has no
-    // edges at all and reads 100% — a repeater merely HEARD once
-    // (inferred, unproven in the sending direction) must not display
-    // certainty the cost function never believed.
+  /// [hops] priced as a route. est. delivery: doorstep confidence ×
+  /// forward-edge p × far-side confidence. Without the candidate terms a
+  /// 1-hop route has no edges at all and reads 100% — a repeater merely
+  /// HEARD once (inferred, unproven in the sending direction) must not
+  /// display certainty the cost function never believed.
+  RouteFound score(
+    List<String> hops, {
+    required List<Candidate> egress,
+    required List<Candidate> ingress,
+    required Map<(String, String), EdgeState> edges,
+    required int nowMillis,
+  }) {
     final source =
-        sources.where((s) => s.repeaterHash == hops.first).firstOrNull;
+        egress.where((s) => s.repeaterHash == hops.first).firstOrNull;
     final target =
-        targets.where((t) => t.repeaterHash == hops.last).firstOrNull;
+        ingress.where((t) => t.repeaterHash == hops.last).firstOrNull;
     var delivery = (source == null ? 1.0 : candidateConfidence(source)) *
         (target == null ? 1.0 : candidateConfidence(target));
     final hopProbabilities = <double>[];
