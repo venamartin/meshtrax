@@ -1,0 +1,28 @@
+name: traxmap
+description: Offline vector maps for MeshTrax, rendered from PMTiles packs. No screens; hooks and data for the app.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+  flutter: ">=3.40.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  crypto: ^3.0.7
+  path: ^1.9.1
+  flutter_map: ^8.3.2
+  flutter_map_vector_tiles: ^2.9.1
+  # MeshTrax pins ^0.9.1; flutter_map 8.3 and flutter_map_vector_tiles accept both.
+  latlong2: ">=0.9.1 <0.11.0"
+  meta: ^1.16.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  assets:
+    - assets/styles/
