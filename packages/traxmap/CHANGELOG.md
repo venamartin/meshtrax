@@ -1,3 +1,11 @@
+## Unreleased
+
+- **Charts draw land contours:** `charts-light` and `charts-dark` read the
+  contours pack (lines plus ft/m labels) like the OSM and USGS styles, so
+  contours on/off and light/dark apply to all three maps.
+- **Example:** the contours toggle shows for NOAA Charts too, and
+  `OVM_STYLES=<dir>` loads styles from a folder (desktop testing).
+
 ## 0.1.0
 
 First version, split out of the `vectormaps` prototype.

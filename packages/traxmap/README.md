@@ -83,7 +83,8 @@ controller.fitPoints(points, maxZoom: 15);
 - **Map and mode:** the user picks a `MapType` (`osm`, `usgs`, `charts`) and
   light or dark. `styles.styleFor(type, dark: …)` (or `styleForBrightness`)
   returns the style id. Contours on/off is the app's choice of whether to
-  pass the contours pack; it applies to OSM and USGS.
+  pass the contours pack. It applies to all three maps, which draw land
+  contours from the same contours pack (on charts, over the land fill).
 - **Escape hatch:** `extraLayers` takes raw flutter_map 8.x layers, for
   anything not yet ported to `MapOverlay`s. It's the only part tied to
   flutter_map.

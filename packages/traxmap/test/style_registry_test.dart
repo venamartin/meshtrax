@@ -111,6 +111,30 @@ void main() {
     expect(StyleInfo.fromStyle('usgs-light', usgs).disclaimer, isNull);
   });
 
+  test('every map draws land contours from the one contours pack', () async {
+    final contours = Pack(
+      id: 'ca-contours-20ft',
+      file: File('/data/packs/ca-contours-20ft.pmtiles'),
+      header: PmTilesHeader.parse(_header()),
+      metadata: const {'kind': 'contours', 'variant': '20ft'},
+    );
+    final registry = bundledStyles();
+    for (final id in await registry.available()) {
+      final on = await registry.load(
+        id,
+        StyleContext(packs: {PackKind.contours: contours}),
+      );
+      final url = ((on['sources'] as Map)['contours'] as Map)['url'];
+      expect(url, 'pmtiles://${Uri.file(contours.file.path)}', reason: id);
+      final ids = [for (final l in on['layers'] as List) (l as Map)['id']];
+      expect(ids, containsAll(['contour', 'contour-label']), reason: id);
+      expect(ids, isNot(contains('contour-label-m')), reason: id);
+      // Contours off: the app leaves the pack out, the layers go.
+      final off = await registry.load(id, const StyleContext());
+      expect((off['sources'] as Map).containsKey('contours'), isFalse);
+    }
+  });
+
   test('every map type has a light and a dark standard style', () async {
     final registry = bundledStyles();
     expect(await registry.mapTypes(), MapType.values);

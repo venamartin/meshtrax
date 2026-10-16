@@ -45,7 +45,12 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final _styles = bundledStyles();
+  // OVM_STYLES=<dir> loads style JSON from a folder instead of the bundled
+  // styles (desktop testing of experimental styles).
+  final _styles = switch (Platform.environment['OVM_STYLES']) {
+    final dir? => StyleRegistry(DirectoryStyleSource(Directory(dir))),
+    null => bundledStyles(),
+  };
   PackManager? _manager;
   List<Pack> _packs = const [];
   // OVM_MAP=osm|usgs|charts and OVM_THEME=dark set the starting map
@@ -272,16 +277,15 @@ class _MapScreenState extends State<MapScreen> {
               _applyStyle();
             },
           ),
-          if (_mapType != MapType.charts)
-            IconButton(
-              tooltip: _contours ? 'Hide contours' : 'Show contours',
-              icon: Icon(_contours ? Icons.terrain : Icons.terrain_outlined),
-              color: _contours ? null : Colors.black38,
-              onPressed: () => setState(() {
-                _contours = !_contours;
-                _updateMapPacks();
-              }),
-            ),
+          IconButton(
+            tooltip: _contours ? 'Hide contours' : 'Show contours',
+            icon: Icon(_contours ? Icons.terrain : Icons.terrain_outlined),
+            color: _contours ? null : Colors.black38,
+            onPressed: () => setState(() {
+              _contours = !_contours;
+              _updateMapPacks();
+            }),
+          ),
           TextButton(
             onPressed: () => setState(
               () => _units = _units == Units.imperial

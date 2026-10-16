@@ -20,6 +20,11 @@
       "type": "vector",
       "url": "pmtiles://{pack:base}",
       "attribution": "USGS The National Map"
+    },
+    "contours": {
+      "type": "vector",
+      "url": "pmtiles://{pack:contours}",
+      "attribution": "USGS 3DEP"
     }
   },
   "layers": [
@@ -89,6 +94,41 @@
       ],
       "paint": {
         "fill-color": "#22201b"
+      }
+    },
+    {
+      "id": "contour",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contour",
+      "paint": {
+        "line-color": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "idx"
+            ],
+            1
+          ],
+          "#7a6650",
+          "#5e4f3d"
+        ],
+        "line-opacity": 0.85,
+        "line-width": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "idx"
+            ],
+            1
+          ],
+          1.0,
+          0.45
+        ]
       }
     },
     {
@@ -515,6 +555,88 @@
         "text-color": "#7fb0e0",
         "text-halo-color": "#161b20",
         "text-halo-width": 1
+      }
+    },
+    {
+      "id": "contour-label",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "idx"
+        ],
+        1
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "ele_ft"
+            ]
+          ],
+          " ft"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#a08c72",
+        "text-halo-color": "#22201b",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "contour-label-m",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "idx"
+        ],
+        1
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "ele_m"
+            ]
+          ],
+          " m"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#a08c72",
+        "text-halo-color": "#22201b",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "metric"
       }
     },
     {
