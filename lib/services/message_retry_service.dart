@@ -61,6 +61,9 @@ class RetryServiceConfig {
   final void Function(Contact, PathSelection, int attempt)? onAttemptStarted;
   // The radio confirmed an ACK for a message to this contact (uint32 hash).
   final void Function(Contact, int ackHash)? onAckMatched;
+  // The last ladder to this contact (pubkey hex) ended: the route it left
+  // on the radio is no longer the ladder's to hold.
+  final void Function(String contactKey)? onLadderEnded;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
 
@@ -80,6 +83,7 @@ class RetryServiceConfig {
     this.onAttemptResult,
     this.onAttemptStarted,
     this.onAckMatched,
+    this.onLadderEnded,
     this.appSettingsService,
     this.debugLogService,
   });
@@ -313,7 +317,13 @@ class MessageRetryService extends ChangeNotifier {
     _resolvedMessages.add(messageId);
     _activeMessages.remove(messageId);
     _sendNextForContact(contactKey);
+    if (!isSendingTo(contactKey)) _config?.onLadderEnded?.call(contactKey);
   }
+
+  /// Whether a message to [contactKey] is on its ladder now: that ladder
+  /// owns the route stored on the radio.
+  bool isSendingTo(String contactKey) => _activeMessages
+      .any((id) => _pendingContacts[id]?.publicKeyHex == contactKey);
 
   Future<void> _attemptSend(String messageId) async {
     final message = _pendingMessages[messageId];
