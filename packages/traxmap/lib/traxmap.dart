@@ -8,6 +8,7 @@
 library;
 
 export 'core.dart';
+export 'src/packs/background_pack_downloader.dart';
 export 'src/styles/asset_style_source.dart';
 export 'src/view/attribution.dart' show AttributionChip;
 export 'src/view/camera.dart';

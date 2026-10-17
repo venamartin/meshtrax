@@ -15,7 +15,7 @@ the styles here are written against.
 | Draws the map surface (`OfflineMapView`) from installed packs | Screens, menus, pickers, buttons |
 | Draws app overlays on the map: markers (any widget), labels from a zoom, lines, polygons | Banners, credits chips, empty states (it hands the app the data) |
 | Camera control (`OfflineMapController`), tap and long-press on the map | Network fetching while the map is in use |
-| Installs, verifies, lists and deletes packs (`PackManager`) | Downloading packs (planned) |
+| Downloads packs in the background, with pause, resume and SHA-256 checks (`PackDownloader`); installs, verifies, lists and deletes them (`PackManager`) | Choosing what to download (the app's screen) |
 | Bundled styles: OSM, USGS and NOAA Charts, each light and dark; units | |
 
 **The app must show** the credits from `MapStyleState.credits` (required by
@@ -95,6 +95,44 @@ controller.fitPoints(points, maxZoom: 15);
   - `OfflineMapController` is a `ChangeNotifier`: camera, visible bounds,
     ready state.
   - `PackManager.changes` fires on install and delete.
+
+## Pack downloads
+
+`BackgroundPackDownloader` (Flutter layer) implements the pure-Dart
+`PackDownloader` on the [background_downloader](https://pub.dev/packages/background_downloader)
+plugin (9.6). It doesn't use Android's DownloadManager.
+
+```dart
+final downloads = BackgroundPackDownloader(manager);
+downloads.updates.listen(showProgress);     // PackDownload: state, progress, error
+await downloads.restore();                  // at launch: earlier and interrupted downloads
+await downloads.requestNotificationPermission(); // when the user taps Download
+await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
+```
+
+- **Platforms:**
+  - **Android:** WorkManager. On Android 14+ it's a user-initiated data
+    transfer job, which needs the notification permission. Packs run past
+    WorkManager's 9-minute limit and keep going in the background.
+  - **iOS and macOS:** background `URLSession`.
+  - **Linux and Windows:** in-process, while the app runs.
+- **Resume:** a paused download continues with an HTTP range request. The
+  server must send `Accept-Ranges: bytes` and the same strong `ETag` on
+  every response; R2 does. A pack rebuilt mid-download changes its ETag, so
+  the download starts over.
+- **Install:** the file lands next to the packs as `<id>.pmtiles.download`.
+  `PackManager.install(move: true)` checks the index's SHA-256 and renames it
+  into place, so there's no second copy, and a bad file is deleted.
+- **Restore:** `restore()` re-queues downloads the app was killed during, and
+  installs ones that finished while it was closed.
+  - **Desktop:** a killed download restarts from 0%, and the plugin leaves
+    its partial file in the system temp folder.
+  - **Phones:** the OS keeps the transfer, except after a swipe-away.
+- **App setup:**
+  - **Android:** `INTERNET` and `POST_NOTIFICATIONS` permissions, Kotlin
+    2.1+.
+  - **macOS:** `com.apple.security.network.client`.
+  - **iOS:** HTTPS only.
 
 ## MeshTrax integration
 
@@ -207,14 +245,25 @@ from the regions mockup in traxmapmaker
 **Screens:**
 - the main screen: map picker (OSM / USGS / NOAA Charts), light/dark,
   contours on/off, ft/m, a pack drawer, and a stress test;
-- a MeshTrax-style demo (hub button).
+- a MeshTrax-style demo (hub button);
+- "Get maps" (cloud button): the pack index, with download, pause, resume
+  and cancel (`lib/downloads_page.dart`).
 
 **Desktop testing variables:**
 - `OVM_MAP=osm|usgs|charts` and `OVM_THEME=dark`: starting map and mode;
 - `OVM_CAMERA=lat,lon,zoom`: starting view;
 - `OVM_UNITS=metric`;
 - `OVM_CONTOURS=off`;
-- `OVM_SCREEN=meshtrax`: open the demo directly.
+- `OVM_SCREEN=meshtrax`: open the demo directly;
+- `OVM_INDEX=<url>`: the pack index (default: traxmapmaker's dev server,
+  `http://127.0.0.1:8000/out/published/index.json`);
+- `OVM_DOWNLOAD=<pack id>`: start that download on launch;
+- `OVM_STYLES=<dir>`: load styles from a folder.
+
+**Local pack server** for downloads, in traxmapmaker: publish with
+`backend = "local"` and `public_base_url = "http://127.0.0.1:8000/out/published"`,
+then run `./viewer/serve.py --rate 8` (8 MB/s, so pause and resume can be
+seen).
 
 The bundled test packs (Watsonville to Monterey) come from traxmapmaker:
 `./build.py --install-to ../traxmap/example/assets/packs`.
@@ -269,6 +318,14 @@ flutter test
 - the core library staying Flutter-free.
 
 `real_pack_test.dart` reads the bundled test packs when present.
+
+**Real downloads**, through background_downloader, against the local pack
+server (skipped when it isn't running). The test downloads a pack, pauses at
+30%, resumes with a range request, then verifies and installs it:
+
+```sh
+cd example && flutter test integration_test/pack_download_test.dart -d linux
+```
 
 ## Findings
 

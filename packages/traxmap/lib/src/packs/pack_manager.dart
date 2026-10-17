@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import 'geo.dart';
 import 'pack.dart';
+import 'pack_download.dart' show PackDownloader;
 import 'pmtiles_header.dart';
 
 /// Thrown when a pack cannot be installed or read.
@@ -18,8 +19,8 @@ class PackException implements Exception {
 
 /// Manages PMTiles packs stored in a single directory on the device.
 ///
-/// The app only ever reads local files here. Downloading from the pack server
-/// (Phase 4) will land through [install] once the file is on disk.
+/// The app only ever reads local files here. Downloads from the pack server
+/// (a [PackDownloader]) land through [install] once the file is on disk.
 class PackManager {
   static const String extension = '.pmtiles';
   static const String _partial = '.part';
@@ -69,7 +70,16 @@ class PackManager {
   /// Copies [source] into [root] as `<id>.pmtiles`, replacing any pack with the
   /// same id. The copy goes to a temporary file and is renamed only after the
   /// header parses and, if [sha256] is given, the checksum matches.
-  Future<Pack> install(File source, {String? id, String? sha256}) async {
+  ///
+  /// With [move], [source] is renamed instead of copied (falling back to a
+  /// copy across file systems), so a large download in [root] needs no
+  /// second copy's worth of space. A rejected file is deleted either way.
+  Future<Pack> install(
+    File source, {
+    String? id,
+    String? sha256,
+    bool move = false,
+  }) async {
     id ??= p.basenameWithoutExtension(source.path);
     if (id.isEmpty || id.contains(RegExp(r'[/\\]'))) {
       throw PackException('Invalid pack id "$id"');
@@ -78,7 +88,16 @@ class PackManager {
     final target = File(p.join(root.path, '$id$extension'));
     final temp = File('${target.path}$_partial');
     try {
-      await source.copy(temp.path);
+      if (move) {
+        try {
+          await source.rename(temp.path);
+        } on FileSystemException {
+          await source.copy(temp.path);
+          await source.delete();
+        }
+      } else {
+        await source.copy(temp.path);
+      }
       await PmTilesHeader.read(temp);
       if (sha256 != null && !await _matches(temp, sha256)) {
         throw PackException('Checksum mismatch for "$id"');

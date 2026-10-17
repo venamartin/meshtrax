@@ -20,6 +20,35 @@ void main() {
       File('${tmp.path}/$name')
         ..writeAsBytesSync(fakePmTiles(metadata: metadata));
 
+  test(
+    'install with move renames the download, and deletes a bad one',
+    () async {
+      // A download lands in the pack directory itself, next to the packs.
+      await manager.root.create(recursive: true);
+      final good = File('${manager.root.path}/r.pmtiles.download')
+        ..writeAsBytesSync(fakePmTiles(metadata: {'kind': 'osm'}));
+      final sum = sha256.convert(good.readAsBytesSync()).toString();
+      final pack = await manager.install(
+        good,
+        id: 'r',
+        sha256: sum,
+        move: true,
+      );
+      expect(pack.kind, PackKind.osm);
+      expect(good.existsSync(), isFalse);
+      expect((await manager.listInstalled()).map((p) => p.id), ['r']);
+
+      final bad = File('${manager.root.path}/s.pmtiles.download')
+        ..writeAsBytesSync(fakePmTiles());
+      await expectLater(
+        manager.install(bad, id: 's', sha256: '0' * 64, move: true),
+        throwsA(isA<PackException>()),
+      );
+      expect(bad.existsSync(), isFalse);
+      expect((await manager.listInstalled()).map((p) => p.id), ['r']);
+    },
+  );
+
   test('install, list, delete', () async {
     final pack = await manager.install(
       source(

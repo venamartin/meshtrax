@@ -1,5 +1,17 @@
 ## Unreleased
 
+- **Pack downloads:**
+  - **`PackDownloader`** (core): `PackDownload` snapshots with state,
+    progress and error.
+  - **`BackgroundPackDownloader`** (Flutter): built on background_downloader
+    9.6. It downloads in the background, pauses and resumes with range
+    requests, restores interrupted downloads at launch, and checks the
+    SHA-256 before installing.
+  - **`PackManager.install(move: true)`** renames a downloaded pack into
+    place instead of copying it.
+  - **Example:** a "Get maps" page; `OVM_INDEX` and `OVM_DOWNLOAD`; Android
+    internet and notification permissions; the macOS network client
+    entitlement; an integration test for a real download.
 - **Charts draw land contours:** `charts-light` and `charts-dark` read the
   contours pack (lines plus ft/m labels) like the OSM and USGS styles, so
   contours on/off and light/dark apply to all three maps.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -7,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:traxmap/traxmap.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'downloads_page.dart';
 import 'map_chrome.dart';
 import 'meshtrax_demo.dart';
 
@@ -52,7 +54,15 @@ class _MapScreenState extends State<MapScreen> {
     null => bundledStyles(),
   };
   PackManager? _manager;
+  BackgroundPackDownloader? _downloader;
   List<Pack> _packs = const [];
+
+  // OVM_INDEX sets the pack index URL; the default is traxmapmaker's dev
+  // server (./viewer/serve.py) over a local `./tmm publish`.
+  static final _indexUrl = Uri.parse(
+    Platform.environment['OVM_INDEX'] ??
+        'http://127.0.0.1:8000/out/published/index.json',
+  );
   // OVM_MAP=osm|usgs|charts and OVM_THEME=dark set the starting map
   // (handy for desktop testing).
   MapType _mapType =
@@ -105,7 +115,15 @@ class _MapScreenState extends State<MapScreen> {
       final manager = PackManager(Directory('${docs.path}/traxmap/packs'));
       await _installBundledPacks(manager);
       setState(() => _manager = manager);
+      final downloader = BackgroundPackDownloader(manager);
+      downloader.updates.listen(_onDownload);
+      await downloader.restore();
+      debugPrint('download: restored ${downloader.restoredCount} interrupted');
+      setState(() => _downloader = downloader);
       await _refresh();
+      // OVM_DOWNLOAD=<pack id> starts that download on launch (desktop testing).
+      final autoDownload = Platform.environment['OVM_DOWNLOAD'];
+      if (autoDownload != null) unawaited(_startDownload(autoDownload));
       await _applyStyle();
       // OVM_SCREEN=meshtrax opens the demo straight away (desktop testing).
       if (Platform.environment['OVM_SCREEN'] == 'meshtrax' &&
@@ -162,6 +180,44 @@ class _MapScreenState extends State<MapScreen> {
       await raf.close();
     }
   }
+
+  /// Logs state changes and every 10% (for desktop testing), and refreshes
+  /// the pack list when a download is installed.
+  void _onDownload(PackDownload d) {
+    final step = ((d.progress ?? 0) * 10).floor();
+    final key = '${d.state.name}/$step';
+    if (_lastLogged[d.id] != key) {
+      _lastLogged[d.id] = key;
+      debugPrint('download: $d');
+    }
+    if (d.state == PackDownloadState.installed) {
+      _refresh();
+      _toast('Installed ${d.entry.name}');
+    } else if (d.state == PackDownloadState.failed) {
+      _toast('${d.entry.name}: ${d.error}');
+    }
+  }
+
+  final _lastLogged = <String, String>{};
+
+  Future<void> _startDownload(String packId) async {
+    try {
+      final index = await fetchIndex(_indexUrl);
+      await _downloader!.start(index.packs.firstWhere((e) => e.id == packId));
+    } catch (e) {
+      debugPrint('download: could not start $packId: $e');
+    }
+  }
+
+  void _openDownloads() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => DownloadsPage(
+        downloader: _downloader!,
+        manager: _manager!,
+        indexUrl: _indexUrl,
+      ),
+    ),
+  );
 
   Future<void> _refresh() async {
     final packs = await _manager!.listInstalled(
@@ -307,6 +363,11 @@ class _MapScreenState extends State<MapScreen> {
                   : Icons.scatter_plot_outlined,
             ),
             onPressed: () => setState(() => _stressOverlays = !_stressOverlays),
+          ),
+          IconButton(
+            tooltip: 'Get maps',
+            icon: const Icon(Icons.cloud_download_outlined),
+            onPressed: _downloader == null ? null : _openDownloads,
           ),
           Builder(
             builder: (context) => IconButton(
