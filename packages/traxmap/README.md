@@ -135,6 +135,65 @@ controller.fitPoints(points, maxZoom: 15);
 5. `map_screen.dart`.
 6. `map_cache_screen.dart`: becomes a pack-management screen.
 
+**Offline maps screen** (replaces `map_cache_screen.dart`; planned
+2026-10-16). MeshTrax owns the screen. traxmap supplies the models, and
+the example app's region picker is the prototype to copy. The design comes
+from the regions mockup in traxmapmaker
+(`experiments/geofabrik_regions/`).
+- **Look and feel:** Martin likes the mockup, so stay as close to it as
+  possible while keeping MeshTrax's style. Keep the mockup's structure
+  and components. Take colours, type and widgets from MeshTrax's theme
+  (Material 3, blue seed, DejaVu Sans, light/dark from the app setting),
+  never the mockup's hex values.
+
+  | Mockup | MeshTrax |
+  | --- | --- |
+  | Green accent, soft-accent fills | `colorScheme.primary` / `primaryContainer` |
+  | Amber warning callout (large region, "Not for navigation") | Orange-tinted box with an orange left border, as in the mockup (MeshTrax already uses `Colors.orange` for warnings) |
+  | Bordered panels, 10 px radius | `Card.outlined` |
+  | Tabs under the title | `TabBar` in the `AppBar` (`AdaptiveAppBarTitle`) |
+  | Breadcrumb trail (North America › United States › …) | Same: tappable `TextButton`s with › separators, above the map |
+  | Map fills by download size (4 bands plus a grey "later"), with a legend strip under the map | Same bands as translucent `MapPolygon` fills over the world pack, tinted from the colour scheme; same legend strip |
+  | Region list as a chip grid under the map, with a "later" pill | `Wrap` of chips, same pill |
+  | Pack rows: checkbox, name, one-line source, size right-aligned in monospace | Same row as an outlined tile; sizes in monospace |
+  | Contour interval dropdown inside the Contours row | Same, as a `DropdownButton` |
+  | "Download" total row, then one primary "Download 1.2 GB" button | Same; `FilledButton` |
+  | Toast line | `SnackBar` |
+  | Map beside the panel above 880 px, stacked below | Same breakpoint; on phones the panel becomes the list sheet |
+
+  Drop the mockup-only parts: the "Mockup" tag, the outline-area and
+  OSM-extract rows, and the "sizes are estimates" note (the index has
+  real sizes).
+- **Tabs:** "Maps & contours" and "NOAA Charts". Charts are picked by
+  coastal state, not by land region.
+- **Layout:** on phones, the map is on top with a draggable list sheet
+  below. On wide screens, the map and list sit side by side.
+- **Map:**
+  - `OfflineMapView` draws region outlines as `MapPolygon`s. Tap one to
+    select it.
+  - Installed regions are filled, and selected ones are highlighted.
+  - It draws on a **small bundled world pack** (vector, z0–6), so the
+    picker works offline before any download. The same pack fills the
+    main map when nothing is installed.
+- **List:**
+  - A drill-down tree (North America › United States › California ›
+    NorCal).
+  - A "Suggested" row at the top for the region at the GPS fix or map
+    centre.
+  - Per-kind toggles with sizes: Map, Contours (on by default), and USGS
+    (US only).
+  - Progress, pause and cancel through `PackDownloader`.
+- **Installed:** storage used, "update available" (the index's sha256
+  differs from the installed pack), and delete.
+- **Data:**
+  - The simplified region outlines (`picker.geojson`) are **fetched from
+    R2** next to `index.json` and cached, so new regions appear without an
+    app release.
+  - Packs pair with regions by region id.
+  - Still to build: a `RegionIndex` in `core.dart` (tree, outlines,
+    `regionAt(LatLng)`, pairing with `PackIndexEntry`s), the world pack,
+    and `picker.geojson` in `./tmm regions` / `./tmm publish`.
+
 **MeshTrax can then delete:**
 - `map_tile_cache_service.dart` and its provider;
 - `map_cache_screen.dart` and its settings and strings;
