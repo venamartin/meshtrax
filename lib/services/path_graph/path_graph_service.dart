@@ -12,6 +12,7 @@ import '../../models/contact.dart';
 import '../../models/path_selection.dart';
 import '../../utils/app_logger.dart';
 import 'frame_adapter.dart';
+import 'radio_route_keeper.dart';
 
 /// Pathfinder: the path graph's hook into the app.
 ///
@@ -21,12 +22,16 @@ import 'frame_adapter.dart';
 /// plus the path it arrived on — echoes of this radio's own messages
 /// confirm their first hop as a doorstep), every route the firmware
 /// learns, and how each direct DM attempt ended. In return it ranks
-/// routes for the retry ladder ([candidatesFor]).
+/// routes for the retry ladder ([candidatesFor]) and keeps its route to
+/// each active contact stored on the radio, the route the radio's ACKs
+/// go on ([RadioRouteKeeper]).
 class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   PathGraphService();
 
   PathGraph? _graph;
   PathLabAdapter? _adapter;
+  RadioRouteKeeper? _keeper;
+  bool _radioReady = false;
   MeshCoreConnector? _connector;
   StreamSubscription<Uint8List>? _frames;
   Timer? _discoverWindow;
@@ -102,6 +107,23 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onChannelPacketHeard = _onChannelPacket;
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
+    final keeper = _keeper = RadioRouteKeeper(
+      contacts: () => connector.contacts,
+      routesFor: candidatesFor,
+      radioWidth: () => connector.pathHashByteWidth,
+      budget: () => connector.messageAttemptBudget,
+      isSendingTo: connector.isSendingTo,
+      recentChats: connector.contactsWithMessagesSince,
+      withRouteLock: connector.withPathLock,
+      writeRoute: (contact, route) => route.useFlood
+          ? connector.clearContactPath(contact)
+          : connector.setContactPath(contact,
+              Uint8List.fromList(route.pathBytes), route.hopCount,
+              hashSize: route.hashSize),
+    );
+    connector.onContactMessageCopy = keeper.onCopy;
+    connector.onSendLadderEnded = keeper.reassert;
+    _radioReady = false;
     WidgetsBinding.instance.addObserver(this);
     _onConnectorChanged();
     appLogger.info('path graph started', tag: 'PathGraph');
@@ -140,6 +162,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onChannelPacketHeard = null;
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
+    _connector?.onContactMessageCopy = null;
+    _connector?.onSendLadderEnded = null;
+    _keeper?.dispose();
+    _keeper = null;
     _connector = null;
     _adapter = null;
     _graph = null;
@@ -156,6 +182,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// most every couple of seconds; RX-log frames can arrive in bursts.
   Timer? _notifyThrottle;
   void _notifySoon() {
+    _keeper?.scheduleSync();
     _notifyThrottle ??= Timer(const Duration(seconds: 2), () {
       _notifyThrottle = null;
       notifyListeners();
@@ -193,6 +220,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     if (!connector.isConnected && _adapter?.pendingDiscoveryPubkey != null) {
       _adapter!.cancelDiscovery('link lost — ask again');
     }
+    final ready = connector.isConnected && !connector.isLoadingContacts;
+    if (ready && !_radioReady) _keeper?.onConnected();
+    _radioReady = ready;
 
     final self = connector.selfPublicKeyHex;
     // The radio's Path Hash Size can change without a new key; the graph
@@ -249,6 +279,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     // snapshot then holds the app's route, not the firmware's.
     if (connector.wroteContactPath(snapshot)) return;
     _provePathReply(snapshot);
+    // The firmware just replaced the stored route the ACKs go on.
+    _keeper?.reassert(snapshot.publicKeyHex);
   }
 
   /// A PATH reply names the first flood copy that arrived: it proves both

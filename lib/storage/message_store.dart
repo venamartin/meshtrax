@@ -462,6 +462,23 @@ class MessageStore {
         .go();
   }
 
+  /// Contacts with a message, either way, that this app saw since [since].
+  Future<Set<String>> contactsWithMessagesSince(DateTime since) async {
+    if (publicKeyHex.isEmpty) return const {};
+    final t = _db.contactMessageRows;
+    final keys = await (_db.selectOnly(t, distinct: true)
+          ..addColumns([t.contactKey])
+          ..where(
+            t.nodeScope.equals(publicKeyHex) &
+                t.receivedAtUs.isBiggerOrEqualValue(
+                  since.microsecondsSinceEpoch,
+                ),
+          ))
+        .map((r) => r.read(t.contactKey)!)
+        .get();
+    return keys.toSet();
+  }
+
   Future<List<Message>> loadMessages(String contactKeyHex) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn('Public key hex is not set. Cannot load messages.');
