@@ -1392,6 +1392,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void Function(Contact, int ackHash)? onAckHeard;
   List<PathSelection>? Function(Contact contact)? graphRouteCandidates;
 
+  /// Pathfinder's current distance to a contact in hops, or null when it
+  /// has nothing recent (see [estimatedHopsTo]).
+  int? Function(Contact contact)? graphDistanceTo;
+
   /// The last DM ladder to this contact (pubkey hex) ended.
   void Function(String contactKey)? onSendLadderEnded;
 
@@ -5992,10 +5996,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   static const int _minFloodTimeoutMs = TimeoutHelper.minFloodMs;
   static const int _maxTimeoutMs = TimeoutHelper.maxMs;
 
-  /// Best known distance to [contact] in hops: the firmware's route, else
-  /// how far the contact's last advert travelled, else null.
+  /// Best known distance to [contact] in hops: what Pathfinder saw last
+  /// (the route their PATH reply named, the hops their last flood took),
+  /// else the firmware's route, else how far the contact's last advert
+  /// travelled, else null. Sizes the wait for a flood's ACK: the default
+  /// 8 hops waited ~50–60 s while every ACK on the 2026-10-17 drive came
+  /// back in 15 s or less.
   int? estimatedHopsTo(Contact contact) =>
-      contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount;
+      graphDistanceTo?.call(contact) ??
+      (contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount);
 
   /// Timeout for one send attempt.
   ///

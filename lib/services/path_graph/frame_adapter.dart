@@ -355,6 +355,22 @@ class PathLabAdapter {
   static const int _floodMessageCap = 32;
   static const Duration _floodMessageWindow = Duration(seconds: 60);
 
+  /// Per contact (lowercase pubkey hex): how many hops their last flooded
+  /// DM or post took to reach me, and when. The decoded message's own
+  /// path_len byte, so it is known even when no raw packet matched.
+  final Map<String, ({int hops, DateTime at})> _lastFloodHops = {};
+
+  /// Hops the contact's last flood took to reach me, if one arrived
+  /// within [within]; their distance for sizing a flood's ACK wait.
+  int? lastFloodHopsFor(String contactPubkeyHex,
+      {Duration within = const Duration(hours: 1)}) {
+    final last = _lastFloodHops[contactPubkeyHex.toLowerCase()];
+    if (last == null || DateTime.now().difference(last.at) > within) {
+      return null;
+    }
+    return last.hops;
+  }
+
   /// PATH_UPDATED follows the logged reply within a second or two (the
   /// log is pushed before the radio decrypts, and the app fetches the
   /// contact before telling us). Ten seconds covers a slow link; a longer
@@ -910,6 +926,10 @@ class PathLabAdapter {
       String contactPubkeyHex, int pathLenRaw, int? snrByte) {
     final hops = PathHelper.pathLenHops(pathLenRaw);
     if (hops < 0) return;
+    if (hops > 0) {
+      _lastFloodHops[contactPubkeyHex.toLowerCase()] =
+          (hops: hops, at: DateTime.now());
+    }
     final width = PathHelper.pathLenWidth(pathLenRaw);
     final srcHash = int.parse(contactPubkeyHex.substring(0, 2), radix: 16);
     final who = contactPubkeyHex.substring(0, 12).toUpperCase();

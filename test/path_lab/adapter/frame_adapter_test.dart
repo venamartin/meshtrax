@@ -635,6 +635,18 @@ void main() {
     expect(adapter.pendingDiscover, isEmpty);
   });
 
+  test('the hops of a contact\'s last flood are kept as their distance', () {
+    final bob = 'b0' * 32;
+    expect(adapter.lastFloodHopsFor(bob), isNull);
+    adapter.attributeContactMessage(bob, 0x43, null); // 3 hops, 2-byte
+    expect(adapter.lastFloodHopsFor(bob), 3);
+    adapter.attributeContactMessage(bob, 0xFF, null); // direct: no distance
+    expect(adapter.lastFloodHopsFor(bob), 3, reason: 'a direct copy says nothing');
+    adapter.attributeContactMessage(bob, 0x02, null); // 2 hops, 1-byte
+    expect(adapter.lastFloodHopsFor(bob), 2,
+        reason: 'the decoded message\'s own path_len, whatever its width');
+  });
+
   test('a new request of mine starts a fresh answer list', () {
     adapter.expectedDiscoverTag = 0x04030201;
     adapter.handleFrame(Uint8List.fromList(

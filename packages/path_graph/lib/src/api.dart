@@ -1415,6 +1415,17 @@ class PathGraph {
     return _toResult(route);
   }
 
+  /// Hop count of their latest PATH reply's route while it is live, else
+  /// null: the freshest distance to them the graph knows.
+  int? liveRouteHops(String contactPubkey) {
+    final live = _liveRoutes[contactPubkey.toLowerCase()];
+    if (live == null) return null;
+    if (_arrivalMillis - live.at > config.liveRouteMinutes * 60 * 1000) {
+      return null;
+    }
+    return live.hops.length;
+  }
+
   /// Their latest PATH reply's route while it leads, priced like any
   /// other route.
   RouteResult? _liveRoute(String contactPubkey, int now) {

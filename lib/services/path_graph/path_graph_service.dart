@@ -103,6 +103,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onSendAttemptStarted = _onAttemptStarted;
     connector.onAckHeard = _onAckHeard;
     connector.graphRouteCandidates = candidatesFor;
+    connector.graphDistanceTo = distanceTo;
     connector.onChannelPacketHeard = _onChannelPacket;
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
@@ -157,6 +158,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onSendAttemptStarted = null;
     _connector?.onAckHeard = null;
     _connector?.graphRouteCandidates = null;
+    _connector?.graphDistanceTo = null;
     _connector?.onChannelPacketHeard = null;
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
@@ -375,6 +377,15 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       },
       for (final r in graph.findAlternatives(key, count: 3)) route(r),
     ].nonNulls.toList();
+  }
+
+  /// The freshest distance to [contact] in hops: the route their last PATH
+  /// reply named while it is live, else the hops their last flood took to
+  /// reach me (within the hour), else null. The connector sizes a flood's
+  /// ACK wait from it instead of assuming 8 hops.
+  int? distanceTo(Contact contact) {
+    final key = contact.publicKeyHex;
+    return _graph?.liveRouteHops(key) ?? _adapter?.lastFloodHopsFor(key);
   }
 
   /// A channel message names its sender; if that name belongs to exactly
