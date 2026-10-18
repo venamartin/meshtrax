@@ -1,0 +1,529 @@
+{
+  "version": 8,
+  "name": "USGS (dark)",
+  "metadata": {
+    "ovm:status": "Generated from usgs-light.json by tool/make_dark_variants.py.",
+    "ovm:map": "usgs",
+    "ovm:theme": "dark",
+    "ovm:family": "standard",
+    "ovm:dark": true
+  },
+  "glyphs": "{glyphs}",
+  "sources": {
+    "base": {
+      "type": "vector",
+      "url": "pmtiles://{pack:base}",
+      "attribution": "USGS The National Map"
+    },
+    "contours": {
+      "type": "vector",
+      "url": "pmtiles://{pack:contours}",
+      "attribution": "USGS 3DEP"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#1a1e22"
+      }
+    },
+    {
+      "id": "elev_band",
+      "type": "fill",
+      "source": "base",
+      "source-layer": "elev_band",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "band_ft"
+          ],
+          500,
+          "#1d2226",
+          1000,
+          "#20262a",
+          1500,
+          "#242a2c",
+          2000,
+          "#282d2e",
+          3000,
+          "#2d3130",
+          5000,
+          "#333533",
+          8000,
+          "#3d3f3d"
+        ],
+        "fill-antialias": false
+      }
+    },
+    {
+      "id": "woodland",
+      "type": "fill",
+      "source": "base",
+      "source-layer": "woodland",
+      "paint": {
+        "fill-color": "#1f2d24",
+        "fill-opacity": 0.8
+      }
+    },
+    {
+      "id": "hillshade",
+      "type": "fill",
+      "source": "base",
+      "source-layer": "hillshade",
+      "paint": {
+        "fill-color": [
+          "case",
+          [
+            "<",
+            [
+              "get",
+              "level"
+            ],
+            0
+          ],
+          "#ffffff",
+          "#000000"
+        ],
+        "fill-opacity": [
+          "match",
+          [
+            "get",
+            "level"
+          ],
+          -1,
+          0.05,
+          1,
+          0.12,
+          2,
+          0.22,
+          3,
+          0.32,
+          4,
+          0.42,
+          0
+        ],
+        "fill-antialias": false
+      }
+    },
+    {
+      "id": "reserve",
+      "type": "line",
+      "source": "base",
+      "source-layer": "reserve",
+      "paint": {
+        "line-color": "#3f6b4a",
+        "line-width": 1.5,
+        "line-dasharray": [
+          3,
+          2
+        ]
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "base",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "marsh",
+          "#17302c",
+          "#13283a"
+        ]
+      }
+    },
+    {
+      "id": "waterway",
+      "type": "line",
+      "source": "base",
+      "source-layer": "waterway",
+      "filter": [
+        "!=",
+        [
+          "get",
+          "kind"
+        ],
+        "coastline"
+      ],
+      "paint": {
+        "line-color": "#2b5578",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.5,
+          14,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "coastline",
+      "type": "line",
+      "source": "base",
+      "source-layer": "waterway",
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "coastline"
+      ],
+      "paint": {
+        "line-color": "#3c6d96",
+        "line-width": 1
+      }
+    },
+    {
+      "id": "contour",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contour",
+      "paint": {
+        "line-color": "#6b5a47",
+        "line-opacity": 0.8,
+        "line-width": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "idx"
+            ],
+            1
+          ],
+          1.1,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "rail",
+      "type": "line",
+      "source": "base",
+      "source-layer": "rail",
+      "paint": {
+        "line-color": "#555b63",
+        "line-width": 1.2,
+        "line-dasharray": [
+          4,
+          2
+        ]
+      }
+    },
+    {
+      "id": "road",
+      "type": "line",
+      "source": "base",
+      "source-layer": "road",
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "motorway",
+          "#9a7440",
+          "major",
+          "#7a6748",
+          "track",
+          "#5e5040",
+          "#4a4f55"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          [
+            "match",
+            [
+              "get",
+              "kind"
+            ],
+            "motorway",
+            1.5,
+            "major",
+            1,
+            0.3
+          ],
+          14,
+          [
+            "match",
+            [
+              "get",
+              "kind"
+            ],
+            "motorway",
+            6,
+            "major",
+            4.5,
+            "ramp",
+            3,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "trail",
+      "type": "line",
+      "source": "base",
+      "source-layer": "trail",
+      "paint": {
+        "line-color": "#d0705f",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          1,
+          15,
+          2.5
+        ],
+        "line-dasharray": [
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "id": "poi",
+      "type": "circle",
+      "source": "base",
+      "source-layer": "poi",
+      "paint": {
+        "circle-radius": 3,
+        "circle-color": "#9b6fb3"
+      }
+    },
+    {
+      "id": "contour-label",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "idx"
+        ],
+        1
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "ele_ft"
+            ]
+          ],
+          " ft"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#a08c72",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "contour-label-m",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "idx"
+        ],
+        1
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "ele_m"
+            ]
+          ],
+          " m"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#a08c72",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "road-label",
+      "type": "symbol",
+      "source": "base",
+      "source-layer": "road",
+      "minzoom": 13,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          [
+            "get",
+            "ref"
+          ]
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 11
+      },
+      "paint": {
+        "text-color": "#c9d0d8",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "trail-label",
+      "type": "symbol",
+      "source": "base",
+      "source-layer": "trail",
+      "minzoom": 13,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 11
+      },
+      "paint": {
+        "text-color": "#e08a7a",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-label",
+      "type": "symbol",
+      "source": "base",
+      "source-layer": "poi",
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#aab3bd",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "place-label",
+      "type": "symbol",
+      "source": "base",
+      "source-layer": "place",
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "populated_place",
+          14,
+          11
+        ]
+      },
+      "paint": {
+        "text-color": "#e6eaef",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      }
+    }
+  ]
+}
