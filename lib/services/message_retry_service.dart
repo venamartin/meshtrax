@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:crypto/crypto.dart';
+import '../helpers/timeout_helper.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
 import '../models/path_selection.dart';
@@ -49,6 +51,9 @@ class RetryServiceConfig {
   final Uint8List? Function()? getSelfPublicKey;
   // The radio's on-air hash width: the width a user override is written at.
   final int Function()? pathHashByteWidth;
+  // LoRa airtime of a packet of this many bytes at the radio's settings:
+  // sizes the wait for a repeater's copy of my own flood.
+  final int Function(int packetBytes)? estimateAirtime;
   final String Function(Contact, String)? prepareContactOutboundText;
   // A message to this contact was just delivered by a flood attempt.
   final Function(Contact)? onFloodDelivered;
@@ -77,6 +82,7 @@ class RetryServiceConfig {
     this.calculateTimeout,
     this.getSelfPublicKey,
     this.pathHashByteWidth,
+    this.estimateAirtime,
     this.prepareContactOutboundText,
     this.onFloodDelivered,
     this.graphRoutes,
@@ -127,6 +133,22 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Set<int>> _onAir = {};
   // Attempts already reported to Pathfinder as failed, at their timeout.
   final Map<String, Set<int>> _reported = {};
+  // "No repeater heard you": the watch for a repeater's copy of a flood
+  // in flight, how long it was, when a message was parked for lack of one,
+  // and how often it has been sent again on a repeater coming into range.
+  final Map<String, Timer> _echoTimers = {};
+  final Map<String, int> _echoWaitMs = {};
+  // Parked messages: false until their cooldown has run.
+  final Map<String, bool> _parkedReady = {};
+  final Map<String, Timer> _cooldownTimers = {};
+  final Map<String, int> _autoResends = {};
+
+  /// Sends a parked message gets on repeaters coming into range, outside
+  /// Max Message Retries; after that its ladder moves on.
+  static const int maxAutoResends = 3;
+
+  /// Floor between one parked send and the next, on top of the echo wait.
+  static const int repeaterCooldownMs = 30000;
   final Map<String, AckHashMapping> _ackHashToMessageId = {};
   final Map<String, List<int>> _expectedAckHashes = {};
   final List<_AckHistoryEntry> _ackHistory = [];
@@ -548,16 +570,125 @@ class MessageRetryService extends ChangeNotifier {
     config.updateMessage(updatedMessage);
 
     _startTimeoutTimer(messageId, actualTimeout);
+    _armEchoWatch(messageId, contact, updatedMessage, actualTimeout);
     return true;
+  }
+
+  /// A flood just left the radio: if a repeater's copy of it can be seen
+  /// at all, wait the firmware-anchored echo window for one; none means
+  /// no repeater heard this radio, and the message is parked.
+  void _armEchoWatch(
+      String messageId, Contact contact, Message message, int attemptTimeoutMs) {
+    final config = _config;
+    final airtime = config?.estimateAirtime;
+    final selection = _attemptRoutes[messageId]?[message.retryCount];
+    if (config == null || airtime == null || selection == null) return;
+    if (!selection.useFlood) return;
+    final outboundText =
+        config.prepareContactOutboundText?.call(contact, message.text) ??
+            message.text;
+    final width = config.pathHashByteWidth?.call() ?? contact.pathHashSize;
+    if (!isContactEchoObservable(outboundText, width)) return;
+    final textBytes = utf8.encode(outboundText).length;
+    final waitMs = TimeoutHelper.echoWaitMs(
+        airtime(txtMsgPacketBytes(textBytes, hops: width)), attemptTimeoutMs);
+    _echoWaitMs[messageId] = waitMs;
+    _echoTimers[messageId]?.cancel();
+    _echoTimers[messageId] =
+        Timer(Duration(milliseconds: waitMs), () => _park(messageId));
+  }
+
+  /// The raw RX log showed a repeater's copy of a flooded DM of mine to
+  /// the contact whose first key byte is [destByte]: somebody heard me.
+  void noteOwnFloodEcho(int destByte) {
+    for (final id in _echoTimers.keys.toList()) {
+      final key = _pendingContacts[id]?.publicKey;
+      if (key == null || key.isEmpty || key[0] != destByte) continue;
+      _echoTimers.remove(id)?.cancel();
+    }
+  }
+
+  void _park(String messageId) {
+    _echoTimers.remove(messageId);
+    final message = _pendingMessages[messageId];
+    final contact = _pendingContacts[messageId];
+    final config = _config;
+    if (message == null || contact == null || config == null) return;
+    if (message.status != MessageStatus.sent ||
+        _resolvedMessages.contains(messageId)) {
+      return;
+    }
+    // The ACK wait is cancelled, not the ACK itself: a copy I failed to
+    // hear can still be delivered, and its ACK flips the message as usual.
+    _timeoutTimers.remove(messageId)?.cancel();
+    final parked = message.copyWith(waitingForRepeater: true);
+    _pendingMessages[messageId] = parked;
+    _parkedReady[messageId] = false;
+    final cooldown = math.max(_echoWaitMs[messageId] ?? 0, repeaterCooldownMs);
+    _cooldownTimers[messageId]?.cancel();
+    _cooldownTimers[messageId] = Timer(Duration(milliseconds: cooldown), () {
+      _cooldownTimers.remove(messageId);
+      if (_parkedReady.containsKey(messageId)) _parkedReady[messageId] = true;
+    });
+    final shortText = message.text.length > 20
+        ? '${message.text.substring(0, 20)}...'
+        : message.text;
+    config.debugLogService?.warn(
+      'No repeater heard "$shortText" to ${contact.name} within '
+      '${((_echoWaitMs[messageId] ?? 0) / 1000).toStringAsFixed(0)} s — '
+      'waiting for one to be in range',
+      tag: 'AckHash',
+    );
+    config.updateMessage(parked);
+    notifyListeners();
+  }
+
+  /// A repeater's transmission reached this radio: every parked message
+  /// past its cooldown is sent again on the same rung (up to
+  /// [maxAutoResends] times), then its ladder moves on.
+  void noteRepeaterHeard() {
+    for (final id in _parkedReady.keys.toList()) {
+      final message = _pendingMessages[id];
+      final contact = _pendingContacts[id];
+      if (message == null || contact == null) {
+        _parkedReady.remove(id);
+        _cooldownTimers.remove(id)?.cancel();
+        continue;
+      }
+      if (_parkedReady[id] != true) continue;
+      _parkedReady.remove(id);
+      final resumed = message.copyWith(
+          status: MessageStatus.pending, waitingForRepeater: false);
+      _pendingMessages[id] = resumed;
+      _config?.updateMessage(resumed);
+      final shortText = message.text.length > 20
+          ? '${message.text.substring(0, 20)}...'
+          : message.text;
+      final n = _autoResends[id] ?? 0;
+      if (n < maxAutoResends) {
+        _autoResends[id] = n + 1;
+        _config?.debugLogService?.info(
+          'A repeater is in range: sending "$shortText" to ${contact.name} '
+          'again (${n + 1}/$maxAutoResends)',
+          tag: 'AckHash',
+        );
+        _attemptSend(id);
+      } else {
+        _handleTimeout(id);
+      }
+    }
   }
 
   bool get hasPendingMessages => _pendingMessages.isNotEmpty;
 
   /// A message is queued, on the air or awaiting its ACK. Failed messages
   /// kept for a late ACK do not count.
+  /// A parked message is not in flight: nothing is on the air for it.
   bool get hasMessagesInFlight => _pendingMessages.values.any(
         (m) =>
-            m.status == MessageStatus.pending || m.status == MessageStatus.sent,
+            !m.waitingForRepeater &&
+            (m.status == MessageStatus.pending ||
+                m.status == MessageStatus.sent),
       );
 
   /// Update the stored contact snapshot for all pending messages to this
@@ -646,6 +777,11 @@ class MessageRetryService extends ChangeNotifier {
     _attemptRoutes.remove(messageId);
     _onAir.remove(messageId);
     _reported.remove(messageId);
+    _echoTimers.remove(messageId)?.cancel();
+    _echoWaitMs.remove(messageId);
+    _parkedReady.remove(messageId);
+    _cooldownTimers.remove(messageId)?.cancel();
+    _autoResends.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -831,6 +967,7 @@ class MessageRetryService extends ChangeNotifier {
         pathHashSize: acked?.hashSize,
         routeSource: acked?.source ?? RouteSource.firmware,
         deliveredLate: message.status == MessageStatus.failed,
+        waitingForRepeater: false,
       );
 
       final wasAlreadyResolved = _resolvedMessages.contains(matchedMessageId);
@@ -894,6 +1031,17 @@ class MessageRetryService extends ChangeNotifier {
     _attemptRoutes.clear();
     _onAir.clear();
     _reported.clear();
+    for (final timer in _echoTimers.values) {
+      timer.cancel();
+    }
+    for (final timer in _cooldownTimers.values) {
+      timer.cancel();
+    }
+    _echoTimers.clear();
+    _echoWaitMs.clear();
+    _parkedReady.clear();
+    _cooldownTimers.clear();
+    _autoResends.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();

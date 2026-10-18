@@ -2928,6 +2928,7 @@ class _MessageBubble extends StatelessWidget {
             : l10n.chat_statusFailedShort;
       case MessageStatus.pending:
       case MessageStatus.sent:
+        if (m.waitingForRepeater) return l10n.chat_statusNoRepeaterHeard;
         if (!detailed) return null;
         if (context.read<MessageRetryService>().isQueued(m.messageId)) {
           return l10n.chat_statusQueued;
@@ -2947,7 +2948,7 @@ class _MessageBubble extends StatelessWidget {
         icon = Icons.access_time;
         break;
       case MessageStatus.sent:
-        icon = Icons.schedule;
+        icon = message.waitingForRepeater ? Icons.cell_tower : Icons.schedule;
         break;
       case MessageStatus.delivered:
         icon = Icons.check;

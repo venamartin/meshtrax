@@ -3760,6 +3760,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_statusQueued => 'Queued';
 
   @override
+  String get chat_statusNoRepeaterHeard =>
+      'No repeater heard you. Will try again when one is in range.';
+
+  @override
   String chat_statusSending(String kind) {
     return 'Sending · $kind';
   }

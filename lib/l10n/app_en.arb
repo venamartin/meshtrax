@@ -2210,6 +2210,7 @@
     }
   },
   "chat_statusQueued": "Queued",
+  "chat_statusNoRepeaterHeard": "No repeater heard you. Will try again when one is in range.",
   "chat_statusSending": "Sending · {kind}",
   "@chat_statusSending": {
     "placeholders": {

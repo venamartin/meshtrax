@@ -1219,6 +1219,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             ),
         getSelfPublicKey: () => _selfPublicKey,
         pathHashByteWidth: () => _pathHashByteWidth,
+        estimateAirtime: _estimateAirtimeMs,
         prepareContactOutboundText: prepareContactOutboundText,
         onFloodDelivered: _relearnRoomRouteAfterFlood,
         graphRoutes: (contact) => graphRouteCandidates?.call(contact),
@@ -6843,7 +6844,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
-      if (packet == null || packet.payloadType != _payloadTypeGroupText) return;
+      if (packet == null) return;
+      // Message liveness, any hash width (the raw copy of my own flooded
+      // DM carries [their byte][my byte]; a flood with hops passed through
+      // a repeater I can hear). Never evidence for Pathfinder: it keeps
+      // its own, width-checked reading of the same frame.
+      if (packet.isFlood) {
+        if (packet.hopCount > 0) _retryService?.noteRepeaterHeard();
+        final me = _selfPublicKey;
+        if (packet.payloadType == _payloadTypeTxtMsg &&
+            packet.payload.length >= 2 &&
+            me != null &&
+            packet.payload[1] == me[0] &&
+            packet.payload[0] != me[0]) {
+          _retryService?.noteOwnFloodEcho(packet.payload[0]);
+        }
+      }
+      if (packet.payloadType != _payloadTypeGroupText) return;
 
       final payload = BufferReader(packet.payload);
       final channelHash = payload.readByte();
@@ -6962,6 +6979,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (ctlType == ctlTypeNodeDiscoverResp) {
         final nodeType = ctlPayload[0] & 0x0F;
         if (nodeType != advTypeRepeater) return;
+        // Whoever it answered, a repeater's transmission reached me.
+        _retryService?.noteRepeaterHeard();
 
         if (ctlPayload.length < 6) return;
         final tag = ByteData.sublistView(ctlPayload, 2, 6).getUint32(0, Endian.little);
@@ -10399,6 +10418,7 @@ const int _routeTransportFlood = 0x00;
 const int _routeFlood = 0x01;
 const int _routeTransportDirect = 0x03;
 
+const int _payloadTypeTxtMsg = 0x02;
 const int _payloadTypeGroupText = 0x05;
 const int _cipherMacSize = 2;
 

@@ -6791,6 +6791,12 @@ abstract class AppLocalizations {
   /// **'Queued'**
   String get chat_statusQueued;
 
+  /// No description provided for @chat_statusNoRepeaterHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'No repeater heard you. Will try again when one is in range.'**
+  String get chat_statusNoRepeaterHeard;
+
   /// No description provided for @chat_statusSending.
   ///
   /// In en, this message translates to:

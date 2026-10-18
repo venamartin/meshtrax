@@ -406,6 +406,23 @@ bool isChannelEchoObservable(
   return repeatedRaw + 3 <= maxFrameSize;
 }
 
+/// Whether a repeater's copy of an outgoing contact message (a flooded DM)
+/// can EVER reach the app through the raw RX-log push, which drops any
+/// packet that does not fit the serial frame (`logRxRaw`: raw + 3 <=
+/// [maxFrameSize]). A 1-hop repeated scoped flood is header(1) + transport
+/// codes(4) + path_len(1) + [pathHashByteWidth] path bytes + payload, where
+/// payload = dest(1) + src(1) + MAC(2) + zero-padded AES blocks of
+/// timestamp(4) + flags(1) + text. At 2-byte hashes a 155-byte text is the
+/// longest whose echo can be seen; 156 and up never echo visibly, so a
+/// silence on them means nothing.
+bool isContactEchoObservable(String outboundText, int pathHashByteWidth) {
+  final plaintext = 5 + utf8.encode(outboundText).length;
+  final ciphertext = ((plaintext + 15) ~/ 16) * 16;
+  final payload = 1 + 1 + 2 + ciphertext;
+  final repeatedRaw = 1 + 4 + 1 + pathHashByteWidth + payload;
+  return repeatedRaw + 3 <= maxFrameSize;
+}
+
 int _senderNameBytes(String? senderName) {
   if (senderName == null || senderName.isEmpty) return maxNameSize - 1;
   final bytes = utf8.encode(senderName);
