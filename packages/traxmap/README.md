@@ -1,11 +1,11 @@
 # traxmap
 
-Offline vector maps for [MeshTrax](../meshtrax): renders map packs (PMTiles,
+Offline vector maps for [MeshTrax](../..): renders map packs (PMTiles,
 Mapbox Vector Tiles) with bundled styles, manages installed packs, and
 exposes hooks for the app. Works with no network at all.
 
-Packs are built by **[traxmapmaker](../traxmapmaker)**, whose
-[`SCHEMA.md`](../traxmapmaker/SCHEMA.md) defines the layers and pack metadata
+Packs are built by **[traxmapmaker](https://github.com/venamartin/traxmapmaker)** (a separate repository), whose
+[`SCHEMA.md`](https://github.com/venamartin/traxmapmaker/blob/main/SCHEMA.md) defines the layers and pack metadata
 the styles here are written against.
 
 ## What it does and doesn't do
@@ -37,7 +37,7 @@ when present (chart styles: "Not for navigation").
 ```yaml
 dependencies:
   traxmap:
-    git: <repo url>   # or path: ../traxmap
+    path: packages/traxmap   # from the MeshTrax root
 ```
 
 ```dart
@@ -174,8 +174,9 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
 6. `map_cache_screen.dart`: becomes a pack-management screen.
 
 **Offline maps screen** (replaces `map_cache_screen.dart`; planned
-2026-10-16). MeshTrax owns the screen. traxmap supplies the models, and
-the example app's region picker is the prototype to copy. The design comes
+2026-10-16). MeshTrax owns the screen. traxmap supplies the models. The
+removed example app's downloads page was the prototype (`git show
+dd0a54c:packages/traxmap/example/lib/downloads_page.dart`). The design comes
 from the regions mockup in traxmapmaker
 (`experiments/geofabrik_regions/`).
 - **Look and feel:** Martin likes the mockup, so stay as close to it as
@@ -237,36 +238,28 @@ from the regions mockup in traxmapmaker
 - `map_cache_screen.dart` and its settings and strings;
 - possibly `flutter_cache_manager`.
 
-## Example app
+## Host app setup
 
-`example/` is the test bench: it shows how an app draws the chrome itself
-(see `lib/map_chrome.dart`). Run it with `flutter run -d linux`, or on a phone.
+traxmap has no example app (it was removed when traxmap moved into MeshTrax);
+MeshTrax is the host. Pack downloads (background_downloader) need, in the app:
 
-**Screens:**
-- the main screen: map picker (OSM / USGS / NOAA Charts), light/dark,
-  contours on/off, ft/m, a pack drawer, and a stress test;
-- a MeshTrax-style demo (hub button);
-- "Get maps" (cloud button): the pack index, with download, pause, resume
-  and cancel (`lib/downloads_page.dart`).
+- **Android:** `android.permission.INTERNET`, and `android.permission.POST_NOTIFICATIONS`
+  for the Android 14+ long-download notification.
+- **macOS:** the `com.apple.security.network.client` entitlement (Debug and Release).
 
-**Desktop testing variables:**
-- `OVM_MAP=osm|usgs|charts` and `OVM_THEME=dark`: starting map and mode;
-- `OVM_CAMERA=lat,lon,zoom`: starting view;
-- `OVM_UNITS=metric`;
-- `OVM_CONTOURS=off`;
-- `OVM_SCREEN=meshtrax`: open the demo directly;
-- `OVM_INDEX=<url>`: the pack index (default: traxmapmaker's dev server,
-  `http://127.0.0.1:8000/out/published/index.json`);
-- `OVM_DOWNLOAD=<pack id>`: start that download on launch;
-- `OVM_STYLES=<dir>`: load styles from a folder.
+## Test packs
+
+Not in git. The tests that read them skip when they're missing. Build the
+Watsonville–Monterey test packs with traxmapmaker and copy them here:
+
+```sh
+./build.py --install-to ../meshtrax/packages/traxmap/test/packs   # in traxmapmaker
+```
 
 **Local pack server** for downloads, in traxmapmaker: publish with
 `backend = "local"` and `public_base_url = "http://127.0.0.1:8000/out/published"`,
 then run `./viewer/serve.py --rate 8` (8 MB/s, so pause and resume can be
 seen).
-
-The bundled test packs (Watsonville to Monterey) come from traxmapmaker:
-`./build.py --install-to ../traxmap/example/assets/packs`.
 
 ## Styles
 
@@ -317,19 +310,16 @@ flutter test
 - attribution;
 - the core library staying Flutter-free.
 
-`real_pack_test.dart` reads the bundled test packs when present.
+`real_pack_test.dart` and `local_pmtiles_provider_test.dart` read the test packs in `test/packs/` when present.
 
-**Real downloads**, through background_downloader, against the local pack
-server (skipped when it isn't running). The test downloads a pack, pauses at
-30%, resumes with a range request, then verifies and installs it:
-
-```sh
-cd example && flutter test integration_test/pack_download_test.dart -d linux
-```
+**Real downloads** were tested by the example app's integration test
+(download, pause at 30%, resume with a range request, verify, install),
+removed with the example: `git show dd0a54c:packages/traxmap/example/integration_test/pack_download_test.dart`.
+Move it into MeshTrax's `integration_test/` when pack downloads are wired up.
 
 ## Findings
 
-traxmapmaker's [`FINDINGS.md`](../traxmapmaker/FINDINGS.md) records the
+traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md) records the
 decisions, measurements and pitfalls behind this package (renderer choice,
-Flutter pitfalls, MeshTrax integration). Both repos grew from the
-`vectormaps` prototype.
+Flutter pitfalls, MeshTrax integration). Both grew from the `vectormaps`
+prototype.

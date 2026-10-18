@@ -30,6 +30,5 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Map packs: only the small bundled test packs are tracked.
+# Map packs, including the test packs in test/packs (built by traxmapmaker).
 *.pmtiles
-!example/assets/packs/*.pmtiles

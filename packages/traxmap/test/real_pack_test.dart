@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:traxmap/traxmap.dart';
 
-/// Reads the pack built by pipeline/build.py, if it has been built.
+/// Reads the test packs built by traxmapmaker, if they're in test/packs.
 void main() {
-  final file = File('example/assets/packs/watsonville-test.pmtiles');
+  final file = File('test/packs/watsonville-test.pmtiles');
 
   test(
     'reads the pipeline-built test pack',
@@ -23,11 +23,11 @@ void main() {
       expect(pack.vectorLayers, isNot(contains('contour')));
       expect(pack.bounds.contains(const LatLng(36.91, -121.76)), isTrue);
     },
-    skip: file.existsSync() ? false : 'run pipeline/build.py --install-example',
+    skip: file.existsSync() ? false : 'build test packs into test/packs (see README)',
   );
 
   final contours = File(
-    'example/assets/packs/watsonville-test-contours-20ft.pmtiles',
+    'test/packs/watsonville-test-contours-20ft.pmtiles',
   );
   test(
     'reads the pipeline-built contours pack',
@@ -41,6 +41,6 @@ void main() {
     },
     skip: contours.existsSync()
         ? false
-        : 'run pipeline/build.py --install-example',
+        : 'build test packs into test/packs (see README)',
   );
 }

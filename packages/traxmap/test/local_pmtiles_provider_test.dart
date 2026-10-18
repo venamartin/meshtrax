@@ -5,10 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:traxmap/src/renderer/local_pmtiles_provider.dart';
 
 void main() {
-  final file = File('example/assets/packs/watsonville-test.pmtiles');
+  final file = File('test/packs/watsonville-test.pmtiles');
   final skip = file.existsSync()
       ? false
-      : 'run pipeline/build.py --install-example';
+      : 'build test packs into test/packs (see README)';
 
   test('serves tiles from the local test pack', () async {
     final provider = await LocalPmTilesVectorTileProvider.open(file);
