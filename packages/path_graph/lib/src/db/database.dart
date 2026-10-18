@@ -29,8 +29,11 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// the row was proven, for the Pathfinder screen's row detail.
   /// v7 (2026-10-14): contact_ingress gains floodProvenAt (a flood echo
   /// proved it) and lastHeardAt (the heard clock, apart from proofs).
+  /// v8 (2026-10-17): contact_ingress gains failedSinceProof — failed
+  /// direct sends from a doorstep since its last proof, the route-start
+  /// gate's counter.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +88,9 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             await customStatement(
                 'UPDATE contact_ingress SET last_heard_at = last_seen '
                 'WHERE final_count > 0 AND last_heard_at IS NULL');
+          }
+          if (from < 8) {
+            await addIfMissing(contactIngress.failedSinceProof);
           }
         },
       );

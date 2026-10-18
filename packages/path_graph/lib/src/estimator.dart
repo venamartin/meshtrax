@@ -27,6 +27,9 @@ class PathGraphConfig {
     this.doorstepWeight = 3,
     this.directFreshMinutes = 30,
     this.measuredSnrHalfLifeMinutes = 45,
+    this.selfFailGate = 2,
+    this.selfSilenceMinutes = 30,
+    this.selfSilenceMinEvents = 3,
     this.relayedCopyGraceSeconds = 60,
     this.liveRouteMinutes = 10,
     this.slashEpochMinutes = 2,
@@ -147,6 +150,27 @@ class PathGraphConfig {
   /// 40 km away).
   final double measuredSnrHalfLifeMinutes;
 
+  /// The route-start gate on my own doorsteps (owner, 2026-10-17). A
+  /// failed one-hop route marks nothing down, Dijkstra never drops a
+  /// source by weight and the ladder always tries the best route, so a
+  /// stale home doorstep held every route 40 km away; only exclusion can
+  /// turn that into a flood, whose echo and PATH reply then teach the
+  /// graph where I am. Negative-only: nothing here mints a proof.
+  ///
+  /// [selfFailGate]: this many direct sends failed from a doorstep since
+  /// its last proof and it stops starting routes (replay of that drive:
+  /// at 2, 113 of 186 failed route attempts skipped, 2 of 7 deliveries
+  /// blocked). [selfSilenceMinutes]: a doorstep this much quieter than
+  /// the newest-heard of my doorsteps stops too — a repeater out-transmits
+  /// a handheld, so not hearing it for that long while hearing others is
+  /// as good as it not hearing me. Self-gated: the clock is my own
+  /// newest hearing, so a quiet mesh excludes nothing, and silence only
+  /// counts once [selfSilenceMinEvents] packets have been heard inside
+  /// the window.
+  final int selfFailGate;
+  final double selfSilenceMinutes;
+  final int selfSilenceMinEvents;
+
   /// Copies of one flood land within seconds of each other: a relayed
   /// copy this soon after a direct one is the same packet, not a move.
   final double relayedCopyGraceSeconds;
@@ -194,6 +218,9 @@ class PathGraphConfig {
         doorstepWeight: doorstepWeight ?? this.doorstepWeight,
         directFreshMinutes: directFreshMinutes,
         measuredSnrHalfLifeMinutes: measuredSnrHalfLifeMinutes,
+        selfFailGate: selfFailGate,
+        selfSilenceMinutes: selfSilenceMinutes,
+        selfSilenceMinEvents: selfSilenceMinEvents,
         relayedCopyGraceSeconds: relayedCopyGraceSeconds,
         liveRouteMinutes: liveRouteMinutes,
         slashEpochMinutes: slashEpochMinutes,

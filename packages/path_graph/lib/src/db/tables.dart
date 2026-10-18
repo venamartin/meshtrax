@@ -92,6 +92,12 @@ class ContactIngress extends Table {
   /// nothing about hearing; the heard list ages from this.
   IntColumn get lastHeardAt => integer().nullable()();
 
+  /// Self rows: direct sends that started at this repeater and got no
+  /// ACK since it last proved it hears me. Any proof resets it. At the
+  /// gate it stops starting routes (the failed one-hop route was the one
+  /// shape nothing could mark down, field 2026-10-17).
+  IntColumn get failedSinceProof => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {ownerPubkey, repeaterHash};
 }

@@ -80,6 +80,15 @@ enum FloodReason {
   noCorridor,
   belowThreshold,
   overBudget,
+
+  /// Every doorstep of mine that could start a route has failed my last
+  /// sends since it last proved it hears me
+  /// ([PathGraphConfig.selfFailGate]).
+  doorstepsFailing,
+
+  /// Every doorstep of mine that could start a route has gone quiet
+  /// while I hear others ([PathGraphConfig.selfSilenceMinutes]).
+  doorstepsQuiet,
 }
 
 /// The three-tier return contract: direct | bidirectional path | flood.
@@ -571,6 +580,12 @@ class PathGraph {
     }
     if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
+    if (!success && _selfPubkey != null) {
+      // The break cannot be localised, but a doorstep that keeps failing
+      // my sends since it last proved itself stops starting routes
+      // (PathGraphConfig.selfFailGate); any proof resets it.
+      _evidence.recordFailedEgress(_selfPubkey!, _hopHex(pathBytes, stride, 0));
+    }
     if (contactPubkey != null) {
       final hops = [
         for (var i = 0; i < hopCount; i++) _hopHex(pathBytes, stride, i)
@@ -715,10 +730,11 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final egress = _egressCandidates(self, now);
+    final mine = _egressCandidates(self, now);
+    final egress = mine.candidates;
     if (egress == null) return const PathResult.flood(FloodReason.noEvidence);
     if (egress.isEmpty) {
-      return const PathResult.flood(FloodReason.noProvenEndpoint);
+      return PathResult.flood(mine.gate ?? FloodReason.noProvenEndpoint);
     }
 
     final route = PathFinder(estimator.config, estimator).search(
@@ -863,12 +879,52 @@ class PathGraph {
 
   bool get _provenOnly => !config.allowInferredEndpoints;
 
-  /// Egress candidates for routing: null when nothing is known at all,
-  /// empty when doorsteps are known but none is proven.
-  List<Candidate>? _egressCandidates(String self, int now) {
+  /// Egress candidates for routing. [candidates] is null when nothing is
+  /// known at all, empty when doorsteps are known but none may start a
+  /// route. [held] names the proven doorsteps the gate kept out, each
+  /// with its reason; [gate] is the reason of the heaviest held one, for
+  /// the flood when nothing survives.
+  ({List<Candidate>? candidates, Map<String, FloodReason> held, FloodReason? gate})
+      _egressCandidates(String self, int now) {
     final all = _evidence.candidatesFor(self, now, isSelf: true);
-    if (all.isEmpty) return null;
-    return _provenOnly ? all.where((c) => c.proven).toList() : all;
+    if (all.isEmpty) return (candidates: null, held: const {}, gate: null);
+    final eligible = _provenOnly ? all.where((c) => c.proven).toList() : all;
+    final held = <String, FloodReason>{};
+    FloodReason? gate;
+    final kept = <Candidate>[];
+    // candidatesFor sorts by weight, so the first held one is the heaviest.
+    for (final c in eligible) {
+      final hold = doorstepHold(c, now: now);
+      if (hold == null) {
+        kept.add(c);
+      } else {
+        held[c.repeaterHash] = hold;
+        gate ??= hold;
+      }
+    }
+    return (candidates: kept, held: held, gate: gate);
+  }
+
+  /// Why [c], one of my proven doorsteps, may not start a route right now,
+  /// or null when it may (see [PathGraphConfig.selfFailGate]). Failures
+  /// are checked first: they are this doorstep's own record.
+  FloodReason? doorstepHold(Candidate c, {int? now}) {
+    final self = _selfPubkey;
+    if (self == null || !c.isSelf || !c.proven) return null;
+    if (c.failedSinceProof >= config.selfFailGate) {
+      return FloodReason.doorstepsFailing;
+    }
+    now ??= _arrivalMillis;
+    final windowMs = (config.selfSilenceMinutes * 60 * 1000).round();
+    final newest = _evidence
+        .candidatesFor(self, now, isSelf: true)
+        .fold(0, (m, x) => x.lastSeen > m ? x.lastSeen : m);
+    if (newest - c.lastSeen > windowMs &&
+        _evidence.selfAliveEventsSince(newest - windowMs) >=
+            config.selfSilenceMinEvents) {
+      return FloodReason.doorstepsQuiet;
+    }
+    return null;
   }
 
   /// A contact's route end may be a doorstep proven by a delivery or one
@@ -925,7 +981,7 @@ class PathGraph {
     final self = _selfPubkey;
     if (self == null) return const [];
     return _divergentRoutes(
-      egress: _egressCandidates(self, now) ?? const [],
+      egress: _egressCandidates(self, now).candidates ?? const [],
       ingress: ingressFor(now),
       count: count,
       now: now,
@@ -1181,6 +1237,8 @@ class PathGraph {
               'flood_proven_at': e.value.floodProvenAt,
             if (e.value.lastHeardAt != null)
               'last_heard_at': e.value.lastHeardAt,
+            if (e.value.failedSinceProof != 0)
+              'failed_since_proof': e.value.failedSinceProof,
           }
       ],
       'contacts': [
@@ -1261,7 +1319,9 @@ class PathGraph {
               ..provenCount = (i['proven_count'] as num?)?.toInt() ??
                   (i['proven_at'] == null ? 0 : 1)
               ..floodProvenAt = (i['flood_proven_at'] as num?)?.toInt()
-              ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt();
+              ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt()
+              ..failedSinceProof =
+                  (i['failed_since_proof'] as num?)?.toInt() ?? 0;
       }
       for (final raw in (document['contacts'] as List?) ?? const []) {
         final c = raw as Map;
@@ -1330,12 +1390,16 @@ class PathGraph {
     // Tier 3: bidirectional route over candidate lists.
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final egress = _egressCandidates(self, now);
+    final mine = _egressCandidates(self, now);
+    final egress = mine.candidates;
     final ingress = _ingressCandidates(contactPubkey, now);
     if (egress == null || ingress == null) {
       return const PathResult.flood(FloodReason.noEvidence);
     }
-    if (egress.isEmpty || ingress.isEmpty) {
+    if (egress.isEmpty) {
+      return PathResult.flood(mine.gate ?? FloodReason.noProvenEndpoint);
+    }
+    if (ingress.isEmpty) {
       return const PathResult.flood(FloodReason.noProvenEndpoint);
     }
 
@@ -1361,6 +1425,11 @@ class PathGraph {
       return null;
     }
     final self = _selfPubkey;
+    // Its first hop may have failed my sends or gone quiet since.
+    if (self != null &&
+        _egressCandidates(self, now).held.containsKey(live.hops.first)) {
+      return null;
+    }
     return _toResult(PathFinder(estimator.config, estimator).score(
       live.hops,
       egress: self == null

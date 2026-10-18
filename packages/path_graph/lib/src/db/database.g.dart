@@ -1006,6 +1006,14 @@ class $ContactIngressTable extends ContactIngress
   late final GeneratedColumn<int> lastHeardAt = GeneratedColumn<int>(
       'last_heard_at', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _failedSinceProofMeta =
+      const VerificationMeta('failedSinceProof');
+  @override
+  late final GeneratedColumn<int> failedSinceProof = GeneratedColumn<int>(
+      'failed_since_proof', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   @override
   List<GeneratedColumn> get $columns => [
         ownerPubkey,
@@ -1022,7 +1030,8 @@ class $ContactIngressTable extends ContactIngress
         penultimateCount,
         provenCount,
         floodProvenAt,
-        lastHeardAt
+        lastHeardAt,
+        failedSinceProof
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1124,6 +1133,12 @@ class $ContactIngressTable extends ContactIngress
           lastHeardAt.isAcceptableOrUnknown(
               data['last_heard_at']!, _lastHeardAtMeta));
     }
+    if (data.containsKey('failed_since_proof')) {
+      context.handle(
+          _failedSinceProofMeta,
+          failedSinceProof.isAcceptableOrUnknown(
+              data['failed_since_proof']!, _failedSinceProofMeta));
+    }
     return context;
   }
 
@@ -1163,6 +1178,8 @@ class $ContactIngressTable extends ContactIngress
           .read(DriftSqlType.int, data['${effectivePrefix}flood_proven_at']),
       lastHeardAt: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}last_heard_at']),
+      failedSinceProof: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}failed_since_proof'])!,
     );
   }
 
@@ -1213,6 +1230,12 @@ class ContactIngressData extends DataClass
   /// the owner's packet to me). A proof refreshes lastSeen but says
   /// nothing about hearing; the heard list ages from this.
   final int? lastHeardAt;
+
+  /// Self rows: direct sends that started at this repeater and got no
+  /// ACK since it last proved it hears me. Any proof resets it. At the
+  /// gate it stops starting routes (the failed one-hop route was the one
+  /// shape nothing could mark down, field 2026-10-17).
+  final int failedSinceProof;
   const ContactIngressData(
       {required this.ownerPubkey,
       required this.repeaterHash,
@@ -1228,7 +1251,8 @@ class ContactIngressData extends DataClass
       required this.penultimateCount,
       required this.provenCount,
       this.floodProvenAt,
-      this.lastHeardAt});
+      this.lastHeardAt,
+      required this.failedSinceProof});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1261,6 +1285,7 @@ class ContactIngressData extends DataClass
     if (!nullToAbsent || lastHeardAt != null) {
       map['last_heard_at'] = Variable<int>(lastHeardAt);
     }
+    map['failed_since_proof'] = Variable<int>(failedSinceProof);
     return map;
   }
 
@@ -1295,6 +1320,7 @@ class ContactIngressData extends DataClass
       lastHeardAt: lastHeardAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastHeardAt),
+      failedSinceProof: Value(failedSinceProof),
     );
   }
 
@@ -1317,6 +1343,7 @@ class ContactIngressData extends DataClass
       provenCount: serializer.fromJson<int>(json['provenCount']),
       floodProvenAt: serializer.fromJson<int?>(json['floodProvenAt']),
       lastHeardAt: serializer.fromJson<int?>(json['lastHeardAt']),
+      failedSinceProof: serializer.fromJson<int>(json['failedSinceProof']),
     );
   }
   @override
@@ -1338,6 +1365,7 @@ class ContactIngressData extends DataClass
       'provenCount': serializer.toJson<int>(provenCount),
       'floodProvenAt': serializer.toJson<int?>(floodProvenAt),
       'lastHeardAt': serializer.toJson<int?>(lastHeardAt),
+      'failedSinceProof': serializer.toJson<int>(failedSinceProof),
     };
   }
 
@@ -1356,7 +1384,8 @@ class ContactIngressData extends DataClass
           int? penultimateCount,
           int? provenCount,
           Value<int?> floodProvenAt = const Value.absent(),
-          Value<int?> lastHeardAt = const Value.absent()}) =>
+          Value<int?> lastHeardAt = const Value.absent(),
+          int? failedSinceProof}) =>
       ContactIngressData(
         ownerPubkey: ownerPubkey ?? this.ownerPubkey,
         repeaterHash: repeaterHash ?? this.repeaterHash,
@@ -1374,6 +1403,7 @@ class ContactIngressData extends DataClass
         floodProvenAt:
             floodProvenAt.present ? floodProvenAt.value : this.floodProvenAt,
         lastHeardAt: lastHeardAt.present ? lastHeardAt.value : this.lastHeardAt,
+        failedSinceProof: failedSinceProof ?? this.failedSinceProof,
       );
   ContactIngressData copyWithCompanion(ContactIngressCompanion data) {
     return ContactIngressData(
@@ -1405,6 +1435,9 @@ class ContactIngressData extends DataClass
           : this.floodProvenAt,
       lastHeardAt:
           data.lastHeardAt.present ? data.lastHeardAt.value : this.lastHeardAt,
+      failedSinceProof: data.failedSinceProof.present
+          ? data.failedSinceProof.value
+          : this.failedSinceProof,
     );
   }
 
@@ -1425,7 +1458,8 @@ class ContactIngressData extends DataClass
           ..write('penultimateCount: $penultimateCount, ')
           ..write('provenCount: $provenCount, ')
           ..write('floodProvenAt: $floodProvenAt, ')
-          ..write('lastHeardAt: $lastHeardAt')
+          ..write('lastHeardAt: $lastHeardAt, ')
+          ..write('failedSinceProof: $failedSinceProof')
           ..write(')'))
         .toString();
   }
@@ -1446,7 +1480,8 @@ class ContactIngressData extends DataClass
       penultimateCount,
       provenCount,
       floodProvenAt,
-      lastHeardAt);
+      lastHeardAt,
+      failedSinceProof);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1465,7 +1500,8 @@ class ContactIngressData extends DataClass
           other.penultimateCount == this.penultimateCount &&
           other.provenCount == this.provenCount &&
           other.floodProvenAt == this.floodProvenAt &&
-          other.lastHeardAt == this.lastHeardAt);
+          other.lastHeardAt == this.lastHeardAt &&
+          other.failedSinceProof == this.failedSinceProof);
 }
 
 class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
@@ -1484,6 +1520,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
   final Value<int> provenCount;
   final Value<int?> floodProvenAt;
   final Value<int?> lastHeardAt;
+  final Value<int> failedSinceProof;
   final Value<int> rowid;
   const ContactIngressCompanion({
     this.ownerPubkey = const Value.absent(),
@@ -1501,6 +1538,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.provenCount = const Value.absent(),
     this.floodProvenAt = const Value.absent(),
     this.lastHeardAt = const Value.absent(),
+    this.failedSinceProof = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ContactIngressCompanion.insert({
@@ -1519,6 +1557,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.provenCount = const Value.absent(),
     this.floodProvenAt = const Value.absent(),
     this.lastHeardAt = const Value.absent(),
+    this.failedSinceProof = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : ownerPubkey = Value(ownerPubkey),
         repeaterHash = Value(repeaterHash),
@@ -1541,6 +1580,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     Expression<int>? provenCount,
     Expression<int>? floodProvenAt,
     Expression<int>? lastHeardAt,
+    Expression<int>? failedSinceProof,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1559,6 +1599,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       if (provenCount != null) 'proven_count': provenCount,
       if (floodProvenAt != null) 'flood_proven_at': floodProvenAt,
       if (lastHeardAt != null) 'last_heard_at': lastHeardAt,
+      if (failedSinceProof != null) 'failed_since_proof': failedSinceProof,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1579,6 +1620,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       Value<int>? provenCount,
       Value<int?>? floodProvenAt,
       Value<int?>? lastHeardAt,
+      Value<int>? failedSinceProof,
       Value<int>? rowid}) {
     return ContactIngressCompanion(
       ownerPubkey: ownerPubkey ?? this.ownerPubkey,
@@ -1596,6 +1638,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       provenCount: provenCount ?? this.provenCount,
       floodProvenAt: floodProvenAt ?? this.floodProvenAt,
       lastHeardAt: lastHeardAt ?? this.lastHeardAt,
+      failedSinceProof: failedSinceProof ?? this.failedSinceProof,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1648,6 +1691,9 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     if (lastHeardAt.present) {
       map['last_heard_at'] = Variable<int>(lastHeardAt.value);
     }
+    if (failedSinceProof.present) {
+      map['failed_since_proof'] = Variable<int>(failedSinceProof.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1672,6 +1718,7 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
           ..write('provenCount: $provenCount, ')
           ..write('floodProvenAt: $floodProvenAt, ')
           ..write('lastHeardAt: $lastHeardAt, ')
+          ..write('failedSinceProof: $failedSinceProof, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2697,6 +2744,7 @@ typedef $$ContactIngressTableCreateCompanionBuilder = ContactIngressCompanion
   Value<int> provenCount,
   Value<int?> floodProvenAt,
   Value<int?> lastHeardAt,
+  Value<int> failedSinceProof,
   Value<int> rowid,
 });
 typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
@@ -2716,6 +2764,7 @@ typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
   Value<int> provenCount,
   Value<int?> floodProvenAt,
   Value<int?> lastHeardAt,
+  Value<int> failedSinceProof,
   Value<int> rowid,
 });
 
@@ -2773,6 +2822,10 @@ class $$ContactIngressTableFilterComposer
 
   ColumnFilters<int> get lastHeardAt => $composableBuilder(
       column: $table.lastHeardAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get failedSinceProof => $composableBuilder(
+      column: $table.failedSinceProof,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$ContactIngressTableOrderingComposer
@@ -2831,6 +2884,10 @@ class $$ContactIngressTableOrderingComposer
 
   ColumnOrderings<int> get lastHeardAt => $composableBuilder(
       column: $table.lastHeardAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get failedSinceProof => $composableBuilder(
+      column: $table.failedSinceProof,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ContactIngressTableAnnotationComposer
@@ -2886,6 +2943,9 @@ class $$ContactIngressTableAnnotationComposer
 
   GeneratedColumn<int> get lastHeardAt => $composableBuilder(
       column: $table.lastHeardAt, builder: (column) => column);
+
+  GeneratedColumn<int> get failedSinceProof => $composableBuilder(
+      column: $table.failedSinceProof, builder: (column) => column);
 }
 
 class $$ContactIngressTableTableManager extends RootTableManager<
@@ -2931,6 +2991,7 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<int> provenCount = const Value.absent(),
             Value<int?> floodProvenAt = const Value.absent(),
             Value<int?> lastHeardAt = const Value.absent(),
+            Value<int> failedSinceProof = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ContactIngressCompanion(
@@ -2949,6 +3010,7 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             provenCount: provenCount,
             floodProvenAt: floodProvenAt,
             lastHeardAt: lastHeardAt,
+            failedSinceProof: failedSinceProof,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2967,6 +3029,7 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<int> provenCount = const Value.absent(),
             Value<int?> floodProvenAt = const Value.absent(),
             Value<int?> lastHeardAt = const Value.absent(),
+            Value<int> failedSinceProof = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ContactIngressCompanion.insert(
@@ -2985,6 +3048,7 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             provenCount: provenCount,
             floodProvenAt: floodProvenAt,
             lastHeardAt: lastHeardAt,
+            failedSinceProof: failedSinceProof,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

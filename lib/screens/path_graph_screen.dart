@@ -36,6 +36,10 @@ String floodReasonText(FloodReason reason,
         'no chain of repeaters joins it to one this radio hears',
       FloodReason.belowThreshold => 'the links back are too weak',
       FloodReason.overBudget => 'the way back is too long',
+      FloodReason.doorstepsFailing =>
+        'the repeaters that hear me have not answered my last sends',
+      FloodReason.doorstepsQuiet =>
+        'the repeaters that hear me have gone quiet',
     };
   }
   if (back) {
@@ -49,6 +53,10 @@ String floodReasonText(FloodReason reason,
             'joins them',
       FloodReason.belowThreshold => 'the links back are too weak',
       FloodReason.overBudget => 'the way back is too long',
+      FloodReason.doorstepsFailing =>
+        'the repeaters that hear me have not answered my last sends',
+      FloodReason.doorstepsQuiet =>
+        'the repeaters that hear me have gone quiet',
     };
   }
   return switch (reason) {
@@ -60,6 +68,11 @@ String floodReasonText(FloodReason reason,
       'no chain of repeaters joins one that hears me to one that hears them',
     FloodReason.belowThreshold => 'links too weak',
     FloodReason.overBudget => 'route too long',
+    FloodReason.doorstepsFailing =>
+      'my repeaters have not answered my last sends — flooding so one can '
+          'prove itself again',
+    FloodReason.doorstepsQuiet =>
+      'every repeater that hears me has gone quiet — flooding to find one',
   };
 }
 

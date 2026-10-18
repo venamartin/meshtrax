@@ -231,6 +231,31 @@ void main() {
     await old.dispose();
   });
 
+  test('failed_since_proof rides the session; an old checkpoint reads 0',
+      () async {
+    final source = await populated();
+    source.reportSendResult(
+        Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), false);
+    expect(source.egressCandidates().first.failedSinceProof, 1);
+    final doc = source.saveSession();
+    await source.dispose();
+
+    final restored = PathGraph(NativeDatabase.memory());
+    await restored.init();
+    await restored.loadSession(doc);
+    expect(restored.egressCandidates().first.failedSinceProof, 1);
+    await restored.dispose();
+
+    for (final row in doc['ingress'] as List) {
+      (row as Map).remove('failed_since_proof');
+    }
+    final old = PathGraph(NativeDatabase.memory());
+    await old.init();
+    await old.loadSession(doc);
+    expect(old.egressCandidates().first.failedSinceProof, 0);
+    await old.dispose();
+  });
+
   test('one bad row fails the restore and leaves the graph as it was',
       () async {
     final source = await populated();

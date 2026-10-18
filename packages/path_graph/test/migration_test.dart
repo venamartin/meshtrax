@@ -291,4 +291,31 @@ void main() {
     await graph.dispose();
     file.parent.deleteSync(recursive: true);
   });
+
+  test('v7 to v8: failed_since_proof starts at 0 and is writable', () async {
+    final seen = DateTime.now().millisecondsSinceEpoch;
+    final file = await atVersion(7, (db) async {
+      await db.customStatement(
+          'INSERT INTO contact_ingress (owner_pubkey, repeater_hash, weight, '
+          "last_seen, evidence, proven_at, proven_count) VALUES ('me', "
+          "'A277', 3.0, $seen, 'proven', $seen, 1)");
+    });
+
+    final graph = PathGraph(NativeDatabase(file));
+    await graph.init();
+    graph.setRadioIdentity('me', 2);
+    expect(graph.egressCandidates().single.failedSinceProof, 0);
+
+    graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), false);
+    await graph.flush();
+    await graph.dispose();
+
+    final reopened = PathGraph(NativeDatabase(file));
+    await reopened.init();
+    reopened.setRadioIdentity('me', 2);
+    expect(reopened.egressCandidates().single.failedSinceProof, 1,
+        reason: 'the count survives a restart');
+    await reopened.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
 }

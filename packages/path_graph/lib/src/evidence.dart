@@ -51,6 +51,10 @@ class IngressEntry {
   /// Last time this row was heard (not proven); null on rows from before
   /// the clocks were split, which fall back to [lastSeen].
   int? lastHeardAt;
+
+  /// Self rows: direct sends that started here and got no ACK since the
+  /// last proof. Any proof resets it.
+  int failedSinceProof = 0;
 }
 
 class Candidate {
@@ -64,7 +68,8 @@ class Candidate {
       this.provenCount = 0,
       this.provenAt,
       this.lastSeen = 0,
-      this.isSelf = false});
+      this.isSelf = false,
+      this.failedSinceProof = 0});
   final String repeaterHash;
   final double weight;
   final EvidenceTier tier;
@@ -72,6 +77,9 @@ class Candidate {
   /// One of my own doorsteps (a repeater that hears this radio), as
   /// opposed to a contact's.
   final bool isSelf;
+
+  /// Self rows: failed direct sends from here since the last proof.
+  final int failedSinceProof;
 
   /// Tallies behind the ranking, for display: times heard carrying the
   /// owner's packets, times seen second-to-last (my rows), times proven
@@ -132,6 +140,29 @@ class EvidenceStore {
   /// repeater. Memory only: after a restart, direct waits for the next
   /// such packet to end it.
   final Map<String, int> _lastRelayed = {};
+
+  /// Arrival millis of the last packets that showed my own end is alive
+  /// (a repeater heard as my last hop, or a proof). The silence gate asks
+  /// "have I heard enough lately for a doorstep's silence to mean
+  /// anything?" — one stray packet after a quiet night says nothing.
+  /// Memory only, newest last, capped.
+  final List<int> _selfAliveEvents = [];
+
+  void _noteSelfAlive(int arrival) {
+    _selfAliveEvents.add(arrival);
+    if (_selfAliveEvents.length > 64) _selfAliveEvents.removeAt(0);
+  }
+
+  int selfAliveEventsSince(int sinceMillis) =>
+      _selfAliveEvents.where((t) => t >= sinceMillis).length;
+
+  /// A direct send that started at [repeaterHash] got no ACK.
+  void recordFailedEgress(String selfPubkey, String repeaterHash) {
+    final e = entries[(selfPubkey, repeaterHash)];
+    if (e == null) return;
+    e.failedSinceProof++;
+    _dirty.add((selfPubkey, repeaterHash));
+  }
 
   /// Weights before this epoch's supersede, so a doorstep that echoes
   /// the same send a moment later gets its slash back.
@@ -246,6 +277,7 @@ class EvidenceStore {
     e
       ..finalCount += 1
       ..lastHeardAt = arrival;
+    _noteSelfAlive(arrival);
     if (lat != null) e.observedLat = lat;
     if (lon != null) e.observedLon = lon;
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
@@ -304,9 +336,11 @@ class EvidenceStore {
     final e =
         _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, weight, arrival)
           ..provenAt = arrival
-          ..provenCount += 1;
+          ..provenCount += 1
+          ..failedSinceProof = 0;
     if (firstProof) e.weight = weight;
     _capSelf(e);
+    _noteSelfAlive(arrival);
     return e;
   }
 
@@ -453,7 +487,8 @@ class EvidenceStore {
             provenCount: e.provenCount,
             provenAt: e.provenAt,
             lastSeen: e.lastSeen,
-            isSelf: isSelf));
+            isSelf: isSelf,
+            failedSinceProof: e.failedSinceProof));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
@@ -567,6 +602,8 @@ class EvidenceStore {
         if ((ghost.lastHeardAt ?? 0) > (target.lastHeardAt ?? 0)) {
           target.lastHeardAt = ghost.lastHeardAt;
         }
+        target.failedSinceProof =
+            math.max(target.failedSinceProof, ghost.failedSinceProof);
         if (ghost.lastSeen > target.lastSeen) {
           target.lastSeen = ghost.lastSeen;
           target.observedLat = ghost.observedLat ?? target.observedLat;
@@ -607,7 +644,8 @@ class EvidenceStore {
         ..penultimateCount = row.penultimateCount
         ..provenCount = row.provenCount
         ..floodProvenAt = row.floodProvenAt
-        ..lastHeardAt = row.lastHeardAt;
+        ..lastHeardAt = row.lastHeardAt
+        ..failedSinceProof = row.failedSinceProof;
     }
     for (final row in await _db.select(_db.knownContacts).get()) {
       knownContacts[row.contactPubkey] =
@@ -654,6 +692,7 @@ class EvidenceStore {
             provenCount: Value(e.provenCount),
             floodProvenAt: Value(e.floodProvenAt),
             lastHeardAt: Value(e.lastHeardAt),
+            failedSinceProof: Value(e.failedSinceProof),
           ),
           mode: InsertMode.insertOrReplace,
         );
