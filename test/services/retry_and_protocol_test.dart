@@ -1113,8 +1113,14 @@ void main() {
         expect(h.lastUpdate!.pathLength, equals(2));
         expect(h.lastUpdate!.pathBytes, equals(g1.pathBytes));
         expect(h.lastUpdate!.routeSource, equals(RouteSource.graph));
-        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: true)]),
-            reason: 'the flood in flight is not judged');
+        expect(
+            h.attempts,
+            equals([
+              (bytes: g1.pathBytes.join(","), delivered: false),
+              (bytes: g1.pathBytes.join(","), delivered: true),
+            ]),
+            reason: 'its timeout was reported when it happened; the late ACK '
+                'adds the delivery; the flood in flight is not judged');
       });
     });
 
@@ -1131,7 +1137,8 @@ void main() {
         async.elapse(const Duration(milliseconds: retryGap));
         h.sent(text);
         expect(h.pathPushes, equals([g1.pathBytes, g2.pathBytes]));
-        expect(h.attempts, isEmpty, reason: 'judged when the message resolves');
+        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]),
+            reason: 'judged at its timeout, so the next rung can be re-planned');
 
         h.retryService.handleAckReceived(h.ackHashFor(1, text), 1500);
         expect(
@@ -1161,10 +1168,12 @@ void main() {
         h.sent(text);
         async.elapse(const Duration(milliseconds: _Harness.timeoutMs + 1));
         expect(h.lastUpdate!.status, equals(MessageStatus.failed));
-        expect(h.attempts, isEmpty);
+        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]),
+            reason: 'the route attempt was judged at its timeout');
 
         async.elapse(MessageRetryService.lateAckGrace);
-        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]));
+        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]),
+            reason: 'the grace reports nothing twice; floods are never judged');
       });
     });
   });

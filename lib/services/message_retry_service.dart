@@ -125,6 +125,8 @@ class MessageRetryService extends ChangeNotifier {
   // accepted (RESP_CODE_SENT): only those were on the air.
   final Map<String, Map<int, PathSelection>> _attemptRoutes = {};
   final Map<String, Set<int>> _onAir = {};
+  // Attempts already reported to Pathfinder as failed, at their timeout.
+  final Map<String, Set<int>> _reported = {};
   final Map<String, AckHashMapping> _ackHashToMessageId = {};
   final Map<String, List<int>> _expectedAckHashes = {};
   final List<_AckHistoryEntry> _ackHistory = [];
@@ -277,19 +279,26 @@ class MessageRetryService extends ChangeNotifier {
     }
     final width = _radioWidth(contact);
     final old = _plans[messageId] ?? const <PathSelection>[];
-    final fresh = planAttempts(contact,
-        radioWidth: width,
-        budget: old.isEmpty ? maxRetries : old.length,
-        graphRoutes: routes);
-    _plans[messageId] = [
-      for (var i = 0; i < keep; i++)
-        i < old.length
-            ? old[i]
-            : i < fresh.length
-                ? fresh[i]
-                : PathSelection.flood(width),
-      ...fresh.skip(keep),
-    ];
+    if (old.isEmpty || keep <= 0) {
+      _plans[messageId] = planAttempts(contact,
+          radioWidth: width, budget: maxRetries, graphRoutes: routes);
+    } else {
+      // The rungs already sent stay; the rest is planned again from the
+      // routes not yet tried, still closing with the floods the ladder
+      // owes.
+      final kept = old.take(keep).toList();
+      final owed = old.where((s) => s.useFlood).length -
+          kept.where((s) => s.useFlood).length;
+      _plans[messageId] = [
+        ...kept,
+        ...planAttempts(contact,
+            radioWidth: width,
+            budget: old.length - kept.length,
+            graphRoutes: routes,
+            tried: kept,
+            floods: owed),
+      ];
+    }
     _pathfinderLadders.add(messageId);
   }
 
@@ -577,11 +586,28 @@ class MessageRetryService extends ChangeNotifier {
     });
   }
 
+  /// A direct attempt that went on the air timed out: tell the graph now,
+  /// not at the message's end, so the rungs still to come can be planned
+  /// around it (field 2026-10-17: rungs 2 and 3 repeated rung 1's stale
+  /// first hop). A late ACK still reports it delivered; the graph then
+  /// sees one failure and one delivery on that route.
+  void _reportTimedOut(String messageId, int attempt) {
+    final report = _config?.onAttemptResult;
+    final contact = _pendingContacts[messageId];
+    final selection = _attemptRoutes[messageId]?[attempt];
+    if (report == null || contact == null || selection == null) return;
+    if (selection.useFlood || !(_onAir[messageId]?.contains(attempt) ?? false)) {
+      return;
+    }
+    if (!(_reported[messageId] ??= {}).add(attempt)) return;
+    report(contact, selection, false, null);
+  }
+
   /// Tells the graph how each direct attempt ended, once: the acked one
   /// delivered, those that went on the air and timed out before it
-  /// failed. An attempt still on the air when an earlier one is acked is
-  /// left unjudged, and one the radio never accepted (a dropped link) says
-  /// nothing about its route.
+  /// failed (unless already reported at their timeout). An attempt still
+  /// on the air when an earlier one is acked is left unjudged, and one the
+  /// radio never accepted (a dropped link) says nothing about its route.
   void _reportAttempts(String messageId,
       {int? ackedAttempt, int? tripTimeMs}) {
     final report = _config?.onAttemptResult;
@@ -592,6 +618,7 @@ class MessageRetryService extends ChangeNotifier {
       return;
     }
     final onAir = _onAir[messageId] ?? const <int>{};
+    final reported = _reported[messageId] ?? const <int>{};
     final timedOut = message.status == MessageStatus.failed
         ? message.retryCount + 1
         : message.retryCount;
@@ -599,7 +626,7 @@ class MessageRetryService extends ChangeNotifier {
       if (selection.useFlood) continue;
       if (i == ackedAttempt) {
         report(contact, selection, true, tripTimeMs);
-      } else if (i < timedOut && onAir.contains(i)) {
+      } else if (i < timedOut && onAir.contains(i) && !reported.contains(i)) {
         report(contact, selection, false, null);
       }
     }
@@ -618,6 +645,7 @@ class MessageRetryService extends ChangeNotifier {
     _floodFirst.remove(messageId);
     _attemptRoutes.remove(messageId);
     _onAir.remove(messageId);
+    _reported.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -642,6 +670,8 @@ class MessageRetryService extends ChangeNotifier {
       tag: 'AckHash',
     );
 
+    _reportTimedOut(messageId, message.retryCount);
+
     if (message.retryCount < _attemptBudget(messageId) - 1) {
       const backoffMs = retryBackoffMs;
 
@@ -652,6 +682,10 @@ class MessageRetryService extends ChangeNotifier {
 
       _pendingMessages[messageId] = updatedMessage;
       config?.updateMessage(updatedMessage);
+      // The failure just reported may have changed Pathfinder's ranking
+      // (a doorstep held, a corridor marked down): re-plan the rungs still
+      // to come instead of repeating this one's mistake.
+      _plan(messageId, contact, keep: updatedMessage.retryCount);
 
       config?.debugLogService?.info(
         'Scheduling retry for "$shortText" to ${contact.name} after ${backoffMs}ms backoff',
@@ -859,6 +893,7 @@ class MessageRetryService extends ChangeNotifier {
     _floodFirst.clear();
     _attemptRoutes.clear();
     _onAir.clear();
+    _reported.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();
