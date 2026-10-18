@@ -320,11 +320,21 @@ class PathLabAdapter {
   PathLabAdapter(this.graph);
 
   final PathGraph graph;
+
+  /// Answers to my current (or last) Discover request, each already filed
+  /// with the graph as it arrived; the bench and the screen read this.
   final List<DiscoverResponse> pendingDiscover = [];
 
   /// Tag of the repeater-discovery request this radio has out, if any;
-  /// replies carrying any other tag answer someone else.
-  int? expectedDiscoverTag;
+  /// replies carrying any other tag answer someone else. A new request
+  /// starts a fresh answer list.
+  int? get expectedDiscoverTag => _expectedDiscoverTag;
+  int? _expectedDiscoverTag;
+  set expectedDiscoverTag(int? tag) {
+    if (tag == _expectedDiscoverTag) return;
+    _expectedDiscoverTag = tag;
+    if (tag != null) pendingDiscover.clear();
+  }
 
   /// Tag of the trace this app has out, if any. The radio pushes every
   /// finished trace it hears — other people's too — and only the tag
@@ -1093,8 +1103,14 @@ class PathLabAdapter {
           rxSnr);
       return;
     }
-    pendingDiscover.add(DiscoverResponse(
-        repeaterHash: hash, uplinkSnr: uplinkSnr, rxSnr: rxSnr));
+    final response = DiscoverResponse(
+        repeaterHash: hash, uplinkSnr: uplinkSnr, rxSnr: rxSnr);
+    pendingDiscover.add(response);
+    // Filed at once (owner, 2026-10-17): a send right after a Discover
+    // used to route on the old ranking for up to 30 s. One answer at a
+    // time is safe — the supersede is once per epoch and a doorstep that
+    // answers later in the same epoch gets its weight back.
+    graph.observeDiscoverResults([response], failureEpisode: false);
     // The full key prefix tells two repeaters sharing a short hash apart.
     final key = _hex(pubkey.sublist(0, pubkey.length < 8 ? pubkey.length : 8));
     final verdict = 'heard my request at ${uplinkSnr.toStringAsFixed(1)} dB · '
@@ -1104,10 +1120,9 @@ class PathLabAdapter {
         '${rxSnr.toStringAsFixed(1)} dB', tag: 'PathGraph');
   }
 
-  /// Harness calls this when the discover window closes.
+  /// The answer window closed. Every answer was filed as it arrived; this
+  /// only clears the list the bench and the screen read.
   void commitDiscover({required bool failureEpisode}) {
-    graph.observeDiscoverResults(List.of(pendingDiscover),
-        failureEpisode: failureEpisode);
     pendingDiscover.clear();
   }
 }

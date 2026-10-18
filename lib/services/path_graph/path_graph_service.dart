@@ -34,7 +34,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   bool _radioReady = false;
   MeshCoreConnector? _connector;
   StreamSubscription<Uint8List>? _frames;
-  Timer? _discoverWindow;
   Timer? _sweepTimer;
 
   // start() and stop() only record what is wanted; the open and close run
@@ -149,7 +148,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _sweepTimer?.cancel();
     _sweepTimer = null;
-    _discoverWindow?.cancel();
     _notifyThrottle?.cancel();
     _notifyThrottle = null;
     await _frames?.cancel();
@@ -196,19 +194,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     adapter.expectedDiscoverTag = _connector?.pendingDiscoverTag;
     adapter.expectedTraceTag = _connector?.pendingTraceTag;
     adapter.handleFrame(frame);
-    if (adapter.framesSeen != before || frame[0] == pushTraceData) {
+    if (adapter.framesSeen != before ||
+        frame[0] == pushTraceData ||
+        frame[0] == pushControlData) {
       _notifySoon();
-    }
-    // Discover answers arrive one push per responder; commit the batch
-    // once the radio's answer window has passed.
-    if (frame.isNotEmpty &&
-        frame[0] == pushControlData &&
-        adapter.pendingDiscover.isNotEmpty) {
-      _discoverWindow?.cancel();
-      _discoverWindow = Timer(const Duration(seconds: 30), () {
-        adapter.commitDiscover(failureEpisode: false);
-        notifyListeners();
-      });
     }
   }
 
