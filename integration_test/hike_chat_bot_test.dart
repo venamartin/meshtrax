@@ -206,6 +206,32 @@ void main() {
       });
       snapshot('start');
 
+      // Reads the peer's route back from the radio itself and compares it
+      // with what the app believed just before: a write that did not land,
+      // or a firmware change the app never heard about, shows up here.
+      ({String why, String believed})? pendingCheck;
+      Future<void> checkRadio(String why) async {
+        pendingCheck = (why: why, believed: stored(peer()));
+        await connector.getContactByKey(peer().publicKey);
+      }
+
+      void onContactFrame(Uint8List frame) {
+        final check = pendingCheck;
+        final radio = Contact.fromFrame(frame);
+        if (check == null ||
+            radio == null ||
+            radio.publicKeyHex.toLowerCase() != peerKey) {
+          return;
+        }
+        pendingCheck = null;
+        final holds = stored(radio);
+        final match = holds == check.believed;
+        jsonl({'kind': 'radio_route', 'why': check.why, 'radio': holds,
+            'appBelieved': check.believed, 'match': match});
+        blog('${match ? "" : "⚠ "}radio route check (${check.why}): radio holds '
+            '$holds${match ? "" : ", the app believed ${check.believed}"}');
+      }
+
       final rng = Random();
       final jokes = List.of(_jokes)..shuffle(rng);
       final answers = List.of(_answers)..shuffle(rng);
@@ -223,11 +249,21 @@ void main() {
         return pool.removeLast();
       }
 
+      // The route 🚀's radio ACKs their DMs on, shown in the field.
+      String ackTag(Contact c) {
+        if (c.pathLength < 0) return 'flood';
+        if (c.pathLength == 0) return 'direct';
+        if (c.pathLength > 4) return '${c.pathLength} hops';
+        return stored(c);
+      }
+
       Future<void> reply(String theirs) async {
         final isDone = theirs.trim().toLowerCase() == 'done';
-        final line = isDone ? 'Welcome back! Crunching the logs now 🔬📈' : pick(theirs);
-        final n = ++replyNo;
         final c = peer();
+        final line =
+            '${isDone ? 'Welcome back! Crunching the logs now 🔬📈' : pick(theirs)} '
+            '[acks: ${ackTag(c)}]';
+        final n = ++replyNo;
         jsonl({'kind': 'tx_start', 'n': n, 'text': line, 'inReplyTo': theirs,
             'stored': stored(c)});
         blog('TX #$n "$line" (stored route ${stored(c)})');
@@ -255,6 +291,7 @@ void main() {
         blog('TX #$n → ${status?.name} on attempt ${sent?.retryCount} '
             '(${sent?.routeSource.name}, ${sent?.tripTimeMs} ms)');
         snapshot('after reply #$n');
+        unawaited(checkRadio('after reply #$n'));
         if (isDone && !done.isCompleted) done.complete('"done" received');
       }
 
@@ -285,6 +322,8 @@ void main() {
         });
         blog('RX copy $n "${l.text}" ${direct ? "direct" : "flood (path_len 0x${l.pathLen.toRadixString(16)})"} '
             'snr ${snr ?? "-"} · stored route ${stored(peer())}');
+        timers.add(Timer(const Duration(seconds: 3),
+            () => unawaited(checkRadio('3 s after copy $n of "${l.text}"'))));
         if (l.txtType != txtTypePlain ||
             l.timestampRaw < startSecs - 300 ||
             answered.contains(id)) {
@@ -308,6 +347,8 @@ void main() {
         switch (frame[0]) {
           case respCodeContactMsgRecv || respCodeContactMsgRecvV3:
             onPeerMessage(frame);
+          case respCodeContact:
+            onContactFrame(frame);
           case pushCodePathUpdated when frame.length >= 33:
             if (hex(frame.sublist(1, 33)).toLowerCase() == peerKey) {
               jsonl({'kind': 'path_updated'});
@@ -369,6 +410,8 @@ void main() {
             'ble': bridge.bleConnected, 'rx': rxCount, 'tx': replyNo});
         snapshot('periodic');
       }));
+      timers.add(Timer.periodic(const Duration(minutes: 5),
+          (_) => unawaited(checkRadio('periodic'))));
 
       blog('🥾 LISTENING for DMs from ${peer().name} — replies after $quiet of quiet; '
           '"done" ends the run');

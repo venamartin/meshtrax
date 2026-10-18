@@ -82,6 +82,11 @@ class RadioRouteKeeper {
     if (_disposed || !_eligible(contact)) return;
     final key = _key(contact.publicKeyHex);
     final id = '$txtType:$senderTimestamp:$text';
+    appLogger.info(
+        'DM from ${contact.name} arrived ${direct ? "on a route" : "as a flood"}; '
+        'the radio ACKed it '
+        '${!direct ? "inside its flooded path reply" : contact.pathLength < 0 ? "by flood (no stored route)" : "on ${_describeStored(contact)}"}',
+        tag: 'PathGraph');
     var episode = _episodes[key];
     if (episode == null || episode.message != id) {
       episode?.expiry?.cancel();
@@ -229,6 +234,10 @@ class RadioRouteKeeper {
   static String _describe(PathSelection route) => route.hopCount == 0
       ? 'direct (no repeater)'
       : PathHelper.formatPathHex(route.pathBytes, stride: route.hashSize);
+
+  static String _describeStored(Contact contact) => contact.pathLength == 0
+      ? 'direct (no repeater)'
+      : PathHelper.formatPathHex(contact.path, stride: contact.pathHashSize);
 }
 
 /// The copies of one message from one contact.
