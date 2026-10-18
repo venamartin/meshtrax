@@ -602,9 +602,12 @@ class PathGraph {
       final self = _selfPubkey;
       // [proveEgress] false: an echo of this very send already proved the
       // first hop heard me; counting the delivery too would double it.
+      // A route the firmware learned ([tally] false) is the path a flood
+      // of mine took: its first hop forwarded that flood.
       if (self != null && proveEgress) {
         _evidence.recordProvenEgress(
-            self, _hopHex(pathBytes, stride, 0), arrival);
+            self, _hopHex(pathBytes, stride, 0), arrival,
+            floodProven: !tally);
       }
       if (contactPubkey != null) {
         _evidence.recordProvenIngress(

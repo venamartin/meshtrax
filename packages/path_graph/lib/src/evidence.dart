@@ -267,12 +267,19 @@ class EvidenceStore {
   /// heard ME, [downlinkSnr] how I heard it. [supersede]: an echo of my
   /// flood — every doorstep had the same chance to echo it, so the
   /// silent ones count against (a direct send or trace only ever tries
-  /// one).
+  /// one). [floodProven]: the hop forwarded a flood of mine, learned
+  /// from a PATH reply rather than its echo; it marks the row as one whose
+  /// silence on later floods counts, without superseding anyone now
+  /// (field 2026-10-17: rows proven only by PATH replies were immune to
+  /// every later supersede and held routes 40 km from home).
   void recordProvenEgress(String selfPubkey, String repeaterHash, int arrival,
-      {double? uplinkSnr, double? downlinkSnr, bool supersede = false}) {
+      {double? uplinkSnr,
+      double? downlinkSnr,
+      bool supersede = false,
+      bool floodProven = false}) {
     _undoSlash((selfPubkey, repeaterHash), arrival);
     final e = _proveSelf(selfPubkey, repeaterHash, 3.0, arrival);
-    if (supersede) e.floodProvenAt = arrival;
+    if (supersede || floodProven) e.floodProvenAt = arrival;
     if (uplinkSnr != null) e.uplinkSnr = _blend(e.uplinkSnr, uplinkSnr);
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
     if (supersede) _supersedeStaleSelf(selfPubkey, arrival);
