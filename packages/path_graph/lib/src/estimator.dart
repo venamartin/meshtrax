@@ -26,6 +26,7 @@ class PathGraphConfig {
     this.selfWeightCap = 12,
     this.doorstepWeight = 3,
     this.directFreshMinutes = 30,
+    this.measuredSnrHalfLifeMinutes = 45,
     this.relayedCopyGraceSeconds = 60,
     this.liveRouteMinutes = 10,
     this.slashEpochMinutes = 2,
@@ -138,6 +139,14 @@ class PathGraphConfig {
   /// half an hour while their DMs arrived over 2-5 hops).
   final double directFreshMinutes;
 
+  /// A measured level (trace, Discover answer) belongs to the place it was
+  /// measured: its share of a doorstep's confidence halves every this many
+  /// minutes since the doorstep's last proof. Proven weights decay
+  /// [egressProvenDecayFactor] times slower, which is why the dB needs its
+  /// own clock (field 2026-10-17: a home measurement propped a doorstep
+  /// 40 km away).
+  final double measuredSnrHalfLifeMinutes;
+
   /// Copies of one flood land within seconds of each other: a relayed
   /// copy this soon after a direct one is the same packet, not a move.
   final double relayedCopyGraceSeconds;
@@ -184,6 +193,7 @@ class PathGraphConfig {
         selfWeightCap: selfWeightCap,
         doorstepWeight: doorstepWeight ?? this.doorstepWeight,
         directFreshMinutes: directFreshMinutes,
+        measuredSnrHalfLifeMinutes: measuredSnrHalfLifeMinutes,
         relayedCopyGraceSeconds: relayedCopyGraceSeconds,
         liveRouteMinutes: liveRouteMinutes,
         slashEpochMinutes: slashEpochMinutes,

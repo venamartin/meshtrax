@@ -977,8 +977,8 @@ class PathGraph {
 
   /// The confidence the router prices a doorstep at (UI/debug): tally
   /// blended with the measured link when one exists.
-  double doorstepConfidence(Candidate c) =>
-      PathFinder(estimator.config, estimator).candidateConfidence(c);
+  double doorstepConfidence(Candidate c) => PathFinder(estimator.config, estimator)
+      .candidateConfidence(c, _arrivalMillis);
 
   /// Ranked egress candidates for the connected radio (UI/debug).
   List<Candidate> egressCandidates() {

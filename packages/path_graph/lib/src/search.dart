@@ -31,26 +31,34 @@ class PathFinder {
   final Estimator estimator;
 
   /// Confidence for virtual candidate edges. A measured link (dB from a
-  /// Discover answer or a trace, either direction) beats a tally: blend
-  /// measured quality with the tally so a strong-but-new responder
-  /// outranks a weak favourite. The measured part fades with the tally —
-  /// a level measured somewhere I no longer am must not hold a doorstep
-  /// up (field finding 2026-10-14: 11.9 dB kept a doorstep 20 miles
-  /// away at 99%). At full weight it is the plain blend.
-  double candidateConfidence(Candidate c) {
+  /// Discover answer or a trace, in the sending direction) beats a tally:
+  /// blend measured quality with the tally so a strong-but-new responder
+  /// outranks a weak favourite. The measured part fades with the tally
+  /// and with the age of the last proof — a level measured somewhere I no
+  /// longer am must not hold a doorstep up (field 2026-10-14: 11.9 dB
+  /// kept a doorstep 20 miles away at 99%; 2026-10-17: +11.6 dB measured
+  /// at home kept it first 40 km away through two halvings). At full
+  /// weight and a fresh proof it is the plain blend.
+  double candidateConfidence(Candidate c, int nowMillis) {
     final tally = (c.weight / (c.weight + 2)).clamp(0.05, 1.0);
-    final snr = c.bestSnr;
+    final snr = c.sendingSnr;
     if (snr == null) return tally;
     final fullTally = config.selfWeightCap / (config.selfWeightCap + 2);
     final freshness = (tally / fullTally).clamp(0.0, 1.0);
+    final proofAge = nowMillis - (c.provenAt ?? c.lastSeen);
+    final proofFade = proofAge <= 0
+        ? 1.0
+        : math.pow(0.5, proofAge / (config.measuredSnrHalfLifeMinutes * 60000))
+            .toDouble();
     final measured = estimator.snrQuality(snr);
-    return (0.7 * measured * freshness + 0.3 * tally).clamp(0.05, 1.0);
+    return (0.7 * measured * freshness * proofFade + 0.3 * tally)
+        .clamp(0.05, 1.0);
   }
 
   /// Doorstep cost: strength dominates corridor length
   /// ([PathGraphConfig.doorstepWeight]).
-  double _doorstepCost(Candidate c) =>
-      config.doorstepWeight * -math.log(candidateConfidence(c));
+  double _doorstepCost(Candidate c, int nowMillis) =>
+      config.doorstepWeight * -math.log(candidateConfidence(c, nowMillis));
 
   RouteFound? search({
     required List<Candidate> egress,
@@ -81,7 +89,7 @@ class PathFinder {
 
     const virtualSource = '<SRC>';
     final targetCost = {
-      for (final t in targets) t.repeaterHash: _doorstepCost(t),
+      for (final t in targets) t.repeaterHash: _doorstepCost(t, nowMillis),
     };
 
     final dist = <String, double>{virtualSource: 0};
@@ -91,7 +99,7 @@ class PathFinder {
 
     // Seed: virtual source → each egress candidate.
     for (final s in sources) {
-      final cost = _doorstepCost(s);
+      final cost = _doorstepCost(s, nowMillis);
       if (cost < (dist[s.repeaterHash] ?? double.infinity)) {
         dist[s.repeaterHash] = cost;
         hopsTo[s.repeaterHash] = 1;
@@ -165,8 +173,9 @@ class PathFinder {
         egress.where((s) => s.repeaterHash == hops.first).firstOrNull;
     final target =
         ingress.where((t) => t.repeaterHash == hops.last).firstOrNull;
-    var delivery = (source == null ? 1.0 : candidateConfidence(source)) *
-        (target == null ? 1.0 : candidateConfidence(target));
+    var delivery =
+        (source == null ? 1.0 : candidateConfidence(source, nowMillis)) *
+            (target == null ? 1.0 : candidateConfidence(target, nowMillis));
     final hopProbabilities = <double>[];
     for (var i = 0; i < hops.length - 1; i++) {
       final e = edges[(hops[i], hops[i + 1])];

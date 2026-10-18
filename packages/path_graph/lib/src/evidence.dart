@@ -63,10 +63,15 @@ class Candidate {
       this.penultimateCount = 0,
       this.provenCount = 0,
       this.provenAt,
-      this.lastSeen = 0});
+      this.lastSeen = 0,
+      this.isSelf = false});
   final String repeaterHash;
   final double weight;
   final EvidenceTier tier;
+
+  /// One of my own doorsteps (a repeater that hears this radio), as
+  /// opposed to a contact's.
+  final bool isSelf;
 
   /// Tallies behind the ranking, for display: times heard carrying the
   /// owner's packets, times seen second-to-last (my rows), times proven
@@ -92,9 +97,13 @@ class Candidate {
   final double? uplinkSnr;
   final double? downlinkSnr;
 
-  /// The direction that matters for *sending* is the uplink; fall back
-  /// to the downlink by reciprocity, else null (tally-only candidate).
-  double? get bestSnr => uplinkSnr ?? downlinkSnr;
+  /// The level in the direction a send travels. For one of my doorsteps
+  /// only the uplink counts (how it heard me: a trace or a Discover
+  /// answer); how loud I hear it says nothing about that, and a strong
+  /// downlink kept a home repeater ranked first 40 km away (field
+  /// 2026-10-17). A contact's doorstep falls back to the downlink by
+  /// reciprocity. Null = tally-only candidate.
+  double? get sendingSnr => isSelf ? uplinkSnr : (uplinkSnr ?? downlinkSnr);
 }
 
 /// Weighted "who hears them" (contacts) and "who hears me" (self rows,
@@ -179,7 +188,8 @@ class EvidenceStore {
             penultimateCount: e.penultimateCount,
             provenCount: e.provenCount,
             provenAt: e.provenAt,
-            lastSeen: e.lastHeardAt ?? e.lastSeen));
+            lastSeen: e.lastHeardAt ?? e.lastSeen,
+            isSelf: isSelf));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
@@ -442,7 +452,8 @@ class EvidenceStore {
             penultimateCount: e.penultimateCount,
             provenCount: e.provenCount,
             provenAt: e.provenAt,
-            lastSeen: e.lastSeen));
+            lastSeen: e.lastSeen,
+            isSelf: isSelf));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
