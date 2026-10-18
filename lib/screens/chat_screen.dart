@@ -26,6 +26,7 @@ import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../services/app_settings_service.dart';
 import '../services/message_retry_service.dart';
+import '../services/path_graph/path_graph_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/server_login_service.dart';
 import '../services/storage_service.dart';
@@ -746,6 +747,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               ?ConnectionStatusBanner.ifDisconnected(context, connector),
               if (_isRoom) ?_buildClockSkewBanner(connector),
+              ?_buildNarrowHashNotice(),
               Expanded(
                 child: Stack(
                   children: [
@@ -1080,6 +1082,42 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Amber strip when the room server's clock disagrees with ours by more
   /// than five minutes (its clock stamps every post). Admins get a one-tap
   /// fix; anyone can dismiss it for this visit.
+  /// Once per contact: their radio sends 1-byte repeater codes, which
+  /// Pathfinder drops, so it can never learn routes to them.
+  Widget? _buildNarrowHashNotice() {
+    final pathfinder = context.watch<PathGraphService>();
+    final key = widget.contact.publicKeyHex;
+    if (!pathfinder.showNarrowNotice(key)) return null;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(left: 12, top: 2, bottom: 2),
+      color: colorScheme.secondaryContainer,
+      child: Row(
+        children: [
+          Icon(Icons.info_outline,
+              size: 18, color: colorScheme.onSecondaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.chat_narrowHashNotice(widget.contact.name),
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close,
+                size: 18, color: colorScheme.onSecondaryContainer),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: () => pathfinder.dismissNarrowNotice(key),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget? _buildClockSkewBanner(MeshCoreConnector connector) {
     if (_clockBannerDismissed) return null;
     final event =

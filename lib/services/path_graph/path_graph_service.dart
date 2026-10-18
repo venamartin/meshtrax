@@ -10,6 +10,7 @@ import '../../connector/meshcore_connector.dart';
 import '../../helpers/path_helper.dart';
 import '../../models/contact.dart';
 import '../../models/path_selection.dart';
+import '../../storage/prefs_manager.dart';
 import '../../utils/app_logger.dart';
 import 'frame_adapter.dart';
 import 'radio_route_keeper.dart';
@@ -401,7 +402,44 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// the raw packet it came from and credits the sender's doorstep.
   void _onContactMessage(String pubkeyHex, int pathLenRaw, int? snrByte) {
     _adapter?.attributeContactMessage(pubkeyHex, pathLenRaw, snrByte);
+    // Their flood came with repeater codes narrower than the graph's: the
+    // graph drops such paths, so it can never learn where they are.
+    final graph = _graph;
+    if (graph != null &&
+        PathHelper.pathLenHops(pathLenRaw) > 0 &&
+        PathHelper.pathLenWidth(pathLenRaw) < graph.hashWidthBytes &&
+        _narrowSenders.add(pubkeyHex.toLowerCase())) {
+      notifyListeners();
+    }
     _notifySoon();
+  }
+
+  // Contacts whose floods arrived with 1-byte repeater codes this session.
+  final Set<String> _narrowSenders = {};
+  static const _narrowNoticeDismissedKey =
+      'pathfinder_narrow_notice_dismissed';
+
+  /// Whether to tell the user, once, that [contactPubkeyHex]'s radio sends
+  /// short repeater codes so Pathfinder cannot learn routes to them.
+  bool showNarrowNotice(String contactPubkeyHex) {
+    final key = contactPubkeyHex.toLowerCase();
+    if (!isRunning || !_narrowSenders.contains(key)) return false;
+    final dismissed =
+        PrefsManager.instance.getStringList(_narrowNoticeDismissedKey) ??
+            const [];
+    return !dismissed.contains(key);
+  }
+
+  /// The user has read the notice for this contact: never show it again.
+  Future<void> dismissNarrowNotice(String contactPubkeyHex) async {
+    final key = contactPubkeyHex.toLowerCase();
+    final dismissed = {
+      ...?PrefsManager.instance.getStringList(_narrowNoticeDismissedKey),
+      key,
+    };
+    await PrefsManager.instance
+        .setStringList(_narrowNoticeDismissedKey, dismissed.toList());
+    notifyListeners();
   }
 
   /// My own channel message came back through the mesh: its first hop
