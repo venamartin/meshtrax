@@ -355,6 +355,15 @@ const int maxFrameSize = 176;
 const int appProtocolVersion = 3;
 // Matches firmware MAX_TEXT_LEN (10 * CIPHER_BLOCK_SIZE).
 const int maxTextPayloadBytes = 160;
+
+/// From the fifth attempt on (attempt index > 3) the firmware hides the
+/// attempt number in two extra bytes after the text, and refuses a text
+/// longer than this outright (BaseChatMesh::composeMsgPacket: `attempt > 3
+/// && text_len > MAX_TEXT_LEN-2` → MSG_SEND_FAILED).
+const int maxTextBytesForLateAttempt = maxTextPayloadBytes - 2;
+
+/// Attempts a DM longer than [maxTextBytesForLateAttempt] can get.
+const int maxAttemptsForNearMaxText = 4;
 const int _sendTextMsgOverheadBytes =
     1 + 1 + 1 + 4 + 6 + 1 + 2; // +2 safety margin
 const int _sendChannelTextMsgOverheadBytes =

@@ -127,6 +127,9 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, List<PathSelection>> _plans = {};
   final Set<String> _pathfinderLadders = {};
   final Set<String> _floodFirst = {};
+  // Texts too long for the firmware's fifth attempt
+  // (maxTextBytesForLateAttempt): their ladder stops at four.
+  final Set<String> _nearMaxText = {};
   // What each attempt actually went out on, and which attempts the radio
   // accepted (RESP_CODE_SENT): only those were on the air.
   final Map<String, Map<int, PathSelection>> _attemptRoutes = {};
@@ -224,6 +227,11 @@ class MessageRetryService extends ChangeNotifier {
     final messageId = const Uuid().v4();
     // A user override outranks the resend's flood.
     if (floodFirst && contact.pathOverride == null) _floodFirst.add(messageId);
+    final outboundText =
+        _config?.prepareContactOutboundText?.call(contact, text) ?? text;
+    if (utf8.encode(outboundText).length > maxTextBytesForLateAttempt) {
+      _nearMaxText.add(messageId);
+    }
     _plan(messageId, contact);
     final first = _selectionFor(messageId, 0, contact);
     final messagePathBytes = pathBytes ?? Uint8List.fromList(first.pathBytes);
@@ -303,7 +311,7 @@ class MessageRetryService extends ChangeNotifier {
     final old = _plans[messageId] ?? const <PathSelection>[];
     if (old.isEmpty || keep <= 0) {
       _plans[messageId] = planAttempts(contact,
-          radioWidth: width, budget: maxRetries, graphRoutes: routes);
+          radioWidth: width, budget: _budgetFor(messageId), graphRoutes: routes);
     } else {
       // The rungs already sent stay; the rest is planned again from the
       // routes not yet tried, still closing with the floods the ladder
@@ -341,6 +349,12 @@ class MessageRetryService extends ChangeNotifier {
   /// length; the firmware ladder follows the setting, as before.
   int _attemptBudget(String messageId) => _pathfinderLadders.contains(messageId)
       ? _plans[messageId]!.length
+      : _budgetFor(messageId);
+
+  /// The Max Message Retries setting, except that a text the firmware
+  /// refuses to send a fifth time stops at four.
+  int _budgetFor(String messageId) => _nearMaxText.contains(messageId)
+      ? math.min(maxRetries, maxAttemptsForNearMaxText)
       : maxRetries;
 
   void _onMessageResolved(String messageId, String contactKey) {
@@ -774,6 +788,7 @@ class MessageRetryService extends ChangeNotifier {
     _plans.remove(messageId);
     _pathfinderLadders.remove(messageId);
     _floodFirst.remove(messageId);
+    _nearMaxText.remove(messageId);
     _attemptRoutes.remove(messageId);
     _onAir.remove(messageId);
     _reported.remove(messageId);
@@ -1028,6 +1043,7 @@ class MessageRetryService extends ChangeNotifier {
     _plans.clear();
     _pathfinderLadders.clear();
     _floodFirst.clear();
+    _nearMaxText.clear();
     _attemptRoutes.clear();
     _onAir.clear();
     _reported.clear();
