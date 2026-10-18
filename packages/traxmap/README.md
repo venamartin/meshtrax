@@ -175,8 +175,8 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
 
 **Offline maps screen** (replaces `map_cache_screen.dart`; planned
 2026-10-16). MeshTrax owns the screen. traxmap supplies the models. The
-removed example app's downloads page was the prototype (`git show
-dd0a54c:packages/traxmap/example/lib/downloads_page.dart`). The design comes
+removed example app's downloads page was the prototype (see
+[HISTORY.md](HISTORY.md)). The design comes
 from the regions mockup in traxmapmaker
 (`experiments/geofabrik_regions/`).
 - **Look and feel:** Martin likes the mockup, so stay as close to it as
@@ -314,7 +314,7 @@ flutter test
 
 **Real downloads** were tested by the example app's integration test
 (download, pause at 30%, resume with a range request, verify, install),
-removed with the example: `git show dd0a54c:packages/traxmap/example/integration_test/pack_download_test.dart`.
+removed with the example; its source and what it checks are in [HISTORY.md](HISTORY.md).
 Move it into MeshTrax's `integration_test/` when pack downloads are wired up.
 
 ## Findings
