@@ -136,6 +136,9 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
 
 ## MeshTrax integration
 
+The app-side notebook (decisions, pitfalls found so far, routing, open
+questions) is [`docs/offline-maps.md`](../../docs/offline-maps.md).
+
 | MeshTrax today | traxmap |
 | --- | --- |
 | `TileLayer(urlTemplate: kMapTileUrlTemplate, …)` | `OfflineMapView(styleId:, packs:)` |
