@@ -1,0 +1,29 @@
+name: traxmap_example
+description: Prototype front end for the traxmap package.
+publish_to: none
+version: 0.0.1+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  traxmap:
+    path: ../
+  path_provider: ^2.1.6
+  # Only for the extraLayers escape-hatch demo (a flutter_map CircleLayer).
+  flutter_map: ^8.3.2
+  latlong2: ">=0.9.1 <0.11.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/packs/
