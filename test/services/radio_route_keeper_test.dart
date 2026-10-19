@@ -261,6 +261,29 @@ void main() {
     });
   });
 
+  // A moving repeater's link went stale: Pathfinder stops standing behind
+  // the route, and the radio must not ACK on it for the rest of the
+  // cooldown.
+  test('a route Pathfinder drops is cleared inside the cooldown', () {
+    fakeAsync((async) {
+      final radio = _Radio([_contact()]);
+      radio.recent = {radio.contacts.first.publicKeyHex};
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, ['CAROL:PF1']);
+
+      radio.routes = [];
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, ['CAROL:PF1', 'CAROL:flood']);
+
+      radio.routes = [_pf2];
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, hasLength(2), reason: 'a new route still waits');
+    });
+  });
+
   test('Pathfinder knows nothing: the stored route is cleared, ACKs flood', () {
     fakeAsync((async) {
       final radio = _Radio([_contact(stored: _pf3)])..routes = [];

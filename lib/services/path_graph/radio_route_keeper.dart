@@ -165,10 +165,9 @@ class RadioRouteKeeper {
           continue;
         }
         final last = _lastWrite[key];
-        if (last != null && DateTime.now().difference(last) < rewriteCooldown) {
-          continue;
-        }
-        await _apply(key);
+        await _apply(key,
+            clearOnly: last != null &&
+                DateTime.now().difference(last) < rewriteCooldown);
       }
     } catch (e) {
       appLogger.warn('stored route check failed: $e', tag: 'PathGraph');
@@ -177,7 +176,10 @@ class RadioRouteKeeper {
     }
   }
 
-  Future<void> _apply(String key) async {
+  /// [clearOnly]: inside the rewrite cooldown only a clear goes out — a
+  /// route Pathfinder no longer stands behind (a moving repeater's link
+  /// went stale) would have the radio ACK on a dead route meanwhile.
+  Future<void> _apply(String key, {bool clearOnly = false}) async {
     try {
       await withRouteLock(() async {
         if (_disposed) return;
@@ -191,6 +193,7 @@ class RadioRouteKeeper {
         }
         final want = _wanted(contact);
         if (want == null || holds(contact, want)) return;
+        if (clearOnly && !want.useFlood) return;
         _lastWrite[key] = DateTime.now();
         appLogger.info(
             'stored route to ${contact.name} set to '
