@@ -185,7 +185,8 @@ class PathGraph {
         _db = PathGraphDatabase(executor),
         _now = now ?? DateTime.now,
         _estimator = Estimator(config) {
-    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes);
+    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes)
+      ..onNewLink = _onNewLink;
     _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
   }
 
@@ -220,6 +221,17 @@ class PathGraph {
   // Per contact: the route their latest PATH reply named, and when
   // (see PathGraphConfig.liveRouteMinutes). Memory only.
   final Map<String, ({List<String> hops, int at})> _liveRoutes = {};
+
+  // Watching-only moving-repeater detectors (PathGraphConfig.mobileNewLinks)
+  // and, per node, the first sighting of its oldest link (0 = from before
+  // first sightings were kept), built on first use. Memory only.
+  final _strangerNovelty = NoveltyCounter(sliceMs: 30 * 60 * 1000);
+  final _riderNovelty = NoveltyCounter(sliceMs: 20 * 60 * 1000);
+  Map<String, int>? _knownSince;
+
+  /// Told when a watching-only detector starts seeing [hash] move (at
+  /// most once a day per repeater and reason).
+  void Function(String hash, MovingReason reason)? onMovingSign;
 
   /// Loads persisted state into the in-memory working set.
   Future<void> init() async {
@@ -733,6 +745,60 @@ class PathGraph {
         if (movingStatusOf(e.value, config, now) case final status?)
           e.key: status,
     };
+  }
+
+  /// A sighting created a link the graph never had: news for both ends.
+  /// One that proved it hears me in each of the last three 20-minute
+  /// slices and keeps meeting new repeaters rides with me (no stationary
+  /// gate: I move with it). Anyone else known for a day that keeps meeting
+  /// new ones while I stay put moves — "stay put" being no repeater new to
+  /// me for an hour, so my own drive does not make fixed ones look new.
+  void _onNewLink(String from, String to, int at) {
+    final known = _knownSince ??= _buildKnownSince();
+    final lastNew = _evidence.lastNewSelfRowAt;
+    final stationary =
+        lastNew == null || at - lastNew > Duration.millisecondsPerHour;
+    final minLinks = config.mobileNewLinks;
+    for (final hash in [from, to]) {
+      final since = known.putIfAbsent(hash, () => at);
+      final meetsSteadily = _riderNovelty.add(hash, at, minLinks: minLinks);
+      if (_selfPubkey != null &&
+          _evidence.provenInEachSlice(hash, at,
+              sliceMs: _riderNovelty.sliceMs, slices: 3)) {
+        if (meetsSteadily) _markMoving(hash, MovingReason.ridesWithMe, at);
+      } else if (stationary &&
+          at - since >= Duration.millisecondsPerDay &&
+          _strangerNovelty.add(hash, at, minLinks: minLinks)) {
+        _markMoving(hash, MovingReason.newLinks, at);
+      }
+    }
+  }
+
+  void _markMoving(String hash, MovingReason reason, int at) {
+    final node = _store.nodeFor(hash, NodeSource.observed);
+    final rides = reason == MovingReason.ridesWithMe;
+    final last = rides ? node.autoRidesWithMeAt : node.autoMovingAt;
+    if (rides) {
+      node.autoRidesWithMeAt = at;
+    } else {
+      node.autoMovingAt = at;
+    }
+    _store.markNodeDirty(hash);
+    if (last == null || at - last > Duration.millisecondsPerDay) {
+      onMovingSign?.call(hash, reason);
+    }
+  }
+
+  Map<String, int> _buildKnownSince() {
+    final known = <String, int>{};
+    for (final e in _store.edges.entries) {
+      final t = e.value.firstObserved ?? 0;
+      for (final h in [e.key.$1, e.key.$2]) {
+        final k = known[h];
+        if (k == null || t < k) known[h] = t;
+      }
+    }
+    return known;
   }
 
   /// The user's word on [hash]; null hands it back to the detectors.
@@ -1443,6 +1509,9 @@ class PathGraph {
     _flushTimer = null;
     await _store.clear();
     await _evidence.clear();
+    _knownSince = null;
+    _strangerNovelty.clear();
+    _riderNovelty.clear();
     _store.nodes.addAll(nodes);
     _store.edges.addAll(edges);
     _evidence.entries.addAll(ingress);

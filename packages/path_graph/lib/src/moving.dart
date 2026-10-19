@@ -69,3 +69,34 @@ MovingStatus? movingStatusOf(
   }
   return null;
 }
+
+/// Watching-only detectors (owner, 2026-10-19). A fixed repeater's set of
+/// links fills within a day and then barely grows; a moving one keeps
+/// meeting repeaters it never had links to, hour after hour. One burst — me
+/// arriving somewhere new, a propagation lift, a code twin starting to
+/// relay — is not enough: the new links must spread over several slices.
+class NoveltyCounter {
+  NoveltyCounter({required this.sliceMs, this.slices = 6, this.minSlices = 3});
+
+  final int sliceMs;
+  final int slices;
+  final int minSlices;
+  final Map<String, List<int>> _times = {};
+
+  /// Records one new link of [hash]; true when its new links in the last
+  /// [slices] slices number at least [minLinks] and fill [minSlices] of
+  /// them.
+  bool add(String hash, int now, {required int minLinks}) {
+    final span = sliceMs * slices;
+    if (_times.length > 512) {
+      _times.removeWhere((_, t) => t.isEmpty || now - t.last >= span);
+    }
+    final times = (_times[hash] ??= [])
+      ..add(now)
+      ..removeWhere((t) => now - t >= span);
+    if (times.length < minLinks) return false;
+    return {for (final t in times) (now - t) ~/ sliceMs}.length >= minSlices;
+  }
+
+  void clear() => _times.clear();
+}

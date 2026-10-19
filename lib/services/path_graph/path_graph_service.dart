@@ -94,7 +94,20 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     _lastError = null;
-    _graph = graph;
+    final live = _graph = graph;
+    live.onMovingSign = (hash, reason) {
+      final name = live.snapshot().nodes[hash]?.name;
+      final who = name == null ? hash : '$hash ($name)';
+      final watching =
+          live.config.mobileAutoTagsRoute ? '' : ' (watching only)';
+      appLogger.info(
+          reason == MovingReason.ridesWithMe
+              ? 'Pathfinder thinks $who rides with me: it keeps proving it '
+                  'hears me while meeting repeaters it never had$watching'
+              : 'Pathfinder thinks $who moves: it keeps meeting repeaters it '
+                  'never had$watching',
+          tag: 'PathGraph');
+    };
     _adapter = PathLabAdapter(graph)..onPathDiscovery = notifyListeners;
     _connector = connector;
     _frames = connector.receivedFrames.listen(_onFrame);

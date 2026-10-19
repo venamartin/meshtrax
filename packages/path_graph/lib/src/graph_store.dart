@@ -76,6 +76,9 @@ class GraphStore {
   final Map<String, NodeState> nodes = {};
   final Map<(String, String), EdgeState> edges = {};
 
+  /// Called when a sighting creates a link the graph never had.
+  void Function(String from, String to, int arrivalMillis)? onNewLink;
+
   final Set<String> _dirtyNodes = {};
   final Set<(String, String)> _dirtyEdges = {};
   final Set<String> _deletedNodes = {};
@@ -111,8 +114,12 @@ class GraphStore {
     nodeFor(from, NodeSource.observed).lastHeard = arrivalMillis;
     nodeFor(to, NodeSource.observed).lastHeard = arrivalMillis;
 
-    final edge = edges.putIfAbsent((from, to),
-        () => EdgeState(source: 'observed', firstObserved: arrivalMillis));
+    var created = false;
+    final edge = edges.putIfAbsent((from, to), () {
+      created = true;
+      return EdgeState(source: 'observed', firstObserved: arrivalMillis);
+    });
+    if (created) onNewLink?.call(from, to, arrivalMillis);
     edge.trafficWeight += 1;
     edge.obsCount += 1;
     edge.lastObserved = arrivalMillis;

@@ -156,6 +156,35 @@ class EvidenceStore {
   int selfAliveEventsSince(int sinceMillis) =>
       _selfAliveEvents.where((t) => t >= sinceMillis).length;
 
+  /// Arrival millis of the last time a repeater I had not had for a day
+  /// heard me or was heard by me: the position-free sign that I moved (a
+  /// radio at home meets nobody new). Memory only.
+  int? lastNewSelfRowAt;
+
+  /// Arrival millis of my doorsteps' proofs in the last hour, per hash,
+  /// for the "rides with me" detector. Memory only.
+  final Map<String, List<int>> _selfProofTimes = {};
+
+  void _noteSelfRow(String selfPubkey, String repeaterHash, int arrival) {
+    final e = entries[(selfPubkey, repeaterHash)];
+    if (e == null || arrival - e.lastSeen > Duration.millisecondsPerDay) {
+      lastNewSelfRowAt = arrival;
+    }
+  }
+
+  /// Whether my doorstep [repeaterHash] proved it hears me in each of the
+  /// last [slices] slices of [sliceMs].
+  bool provenInEachSlice(String repeaterHash, int now,
+      {required int sliceMs, required int slices}) {
+    final times = _selfProofTimes[repeaterHash];
+    if (times == null) return false;
+    final filled = {
+      for (final t in times)
+        if (now - t < sliceMs * slices) (now - t) ~/ sliceMs,
+    };
+    return filled.length >= slices;
+  }
+
   /// A direct send that started at [repeaterHash] got no ACK.
   void recordFailedEgress(String selfPubkey, String repeaterHash) {
     final e = entries[(selfPubkey, repeaterHash)];
@@ -271,6 +300,7 @@ class EvidenceStore {
   void recordLastHop(String selfPubkey, String repeaterHash, int arrival,
       {double? lat, double? lon, double? downlinkSnr}) {
     final proven = entries[(selfPubkey, repeaterHash)]?.proven ?? false;
+    _noteSelfRow(selfPubkey, repeaterHash, arrival);
     final e = _upsert(selfPubkey, repeaterHash, EvidenceTier.inferred,
         proven ? 0.0 : 1.0, arrival);
     _capSelf(e);
@@ -333,6 +363,10 @@ class EvidenceStore {
   IngressEntry _proveSelf(
       String selfPubkey, String repeaterHash, double weight, int arrival) {
     final firstProof = entries[(selfPubkey, repeaterHash)]?.provenAt == null;
+    _noteSelfRow(selfPubkey, repeaterHash, arrival);
+    (_selfProofTimes[repeaterHash] ??= [])
+      ..add(arrival)
+      ..removeWhere((t) => arrival - t > Duration.millisecondsPerHour);
     final e =
         _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, weight, arrival)
           ..provenAt = arrival
@@ -557,6 +591,8 @@ class EvidenceStore {
     _lastSlashMillis.clear();
     _lastSelfSupersedeMillis.clear();
     _slashedThisEpoch.clear();
+    _selfProofTimes.clear();
+    lastNewSelfRowAt = null;
     await _db.delete(_db.contactIngress).go();
     await _db.delete(_db.knownContacts).go();
   }
