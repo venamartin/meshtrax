@@ -192,6 +192,23 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// The user's word on whether repeater [hash] moves; null lets the
+  /// detectors decide. Routes change at once; the radio's stored routes
+  /// follow on the keeper's next check.
+  void setMovingOverride(String hash, MovingOverride? value) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.setMovingOverride(hash, value);
+    final how = switch (value) {
+      null => 'left to Pathfinder',
+      MovingOverride.moves => 'marked as moving',
+      MovingOverride.withMe => 'marked as moving with me',
+      MovingOverride.staysPut => 'marked as staying put',
+    };
+    appLogger.info('repeater $hash $how', tag: 'PathGraph');
+    _notifySoon();
+  }
+
   /// Listeners (the debug screen) are told about new observations at
   /// most every couple of seconds; RX-log frames can arrive in bursts.
   Timer? _notifyThrottle;

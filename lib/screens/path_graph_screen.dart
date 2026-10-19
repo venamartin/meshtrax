@@ -83,6 +83,17 @@ String floodReasonText(FloodReason reason,
   };
 }
 
+/// Why Pathfinder treats a repeater as moving, in plain words.
+String movingReasonText(MovingStatus status) => switch (status.reason) {
+      MovingReason.manual => 'you said it moves',
+      MovingReason.manualWithMe => 'you said it moves with you',
+      MovingReason.advertMoved => 'its advert showed it somewhere else',
+      MovingReason.ridesWithMe =>
+        'it keeps hearing me while meeting repeaters it never had, so it '
+            'seems to ride with me',
+      MovingReason.newLinks => 'it keeps meeting repeaters it never had',
+    };
+
 /// Pathfinder: the repeaters around this radio, and how it would reach
 /// whoever is picked. Laid out like the room server screen. While the
 /// switch is on, the routes shown here are the ones DMs, logins and
@@ -293,6 +304,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           subtitle: _tableSummary(mine)),
       const SizedBox(height: 8),
       _doorstepTable(graph, snap, contactByHash, mine, isSelf: true),
+      ..._movingList(graph, snap),
       const SizedBox(height: 24),
       _sectionTitle('Find a route'),
       const SizedBox(height: 8),
@@ -317,6 +329,10 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       if (target.hash != null) ...[
         const SizedBox(height: 16),
         _targetHeader(target),
+        if (!throughDoorsteps) ...[
+          const SizedBox(height: 16),
+          _movingCard(graph, service, target.hash!),
+        ],
         if (throughDoorsteps) ...[
           const SizedBox(height: 16),
           ...() {
@@ -527,6 +543,100 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
+  // ---------------------------------------------------------------- moving
+
+  /// Repeaters tagged as moving, whether their tag acts on routes yet or
+  /// is still only watched. Tap one to see it and change its tag.
+  List<Widget> _movingList(PathGraph graph, GraphSnapshot snap) {
+    final moving = graph.movingRepeaters().entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    if (moving.isEmpty) return const [];
+    final minutes = graph.config.mobileFreshMinutes.round();
+    return [
+      const SizedBox(height: 24),
+      _sectionTitle('Moving repeaters (${moving.length})',
+          subtitle: 'Their links count for $minutes minutes after they were '
+              'last heard'),
+      const SizedBox(height: 8),
+      Card(
+        child: Column(
+          children: [
+            for (final e in moving)
+              ListTile(
+                leading: Icon(Icons.directions_car,
+                    color: e.value.acts ? Colors.orange : Colors.grey),
+                title: Text(snap.nodes[e.key]?.name ?? e.key),
+                subtitle: Text('${e.key} · ${movingReasonText(e.value)}'
+                    '${e.value.acts ? '' : ' (watching only)'}'),
+                onTap: () => _pick(e.key),
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  /// Whether [hash] moves, why, and the user's switch for it.
+  Widget _movingCard(PathGraph graph, PathGraphService service, String hash) {
+    final status = graph.movingStatus(hash);
+    final minutes = graph.config.mobileFreshMinutes.round();
+    final summary = switch (status) {
+      null => 'Pathfinder treats it as a fixed repeater.',
+      MovingStatus(acts: false) =>
+        'Pathfinder thinks it moves: ${movingReasonText(status)}. Watching '
+            'only — routes still treat it as fixed.',
+      MovingStatus(withMe: true) =>
+        'Moves with me: ${movingReasonText(status)}. It counts as hearing me '
+            'any time; its links count for $minutes minutes after they were '
+            'last heard.',
+      _ => 'Moves: ${movingReasonText(status)}. Everything about it counts '
+          'for $minutes minutes after it was last heard.',
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Does it move?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(summary, style: TextStyle(color: Colors.grey[600])),
+            RadioGroup<MovingOverride?>(
+              groupValue: graph.snapshot().nodes[hash]?.movingOverride,
+              onChanged: (value) {
+                service.setMovingOverride(hash, value);
+                setState(() {});
+              },
+              child: const Column(
+                children: [
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Let Pathfinder decide'),
+                    value: null,
+                  ),
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Moves'),
+                    subtitle: Text("Someone else's, in a car or carried"),
+                    value: MovingOverride.moves,
+                  ),
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Moves with me'),
+                    subtitle: Text('In my car: it always hears me'),
+                    value: MovingOverride.withMe,
+                  ),
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Stays put'),
+                    value: MovingOverride.staysPut,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------- tables
 
   /// Doorstep rows in the router's own order (confidence: tally blended
@@ -685,6 +795,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
             _infoRow('Last seen', _timeOf(c.lastSeen)),
             _infoRow('Last proof', c.provenAt == null ? 'never' : _timeOf(c.provenAt!)),
             _infoRow('Evidence', tier),
+            if (graph.movingStatus(hash) case final moving?)
+              _infoRow('Moves',
+                  '${movingReasonText(moving)}${moving.acts ? '' : ' (watching only)'}'),
           ],
         ),
       ),
