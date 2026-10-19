@@ -6,12 +6,14 @@ import 'db/database.dart';
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'moving.dart';
 import 'retention.dart';
 import 'search.dart';
 
 export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
-export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
+export 'graph_store.dart' show EdgeState, MovingOverride, NodeState, NodeSource;
+export 'moving.dart' show MovingReason, MovingStatus;
 export 'retention.dart' show RetentionPolicy, RetentionReport;
 
 /// Attribution quality of an observed path's originator.
@@ -506,7 +508,7 @@ class PathGraph {
   bool _movedFar(String fromHash, String toHash) {
     final a = _store.nodes[fromHash];
     final b = _store.nodes[toHash];
-    if (a?.lat == null || a?.lon == null || b?.lat == null || b?.lon == null) {
+    if (!isRealPosition(a?.lat, a?.lon) || !isRealPosition(b?.lat, b?.lon)) {
       return false;
     }
     return haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) >
@@ -606,8 +608,8 @@ class PathGraph {
       }
       _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
       _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
-      final edge = _store.edges.putIfAbsent(
-          (from, to), () => EdgeState(source: 'observed'));
+      final edge = _store.edges.putIfAbsent((from, to),
+          () => EdgeState(source: 'observed', firstObserved: arrival));
       if (success) edge.s++;
       edge.n++;
       edge.lastObserved = arrival;
@@ -658,8 +660,8 @@ class PathGraph {
     for (var i = 1; i < hops.length; i++) {
       final from = hops[i - 1].toUpperCase();
       final to = hops[i].toUpperCase();
-      final edge = _store.edges
-          .putIfAbsent((from, to), () => EdgeState(source: 'trace'));
+      final edge = _store.edges.putIfAbsent(
+          (from, to), () => EdgeState(source: 'trace', firstObserved: arrival));
       if (i < snrs.length) {
         // EWMA so repeated traces refine rather than overwrite.
         edge.measuredSnr = edge.measuredSnr == null
@@ -675,7 +677,11 @@ class PathGraph {
     _scheduleFlush();
   }
 
-  /// Repeater advert metadata enrichment (advert outranks import).
+  /// Repeater advert metadata enrichment (advert outranks import). An
+  /// advert without a position fix (0,0) leaves the known position alone.
+  /// The same key advertising a real position [PathGraphConfig.mobileMoveKm]
+  /// from its last one marks the repeater as moving; another key on the
+  /// same hash is a code twin, not a move.
   void ingestNode(
     String hashBytes, {
     String? name,
@@ -683,16 +689,52 @@ class PathGraph {
     double? lat,
     double? lon,
   }) {
+    final hash = hashBytes.toUpperCase();
+    final real = isRealPosition(lat, lon);
+    final before = _store.nodes[hash];
+    if (real &&
+        before != null &&
+        before.source == NodeSource.advert &&
+        pubkey != null &&
+        before.pubkey?.toLowerCase() == pubkey.toLowerCase() &&
+        isRealPosition(before.lat, before.lon) &&
+        haversineKm(before.lat!, before.lon!, lat!, lon!) >=
+            config.mobileMoveKm) {
+      before.movedAt = _arrivalMillis;
+    }
     _store.enrichNode(
-      hashBytes.toUpperCase(),
+      hash,
       NodeSource.advert,
       name: name,
       pubkey: pubkey,
-      lat: lat,
-      lon: lon,
+      lat: real ? lat : null,
+      lon: real ? lon : null,
     );
-    _store.nodeFor(hashBytes.toUpperCase(), NodeSource.advert).lastHeard =
-        _arrivalMillis;
+    _store.nodeFor(hash, NodeSource.advert).lastHeard = _arrivalMillis;
+    _scheduleFlush();
+  }
+
+  /// Whether [hash] moves, and why; null for a fixed repeater.
+  MovingStatus? movingStatus(String hash) {
+    final node = _store.nodes[hash.toUpperCase()];
+    return node == null ? null : movingStatusOf(node, config, _arrivalMillis);
+  }
+
+  /// Every repeater tagged as moving, acting or watching-only.
+  Map<String, MovingStatus> movingRepeaters() {
+    final now = _arrivalMillis;
+    return {
+      for (final e in _store.nodes.entries)
+        if (movingStatusOf(e.value, config, now) case final status?)
+          e.key: status,
+    };
+  }
+
+  /// The user's word on [hash]; null hands it back to the detectors.
+  void setMovingOverride(String hash, MovingOverride? value) {
+    final key = hash.toUpperCase();
+    _store.nodeFor(key, NodeSource.observed).movingOverride = value;
+    _store.markNodeDirty(key);
     _scheduleFlush();
   }
 
@@ -1126,6 +1168,8 @@ class PathGraph {
         if (e.n > 0) 'attempts': e.n,
         if (e.lastObserved != null)
           'last_observed': _isoFromMillis(e.lastObserved!),
+        if (e.firstObserved != null)
+          'first_observed': _isoFromMillis(e.firstObserved!),
       });
     }
 
@@ -1198,6 +1242,13 @@ class PathGraph {
             if (e.value.lon != null) 'lon': e.value.lon,
             if (e.value.lastHeard != null) 'last_heard': e.value.lastHeard,
             if (e.value.pubkey != null) 'pubkey': e.value.pubkey,
+            if (e.value.movedAt != null) 'moved_at': e.value.movedAt,
+            if (e.value.movingOverride != null)
+              'moving_override': e.value.movingOverride!.name,
+            if (e.value.autoMovingAt != null)
+              'auto_moving_at': e.value.autoMovingAt,
+            if (e.value.autoRidesWithMeAt != null)
+              'auto_rides_with_me_at': e.value.autoRidesWithMeAt,
           }
       ],
       'edges': [
@@ -1214,6 +1265,8 @@ class PathGraph {
               'last_observed': e.value.lastObserved,
             if (e.value.measuredSnr != null)
               'measured_snr': e.value.measuredSnr,
+            if (e.value.firstObserved != null)
+              'first_observed': e.value.firstObserved,
           }
       ],
       'ingress': [
@@ -1286,12 +1339,20 @@ class PathGraph {
           lon: (n['lon'] as num?)?.toDouble(),
           lastHeard: (n['last_heard'] as num?)?.toInt(),
           pubkey: n['pubkey'] as String?,
+          movedAt: (n['moved_at'] as num?)?.toInt(),
+          movingOverride: MovingOverride.values
+              .where((v) => v.name == n['moving_override'])
+              .firstOrNull,
+          autoMovingAt: (n['auto_moving_at'] as num?)?.toInt(),
+          autoRidesWithMeAt: (n['auto_rides_with_me_at'] as num?)?.toInt(),
         );
       }
       for (final raw in (document['edges'] as List?) ?? const []) {
         final e = raw as Map;
         edges[(e['from'] as String, e['to'] as String)] =
-            EdgeState(source: e['source'] as String? ?? 'observed')
+            EdgeState(
+                source: e['source'] as String? ?? 'observed',
+                firstObserved: (e['first_observed'] as num?)?.toInt())
               ..s = (e['s'] as num?)?.toInt() ?? 0
               ..n = (e['n'] as num?)?.toInt() ?? 0
               ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0

@@ -32,6 +32,11 @@ class PathGraphConfig {
     this.selfSilenceMinEvents = 3,
     this.relayedCopyGraceSeconds = 60,
     this.liveRouteMinutes = 10,
+    this.mobileFreshMinutes = 15,
+    this.mobileNewLinks = 5,
+    this.mobileMoveKm = 2,
+    this.mobileTagDays = 14,
+    this.mobileAutoTagsRoute = false,
     this.slashEpochMinutes = 2,
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
@@ -183,6 +188,34 @@ class PathGraphConfig {
   /// within milliseconds, and the ACKs that followed were lost).
   final double liveRouteMinutes;
 
+  /// A moving repeater (owner, 2026-10-19) collects links to every
+  /// repeater it passes, and old ones make it a wormhole: "A hears it"
+  /// in Oakland at 10:00 plus "it reaches B" in Sacramento at 14:00 reads
+  /// as a two-hop corridor. Everything about one — its links, my doorstep
+  /// row for it (from its last proof), a contact's row for it (from the
+  /// last sighting) — counts for this long after it was last refreshed.
+  /// A hard window, not a faster fade: a faded two-hop shortcut still
+  /// beats a real five-hop corridor. One riding with me keeps my doorstep
+  /// row; its links still expire.
+  final double mobileFreshMinutes;
+
+  /// Watching-only detector ("keeps meeting new repeaters"): this many
+  /// links first seen in the last three hours, spread over at least three
+  /// of its half-hours, from a repeater known for a day.
+  final int mobileNewLinks;
+
+  /// An advert from the same key this far from its last real position
+  /// marks the repeater as moving.
+  final double mobileMoveKm;
+
+  /// A moving sign (advert move, detector) lasts this long.
+  final double mobileTagDays;
+
+  /// Off: the traffic detectors only watch (shown, logged, exported),
+  /// until a week of field data has set their thresholds (owner,
+  /// 2026-10-19). The user's tags and advert moves always act.
+  final bool mobileAutoTagsRoute;
+
   /// Supersede slash: epoch-limited, floored (proven keeps ≥ this).
   final double slashEpochMinutes;
   final double slashFactorProven;
@@ -195,6 +228,8 @@ class PathGraphConfig {
           double? pThreshold,
           int? maxHops,
           double? doorstepWeight,
+          double? mobileFreshMinutes,
+          bool? mobileAutoTagsRoute,
           bool? allowInferredEndpoints}) =>
       PathGraphConfig(
         beta: beta ?? this.beta,
@@ -223,6 +258,11 @@ class PathGraphConfig {
         selfSilenceMinEvents: selfSilenceMinEvents,
         relayedCopyGraceSeconds: relayedCopyGraceSeconds,
         liveRouteMinutes: liveRouteMinutes,
+        mobileFreshMinutes: mobileFreshMinutes ?? this.mobileFreshMinutes,
+        mobileNewLinks: mobileNewLinks,
+        mobileMoveKm: mobileMoveKm,
+        mobileTagDays: mobileTagDays,
+        mobileAutoTagsRoute: mobileAutoTagsRoute ?? this.mobileAutoTagsRoute,
         slashEpochMinutes: slashEpochMinutes,
         slashFactorProven: slashFactorProven,
         slashFactorInferred: slashFactorInferred,

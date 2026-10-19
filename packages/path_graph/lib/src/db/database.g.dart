@@ -51,9 +51,45 @@ class $GraphNodesTable extends GraphNodes
   late final GeneratedColumn<String> pubkey = GeneratedColumn<String>(
       'pubkey', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _movedAtMeta =
+      const VerificationMeta('movedAt');
   @override
-  List<GeneratedColumn> get $columns =>
-      [hashBytes, name, role, lat, lon, lastHeard, source, pubkey];
+  late final GeneratedColumn<int> movedAt = GeneratedColumn<int>(
+      'moved_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _movingOverrideMeta =
+      const VerificationMeta('movingOverride');
+  @override
+  late final GeneratedColumn<String> movingOverride = GeneratedColumn<String>(
+      'moving_override', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _autoMovingAtMeta =
+      const VerificationMeta('autoMovingAt');
+  @override
+  late final GeneratedColumn<int> autoMovingAt = GeneratedColumn<int>(
+      'auto_moving_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _autoRidesWithMeAtMeta =
+      const VerificationMeta('autoRidesWithMeAt');
+  @override
+  late final GeneratedColumn<int> autoRidesWithMeAt = GeneratedColumn<int>(
+      'auto_rides_with_me_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        hashBytes,
+        name,
+        role,
+        lat,
+        lon,
+        lastHeard,
+        source,
+        pubkey,
+        movedAt,
+        movingOverride,
+        autoMovingAt,
+        autoRidesWithMeAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -100,6 +136,28 @@ class $GraphNodesTable extends GraphNodes
       context.handle(_pubkeyMeta,
           pubkey.isAcceptableOrUnknown(data['pubkey']!, _pubkeyMeta));
     }
+    if (data.containsKey('moved_at')) {
+      context.handle(_movedAtMeta,
+          movedAt.isAcceptableOrUnknown(data['moved_at']!, _movedAtMeta));
+    }
+    if (data.containsKey('moving_override')) {
+      context.handle(
+          _movingOverrideMeta,
+          movingOverride.isAcceptableOrUnknown(
+              data['moving_override']!, _movingOverrideMeta));
+    }
+    if (data.containsKey('auto_moving_at')) {
+      context.handle(
+          _autoMovingAtMeta,
+          autoMovingAt.isAcceptableOrUnknown(
+              data['auto_moving_at']!, _autoMovingAtMeta));
+    }
+    if (data.containsKey('auto_rides_with_me_at')) {
+      context.handle(
+          _autoRidesWithMeAtMeta,
+          autoRidesWithMeAt.isAcceptableOrUnknown(
+              data['auto_rides_with_me_at']!, _autoRidesWithMeAtMeta));
+    }
     return context;
   }
 
@@ -125,6 +183,14 @@ class $GraphNodesTable extends GraphNodes
           .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
       pubkey: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}pubkey']),
+      movedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}moved_at']),
+      movingOverride: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}moving_override']),
+      autoMovingAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}auto_moving_at']),
+      autoRidesWithMeAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}auto_rides_with_me_at']),
     );
   }
 
@@ -150,6 +216,14 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
 
   /// Full 64-hex pubkey when known (enables re-collapse at other widths).
   final String? pubkey;
+
+  /// Moving repeaters: arrival millis of the last advert that showed it
+  /// somewhere else; the user's override (moves | withMe | staysPut);
+  /// the watching-only detectors' last sightings.
+  final int? movedAt;
+  final String? movingOverride;
+  final int? autoMovingAt;
+  final int? autoRidesWithMeAt;
   const GraphNode(
       {required this.hashBytes,
       this.name,
@@ -158,7 +232,11 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
       this.lon,
       this.lastHeard,
       required this.source,
-      this.pubkey});
+      this.pubkey,
+      this.movedAt,
+      this.movingOverride,
+      this.autoMovingAt,
+      this.autoRidesWithMeAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -182,6 +260,18 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
     if (!nullToAbsent || pubkey != null) {
       map['pubkey'] = Variable<String>(pubkey);
     }
+    if (!nullToAbsent || movedAt != null) {
+      map['moved_at'] = Variable<int>(movedAt);
+    }
+    if (!nullToAbsent || movingOverride != null) {
+      map['moving_override'] = Variable<String>(movingOverride);
+    }
+    if (!nullToAbsent || autoMovingAt != null) {
+      map['auto_moving_at'] = Variable<int>(autoMovingAt);
+    }
+    if (!nullToAbsent || autoRidesWithMeAt != null) {
+      map['auto_rides_with_me_at'] = Variable<int>(autoRidesWithMeAt);
+    }
     return map;
   }
 
@@ -198,6 +288,18 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
       source: Value(source),
       pubkey:
           pubkey == null && nullToAbsent ? const Value.absent() : Value(pubkey),
+      movedAt: movedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(movedAt),
+      movingOverride: movingOverride == null && nullToAbsent
+          ? const Value.absent()
+          : Value(movingOverride),
+      autoMovingAt: autoMovingAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(autoMovingAt),
+      autoRidesWithMeAt: autoRidesWithMeAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(autoRidesWithMeAt),
     );
   }
 
@@ -213,6 +315,10 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
       lastHeard: serializer.fromJson<int?>(json['lastHeard']),
       source: serializer.fromJson<String>(json['source']),
       pubkey: serializer.fromJson<String?>(json['pubkey']),
+      movedAt: serializer.fromJson<int?>(json['movedAt']),
+      movingOverride: serializer.fromJson<String?>(json['movingOverride']),
+      autoMovingAt: serializer.fromJson<int?>(json['autoMovingAt']),
+      autoRidesWithMeAt: serializer.fromJson<int?>(json['autoRidesWithMeAt']),
     );
   }
   @override
@@ -227,6 +333,10 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
       'lastHeard': serializer.toJson<int?>(lastHeard),
       'source': serializer.toJson<String>(source),
       'pubkey': serializer.toJson<String?>(pubkey),
+      'movedAt': serializer.toJson<int?>(movedAt),
+      'movingOverride': serializer.toJson<String?>(movingOverride),
+      'autoMovingAt': serializer.toJson<int?>(autoMovingAt),
+      'autoRidesWithMeAt': serializer.toJson<int?>(autoRidesWithMeAt),
     };
   }
 
@@ -238,7 +348,11 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
           Value<double?> lon = const Value.absent(),
           Value<int?> lastHeard = const Value.absent(),
           String? source,
-          Value<String?> pubkey = const Value.absent()}) =>
+          Value<String?> pubkey = const Value.absent(),
+          Value<int?> movedAt = const Value.absent(),
+          Value<String?> movingOverride = const Value.absent(),
+          Value<int?> autoMovingAt = const Value.absent(),
+          Value<int?> autoRidesWithMeAt = const Value.absent()}) =>
       GraphNode(
         hashBytes: hashBytes ?? this.hashBytes,
         name: name.present ? name.value : this.name,
@@ -248,6 +362,14 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
         lastHeard: lastHeard.present ? lastHeard.value : this.lastHeard,
         source: source ?? this.source,
         pubkey: pubkey.present ? pubkey.value : this.pubkey,
+        movedAt: movedAt.present ? movedAt.value : this.movedAt,
+        movingOverride:
+            movingOverride.present ? movingOverride.value : this.movingOverride,
+        autoMovingAt:
+            autoMovingAt.present ? autoMovingAt.value : this.autoMovingAt,
+        autoRidesWithMeAt: autoRidesWithMeAt.present
+            ? autoRidesWithMeAt.value
+            : this.autoRidesWithMeAt,
       );
   GraphNode copyWithCompanion(GraphNodesCompanion data) {
     return GraphNode(
@@ -259,6 +381,16 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
       lastHeard: data.lastHeard.present ? data.lastHeard.value : this.lastHeard,
       source: data.source.present ? data.source.value : this.source,
       pubkey: data.pubkey.present ? data.pubkey.value : this.pubkey,
+      movedAt: data.movedAt.present ? data.movedAt.value : this.movedAt,
+      movingOverride: data.movingOverride.present
+          ? data.movingOverride.value
+          : this.movingOverride,
+      autoMovingAt: data.autoMovingAt.present
+          ? data.autoMovingAt.value
+          : this.autoMovingAt,
+      autoRidesWithMeAt: data.autoRidesWithMeAt.present
+          ? data.autoRidesWithMeAt.value
+          : this.autoRidesWithMeAt,
     );
   }
 
@@ -272,14 +404,18 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
           ..write('lon: $lon, ')
           ..write('lastHeard: $lastHeard, ')
           ..write('source: $source, ')
-          ..write('pubkey: $pubkey')
+          ..write('pubkey: $pubkey, ')
+          ..write('movedAt: $movedAt, ')
+          ..write('movingOverride: $movingOverride, ')
+          ..write('autoMovingAt: $autoMovingAt, ')
+          ..write('autoRidesWithMeAt: $autoRidesWithMeAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(hashBytes, name, role, lat, lon, lastHeard, source, pubkey);
+  int get hashCode => Object.hash(hashBytes, name, role, lat, lon, lastHeard,
+      source, pubkey, movedAt, movingOverride, autoMovingAt, autoRidesWithMeAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -291,7 +427,11 @@ class GraphNode extends DataClass implements Insertable<GraphNode> {
           other.lon == this.lon &&
           other.lastHeard == this.lastHeard &&
           other.source == this.source &&
-          other.pubkey == this.pubkey);
+          other.pubkey == this.pubkey &&
+          other.movedAt == this.movedAt &&
+          other.movingOverride == this.movingOverride &&
+          other.autoMovingAt == this.autoMovingAt &&
+          other.autoRidesWithMeAt == this.autoRidesWithMeAt);
 }
 
 class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
@@ -303,6 +443,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
   final Value<int?> lastHeard;
   final Value<String> source;
   final Value<String?> pubkey;
+  final Value<int?> movedAt;
+  final Value<String?> movingOverride;
+  final Value<int?> autoMovingAt;
+  final Value<int?> autoRidesWithMeAt;
   final Value<int> rowid;
   const GraphNodesCompanion({
     this.hashBytes = const Value.absent(),
@@ -313,6 +457,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
     this.lastHeard = const Value.absent(),
     this.source = const Value.absent(),
     this.pubkey = const Value.absent(),
+    this.movedAt = const Value.absent(),
+    this.movingOverride = const Value.absent(),
+    this.autoMovingAt = const Value.absent(),
+    this.autoRidesWithMeAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GraphNodesCompanion.insert({
@@ -324,6 +472,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
     this.lastHeard = const Value.absent(),
     required String source,
     this.pubkey = const Value.absent(),
+    this.movedAt = const Value.absent(),
+    this.movingOverride = const Value.absent(),
+    this.autoMovingAt = const Value.absent(),
+    this.autoRidesWithMeAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : hashBytes = Value(hashBytes),
         source = Value(source);
@@ -336,6 +488,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
     Expression<int>? lastHeard,
     Expression<String>? source,
     Expression<String>? pubkey,
+    Expression<int>? movedAt,
+    Expression<String>? movingOverride,
+    Expression<int>? autoMovingAt,
+    Expression<int>? autoRidesWithMeAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -347,6 +503,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
       if (lastHeard != null) 'last_heard': lastHeard,
       if (source != null) 'source': source,
       if (pubkey != null) 'pubkey': pubkey,
+      if (movedAt != null) 'moved_at': movedAt,
+      if (movingOverride != null) 'moving_override': movingOverride,
+      if (autoMovingAt != null) 'auto_moving_at': autoMovingAt,
+      if (autoRidesWithMeAt != null) 'auto_rides_with_me_at': autoRidesWithMeAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -360,6 +520,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
       Value<int?>? lastHeard,
       Value<String>? source,
       Value<String?>? pubkey,
+      Value<int?>? movedAt,
+      Value<String?>? movingOverride,
+      Value<int?>? autoMovingAt,
+      Value<int?>? autoRidesWithMeAt,
       Value<int>? rowid}) {
     return GraphNodesCompanion(
       hashBytes: hashBytes ?? this.hashBytes,
@@ -370,6 +534,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
       lastHeard: lastHeard ?? this.lastHeard,
       source: source ?? this.source,
       pubkey: pubkey ?? this.pubkey,
+      movedAt: movedAt ?? this.movedAt,
+      movingOverride: movingOverride ?? this.movingOverride,
+      autoMovingAt: autoMovingAt ?? this.autoMovingAt,
+      autoRidesWithMeAt: autoRidesWithMeAt ?? this.autoRidesWithMeAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -401,6 +569,18 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
     if (pubkey.present) {
       map['pubkey'] = Variable<String>(pubkey.value);
     }
+    if (movedAt.present) {
+      map['moved_at'] = Variable<int>(movedAt.value);
+    }
+    if (movingOverride.present) {
+      map['moving_override'] = Variable<String>(movingOverride.value);
+    }
+    if (autoMovingAt.present) {
+      map['auto_moving_at'] = Variable<int>(autoMovingAt.value);
+    }
+    if (autoRidesWithMeAt.present) {
+      map['auto_rides_with_me_at'] = Variable<int>(autoRidesWithMeAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -418,6 +598,10 @@ class GraphNodesCompanion extends UpdateCompanion<GraphNode> {
           ..write('lastHeard: $lastHeard, ')
           ..write('source: $source, ')
           ..write('pubkey: $pubkey, ')
+          ..write('movedAt: $movedAt, ')
+          ..write('movingOverride: $movingOverride, ')
+          ..write('autoMovingAt: $autoMovingAt, ')
+          ..write('autoRidesWithMeAt: $autoRidesWithMeAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -488,6 +672,12 @@ class $GraphEdgesTable extends GraphEdges
   late final GeneratedColumn<double> measuredSnr = GeneratedColumn<double>(
       'measured_snr', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _firstObservedMeta =
+      const VerificationMeta('firstObserved');
+  @override
+  late final GeneratedColumn<int> firstObserved = GeneratedColumn<int>(
+      'first_observed', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         fromHash,
@@ -498,7 +688,8 @@ class $GraphEdgesTable extends GraphEdges
         lastObserved,
         obsCount,
         source,
-        measuredSnr
+        measuredSnr,
+        firstObserved
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -556,6 +747,12 @@ class $GraphEdgesTable extends GraphEdges
           measuredSnr.isAcceptableOrUnknown(
               data['measured_snr']!, _measuredSnrMeta));
     }
+    if (data.containsKey('first_observed')) {
+      context.handle(
+          _firstObservedMeta,
+          firstObserved.isAcceptableOrUnknown(
+              data['first_observed']!, _firstObservedMeta));
+    }
     return context;
   }
 
@@ -583,6 +780,8 @@ class $GraphEdgesTable extends GraphEdges
           .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
       measuredSnr: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}measured_snr']),
+      firstObserved: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}first_observed']),
     );
   }
 
@@ -610,6 +809,10 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
 
   /// Trace-fed per-hop SNR EWMA.
   final double? measuredSnr;
+
+  /// Arrival-time millis of the first observation; null for links from
+  /// before v9.
+  final int? firstObserved;
   const GraphEdge(
       {required this.fromHash,
       required this.toHash,
@@ -619,7 +822,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       this.lastObserved,
       required this.obsCount,
       required this.source,
-      this.measuredSnr});
+      this.measuredSnr,
+      this.firstObserved});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -635,6 +839,9 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || measuredSnr != null) {
       map['measured_snr'] = Variable<double>(measuredSnr);
+    }
+    if (!nullToAbsent || firstObserved != null) {
+      map['first_observed'] = Variable<int>(firstObserved);
     }
     return map;
   }
@@ -654,6 +861,9 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       measuredSnr: measuredSnr == null && nullToAbsent
           ? const Value.absent()
           : Value(measuredSnr),
+      firstObserved: firstObserved == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firstObserved),
     );
   }
 
@@ -670,6 +880,7 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       obsCount: serializer.fromJson<int>(json['obsCount']),
       source: serializer.fromJson<String>(json['source']),
       measuredSnr: serializer.fromJson<double?>(json['measuredSnr']),
+      firstObserved: serializer.fromJson<int?>(json['firstObserved']),
     );
   }
   @override
@@ -685,6 +896,7 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       'obsCount': serializer.toJson<int>(obsCount),
       'source': serializer.toJson<String>(source),
       'measuredSnr': serializer.toJson<double?>(measuredSnr),
+      'firstObserved': serializer.toJson<int?>(firstObserved),
     };
   }
 
@@ -697,7 +909,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           Value<int?> lastObserved = const Value.absent(),
           int? obsCount,
           String? source,
-          Value<double?> measuredSnr = const Value.absent()}) =>
+          Value<double?> measuredSnr = const Value.absent(),
+          Value<int?> firstObserved = const Value.absent()}) =>
       GraphEdge(
         fromHash: fromHash ?? this.fromHash,
         toHash: toHash ?? this.toHash,
@@ -709,6 +922,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
         obsCount: obsCount ?? this.obsCount,
         source: source ?? this.source,
         measuredSnr: measuredSnr.present ? measuredSnr.value : this.measuredSnr,
+        firstObserved:
+            firstObserved.present ? firstObserved.value : this.firstObserved,
       );
   GraphEdge copyWithCompanion(GraphEdgesCompanion data) {
     return GraphEdge(
@@ -726,6 +941,9 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       source: data.source.present ? data.source.value : this.source,
       measuredSnr:
           data.measuredSnr.present ? data.measuredSnr.value : this.measuredSnr,
+      firstObserved: data.firstObserved.present
+          ? data.firstObserved.value
+          : this.firstObserved,
     );
   }
 
@@ -740,14 +958,15 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           ..write('lastObserved: $lastObserved, ')
           ..write('obsCount: $obsCount, ')
           ..write('source: $source, ')
-          ..write('measuredSnr: $measuredSnr')
+          ..write('measuredSnr: $measuredSnr, ')
+          ..write('firstObserved: $firstObserved')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(fromHash, toHash, s, n, trafficWeight,
-      lastObserved, obsCount, source, measuredSnr);
+      lastObserved, obsCount, source, measuredSnr, firstObserved);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -760,7 +979,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           other.lastObserved == this.lastObserved &&
           other.obsCount == this.obsCount &&
           other.source == this.source &&
-          other.measuredSnr == this.measuredSnr);
+          other.measuredSnr == this.measuredSnr &&
+          other.firstObserved == this.firstObserved);
 }
 
 class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
@@ -773,6 +993,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
   final Value<int> obsCount;
   final Value<String> source;
   final Value<double?> measuredSnr;
+  final Value<int?> firstObserved;
   final Value<int> rowid;
   const GraphEdgesCompanion({
     this.fromHash = const Value.absent(),
@@ -784,6 +1005,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     this.obsCount = const Value.absent(),
     this.source = const Value.absent(),
     this.measuredSnr = const Value.absent(),
+    this.firstObserved = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GraphEdgesCompanion.insert({
@@ -796,6 +1018,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     this.obsCount = const Value.absent(),
     required String source,
     this.measuredSnr = const Value.absent(),
+    this.firstObserved = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : fromHash = Value(fromHash),
         toHash = Value(toHash),
@@ -810,6 +1033,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     Expression<int>? obsCount,
     Expression<String>? source,
     Expression<double>? measuredSnr,
+    Expression<int>? firstObserved,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -822,6 +1046,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       if (obsCount != null) 'obs_count': obsCount,
       if (source != null) 'source': source,
       if (measuredSnr != null) 'measured_snr': measuredSnr,
+      if (firstObserved != null) 'first_observed': firstObserved,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -836,6 +1061,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       Value<int>? obsCount,
       Value<String>? source,
       Value<double?>? measuredSnr,
+      Value<int?>? firstObserved,
       Value<int>? rowid}) {
     return GraphEdgesCompanion(
       fromHash: fromHash ?? this.fromHash,
@@ -847,6 +1073,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       obsCount: obsCount ?? this.obsCount,
       source: source ?? this.source,
       measuredSnr: measuredSnr ?? this.measuredSnr,
+      firstObserved: firstObserved ?? this.firstObserved,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -881,6 +1108,9 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     if (measuredSnr.present) {
       map['measured_snr'] = Variable<double>(measuredSnr.value);
     }
+    if (firstObserved.present) {
+      map['first_observed'] = Variable<int>(firstObserved.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -899,6 +1129,7 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
           ..write('obsCount: $obsCount, ')
           ..write('source: $source, ')
           ..write('measuredSnr: $measuredSnr, ')
+          ..write('firstObserved: $firstObserved, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2279,6 +2510,10 @@ typedef $$GraphNodesTableCreateCompanionBuilder = GraphNodesCompanion Function({
   Value<int?> lastHeard,
   required String source,
   Value<String?> pubkey,
+  Value<int?> movedAt,
+  Value<String?> movingOverride,
+  Value<int?> autoMovingAt,
+  Value<int?> autoRidesWithMeAt,
   Value<int> rowid,
 });
 typedef $$GraphNodesTableUpdateCompanionBuilder = GraphNodesCompanion Function({
@@ -2290,6 +2525,10 @@ typedef $$GraphNodesTableUpdateCompanionBuilder = GraphNodesCompanion Function({
   Value<int?> lastHeard,
   Value<String> source,
   Value<String?> pubkey,
+  Value<int?> movedAt,
+  Value<String?> movingOverride,
+  Value<int?> autoMovingAt,
+  Value<int?> autoRidesWithMeAt,
   Value<int> rowid,
 });
 
@@ -2325,6 +2564,20 @@ class $$GraphNodesTableFilterComposer
 
   ColumnFilters<String> get pubkey => $composableBuilder(
       column: $table.pubkey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get movedAt => $composableBuilder(
+      column: $table.movedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get movingOverride => $composableBuilder(
+      column: $table.movingOverride,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get autoMovingAt => $composableBuilder(
+      column: $table.autoMovingAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get autoRidesWithMeAt => $composableBuilder(
+      column: $table.autoRidesWithMeAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$GraphNodesTableOrderingComposer
@@ -2359,6 +2612,21 @@ class $$GraphNodesTableOrderingComposer
 
   ColumnOrderings<String> get pubkey => $composableBuilder(
       column: $table.pubkey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get movedAt => $composableBuilder(
+      column: $table.movedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get movingOverride => $composableBuilder(
+      column: $table.movingOverride,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get autoMovingAt => $composableBuilder(
+      column: $table.autoMovingAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get autoRidesWithMeAt => $composableBuilder(
+      column: $table.autoRidesWithMeAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$GraphNodesTableAnnotationComposer
@@ -2393,6 +2661,18 @@ class $$GraphNodesTableAnnotationComposer
 
   GeneratedColumn<String> get pubkey =>
       $composableBuilder(column: $table.pubkey, builder: (column) => column);
+
+  GeneratedColumn<int> get movedAt =>
+      $composableBuilder(column: $table.movedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get movingOverride => $composableBuilder(
+      column: $table.movingOverride, builder: (column) => column);
+
+  GeneratedColumn<int> get autoMovingAt => $composableBuilder(
+      column: $table.autoMovingAt, builder: (column) => column);
+
+  GeneratedColumn<int> get autoRidesWithMeAt => $composableBuilder(
+      column: $table.autoRidesWithMeAt, builder: (column) => column);
 }
 
 class $$GraphNodesTableTableManager extends RootTableManager<
@@ -2429,6 +2709,10 @@ class $$GraphNodesTableTableManager extends RootTableManager<
             Value<int?> lastHeard = const Value.absent(),
             Value<String> source = const Value.absent(),
             Value<String?> pubkey = const Value.absent(),
+            Value<int?> movedAt = const Value.absent(),
+            Value<String?> movingOverride = const Value.absent(),
+            Value<int?> autoMovingAt = const Value.absent(),
+            Value<int?> autoRidesWithMeAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GraphNodesCompanion(
@@ -2440,6 +2724,10 @@ class $$GraphNodesTableTableManager extends RootTableManager<
             lastHeard: lastHeard,
             source: source,
             pubkey: pubkey,
+            movedAt: movedAt,
+            movingOverride: movingOverride,
+            autoMovingAt: autoMovingAt,
+            autoRidesWithMeAt: autoRidesWithMeAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2451,6 +2739,10 @@ class $$GraphNodesTableTableManager extends RootTableManager<
             Value<int?> lastHeard = const Value.absent(),
             required String source,
             Value<String?> pubkey = const Value.absent(),
+            Value<int?> movedAt = const Value.absent(),
+            Value<String?> movingOverride = const Value.absent(),
+            Value<int?> autoMovingAt = const Value.absent(),
+            Value<int?> autoRidesWithMeAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GraphNodesCompanion.insert(
@@ -2462,6 +2754,10 @@ class $$GraphNodesTableTableManager extends RootTableManager<
             lastHeard: lastHeard,
             source: source,
             pubkey: pubkey,
+            movedAt: movedAt,
+            movingOverride: movingOverride,
+            autoMovingAt: autoMovingAt,
+            autoRidesWithMeAt: autoRidesWithMeAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -2500,6 +2796,7 @@ typedef $$GraphEdgesTableCreateCompanionBuilder = GraphEdgesCompanion Function({
   Value<int> obsCount,
   required String source,
   Value<double?> measuredSnr,
+  Value<int?> firstObserved,
   Value<int> rowid,
 });
 typedef $$GraphEdgesTableUpdateCompanionBuilder = GraphEdgesCompanion Function({
@@ -2512,6 +2809,7 @@ typedef $$GraphEdgesTableUpdateCompanionBuilder = GraphEdgesCompanion Function({
   Value<int> obsCount,
   Value<String> source,
   Value<double?> measuredSnr,
+  Value<int?> firstObserved,
   Value<int> rowid,
 });
 
@@ -2550,6 +2848,9 @@ class $$GraphEdgesTableFilterComposer
 
   ColumnFilters<double> get measuredSnr => $composableBuilder(
       column: $table.measuredSnr, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get firstObserved => $composableBuilder(
+      column: $table.firstObserved, builder: (column) => ColumnFilters(column));
 }
 
 class $$GraphEdgesTableOrderingComposer
@@ -2589,6 +2890,10 @@ class $$GraphEdgesTableOrderingComposer
 
   ColumnOrderings<double> get measuredSnr => $composableBuilder(
       column: $table.measuredSnr, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get firstObserved => $composableBuilder(
+      column: $table.firstObserved,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$GraphEdgesTableAnnotationComposer
@@ -2626,6 +2931,9 @@ class $$GraphEdgesTableAnnotationComposer
 
   GeneratedColumn<double> get measuredSnr => $composableBuilder(
       column: $table.measuredSnr, builder: (column) => column);
+
+  GeneratedColumn<int> get firstObserved => $composableBuilder(
+      column: $table.firstObserved, builder: (column) => column);
 }
 
 class $$GraphEdgesTableTableManager extends RootTableManager<
@@ -2663,6 +2971,7 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             Value<int> obsCount = const Value.absent(),
             Value<String> source = const Value.absent(),
             Value<double?> measuredSnr = const Value.absent(),
+            Value<int?> firstObserved = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GraphEdgesCompanion(
@@ -2675,6 +2984,7 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             obsCount: obsCount,
             source: source,
             measuredSnr: measuredSnr,
+            firstObserved: firstObserved,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2687,6 +2997,7 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             Value<int> obsCount = const Value.absent(),
             required String source,
             Value<double?> measuredSnr = const Value.absent(),
+            Value<int?> firstObserved = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               GraphEdgesCompanion.insert(
@@ -2699,6 +3010,7 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             obsCount: obsCount,
             source: source,
             measuredSnr: measuredSnr,
+            firstObserved: firstObserved,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

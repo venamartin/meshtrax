@@ -18,6 +18,14 @@ class GraphNodes extends Table {
   /// Full 64-hex pubkey when known (enables re-collapse at other widths).
   TextColumn get pubkey => text().nullable()();
 
+  /// Moving repeaters: arrival millis of the last advert that showed it
+  /// somewhere else; the user's override (moves | withMe | staysPut);
+  /// the watching-only detectors' last sightings.
+  IntColumn get movedAt => integer().nullable()();
+  TextColumn get movingOverride => text().nullable()();
+  IntColumn get autoMovingAt => integer().nullable()();
+  IntColumn get autoRidesWithMeAt => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {hashBytes};
 }
@@ -43,6 +51,10 @@ class GraphEdges extends Table {
 
   /// Trace-fed per-hop SNR EWMA.
   RealColumn get measuredSnr => real().nullable()();
+
+  /// Arrival-time millis of the first observation; null for links from
+  /// before v9.
+  IntColumn get firstObserved => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {fromHash, toHash};

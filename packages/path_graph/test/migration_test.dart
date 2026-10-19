@@ -318,4 +318,49 @@ void main() {
     await reopened.dispose();
     file.parent.deleteSync(recursive: true);
   });
+
+  test('v8 to v9: links gain a first-seen time, nodes their moving tags',
+      () async {
+    final seen = DateTime.now().millisecondsSinceEpoch;
+    final file = await atVersion(8, (db) async {
+      await db.customStatement('DROP TABLE graph_edges');
+      await db.customStatement('DROP TABLE graph_nodes');
+      await db.customStatement('''
+        CREATE TABLE graph_nodes (
+          hash_bytes TEXT NOT NULL, name TEXT, role TEXT, lat REAL, lon REAL,
+          last_heard INTEGER, source TEXT NOT NULL, pubkey TEXT,
+          PRIMARY KEY (hash_bytes))''');
+      await db.customStatement('''
+        CREATE TABLE graph_edges (
+          from_hash TEXT NOT NULL, to_hash TEXT NOT NULL,
+          s INTEGER NOT NULL DEFAULT 0, n INTEGER NOT NULL DEFAULT 0,
+          traffic_weight REAL NOT NULL DEFAULT 0, last_observed INTEGER,
+          obs_count INTEGER NOT NULL DEFAULT 0, source TEXT NOT NULL,
+          measured_snr REAL, PRIMARY KEY (from_hash, to_hash))''');
+      await db.customStatement("INSERT INTO graph_nodes (hash_bytes, source) "
+          "VALUES ('C882', 'observed')");
+      await db.customStatement(
+          'INSERT INTO graph_edges (from_hash, to_hash, traffic_weight, '
+          "last_observed, obs_count, source) VALUES ('C882', '9105', 1, "
+          "$seen, 1, 'observed')");
+    });
+
+    final graph = PathGraph(NativeDatabase(file));
+    await graph.init();
+    expect(graph.snapshot().edges[('C882', '9105')]!.firstObserved, isNull,
+        reason: 'a link from before v9 reads as old');
+    graph.observePath(Uint8List.fromList([0xC8, 0x82, 0x41, 0xB1]), 2,
+        const ObservationOrigin.anonymous());
+    graph.setMovingOverride('C882', MovingOverride.moves);
+    await graph.flush();
+    await graph.dispose();
+
+    final reopened = PathGraph(NativeDatabase(file));
+    await reopened.init();
+    expect(reopened.snapshot().edges[('C882', '41B1')]!.firstObserved,
+        isNotNull);
+    expect(reopened.movingStatus('C882')!.reason, MovingReason.manual);
+    await reopened.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
 }
