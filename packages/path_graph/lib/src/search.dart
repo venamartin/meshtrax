@@ -66,6 +66,7 @@ class PathFinder {
     required Map<(String, String), EdgeState> edges,
     required int nowMillis,
     Map<(String, String), double> penalties = const {},
+    Set<String> moving = const {},
   }) {
     final sources = egress.where((c) => c.repeaterHash != directHash).toList();
     final targets = ingress.where((c) => c.repeaterHash != directHash).toList();
@@ -75,11 +76,18 @@ class PathFinder {
     // travel it, and only that direction. The graph never infers the
     // reverse, and it demands nothing about the reverse either (owner,
     // 2026-10-13): a route is a chain of links each observed the way the
-    // packet will go. Quality is priced per link and per doorstep.
+    // packet will go. Quality is priced per link and per doorstep. A
+    // link touching a [moving] repeater counts only while fresh
+    // ([PathGraphConfig.mobileFreshMinutes]).
+    final freshMs = (config.mobileFreshMinutes * 60 * 1000).round();
     final adjacency = <String, List<(String, double)>>{};
     for (final entry in edges.entries) {
       final (from, to) = entry.key;
       if (!estimator.usable(entry.value, nowMillis)) continue;
+      if ((moving.contains(from) || moving.contains(to)) &&
+          nowMillis - (entry.value.lastObserved ?? 0) > freshMs) {
+        continue;
+      }
       (adjacency[from] ??= []).add((
         to,
         estimator.edgeCost(entry.value, nowMillis) +

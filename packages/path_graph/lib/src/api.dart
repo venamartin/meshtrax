@@ -91,6 +91,11 @@ enum FloodReason {
   /// Every doorstep of mine that could start a route has gone quiet
   /// while I hear others ([PathGraphConfig.selfSilenceMinutes]).
   doorstepsQuiet,
+
+  /// Every doorstep of mine that could start a route is a moving repeater
+  /// that has not proved it hears me for
+  /// [PathGraphConfig.mobileFreshMinutes].
+  doorstepsMoving,
 }
 
 /// The three-tier return contract: direct | bidirectional path | flood.
@@ -786,6 +791,7 @@ class PathGraph {
       ingress: [_selfTarget(repeaterHash)],
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -805,8 +811,10 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final theirs = _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false);
-    final mine = _evidence.heardCandidatesFor(self, now, isSelf: true);
+    final theirs = _freshRows(
+        _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false), now);
+    final mine =
+        _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now);
     if (theirs.isEmpty || mine.isEmpty) {
       return const PathResult.flood(FloodReason.noEvidence);
     }
@@ -815,6 +823,7 @@ class PathGraph {
       ingress: mine,
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -830,13 +839,15 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final mine = _evidence.heardCandidatesFor(self, now, isSelf: true);
+    final mine =
+        _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now);
     if (mine.isEmpty) return const PathResult.flood(FloodReason.noEvidence);
     final route = PathFinder(estimator.config, estimator).search(
       egress: [_selfTarget(repeaterHash)],
       ingress: mine,
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -854,7 +865,8 @@ class PathGraph {
     if (self == null) return const [];
     return _divergentRoutes(
       egress: [_selfTarget(repeaterHash)],
-      ingress: _evidence.heardCandidatesFor(self, now, isSelf: true),
+      ingress:
+          _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now),
       count: count,
       now: now,
     );
@@ -870,8 +882,10 @@ class PathGraph {
     final self = _selfPubkey;
     if (self == null) return const [];
     return _divergentRoutes(
-      egress: _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false),
-      ingress: _evidence.heardCandidatesFor(self, now, isSelf: true),
+      egress: _freshRows(
+          _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false), now),
+      ingress:
+          _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now),
       count: count,
       now: now,
     );
@@ -894,6 +908,7 @@ class PathGraph {
       ingress: [_selfTarget(bHash)],
       edges: _store.edges,
       nowMillis: _arrivalMillis,
+      moving: _movingNow(_arrivalMillis),
     );
     if (leg == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -957,6 +972,7 @@ class PathGraph {
       return FloodReason.doorstepsFailing;
     }
     now ??= _arrivalMillis;
+    if (_staleMoving(c, now, byProof: true)) return FloodReason.doorstepsMoving;
     final windowMs = (config.selfSilenceMinutes * 60 * 1000).round();
     final newest = _evidence
         .candidatesFor(self, now, isSelf: true)
@@ -977,10 +993,34 @@ class PathGraph {
   List<Candidate>? _ingressCandidates(String contactPubkey, int now) {
     final all = _evidence.candidatesFor(contactPubkey.toLowerCase(), now, isSelf: false);
     if (all.isEmpty) return null;
-    return _provenOnly
-        ? all.where((c) => c.proven || c.heard).toList()
-        : all;
+    return _freshRows(
+        _provenOnly ? all.where((c) => c.proven || c.heard).toList() : all,
+        now);
   }
+
+  int get _mobileFreshMs => (config.mobileFreshMinutes * 60 * 1000).round();
+
+  /// Repeaters whose moving tag acts on routing right now.
+  Set<String> _movingNow(int now) => {
+        for (final e in _store.nodes.entries)
+          if (movingStatusOf(e.value, config, now)?.acts ?? false) e.key,
+      };
+
+  /// [c] sits on a moving repeater and was last refreshed longer ago than
+  /// [PathGraphConfig.mobileFreshMinutes]: by its last proof when
+  /// [byProof] (my end stays proven-only), else by its last sighting. My
+  /// own row for one riding with me never goes stale.
+  bool _staleMoving(Candidate c, int now, {bool byProof = false}) {
+    final node = _store.nodes[c.repeaterHash];
+    final status = node == null ? null : movingStatusOf(node, config, now);
+    if (status == null || !status.acts) return false;
+    if (c.isSelf && status.withMe) return false;
+    final at = byProof ? (c.provenAt ?? 0) : c.lastSeen;
+    return now - at > _mobileFreshMs;
+  }
+
+  List<Candidate> _freshRows(List<Candidate> rows, int now) =>
+      rows.where((c) => !_staleMoving(c, now)).toList();
 
   RouteResult _toResult(RouteFound route) => RouteResult(
         _hopsToBytes(route.hops),
@@ -1041,6 +1081,7 @@ class PathGraph {
     ingress = List.of(ingress);
 
     final finder = PathFinder(estimator.config, estimator);
+    final moving = _movingNow(now);
     final penalties = <(String, String), double>{};
     final results = <RouteResult>[];
     final seen = <String>{};
@@ -1051,6 +1092,7 @@ class PathGraph {
         edges: _store.edges,
         nowMillis: now,
         penalties: penalties,
+        moving: moving,
       );
       if (route == null) break;
       final key = route.hops.join('>');
@@ -1469,6 +1511,7 @@ class PathGraph {
       ingress: ingress,
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);

@@ -40,6 +40,8 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear me have not answered my last sends',
       FloodReason.doorstepsQuiet =>
         'the repeaters that hear me have gone quiet',
+      FloodReason.doorstepsMoving =>
+        'the repeaters that hear me are moving and none has answered me lately',
     };
   }
   if (back) {
@@ -57,6 +59,8 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear me have not answered my last sends',
       FloodReason.doorstepsQuiet =>
         'the repeaters that hear me have gone quiet',
+      FloodReason.doorstepsMoving =>
+        'the repeaters that hear me are moving and none has answered me lately',
     };
   }
   return switch (reason) {
@@ -73,6 +77,9 @@ String floodReasonText(FloodReason reason,
           'prove itself again',
     FloodReason.doorstepsQuiet =>
       'every repeater that hears me has gone quiet — flooding to find one',
+    FloodReason.doorstepsMoving =>
+      'the repeaters that hear me are moving and none has answered me lately '
+          '— flooding to find one',
   };
 }
 
