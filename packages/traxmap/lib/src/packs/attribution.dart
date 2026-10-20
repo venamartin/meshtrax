@@ -38,12 +38,21 @@ List<Pack> packsUsedBy(
 ) {
   final urls = {
     for (final s in ((style['sources'] as Map?) ?? const {}).values)
-      if (s is Map && s['url'] is String) s['url'] as String,
+      if (s is Map) ...sourceUrls(s),
   };
   return [
     for (final p in packs)
       if (urls.contains(context.pmtilesUrl(p))) p,
   ];
+}
+
+/// The pack URLs a resolved style source reads: `ovm:urls` when several
+/// packs serve it, else its `url`.
+List<String> sourceUrls(Map<Object?, Object?> source) {
+  final many = source['ovm:urls'];
+  if (many is List) return [for (final u in many) u as String];
+  final one = source['url'];
+  return one is String ? [one] : const [];
 }
 
 String _plain(String html) => html

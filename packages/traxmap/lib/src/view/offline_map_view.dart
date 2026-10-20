@@ -29,7 +29,7 @@ class MapStyleState {
   /// From the style's `metadata["ovm:disclaimer"]`, if any.
   String? get disclaimer => info.disclaimer;
 
-  /// The packs the resolved style uses (one per kind).
+  /// The packs the resolved style uses.
   final List<Pack> packsInUse;
 
   const MapStyleState({
@@ -166,22 +166,22 @@ class _OfflineMapViewState extends State<OfflineMapView> {
   }
 
   Future<void> _loadStyle() async {
-    // One pack per kind; among variants (e.g. 20 ft vs 10 m contours),
-    // prefer the one in the requested units.
-    final packsByKind = <PackKind, Pack>{};
-    for (final pack in widget.packs) {
-      final current = packsByKind[pack.kind];
-      if (current == null ||
-          (current.units != widget.units && pack.units == widget.units)) {
-        packsByKind[pack.kind] = pack;
-      }
-    }
+    // All packs of a kind serve one source (neighbouring regions), the
+    // requested units' variant first.
+    final packsByKind = StyleContext.packsByKind(
+      widget.packs,
+      units: widget.units,
+    );
     final id = widget.styleId;
     try {
       final context = StyleContext(packs: packsByKind, units: widget.units);
       final style = await _registry.load(id, context);
       if (!mounted || id != widget.styleId) return;
-      final used = packsUsedBy(style, packsByKind.values, context);
+      final used = packsUsedBy(
+        style,
+        packsByKind.values.expand((l) => l),
+        context,
+      );
       final info = StyleInfo.fromStyle(id, style);
       final requiredUrls = {
         for (final pack in used)
@@ -195,7 +195,7 @@ class _OfflineMapViewState extends State<OfflineMapView> {
         _coverageSources = {
           for (final MapEntry(:key, :value)
               in ((style['sources'] as Map?) ?? const {}).entries)
-            if (value is Map && requiredUrls.contains(value['url']))
+            if (value is Map && sourceUrls(value).any(requiredUrls.contains))
               key as String,
         };
       });

@@ -41,8 +41,10 @@ class DirectoryStyleSource implements StyleSource {
 /// Native renderers cannot read Flutter assets directly, so the adapter copies
 /// glyphs and sprites to disk and passes their URLs here.
 class StyleContext {
-  /// Installed pack to use for each pack kind referenced by the style.
-  final Map<PackKind, Pack> packs;
+  /// Installed packs for each pack kind referenced by the style, in
+  /// preference order (see [packsByKind]). Several packs of one kind (e.g.
+  /// neighbouring regions) are drawn as one source.
+  final Map<PackKind, List<Pack>> packs;
 
   /// Glyph URL template, e.g. `file:///.../glyphs/{fontstack}/{range}.pbf`.
   final String? glyphs;
@@ -67,6 +69,30 @@ class StyleContext {
 
   static String defaultPmtilesUrl(Pack pack) =>
       'pmtiles://${Uri.file(pack.file.absolute.path)}';
+
+  /// Groups [packs] by kind, each list in preference order: packs in
+  /// [units] first (contours variants), then the newest build, then by id.
+  static Map<PackKind, List<Pack>> packsByKind(
+    Iterable<Pack> packs, {
+    required Units units,
+  }) {
+    final out = <PackKind, List<Pack>>{};
+    for (final pack in packs) {
+      (out[pack.kind] ??= []).add(pack);
+    }
+    for (final list in out.values) {
+      list.sort((a, b) {
+        final byUnits = (b.units == units ? 1 : 0) - (a.units == units ? 1 : 0);
+        if (byUnits != 0) return byUnits;
+        final aDate = a.buildDate, bDate = b.buildDate;
+        if (aDate != null && bDate != null && aDate != bDate) {
+          return bDate.compareTo(aDate);
+        }
+        return a.id.compareTo(b.id);
+      });
+    }
+    return out;
+  }
 }
 
 /// Loads the bundled MapLibre style JSON files and resolves their placeholders.
@@ -79,6 +105,8 @@ class StyleContext {
 ///
 /// A source whose pack kind is not installed is removed together with every
 /// layer that uses it, so a missing optional pack never breaks the style.
+/// When several packs of the kind are installed, the source's `url` names
+/// the first and `ovm:urls` lists them all, in preference order.
 ///
 /// Layers can be tagged `"metadata": {"ovm:units": "imperial" | "metric"}`
 /// (e.g. a contour label in feet and its twin in metres); only those matching
@@ -158,12 +186,15 @@ class StyleRegistry {
       if (url is! String) continue;
       final m = _packPlaceholder.firstMatch(url);
       if (m == null) continue;
-      final pack = context.packs[PackKind.parse(m.group(1))];
-      if (pack == null) {
+      final packs = context.packs[PackKind.parse(m.group(1))] ?? const [];
+      if (packs.isEmpty) {
         sources.remove(entry.key);
         dropped.add(entry.key);
       } else {
-        source['url'] = context.pmtilesUrl(pack);
+        source['url'] = context.pmtilesUrl(packs.first);
+        if (packs.length > 1) {
+          source['ovm:urls'] = [for (final p in packs) context.pmtilesUrl(p)];
+        }
       }
     }
     (out['layers'] as List<Object?>?)?.removeWhere((l) {

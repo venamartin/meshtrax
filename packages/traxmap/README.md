@@ -80,10 +80,19 @@ controller.fitPoints(points, maxZoom: 15);
 
 - **Zooms are MapLibre zooms**, one lower than flutter_map's. Use
   `MapCamera.fromFlutterMapZoom` when porting numbers.
-- **Packs:** one per kind is used (`base`, `osm`, `contours`, `charts`).
-  Among contours variants (`20ft`, `10m`, …) the one matching `units` wins.
-  A style source whose pack kind isn't installed is dropped, along with its
-  layers.
+- **Packs:**
+  - **Every installed pack of a kind** (`base`, `osm`, `contours`,
+    `charts`) serves that kind's style source together, so neighbouring
+    regions draw as one map. Each tile comes from the first pack that has
+    it (`CompositePmTilesProvider`). Packs cut from one master hold
+    identical tiles where they overlap.
+  - **Pack order** (`StyleContext.packsByKind`): the contours variant
+    matching `units` first (`20ft` vs `10m`), then the newest build. A
+    region that only has the other variant still draws.
+  - **Missing kinds:** a style source whose pack kind isn't installed is
+    dropped, along with its layers.
+  - **Caching:** the decoded-tile cache key covers each file's size and
+    time, so an updated pack never shows stale tiles.
 - **Map and mode:** the user picks a `MapType` (`osm`, `usgs`, `charts`) and
   light or dark. `styles.styleFor(type, dark: …)` (or `styleForBrightness`)
   returns the style id. Contours on/off is the app's choice of whether to

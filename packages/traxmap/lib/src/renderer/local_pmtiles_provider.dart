@@ -123,7 +123,10 @@ class LocalPmTilesVectorTileProvider extends vt.VectorTileProvider {
       directory = _leaves[entry.offset] ??= vt.PmTilesDirectory.decode(
         _inflate(
           header,
-          await _read(header.leafDirectoriesOffset + entry.offset, entry.length),
+          await _read(
+            header.leafDirectoriesOffset + entry.offset,
+            entry.length,
+          ),
         ),
       );
     }

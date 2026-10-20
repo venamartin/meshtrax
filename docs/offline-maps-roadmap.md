@@ -341,7 +341,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 
 | Task | Change |
 | --- | --- |
-| T3 | (Next, after O3.) traxmap combined source per kind (neighbouring regions), and a cache key that changes when packs change. |
+| T3 | **Done 2026-10-19.** traxmap combined source per kind (`CompositePmTilesProvider`, `StyleContext.packsByKind`, `ovm:urls`), with a cache key that changes when packs change. Checked on the Pi with Puerto Rico + US Virgin Islands from `dev/`: one seamless map, and the Copernicus notice reaches `MapStyleState.notices`. |
 | T5 | traxmap view hooks: `baseLayers`, `onCoverageChanged`, rendering with no packs, `StyleInfo.requiredKinds`, the `labels` slot tag, polygon holes.<br>• `MapStyleState.notices`: licence notices from the packs in use (e.g. Copernicus' liability sentence), for the app to show with the credits. |
 | A5 | `AppMap` (`lib/widgets/app_map.dart`): style from settings (map type, theme following the app, contours), installed packs, units; online OSM tiles in `baseLayers` while `onCoverageChanged` says not covered; credits chip (plus the OSM credit while online tiles show, plus pack notices) and the chart disclaimer. Settings `map_type`, `map_contours`, `map_theme`. `MapPacksService` shares one style registry. The coverage banner and online/offline wording come with the main map (M5). |
 | O3 | **Dropped for now** (Martin, 2026-10-19: "I don't like the map selector … let's just use text for now"). The picker map was built and checked on the Pi, then removed. The Maps tab stays text only (breadcrumb, Suggested, chips), and the Geofabrik credit stays under the list. `AppMap` itself stays: the map screens use it. |

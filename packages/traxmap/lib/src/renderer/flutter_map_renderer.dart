@@ -12,7 +12,8 @@ import '../packs/geo.dart';
 import '../view/camera.dart';
 import '../view/map_controller.dart';
 import '../view/overlays.dart';
-import 'local_pmtiles_provider.dart';
+import '../packs/attribution.dart';
+import 'composite_pmtiles_provider.dart';
 
 /// Renders a resolved style with flutter_map + flutter_map_vector_tiles.
 ///
@@ -100,7 +101,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   bool _ready = false;
 
   vt.TileProviders? _providers;
-  var _local = <String, LocalPmTilesVectorTileProvider>{};
+  var _local = <String, CompositePmTilesProvider>{};
   Widget? _vectorLayer; // kept so parent rebuilds don't rebuild it
   Object? _error;
 
@@ -135,18 +136,21 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
 
   Future<void> _load() async {
     final style = widget.style;
-    final providers = <String, LocalPmTilesVectorTileProvider>{};
+    final providers = <String, CompositePmTilesProvider>{};
     try {
       final sources = (style['sources'] as Map<String, Object?>?) ?? {};
       for (final MapEntry(:key, :value) in sources.entries) {
         final source = value as Map<String, Object?>;
-        final url = source['url'];
-        if (source['type'] != 'vector' || url is! String) continue;
-        if (!url.startsWith('pmtiles://')) {
-          throw UnsupportedError('Source "$key" is not a local pack: $url');
-        }
-        final path = Uri.parse(url.substring('pmtiles://'.length)).toFilePath();
-        providers[key] = await LocalPmTilesVectorTileProvider.open(File(path));
+        final urls = sourceUrls(source);
+        if (source['type'] != 'vector' || urls.isEmpty) continue;
+        final files = [
+          for (final url in urls)
+            if (url.startsWith('pmtiles://'))
+              File(Uri.parse(url.substring('pmtiles://'.length)).toFilePath())
+            else
+              throw UnsupportedError('Source "$key" is not a local pack: $url'),
+        ];
+        providers[key] = await CompositePmTilesProvider.open(files);
       }
       final theme = vt.ThemeReader(
         logger: kDebugMode ? const vt.Logger.console() : const vt.Logger.noop(),

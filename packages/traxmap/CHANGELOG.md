@@ -1,5 +1,17 @@
 ## Unreleased
 
+- **Neighbouring regions draw as one map** (breaking for `StyleContext`):
+  - `StyleContext.packs` is now `Map<PackKind, List<Pack>>`, in preference
+    order from `StyleContext.packsByKind(packs, units:)`: the units
+    variant first, then the newest build.
+  - A resolved source names its first pack in `url` and every pack in
+    `ovm:urls`. The renderer serves it with `CompositePmTilesProvider`,
+    each tile from the first pack that has it. `sourceUrls(source)` reads
+    either form; `packsUsedBy` credits all of them.
+  - The decoded-tile cache key covers each file's size and modification
+    time, so an updated or replaced pack never shows stale tiles.
+  - Checked on the Pi with the Puerto Rico and US Virgin Islands packs from
+    maps.meshtrax.io/dev.
 - **Coverage and base layers** (for apps that show online tiles where no
   pack is installed):
   - `OfflineMapView.onCoverageChanged(bool)` reports whether the style's
