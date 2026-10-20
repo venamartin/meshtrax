@@ -492,7 +492,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 | B5 | `highlightLabel` is never shown | `map_screen.dart` | M5, done: the pin's label |
 | B6 | `mapTimeFilterHours` defaults to 48 in the constructor but 0 in `fromJson` | `app_settings.dart` | A4 |
 | B7 | `selfLatitude!` force-unwraps | `channel_message_path_screen.dart` | M2, done: the line just leaves out the radio's position |
-| B8 | `selfLatitude!` force-unwrap | `path_trace_map.dart` | M3 |
+| B8 | `selfLatitude!` force-unwrap | `path_trace_map.dart` | M3, done: the line starts at the first hop instead |
 | B9 | Tile User-Agent is `com.meshcore.open`; bulk prefetch breaks OSM's tile policy | `map_tile_cache_service.dart` | A1, O1 |
 
 ## Risks and gates

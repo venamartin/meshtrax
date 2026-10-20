@@ -501,47 +501,47 @@ class _ChannelMessagePathMapScreenState
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.channelPath_observedPathHeader,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    isExpanded: true,
-                    value: selectedIndex,
-                    items: [
-                      for (int i = 0; i < paths.length; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text(
-                            '${paths[i].isPrimary ? l10n.channelPath_primaryPath(i + 1) : l10n.channelPath_pathLabel(i + 1)}'
-                            ' • ${_formatHopCount(paths[i].getHopCount(widget.message.pathHashSize), l10n)}',
-                          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.channelPath_observedPathHeader,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  isExpanded: true,
+                  value: selectedIndex,
+                  items: [
+                    for (int i = 0; i < paths.length; i++)
+                      DropdownMenuItem(
+                        value: i,
+                        child: Text(
+                          '${paths[i].isPrimary ? l10n.channelPath_primaryPath(i + 1) : l10n.channelPath_pathLabel(i + 1)}'
+                          ' • ${_formatHopCount(paths[i].getHopCount(widget.message.pathHashSize), l10n)}',
                         ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      onSelected(value);
-                    },
-                  ),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    onSelected(value);
+                  },
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.channelPath_selectedPathLabel(
-                    label,
-                    PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize),
-                  ),
-                  style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.channelPath_selectedPathLabel(
+                  label,
+                  PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize),
                 ),
-              ],
-            ),
+                style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              ),
+            ],
           ),
+        ),
       ),
     );
   }

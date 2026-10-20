@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -14,11 +13,13 @@ import '../models/app_settings.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/utils/app_logger.dart';
+import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/path_selection_dialog.dart';
 import 'package:meshtrax/widgets/snr_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:traxmap/latlong2.dart';
+import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 
 double getPathDistanceMeters(List<LatLng> points) {
   if (points.length <= 1) return 0.0;
@@ -79,7 +80,8 @@ class PathTraceMapScreen extends StatefulWidget {
 }
 
 class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
-  static const double _labelZoomThreshold = 8.5;
+  // MapLibre zoom from which hop labels show.
+  static const double _labelMinZoom = 7.5;
 
   StreamSubscription<Uint8List>? _frameSubscription;
   Timer? _timeoutTimer;
@@ -97,13 +99,8 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
   LatLng? _targetContactPosition;
   bool _targetContactIsGuessed = false;
   List<LatLng> _points = <LatLng>[];
-  List<Polyline> _polylines = [];
-  LatLng? _initialCenter = LatLng(0, 0);
-  double _initialZoom = 2.0;
-  LatLngBounds? _bounds;
   ValueKey<String> _mapKey = const ValueKey('initial');
   double _pathDistanceMeters = 0.0;
-  bool _showNodeLabels = true;
   Contact? _targetContact;
   final ScrollController _scrollController = ScrollController();
 
@@ -249,7 +246,6 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       _hasData = false;
       _traceData = null;
       _points = <LatLng>[];
-      _polylines = [];
     });
     if (!alreadyFailed) {
       showDismissibleSnackBar(
@@ -449,8 +445,8 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
         _targetContactPosition = targetPos;
         _targetContactIsGuessed = targetGuessed;
 
-        _points = <LatLng>[];
-        _points.add(LatLng(connector.selfLatitude!, connector.selfLongitude!));
+        // The radio's own position, when it has one, starts the line.
+        _points = <LatLng>[?startLocation];
         String hopLast = "";
         String hopLastLast = "";
         for (final hop in _traceData!.pathData) {
@@ -472,21 +468,6 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
             _points.add(targetPos);
           }
         }
-        _polylines = _points.length > 1
-            ? [
-                Polyline(
-                  points: _points,
-                  strokeWidth: 4,
-                  color: Colors.blueAccent,
-                ),
-              ]
-            : <Polyline>[];
-
-        _initialCenter = _points.isNotEmpty
-            ? _points.first
-            : const LatLng(0, 0);
-        _initialZoom = _points.isNotEmpty ? 13.0 : 2.0;
-        _bounds = _points.length > 1 ? LatLngBounds.fromPoints(_points) : null;
         _mapKey = ValueKey(
           '${context.l10n.pathTrace_you},${_formatPathPrefixes(rawPathData)}',
         );
@@ -507,12 +488,9 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       builder: (context, connector, _) {
         final settings = context.watch<AppSettingsService>().settings;
         final isImperial = settings.unitSystem == UnitSystem.imperial;
-        final tileCache = context.read<MapTileCacheService>();
-
         return Scaffold(
           appBar: AppBar(
             title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 FittedBox(
@@ -524,7 +502,7 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
                 ),
               ],
             ),
-            centerTitle: false,
+            centerTitle: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_road),
@@ -546,37 +524,42 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
           ),
           body: SafeArea(
             top: false,
-            child: Stack(
+            child: Column(
               children: [
-                if (!_hasData)
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_isLoading) const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        if (!_isLoading && _failed2Loaded)
-                          Text(context.l10n.pathTrace_notAvailable),
-                      ],
-                    ),
-                  ),
-                if (_hasData)
-                  _buildMapPathTrace(context, tileCache, _targetContact),
-                if (_points.isEmpty &&
-                    !_hasData &&
-                    !_isLoading &&
-                    !_failed2Loaded)
-                  Center(
-                    child: Card(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      child: Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text(
-                          context.l10n.channelPath_noRepeaterLocations,
+                Expanded(
+                  child: Stack(
+                    children: [
+                      if (!_hasData)
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isLoading) const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              if (!_isLoading && _failed2Loaded)
+                                Text(context.l10n.pathTrace_notAvailable),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
+                      if (_hasData) _buildMapPathTrace(context, _targetContact),
+                      if (_points.isEmpty &&
+                          !_hasData &&
+                          !_isLoading &&
+                          !_failed2Loaded)
+                        Center(
+                          child: Card(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: Text(
+                                context.l10n.channelPath_noRepeaterLocations,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
                 if (_hasData)
                   _buildLegendCard(context, _traceData!, isImperial),
               ],
@@ -587,15 +570,14 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     );
   }
 
-  List<Marker> _buildHopMarkers(
+  List<MapMarker> _buildHopMarkers(
     List<String> pathData, {
-    required bool showLabels,
     required Contact? target,
   }) {
-    final markers = <Marker>[];
+    final markers = <MapMarker>[];
     String hopLast = "";
     String hopLastLast = "";
-    for (final hop in pathData) {
+    for (final (i, hop) in pathData.indexed) {
       final contact = _traceData!.pathContacts[hop];
       final inferred = _inferredHopPositions[hop];
       final hasGps = contact != null && contact.hasLocation;
@@ -610,49 +592,19 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       final point = hasGps
           ? LatLng(contact.latitude!, contact.longitude!)
           : inferred!;
-      final label = hop;
-
       markers.add(
-        Marker(
-          point: point,
-          width: 35,
-          height: 35,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: hasGps
-                  ? Colors.green
-                  : Colors.orange.withValues(alpha: 0.75),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              hasGps ? label : '~$label',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
+        MapMarker(
+          id: 'hop:$i:$hop',
+          position: point.toOvm(),
+          size: const Size(35, 35),
+          label: contact?.name ?? '~$hop',
+          labelMinZoom: _labelMinZoom,
+          child: _badge(
+            hasGps ? Colors.green : Colors.orange.withValues(alpha: 0.75),
+            Text(hasGps ? hop : '~$hop', style: _badgeText),
           ),
         ),
       );
-      if (showLabels) {
-        markers.add(
-          _buildNodeLabelMarker(
-            point: point,
-            label: contact?.name ?? '~$label',
-          ),
-        );
-      }
       hopLastLast = hopLast;
       hopLast = hop;
     }
@@ -660,126 +612,67 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     final selfLat = context.read<MeshCoreConnector>().selfLatitude;
     final selfLon = context.read<MeshCoreConnector>().selfLongitude;
     if (selfLat != null && selfLon != null) {
-      final selfPoint = LatLng(selfLat, selfLon);
       markers.add(
-        Marker(
-          point: selfPoint,
-          width: 35,
-          height: 35,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              context.l10n.pathTrace_you,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
+        MapMarker(
+          id: 'self',
+          position: LatLng(selfLat, selfLon).toOvm(),
+          size: const Size(35, 35),
+          label: context.l10n.pathTrace_you,
+          labelMinZoom: _labelMinZoom,
+          child: _badge(
+            Colors.blue,
+            Text(context.l10n.pathTrace_you, style: _badgeText),
           ),
         ),
       );
-      if (showLabels) {
-        markers.add(
-          _buildNodeLabelMarker(
-            point: selfPoint,
-            label: context.l10n.pathTrace_you,
-          ),
-        );
-      }
     }
 
     // Add target contact endpoint marker.
     final targetPos = _targetContactPosition;
     if (targetPos != null && target != null && target.type == advTypeChat) {
       final isGuessed = _targetContactIsGuessed;
-      final targetName = target.name;
       markers.add(
-        Marker(
-          point: targetPos,
-          width: 35,
-          height: 35,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: isGuessed
-                  ? Colors.purple.withValues(alpha: 0.55)
-                  : Colors.red,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.person, color: Colors.white, size: 18),
+        MapMarker(
+          id: 'target',
+          position: targetPos.toOvm(),
+          size: const Size(35, 35),
+          label: isGuessed ? '~${target.name}' : target.name,
+          labelMinZoom: _labelMinZoom,
+          child: _badge(
+            isGuessed ? Colors.purple.withValues(alpha: 0.55) : Colors.red,
+            const Icon(Icons.person, color: Colors.white, size: 18),
           ),
         ),
       );
-      if (showLabels) {
-        markers.add(
-          _buildNodeLabelMarker(
-            point: targetPos,
-            label: isGuessed ? '~$targetName' : targetName,
-          ),
-        );
-      }
     }
 
     return markers;
   }
 
-  Marker _buildNodeLabelMarker({required LatLng point, required String label}) {
-    return Marker(
-      point: point,
-      width: 120,
-      height: 24,
-      alignment: Alignment.topCenter,
-      child: IgnorePointer(
-        child: Transform.translate(
-          offset: const Offset(0, -20),
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
+  static const _badgeText = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
+    fontSize: 12,
+  );
+
+  /// A round white-ringed badge around [child].
+  Widget _badge(Color color, Widget child) => Container(
+    padding: const EdgeInsets.all(4),
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 2),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+    alignment: Alignment.center,
+    child: child,
+  );
 
   String formatDirectionText(PathTraceData pathTraceData, int index) {
     if (index == 0 || index == pathTraceData.snrData.length - 1) {
@@ -821,54 +714,31 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     }
   }
 
-  Widget _buildMapPathTrace(
-    BuildContext context,
-    MapTileCacheService tileCache,
-    Contact? target,
-  ) {
-    return FlutterMap(
-      key: _mapKey,
-      options: MapOptions(
-        interactionOptions: InteractionOptions(flags: ~InteractiveFlag.rotate),
-        initialCenter: _initialCenter!,
-        initialZoom: _initialZoom,
-        initialCameraFit: _bounds == null
-            ? null
-            : CameraFit.bounds(
-                bounds: _bounds!,
-                padding: const EdgeInsets.all(64),
-                maxZoom: 16,
-              ),
-        minZoom: 2.0,
-        maxZoom: 18.0,
-        onPositionChanged: (camera, hasGesture) {
-          final shouldShow = camera.zoom >= _labelZoomThreshold;
-          if (shouldShow != _showNodeLabels && mounted) {
-            setState(() {
-              _showNodeLabels = shouldShow;
-            });
-          }
-        },
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: kMapTileUrlTemplate,
-          tileProvider: tileCache.tileProvider,
-          userAgentPackageName: MapTileCacheService.userAgentPackageName,
-          maxZoom: 19,
+  Widget _buildMapPathTrace(BuildContext context, Contact? target) => AppMap(
+    key: _mapKey,
+    initialCamera: MapCamera(
+      center: (_points.firstOrNull ?? const LatLng(0, 0)).toOvm(),
+      zoom: _points.isNotEmpty ? 12 : 1,
+    ),
+    initialFit: _points.length > 1
+        ? MapFit.points(
+            _points.toOvm(),
+            padding: const EdgeInsets.all(64),
+            maxZoom: 15,
+          )
+        : null,
+    overlays: [
+      if (_points.length > 1)
+        MapLine(
+          id: 'path',
+          points: _points.toOvm(),
+          color: Colors.blueAccent,
+          width: 4,
         ),
-        if (_polylines.isNotEmpty) PolylineLayer(polylines: _polylines),
-        if (_traceData!.pathData.isNotEmpty)
-          MarkerLayer(
-            markers: _buildHopMarkers(
-              _traceData!.pathData,
-              showLabels: _showNodeLabels,
-              target: target,
-            ),
-          ),
-      ],
-    );
-  }
+      if (_traceData!.pathData.isNotEmpty)
+        ..._buildHopMarkers(_traceData!.pathData, target: target),
+    ],
+  );
 
   Widget _buildLegendCard(
     BuildContext context,
@@ -880,10 +750,8 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     final estimatedHeight = 72.0 + ((pathTraceData.pathData.length + 1) * 76.0);
     final cardHeight = max(120.0, min(maxHeight, estimatedHeight));
 
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: 16,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: SizedBox(
         height: cardHeight,
         child: Card(
