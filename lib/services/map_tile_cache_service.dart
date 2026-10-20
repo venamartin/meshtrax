@@ -34,7 +34,7 @@ class MapTileCacheResult {
 
 class MapTileCacheService {
   static const String cacheKey = 'map_tile_cache';
-  static const String userAgentPackageName = 'com.meshcore.open';
+  static const String userAgentPackageName = 'com.vena.meshtrax';
   static const int defaultMinZoom = 10;
   static const int defaultMaxZoom = 15;
 
