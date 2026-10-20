@@ -186,6 +186,45 @@ typedef RestoreWrite = ({
   return (writes: writes, notes: notes);
 }
 
+/// CLI commands that put back the backup's CLI-only settings (firmware
+/// 1.18+), with the same plain-words notes as [planRestoreSettings]. WiFi
+/// keys go only to a radio with WiFi; the password is never in a backup.
+({List<String> commands, List<String> notes}) planRestoreCliSettings(
+  DeviceBackup backup, {
+  required int? targetVerCode,
+  required String? targetVersion,
+  required bool targetHasWifi,
+}) {
+  final commands = <String>[];
+  final notes = <String>[];
+  final saved = backup.cliSettings;
+  if (saved.isEmpty) return (commands: commands, notes: notes);
+  if (!firmwareSupports(RadioSetting.cliSettings, targetVerCode, targetVersion)) {
+    notes.add("Command-line settings (not supported by this radio's firmware)");
+    return (commands: commands, notes: notes);
+  }
+  for (final key in backupCliKeys) {
+    if (saved[key] != null) commands.add('set $key ${saved[key]}');
+  }
+  if (!backupWifiKeys.any(saved.containsKey)) {
+    return (commands: commands, notes: notes);
+  }
+  if (!targetHasWifi) {
+    notes.add('WiFi (this radio has no WiFi)');
+    return (commands: commands, notes: notes);
+  }
+  for (final key in backupWifiKeys) {
+    if (saved[key] != null) commands.add('set $key ${saved[key]}');
+  }
+  if (saved.containsKey('wifi.ssid')) {
+    notes.add(
+      'WiFi password (backups never keep it: enter it in WiFi settings, '
+      'then restart the radio)',
+    );
+  }
+  return (commands: commands, notes: notes);
+}
+
 /// Byte 1 of CMD_SET_OTHER_PARAMS. On per-type firmware (1.12+) MeshTrax
 /// keeps the radio in manual mode and filters with the auto-add flags, so
 /// the byte is always 1 there — writing 0 would make the connector's
