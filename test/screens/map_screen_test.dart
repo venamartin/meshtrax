@@ -17,6 +17,7 @@ import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/screens/map_screen.dart';
+import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
@@ -191,6 +192,19 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byType(MapScreen), findsNothing);
+  });
+
+  testWidgets('the menu opens Offline maps', (tester) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    await tester.tap(find.byIcon(Icons.more_vert));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.text('Offline maps'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(OfflineMapsScreen), findsOneWidget);
   });
 
   testWidgets('a path trace starts without a radio position', (tester) async {

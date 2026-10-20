@@ -25,6 +25,7 @@ import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/contact_search.dart';
+import '../utils/platform_info.dart';
 import '../utils/route_transitions.dart';
 import '../widgets/app_map.dart';
 import '../widgets/quick_switch_bar.dart';
@@ -40,6 +41,7 @@ import '../helpers/snack_bar_builder.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
+import 'offline_maps_screen.dart';
 
 class MapScreen extends StatefulWidget {
   /// A point to show and pin, e.g. a shared POI opened from a chat. The
@@ -404,6 +406,22 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 PopupMenuButton(
                   itemBuilder: (context) => [
+                    if (!PlatformInfo.isWeb)
+                      PopupMenuItem(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.download_for_offline_outlined),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.offlineMaps_title),
+                          ],
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const OfflineMapsScreen(),
+                          ),
+                        ),
+                      ),
                     PopupMenuItem(
                       child: Row(
                         children: [

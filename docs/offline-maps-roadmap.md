@@ -39,6 +39,8 @@ Last updated 2026-10-19, evening. **Resume here.**
    - B1–B5 are fixed.
    - Checked on the Pi with a fake radio (preview harness); `test/screens/map_screen_test.dart` covers markers, the POI link and B1.
 2. **Next: the no-radio map (M5b)**, then the map selector (OSM / USGS / NOAA) as a plain text choice in App Settings → Map Display, then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
+   - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
+   - The map theme defaults to "Auto", following the app's light/dark theme. Martin noticed it dark (his app is dark). The Map Display text choices should include Map theme (Auto / Light / Dark).
    - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
 3. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
