@@ -121,7 +121,9 @@ class PackIndex {
         packs.add(PackIndexEntry.fromJson(e as Map<String, Object?>));
       } on Object catch (error) {
         final id = e is Map ? e['id'] : null;
-        skipped.add('${id ?? 'entry ${packs.length + skipped.length}'}: $error');
+        skipped.add(
+          '${id ?? 'entry ${packs.length + skipped.length}'}: $error',
+        );
       }
     }
     return PackIndex(
@@ -139,6 +141,12 @@ class PackIndex {
       if (e.kind != PackKind.unknown &&
           e.schemaVersion == supportedSchemaVersion)
         e,
+  ];
+
+  /// The [usable] packs cut for the region at [path] (a picker `path`).
+  List<PackIndexEntry> forRegion(String path) => [
+    for (final e in usable)
+      if (e.region == path) e,
   ];
 
   /// True when the server publishes a schema newer than this app supports.

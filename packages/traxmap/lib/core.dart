@@ -11,5 +11,6 @@ export 'src/packs/pack_download.dart';
 export 'src/packs/pack_index.dart';
 export 'src/packs/pack_manager.dart' show PackManager, PackException;
 export 'src/packs/pmtiles_header.dart';
+export 'src/packs/region_index.dart';
 export 'src/styles/style_info.dart';
 export 'src/styles/style_registry.dart';

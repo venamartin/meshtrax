@@ -9,6 +9,18 @@
   - A malformed entry is skipped and listed in `skipped`, not fatal. A
     missing `packs` key is an empty catalogue.
   - The test fixture is the real `dev/index.json` from maps.meshtrax.io.
+  - `forRegion(path)` lists the usable packs cut for a picker region.
+- **`RegionIndex`** (core): the download picker's region tree from
+  `picker.geojson` (traxmapmaker FINDINGS §1.2).
+  - `Region` holds id, name, path, parent path, level, downloadable, fit
+    bounds and outline polygons with holes.
+  - The index offers `roots`, `childrenOf` (by name), `ancestorsOf`, and
+    `regionAt(LatLng)` (the smallest downloadable region containing the
+    point).
+  - It keeps the `attribution` credit the app must show, and the `version`
+    (`needsNewerApp`).
+  - Malformed features are skipped and listed in `skipped`. Outlines are
+    already split at the antimeridian.
 - **Pack downloads:**
   - **`PackDownloader`** (core): `PackDownload` snapshots with state,
     progress and error.
