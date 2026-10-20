@@ -38,9 +38,9 @@ Last updated 2026-10-19, evening. **Resume here.**
    - Starting camera: the highlight, then the nodes, then the last camera (`UiViewStateService.mapCamera`), then the first downloaded map.
    - B1–B5 are fixed.
    - Checked on the Pi with a fake radio (preview harness); `test/screens/map_screen_test.dart` covers markers, the POI link and B1.
-2. **Next: the no-radio map (M5b)**, then the map selector (OSM / USGS / NOAA) as a plain text choice in App Settings → Map Display, then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
+2. **Next:** the no-radio map (M5b) and the layers sheet (M6, Google Maps style; it replaces the planned text selector), then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
    - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
-   - The map theme defaults to "Auto", following the app's light/dark theme. Martin noticed it dark (his app is dark). The Map Display text choices should include Map theme (Auto / Light / Dark).
+   - The map is Light by default, whatever the app's theme (Martin, 2026-10-20; `map_theme` is `light` or `dark`). The Light/Dark choice goes in the layers sheet.
    - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
 3. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
@@ -160,19 +160,33 @@ Test: auto-connect firing while either of these is open.
 
 ### S2. Layers sheet
 
-New: a modal bottom sheet opened by the layers button. It shares one `MapLayerSettings` widget with App Settings (S4).
+**Redesigned 2026-10-20 (Martin): Google Maps style.** A modal bottom sheet opened by a round layers button on the main map. It replaces the planned plain-text map selector in App Settings.
+- **Map type:** square tiles with a caption, the selected one outlined.
+- **Map details and Nodes:** toggle tiles.
+- **Map theme:** in the sheet, Light or Dark; the default is Light, whatever the app's theme (done: `map_theme`).
+- **Node types** (Martin): repeaters, chat nodes, rooms etc. toggle here. These are the existing `mapShow*` settings from the filter dialog. The finer filters (last seen, key prefix, discovery contacts, overlaps) stay in that dialog, reached from the sheet.
 
 ```
-│ Map layers                                   │
-│ ◉ OpenStreetMap   Style [Standard | Park]    │  Park family (Phase 8)
-│ ○ USGS topo        Not downloaded  [Download]│  greyed when its pack kinds aren't installed
-│ ○ NOAA charts      Not downloaded  [Download]│  Phase 6
-│ Layers                                       │
-│ Contours            20 ft lines        [●━]  │
-│ National parks                         [●━]  │  Phase 8: one per installed overlay id
-│   Opacity  ───────●────                      │
-│ Theme          [ Auto | Light | Dark ]       │
-│ ⬇ Offline maps…                        (2) › │  badge = downloads + updates
+│ Map type                                   ✕ │
+│  ┏━━━━━━┓      ┌──────┐      ┌──────┐        │
+│  ┃ OSM  ┃      │ USGS │      │ NOAA │        │  tiles; greyed + "Not downloaded" when
+│  ┗━━━━━━┛      └──────┘      └──────┘        │  their packs aren't installed (charts: Phase 6)
+│  Standard      USGS topo     Charts          │
+│ ──────────────────────────────────────────── │
+│ Map details                                  │
+│  ┏━━━━━━┓      ┌──────┐                      │
+│  ┃ ≋≋≋  ┃      │  ☾   │                      │  Contours (20 ft / 10 m by units), Dark map;
+│  ┗━━━━━━┛      └──────┘                      │  later National parks etc. (Phase 8)
+│  Contours      Dark map                      │
+│ ──────────────────────────────────────────── │
+│ Nodes                                        │
+│  ┏━━━━┓  ┏━━━━┓  ┏━━━━┓  ┏━━━━┓  ┌────┐     │
+│  ┃ ⌂  ┃  ┃ 👤 ┃  ┃ 🚪 ┃  ┃ ⚑  ┃  │ ?  │     │  mapShowRepeaters, mapShowChatNodes,
+│  ┗━━━━┛  ┗━━━━┛  ┗━━━━┛  ┗━━━━┛  └────┘     │  mapShowOtherNodes, mapShowMarkers,
+│ Repeaters Chat  Rooms&    Pins   Guessed     │  mapShowGuessedLocations
+│                 sensors                      │
+│ More filters (last seen, key prefix…)      › │  the existing filter dialog
+│ ⬇ Offline maps                         (2) › │  badge = downloads + updates
 ```
 
 ### S3. Offline maps screen
@@ -398,7 +412,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 
 | Task | Change |
 | --- | --- |
-| M6 | Layers button and sheet (S2), the Settings rows, desktop +/−. |
+| M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types; desktop +/−. Martin wants it soon: it replaces the text map selector. |
 | M7 | Phone GPS (geolocator), plus the privacy, platform and store updates. On the Pi it uses the radio fallback; the permission flow needs a phone. |
 
 ### Phase 5: cleanup and release gate
