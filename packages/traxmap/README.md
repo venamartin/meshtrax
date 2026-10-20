@@ -138,6 +138,11 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
 
 The app-side notebook (decisions, pitfalls found so far, routing, open
 questions) is [`docs/offline-maps.md`](../../docs/offline-maps.md).
+The integration roadmap (screens, phases, testing on the Pi) is
+[`docs/offline-maps-roadmap.md`](../../docs/offline-maps-roadmap.md). Where it
+differs from the notes below, the roadmap wins. For example, the picker
+draws on online tiles instead of a bundled world pack, and packs pair with
+regions by region path.
 
 | MeshTrax today | traxmap |
 | --- | --- |

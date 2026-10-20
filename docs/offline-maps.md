@@ -19,8 +19,15 @@ traxmap moved into this repository.
   [`SCHEMA.md`](https://github.com/venamartin/traxmapmaker/blob/main/SCHEMA.md) is the contract the styles are
   written against. Its [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md) keeps the
   data-side record: sources, measurements, server layout and build design.
-- **Status:** MeshTrax doesn't depend on traxmap yet (`pubspec.yaml` is
-  untouched). Integration starts in its own branch and PR.
+- **Pack server:** `https://maps.meshtrax.io` (Cloudflare R2). traxmapmaker's
+  FINDINGS §1 is the contract. A frozen test catalogue lives under `dev/`;
+  the root `index.json` returns 404 until the first real publish.
+- **Integration roadmap:** [`offline-maps-roadmap.md`](offline-maps-roadmap.md)
+  covers the screens, phases, how to test on the Pi, and coordination with
+  traxmapmaker.
+- **Park overlays:** [`park-maps.md`](park-maps.md).
+- **Status (2026-10-19):** Phase 1 (the download screen) is in progress on
+  the local branch `feat/offline-maps`.
 
 ## Decisions that shape the app
 
@@ -37,6 +44,16 @@ traxmap moved into this repository.
 | 2026-10-16 | **Pack downloads use background_downloader**, not Android's DownloadManager: scoped tasks, Android 14+ UIDT, range-request resume, restore at launch, SHA-256 check, then `PackManager.install(move: true)`. |
 | 2026-10-16 | **Offline routing (trails, dirt roads or a mix) with the BRouter library embedded in MeshTrax, Android only.** See "Routing" below. |
 | 2026-10-17 | **Routing is an opt-in download, off by default** (Android only). |
+| 2026-10-17 | **Online OSM raster tiles where no pack is installed.** They load on demand only, from a disk cache of tiles already viewed. The bulk "Offline Map Cache" prefetch goes (it breaks OSM's tile policy), the User-Agent becomes `com.vena.meshtrax`, and "© OpenStreetMap contributors" shows whenever raster tiles do. The bundled world pack is deferred. Martin: about 95% of users are online. |
+| 2026-10-17 | **Phone GPS** (geolocator, when-in-use, asked on the first tap of centre-on-me) arrives with the main map. The radio's position is the fallback, and the only source on Linux. privacy.md and the store forms change in the same step. |
+| 2026-10-17 | **Offline maps screen: three tabs, Maps · Charts · Downloaded,** plus a layers button on the main map (mirrored in App Settings). |
+| 2026-10-17 | **Order:** the download screen and the map migration first, then charts, then routing, then park overlays. |
+| 2026-10-18 | **Park maps are overlays** in a generic level model: per region and per source (NPS first). See [`park-maps.md`](park-maps.md). |
+| 2026-10-18 | **The server data is modular:** one module per data set (traxmapmaker FINDINGS §1). Routing and overlays stay separate. |
+| 2026-10-19 | **Maps work without a radio.** The scanner's ⋮ menu gets Offline maps and Map; with no radio, the map shows no nodes and hides radio-only actions. |
+| 2026-10-19 | **List-first:** the Offline maps list, region detail and downloads come before any map-rendering work. |
+| 2026-10-19 | **The Pi is the test bench** (Linux desktop, hot reload). Phones only at the release gates and for phone-only features. |
+| 2026-10-19 | **A 404 on `index.json` means "no catalogue yet"**: an empty state, not an error. |
 
 ## Pitfalls already found
 
@@ -67,6 +84,11 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
 - **Tiles look soft just below each whole zoom (fixed 2026-10-16).** flutter_map_vector_tiles draws each tile once into a bitmap at `floor(zoom)` and stretches it up to 2× until the next level; labels stay sharp because they're drawn every frame. The renderer now gives the tile layer a higher `devicePixelRatio` through `MediaQuery` (default 2× the screen density, capped at 4; `OfflineMapView.tileResolution` overrides it). Measured on the Pi at z13.9, edge sharpness rose from 105 to 184 (z13.0 is 238). Cost: tile bitmap memory and raster time grow with the square of the factor. Check frame times and memory on phones in Phase 2.
 - **Report the starting camera.** flutter_map's `onPositionChanged` doesn't fire until the user moves. The renderer reports the camera once the map is ready (after the frame), so zoom-derived UI is right from the start.
 - **Two `LatLng`s and the latlong2 range.** MeshTrax pins `latlong2 ^0.9.1`; the package accepts `>=0.9.1 <0.11.0`, as do flutter_map 8.3 and flutter_map_vector_tiles 2.9. The package's own `LatLng` clashes by name: import `package:traxmap/traxmap.dart` with `hide LatLng, LatLngBounds` where latlong2 is used, and convert with `package:traxmap/latlong2.dart` (`toOvm()`, `toLatLong2()`).
+- **What the renderer can't do** (2026-10-18). This shapes the styles and the park overlays; the full list is in traxmapmaker FINDINGS §4, "App renderer limits for style authors".
+  - **No `within`:** the parser rejects it.
+  - **Fonts:** `text-font` only picks weight and italic. There's no font family, and no glyph PBFs are used.
+  - **Sprites:** one `SpriteAtlas` per layer, so icon sheets must be merged. Sprites, `line-pattern` and every `*-opacity` do work, but traxmap doesn't load sprites yet.
+  - **Tapping features:** there's no query API for vector features.
 - `RandomAccessFile` allows one pending operation at a time, so local tile reads need serializing.
 - **Test hang:** `rootBundle` caches asset futures. A future created inside one `testWidgets` fake-async zone never completes when awaited from another. Load assets in plain `test()` with `TestWidgetsFlutterBinding.ensureInitialized()`.
 - A bundled pack copied into app storage goes stale after a pipeline rebuild. Compare size plus the first 16 KiB, and reinstall when they differ.
@@ -135,20 +157,22 @@ time, memory and APK size.
 
 ## Open questions for the app
 
-- **Renderer on phones:** measure frame time, memory and cold start on real
-  Android and iOS phones, and compare with maplibre_gl. Check the tile
-  resolution factor (2× screen density, capped at 4) there too.
-- **Combined multi-pack source per kind:** each tile should come from
-  whichever installed pack has it (e.g. Lake Tahoe across California and
-  Nevada). Today `StyleContext` maps one pack per kind. This is needed as
-  soon as users install neighbouring regions.
-- **`StyleInfo` could list the pack kinds a style needs**, so the picker
-  hides or greys out styles whose packs aren't installed.
-- **Still to build for the Offline maps screen:**
-  - a `RegionIndex` in `core.dart` (tree, outlines, `regionAt(LatLng)`,
-    pairing with `PackIndexEntry`s);
-  - the bundled world pack;
-  - `picker.geojson` from traxmapmaker.
-- **Charts get their own picker,** by coastal state.
+Each item now has a task in the [roadmap](offline-maps-roadmap.md).
+
+- **Renderer on phones** (gate G1): measure frame time, memory and cold start
+  on real Android and iOS phones, and compare with maplibre_gl. Check the
+  tile resolution factor (2× screen density, capped at 4) there too.
+- **Combined multi-pack source per kind** (task T3): each tile should come
+  from whichever installed pack has it (e.g. Lake Tahoe across California
+  and Nevada). Today `StyleContext` maps one pack per kind. This is needed
+  as soon as users install neighbouring regions.
+- **`StyleInfo` lists the pack kinds a style needs** (task T5), so the
+  layers sheet can grey out maps whose packs aren't installed.
+- **Offline maps screen:**
+  - `RegionIndex` in `core.dart` (task T2);
+  - `picker.geojson`: done, served by traxmapmaker on `dev/`;
+  - the bundled world pack is deferred, because the picker draws on online
+    tiles (decided 2026-10-17).
+- **Charts get their own picker,** by coastal state (Phase 6).
 - **Night style** (red on black, for night vision) and **SDF icons** (buoys,
-  peaks, trailheads).
+  peaks, trailheads). Sprites come with task T9.
