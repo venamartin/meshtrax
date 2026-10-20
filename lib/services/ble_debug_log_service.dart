@@ -204,6 +204,8 @@ class BleDebugLogService extends ChangeNotifier {
         return 'CMD_EXPORT_PRIVATE_KEY';
       case cmdImportPrivateKey:
         return 'CMD_IMPORT_PRIVATE_KEY';
+      case cmdRunCliCommand:
+        return 'CMD_RUN_CLI_COMMAND';
       default:
         return null;
     }
@@ -245,6 +247,8 @@ class BleDebugLogService extends ChangeNotifier {
         return 'RESP_CODE_AUTO_ADD_CONFIG';
       case respCodePrivateKey:
         return 'RESP_CODE_PRIVATE_KEY';
+      case respCodeCliReply:
+        return 'RESP_CODE_CLI_REPLY';
       case pushCodeTraceData:
         return 'PUSH_CODE_TRACE_DATA';
       default:

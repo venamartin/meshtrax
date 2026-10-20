@@ -1562,6 +1562,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get debugFrame_textTypeCli => '명령줄 인터페이스 (CLI)';
 
   @override
+  String get debugFrame_textTypeCliCommand => 'CLI command';
+
+  @override
   String get debugFrame_textTypePlain => '단순한';
 
   @override

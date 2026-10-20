@@ -1615,6 +1615,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get debugFrame_textTypeCli => 'CLI';
 
   @override
+  String get debugFrame_textTypeCliCommand => 'CLI command';
+
+  @override
   String get debugFrame_textTypePlain => 'Обычный';
 
   @override
