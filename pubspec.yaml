@@ -43,6 +43,11 @@ dependencies:
   flserial: ^0.7.2
   provider: ^6.1.5+1
   shared_preferences: ^2.2.2
+  # 2.5.x calls its Kotlin side over JNI, and that lookup fails in release
+  # builds: PrefsManager.initialize() throws NoSuchMethodError
+  # (SharedPreferencesApiRegistrar.getAll) and the app starts to a blank
+  # screen. pubspec.lock is untracked, so fresh clones and CI would pick it up.
+  shared_preferences_android: ">=2.4.23 <2.5.0"
   uuid: ^4.3.3
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
