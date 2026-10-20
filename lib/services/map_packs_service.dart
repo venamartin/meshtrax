@@ -65,13 +65,17 @@ class MapPacksService extends ChangeNotifier {
   final PackDownloader downloader;
   final Uri indexUrl;
 
-  /// Holds the cached catalogue (`index.json`, `picker.geojson`).
+  /// Holds the cached catalogue (`index.json`, `picker.geojson`,
+  /// `chart_areas.geojson`).
   final Directory cacheDir;
   final http.Client _client;
 
   PackIndex? _index;
   RegionIndex? _regions;
   DateTime? _fetchedAt;
+  ChartAreaIndex? _chartAreas;
+  String? _chartAreasError;
+  DateTime? _chartAreasFetchedAt;
   CatalogueStatus _status = CatalogueStatus.unknown;
   String? _error;
   List<Pack> _installed = const [];
@@ -149,6 +153,23 @@ class MapPacksService extends ChangeNotifier {
   /// When the catalogue shown was fetched (the cache file's time).
   DateTime? get fetchedAt => _fetchedAt;
 
+  /// The NOAA chart areas for the Charts tab; null before the first fetch
+  /// and while the server has none.
+  ChartAreaIndex? get chartAreas => _chartAreas;
+
+  /// Why the last fetch of the chart areas failed. Kept apart from [error]
+  /// so a charts problem never puts the Maps tab in an error state.
+  String? get chartAreasError => _chartAreasError;
+
+  /// When the chart areas shown were fetched (the cache file's time).
+  DateTime? get chartAreasFetchedAt => _chartAreasFetchedAt;
+
+  /// The charts pack for a chart area's [packRegion].
+  PackIndexEntry? chartPackOf(String packRegion) =>
+      packsForRegion(packRegion)
+          .where((e) => e.kind == PackKind.charts)
+          .firstOrNull;
+
   List<Pack> get installed => _installed;
 
   /// Size on disk of an installed pack.
@@ -207,7 +228,27 @@ class MapPacksService extends ChangeNotifier {
       _error = '$e';
       _status = CatalogueStatus.error;
     }
+    if (_status == CatalogueStatus.ready) await _refreshChartAreas();
     notifyListeners();
+  }
+
+  /// Fetches `chart_areas.geojson`. Its own failure is recorded in
+  /// [chartAreasError]; a 404 (none published) keeps what was cached.
+  Future<void> _refreshChartAreas() async {
+    try {
+      final body = await _fetch(
+        indexUrl.resolve('chart_areas.geojson'),
+        'chart_areas.geojson',
+      );
+      if (body != null) {
+        _chartAreas = _parseChartAreas(body);
+        _chartAreasFetchedAt = DateTime.now();
+      }
+      _chartAreasError = null;
+    } on Object catch (e) {
+      appLogger.warn('Chart areas refresh failed: $e', tag: 'Maps');
+      _chartAreasError = '$e';
+    }
   }
 
   /// GETs [url], cached as [name] with its ETag. Returns the body (fresh or
@@ -244,20 +285,36 @@ class MapPacksService extends ChangeNotifier {
   }
 
   Future<void> _loadCache() async {
-    final indexFile = File('${cacheDir.path}/index.json');
-    final pickerFile = File('${cacheDir.path}/picker.geojson');
-    try {
-      if (await indexFile.exists()) {
-        _index = _parseIndex(await indexFile.readAsString());
-        _fetchedAt = await indexFile.lastModified();
-        _status = CatalogueStatus.ready;
+    // Each file on its own, so one unreadable file can't hide the others.
+    Future<void> read(String name, Future<void> Function(File file) use) async {
+      final file = File('${cacheDir.path}/$name');
+      try {
+        if (await file.exists()) await use(file);
+      } on Object catch (e) {
+        appLogger.warn('Cached $name unreadable: $e', tag: 'Maps');
       }
-      if (await pickerFile.exists()) {
-        _regions = RegionIndex.parse(await pickerFile.readAsString());
-      }
-    } on Object catch (e) {
-      appLogger.warn('Cached map catalogue unreadable: $e', tag: 'Maps');
     }
+
+    await read('index.json', (file) async {
+      _index = _parseIndex(await file.readAsString());
+      _fetchedAt = await file.lastModified();
+      _status = CatalogueStatus.ready;
+    });
+    await read('picker.geojson', (file) async {
+      _regions = RegionIndex.parse(await file.readAsString());
+    });
+    await read('chart_areas.geojson', (file) async {
+      _chartAreas = _parseChartAreas(await file.readAsString());
+      _chartAreasFetchedAt = await file.lastModified();
+    });
+  }
+
+  ChartAreaIndex _parseChartAreas(String body) {
+    final areas = ChartAreaIndex.parse(body);
+    for (final skipped in areas.skipped) {
+      appLogger.warn('Chart area skipped: $skipped', tag: 'Maps');
+    }
+    return areas;
   }
 
   PackIndex _parseIndex(String body) {

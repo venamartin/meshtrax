@@ -17,6 +17,10 @@ final _index = File('packages/traxmap/test/support/sample_index.json')
     .readAsStringSync();
 final _picker = File('packages/traxmap/test/support/picker.geojson')
     .readAsStringSync();
+final _chartAreas = File('packages/traxmap/test/support/chart_areas.geojson')
+    .readAsStringSync();
+final _chartsIndex = File('packages/traxmap/test/support/charts_index.json')
+    .readAsStringSync();
 
 const _ri = 'north-america/us/rhode-island';
 
@@ -68,6 +72,11 @@ void main() {
           http.Response(_index, 200, headers: {'etag': '"i1"'}),
       '/dev/picker.geojson': (_) =>
           http.Response(_picker, 200, headers: {'etag': '"p1"'}),
+      '/dev/chart_areas.geojson': (_) => http.Response.bytes(
+        utf8.encode(_chartAreas),
+        200,
+        headers: {'etag': '"c1"'},
+      ),
     };
   });
   tearDown(() => tmp.delete(recursive: true));
@@ -108,22 +117,33 @@ void main() {
       expect(maps.status, CatalogueStatus.ready);
       expect(maps.index!.packs, hasLength(9));
       expect(maps.regions!.attribution, contains('Geofabrik'));
+      expect(maps.chartAreas!.areas, hasLength(41));
       expect(requests.map((r) => r.url.path), [
         '/dev/index.json',
         '/dev/picker.geojson',
+        '/dev/chart_areas.geojson',
       ]);
       expect(requests.first.headers['If-None-Match'], isNull);
 
       // A second refresh sends the ETags and keeps the cache on 304.
       routes = {
-        for (final path in ['/dev/index.json', '/dev/picker.geojson'])
+        for (final path in [
+          '/dev/index.json',
+          '/dev/picker.geojson',
+          '/dev/chart_areas.geojson',
+        ])
           path: (_) => http.Response('', 304),
       };
       requests.clear();
       await maps.refresh();
-      expect(requests.map((r) => r.headers['If-None-Match']), ['"i1"', '"p1"']);
+      expect(requests.map((r) => r.headers['If-None-Match']), [
+        '"i1"',
+        '"p1"',
+        '"c1"',
+      ]);
       expect(maps.status, CatalogueStatus.ready);
       expect(maps.index!.packs, hasLength(9));
+      expect(maps.chartAreas!.areas, hasLength(41));
 
       // A new service starts from the cache, with no network.
       final again = service();
@@ -162,6 +182,81 @@ void main() {
       );
     },
   );
+
+  group('chart areas', () {
+    test('none published (404): the catalogue is still ready', () async {
+      routes.remove('/dev/chart_areas.geojson');
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.status, CatalogueStatus.ready);
+      expect(maps.chartAreas, isNull);
+      expect(maps.chartAreasError, isNull);
+      expect(maps.regions, isNotNull);
+    });
+
+    test(
+      'a failure keeps the last chart areas and leaves Maps alone',
+      () async {
+        final maps = service();
+        await maps.start();
+        await maps.refresh();
+        final fetchedAt = maps.fetchedAt;
+        routes['/dev/chart_areas.geojson'] = (_) => http.Response('', 500);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await maps.refresh();
+        expect(maps.status, CatalogueStatus.ready);
+        expect(maps.error, isNull);
+        expect(maps.fetchedAt, isNot(fetchedAt));
+        expect(maps.chartAreasError, contains('500'));
+        expect(maps.chartAreas!.areas, hasLength(41));
+
+        routes['/dev/chart_areas.geojson'] = (_) => http.Response('', 304);
+        await maps.refresh();
+        expect(maps.chartAreasError, isNull);
+      },
+    );
+
+    test(
+      'the cache brings them back even if the picker cache is bad',
+      () async {
+        final maps = service();
+        await maps.start();
+        await maps.refresh();
+        File('${tmp.path}/maps/picker.geojson').writeAsStringSync('{broken');
+        routes = {'/dev/index.json': (_) => http.Response('', 500)};
+        final again = service();
+        await again.start();
+        expect(again.regions, isNull);
+        expect(again.chartAreas!.areas, hasLength(41));
+        expect(again.chartAreasFetchedAt, isNotNull);
+      },
+    );
+
+    test('read as UTF-8 when the server names no charset', () async {
+      routes['/dev/chart_areas.geojson'] = (_) => http.Response.bytes(
+        utf8.encode(_chartAreas.replaceFirst('"Haiti"', '"Haïti"')),
+        200,
+        headers: {'content-type': 'application/geo+json'},
+      );
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.chartAreas!.areas.map((a) => a.name), contains('Haïti'));
+    });
+
+    test('each area pairs with its charts pack by region', () async {
+      routes['/dev/index.json'] = (_) => http.Response(_chartsIndex, 200);
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.chartPackOf('charts/us/florida')!.id, 'charts-us-fl-charts');
+      expect(maps.chartPackOf(_ri), isNull, reason: 'a street map region');
+      for (final area in maps.chartAreas!.areas) {
+        expect(maps.chartPackOf(area.packRegion), isNotNull, reason: area.id);
+      }
+    });
+  });
 
   test('a 404 index means no catalogue yet, not an error', () async {
     routes = {};
