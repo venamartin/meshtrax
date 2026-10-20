@@ -3,6 +3,23 @@ import 'package:meshtrax/utils/app_logger.dart';
 
 import '../connector/meshcore_protocol.dart';
 
+/// One summarised series from a sensor's min/max/average reply.
+class LppMinMaxAvg {
+  final int channel;
+  final int type;
+  final double min;
+  final double max;
+  final double avg;
+
+  const LppMinMaxAvg({
+    required this.channel,
+    required this.type,
+    required this.min,
+    required this.max,
+    required this.avg,
+  });
+}
+
 class CayenneLpp {
   static const int lppDigitalInput = 0; // 1 byte
   static const int lppDigitalOutput = 1; // 1 byte
@@ -161,33 +178,86 @@ class CayenneLpp {
       ..sort((a, b) => (a['channel'] as int).compareTo(b['channel'] as int));
   }
 
+  /// How a sensor stores one value of [type] in its own messages (LPPData
+  /// in LPPDataHelpers.h): bytes, multiplier, signed. It differs from the
+  /// telemetry encoding for humidity: 2 bytes ×10 there, 1 byte ×2 in the
+  /// telemetry. Null for multi-value types (GPS, accelerometer, gyrometer,
+  /// colour, polyline).
+  static (int, int, bool)? lppDataFormat(int type) => switch (type) {
+    lppCurrent => (2, 1000, false),
+    lppDistance || lppEnergy => (4, 1000, false),
+    lppVoltage => (2, 100, false),
+    lppAnalogInput || lppAnalogOutput => (2, 100, true),
+    lppTemperature => (2, 10, true),
+    lppBarometricPressure || lppRelativeHumidity => (2, 10, false),
+    lppAltitude => (2, 1, true),
+    lppLuminosity || lppConcentration || lppDirection || lppPower => (
+      2,
+      1,
+      false,
+    ),
+    lppGenericSensor || lppFrequency || lppUnixTime => (4, 1, false),
+    lppDigitalInput ||
+    lppDigitalOutput ||
+    lppPresence ||
+    lppPercentage ||
+    lppSwitch => (1, 1, false),
+    _ => null,
+  };
+
+  static double _readLppData(Uint8List b, int offset, (int, int, bool) f) {
+    final (size, multiplier, signed) = f;
+    var raw = 0;
+    for (var i = 0; i < size; i++) {
+      raw = (raw << 8) | b[offset + i];
+    }
+    final bits = 8 * size;
+    if (signed && raw & (1 << (bits - 1)) != 0) raw -= 1 << bits;
+    return raw / multiplier;
+  }
+
+  /// The min/max/average reply after its tag (REQ 0x04): `[sensor time u32
+  /// LE]` then up to 8 `[channel][type][min][max][avg]`, each value in
+  /// [lppDataFormat] form. Null when even the time is missing.
+  static ({DateTime sensorTime, List<LppMinMaxAvg> series})? parseMinMaxAvg(
+    Uint8List data,
+  ) {
+    if (data.length < 4) return null;
+    final seconds = ByteData.sublistView(data, 0, 4).getUint32(0, Endian.little);
+    final series = <LppMinMaxAvg>[];
+    var i = 4;
+    while (i + 2 <= data.length) {
+      final channel = data[i];
+      final type = data[i + 1];
+      if (channel == 0 && type == 0) break;
+      final format = lppDataFormat(type);
+      if (format == null) break;
+      final size = format.$1;
+      if (i + 2 + 3 * size > data.length) break;
+      series.add(LppMinMaxAvg(
+        channel: channel,
+        type: type,
+        min: _readLppData(data, i + 2, format),
+        max: _readLppData(data, i + 2 + size, format),
+        avg: _readLppData(data, i + 2 + 2 * size, format),
+      ));
+      i += 2 + 3 * size;
+    }
+    return (
+      sensorTime: DateTime.fromMillisecondsSinceEpoch(seconds * 1000),
+      series: series,
+    );
+  }
+
   /// One `min_deltas` entry of a telemetry push subscription (firmware
-  /// 1.18, REQ_TYPE_SUBSCRIBE): `[channel][type][delta]`, big-endian, sized
-  /// and scaled the way the sensor reads it back (LPPData in
-  /// LPPDataHelpers.h). There humidity is 2 bytes ×10, not the 1 byte ×2
-  /// of the telemetry itself. Multi-value types (GPS, accelerometer,
-  /// gyrometer, colour, polyline) can't carry a delta.
+  /// 1.18, REQ_TYPE_SUBSCRIBE): `[channel][type][delta]`, big-endian, in
+  /// the [lppDataFormat] the sensor reads it back with.
   static Uint8List encodeDelta(int channel, int type, double delta) {
-    final (size, multiplier) = switch (type) {
-      lppCurrent || lppDistance || lppEnergy => (
-        type == lppCurrent ? 2 : 4,
-        1000,
-      ),
-      lppVoltage || lppAnalogInput || lppAnalogOutput => (2, 100),
-      lppTemperature || lppBarometricPressure || lppRelativeHumidity => (2, 10),
-      lppGenericSensor || lppFrequency || lppUnixTime => (4, 1),
-      lppLuminosity ||
-      lppConcentration ||
-      lppAltitude ||
-      lppDirection ||
-      lppPower => (2, 1),
-      lppDigitalInput ||
-      lppDigitalOutput ||
-      lppPresence ||
-      lppPercentage ||
-      lppSwitch => (1, 1),
-      _ => throw ArgumentError.value(type, 'type', 'cannot carry a delta'),
-    };
+    final format = lppDataFormat(type);
+    if (format == null) {
+      throw ArgumentError.value(type, 'type', 'cannot carry a delta');
+    }
+    final (size, multiplier, _) = format;
     if (delta <= 0) throw ArgumentError.value(delta, 'delta', 'must be > 0');
     final maxRaw = (1 << (8 * size)) - 1;
     final raw = (delta * multiplier).round().clamp(1, maxRaw);

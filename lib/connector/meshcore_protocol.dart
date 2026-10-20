@@ -239,8 +239,11 @@ const int txtTypeCliCommand = 3; // command to a companion, firmware ver 14+
 const int reqTypeGetStatus = 0x01;
 const int reqTypeKeepAlive = 0x02;
 const int reqTypeGetTelemetry = 0x03;
+const int reqTypeGetMinMaxAvg = 0x04; // sensors, since firmware 1.7.3
 const int reqTypeGetAccessList = 0x05;
 const int reqTypeGetNeighbors = 0x06;
+const int reqTypeSubscribe = 0x08; // sensors, firmware 1.18+
+const int reqTypeUnsubscribe = 0x09; // sensors, firmware 1.18+
 
 // Repeater response codes
 const int respServerLoginOk = 0;
@@ -971,6 +974,102 @@ Uint8List buildSendBinaryReq(Uint8List repeaterPubKey, {Uint8List? payload}) {
     writer.writeBytes(payload);
   }
   return writer.toBytes();
+}
+
+// Sensor telemetry push (firmware 1.18, SensorMesh.cpp). These are
+// CMD_SEND_BINARY_REQ payloads; the radio prepends the request timestamp,
+// which comes back as the tag in RESP_CODE_SENT and the reply.
+
+/// `[0x08][push_tag x4][timeout_secs u16 LE][0][deltas_len][deltas]`.
+/// The sensor wants 3–14 bytes of deltas (CayenneLpp.encodeDelta) and
+/// treats a timeout of 0 as "never push", so 1–65535 seconds.
+Uint8List buildSubscribePayload(
+  Uint8List pushTag,
+  int timeoutSecs,
+  Uint8List minDeltas,
+) {
+  if (pushTag.length != 4) {
+    throw ArgumentError.value(pushTag, 'pushTag', 'must be 4 bytes');
+  }
+  if (timeoutSecs < 1 || timeoutSecs > 0xFFFF) {
+    throw RangeError.range(timeoutSecs, 1, 0xFFFF, 'timeoutSecs');
+  }
+  if (minDeltas.length < 3 || minDeltas.length > 14) {
+    throw RangeError.range(minDeltas.length, 3, 14, 'minDeltas.length');
+  }
+  final writer = BufferWriter();
+  writer.writeByte(reqTypeSubscribe);
+  writer.writeBytes(pushTag);
+  writer.writeUInt16LE(timeoutSecs);
+  writer.writeByte(0);
+  writer.writeByte(minDeltas.length);
+  writer.writeBytes(minDeltas);
+  return writer.toBytes();
+}
+
+Uint8List buildUnsubscribePayload() => Uint8List.fromList([reqTypeUnsubscribe]);
+
+/// `[0x04][start secs ago u32 LE][end secs ago u32 LE][0][0]`: the sensor
+/// summarises the readings it stored with `end <= age < start`.
+Uint8List buildMinMaxAvgPayload({
+  required int startSecsAgo,
+  required int endSecsAgo,
+}) {
+  final writer = BufferWriter();
+  writer.writeByte(reqTypeGetMinMaxAvg);
+  writer.writeUInt32LE(startSecsAgo);
+  writer.writeUInt32LE(endSecsAgo);
+  writer.writeBytes(Uint8List(2));
+  return writer.toBytes();
+}
+
+/// What a sensor granted for a subscription.
+class SubscribeGrant {
+  final int grantedSecs;
+  final String region;
+
+  const SubscribeGrant({required this.grantedSecs, required this.region});
+}
+
+/// The SUBSCRIBE reply after its tag: `[granted secs u16 LE][0][0][region
+/// name, unterminated]` then AES padding. A sensor that found no region
+/// replies `[0][0][0][0]`; null then.
+SubscribeGrant? parseSubscribeReply(Uint8List data) {
+  if (data.length < 4) return null;
+  final name = data.sublist(4);
+  final end = name.indexOf(0);
+  final region = utf8.decode(
+    end < 0 ? name : name.sublist(0, end),
+    allowMalformed: true,
+  );
+  if (region.isEmpty) return null;
+  return SubscribeGrant(grantedSecs: data[0] | (data[1] << 8), region: region);
+}
+
+/// A telemetry push as the companion forwards it:
+/// `[0x8C][0][push_tag x4][sensor time u32 LE][LPP…]`. It names no sender:
+/// the push tag is the only link to the sensor.
+class SensorPush {
+  final Uint8List pushTag;
+  final DateTime sensorTime;
+  final Uint8List lpp;
+
+  const SensorPush({
+    required this.pushTag,
+    required this.sensorTime,
+    required this.lpp,
+  });
+}
+
+SensorPush? parseSensorPush(Uint8List frame) {
+  if (frame.length < 10 || frame[0] != pushCodeBinaryResponse) return null;
+  return SensorPush(
+    pushTag: Uint8List.fromList(frame.sublist(2, 6)),
+    sensorTime: DateTime.fromMillisecondsSinceEpoch(
+      readUint32LE(frame, 6) * 1000,
+    ),
+    lpp: Uint8List.fromList(frame.sublist(10)),
+  );
 }
 
 //Build a trace request frame
