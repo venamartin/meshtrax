@@ -1289,173 +1289,180 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _textController,
-                builder: (context, value, child) {
-                  final renderGifs = context.read<UiViewStateService>().renderGifs;
-                  final gifId = GifHelper.parseGif(value.text);
-                  if (gifId != null) {
-                    return Focus(
-                      autofocus: true,
-                      onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent &&
-                            (event.logicalKey == LogicalKeyboardKey.enter ||
-                                event.logicalKey ==
-                                    LogicalKeyboardKey.numpadEnter)) {
-                          _sendMessage(connector);
-                          return KeyEventResult.handled;
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: renderGifs ? GifMessage(
-                                url:
-                                    'https://media.giphy.com/media/$gifId/giphy.gif',
-                                backgroundColor:
-                                    colorScheme.surfaceContainerHighest,
-                                fallbackTextColor: colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
-                                maxSize: 160,
-                              ) : Container(
-                                height: 60,
-                                color: colorScheme.surfaceContainerHighest,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.gif_box, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      "GIF",
-                                      style: TextStyle(
-                                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              _textController.clear();
-                              _textFieldFocusNode.requestFocus();
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+      child: Row(
+        children: [
+          Expanded(
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _textController,
+              builder: (context, value, child) {
+                final renderGifs = context.read<UiViewStateService>().renderGifs;
+                final gifId = GifHelper.parseGif(value.text);
+                if (gifId != null) {
                   return Focus(
+                    autofocus: true,
                     onKeyEvent: (node, event) {
-                      if (PlatformInfo.isDesktop && event is KeyDownEvent) {
-                        if (event.logicalKey == LogicalKeyboardKey.enter ||
-                            event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-                          if (HardwareKeyboard.instance.isControlPressed ||
-                              HardwareKeyboard.instance.isShiftPressed) {
-                            final text = _textController.text;
-                            final selection = _textController.selection;
-                            final start = selection.start;
-                            final end = selection.end;
-                            if (start >= 0 && end >= 0) {
-                              _textController.text = text.replaceRange(start, end, '\n');
-                              _textController.selection = TextSelection.collapsed(offset: start + 1);
-                            } else {
-                              _textController.text += '\n';
-                            }
-                            return KeyEventResult.handled;
-                          } else {
-                            _sendMessage(connector);
-                            return KeyEventResult.handled;
-                          }
-                        }
+                      if (event is KeyDownEvent &&
+                          (event.logicalKey == LogicalKeyboardKey.enter ||
+                              event.logicalKey ==
+                                  LogicalKeyboardKey.numpadEnter)) {
+                        _sendMessage(connector);
+                        return KeyEventResult.handled;
                       }
                       return KeyEventResult.ignored;
                     },
-                    child: ByteCountedTextField(
-                      maxBytes: maxBytes,
-                      controller: _textController,
-                      focusNode: _textFieldFocusNode,
-                      textInputAction: TextInputAction.newline,
-                      hintText: context.l10n.chat_typeMessage,
-                      onSubmitted: (_) => _sendMessage(connector),
-                      encoder:
-                          connector.isContactSmazEnabled(
-                            widget.contact.publicKeyHex,
-                          )
-                          ? (text) => connector.prepareContactOutboundText(
-                              widget.contact,
-                              text,
-                            )
-                          : null,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.chat_typeMessage,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: renderGifs ? GifMessage(
+                              url:
+                                  'https://media.giphy.com/media/$gifId/giphy.gif',
+                              backgroundColor:
+                                  colorScheme.surfaceContainerHighest,
+                              fallbackTextColor: colorScheme.onSurface
+                                  .withValues(alpha: 0.6),
+                              maxSize: 160,
+                            ) : Container(
+                              height: 60,
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.gif_box, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "GIF",
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLow,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _textController.clear();
+                            _textFieldFocusNode.requestFocus();
+                          },
                         ),
-                      ),
+                      ],
                     ),
                   );
+                }
+                return Focus(
+                  onKeyEvent: (node, event) {
+                    if (PlatformInfo.isDesktop && event is KeyDownEvent) {
+                      if (event.logicalKey == LogicalKeyboardKey.enter ||
+                          event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+                        if (HardwareKeyboard.instance.isControlPressed ||
+                            HardwareKeyboard.instance.isShiftPressed) {
+                          final text = _textController.text;
+                          final selection = _textController.selection;
+                          final start = selection.start;
+                          final end = selection.end;
+                          if (start >= 0 && end >= 0) {
+                            _textController.text = text.replaceRange(start, end, '\n');
+                            _textController.selection = TextSelection.collapsed(offset: start + 1);
+                          } else {
+                            _textController.text += '\n';
+                          }
+                          return KeyEventResult.handled;
+                        } else {
+                          _sendMessage(connector);
+                          return KeyEventResult.handled;
+                        }
+                      }
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: ByteCountedTextField(
+                    maxBytes: maxBytes,
+                    controller: _textController,
+                    focusNode: _textFieldFocusNode,
+                    textInputAction: TextInputAction.newline,
+                    hintText: context.l10n.chat_typeMessage,
+                    onSubmitted: (_) => _sendMessage(connector),
+                    encoder:
+                        connector.isContactSmazEnabled(
+                          widget.contact.publicKeyHex,
+                        )
+                        ? (text) => connector.prepareContactOutboundText(
+                            widget.contact,
+                            text,
+                          )
+                        : null,
+                    decoration: InputDecoration(
+                      hintText: context.l10n.chat_typeMessage,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLow,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          ComposerActionButton(
+            controller: _textController,
+            trayOpen: _trayOpen,
+            onToggleTray: _toggleTray,
+            onSend: () => _sendMessage(connector),
+            sendTooltip: context.l10n.chat_sendMessageTo(
+              _resolveContact(connector).name,
+            ),
+          ),
+        ],
+      ),
+    );
+    // One bottom inset under the whole composer, so the tray opens right
+    // under the input row and stays above the system navigation bar.
+    return ColoredBox(
+      color: colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (reply != null)
+              Builder(
+                builder: (context) {
+                  final textScale =
+                      context.select<ChatTextScaleService, double>(
+                    (service) => service.scale,
+                  );
+                  return _buildReplyBanner(reply, connector, textScale);
                 },
               ),
-            ),
-            const SizedBox(width: 8),
-            ComposerActionButton(
+            PasteConversionBar(
               controller: _textController,
-              trayOpen: _trayOpen,
-              onToggleTray: _toggleTray,
-              onSend: () => _sendMessage(connector),
-              sendTooltip: context.l10n.chat_sendMessageTo(
-                _resolveContact(connector).name,
-              ),
+              onReplace: _insertComposerText,
+            ),
+            inputBar,
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              child: _trayOpen
+                  ? _buildAttachTray(connector)
+                  : const SizedBox(width: double.infinity),
             ),
           ],
         ),
       ),
-    );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (reply != null)
-          Builder(
-            builder: (context) {
-              final textScale = context.select<ChatTextScaleService, double>(
-                (service) => service.scale,
-              );
-              return _buildReplyBanner(reply, connector, textScale);
-            },
-          ),
-        PasteConversionBar(
-          controller: _textController,
-          onReplace: _insertComposerText,
-        ),
-        inputBar,
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: _trayOpen
-              ? _buildAttachTray(connector)
-              : const SizedBox(width: double.infinity),
-        ),
-      ],
     );
   }
 
