@@ -7571,6 +7571,114 @@ abstract class AppLocalizations {
   /// **'Could not open the calendar'**
   String get structured_calendarFailed;
 
+  /// No description provided for @structured_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get structured_today;
+
+  /// No description provided for @structured_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get structured_tomorrow;
+
+  /// No description provided for @structured_inDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{In 1 day} other{In {count} days}}'**
+  String structured_inDays(int count);
+
+  /// No description provided for @structured_past.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get structured_past;
+
+  /// No description provided for @structured_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get structured_map;
+
+  /// No description provided for @structured_navigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate'**
+  String get structured_navigate;
+
+  /// No description provided for @structured_channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get structured_channel;
+
+  /// No description provided for @structured_contact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get structured_contact;
+
+  /// No description provided for @structured_room.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get structured_room;
+
+  /// No description provided for @structured_repeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeater'**
+  String get structured_repeater;
+
+  /// No description provided for @structured_sensor.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensor'**
+  String get structured_sensor;
+
+  /// No description provided for @structured_joinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel'**
+  String get structured_joinChannel;
+
+  /// No description provided for @structured_addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get structured_addContact;
+
+  /// No description provided for @structured_addRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Add room'**
+  String get structured_addRoom;
+
+  /// No description provided for @structured_addRepeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Add repeater'**
+  String get structured_addRepeater;
+
+  /// No description provided for @structured_addSensor.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sensor'**
+  String get structured_addSensor;
+
+  /// No description provided for @structured_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get structured_open;
+
+  /// No description provided for @structured_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get structured_added;
+
   /// No description provided for @tray_add.
   ///
   /// In en, this message translates to:

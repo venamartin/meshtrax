@@ -87,8 +87,11 @@ Event: Mesh meetup | 2026-10-18 14:00-16:00 | Hauptplatz
 - The text Google Calendar produces when an event is shared (title line,
   then `Oct 15  •  5 – 6 PM  •  View details & RSVP https://calendar.app.google/...`),
   as an Event. English month names only.
-- `meshcore://channel/add?...` and `meshcore://contact/add?...` links as
-  tappable join and import actions.
+- A message that is just a `meshcore://channel/add?...` or
+  `meshcore://contact/add?...` link, with up to two lines of text around
+  it, as a card with a join or add button (Channel, Contact, Room,
+  Repeater or Sensor, from the link's `type`). Inside a longer message the
+  link stays a tappable join or import action.
 
 ## Byte budget
 

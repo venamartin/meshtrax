@@ -2448,7 +2448,9 @@ class _MessageBubble extends StatelessWidget {
         gifId == null && structured == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
     final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
-    final displayMetaColor = displayTextColor.withValues(alpha: 0.7);
+    final displayMetaColor = structured != null
+        ? StructuredPalette.of(context, structured).muted
+        : displayTextColor.withValues(alpha: 0.7);
     final bodyFontSize = isJumboEmoji ? 48.0 : 14.0;
 
     return Padding(
@@ -2476,21 +2478,31 @@ class _MessageBubble extends StatelessWidget {
                 ],
                 Flexible(
                   child: Container(
-                    padding: gifId != null
-                        ? const EdgeInsets.all(4)
-                        : isJumboEmoji
-                            ? EdgeInsets.zero
-                            : const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
+                    padding: structured != null
+                        ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
+                        : gifId != null
+                            ? const EdgeInsets.all(4)
+                            : isJumboEmoji
+                                ? EdgeInsets.zero
+                                : const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                      maxWidth: structured != null
+                          ? StructuredMessageCard.maxBubbleWidth(context)
+                          : MediaQuery.of(context).size.width * 0.65,
                     ),
-                    decoration: BoxDecoration(
-                      color: displayBubbleColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    decoration: structured != null
+                        ? StructuredMessageCard.bubbleDecoration(
+                            context,
+                            structured,
+                            failed: isFailed,
+                          )
+                        : BoxDecoration(
+                            color: displayBubbleColor,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2542,20 +2554,7 @@ class _MessageBubble extends StatelessWidget {
                         if (structured != null)
                           StructuredMessageCard(
                             message: structured,
-                            textColor: textColor,
                             textScale: textScale,
-                            trailing: (!enableTracing && isOutgoing)
-                                ? Padding(
-                                    padding: const EdgeInsets.only(bottom: 2),
-                                    child: MessageStatusIcon(
-                                      isAcked:
-                                          message.status == MessageStatus.delivered,
-                                      isFailed:
-                                          message.status ==
-                                          MessageStatus.failed,
-                                    ),
-                                  )
-                                : null,
                           )
                         else if (gifId != null)
                           Stack(
@@ -2663,7 +2662,9 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                           ),
-                        if (enableTracing && viaLabel != null) ...[
+                        if (enableTracing &&
+                            viaLabel != null &&
+                            structured == null) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -2734,7 +2735,33 @@ class _MessageBubble extends StatelessWidget {
                             },
                           ),
                         ],
-                        if (enableTracing) ...[
+                        if (structured != null &&
+                            (enableTracing || isOutgoing))
+                          StructuredCardFooter(
+                            message: structured,
+                            time: enableTracing
+                                ? _formatTime(message.timestamp)
+                                : null,
+                            path: enableTracing ? viaLabel : null,
+                            extra: [
+                              if (enableTracing && !isOutgoing) ...[
+                                ?_receivedKindLabel(context),
+                                if (message.tripTimeMs != null &&
+                                    message.status == MessageStatus.delivered)
+                                  '${(message.tripTimeMs! / 1000).toStringAsFixed(1)}s',
+                              ],
+                            ],
+                            status: !isOutgoing
+                                ? null
+                                : enableTracing
+                                    ? _buildStatusIcon(displayMetaColor)
+                                    : MessageStatusIcon(
+                                        isAcked: message.status ==
+                                            MessageStatus.delivered,
+                                        isFailed: isFailed,
+                                      ),
+                          )
+                        else if (enableTracing) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -2965,7 +2992,7 @@ class _MessageBubble extends StatelessWidget {
           Icon(
             StructuredMessageCard.iconFor(structured),
             size: 14,
-            color: snippetColor,
+            color: StructuredPalette.of(context, structured).ink,
           ),
           const SizedBox(width: 4),
           Flexible(

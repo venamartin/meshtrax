@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
+import 'structured_message_card.dart';
 
 /// One message the pinned bar may pick from.
 class PinCandidate {
@@ -115,19 +116,17 @@ class PinnedMessagesBar extends StatelessWidget {
   }
 
   Widget _row(BuildContext context, PinnedEntry entry, ColorScheme scheme) {
-    final (icon, color) = switch (entry.message) {
-      SosMessage() => (Icons.warning_rounded, scheme.error),
-      EventMessage() => (Icons.event, scheme.primary),
-      NoticeMessage() => (Icons.campaign, scheme.primary),
-      LocationMessage() => (Icons.location_on, scheme.primary),
-    };
     return InkWell(
       onTap: () => onTap(entry),
       child: Padding(
         padding: const EdgeInsets.only(left: 12, top: 2, bottom: 2),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: color),
+            Icon(
+              StructuredMessageCard.iconFor(entry.message),
+              size: 18,
+              color: StructuredPalette.of(context, entry.message).ink,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(

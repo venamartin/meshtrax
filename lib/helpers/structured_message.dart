@@ -2,6 +2,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'calendar_share.dart';
 import 'maps_link.dart';
+import 'meshcore_qr.dart';
 
 /// The MeshTrax structured message format, documented in
 /// docs/message-format.md.
@@ -217,6 +218,9 @@ sealed class StructuredMessage {
         .where((l) => l.isNotEmpty)
         .toList();
     if (lines.isEmpty || lines.length > 3) return null;
+
+    final share = ShareMessage.fromLines(lines);
+    if (share != null) return share;
 
     LatLng? position;
     String? name;
@@ -551,6 +555,97 @@ class NoticeMessage extends StructuredMessage {
     _appendCommon(out, link: link, extraText: const [], extensions: extensions);
     return out.join('\n');
   }
+}
+
+/// What a meshcore:// share link adds to the radio.
+enum ShareKind { channel, contact, repeater, room, sensor }
+
+/// A `meshcore://channel/add` or `meshcore://contact/add` link, alone or with
+/// up to two lines of text around it, shown as a card with a join or add
+/// button. A link inside a longer message stays a tappable link.
+class ShareMessage extends StructuredMessage {
+  final ShareKind kind;
+  final String name;
+
+  /// The channel secret, or the contact's public key, as the link carries it.
+  final String keyHex;
+
+  /// The link itself, handed to the existing join and import code.
+  final String url;
+  final String? note;
+
+  const ShareMessage({
+    required this.kind,
+    required this.name,
+    required this.keyHex,
+    required this.url,
+    this.note,
+    super.extraText,
+  });
+
+  static final _link = RegExp(r'^meshcore://\S+$', caseSensitive: false);
+
+  /// The share in [lines] when exactly one of them is a valid meshcore://
+  /// link; the other lines become the note.
+  static ShareMessage? fromLines(List<String> lines) {
+    final links = lines.where(_link.hasMatch).toList();
+    if (links.length != 1) return null;
+    final url = links.single;
+    final ShareKind kind;
+    final String name;
+    final String keyHex;
+    try {
+      final channel = MeshCoreQr.parseChannelQr(url);
+      final contact = channel == null ? MeshCoreQr.parseContactQr(url) : null;
+      if (channel != null) {
+        kind = ShareKind.channel;
+        name = channel.name;
+        keyHex = channel.pskHex;
+      } else if (contact != null) {
+        // advType* in meshcore_protocol.dart.
+        kind = switch (contact.type) {
+          2 => ShareKind.repeater,
+          3 => ShareKind.room,
+          4 => ShareKind.sensor,
+          _ => ShareKind.contact,
+        };
+        name = contact.name;
+        keyHex = contact.pubKeyHex;
+      } else {
+        return null;
+      }
+    } catch (_) {
+      // A malformed query (bad % escape) is just text.
+      return null;
+    }
+    final free = lines.where((l) => l != url).toList();
+    return ShareMessage(
+      kind: kind,
+      name: name.trim(),
+      keyHex: keyHex,
+      url: url,
+      note: free.isNotEmpty ? free.first : null,
+      extraText: free.skip(1).toList(),
+    );
+  }
+
+  @override
+  LatLng? get position => null;
+
+  @override
+  String get keyword => switch (kind) {
+        ShareKind.channel => 'Channel',
+        ShareKind.contact => 'Contact',
+        ShareKind.repeater => 'Repeater',
+        ShareKind.room => 'Room',
+        ShareKind.sensor => 'Sensor',
+      };
+
+  @override
+  String get summary => name.isEmpty ? keyword : '$keyword: $name';
+
+  @override
+  String toWire() => [?note, url, ...extraText].join('\n');
 }
 
 void _appendCommon(
