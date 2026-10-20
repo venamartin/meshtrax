@@ -4280,4 +4280,46 @@ class AppLocalizationsUk extends AppLocalizations {
   String map_downloadRegion(String region, String size) {
     return 'Download $region · $size';
   }
+
+  @override
+  String get mapLayers_title => 'Map layers';
+
+  @override
+  String get mapLayers_mapType => 'Map type';
+
+  @override
+  String get mapLayers_standard => 'Standard';
+
+  @override
+  String get mapLayers_usgs => 'USGS topo';
+
+  @override
+  String get mapLayers_charts => 'Charts';
+
+  @override
+  String get mapLayers_notDownloaded => 'Not downloaded';
+
+  @override
+  String get mapLayers_details => 'Map details';
+
+  @override
+  String get mapLayers_contours => 'Contours';
+
+  @override
+  String get mapLayers_dark => 'Dark map';
+
+  @override
+  String get mapLayers_nodes => 'Nodes';
+
+  @override
+  String get mapLayers_pins => 'Pins';
+
+  @override
+  String get mapLayers_guessed => 'Guessed';
+
+  @override
+  String get mapLayers_moreFilters => 'More filters';
+
+  @override
+  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
 }

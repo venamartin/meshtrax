@@ -291,11 +291,21 @@ class MapPacksService extends ChangeNotifier {
     for (final type in MapType.values) {
       for (final dark in [false, true]) {
         final id = await styles.styleFor(type, dark: dark);
-        if (id != null) _styleIds[(type, dark)] = id;
+        if (id == null) continue;
+        _styleIds[(type, dark)] = id;
+        _requiredKinds[type] = (await styles.info(id)).requiredKinds;
       }
     }
     notifyListeners();
   }
+
+  final _requiredKinds = <MapType, Set<PackKind>>{};
+
+  /// Whether [type] has anything to draw: an installed pack of a kind its
+  /// style needs. OSM always does, from online tiles where there's none.
+  bool hasMap(MapType type) =>
+      type == MapType.osm ||
+      _installed.any((p) => _requiredKinds[type]?.contains(p.kind) ?? false);
 
   /// The installed packs a map draws from; the style uses those it needs.
   /// Contours come last so the map's own credit leads the credits.

@@ -131,6 +131,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/map_layers/
 
 flutter_launcher_icons:
   android: true

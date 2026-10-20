@@ -38,11 +38,17 @@ Last updated 2026-10-19, evening. **Resume here.**
    - Starting camera: the highlight, then the nodes, then the last camera (`UiViewStateService.mapCamera`), then the first downloaded map.
    - B1–B5 are fixed.
    - Checked on the Pi with a fake radio (preview harness); `test/screens/map_screen_test.dart` covers markers, the POI link and B1.
-2. **Next:** the no-radio map (M5b) and the layers sheet (M6, Google Maps style; it replaces the planned text selector), then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
+2. **M6 layers sheet: done (2026-10-20).** It's built Google Maps style; desktop +/− is still to do.
+   - **Button:** a round Layers button (bottom right) replaces the filter button.
+   - **Map type tiles:** greyed with "Not downloaded" when no pack of the style's kinds is installed (`MapPacksService.hasMap`); tapping opens Offline maps.
+   - **Toggle tiles:** Contours and Dark map; Repeaters, Chat Nodes, Other Nodes, Pins and Guessed.
+   - **Rows:** "More filters" (the old dialog, now last seen, key prefix, discovery contacts and overlaps) and Offline maps with its badge.
+   - **Thumbnails:** rendered from our own styles on the Pi, label-free except charts, and bundled as 216 px WebP in `assets/map_layers/` (54 KB).
+3. **Next:** the no-radio map (M5b), then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
    - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
    - The map is Light by default, whatever the app's theme (Martin, 2026-10-20; `map_theme` is `light` or `dark`). The Light/Dark choice goes in the layers sheet.
    - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
-3. **Waiting for Martin:**
+4. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
@@ -412,7 +418,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 
 | Task | Change |
 | --- | --- |
-| M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types; desktop +/−. Martin wants it soon: it replaces the text map selector. |
+| M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types. **Done** except desktop +/−. |
 | M7 | Phone GPS (geolocator), plus the privacy, platform and store updates. On the Pi it uses the radio fallback; the permission flow needs a phone. |
 
 ### Phase 5: cleanup and release gate

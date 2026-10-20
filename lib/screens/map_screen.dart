@@ -28,6 +28,7 @@ import '../utils/contact_search.dart';
 import '../utils/platform_info.dart';
 import '../utils/route_transitions.dart';
 import '../widgets/app_map.dart';
+import '../widgets/map_layers_sheet.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 import 'chat_screen.dart';
@@ -528,9 +529,14 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ),
             floatingActionButton: FloatingActionButton(
-              onPressed: () => _showFilterDialog(context, settingsService),
-              tooltip: context.l10n.map_filterNodes,
-              child: const Icon(Icons.filter_list),
+              onPressed: () => showMapLayersSheet(
+                context,
+                extra: _nodeLayers,
+                onMoreFilters: () =>
+                    _showFilterDialog(context, settingsService),
+              ),
+              tooltip: context.l10n.mapLayers_title,
+              child: const Icon(Icons.layers_outlined),
             ),
           ),
         );
@@ -1873,6 +1879,59 @@ class _MapScreenState extends State<MapScreen> {
     return result ?? false;
   }
 
+  /// The layers sheet's Nodes section: which kinds of node show.
+  Widget _nodeLayers(BuildContext context) {
+    final l10n = context.l10n;
+    final service = context.watch<AppSettingsService>();
+    final settings = service.settings;
+    final background = Theme.of(context).colorScheme.surfaceContainerHighest;
+    Widget badge(Color color, IconData icon) => ColoredBox(
+      color: background,
+      child: Center(child: _nodeDot(color, icon)),
+    );
+    return MapLayerSection(
+      title: l10n.mapLayers_nodes,
+      children: [
+        MapLayerTile(
+          picture: badge(_getNodeColor(advTypeRepeater), Icons.router),
+          label: l10n.map_repeaters,
+          selected: settings.mapShowRepeaters,
+          onTap: () => service.setMapShowRepeaters(!settings.mapShowRepeaters),
+        ),
+        MapLayerTile(
+          picture: badge(_getNodeColor(advTypeChat), Icons.person),
+          label: l10n.map_chatNodes,
+          selected: settings.mapShowChatNodes,
+          onTap: () => service.setMapShowChatNodes(!settings.mapShowChatNodes),
+        ),
+        MapLayerTile(
+          picture: badge(_getNodeColor(advTypeRoom), Icons.meeting_room),
+          label: l10n.map_otherNodes,
+          selected: settings.mapShowOtherNodes,
+          onTap: () =>
+              service.setMapShowOtherNodes(!settings.mapShowOtherNodes),
+        ),
+        MapLayerTile(
+          picture: badge(Colors.orange, Icons.flag),
+          label: l10n.mapLayers_pins,
+          selected: settings.mapShowMarkers,
+          onTap: () => service.setMapShowMarkers(!settings.mapShowMarkers),
+        ),
+        MapLayerTile(
+          picture: badge(
+            Colors.grey.withValues(alpha: 0.55),
+            Icons.not_listed_location,
+          ),
+          label: l10n.mapLayers_guessed,
+          selected: settings.mapShowGuessedLocations,
+          onTap: () => service.setMapShowGuessedLocations(
+            !settings.mapShowGuessedLocations,
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showFilterDialog(
     BuildContext context,
     AppSettingsService settingsService,
@@ -1890,46 +1949,6 @@ class _MapScreenState extends State<MapScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    context.l10n.map_nodeTypes,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  CheckboxListTile(
-                    title: Text(context.l10n.map_chatNodes),
-                    value: settings.mapShowChatNodes,
-                    onChanged: (value) {
-                      service.setMapShowChatNodes(value ?? true);
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  CheckboxListTile(
-                    title: Text(context.l10n.map_repeaters),
-                    value: settings.mapShowRepeaters,
-                    onChanged: (value) {
-                      service.setMapShowRepeaters(value ?? true);
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  CheckboxListTile(
-                    title: Text(context.l10n.map_otherNodes),
-                    value: settings.mapShowOtherNodes,
-                    onChanged: (value) {
-                      service.setMapShowOtherNodes(value ?? true);
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  CheckboxListTile(
-                    title: Text(context.l10n.map_showGuessedLocations),
-                    value: settings.mapShowGuessedLocations,
-                    onChanged: (value) {
-                      service.setMapShowGuessedLocations(value ?? true);
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
                   CheckboxListTile(
                     title: Text(context.l10n.map_showDiscoveryContacts),
                     value: settings.mapShowDiscoveryContacts,
@@ -1976,23 +1995,6 @@ class _MapScreenState extends State<MapScreen> {
                     onChanged: (value) {
                       service.setMapKeyPrefix(value);
                     },
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.map_markers,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  CheckboxListTile(
-                    title: Text(context.l10n.map_showSharedMarkers),
-                    value: settings.mapShowMarkers,
-                    onChanged: (value) {
-                      service.setMapShowMarkers(value ?? true);
-                    },
-                    contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 16),
                   Text(

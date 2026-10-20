@@ -207,6 +207,37 @@ void main() {
     expect(find.byType(OfflineMapsScreen), findsOneWidget);
   });
 
+  testWidgets('the layers button: map types, details and node types', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    final settings = tester
+        .element(find.byType(MapScreen))
+        .read<AppSettingsService>();
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Map type'), findsOneWidget);
+    expect(find.text('Standard'), findsOneWidget);
+    expect(
+      find.text('Not downloaded'),
+      findsNWidgets(2),
+      reason: 'USGS and charts: no packs',
+    );
+    expect(find.text('Nodes'), findsOneWidget);
+
+    await tester.tap(find.text('Dark map'));
+    await tester.pump();
+    expect(settings.settings.mapTheme, 'dark');
+    await tester.tap(find.text('Repeaters'));
+    await tester.pump();
+    expect(settings.settings.mapShowRepeaters, isFalse);
+    await tester.tap(find.text('Contours'));
+    await tester.pump();
+    expect(settings.settings.mapContours, isFalse);
+  });
+
   testWidgets('a path trace starts without a radio position', (tester) async {
     await pumpMap(
       tester,

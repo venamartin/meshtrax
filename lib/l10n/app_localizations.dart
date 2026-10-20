@@ -7361,6 +7361,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download {region} · {size}'**
   String map_downloadRegion(String region, String size);
+
+  /// No description provided for @mapLayers_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Map layers'**
+  String get mapLayers_title;
+
+  /// No description provided for @mapLayers_mapType.
+  ///
+  /// In en, this message translates to:
+  /// **'Map type'**
+  String get mapLayers_mapType;
+
+  /// No description provided for @mapLayers_standard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get mapLayers_standard;
+
+  /// No description provided for @mapLayers_usgs.
+  ///
+  /// In en, this message translates to:
+  /// **'USGS topo'**
+  String get mapLayers_usgs;
+
+  /// No description provided for @mapLayers_charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Charts'**
+  String get mapLayers_charts;
+
+  /// No description provided for @mapLayers_notDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not downloaded'**
+  String get mapLayers_notDownloaded;
+
+  /// No description provided for @mapLayers_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Map details'**
+  String get mapLayers_details;
+
+  /// No description provided for @mapLayers_contours.
+  ///
+  /// In en, this message translates to:
+  /// **'Contours'**
+  String get mapLayers_contours;
+
+  /// No description provided for @mapLayers_dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark map'**
+  String get mapLayers_dark;
+
+  /// No description provided for @mapLayers_nodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Nodes'**
+  String get mapLayers_nodes;
+
+  /// No description provided for @mapLayers_pins.
+  ///
+  /// In en, this message translates to:
+  /// **'Pins'**
+  String get mapLayers_pins;
+
+  /// No description provided for @mapLayers_guessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Guessed'**
+  String get mapLayers_guessed;
+
+  /// No description provided for @mapLayers_moreFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'More filters'**
+  String get mapLayers_moreFilters;
+
+  /// No description provided for @mapLayers_moreFiltersDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen, key prefix, overlaps'**
+  String get mapLayers_moreFiltersDetail;
 }
 
 class _AppLocalizationsDelegate

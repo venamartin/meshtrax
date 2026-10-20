@@ -2316,5 +2316,19 @@
   "map_noOfflineMap": "No offline map here",
   "map_zoomInForOfflineMap": "Zoom in to see your offline map",
   "map_downloadRegion": "Download {region} · {size}",
-  "@map_downloadRegion": {"placeholders": {"region": {"type": "String"}, "size": {"type": "String"}}}
+  "@map_downloadRegion": {"placeholders": {"region": {"type": "String"}, "size": {"type": "String"}}},
+  "mapLayers_title": "Map layers",
+  "mapLayers_mapType": "Map type",
+  "mapLayers_standard": "Standard",
+  "mapLayers_usgs": "USGS topo",
+  "mapLayers_charts": "Charts",
+  "mapLayers_notDownloaded": "Not downloaded",
+  "mapLayers_details": "Map details",
+  "mapLayers_contours": "Contours",
+  "mapLayers_dark": "Dark map",
+  "mapLayers_nodes": "Nodes",
+  "mapLayers_pins": "Pins",
+  "mapLayers_guessed": "Guessed",
+  "mapLayers_moreFilters": "More filters",
+  "mapLayers_moreFiltersDetail": "Last seen, key prefix, overlaps"
 }
