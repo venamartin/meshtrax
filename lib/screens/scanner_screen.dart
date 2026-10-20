@@ -1,6 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../utils/platform_info.dart';
+
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +19,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../helpers/terms_gate.dart';
 import 'chats_screen.dart';
 import 'offline_maps_screen.dart';
+import 'no_radio_map_screen.dart';
 import 'tcp_screen.dart';
 import 'usb_screen.dart';
 
@@ -268,14 +272,23 @@ class _ScannerScreenState extends State<ScannerScreen> {
               PopupMenuItem<void>(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const OfflineMapsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const OfflineMapsScreen()),
                 ),
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.download_for_offline_outlined),
                   title: Text(context.l10n.scanner_offlineMaps),
+                ),
+              ),
+              PopupMenuItem<void>(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NoRadioMapScreen()),
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.map_outlined),
+                  title: Text(context.l10n.scanner_map),
                 ),
               ),
             ],

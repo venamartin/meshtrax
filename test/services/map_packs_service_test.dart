@@ -256,6 +256,24 @@ void main() {
     },
   );
 
+  test('with nothing else to show, maps open on the latest map pack', () async {
+    final maps = service();
+    await maps.start();
+    await maps.refresh();
+    expect(maps.latestMapFit, isNull);
+
+    await install(maps, 'us-rhode-island-contours-10m');
+    await maps.reloadInstalled();
+    expect(maps.latestMapFit, isNull, reason: 'contours alone are no map');
+
+    await install(maps, 'us-rhode-island-osm');
+    await maps.reloadInstalled();
+    final fit = maps.latestMapFit!;
+    final pack = maps.installedPack('us-rhode-island-osm')!;
+    expect(fit.bounds, pack.bounds);
+    expect(fit.minZoom, pack.minZoom);
+  });
+
   test('deleting a region cancels its downloads and frees its packs', () async {
     final maps = service();
     await maps.start();

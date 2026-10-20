@@ -2323,6 +2323,7 @@
   "mapLayers_usgs": "USGS topo",
   "mapLayers_charts": "Charts",
   "mapLayers_notDownloaded": "Not downloaded",
+  "mapLayers_offlineOnly": "Offline only",
   "mapLayers_details": "Map details",
   "mapLayers_contours": "Contours",
   "mapLayers_dark": "Dark map",
@@ -2331,5 +2332,6 @@
   "mapLayers_guessed": "Guessed",
   "mapLayers_moreFilters": "More filters",
   "mapLayers_moreFiltersDetail": "Last seen, key prefix, overlaps",
-  "map_legend": "Legend"
+  "map_legend": "Legend",
+  "scanner_map": "Map"
 }

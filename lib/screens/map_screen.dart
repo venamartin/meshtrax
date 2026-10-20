@@ -336,7 +336,7 @@ class _MapScreenState extends State<MapScreen> {
             if (hasMapContent) {
               _mapController.move(center.toOvm(), zoom: zoom);
             } else if (lastCamera == null) {
-              _showFirstDownloadedMap();
+              _showLatestDownloadedMap();
             }
           });
         }
@@ -904,10 +904,12 @@ class _MapScreenState extends State<MapScreen> {
         child: Icon(icon, color: Colors.white, size: 20),
       );
 
-  /// With nothing to show and no saved camera: the first downloaded map.
-  void _showFirstDownloadedMap() {
-    final packs = context.read<MapPacksService?>()?.installed ?? const [];
-    if (packs.isNotEmpty) _mapController.fitBounds(packs.first.bounds);
+  /// With nothing to show and no saved camera: the latest downloaded map.
+  void _showLatestDownloadedMap() {
+    final fit = context.read<MapPacksService?>()?.latestMapFit;
+    if (fit != null) {
+      _mapController.fitBounds(fit.bounds!, minZoom: fit.minZoom);
+    }
   }
 
   Color _getNodeColor(int type) {

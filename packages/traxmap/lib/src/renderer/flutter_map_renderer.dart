@@ -280,6 +280,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
     coordinates: [for (final p in fit.coordinates) _ll(p)],
     padding: fit.padding,
     maxZoom: fit.maxZoom == null ? null : fit.maxZoom! + _zoomOffset,
+    minZoom: fit.minZoom == null ? 0 : fit.minZoom! + _zoomOffset,
   );
 
   void _onMapReady() {

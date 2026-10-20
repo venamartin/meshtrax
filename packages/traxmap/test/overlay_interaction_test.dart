@@ -191,6 +191,15 @@ void main() {
     await tester.pump();
     expect(controller.camera!.zoom, lessThanOrEqualTo(14 + 1e-6));
     expect(controller.visibleBounds, isNotNull);
+
+    // A box too big for the view stops at minZoom, around its centre.
+    controller.fitBounds(
+      const LatLngBounds(south: 45, west: -80, north: 62, east: -57),
+      minZoom: 6,
+    );
+    await tester.pump();
+    expect(controller.camera!.zoom, closeTo(6, 1e-6));
+    expect(controller.camera!.center.longitude, closeTo(-68.5, 0.01));
   });
 
   testWidgets('initialFit frames the points', (tester) async {

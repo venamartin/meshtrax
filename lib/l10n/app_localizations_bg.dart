@@ -4287,6 +4287,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get mapLayers_notDownloaded => 'Not downloaded';
 
   @override
+  String get mapLayers_offlineOnly => 'Offline only';
+
+  @override
   String get mapLayers_details => 'Map details';
 
   @override
@@ -4312,4 +4315,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get map_legend => 'Legend';
+
+  @override
+  String get scanner_map => 'Map';
 }

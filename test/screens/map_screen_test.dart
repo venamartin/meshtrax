@@ -225,17 +225,26 @@ void main() {
       findsNWidgets(2),
       reason: 'USGS and charts: no packs',
     );
+    expect(
+      find.text('Offline only'),
+      findsNWidgets(2),
+      reason: 'nothing downloaded, so Online: contours and dark',
+    );
     expect(find.text('Nodes'), findsOneWidget);
 
+    // An Offline-only choice made Online switches to Offline.
     await tester.tap(find.text('Dark map'));
     await tester.pump();
+    expect(settings.settings.mapSource, 'offline');
     expect(settings.settings.mapTheme, 'dark');
-    await tester.tap(find.text('Repeaters'));
-    await tester.pump();
-    expect(settings.settings.mapShowRepeaters, isFalse);
+    expect(find.text('Offline only'), findsNothing);
+
     await tester.tap(find.text('Contours'));
     await tester.pump();
     expect(settings.settings.mapContours, isFalse);
+    await tester.tap(find.text('Repeaters'));
+    await tester.pump();
+    expect(settings.settings.mapShowRepeaters, isFalse);
   });
 
   testWidgets('the legend hides behind an info button', (tester) async {

@@ -6,10 +6,15 @@ import '../l10n/l10n.dart';
 import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
+import 'app_map.dart';
 
 /// Opens the map layers sheet, laid out like Google Maps': which map, its
 /// details (contours, dark), any [extra] section a screen adds (the Node
 /// Map's node types), [onMoreFilters], and Offline maps.
+///
+/// Online, the map is the standard online look, so the other map types,
+/// contours and dark show "Offline only"; tapping one switches to Offline
+/// and applies it.
 ///
 /// [extra] builds inside the sheet, so it rebuilds as settings change.
 Future<void> showMapLayersSheet(
@@ -35,8 +40,18 @@ class MapLayersSheet extends StatelessWidget {
     final maps = context.watch<MapPacksService>();
     final settingsService = context.watch<AppSettingsService>();
     final settings = settingsService.settings;
-    final current = MapType.parse(settings.mapType) ?? MapType.osm;
+    final online = mapIsOnline(settings, maps);
+    final current = online
+        ? MapType.osm
+        : MapType.parse(settings.mapType) ?? MapType.osm;
     final dark = settings.mapTheme == 'dark';
+    final contours = settings.mapContours;
+
+    // An Offline-only choice made while Online: go Offline, then apply it.
+    void offline(Future<void> Function() apply) {
+      if (online) settingsService.setMapSource('offline');
+      apply();
+    }
 
     void openOfflineMaps() => Navigator.of(context)
       ..pop()
@@ -46,15 +61,22 @@ class MapLayersSheet extends StatelessWidget {
 
     Widget mapTile(MapType type, String picture, String label) {
       final available = maps.hasMap(type);
+      final offlineOnly = online && type != MapType.osm;
       return MapLayerTile(
         picture: _picture(picture),
         label: label,
-        note: available ? null : l10n.mapLayers_notDownloaded,
+        note: !available
+            ? l10n.mapLayers_notDownloaded
+            : offlineOnly
+            ? l10n.mapLayers_offlineOnly
+            : null,
         selected: available && type == current,
-        enabled: available,
-        onTap: available
-            ? () => settingsService.setMapType(type.name)
-            : openOfflineMaps,
+        enabled: available && !offlineOnly,
+        onTap: !available
+            ? openOfflineMaps
+            : offlineOnly
+            ? () => offline(() => settingsService.setMapType(type.name))
+            : () => settingsService.setMapType(type.name),
       );
     }
 
@@ -85,16 +107,24 @@ class MapLayersSheet extends StatelessWidget {
                 MapLayerTile(
                   picture: _picture('contours'),
                   label: l10n.mapLayers_contours,
-                  selected: settings.mapContours,
-                  onTap: () =>
-                      settingsService.setMapContours(!settings.mapContours),
+                  note: online ? l10n.mapLayers_offlineOnly : null,
+                  selected: !online && contours,
+                  enabled: !online,
+                  onTap: () => offline(
+                    () => settingsService.setMapContours(online || !contours),
+                  ),
                 ),
                 MapLayerTile(
                   picture: _picture('dark'),
                   label: l10n.mapLayers_dark,
-                  selected: dark,
-                  onTap: () =>
-                      settingsService.setMapTheme(dark ? 'light' : 'dark'),
+                  note: online ? l10n.mapLayers_offlineOnly : null,
+                  selected: !online && dark,
+                  enabled: !online,
+                  onTap: () => offline(
+                    () => settingsService.setMapTheme(
+                      online || !dark ? 'dark' : 'light',
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -15,6 +15,15 @@ import '../services/map_packs_service.dart';
 import '../services/map_tile_cache_service.dart';
 import '../utils/format_bytes.dart';
 
+/// Whether maps are in Online mode (the Online | Offline switch): `map_source`,
+/// where `auto` is online until the first download.
+bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
+    switch (settings.mapSource) {
+      'online' => true,
+      'offline' => false,
+      _ => maps.installed.isEmpty,
+    };
+
 /// The map every MeshTrax map screen draws, with the credits (and chart
 /// disclaimer) the data's licences require.
 ///
@@ -24,9 +33,9 @@ import '../utils/format_bytes.dart';
 /// with online OpenStreetMap tiles. Either way a dashed line marks where the
 /// downloaded regions end.
 ///
-/// The map, contours and light/dark come from the user's settings unless a
-/// screen overrides them (the region picker always shows OSM without
-/// contours). See docs/offline-maps-roadmap.md, "App architecture".
+/// The map, contours and light/dark come from the user's settings (in
+/// Offline mode; Online it's the standard light map) unless a screen
+/// overrides them. See docs/offline-maps-roadmap.md, "App architecture".
 class AppMap extends StatefulWidget {
   final List<MapOverlay> overlays;
   final OfflineMapController? controller;
@@ -132,17 +141,16 @@ class _AppMapState extends State<AppMap> {
     final settings = context.select<AppSettingsService, AppSettings>(
       (s) => s.settings,
     );
-    final type =
-        widget.mapType ?? MapType.parse(settings.mapType) ?? MapType.osm;
-    final dark = settings.mapTheme == 'dark';
+    // Online, the whole map has the online map's look: map types, dark and
+    // contours come from downloaded packs, so they're Offline mode's.
+    final online = mapIsOnline(settings, maps);
+    final type = online
+        ? MapType.osm
+        : widget.mapType ?? MapType.parse(settings.mapType) ?? MapType.osm;
+    final dark = !online && settings.mapTheme == 'dark';
     final styleId = maps.styleId(type, dark: dark);
     if (styleId == null) return const SizedBox.expand();
 
-    final online = switch (settings.mapSource) {
-      'online' => true,
-      'offline' => false,
-      _ => maps.installed.isEmpty,
-    };
     final style = _style;
     final credits = [
       if (online) '© OpenStreetMap contributors',
@@ -158,7 +166,7 @@ class _AppMapState extends State<AppMap> {
           styleId: styleId,
           styleRegistry: maps.styles,
           packs: maps.mapPacks(
-            contours: widget.contours ?? settings.mapContours,
+            contours: !online && (widget.contours ?? settings.mapContours),
           ),
           units: settings.unitSystem == UnitSystem.imperial
               ? Units.imperial

@@ -155,6 +155,24 @@ class MapPacksService extends ChangeNotifier {
   /// When an installed pack was downloaded (its file's time).
   DateTime? installedAt(Pack pack) => _files[pack.file.path]?.modified;
 
+  /// Where to open a map with nothing else to show: the most recently
+  /// installed street or topo map, framed, but no further out than its packs
+  /// draw (a big region shows its middle).
+  MapFit? get latestMapFit {
+    final maps =
+        _installed
+            .where((p) => p.kind == PackKind.osm || p.kind == PackKind.base)
+            .toList()
+          ..sort(
+            (a, b) => (installedAt(a) ?? DateTime(0)).compareTo(
+              installedAt(b) ?? DateTime(0),
+            ),
+          );
+    if (maps.isEmpty) return null;
+    final pack = maps.last;
+    return MapFit.bounds(pack.bounds, minZoom: pack.minZoom.toDouble());
+  }
+
   /// Bytes used by all installed packs.
   int get installedBytes => _installed.fold(0, (sum, p) => sum + sizeOf(p));
 

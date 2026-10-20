@@ -7398,6 +7398,12 @@ abstract class AppLocalizations {
   /// **'Not downloaded'**
   String get mapLayers_notDownloaded;
 
+  /// No description provided for @mapLayers_offlineOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline only'**
+  String get mapLayers_offlineOnly;
+
   /// No description provided for @mapLayers_details.
   ///
   /// In en, this message translates to:
@@ -7451,6 +7457,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Legend'**
   String get map_legend;
+
+  /// No description provided for @scanner_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get scanner_map;
 }
 
 class _AppLocalizationsDelegate

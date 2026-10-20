@@ -129,11 +129,16 @@ void main() {
   ) async {
     String styleId() =>
         tester.widget<OfflineMapView>(find.byType(OfflineMapView)).styleId;
+    await settings.setMapSource('offline');
     await pumpMap(tester, brightness: Brightness.dark);
     expect(styleId(), 'osm-light');
 
     await settings.setMapTheme('dark');
     await tester.pump();
     expect(styleId(), 'osm-dark');
+
+    await settings.setMapSource('online');
+    await tester.pump();
+    expect(styleId(), 'osm-light', reason: 'online is the standard look');
   });
 }

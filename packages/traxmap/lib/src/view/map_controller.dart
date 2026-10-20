@@ -14,16 +14,22 @@ class MapFit {
   /// tight cluster from zooming all the way in.
   final double? maxZoom;
 
+  /// Lowest zoom the fit may use (package zoom), e.g. where packs still
+  /// draw: a bigger area is then shown around its centre, cropped.
+  final double? minZoom;
+
   const MapFit.bounds(
     LatLngBounds this.bounds, {
     this.padding = const EdgeInsets.all(32),
     this.maxZoom,
+    this.minZoom,
   }) : points = null;
 
   const MapFit.points(
     List<LatLng> this.points, {
     this.padding = const EdgeInsets.all(32),
     this.maxZoom,
+    this.minZoom,
   }) : bounds = null;
 
   /// The points to frame, whichever form this fit was given in.
@@ -76,8 +82,16 @@ class OfflineMapController extends ChangeNotifier {
     LatLngBounds bounds, {
     EdgeInsets padding = const EdgeInsets.all(32),
     double? maxZoom,
+    double? minZoom,
   }) => _run(
-    (d) => d.fit(MapFit.bounds(bounds, padding: padding, maxZoom: maxZoom)),
+    (d) => d.fit(
+      MapFit.bounds(
+        bounds,
+        padding: padding,
+        maxZoom: maxZoom,
+        minZoom: minZoom,
+      ),
+    ),
   );
 
   /// Frames [points]; does nothing for an empty list.
