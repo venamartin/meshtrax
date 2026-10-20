@@ -124,11 +124,16 @@ void main() {
     expect(find.byType(fm.TileLayer), findsNothing);
   });
 
-  testWidgets('the map follows the app theme', (tester) async {
+  testWidgets('the map is light, even in a dark app, unless set dark', (
+    tester,
+  ) async {
+    String styleId() =>
+        tester.widget<OfflineMapView>(find.byType(OfflineMapView)).styleId;
     await pumpMap(tester, brightness: Brightness.dark);
-    expect(
-      tester.widget<OfflineMapView>(find.byType(OfflineMapView)).styleId,
-      'osm-dark',
-    );
+    expect(styleId(), 'osm-light');
+
+    await settings.setMapTheme('dark');
+    await tester.pump();
+    expect(styleId(), 'osm-dark');
   });
 }

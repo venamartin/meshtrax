@@ -239,11 +239,11 @@ void main() {
   });
 
   group('AppSettings — map choice', () {
-    test('defaults: OSM, contours on, theme and source automatic', () {
+    test('defaults: OSM, contours on, a light map, source automatic', () {
       for (final s in [AppSettings(), AppSettings.fromJson({})]) {
         expect(s.mapType, 'osm');
         expect(s.mapContours, isTrue);
-        expect(s.mapTheme, 'auto');
+        expect(s.mapTheme, 'light');
         expect(s.mapSource, 'auto');
       }
     });

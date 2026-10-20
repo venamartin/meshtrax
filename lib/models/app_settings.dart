@@ -35,8 +35,8 @@ class AppSettings {
   /// Draw contour lines when a contours pack is installed.
   final bool mapContours;
 
-  /// Map colours: `auto` follows the app's light or dark theme, or `light`
-  /// or `dark`.
+  /// Map colours, `light` or `dark`, whatever the app's theme (Martin,
+  /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
 
   /// Where maps come from: `online` (online tiles wherever nothing is
@@ -107,7 +107,7 @@ class AppSettings {
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
     this.mapContours = true,
-    this.mapTheme = 'auto',
+    this.mapTheme = 'light',
     this.mapSource = 'auto',
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
@@ -216,7 +216,7 @@ class AppSettings {
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
       mapType: json['map_type'] as String? ?? 'osm',
       mapContours: json['map_contours'] as bool? ?? true,
-      mapTheme: json['map_theme'] as String? ?? 'auto',
+      mapTheme: json['map_theme'] as String? ?? 'light',
       mapSource: json['map_source'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,

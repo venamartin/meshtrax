@@ -134,11 +134,7 @@ class _AppMapState extends State<AppMap> {
     );
     final type =
         widget.mapType ?? MapType.parse(settings.mapType) ?? MapType.osm;
-    final dark = switch (settings.mapTheme) {
-      'dark' => true,
-      'light' => false,
-      _ => Theme.of(context).brightness == Brightness.dark,
-    };
+    final dark = settings.mapTheme == 'dark';
     final styleId = maps.styleId(type, dark: dark);
     if (styleId == null) return const SizedBox.expand();
 
