@@ -27,6 +27,17 @@ class AppSettings {
 
   /// Hold offline map downloads until the phone is on Wi-Fi.
   final bool mapDownloadsWifiOnly;
+
+  /// Which map the map screens draw: `osm`, `usgs` or `charts` (traxmap's
+  /// MapType names).
+  final String mapType;
+
+  /// Draw contour lines when a contours pack is installed.
+  final bool mapContours;
+
+  /// Map colours: `auto` follows the app's light or dark theme, or `light`
+  /// or `dark`.
+  final String mapTheme;
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
@@ -89,6 +100,9 @@ class AppSettings {
     this.mapShowGuessedLocations = true,
     this.enableMessageTracing = true,
     this.mapDownloadsWifiOnly = true,
+    this.mapType = 'osm',
+    this.mapContours = true,
+    this.mapTheme = 'auto',
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -137,6 +151,9 @@ class AppSettings {
       'map_show_guessed_locations': mapShowGuessedLocations,
       'enable_message_tracing': enableMessageTracing,
       'map_downloads_wifi_only': mapDownloadsWifiOnly,
+      'map_type': mapType,
+      'map_contours': mapContours,
+      'map_theme': mapTheme,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -190,6 +207,9 @@ class AppSettings {
           json['map_show_guessed_locations'] as bool? ?? true,
       enableMessageTracing: json['enable_message_tracing'] as bool? ?? false,
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
+      mapType: json['map_type'] as String? ?? 'osm',
+      mapContours: json['map_contours'] as bool? ?? true,
+      mapTheme: json['map_theme'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -262,6 +282,9 @@ class AppSettings {
     bool? mapShowGuessedLocations,
     bool? enableMessageTracing,
     bool? mapDownloadsWifiOnly,
+    String? mapType,
+    bool? mapContours,
+    String? mapTheme,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -304,6 +327,9 @@ class AppSettings {
           mapShowGuessedLocations ?? this.mapShowGuessedLocations,
       enableMessageTracing: enableMessageTracing ?? this.enableMessageTracing,
       mapDownloadsWifiOnly: mapDownloadsWifiOnly ?? this.mapDownloadsWifiOnly,
+      mapType: mapType ?? this.mapType,
+      mapContours: mapContours ?? this.mapContours,
+      mapTheme: mapTheme ?? this.mapTheme,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:

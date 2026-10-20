@@ -2311,5 +2311,6 @@
   "offlineMaps_notificationFailed": "Map download failed",
   "offlineMaps_clearTileCache": "Clear cached online map tiles",
   "offlineMaps_clearTileCachePrompt": "Remove the online map tiles saved while browsing? Downloaded maps stay.",
-  "offlineMaps_tileCacheCleared": "Cached online map tiles removed"
+  "offlineMaps_tileCacheCleared": "Cached online map tiles removed",
+  "map_notForNavigation": "Not for navigation"
 }

@@ -7337,6 +7337,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cached online map tiles removed'**
   String get offlineMaps_tileCacheCleared;
+
+  /// No description provided for @map_notForNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Not for navigation'**
+  String get map_notForNavigation;
 }
 
 class _AppLocalizationsDelegate

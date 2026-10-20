@@ -4006,4 +4006,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+
+  @override
+  String get map_notForNavigation => 'Not for navigation';
 }

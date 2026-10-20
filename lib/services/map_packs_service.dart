@@ -83,8 +83,10 @@ class MapPacksService extends ChangeNotifier {
     required this.cacheDir,
     http.Client? client,
     Uri? indexUrl,
+    StyleRegistry? styles,
   }) : _client = client ?? http.Client(),
-       indexUrl = indexUrl ?? defaultIndexUrl;
+       indexUrl = indexUrl ?? defaultIndexUrl,
+       styles = styles ?? bundledStyles();
 
   /// Builds the service on the app's storage, restores downloads from the
   /// previous run, and starts an update check if the catalogue is stale.
@@ -261,6 +263,41 @@ class MapPacksService extends ChangeNotifier {
     _downloads[download.id] = download;
     notifyListeners();
   }
+
+  // --- Drawing -------------------------------------------------------------
+
+  /// The map styles (the bundled ones unless given), shared by every map so
+  /// each loads once.
+  final StyleRegistry styles;
+
+  final _styleIds = <(MapType, bool), String>{};
+  Future<void>? _loadingStyleIds;
+
+  /// The style for [type] in light or dark, or null until the style list
+  /// has loaded (listeners are notified then).
+  String? styleId(MapType type, {required bool dark}) {
+    final id = _styleIds[(type, dark)];
+    if (id == null) _loadingStyleIds ??= _loadStyleIds();
+    return id;
+  }
+
+  Future<void> _loadStyleIds() async {
+    for (final type in MapType.values) {
+      for (final dark in [false, true]) {
+        final id = await styles.styleFor(type, dark: dark);
+        if (id != null) _styleIds[(type, dark)] = id;
+      }
+    }
+    notifyListeners();
+  }
+
+  /// The installed packs a map draws from; the style uses those it needs.
+  List<Pack> mapPacks({required bool contours}) => [
+    for (final pack in _installed)
+      if (pack.kind != PackKind.unknown &&
+          (contours || pack.kind != PackKind.contours))
+        pack,
+  ];
 
   // --- Catalogue queries ---------------------------------------------------
 

@@ -237,6 +237,26 @@ void main() {
     });
   });
 
+  group('AppSettings — map choice', () {
+    test('defaults: OSM, contours on, theme follows the app', () {
+      for (final s in [AppSettings(), AppSettings.fromJson({})]) {
+        expect(s.mapType, 'osm');
+        expect(s.mapContours, isTrue);
+        expect(s.mapTheme, 'auto');
+      }
+    });
+
+    test('round-trips through JSON', () {
+      final json = AppSettings()
+          .copyWith(mapType: 'charts', mapContours: false, mapTheme: 'dark')
+          .toJson();
+      final s = AppSettings.fromJson(json);
+      expect(s.mapType, 'charts');
+      expect(s.mapContours, isFalse);
+      expect(s.mapTheme, 'dark');
+    });
+  });
+
   group('AppSettings — mapTimeFilterHours', () {
     test('a fresh install and a saved file without the key agree: all time', () {
       expect(AppSettings().mapTimeFilterHours, 0);

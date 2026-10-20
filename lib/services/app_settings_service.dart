@@ -93,6 +93,18 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mapDownloadsWifiOnly: value));
   }
 
+  Future<void> setMapType(String value) async {
+    await updateSettings(_settings.copyWith(mapType: value));
+  }
+
+  Future<void> setMapContours(bool value) async {
+    await updateSettings(_settings.copyWith(mapContours: value));
+  }
+
+  Future<void> setMapTheme(String value) async {
+    await updateSettings(_settings.copyWith(mapTheme: value));
+  }
+
   Future<void> setNotificationsEnabled(bool value) async {
     await updateSettings(_settings.copyWith(notificationsEnabled: value));
   }
