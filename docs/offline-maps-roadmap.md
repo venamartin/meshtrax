@@ -33,11 +33,13 @@ Last updated 2026-10-19, evening. **Resume here.**
 - **Tests:** the app's 769 and traxmap's 67 pass; `flutter analyze --fatal-infos --fatal-warnings` is clean.
 
 **Next:**
-1. **Phase 3, starting with the main Node Map on `AppMap` (M5)**, ahead of the small maps, because that's where Martin sees offline maps. G1 (phone check) is deferred while he tests on the Pi.
-   - The main map gains the starting camera and fixes B1–B5.
-   - `AppMap` already has the Online | Offline switch (2026-10-20; see S1). The main map just uses it. Decide then whether the small maps (M1–M4) show the switch or follow the setting silently.
-   - Then the no-radio map (M5b), then M1–M4.
-2. **The map selector (OSM / USGS / NOAA), right after M5:** a plain text choice in App Settings → Map Display (Martin prefers text over graphics for now). The layers sheet (M6) can come later.
+1. **M5 is done (2026-10-20):** the Node Map draws on `AppMap`, with the Online | Offline switch, offline packs and online tiles in the gaps.
+   - Nodes, guessed locations, pins, "You" and the highlight pin are `MapMarker`s, labelled from zoom 13 (`MapMarker.label`), so the separate label markers are gone. The path trace is a `MapLine`.
+   - Starting camera: the highlight, then the nodes, then the last camera (`UiViewStateService.mapCamera`), then the first downloaded map.
+   - B1–B5 are fixed.
+   - Checked on the Pi with a fake radio (preview harness); `test/screens/map_screen_test.dart` covers markers, the POI link and B1.
+2. **Next: the no-radio map (M5b)**, then the map selector (OSM / USGS / NOAA) as a plain text choice in App Settings → Map Display, then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
+   - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
 3. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
@@ -447,11 +449,11 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 
 | # | Bug | Where | Fixed in |
 | --- | --- | --- | --- |
-| B1 | Radar button force-unwraps `selfLatitude!` | `map_screen.dart` | M5 |
-| B2 | Unawaited message reload on every build | `map_screen.dart` `_collectSharedMarkers` | M5 |
-| B3 | Dead `_isSelectingPoi` branches | `map_screen.dart` | M5 |
-| B4 | A map opened from a chat POI has no back button while connected | `map_screen.dart` | M5 |
-| B5 | `highlightLabel` is never shown | `map_screen.dart` | M5 |
+| B1 | Radar button force-unwraps `selfLatitude!` | `map_screen.dart` | M5, done: the trace starts without a radio position |
+| B2 | Unawaited message reload on every build | `map_screen.dart` `_collectSharedMarkers` | M5, done: reload on a new channel message or a contact's newer message |
+| B3 | Dead `_isSelectingPoi` branches | `map_screen.dart` | M5, done: removed |
+| B4 | A map opened from a chat POI has no back button while connected | `map_screen.dart` | M5, done: back button, no quick-switch bar |
+| B5 | `highlightLabel` is never shown | `map_screen.dart` | M5, done: the pin's label |
 | B6 | `mapTimeFilterHours` defaults to 48 in the constructor but 0 in `fromJson` | `app_settings.dart` | A4 |
 | B7 | `selfLatitude!` force-unwraps | `channel_message_path_screen.dart` | M2 |
 | B8 | `selfLatitude!` force-unwrap | `path_trace_map.dart` | M3 |

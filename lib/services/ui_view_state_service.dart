@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:traxmap/traxmap.dart' show LatLng, MapCamera;
 
 import '../storage/prefs_manager.dart';
 import '../utils/contact_search.dart';
@@ -18,6 +19,7 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
   static const _keyRenderGifs = 'ui_render_gifs';
   static const _keySendGifsAsLinks = 'ui_send_gifs_as_links';
+  static const _keyMapCamera = 'ui_map_camera';
 
   String _contactsSelectedGroupName = contactsAllGroupsValue;
   String _contactsSearchText = '';
@@ -30,6 +32,7 @@ class UiViewStateService extends ChangeNotifier {
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
   bool _renderGifs = true;
   bool _sendGifsAsLinks = true;
+  MapCamera? _mapCamera;
 
   String get contactsSelectedGroupName => _contactsSelectedGroupName;
   String get contactsSearchText => _contactsSearchText;
@@ -41,6 +44,10 @@ class UiViewStateService extends ChangeNotifier {
   ChannelSortOption get channelsSortOption => _channelsSortOption;
   bool get renderGifs => _renderGifs;
   bool get sendGifsAsLinks => _sendGifsAsLinks;
+
+  /// Where the main map was last left (MapLibre zoom), for opening it with
+  /// nothing else to show.
+  MapCamera? get mapCamera => _mapCamera;
 
   Future<void> initialize() async {
     final prefs = PrefsManager.instance;
@@ -71,6 +78,12 @@ class UiViewStateService extends ChangeNotifier {
 
     _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
     _sendGifsAsLinks = prefs.getBool(_keySendGifsAsLinks) ?? true;
+
+    final camera = prefs.getStringList(_keyMapCamera)?.map(double.tryParse);
+    if (camera != null && camera.length == 3 && !camera.contains(null)) {
+      final [lat, lon, zoom] = camera.cast<double>().toList();
+      _mapCamera = MapCamera(center: LatLng(lat, lon), zoom: zoom);
+    }
 
     final channelSortStr = prefs.getString(_keyChannelsSortOption);
     if (channelSortStr != null) {
@@ -173,5 +186,16 @@ class UiViewStateService extends ChangeNotifier {
     _sendGifsAsLinks = value;
     notifyListeners();
     unawaited(PrefsManager.instance.setBool(_keySendGifsAsLinks, value));
+  }
+
+  void setMapCamera(MapCamera value) {
+    _mapCamera = value;
+    unawaited(
+      PrefsManager.instance.setStringList(_keyMapCamera, [
+        '${value.center.latitude}',
+        '${value.center.longitude}',
+        '${value.zoom}',
+      ]),
+    );
   }
 }

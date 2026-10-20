@@ -202,7 +202,8 @@ class _AppMapState extends State<AppMap> {
           Positioned(
             left: 8,
             right: 8,
-            bottom: 40,
+            // Clear of a screen's floating action button.
+            bottom: 88,
             child: Center(child: _NoOfflineMap(regionPath: _regionPath)),
           ),
         if (credits.isNotEmpty)
