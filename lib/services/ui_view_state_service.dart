@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -18,6 +19,8 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
   static const _keyRenderGifs = 'ui_render_gifs';
   static const _keySendGifsAsLinks = 'ui_send_gifs_as_links';
+  static const _keyDismissedPins = 'ui_dismissed_pins';
+  static const _maxDismissedPerChat = 50;
 
   String _contactsSelectedGroupName = contactsAllGroupsValue;
   String _contactsSearchText = '';
@@ -30,6 +33,12 @@ class UiViewStateService extends ChangeNotifier {
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
   bool _renderGifs = true;
   bool _sendGifsAsLinks = true;
+
+  /// Pinned-bar dismissals per chat: chat id → message ids the viewer closed.
+  Map<String, List<String>> _dismissedPins = {};
+
+  Set<String> dismissedPins(String chatId) =>
+      (_dismissedPins[chatId] ?? const <String>[]).toSet();
 
   String get contactsSelectedGroupName => _contactsSelectedGroupName;
   String get contactsSearchText => _contactsSearchText;
@@ -71,6 +80,19 @@ class UiViewStateService extends ChangeNotifier {
 
     _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
     _sendGifsAsLinks = prefs.getBool(_keySendGifsAsLinks) ?? true;
+
+    final pinsJson = prefs.getString(_keyDismissedPins);
+    if (pinsJson != null) {
+      try {
+        final decoded = jsonDecode(pinsJson) as Map<String, dynamic>;
+        _dismissedPins = {
+          for (final e in decoded.entries)
+            e.key: (e.value as List).cast<String>(),
+        };
+      } catch (_) {
+        _dismissedPins = {};
+      }
+    }
 
     final channelSortStr = prefs.getString(_keyChannelsSortOption);
     if (channelSortStr != null) {
@@ -173,5 +195,18 @@ class UiViewStateService extends ChangeNotifier {
     _sendGifsAsLinks = value;
     notifyListeners();
     unawaited(PrefsManager.instance.setBool(_keySendGifsAsLinks, value));
+  }
+
+  void dismissPin(String chatId, String messageId) {
+    final list = List<String>.from(_dismissedPins[chatId] ?? const []);
+    if (list.contains(messageId)) return;
+    list.add(messageId);
+    if (list.length > _maxDismissedPerChat) list.removeAt(0);
+    _dismissedPins = {..._dismissedPins, chatId: list};
+    notifyListeners();
+    unawaited(
+      PrefsManager.instance
+          .setString(_keyDismissedPins, jsonEncode(_dismissedPins)),
+    );
   }
 }

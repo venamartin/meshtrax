@@ -18,7 +18,15 @@ import '../helpers/snack_bar_builder.dart';
 class RoomAnnouncementDialog extends StatefulWidget {
   final Contact room;
 
-  const RoomAnnouncementDialog({super.key, required this.room});
+  /// Prepended to the posted text, e.g. `Notice: ` so the post renders as a
+  /// notice card in MeshTrax while staying plain text elsewhere.
+  final String textPrefix;
+
+  const RoomAnnouncementDialog({
+    super.key,
+    required this.room,
+    this.textPrefix = '',
+  });
 
   @override
   State<RoomAnnouncementDialog> createState() => _RoomAnnouncementDialogState();
@@ -67,8 +75,9 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
   }
 
   Future<void> _send() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty || _isSending) return;
+    final body = _textController.text.trim();
+    if (body.isEmpty || _isSending) return;
+    final text = '${widget.textPrefix}$body';
     if (utf8.encode(text).length > maxRoomPostTextBytes) {
       showDismissibleSnackBar(
         context,
@@ -111,7 +120,7 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.campaign, color: Colors.purple),
+          Icon(Icons.campaign, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(l10n.room_postAnnouncement)),
         ],

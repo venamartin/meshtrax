@@ -4322,4 +4322,133 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get room_selfDemoteWarning =>
       'Du ändrar din egen åtkomst. Om du släpper din adminroll kan bara rummets egen konsol ge tillbaka den.';
+
+  @override
+  String get structured_openMap => 'Open map';
+
+  @override
+  String get structured_addToCalendar => 'Add to calendar';
+
+  @override
+  String get structured_details => 'Details';
+
+  @override
+  String get structured_sos => 'SOS';
+
+  @override
+  String get structured_event => 'Event';
+
+  @override
+  String get structured_notice => 'Notice';
+
+  @override
+  String get structured_allDay => 'All day';
+
+  @override
+  String get structured_calendarFailed => 'Could not open the calendar';
+
+  @override
+  String get tray_add => 'Add';
+
+  @override
+  String get tray_myLocation => 'My location';
+
+  @override
+  String get tray_pointOnMap => 'Point on map';
+
+  @override
+  String get tray_sos => 'SOS';
+
+  @override
+  String get tray_event => 'Event';
+
+  @override
+  String get tray_notice => 'Notice';
+
+  @override
+  String get tray_noRadioPosition =>
+      'Your radio has no position yet. Pick one on the map.';
+
+  @override
+  String get dialog_insert => 'Insert';
+
+  @override
+  String get dialog_eventTitle => 'Title';
+
+  @override
+  String get dialog_eventDate => 'Date';
+
+  @override
+  String get dialog_eventStart => 'Start';
+
+  @override
+  String get dialog_eventEnd => 'End';
+
+  @override
+  String get dialog_eventNoEnd => 'No end time';
+
+  @override
+  String get dialog_eventPlace => 'Place (optional)';
+
+  @override
+  String get dialog_pickOnMap => 'Pick on map';
+
+  @override
+  String get dialog_sosTitle => 'Send SOS';
+
+  @override
+  String get dialog_sosText => 'What happened?';
+
+  @override
+  String get dialog_noticeTitle => 'Notice';
+
+  @override
+  String get dialog_noticeText => 'What should everyone know?';
+
+  @override
+  String get dialog_labelTitle => 'Point on map';
+
+  @override
+  String get dialog_note => 'Note (optional)';
+
+  @override
+  String get paste_convertLocation =>
+      'Looks like a maps link. Convert it to a Location?';
+
+  @override
+  String get paste_convertEvent =>
+      'Looks like a calendar share. Convert it to an Event?';
+
+  @override
+  String get paste_convert => 'Convert';
+
+  @override
+  String get paste_resolving => 'Resolving link…';
+
+  @override
+  String get paste_resolveFailed => 'Could not resolve the link';
+
+  @override
+  String get pinned_dismiss => 'Dismiss';
+
+  @override
+  String get tray_gif => 'GIF';
+
+  @override
+  String link_joinChannelBody(String name) {
+    return 'Join channel $name?';
+  }
+
+  @override
+  String link_alreadyJoined(String name) {
+    return 'You are already in $name';
+  }
+
+  @override
+  String link_channelJoined(String name) {
+    return 'Joined $name';
+  }
+
+  @override
+  String get map_pickPositionHint => 'Tap the map to pick a position';
 }

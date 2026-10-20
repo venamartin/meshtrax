@@ -20,6 +20,7 @@ import '../models/message.dart';
 import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
 import '../helpers/gif_helper.dart';
+import '../helpers/structured_message.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
@@ -6613,7 +6614,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
                 settings.notifyOnNewMessage) {
               _notificationService.showMessageNotification(
                 contactName: contact?.name ?? 'Unknown',
-                message: incoming.text,
+                message:
+                    StructuredMessage.parse(incoming.text)?.summary ??
+                        incoming.text,
                 contactId: incoming.senderKeyHex,
                 badgeCount: getTotalUnreadCount(),
               );
@@ -6806,7 +6809,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final trimmed = text.trim();
     final isStructuredPayload =
         GifHelper.parseGif(trimmed) != null ||
-        trimmed.startsWith('m:') ||
+        StructuredMessage.hasPrefix(trimmed) ||
         trimmed.startsWith('V1|');
     if (!isStructuredPayload && isContactSmazEnabled(contact.publicKeyHex)) {
       return Smaz.encodeIfSmaller(text);
@@ -6817,7 +6820,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   String prepareChannelOutboundText(int channelIndex, String text) {
     final trimmed = text.trim();
     final isStructuredPayload =
-        GifHelper.parseGif(trimmed) != null || trimmed.startsWith('m:');
+        GifHelper.parseGif(trimmed) != null ||
+        StructuredMessage.hasPrefix(trimmed);
     if (!isStructuredPayload && isChannelSmazEnabled(channelIndex)) {
       return Smaz.encodeIfSmaller(text);
     }
@@ -6919,7 +6923,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // chat screen parses away. Show only the body so the notification doesn't
     // leak the mention, the quote prefix, or the snippet's trailing dots.
     final replyInfo = ChannelMessage.parseReply(message.text);
-    final notificationText = replyInfo?.actualMessage ?? message.text;
+    final replyBody = replyInfo?.actualMessage ?? message.text;
+    final notificationText =
+        StructuredMessage.parse(replyBody)?.summary ?? replyBody;
 
     _notificationService.showChannelMessageNotification(
       channelName: label,
@@ -8629,8 +8635,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     // Show the post's author and body, not the raw reply wire text.
-    final body =
+    final replyBody =
         ChannelMessage.parseReply(message.text)?.actualMessage ?? message.text;
+    final body = StructuredMessage.parse(replyBody)?.summary ?? replyBody;
     final author = _resolveContactSenderName(message, room, true);
     _notificationService.showMessageNotification(
       contactName: room.name,

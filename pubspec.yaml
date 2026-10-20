@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.7.93+103
+version: 1.7.95+105
 
 environment:
   # Dart 3.13 = Flutter 3.47, the minimum whose Gradle plugin can drive the
@@ -43,6 +43,11 @@ dependencies:
   flserial: ^0.7.2
   provider: ^6.1.5+1
   shared_preferences: ^2.2.2
+  # 2.5.x calls its Kotlin side over JNI, and that lookup fails in release
+  # builds: PrefsManager.initialize() throws NoSuchMethodError
+  # (SharedPreferencesApiRegistrar.getAll) and the app starts to a blank
+  # screen. pubspec.lock is untracked, so fresh clones and CI would pick it up.
+  shared_preferences_android: ">=2.4.23 <2.5.0"
   uuid: ^4.3.3
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
@@ -59,6 +64,7 @@ dependencies:
   mobile_scanner: ^7.1.4  # QR/barcode scanning
   qr_flutter: ^4.1.0      # QR code generation
   url_launcher: ^6.3.0    # Launch URLs in system browser
+  add_2_calendar: ^3.1.1  # Add an event to the phone calendar
   linkify: ^5.0.0         # Auto-detect and linkify URLs in text
   gpx: ^2.3.0
   scrollable_positioned_list: ^0.3.8
