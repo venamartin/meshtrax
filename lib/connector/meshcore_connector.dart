@@ -898,6 +898,50 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _secondAppDismissed = false;
   }
 
+  // Requests the radio answers with RESP_CODE_SENT that are not messages.
+  // Unclaimed, their SENT fell through to "promote the newest pending DM",
+  // marking a queued DM sent although it never went out. The telemetry
+  // request only answers SENT when it names a contact.
+  static const Set<int> _requestCommandsAnsweredBySent = {
+    cmdSendLogin,
+    cmdSendStatusReq,
+    cmdSendTracePath,
+    cmdSendTelemetryReq,
+    cmdSendBinaryReq,
+    cmdSendAnonReq,
+  };
+
+  // When each still-unanswered request went out. A refused request gets ERR
+  // instead of SENT, so a claim also lapses after [_requestSentWindow].
+  final List<DateTime> _requestSentClaims = [];
+  static const Duration _requestSentWindow = Duration(seconds: 10);
+
+  void _recordOutgoing(Uint8List frame) {
+    _secondAppDetector.onSent(frame);
+    if (frame.isEmpty || !_requestCommandsAnsweredBySent.contains(frame[0])) {
+      return;
+    }
+    if (frame[0] == cmdSendTelemetryReq && frame.length < 4 + pubKeySize) {
+      return;
+    }
+    _requestSentClaims.add(DateTime.now());
+  }
+
+  bool _takeRequestSentClaim() {
+    final now = DateTime.now();
+    _requestSentClaims.removeWhere(
+      (at) => now.difference(at) > _requestSentWindow,
+    );
+    if (_requestSentClaims.isEmpty) return false;
+    _requestSentClaims.removeAt(0);
+    return true;
+  }
+
+  /// The bookkeeping [sendFrame] does before a write, for tests that
+  /// replace the transport write.
+  @visibleForTesting
+  void recordOutgoingForTest(Uint8List frame) => _recordOutgoing(frame);
+
   @visibleForTesting
   void markInitialSyncCompleteForTest() => _initialSyncComplete = true;
 
@@ -3342,6 +3386,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _firmwareVersion = null;
     _hasWifi = null;
     _resetSecondApp();
+    _requestSentClaims.clear();
     _autoAddUsers = false;
     _autoAddRepeaters = false;
     _autoAddRoomServers = false;
@@ -3441,7 +3486,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
     );
-    _secondAppDetector.onSent(data);
+    _recordOutgoing(data);
 
     if (_activeTransport == MeshCoreTransportType.usb) {
       await _usbManager.write(data);
@@ -7205,6 +7250,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return;
       }
 
+      // A request's SENT (its tag, not an ACK hash): no message owns it.
+      if (_takeRequestSentClaim()) {
+        return;
+      }
+
       if (_markNextPendingChannelMessageSent()) {
         return;
       }
@@ -9269,6 +9319,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // banner sticks on "Reading device info" until the next attempt.
     _initialSyncComplete = false;
     _resetSecondApp();
+    _requestSentClaims.clear();
     _awaitingSelfInfo = false;
     _selfInfoRetryTimer?.cancel();
     _selfInfoRetryTimer = null;
