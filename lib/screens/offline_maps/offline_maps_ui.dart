@@ -61,11 +61,9 @@ Color sizeBandColor(ColorScheme scheme, int bytes) => bytes >= 1e9
             : 0.3,
       );
 
-/// Sizes line up in a fixed-width face, as in the mockup.
-const sizeStyle = TextStyle(
-  fontFamily: 'monospace',
-  fontFeatures: [FontFeature.tabularFigures()],
-);
+/// Sizes line up with tabular digits. Not a monospace family: there's no
+/// portable one, and on Linux the fallback was the emoji font (digits only).
+const sizeStyle = TextStyle(fontFeatures: [FontFeature.tabularFigures()]);
 
 /// Orange-bordered notice box, as MeshTrax shows warnings.
 class Callout extends StatelessWidget {

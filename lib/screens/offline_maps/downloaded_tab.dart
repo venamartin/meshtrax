@@ -172,6 +172,15 @@ class DownloadedTab extends StatelessWidget {
   }
 }
 
+/// How a region's packs are listed: as in the region detail.
+const _kindOrder = [
+  PackKind.osm,
+  PackKind.contours,
+  PackKind.base,
+  PackKind.charts,
+  PackKind.unknown,
+];
+
 String _regionName(MapPacksService maps, String path) =>
     maps.regions?[path]?.name ?? path.split('/').last;
 
@@ -337,7 +346,13 @@ class _RegionCard extends StatelessWidget {
         : DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
               .format(dates.last);
     final details = [
-      packs.map((p) => installedLabel(l10n, p)).join(' · '),
+      (packs.toList()..sort(
+            (a, b) => _kindOrder
+                .indexOf(a.kind)
+                .compareTo(_kindOrder.indexOf(b.kind)),
+          ))
+          .map((p) => installedLabel(l10n, p))
+          .join(' · '),
       [
         if (date != null) l10n.offlineMaps_downloadedOn(date),
         if (updates.isNotEmpty) l10n.offlineMaps_updateAvailable,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -202,14 +203,16 @@ class MapPacksService extends ChangeNotifier {
     switch (response.statusCode) {
       case 200:
         await cacheDir.create(recursive: true);
-        await file.writeAsString(response.body);
+        await file.writeAsBytes(response.bodyBytes);
         final newTag = response.headers['etag'];
         if (newTag != null) {
           await etagFile.writeAsString(newTag);
         } else if (await etagFile.exists()) {
           await etagFile.delete();
         }
-        return response.body;
+        // JSON is UTF-8 (RFC 8259). The server names no charset, and
+        // response.body would then decode as Latin-1.
+        return utf8.decode(response.bodyBytes);
       case 304 when cached:
         await file.setLastModified(DateTime.now());
         return file.readAsString();

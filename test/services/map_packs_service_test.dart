@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -129,6 +130,36 @@ void main() {
       await again.start();
       expect(again.status, CatalogueStatus.ready);
       expect(again.regions!['north-america/us/rhode-island'], isNotNull);
+    },
+  );
+
+  test(
+    'reads the catalogue as UTF-8 when the server names no charset',
+    () async {
+      // R2 serves application/geo+json with no charset; the live picker has
+      // raw UTF-8 (e.g. the en dash in "Watsonville – Monterey").
+      final picker = _picker.replaceAll(r'\u2013', '–');
+      expect(picker, contains('Watsonville – Monterey'));
+      routes['/dev/picker.geojson'] = (_) => http.Response.bytes(
+        utf8.encode(picker),
+        200,
+        headers: {'content-type': 'application/geo+json', 'etag': '"p1"'},
+      );
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(
+        maps.regions!['test/watsonville-test']!.name,
+        'Watsonville – Monterey (test)',
+      );
+
+      // And the cache keeps the bytes, so a 304 later reads them back intact.
+      final again = service();
+      await again.start();
+      expect(
+        again.regions!['test/watsonville-test']!.name,
+        'Watsonville – Monterey (test)',
+      );
     },
   );
 

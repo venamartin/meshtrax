@@ -246,6 +246,17 @@ class BackgroundPackDownloader implements PackDownloader {
     final file = File(await task.filePath());
     try {
       if (!await file.exists()) {
+        // The plugin can report or record a completion twice (live, then
+        // again from its database at the next launch). If the first one
+        // installed this build, there's nothing left to do.
+        final installed = await manager.listInstalled();
+        if (installed.any(
+          (p) => p.id == entry.id && p.isBuild(entry.sha256) == true,
+        )) {
+          _emit(PackDownload(entry, PackDownloadState.installed, progress: 1));
+          await _downloader.database.deleteRecordWithId(task.taskId);
+          return;
+        }
         throw const PackException('Downloaded file is missing');
       }
       await manager.install(
