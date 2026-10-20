@@ -1,5 +1,8 @@
 ## Unreleased
 
+- **`MapFit.minZoom`** (and `OfflineMapController.fitBounds(minZoom:)`):
+  a fit never zooms out past it; a bigger area shows its middle. MeshTrax
+  frames a downloaded region no further out than its packs draw.
 - **`TileCoverage`:** `OfflineMapView.onTileCoverage` reports which tiles
   the style's required packs draw, whenever the style or the packs change.
   `TileCoverage.covers(z, x, y)` takes flutter_map tile numbers, so an app

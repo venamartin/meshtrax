@@ -44,11 +44,17 @@ Last updated 2026-10-19, evening. **Resume here.**
    - **Toggle tiles:** Contours and Dark map; Repeaters, Chat Nodes, Other Nodes, Pins and Guessed.
    - **Rows:** "More filters" (the old dialog, now last seen, key prefix, discovery contacts and overlaps) and Offline maps with its badge.
    - **Thumbnails:** rendered from our own styles on the Pi, label-free except charts, and bundled as 216 px WebP in `assets/map_layers/` (54 KB).
-3. **Next:** the no-radio map (M5b), then the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
+3. **M5b no-radio map: done (2026-10-20).** The scanner's ⋮ menu has **Map** (`NoRadioMapScreen`).
+   - It shows the map, the Online | Offline switch and the layers sheet without Nodes, with no radio actions.
+   - It opens where the map was last left, else framed on the latest street or topo map, never further out than its packs draw (`MapPacksService.latestMapFit`, `MapFit.minZoom`).
+   - The Node Map uses the same fallback.
+   - Auto-connect while it's open: the scanner moves on to Chats only once it's the top screen again.
+4. **Online mode is the standard look** (Martin, 2026-10-20). Online, the map draws the standard light map everywhere (`mapIsOnline`), because USGS, charts, contours and dark come from downloaded packs. The layers sheet greys those tiles with "Offline only"; tapping one switches to Offline and applies it. The choices are kept for Offline.
+5. **Next:** the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
    - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
    - The map is Light by default, whatever the app's theme (Martin, 2026-10-20; `map_theme` is `light` or `dark`). The Light/Dark choice goes in the layers sheet.
    - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
-4. **Waiting for Martin:**
+6. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
