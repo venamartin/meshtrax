@@ -2470,5 +2470,66 @@
   "mapLayers_moreFilters": "More filters",
   "mapLayers_moreFiltersDetail": "Last seen, key prefix, overlaps",
   "map_legend": "Legend",
-  "scanner_map": "Map"
+  "scanner_map": "Map",
+  "structured_openMap": "Open map",
+  "structured_addToCalendar": "Add to calendar",
+  "structured_details": "Details",
+  "structured_sos": "SOS",
+  "structured_event": "Event",
+  "structured_notice": "Notice",
+  "structured_allDay": "All day",
+  "structured_calendarFailed": "Could not open the calendar",
+  "tray_add": "Add",
+  "tray_myLocation": "My location",
+  "tray_pointOnMap": "Point on map",
+  "tray_sos": "SOS",
+  "tray_event": "Event",
+  "tray_notice": "Notice",
+  "tray_noRadioPosition": "Your radio has no position yet. Pick one on the map.",
+  "dialog_insert": "Insert",
+  "dialog_eventTitle": "Title",
+  "dialog_eventDate": "Date",
+  "dialog_eventStart": "Start",
+  "dialog_eventEnd": "End",
+  "dialog_eventNoEnd": "No end time",
+  "dialog_eventPlace": "Place (optional)",
+  "dialog_pickOnMap": "Pick on map",
+  "dialog_sosTitle": "Send SOS",
+  "dialog_sosText": "What happened?",
+  "dialog_noticeTitle": "Notice",
+  "dialog_noticeText": "What should everyone know?",
+  "dialog_labelTitle": "Point on map",
+  "dialog_note": "Note (optional)",
+  "paste_convertLocation": "Looks like a maps link. Convert it to a Location?",
+  "paste_convertEvent": "Looks like a calendar share. Convert it to an Event?",
+  "paste_convert": "Convert",
+  "paste_resolving": "Resolving link…",
+  "paste_resolveFailed": "Could not resolve the link",
+  "pinned_dismiss": "Dismiss",
+  "tray_gif": "GIF",
+  "link_joinChannelBody": "Join channel {name}?",
+  "@link_joinChannelBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "link_alreadyJoined": "You are already in {name}",
+  "@link_alreadyJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "link_channelJoined": "Joined {name}",
+  "@link_channelJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "map_pickPositionHint": "Tap the map to pick a position"
 }

@@ -39,6 +39,8 @@ import '../widgets/room_login_dialog.dart';
 import '../widgets/routing_dialog.dart';
 import 'path_graph_screen.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../helpers/structured_message.dart';
+import '../services/short_link_resolver.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
@@ -54,12 +56,16 @@ class MapScreen extends StatefulWidget {
   final double highlightZoom;
   final bool hideBackButton;
 
+  /// Pick mode: a tap or long press pops the screen with the chosen LatLng.
+  final bool pickPosition;
+
   const MapScreen({
     super.key,
     this.highlightPosition,
     this.highlightLabel,
     this.highlightZoom = 14.0,
     this.hideBackButton = false,
+    this.pickPosition = false,
   });
 
   @override
@@ -352,7 +358,11 @@ class _MapScreenState extends State<MapScreen> {
           canPop: allowBack,
           child: Scaffold(
             appBar: AppBar(
-              title: AppBarTitle(context.l10n.map_title),
+              title: AppBarTitle(
+                widget.pickPosition
+                    ? context.l10n.map_pickPositionHint
+                    : context.l10n.map_title,
+              ),
               centerTitle: true,
               automaticallyImplyLeading: isPoiLink,
               actions: [
@@ -458,11 +468,21 @@ class _MapScreenState extends State<MapScreen> {
                 AppMap(
                   controller: _mapController,
                   initialCamera: startCamera,
-                  onLongPress: (position) => _showShareMarkerAtPositionSheet(
-                    context: context,
-                    connector: connector,
-                    position: position.toLatLong2(),
-                  ),
+                  onTap: widget.pickPosition
+                      ? (position) =>
+                            Navigator.pop(context, position.toLatLong2())
+                      : null,
+                  onLongPress: (position) {
+                    if (widget.pickPosition) {
+                      Navigator.pop(context, position.toLatLong2());
+                      return;
+                    }
+                    _showShareMarkerAtPositionSheet(
+                      context: context,
+                      connector: connector,
+                      position: position.toLatLong2(),
+                    );
+                  },
                   onCameraChanged: _onCameraChanged,
                   overlays: [
                     if (_isBuildingPathTrace && _points.length > 1)
@@ -1244,22 +1264,21 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  /// Location and SOS messages become shared markers. Events and notices
+  /// carry no pin of their own.
   _MarkerPayload? _parseMarkerText(String text) {
-    final trimmed = text.trim();
-    if (!trimmed.startsWith('m:')) return null;
-
-    final parts = trimmed.substring(2).split('|');
-    if (parts.isEmpty) return null;
-    final coords = parts[0].split(',');
-    if (coords.length != 2) return null;
-    final lat = double.tryParse(coords[0].trim());
-    final lon = double.tryParse(coords[1].trim());
-    if (lat == null || lon == null) return null;
-
-    final label = parts.length > 1 ? parts[1].trim() : '';
-    final flags = parts.length > 2 ? parts[2].trim() : '';
+    final parsed = StructuredMessage.parse(
+      text,
+      resolveShortLink: ShortLinkResolver.instance.cached,
+    );
+    final (LatLng position, String label, String flags) = switch (parsed) {
+      LocationMessage m => (m.position, m.label ?? '', 'poi'),
+      SosMessage m => (m.position, m.text, 'sos'),
+      _ => (const LatLng(0, 0), '', ''),
+    };
+    if (flags.isEmpty) return null;
     return _MarkerPayload(
-      position: LatLng(lat, lon),
+      position: position,
       label: label.isEmpty ? context.l10n.map_sharedPin : label,
       flags: flags,
     );
@@ -1279,7 +1298,9 @@ class _MapScreenState extends State<MapScreen> {
     size: const Size(40, 40),
     onTap: () => _showMarkerInfo(marker),
     child: _nodeDot(
-      marker.isChannel
+      marker.flags == 'sos'
+          ? Colors.red
+          : marker.isChannel
           ? (marker.isPublicChannel ? Colors.orange : Colors.purple)
           : Colors.blue,
       Icons.flag,
@@ -1603,7 +1624,6 @@ class _MapScreenState extends State<MapScreen> {
                   connector: connector,
                   position: position,
                   defaultLabel: context.l10n.map_pointOfInterest,
-                  flags: 'poi',
                 );
               },
             ),
@@ -1643,7 +1663,6 @@ class _MapScreenState extends State<MapScreen> {
     required MeshCoreConnector connector,
     required LatLng position,
     required String defaultLabel,
-    required String flags,
   }) async {
     if (!connector.isConnected) {
       showDismissibleSnackBar(
@@ -1656,7 +1675,7 @@ class _MapScreenState extends State<MapScreen> {
     final label = await _promptForLabel(context, defaultLabel);
     if (label == null || !mounted) return;
 
-    final markerText = _formatMarkerMessage(position, label, flags);
+    final markerText = LocationMessage(position: position, label: label).toWire();
     if (!mounted) return;
 
     await _showRecipientSheet(
@@ -1690,7 +1709,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
           TextButton(
             onPressed: () {
-              final label = controller.text.trim().replaceAll('|', '/');
+              final label = StructuredMessage.sanitizeField(controller.text);
               Navigator.pop(
                 dialogContext,
                 label.isEmpty ? defaultLabel : label,
@@ -1701,12 +1720,6 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
-  }
-
-  String _formatMarkerMessage(LatLng position, String label, String flags) {
-    final lat = position.latitude.toStringAsFixed(6);
-    final lon = position.longitude.toStringAsFixed(6);
-    return 'm:$lat,$lon|$label|$flags';
   }
 
   Future<void> _showRecipientSheet({

@@ -7871,6 +7871,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Map'**
   String get scanner_map;
+
+  /// No description provided for @structured_openMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open map'**
+  String get structured_openMap;
+
+  /// No description provided for @structured_addToCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to calendar'**
+  String get structured_addToCalendar;
+
+  /// No description provided for @structured_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get structured_details;
+
+  /// No description provided for @structured_sos.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS'**
+  String get structured_sos;
+
+  /// No description provided for @structured_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get structured_event;
+
+  /// No description provided for @structured_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Notice'**
+  String get structured_notice;
+
+  /// No description provided for @structured_allDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All day'**
+  String get structured_allDay;
+
+  /// No description provided for @structured_calendarFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the calendar'**
+  String get structured_calendarFailed;
+
+  /// No description provided for @tray_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get tray_add;
+
+  /// No description provided for @tray_myLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get tray_myLocation;
+
+  /// No description provided for @tray_pointOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Point on map'**
+  String get tray_pointOnMap;
+
+  /// No description provided for @tray_sos.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS'**
+  String get tray_sos;
+
+  /// No description provided for @tray_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get tray_event;
+
+  /// No description provided for @tray_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Notice'**
+  String get tray_notice;
+
+  /// No description provided for @tray_noRadioPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio has no position yet. Pick one on the map.'**
+  String get tray_noRadioPosition;
+
+  /// No description provided for @dialog_insert.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert'**
+  String get dialog_insert;
+
+  /// No description provided for @dialog_eventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get dialog_eventTitle;
+
+  /// No description provided for @dialog_eventDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get dialog_eventDate;
+
+  /// No description provided for @dialog_eventStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get dialog_eventStart;
+
+  /// No description provided for @dialog_eventEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get dialog_eventEnd;
+
+  /// No description provided for @dialog_eventNoEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'No end time'**
+  String get dialog_eventNoEnd;
+
+  /// No description provided for @dialog_eventPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Place (optional)'**
+  String get dialog_eventPlace;
+
+  /// No description provided for @dialog_pickOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick on map'**
+  String get dialog_pickOnMap;
+
+  /// No description provided for @dialog_sosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send SOS'**
+  String get dialog_sosTitle;
+
+  /// No description provided for @dialog_sosText.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened?'**
+  String get dialog_sosText;
+
+  /// No description provided for @dialog_noticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notice'**
+  String get dialog_noticeTitle;
+
+  /// No description provided for @dialog_noticeText.
+  ///
+  /// In en, this message translates to:
+  /// **'What should everyone know?'**
+  String get dialog_noticeText;
+
+  /// No description provided for @dialog_labelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Point on map'**
+  String get dialog_labelTitle;
+
+  /// No description provided for @dialog_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get dialog_note;
+
+  /// No description provided for @paste_convertLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a maps link. Convert it to a Location?'**
+  String get paste_convertLocation;
+
+  /// No description provided for @paste_convertEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a calendar share. Convert it to an Event?'**
+  String get paste_convertEvent;
+
+  /// No description provided for @paste_convert.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert'**
+  String get paste_convert;
+
+  /// No description provided for @paste_resolving.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolving link…'**
+  String get paste_resolving;
+
+  /// No description provided for @paste_resolveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not resolve the link'**
+  String get paste_resolveFailed;
+
+  /// No description provided for @pinned_dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get pinned_dismiss;
+
+  /// No description provided for @tray_gif.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF'**
+  String get tray_gif;
+
+  /// No description provided for @link_joinChannelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel {name}?'**
+  String link_joinChannelBody(String name);
+
+  /// No description provided for @link_alreadyJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already in {name}'**
+  String link_alreadyJoined(String name);
+
+  /// No description provided for @link_channelJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined {name}'**
+  String link_channelJoined(String name);
+
+  /// No description provided for @map_pickPositionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to pick a position'**
+  String get map_pickPositionHint;
 }
 
 class _AppLocalizationsDelegate
