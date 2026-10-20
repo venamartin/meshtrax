@@ -2,7 +2,7 @@
 // pause at 30%, resume with a range request, verify the SHA-256, install.
 // Moved here from traxmap's removed example app (packages/traxmap/HISTORY.md).
 //
-// Against the frozen test catalogue on R2:
+// Against the production catalogue on R2:
 //
 //   flutter test integration_test/pack_download_test.dart -d linux
 //
@@ -25,7 +25,7 @@ void main() {
   final indexUrl = Uri.parse(
     const String.fromEnvironment(
       'MAP_INDEX_URL',
-      defaultValue: 'https://maps.meshtrax.io/dev/index.json',
+      defaultValue: 'https://maps.meshtrax.io/index.json',
     ),
   );
 

@@ -59,15 +59,20 @@ Last updated 2026-10-19, evening. **Resume here.**
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
 
-**Data on R2** (from traxmapmaker-d3; as of 2026-10-20, 81 packs on `dev/`):
-- **On `dev/`:**
-  - North America OSM packs, border-complete: 52 US states (California split in two), 20 Canadian regions (British Columbia and Nunavut split), and Mexico. The Rhode Island OSM pack is now the border-complete build.
-  - Puerto Rico and US Virgin Islands map and contours packs, plus a Puerto Rico & Virgin Islands charts pack. The charts pack's region gets a chart-areas file in §1.4.
-  - `us-rhode-island` (USGS), kept for the map-selector work until a release USGS pack lands.
-  - The index and picker are served with `charset=utf-8`; contours packs carry the Copernicus `notice`.
-- **Removed 2026-10-20:** the Watsonville test packs and region, and the per-region Rhode Island contours.
-- **Not yet:** contours and USGS for North America. The next build (US contours or the US charts master) is Martin's call. The root `index.json` (production default) still returns 404.
-- **Tested 2026-10-20** through `MapPacksService` and the screens in a preview harness. Every pack's region is in the picker. The Rhode Island update was detected by checksum and installed. Rhode Island + Connecticut and Vermont + Quebec draw seamlessly across the border. Quebec (1.67 GB): 68 s download, 38 s SHA-256 check on the Pi, memory flat. DC (12 MB): 5 s.
+**Data on R2** (from traxmapmaker-d3, 2026-10-20):
+- **Production only** (Martin): `https://maps.meshtrax.io/index.json` is the one catalogue, and it gets only products from full master builds. `dev/` is retired.
+- **On it:** the 73 North America OSM packs, border-complete. Puerto Rico and the US Virgin Islands were rehearsal builds; they return with a full Central America build.
+- **Coming, in order:**
+  - Mexico split into its 32 states (container `north-america/mexico`, ids like `mexico-nuevo-leon`), replacing `mexico-osm`;
+  - the NOAA charts master with `chart_areas.geojson` (§1.4), including Puerto Rico;
+  - US contours;
+  - the USGS base.
+- **Until then:** no charts, contours or USGS packs anywhere. Use the preview folder's local copies for screenshots.
+- **Tested 2026-10-20** (on `dev/`, same packs):
+  - Every pack's region is in the picker.
+  - The Rhode Island update was detected by checksum.
+  - RI+CT and VT+QC draw seamlessly across the border.
+  - Quebec (1.67 GB): 68 s download, 38 s SHA-256 check, memory flat.
 - **Sharing the Pi:** traxmapmaker shares its 4 cores. During its big builds, keep heavy Flutter work (analysis server, full test runs, builds) light. It messages before starting one.
 
 **Known issues:** below.
@@ -79,17 +84,16 @@ Last updated 2026-10-19, evening. **Resume here.**
 All UI testing is done on the Raspberry Pi as a Linux desktop app, with hot reload. Phones are only used at gates G1 and G2, and for phone-only features: Android 14 UIDT, iOS background transfers, GPS permissions, BRouter.
 
 ```sh
-flutter run -d linux --dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/dev/index.json
+flutter run -d linux
 ```
 
-- **VS Code:** a local `.vscode/launch.json` (gitignored) with `"deviceId": "linux"` and the same `--dart-define` in `toolArgs`.
+- **Catalogue:** production (`https://maps.meshtrax.io/index.json`) for every build. Martin retired `dev/` on 2026-10-20: the server only gets finished products. `--dart-define=MAP_INDEX_URL=…` remains for a local server.
+- **VS Code:** a local `.vscode/launch.json` (gitignored) with `"deviceId": "linux"`.
 - **Reloading:**
   - Hot reload (save, or `r`) covers widget changes.
   - Hot restart (`R`) is needed after changes to `main()`, providers or service start-up.
   - Changing a `--dart-define` needs a full restart.
-- **Test data:**
-  - Rhode Island: 52.6 MB in total.
-  - Watsonville test region: 16.8 MB, with a charts pack.
+- **Test data:** small production packs, e.g. District of Columbia (12 MB) or Rhode Island (37 MB). Until the charts, contours and USGS masters land, the preview folder in the scratchpad still has Puerto Rico contours, charts and the Rhode Island USGS pilot, downloaded from the retired `dev/`.
 - **Pause and resume:** home internet is too fast to catch a pause. Use traxmapmaker's throttled server instead: publish locally, run `./viewer/serve.py --rate 8`, and point the app at `--dart-define=MAP_INDEX_URL=http://127.0.0.1:8000/out/published/index.json`.
 - **Installed packs on Linux:** `~/.local/share/com.meshtrax.app/maps/`. Delete it for a first-run test.
 - **Offline:** `nmcli networking off` / `on`.
@@ -105,7 +109,7 @@ The two Claude sessions on the Pi message each other directly. The notes are the
 traxmapmaker sends a message:
 - before changing anything in §1;
 - when the root `index.json` goes live;
-- when charts, routing or overlays land on `dev/`.
+- when charts, routing or overlays land on the server.
 
 ## Screens
 
@@ -458,7 +462,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ### Later
 
 - Night style
-- Bundled world pack
+- World base map: from traxmapmaker, downloaded with the catalogue, built last (see Known issues)
 - Offline line-of-sight elevation
 - Cutting areas on the device
 - Online vector tiles streamed from R2
@@ -470,7 +474,9 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ## Known issues
 
 - **Peak labels had a box before the name on the Pi** ("▯ Bare Rock"). The styles put "▲" before the name, and the renderer draws labels in the platform's default font, which lacks it on Linux. Fixed 2026-10-20 by dropping the "▲" (`tool/make_styles.py`). A proper peak icon comes with sprites (T9); a font for labels needs the font hook (T12).
-- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the dashed outlines and the "Zoom in" card show. The bundled world pack (Later) would fill it.
+- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the dashed outlines and the "Zoom in" card show.
+  - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
+  - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.
 - **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
 
 ## Bugs to fix along the way
