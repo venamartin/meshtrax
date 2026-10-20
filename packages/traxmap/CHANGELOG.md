@@ -1,5 +1,19 @@
 ## Unreleased
 
+- **Coverage and base layers** (for apps that show online tiles where no
+  pack is installed):
+  - `OfflineMapView.onCoverageChanged(bool)` reports whether the style's
+    required packs have a tile at the view centre. It's checked from the
+    packs' directories once the camera settles.
+  - `baseLayers` draws raw flutter_map layers between the map's tiles and
+    the overlays.
+  - `StyleInfo.requiredKinds` comes from the new `ovm:requires` style
+    metadata: osm, base (USGS) and charts. All six bundled styles carry it,
+    and so does `tool/make_styles.py`.
+- **Licence notices:** `MapStyleState.notices` lists the distinct `notice`
+  lines of the packs a style draws from (Copernicus' liability statement
+  is the first). `noticesOf(packs)` is in core.
+- **`MapPolygon.holes`** for outlines with cut-outs.
 - **Pack index v2:** matches traxmapmaker's server contract (FINDINGS §1.1).
   - `PackIndexEntry` reads `region` (the region path), `variant`, `units`,
     `interval` and `interval_unit`, and writes them back, so downloads

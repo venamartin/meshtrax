@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -32,6 +33,17 @@ class FlutterMapRenderer extends StatefulWidget {
   final List<MapOverlay> overlays;
   final MapLabelStyle labelStyle;
   final List<Widget> extraLayers;
+
+  /// Raw flutter_map layers drawn above the vector tiles and below the
+  /// overlays, e.g. online raster tiles where no pack covers the view.
+  final List<Widget> baseLayers;
+
+  /// Style sources whose tiles count as "the map is covered here".
+  final Set<String> coverageSources;
+
+  /// Reports, once the camera settles, whether [coverageSources] have a tile
+  /// at the view centre. Called only when the answer changes.
+  final ValueChanged<bool>? onCoverageChanged;
   final OfflineMapController? controller;
   final ValueChanged<MapCamera>? onCameraChanged;
   final ValueChanged<LatLng>? onTap;
@@ -56,6 +68,9 @@ class FlutterMapRenderer extends StatefulWidget {
     this.overlays = const [],
     this.labelStyle = const MapLabelStyle(),
     this.extraLayers = const [],
+    this.baseLayers = const [],
+    this.coverageSources = const {},
+    this.onCoverageChanged,
     this.controller,
     this.onCameraChanged,
     this.onTap,
@@ -85,8 +100,12 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   bool _ready = false;
 
   vt.TileProviders? _providers;
+  var _local = <String, LocalPmTilesVectorTileProvider>{};
   Widget? _vectorLayer; // kept so parent rebuilds don't rebuild it
   Object? _error;
+
+  bool? _covered;
+  Timer? _coverageTimer;
 
   final _lineHits = fm.LayerHitNotifier<MapOverlay>(null);
   final _polygonHits = fm.LayerHitNotifier<MapOverlay>(null);
@@ -102,6 +121,9 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   void didUpdateWidget(FlutterMapRenderer old) {
     super.didUpdateWidget(old);
     if (!identical(old.style, widget.style)) _load();
+    if (!setEquals(old.coverageSources, widget.coverageSources)) {
+      _scheduleCoverage();
+    }
     if (!identical(old.overlays, widget.overlays)) {
       _overlays = _Overlays.from(widget.overlays);
     }
@@ -113,7 +135,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
 
   Future<void> _load() async {
     final style = widget.style;
-    final providers = <String, vt.VectorTileProvider>{};
+    final providers = <String, LocalPmTilesVectorTileProvider>{};
     try {
       final sources = (style['sources'] as Map<String, Object?>?) ?? {};
       for (final MapEntry(:key, :value) in sources.entries) {
@@ -137,20 +159,62 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       final tileProviders = vt.TileProviders(providers);
       setState(() {
         _providers = tileProviders;
+        _local = providers;
         _vectorLayer = vt.VectorTileLayer(
           theme: theme,
           tileProviders: tileProviders,
         );
         _error = null;
       });
+      _scheduleCoverage();
     } catch (e) {
       vt.TileProviders(providers).dispose();
       if (mounted) setState(() => _error = e);
     }
   }
 
+  /// Checks coverage once the camera has been still for a moment.
+  void _scheduleCoverage() {
+    if (widget.onCoverageChanged == null) return;
+    _coverageTimer?.cancel();
+    _coverageTimer = Timer(const Duration(milliseconds: 250), _checkCoverage);
+  }
+
+  Future<void> _checkCoverage() async {
+    if (!_ready || !mounted) return;
+    final view = camera;
+    final zoom = view.zoom.floor();
+    var covered = false;
+    for (final source in widget.coverageSources) {
+      final provider = _local[source];
+      // Below a pack's lowest zoom it draws nothing; above its highest the
+      // renderer stretches its top-zoom tiles.
+      if (provider == null || zoom < provider.minimumZoom) continue;
+      final z = math.min(zoom, provider.maximumZoom);
+      if (await provider.contains(_tileAt(view.center, z))) {
+        covered = true;
+        break;
+      }
+    }
+    if (!mounted || covered == _covered) return;
+    _covered = covered;
+    widget.onCoverageChanged?.call(covered);
+  }
+
+  static vt.TileKey _tileAt(LatLng p, int z) {
+    final n = 1 << z;
+    final lat = p.latitude.clamp(-85.0511, 85.0511) * math.pi / 180;
+    final x = ((p.longitude + 180) / 360 * n).floor().clamp(0, n - 1);
+    final y =
+        ((1 - math.log(math.tan(lat) + 1 / math.cos(lat)) / math.pi) / 2 * n)
+            .floor()
+            .clamp(0, n - 1);
+    return vt.TileKey(z, x, y);
+  }
+
   @override
   void dispose() {
+    _coverageTimer?.cancel();
     widget.controller?.detach(this);
     _map.dispose();
     _providers?.dispose();
@@ -203,6 +267,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   void _onMapReady() {
     _ready = true;
     widget.controller?.attach(this);
+    _scheduleCoverage();
     // Report the starting camera too (apps derive label visibility etc. from
     // it); after the frame, as listeners usually call setState.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -222,6 +287,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       MapCamera(center: _ovm(c.center), zoom: c.zoom - _zoomOffset),
     );
     if (_ready) widget.controller?.cameraChanged();
+    _scheduleCoverage();
   }
 
   /// Wraps an interactive line/polygon layer: a tap or long-press on an
@@ -306,6 +372,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
             );
           },
         ),
+        ...widget.baseLayers,
         if (o.passivePolygons.isNotEmpty)
           fm.PolygonLayer(polygons: o.passivePolygons),
         if (o.activePolygons.isNotEmpty)
@@ -354,10 +421,14 @@ class _Overlays {
       switch (o) {
         case MapPolygon():
           final points = [for (final p in o.points) _pt(p)];
+          final holes = [
+            for (final hole in o.holes) [for (final p in hole) _pt(p)],
+          ];
           if (o.hasHandlers) {
             activePolygons.add(
               fm.Polygon<MapOverlay>(
                 points: points,
+                holePointsList: holes,
                 color: o.fillColor,
                 borderColor: o.strokeColor,
                 borderStrokeWidth: o.strokeWidth,
@@ -368,6 +439,7 @@ class _Overlays {
             passivePolygons.add(
               fm.Polygon<Object>(
                 points: points,
+                holePointsList: holes,
                 color: o.fillColor,
                 borderColor: o.strokeColor,
                 borderStrokeWidth: o.strokeWidth,

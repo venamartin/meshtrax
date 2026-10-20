@@ -5,6 +5,9 @@
     "ovm:status": "Starter style; Phase 3 replaces it. Simplified symbology, not S-52.",
     "ovm:disclaimer": "Not for navigation",
     "ovm:map": "charts",
+    "ovm:requires": [
+      "charts"
+    ],
     "ovm:theme": "light",
     "ovm:family": "standard"
   },

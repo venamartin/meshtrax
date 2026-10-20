@@ -13,6 +13,21 @@ List<String> attributionOf(Iterable<Pack> packs) {
   return out;
 }
 
+/// Notices the packs' licences require the app to show with the credits
+/// (pack metadata `notice`, one per line), de-duplicated.
+List<String> noticesOf(Iterable<Pack> packs) {
+  final out = <String>[];
+  for (final pack in packs) {
+    final raw = pack.metadata['notice'];
+    if (raw is! String) continue;
+    for (final line in raw.split('\n')) {
+      final text = line.trim();
+      if (text.isNotEmpty && !out.contains(text)) out.add(text);
+    }
+  }
+  return out;
+}
+
 /// The packs among [packs] that a resolved [style] actually draws from, so
 /// an installed but unused pack (e.g. OSM under the USGS Topo style) isn't
 /// credited.

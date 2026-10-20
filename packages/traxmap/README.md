@@ -18,9 +18,13 @@ the styles here are written against.
 | Downloads packs in the background, with pause, resume and SHA-256 checks (`PackDownloader`); installs, verifies, lists and deletes them (`PackManager`) | Choosing what to download (the app's screen) |
 | Bundled styles: OSM, USGS and NOAA Charts, each light and dark; units | |
 
-**The app must show** the credits from `MapStyleState.credits` (required by
-the OpenStreetMap licence and the data sources), and `MapStyleState.disclaimer`
-when present (chart styles: "Not for navigation").
+**The app must show** these alongside the map:
+- the credits from `MapStyleState.credits`, required by the OpenStreetMap
+  licence and the data sources;
+- `MapStyleState.notices`, the licence notices packs carry in their `notice`
+  metadata (e.g. Copernicus' liability statement);
+- `MapStyleState.disclaimer` when present (chart styles: "Not for
+  navigation").
 
 ## Libraries
 
@@ -86,8 +90,17 @@ controller.fitPoints(points, maxZoom: 15);
   pass the contours pack. It applies to all three maps, which draw land
   contours from the same contours pack (on charts, over the land fill).
 - **Escape hatch:** `extraLayers` takes raw flutter_map 8.x layers, for
-  anything not yet ported to `MapOverlay`s. It's the only part tied to
-  flutter_map.
+  anything not yet ported to `MapOverlay`s, drawn above everything.
+- **Where no pack covers the view:**
+  - `onCoverageChanged(bool)` reports whether the style's required packs
+    (`StyleInfo.requiredKinds`, from `ovm:requires`) have a tile at the view
+    centre. It fires when the camera settles, and only on a change. It's
+    false below a pack's lowest zoom, and with no packs.
+  - `baseLayers` takes raw flutter_map layers drawn above the map's tiles
+    and below the overlays. MeshTrax puts online raster tiles there while
+    the view isn't covered.
+  - `extraLayers` and `baseLayers` are the only parts of the API tied to
+    flutter_map.
 - **Sharpness:** tile bitmaps are drawn at twice the screen density, capped
   at 4, so lines stay crisp between whole zoom levels. `tileResolution`
   overrides it on memory-constrained devices.

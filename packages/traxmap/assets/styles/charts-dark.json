@@ -5,6 +5,9 @@
     "ovm:status": "Generated from charts-light.json by tool/make_dark_variants.py.",
     "ovm:disclaimer": "Not for navigation",
     "ovm:map": "charts",
+    "ovm:requires": [
+      "charts"
+    ],
     "ovm:theme": "dark",
     "ovm:family": "standard",
     "ovm:dark": true

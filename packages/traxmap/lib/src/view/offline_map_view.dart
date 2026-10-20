@@ -22,6 +22,10 @@ class MapStyleState {
   /// Credits for the packs this style actually draws from, as plain text.
   final List<String> credits;
 
+  /// Notices the data's licences require next to the credits (pack metadata
+  /// `notice`), e.g. Copernicus' liability statement.
+  final List<String> notices;
+
   /// From the style's `metadata["ovm:disclaimer"]`, if any.
   String? get disclaimer => info.disclaimer;
 
@@ -31,6 +35,7 @@ class MapStyleState {
   const MapStyleState({
     required this.info,
     required this.credits,
+    this.notices = const [],
     required this.packsInUse,
   });
 }
@@ -60,9 +65,19 @@ class OfflineMapView extends StatefulWidget {
   final MapLabelStyle labelStyle;
 
   /// Escape hatch: extra flutter_map 8.x layer widgets, drawn above
-  /// everything else (e.g. layers not yet ported to [MapOverlay]s). This is
-  /// the only part of the API tied to flutter_map.
+  /// everything else (e.g. layers not yet ported to [MapOverlay]s). This and
+  /// [baseLayers] are the only parts of the API tied to flutter_map.
   final List<Widget> extraLayers;
+
+  /// flutter_map 8.x layers drawn above the map's own tiles and below the
+  /// overlays: e.g. online raster tiles while [onCoverageChanged] says no
+  /// pack covers the view.
+  final List<Widget> baseLayers;
+
+  /// Whether the style's required packs ([StyleInfo.requiredKinds]) have a
+  /// tile at the view centre, reported when the camera settles and only
+  /// when it changes. False below a pack's lowest zoom, and with no packs.
+  final ValueChanged<bool>? onCoverageChanged;
 
   final ValueChanged<MapCamera>? onCameraChanged;
 
@@ -98,6 +113,8 @@ class OfflineMapView extends StatefulWidget {
     this.overlays = const [],
     this.labelStyle = const MapLabelStyle(),
     this.extraLayers = const [],
+    this.baseLayers = const [],
+    this.onCoverageChanged,
     this.onCameraChanged,
     this.onTap,
     this.onLongPress,
@@ -115,6 +132,9 @@ class _OfflineMapViewState extends State<OfflineMapView> {
   late final StyleRegistry _registry = widget.styleRegistry ?? bundledStyles();
   Map<String, Object?>? _style;
   Object? _styleError;
+
+  /// Style sources that count for [OfflineMapView.onCoverageChanged].
+  Set<String> _coverageSources = const {};
 
   /// Kept so the camera survives the renderer being remounted.
   MapCamera? _lastCamera;
@@ -162,14 +182,28 @@ class _OfflineMapViewState extends State<OfflineMapView> {
       final style = await _registry.load(id, context);
       if (!mounted || id != widget.styleId) return;
       final used = packsUsedBy(style, packsByKind.values, context);
+      final info = StyleInfo.fromStyle(id, style);
+      final requiredUrls = {
+        for (final pack in used)
+          if (info.requiredKinds.isEmpty ||
+              info.requiredKinds.contains(pack.kind))
+            context.pmtilesUrl(pack),
+      };
       setState(() {
         _style = style;
         _styleError = null;
+        _coverageSources = {
+          for (final MapEntry(:key, :value)
+              in ((style['sources'] as Map?) ?? const {}).entries)
+            if (value is Map && requiredUrls.contains(value['url']))
+              key as String,
+        };
       });
       widget.onStyleLoaded?.call(
         MapStyleState(
-          info: StyleInfo.fromStyle(id, style),
+          info: info,
           credits: attributionOf(used),
+          notices: noticesOf(used),
           packsInUse: used,
         ),
       );
@@ -200,6 +234,9 @@ class _OfflineMapViewState extends State<OfflineMapView> {
       overlays: widget.overlays,
       labelStyle: widget.labelStyle,
       extraLayers: widget.extraLayers,
+      baseLayers: widget.baseLayers,
+      coverageSources: _coverageSources,
+      onCoverageChanged: widget.onCoverageChanged,
       onCameraChanged: _onCamera,
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,

@@ -158,6 +158,20 @@ void main() {
     );
   });
 
+  test('each map names the pack kinds it requires', () async {
+    final registry = bundledStyles();
+    for (final (type, kind) in [
+      (MapType.osm, PackKind.osm),
+      (MapType.usgs, PackKind.base),
+      (MapType.charts, PackKind.charts),
+    ]) {
+      for (final dark in [false, true]) {
+        final id = await registry.styleFor(type, dark: dark);
+        expect((await registry.info(id!)).requiredKinds, {kind}, reason: id);
+      }
+    }
+  });
+
   test('bundled styles load and resolve', () async {
     final registry = bundledStyles();
     final ids = await registry.available();

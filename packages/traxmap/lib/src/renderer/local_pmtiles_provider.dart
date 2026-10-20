@@ -106,6 +106,30 @@ class LocalPmTilesVectorTileProvider extends vt.VectorTileProvider {
     }
   }
 
+  /// Whether the archive has [tile], from its directories alone (no tile
+  /// data is read).
+  Future<bool> contains(vt.TileKey tile) async {
+    if (tile.z < minimumZoom ||
+        tile.z > maximumZoom ||
+        tile.z > vt.pmTilesMaxAddressableZoom) {
+      return false;
+    }
+    final tileId = vt.zxyToTileId(tile.z, tile.x, tile.y);
+    var directory = _root;
+    for (var depth = 0; depth < 3 && !_disposed; depth++) {
+      final entry = directory.find(tileId);
+      if (entry == null) return false;
+      if (!entry.isLeaf) return entry.length > 0;
+      directory = _leaves[entry.offset] ??= vt.PmTilesDirectory.decode(
+        _inflate(
+          header,
+          await _read(header.leafDirectoriesOffset + entry.offset, entry.length),
+        ),
+      );
+    }
+    return false;
+  }
+
   Future<Uint8List> _read(int offset, int length) {
     final result = _queue.then((_) async {
       await _raf.setPosition(offset);

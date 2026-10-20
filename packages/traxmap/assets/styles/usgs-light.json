@@ -4,6 +4,9 @@
   "metadata": {
     "ovm:status": "Starter style; Phase 3 replaces it. Layer names follow pipeline/SCHEMA.md v1.",
     "ovm:map": "usgs",
+    "ovm:requires": [
+      "base"
+    ],
     "ovm:theme": "light",
     "ovm:family": "standard"
   },

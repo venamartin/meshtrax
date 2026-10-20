@@ -31,6 +31,25 @@ void main() {
     ]);
   });
 
+  test('licence notices: every distinct line, from packs that have one', () {
+    Pack withNotice(String id, String notice) => Pack(
+      id: id,
+      file: File('/packs/$id.pmtiles'),
+      header: PmTilesHeader.parse(fakePmTiles()),
+      metadata: {'kind': 'contours', 'notice': notice},
+    );
+    const copernicus = 'The organisations in charge of Copernicus …';
+    expect(
+      noticesOf([
+        base,
+        withNotice('a', copernicus),
+        withNotice('b', '$copernicus\nAnother source notice'),
+      ]),
+      [copernicus, 'Another source notice'],
+    );
+    expect(noticesOf([base, osm]), isEmpty);
+  });
+
   test('only packs the style draws from are credited', () {
     const context = StyleContext();
     final style = <String, Object?>{

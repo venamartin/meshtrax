@@ -1,3 +1,5 @@
+import '../packs/pack.dart';
+
 /// The maps a user picks between. Each has light and dark styles.
 enum MapType {
   /// OpenStreetMap streets, places and land cover; works worldwide.
@@ -41,6 +43,11 @@ class StyleInfo {
   /// From `metadata["ovm:status"]`.
   final String? description;
 
+  /// Pack kinds the map can't be drawn without, from
+  /// `metadata["ovm:requires"]` (e.g. `osm` for the OSM map). Other sources,
+  /// such as contours, only add detail.
+  final Set<PackKind> requiredKinds;
+
   const StyleInfo({
     required this.id,
     required this.name,
@@ -49,6 +56,7 @@ class StyleInfo {
     this.family = StyleFamily.standard,
     this.disclaimer,
     this.description,
+    this.requiredKinds = const {},
   });
 
   factory StyleInfo.fromStyle(String id, Map<String, Object?> style) {
@@ -65,6 +73,10 @@ class StyleInfo {
           ? disclaimer
           : null,
       description: m['ovm:status'] as String?,
+      requiredKinds: {
+        for (final k in (m['ovm:requires'] as List?) ?? const [])
+          if (k is String) PackKind.parse(k),
+      }..remove(PackKind.unknown),
     );
   }
 
