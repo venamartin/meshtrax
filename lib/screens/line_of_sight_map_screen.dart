@@ -2,19 +2,20 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:traxmap/latlong2.dart';
+import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 
 import '../l10n/l10n.dart';
 import '../screens/chats_screen.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
 import '../services/line_of_sight_service.dart';
-import '../services/map_tile_cache_service.dart';
 import '../utils/route_transitions.dart';
 import '../connector/meshcore_connector.dart';
 import '../widgets/app_bar.dart';
+import '../widgets/app_map.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 
@@ -54,7 +55,8 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
   static const double _kmToMiles = 0.621371;
   static const double _maxAntennaFeet = 400.0;
   static const double _maxAntennaMeters = _maxAntennaFeet / _metersToFeet;
-  static const double _labelZoomThreshold = 8.5;
+  // MapLibre zoom from which endpoint labels show.
+  static const double _labelMinZoom = 7.5;
 
   final LineOfSightService _lineOfSightService = LineOfSightService();
 
@@ -69,8 +71,6 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
   bool _showHud = true;
   bool _menuExpanded = true;
   bool _showDisplayNodes = true;
-  bool _showMarkerLabels = true;
-  bool _didReceivePositionUpdate = false;
   int _losRequestNonce = 0;
   bool _initialLosScheduled = false;
 
@@ -304,22 +304,11 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
   Widget build(BuildContext context) {
     final settings = context.watch<AppSettingsService>().settings;
     final isImperial = settings.unitSystem == UnitSystem.imperial;
-    final tileCache = context.read<MapTileCacheService>();
     final endpoints = _visibleEndpoints();
     final mapPoints = [
       if (_start != null) _start!.point,
       if (_end != null) _end!.point,
     ];
-    final initialCenter = mapPoints.isNotEmpty
-        ? mapPoints.first
-        : const LatLng(0, 0);
-    final bounds = mapPoints.length > 1
-        ? LatLngBounds.fromPoints(mapPoints)
-        : null;
-    final initialZoom = mapPoints.length > 1 ? 13.0 : 2.0;
-    if (!_didReceivePositionUpdate) {
-      _showMarkerLabels = initialZoom >= _labelZoomThreshold;
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -339,51 +328,13 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
           ),
         ],
       ),
-      body: Stack(
+      // The control panel sits above the map (docked, Martin 2026-10-20),
+      // so it never covers the map's own switch, credits or card.
+      body: Column(
         children: [
-          FlutterMap(
-            options: MapOptions(
-              initialCenter: initialCenter,
-              initialZoom: initialZoom,
-              initialCameraFit: bounds == null
-                  ? null
-                  : CameraFit.bounds(
-                      bounds: bounds,
-                      padding: const EdgeInsets.all(64),
-                      maxZoom: 16,
-                    ),
-              interactionOptions: InteractionOptions(
-                flags: ~InteractiveFlag.rotate,
-              ),
-              onLongPress: (_, point) => _addCustomPoint(point),
-              onPositionChanged: (camera, hasGesture) {
-                final shouldShow = camera.zoom >= _labelZoomThreshold;
-                if (!_didReceivePositionUpdate ||
-                    shouldShow != _showMarkerLabels) {
-                  setState(() {
-                    _didReceivePositionUpdate = true;
-                    _showMarkerLabels = shouldShow;
-                  });
-                }
-              },
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: kMapTileUrlTemplate,
-                tileProvider: tileCache.tileProvider,
-                userAgentPackageName: MapTileCacheService.userAgentPackageName,
-                maxZoom: 19,
-              ),
-              if (_result != null && _result!.segments.isNotEmpty)
-                PolylineLayer(polylines: _buildSegmentPolylines(_result!)),
-              MarkerLayer(markers: _buildMarkers(endpoints)),
-            ],
-          ),
           if (_showHud)
-            Positioned(
-              left: 12,
-              right: 12,
-              top: 12,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.52,
@@ -391,27 +342,56 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
                 child: _buildControlPanel(isImperial),
               ),
             ),
-          if (!_showHud && _result != null && _result!.segments.isNotEmpty)
-            Positioned(
-              left: 12,
-              bottom: 12,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+          Expanded(
+            child: Stack(
+              children: [
+                AppMap(
+                  initialCamera: MapCamera(
+                    center: (mapPoints.firstOrNull ?? const LatLng(0, 0))
+                        .toOvm(),
+                    zoom: mapPoints.length > 1 ? 12 : 1,
                   ),
-                  child: Text(
-                    context.l10n.losElevationAttribution,
-                    style: const TextStyle(fontSize: 10, color: Colors.white),
-                  ),
+                  initialFit: mapPoints.length > 1
+                      ? MapFit.points(
+                          mapPoints.toOvm(),
+                          padding: const EdgeInsets.all(64),
+                          maxZoom: 15,
+                        )
+                      : null,
+                  onLongPress: (point) => _addCustomPoint(point.toLatLong2()),
+                  overlays: [
+                    if (_result != null) ..._buildSegmentLines(_result!),
+                    ..._buildMarkers(endpoints),
+                  ],
                 ),
-              ),
+                if (!_showHud && _result != null && _result!.segments.isNotEmpty)
+                  // Above the map's own credits, bottom left.
+                  Positioned(
+                    left: 8,
+                    bottom: 40,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          context.l10n.losElevationAttribution,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -802,113 +782,65 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
     );
   }
 
-  List<Polyline> _buildSegmentPolylines(LineOfSightPathResult result) {
-    final polylines = <Polyline>[];
-    for (final segment in result.segments) {
-      final color = !segment.result.hasData
-          ? Colors.grey
-          : (segment.result.isClear ? Colors.green : Colors.red);
-      polylines.add(
-        Polyline(
-          points: [segment.start, segment.end],
-          strokeWidth: 4,
-          color: color,
-        ),
-      );
-    }
-    return polylines;
-  }
+  List<MapLine> _buildSegmentLines(LineOfSightPathResult result) => [
+    for (final (i, segment) in result.segments.indexed)
+      MapLine(
+        id: 'segment:$i',
+        points: [segment.start.toOvm(), segment.end.toOvm()],
+        color: !segment.result.hasData
+            ? Colors.grey
+            : (segment.result.isClear ? Colors.green : Colors.red),
+        width: 4,
+      ),
+  ];
 
-  List<Marker> _buildMarkers(List<LineOfSightEndpoint> endpoints) {
-    return [
-      for (final endpoint in endpoints)
-        Marker(
-          point: endpoint.point,
-          width: 36,
-          height: 36,
-          child: GestureDetector(
-            onTap: () => _selectFromMap(endpoint),
-            child: Container(
-              decoration: BoxDecoration(
-                color: endpoint.color,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 4),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Icon(endpoint.icon, color: Colors.white, size: 16),
-                  ),
-                  if (endpoint == _start || endpoint == _end)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          endpoint == _start ? 'A' : 'B',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+  List<MapMarker> _buildMarkers(List<LineOfSightEndpoint> endpoints) => [
+    for (final (i, endpoint) in endpoints.indexed)
+      MapMarker(
+        id: 'endpoint:$i',
+        position: endpoint.point.toOvm(),
+        size: const Size(36, 36),
+        label: endpoint.label,
+        labelMinZoom: _labelMinZoom,
+        onTap: () => _selectFromMap(endpoint),
+        child: Container(
+          decoration: BoxDecoration(
+            color: endpoint.color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
           ),
-        ),
-      for (final endpoint in endpoints)
-        if (_showMarkerLabels)
-          Marker(
-            point: endpoint.point,
-            width: 120,
-            height: 24,
-            alignment: Alignment.topCenter,
-            child: IgnorePointer(
-              child: Transform.translate(
-                offset: const Offset(0, -20),
-                child: FittedBox(
-                  fit: BoxFit.contain,
+          child: Stack(
+            children: [
+              Center(child: Icon(endpoint.icon, color: Colors.white, size: 16)),
+              if (endpoint == _start || endpoint == _end)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(7),
+                      border: Border.all(color: Colors.white, width: 1),
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      endpoint.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      endpoint == _start ? 'A' : 'B',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 9,
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+            ],
           ),
-    ];
-  }
+        ),
+      ),
+  ];
 
   String _statusText() {
     if (_loading) return context.l10n.losStatusChecking;
