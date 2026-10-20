@@ -7290,18 +7290,6 @@ abstract class AppLocalizations {
   /// **'Not available for this region'**
   String get offlineMaps_notInCatalogue;
 
-  /// No description provided for @offlineMaps_chooseRegion.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a region'**
-  String get offlineMaps_chooseRegion;
-
-  /// No description provided for @offlineMaps_chooseRegionHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap a region in the list to see its maps.'**
-  String get offlineMaps_chooseRegionHint;
-
   /// No description provided for @offlineMaps_notificationRunning.
   ///
   /// In en, this message translates to:

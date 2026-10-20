@@ -146,17 +146,19 @@ void main() {
     expect(find.textContaining('Rhode Island  35 MB'), findsOneWidget);
   });
 
-  testWidgets('wide: the detail sits beside the list', (tester) async {
+  testWidgets('wide: one column, the detail in place of the list', (
+    tester,
+  ) async {
     await open(tester, size: const Size(1200, 900));
-    expect(find.text('Choose a region'), findsOneWidget);
-
     await tester.tap(find.textContaining('Test'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Watsonville'));
     await tester.pumpAndSettle();
-    expect(find.text('Choose a region'), findsNothing);
     expect(find.text('NOAA charts'), findsOneWidget);
-    // The list stays visible next to the detail.
+    expect(find.text('Regions in Test'), findsNothing);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Test'));
+    await tester.pumpAndSettle();
     expect(find.text('Regions in Test'), findsOneWidget);
   });
 

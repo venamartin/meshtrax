@@ -146,8 +146,7 @@ New `lib/screens/offline_maps_screen.dart`. It replaces `map_cache_screen.dart`.
   - Downloaded shows a badge for active downloads plus available updates.
   - The screen opens on Downloaded once anything is installed, otherwise on Maps.
   - Charts arrives in Phase 6.
-- **Wide (≥ 880 px):** content plus a 340 px `Card.outlined` panel.
-- **Phone:** the picker map above a `DraggableScrollableSheet`. Until O3 adds the map, it's a plain list.
+- **Layout:** one column on every screen size, centred at 720 px. Tapping a region opens its detail in place of the list, with "‹ Parent" to go back (Martin, 2026-10-19: the side panel looked like a copy of Downloaded).
 - **Look:** follows traxmapmaker's regions mockup, in MeshTrax's Material 3 theme. The mapping table is in the traxmap README, "MeshTrax integration".
 
 **S3a. Maps tab** (text only; the picker map was dropped 2026-10-19):

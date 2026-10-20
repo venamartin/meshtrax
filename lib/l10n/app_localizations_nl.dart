@@ -4217,13 +4217,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Not available for this region';
 
   @override
-  String get offlineMaps_chooseRegion => 'Choose a region';
-
-  @override
-  String get offlineMaps_chooseRegionHint =>
-      'Tap a region in the list to see its maps.';
-
-  @override
   String get offlineMaps_notificationRunning => 'Downloading map';
 
   @override

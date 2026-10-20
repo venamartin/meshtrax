@@ -14,11 +14,10 @@ import 'offline_maps_ui.dart';
 class RegionDetail extends StatefulWidget {
   final Region region;
 
-  /// Shown as "‹ Parent" on narrow screens, where the detail replaces the
-  /// list.
-  final VoidCallback? onBack;
+  /// Shown as "‹ Parent": the detail replaces the region list.
+  final VoidCallback onBack;
 
-  const RegionDetail({super.key, required this.region, this.onBack});
+  const RegionDetail({super.key, required this.region, required this.onBack});
 
   @override
   State<RegionDetail> createState() => _RegionDetailState();
@@ -86,19 +85,16 @@ class _RegionDetailState extends State<RegionDetail> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (widget.onBack != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: widget.onBack,
-              icon: const Icon(Icons.chevron_left),
-              label: Text(
-                ancestors.isEmpty
-                    ? l10n.offlineMaps_world
-                    : ancestors.last.name,
-              ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: widget.onBack,
+            icon: const Icon(Icons.chevron_left),
+            label: Text(
+              ancestors.isEmpty ? l10n.offlineMaps_world : ancestors.last.name,
             ),
           ),
+        ),
         Text(region.name, style: theme.textTheme.titleLarge),
         if (ancestors.isNotEmpty)
           Text(

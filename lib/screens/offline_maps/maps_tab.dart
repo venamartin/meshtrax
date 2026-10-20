@@ -12,13 +12,10 @@ import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
 import 'region_detail.dart';
 
-/// Above this width the region detail sits beside the list (the mockup's
-/// 880 px breakpoint); below it the detail replaces the list.
-const _wideLayout = 880.0;
-
 /// Region browser: breadcrumb, a suggested region, and the regions inside
-/// the one being browsed (roadmap screen S3a). Text only for now: Martin
-/// dropped the picker map on 2026-10-19.
+/// the one being browsed (roadmap screen S3a); tapping a region opens its
+/// detail in place of the list. Text only, one column on every screen size
+/// (Martin, 2026-10-19).
 class MapsTab extends StatelessWidget {
   final String? browsePath;
   final String? selectedPath;
@@ -40,45 +37,23 @@ class MapsTab extends StatelessWidget {
     if (regions == null || maps.index == null) return _CatalogueState(maps);
 
     final selected = selectedPath == null ? null : regions[selectedPath!];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final list = _RegionList(
-          regions: regions,
-          browse: browsePath == null ? null : regions[browsePath!],
-          selected: selected,
-          onBrowse: onBrowse,
-          onSelect: onSelect,
-        );
-        if (constraints.maxWidth < _wideLayout) {
-          if (selected == null) return list;
-          return RegionDetail(
-            key: ValueKey(selected.path),
-            region: selected,
-            onBack: () => onSelect(null),
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: list),
-            SizedBox(
-              width: 340,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
-                child: Card.outlined(
-                  margin: EdgeInsets.zero,
-                  child: selected == null
-                      ? const _ChooseRegion()
-                      : RegionDetail(
-                          key: ValueKey(selected.path),
-                          region: selected,
-                        ),
-                ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: selected == null
+            ? _RegionList(
+                regions: regions,
+                browse: browsePath == null ? null : regions[browsePath!],
+                selected: selected,
+                onBrowse: onBrowse,
+                onSelect: onSelect,
+              )
+            : RegionDetail(
+                key: ValueKey(selected.path),
+                region: selected,
+                onBack: () => onSelect(null),
               ),
-            ),
-          ],
-        );
-      },
+      ),
     );
   }
 }
@@ -411,32 +386,6 @@ class _SizeDot extends StatelessWidget {
       shape: BoxShape.circle,
     ),
   );
-}
-
-class _ChooseRegion extends StatelessWidget {
-  const _ChooseRegion();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.l10n.offlineMaps_chooseRegion,
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.l10n.offlineMaps_chooseRegionHint,
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 int _defaultBytes(BuildContext context, MapPacksService maps, Region region) {

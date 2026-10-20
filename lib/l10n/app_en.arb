@@ -2304,8 +2304,6 @@
   "offlineMaps_resume": "Resume",
   "offlineMaps_deleteRegion": "Delete region",
   "offlineMaps_notInCatalogue": "Not available for this region",
-  "offlineMaps_chooseRegion": "Choose a region",
-  "offlineMaps_chooseRegionHint": "Tap a region in the list to see its maps.",
   "offlineMaps_notificationRunning": "Downloading map",
   "offlineMaps_notificationPaused": "Map download paused",
   "offlineMaps_notificationFailed": "Map download failed",
