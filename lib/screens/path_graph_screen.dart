@@ -575,8 +575,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     ];
   }
 
-  /// Whether [hash] moves, why, and the user's switch for it.
-  Widget _movingSwitch(PathGraph graph, String hash, VoidCallback onChanged) {
+  /// Whether [hash] moves and why, as one line of its sheet; tapping it
+  /// opens the switch.
+  Widget _movingTile(PathGraph graph, String hash, VoidCallback onChanged) {
     final status = graph.movingStatus(hash);
     final minutes = graph.config.mobileFreshMinutes.round();
     final summary = switch (status) {
@@ -591,20 +592,36 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       _ => 'Moves: ${movingReasonText(status)}. Everything about it counts '
           'for $minutes minutes after it was last heard.',
     };
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Does it move?',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(summary, style: TextStyle(color: Colors.grey[600])),
-        RadioGroup<MovingOverride?>(
-          groupValue: graph.snapshot().nodes[hash]?.movingOverride,
-          onChanged: (value) {
-            context.read<PathGraphService>().setMovingOverride(hash, value);
-            onChanged();
-          },
-          child: const Column(
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.directions_car,
+          color: (status?.acts ?? false) ? Colors.orange : Colors.grey),
+      title: const Text('Does it move?'),
+      subtitle: Text(summary),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _pickMoving(graph, hash, onChanged),
+    );
+  }
+
+  /// The user's word on [hash], in a dialog like the language picker:
+  /// picking one closes it.
+  Future<void> _pickMoving(
+          PathGraph graph, String hash, VoidCallback onChanged) =>
+      showDialog<void>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Does it move?'),
+          contentPadding: const EdgeInsets.only(top: 12, bottom: 8),
+          content: SingleChildScrollView(
+            child: RadioGroup<MovingOverride?>(
+              groupValue: graph.snapshot().nodes[hash]?.movingOverride,
+              onChanged: (value) {
+                context.read<PathGraphService>().setMovingOverride(hash, value);
+                Navigator.pop(dialog);
+                onChanged();
+              },
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   RadioListTile<MovingOverride?>(
                     title: Text('Let Pathfinder decide'),
@@ -626,10 +643,16 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog),
+              child: Text(context.l10n.common_cancel),
+            ),
+          ],
         ),
-      ],
-    );
-  }
+      );
 
   // ---------------------------------------------------------------- tables
 
@@ -749,7 +772,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
 
   /// A repeater's sheet: what this table row knows about it, when opened
   /// from one ([row]: one of mine when [isSelf], else one of [who]'s), and
-  /// the "Does it move?" switch.
+  /// whether it moves (tap for the switch).
   void _showRepeaterSheet(PathGraph graph, GraphSnapshot snap,
       Map<String, Contact> contactByHash, String hash,
       {Candidate? row, bool isSelf = true, String who = 'them'}) {
@@ -757,17 +780,22 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     final known = contactByHash[hash];
     final name = node?.name ?? known?.name ?? hash;
     final pubkey = node?.pubkey ?? known?.publicKeyHex;
+    // Draggable: a swipe down from the top of a long sheet closes it
+    // instead of only scrolling it.
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-              16, 0, 16, 16 + MediaQuery.paddingOf(context).bottom),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.25,
+        maxChildSize: 0.9,
+        builder: (context, scroll) => StatefulBuilder(
+          builder: (context, setSheetState) => ListView(
+            controller: scroll,
+            padding: EdgeInsets.fromLTRB(
+                16, 0, 16, 16 + MediaQuery.paddingOf(context).bottom),
             children: [
               Text(name,
                   style: const TextStyle(
@@ -798,7 +826,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
                 }),
               ],
               const Divider(),
-              _movingSwitch(graph, hash, () {
+              _movingTile(graph, hash, () {
                 setSheetState(() {});
                 setState(() {});
               }),
