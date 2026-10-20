@@ -49,6 +49,18 @@ String installedLabel(AppLocalizations l10n, Pack pack) => packLabel(
 String entryLabel(AppLocalizations l10n, PackIndexEntry e) =>
     packLabel(l10n, e.kind, interval: e.interval, intervalUnit: e.intervalUnit);
 
+/// The mockup's download-size bands: tints of the primary colour, and
+/// orange from 1 GB, where a region is worth splitting.
+Color sizeBandColor(ColorScheme scheme, int bytes) => bytes >= 1e9
+    ? Colors.orange
+    : scheme.primary.withValues(
+        alpha: bytes >= 5e8
+            ? 0.85
+            : bytes >= 1e8
+            ? 0.55
+            : 0.3,
+      );
+
 /// Sizes line up in a fixed-width face, as in the mockup.
 const sizeStyle = TextStyle(
   fontFamily: 'monospace',

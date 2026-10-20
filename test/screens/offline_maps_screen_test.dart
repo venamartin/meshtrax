@@ -13,6 +13,9 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
+import 'package:meshtrax/services/map_tile_cache_service.dart';
+
+import '../helpers/map_fakes.dart';
 
 /// Real catalogue files from maps.meshtrax.io/dev (kept in traxmap's tests).
 final _index = File('packages/traxmap/test/support/sample_index.json')
@@ -55,6 +58,7 @@ void main() {
       downloader: downloader,
       cacheDir: Directory('${tmp.path}/maps'),
       indexUrl: Uri.parse('https://maps.example/dev/index.json'),
+      styles: StyleRegistry(MemoryStyles()),
       client: MockClient(
         (request) async => switch (request.url.path) {
           '/dev/index.json' => http.Response(_index, 200),
@@ -86,6 +90,7 @@ void main() {
             create: (_) => AppSettingsService(),
           ),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
+          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           locale: const Locale('en'),
@@ -99,7 +104,7 @@ void main() {
   }
 
   testWidgets('phone: browse to Rhode Island and download it', (tester) async {
-    await open(tester, size: const Size(400, 900));
+    await open(tester, size: const Size(400, 1600));
 
     // Nothing installed: the screen opens on Maps, at the top level.
     expect(find.text('World'), findsOneWidget);
@@ -158,7 +163,7 @@ void main() {
   testWidgets('a deep link opens the region detail', (tester) async {
     await open(
       tester,
-      size: const Size(400, 900),
+      size: const Size(400, 1600),
       region: 'north-america/us/rhode-island',
     );
     expect(find.text('Rhode Island'), findsOneWidget);
@@ -168,8 +173,8 @@ void main() {
   testWidgets('Downloaded is empty until something is installed', (
     tester,
   ) async {
-    await open(tester, size: const Size(400, 900));
-    await tester.tap(find.text('Downloaded'));
+    await open(tester, size: const Size(400, 1600));
+    await tester.tap(find.widgetWithText(Tab, 'Downloaded'));
     await tester.pumpAndSettle();
     expect(find.text('No offline maps yet'), findsOneWidget);
 

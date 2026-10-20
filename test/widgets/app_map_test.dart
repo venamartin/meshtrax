@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
@@ -14,28 +12,7 @@ import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 
-/// Styles held in memory: no asset bundle, so no fake-async hang in tests.
-class _MemoryStyles implements StyleSource {
-  @override
-  Future<List<String>> ids() async => ['osm-dark', 'osm-light'];
-
-  @override
-  Future<Map<String, Object?>> load(String id) async => {
-    'version': 8,
-    'name': id,
-    'metadata': {
-      'ovm:map': 'osm',
-      'ovm:theme': id.endsWith('dark') ? 'dark' : 'light',
-      'ovm:requires': ['osm'],
-    },
-    'sources': {
-      'osm': {'type': 'vector', 'url': 'pmtiles://{pack:osm}'},
-    },
-    'layers': [
-      {'id': 'bg', 'type': 'background'},
-    ],
-  };
-}
+import '../helpers/map_fakes.dart';
 
 class _NoDownloads implements PackDownloader {
   @override
@@ -52,28 +29,6 @@ class _NoDownloads implements PackDownloader {
   Future<void> cancel(String packId) async {}
 }
 
-/// Online tiles that never touch the network or disk.
-class _BlankTiles extends MapTileCacheService {
-  @override
-  fm.TileProvider get tileProvider => _BlankTileProvider();
-}
-
-class _BlankTileProvider extends fm.TileProvider {
-  // A 1×1 transparent PNG.
-  static final _png = Uint8List.fromList(const [
-    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, //
-    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-    0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
-    0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
-    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
-    0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
-  ]);
-
-  @override
-  ImageProvider getImage(fm.TileCoordinates c, fm.TileLayer options) =>
-      MemoryImage(_png);
-}
-
 void main() {
   late Directory tmp;
   late MapPacksService maps;
@@ -84,7 +39,7 @@ void main() {
       manager: PackManager(Directory('${tmp.path}/packs')),
       downloader: _NoDownloads(),
       cacheDir: tmp,
-      styles: StyleRegistry(_MemoryStyles()),
+      styles: StyleRegistry(MemoryStyles()),
     );
   });
   tearDown(() => tmp.delete(recursive: true));
@@ -100,7 +55,7 @@ void main() {
             create: (_) => AppSettingsService(),
           ),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: _BlankTiles()),
+          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           theme: ThemeData(brightness: brightness ?? Brightness.light),

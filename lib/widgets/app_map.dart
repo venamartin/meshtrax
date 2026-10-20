@@ -33,6 +33,9 @@ class AppMap extends StatefulWidget {
   /// Overrides the contours setting.
   final bool? contours;
 
+  /// Credits for what the screen draws on top, e.g. region outlines.
+  final List<String> extraCredits;
+
   const AppMap({
     super.key,
     this.overlays = const [],
@@ -46,6 +49,7 @@ class AppMap extends StatefulWidget {
     this.onCameraChanged,
     this.mapType,
     this.contours,
+    this.extraCredits = const [],
   });
 
   @override
@@ -78,6 +82,7 @@ class _AppMapState extends State<AppMap> {
     final credits = [
       ...?style?.credits,
       if (online) '© OpenStreetMap contributors',
+      ...widget.extraCredits,
       ...?style?.notices,
     ];
     final disclaimer = style?.disclaimer;

@@ -346,10 +346,10 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 
 | Task | Change |
 | --- | --- |
-| T3 | traxmap combined source per kind (neighbouring regions), and a cache key that changes when packs change. |
+| T3 | (Next, after O3.) traxmap combined source per kind (neighbouring regions), and a cache key that changes when packs change. |
 | T5 | traxmap view hooks: `baseLayers`, `onCoverageChanged`, rendering with no packs, `StyleInfo.requiredKinds`, the `labels` slot tag, polygon holes.<br>• `MapStyleState.notices`: licence notices from the packs in use (e.g. Copernicus' liability sentence), for the app to show with the credits. |
 | A5 | `AppMap` (`lib/widgets/app_map.dart`): style from settings (map type, theme following the app, contours), installed packs, units; online OSM tiles in `baseLayers` while `onCoverageChanged` says not covered; credits chip (plus the OSM credit while online tiles show, plus pack notices) and the chart disclaimer. Settings `map_type`, `map_contours`, `map_theme`. `MapPacksService` shares one style registry. The coverage banner and online/offline wording come with the main map (M5). |
-| O3 | Picker map: region polygons over online tiles, size tint, tap to select, legend, phone sheet or wide panel. |
+| O3 | Picker map in the Maps tab: the browsed regions as polygons over `AppMap` (OSM, no contours), tinted by download size, installed ones filled, the selected one outlined; tap a polygon to drill down or select; legend strip; the Geofabrik credit goes into the map's credits chip. **Layout:** phones get the map above the list or detail, not a draggable sheet, so the credits chip is never covered. Wide screens get the map above the list, with the detail panel beside them.<br>• Checked on the Pi 2026-10-19 with a throwaway preview app and the real Rhode Island packs: vector map with contours at Providence; online OSM beyond the packs at Boston; the picker framing Rhode Island. |
 | G1 | **Gate on real phones:** frame time, memory, cold start, tile resolution. Go or no-go before the main map. |
 
 ### Phase 3: migrate the map views
@@ -409,6 +409,11 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 - Label priority overrides
 - Brochure extraction
 - Showing the last radio's nodes in no-radio mode
+
+## Known issues
+
+- **Peak labels show a box before the name on the Pi** ("▯ Bare Rock"). The styles prefix peaks with "▲", and the renderer draws labels in the platform's default font, which lacks that glyph on Linux. The renderer ignores font families (offline-maps.md, "What the renderer can't do"). Fix with a peak sprite (T9) or the font hook (T12); a cheaper stopgap is dropping the "▲" from the style text.
+- **Beyond a pack's outline the map is blank, not online,** while the view centre is inside the pack. That's the accepted trade-off of switching online tiles on by the centre (decided 2026-10-17).
 
 ## Bugs to fix along the way
 
