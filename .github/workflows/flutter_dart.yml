@@ -57,3 +57,26 @@ jobs:
       - name: Test traxmap package
         working-directory: packages/traxmap
         run: flutter test -r github
+
+  # Day-to-day development runs on a Raspberry Pi (Linux desktop) with no
+  # Android SDK, so this is where the Android side gets built: plugin native
+  # code (background_downloader needs Kotlin 2.1+) and the manifest.
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Build debug APK
+        run: flutter build apk --debug

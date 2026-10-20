@@ -21,7 +21,7 @@ version: 1.7.84+94
 environment:
   # Dart 3.13 = Flutter 3.47, the minimum whose Gradle plugin can drive the
   # AGP 9.1 / Gradle 9.3 Android toolchain this project is pinned to.
-  sdk: ^3.13.0
+  sdk: ^3.13.5
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -44,7 +44,7 @@ dependencies:
   provider: ^6.1.5+1
   shared_preferences: ^2.2.2
   uuid: ^4.3.3
-  flutter_map: ^8.2.2
+  flutter_map: ^8.3.2
   latlong2: ^0.9.1
   # Notifications for Android/iOS (Disabled on Windows if ATL headers are missing)
   flutter_local_notifications: ^21.0.0
@@ -77,6 +77,9 @@ dependencies:
   # Learns mesh routes from the radio's raw frames; observe-only hook
   path_graph:
     path: packages/path_graph
+  # Offline vector maps: renders and downloads map packs (docs/offline-maps.md)
+  traxmap:
+    path: packages/traxmap
   emoji_picker_flutter: ^4.4.0
 
 
