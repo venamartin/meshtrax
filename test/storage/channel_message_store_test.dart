@@ -417,6 +417,58 @@ void main() {
     expect(loaded.single.sentWireSecs, [1785711172, 1785711202]);
   });
 
+  // A send whose app was killed (or whose timers died with it) is saved as
+  // pending and nothing would ever settle it — the timer icon forever.
+  group('failPendingSendsBefore', () {
+    const cutoffMs = 1753000500000;
+    final cutoff = DateTime.fromMillisecondsSinceEpoch(cutoffMs);
+
+    ChannelMessage pending(String id, {int ts = 1753000000000}) =>
+        msg('hi', id: id, ts: ts, outgoing: true)
+            .copyWith(status: ChannelMessageStatus.pending);
+
+    Future<ChannelMessageStatus?> statusOf(String idKey, String id) async =>
+        (await store.findByMessageId(idKey, id))?.status;
+
+    test('fails own pending sends from before the cutoff, in every channel',
+        () async {
+      await store.upsertMessage(idKeyA, pending('old-a'));
+      await store.upsertMessage(idKeyB, pending('old-b'));
+
+      expect(await store.failPendingSendsBefore(cutoff), 2);
+      expect(await statusOf(idKeyA, 'old-a'), ChannelMessageStatus.failed);
+      expect(await statusOf(idKeyB, 'old-b'), ChannelMessageStatus.failed);
+    });
+
+    test('leaves sends from this run, settled sends and incoming rows alone',
+        () async {
+      await store.upsertMessage(idKeyA, pending('live', ts: cutoffMs + 1));
+      await store.upsertMessage(
+          idKeyA, msg('done', id: 'sent', outgoing: true));
+      // Incoming rows default to pending too; they are not ours to fail.
+      await store.upsertMessage(
+        idKeyA,
+        msg('theirs', id: 'in').copyWith(status: ChannelMessageStatus.pending),
+      );
+
+      expect(await store.failPendingSendsBefore(cutoff), 0);
+      expect(await statusOf(idKeyA, 'live'), ChannelMessageStatus.pending);
+      expect(await statusOf(idKeyA, 'sent'), ChannelMessageStatus.sent);
+      expect(await statusOf(idKeyA, 'in'), ChannelMessageStatus.pending);
+    });
+
+    test('only touches the scoped node', () async {
+      store.setPublicKeyHex = '0123456789ab';
+      await store.upsertMessage(idKeyA, pending('other-node'));
+      store.setPublicKeyHex = 'deadbeef00cafe';
+
+      expect(await store.failPendingSendsBefore(cutoff), 0);
+      store.setPublicKeyHex = '0123456789ab';
+      expect(await statusOf(idKeyA, 'other-node'),
+          ChannelMessageStatus.pending);
+    });
+  });
+
   test('messages arriving later get later stamps', () async {
     // Same sender timestamp on both: ordering must come from arrival, not the
     // sender's clock, which is the entire point of the column.
