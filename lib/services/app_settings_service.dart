@@ -101,6 +101,10 @@ class AppSettingsService extends ChangeNotifier {
     );
   }
 
+  Future<void> setMapDownloadsWifiOnly(bool value) async {
+    await updateSettings(_settings.copyWith(mapDownloadsWifiOnly: value));
+  }
+
   Future<void> setNotificationsEnabled(bool value) async {
     await updateSettings(_settings.copyWith(notificationsEnabled: value));
   }

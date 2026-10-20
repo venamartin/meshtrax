@@ -336,7 +336,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | A1 | Map tile User-Agent → `com.vena.meshtrax`. |
 | A2 | traxmap dependency, `flutter_map ^8.3.2`, SDK `^3.13.5`.<br>• Android backup rules exclude `files/maps/`.<br>• A CI job builds a debug APK.<br>• iOS backup exclusion moves to G2: it needs native code and a Mac to test. |
 | A3 | `MapPacksService`. |
-| A4 | Settings fields, and fix the time-filter default mismatch. |
+| A4 | "Download maps on Wi‑Fi only" setting (default on). Fixes B6: the time filter now defaults to 0 (all time) everywhere. Map type, family, contours and theme arrive with `AppMap` (A5), the first code that reads them. |
 | O1 | Offline maps shell, tabs, badge and Downloaded tab.<br>• Scanner ⋮ "Offline maps".<br>• Settings row and Wi‑Fi switch.<br>• **Delete** the map cache screen, the prefetch, and their settings and strings.<br>• `formatBytes`.<br>• privacy.md map-server section. |
 | O2 | Maps tab list (breadcrumb, Suggested, chips, picker credit, every state) and region detail with downloads.<br>• The download integration test moves to `integration_test/pack_download_test.dart`. |
 

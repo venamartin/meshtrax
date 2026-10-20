@@ -223,4 +223,24 @@ void main() {
       expect(AppSettings.fromJson(json).incrementalContactSync, isTrue);
     });
   });
+
+  group('AppSettings — mapDownloadsWifiOnly', () {
+    test('defaults to on', () {
+      expect(AppSettings().mapDownloadsWifiOnly, isTrue);
+      expect(AppSettings.fromJson({}).mapDownloadsWifiOnly, isTrue);
+    });
+
+    test('round-trips through JSON', () {
+      final json = AppSettings().copyWith(mapDownloadsWifiOnly: false).toJson();
+      expect(json['map_downloads_wifi_only'], isFalse);
+      expect(AppSettings.fromJson(json).mapDownloadsWifiOnly, isFalse);
+    });
+  });
+
+  group('AppSettings — mapTimeFilterHours', () {
+    test('a fresh install and a saved file without the key agree: all time', () {
+      expect(AppSettings().mapTimeFilterHours, 0);
+      expect(AppSettings.fromJson({}).mapTimeFilterHours, 0);
+    });
+  });
 }
