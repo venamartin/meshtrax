@@ -134,8 +134,8 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
     the leftover build on a later call.
 - **Wi‑Fi only:** `setRequiresWiFi(true)` holds every download, running
   ones included, until the device is on Wi‑Fi. Phones only.
-- **Notifications:** `notification`, `pausedNotification` and
-  `failedNotification` take translated titles.
+- **Notifications:** `configureNotifications(running:, paused:, failed:)`
+  sets translated titles; call it once the app knows its locale.
 - **Restore:** `restore()` re-queues downloads the app was killed during, and
   installs ones that finished while it was closed.
   - **Desktop:** a killed download restarts from 0%, and the plugin leaves

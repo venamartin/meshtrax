@@ -39,21 +39,26 @@ class BackgroundPackDownloader implements PackDownloader {
   StreamSubscription<TaskUpdate>? _subscription;
 
   /// [scope] isolates traxmap's tasks from the app's own background_downloader
-  /// use. [notification], [pausedNotification] and [failedNotification]
-  /// title the system notifications (Android 14+ requires one for long
-  /// downloads); pass translated text. The body shows the pack name.
-  BackgroundPackDownloader(
-    this.manager, {
-    String scope = 'traxmap',
-    String notification = 'Downloading map',
-    String pausedNotification = 'Map download paused',
-    String failedNotification = 'Map download failed',
-  }) : _downloader = FileDownloader.scoped(scope) {
+  /// use. Notifications start with English titles; see
+  /// [configureNotifications].
+  BackgroundPackDownloader(this.manager, {String scope = 'traxmap'})
+    : _downloader = FileDownloader.scoped(scope) {
+    configureNotifications();
+  }
+
+  /// Titles the system notifications (Android 14+ requires one for long
+  /// downloads). Pass translated text once the app knows its locale; the
+  /// body shows the pack name.
+  void configureNotifications({
+    String running = 'Downloading map',
+    String paused = 'Map download paused',
+    String failed = 'Map download failed',
+  }) {
     _downloader.configureNotificationForGroup(
       _group,
-      running: TaskNotification(notification, '{displayName}  {progress}'),
-      paused: TaskNotification(pausedNotification, '{displayName}'),
-      error: TaskNotification(failedNotification, '{displayName}'),
+      running: TaskNotification(running, '{displayName}  {progress}'),
+      paused: TaskNotification(paused, '{displayName}'),
+      error: TaskNotification(failed, '{displayName}'),
       progressBar: true,
     );
   }

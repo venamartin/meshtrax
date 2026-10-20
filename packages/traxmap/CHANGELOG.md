@@ -36,8 +36,8 @@
 - **`BackgroundPackDownloader`:**
   - `setRequiresWiFi(bool)` replaces the `requiresWiFi` constructor flag,
     and applies to running downloads too.
-  - The paused and failed notification titles are parameters, so they can
-    be translated.
+  - `configureNotifications(running:, paused:, failed:)` sets translated
+    notification titles at any time, e.g. once the app knows its locale.
 - **Pack downloads:**
   - **`PackDownloader`** (core): `PackDownload` snapshots with state,
     progress and error.

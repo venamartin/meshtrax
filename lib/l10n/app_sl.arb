@@ -227,19 +227,6 @@
   "appSettings_last6Hours": "Zadnjih 6 ur",
   "appSettings_last24Hours": "Zadnjih 24 ur",
   "appSettings_lastWeek": "Prejšnji teden",
-  "appSettings_offlineMapCache": "Shramba zemljevidov brez povezave",
-  "appSettings_noAreaSelected": "Območje ni izbrano",
-  "appSettings_areaSelectedZoom": "Izbrano območje (povečava {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Razhroščevanje",
   "appSettings_appDebugLogging": "Programski dnevnik",
   "appSettings_appDebugLoggingSubtitle": "Dnevnik debug sporočil za odpravljanje težav",
@@ -638,91 +625,6 @@
   "map_sharedPin": "Deljeno naslovno geslo",
   "map_joinRoom": "Pridružiti sobo",
   "map_manageRepeater": "Upravljajte Ponovitve",
-  "mapCache_title": "Omrezni predpomnilnik zemljeških zemljejevskih slik",
-  "mapCache_selectAreaFirst": "Izberite območje za prvo predpomnilnik.",
-  "mapCache_noTilesToDownload": "Nihče slik ne bo naložil za to območje.",
-  "mapCache_downloadTilesTitle": "Naloži ploščice",
-  "mapCache_downloadTilesPrompt": "Naložiť {count} plošč za uporabo v režimu brez povezave?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Naloži",
-  "mapCache_cachedTiles": "Pospešeno shranjeni {count} plošč",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Shranjeni {downloaded} ploščad ({failed} neuspešno)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Ponovite arhiv za offline način",
-  "mapCache_clearOfflineCachePrompt": "Izbriši vse predpomnilnikovane kartografske ploščice?",
-  "mapCache_offlineCacheCleared": "Omrezni predpomnik je bil izbrisal.",
-  "mapCache_noAreaSelected": "Nizona označena površina",
-  "mapCache_cacheArea": "Omanski prostor",
-  "mapCache_useCurrentView": "Uporabi trenutni prikaz",
-  "mapCache_zoomRange": "Občutek razpona",
-  "mapCache_estimatedTiles": "Predvideni ploščadi: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Naloženo {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Naloži ploščice",
-  "mapCache_clearCacheButton": "Ponoviti arhiv",
-  "mapCache_failedDownloads": "Poslovniški izniki: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Takoj",
   "time_minutesAgo": "{minutes} minut nazaj",
   "@time_minutesAgo": {

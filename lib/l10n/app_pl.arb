@@ -227,19 +227,6 @@
   "appSettings_last6Hours": "Ostatnie 6 godzin",
   "appSettings_last24Hours": "Ostatnie 24 godziny",
   "appSettings_lastWeek": "Ostatni tydzień",
-  "appSettings_offlineMapCache": "Pamięć podręczna map offline",
-  "appSettings_noAreaSelected": "Nie wybrano żadnego obszaru.",
-  "appSettings_areaSelectedZoom": "Wybrany obszar (skala {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Debug",
   "appSettings_appDebugLogging": "Logowanie Debugowania Aplikacji",
   "appSettings_appDebugLoggingSubtitle": "Rejestruj komunikaty debugowania aplikacji w celu diagnozowania problemów.",
@@ -648,91 +635,6 @@
   "map_sharedPin": "Udostępniona pinezka",
   "map_joinRoom": "Dołącz do pokoju",
   "map_manageRepeater": "Zarządzaj przekaźnikiem",
-  "mapCache_title": "Pamięć podręczna map offline",
-  "mapCache_selectAreaFirst": "Najpierw wybierz obszar do zapisania w pamięci podręcznej.",
-  "mapCache_noTilesToDownload": "Brak kafelków do pobrania dla tego obszaru.",
-  "mapCache_downloadTilesTitle": "Pobierz kafelki",
-  "mapCache_downloadTilesPrompt": "Pobrać {count} kafelków do użytku offline?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Pobierz",
-  "mapCache_cachedTiles": "Zapisano w pamięci podręcznej {count} kafelków",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Zapisano w pamięci podręcznej {downloaded} kafelków ({failed} nieudanych)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Wyczyść pamięć podręczną offline",
-  "mapCache_clearOfflineCachePrompt": "Usunąć wszystkie zapisane kafelki mapy?",
-  "mapCache_offlineCacheCleared": "Wyczyszczono pamięć podręczną offline",
-  "mapCache_noAreaSelected": "Nie wybrano żadnego obszaru.",
-  "mapCache_cacheArea": "Obszar pamięci podręcznej",
-  "mapCache_useCurrentView": "Użyj aktualnego widoku",
-  "mapCache_zoomRange": "Zakres przybliżenia",
-  "mapCache_estimatedTiles": "Szacowana liczba kafelków: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Pobrano {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Pobierz kafelki",
-  "mapCache_clearCacheButton": "Wyczyść pamięć podręczną",
-  "mapCache_failedDownloads": "Nieudane pobrania: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Właśnie teraz",
   "time_minutesAgo": "{minutes} minut temu",
   "@time_minutesAgo": {

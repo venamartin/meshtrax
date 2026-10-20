@@ -345,22 +345,9 @@
   "appSettings_last6Hours": "Last 6 hours",
   "appSettings_last24Hours": "Last 24 hours",
   "appSettings_lastWeek": "Last week",
-  "appSettings_offlineMapCache": "Offline Map Cache",
   "appSettings_unitsTitle": "Units",
   "appSettings_unitsMetric": "Metric (m / km)",
   "appSettings_unitsImperial": "Imperial (ft / mi)",
-  "appSettings_noAreaSelected": "No area selected",
-  "appSettings_areaSelectedZoom": "Area selected (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Debug",
   "appSettings_appDebugLogging": "App Debug Logging",
   "appSettings_appDebugLoggingSubtitle": "Log app debug messages for troubleshooting",
@@ -971,91 +958,6 @@
   "map_runTraceWithReturnPath": "Return back on the same path.",
   "map_removeLast": "Remove Last",
   "map_pathTraceCancelled": "Path trace cancelled.",
-  "mapCache_title": "Offline Map Cache",
-  "mapCache_selectAreaFirst": "Select an area to cache first",
-  "mapCache_noTilesToDownload": "No tiles to download for this area",
-  "mapCache_downloadTilesTitle": "Download tiles",
-  "mapCache_downloadTilesPrompt": "Download {count} tiles for offline use?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Download",
-  "mapCache_cachedTiles": "Cached {count} tiles",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Cached {downloaded} tiles ({failed} failed)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Clear offline cache",
-  "mapCache_clearOfflineCachePrompt": "Remove all cached map tiles?",
-  "mapCache_offlineCacheCleared": "Offline cache cleared",
-  "mapCache_noAreaSelected": "No area selected",
-  "mapCache_cacheArea": "Cache Area",
-  "mapCache_useCurrentView": "Use Current View",
-  "mapCache_zoomRange": "Zoom Range",
-  "mapCache_estimatedTiles": "Estimated tiles: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Downloaded {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Download Tiles",
-  "mapCache_clearCacheButton": "Clear Cache",
-  "mapCache_failedDownloads": "Failed downloads: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Just now",
   "time_minutesAgo": "{minutes}m ago",
   "@time_minutesAgo": {
@@ -2329,5 +2231,85 @@
   "room_reloadPosts": "Reload recent posts",
   "room_reloadPostsExplain": "Asks the room to send its recent posts again (it keeps up to 32). You'll be asked to log in with the room password. Messages you already have are kept.",
   "room_reloadFailed": "Couldn't reset the room on the radio",
-  "room_selfDemoteWarning": "You're changing your own access. If you drop your admin role, only the room's own console can give it back."
+  "room_selfDemoteWarning": "You're changing your own access. If you drop your admin role, only the room's own console can give it back.",
+  "scanner_offlineMaps": "Offline maps",
+  "appSettings_offlineMaps": "Offline maps",
+  "appSettings_offlineMapsNone": "None downloaded",
+  "appSettings_offlineMapsSummary": "{count, plural, =1{1 region} other{{count} regions}} · {size}",
+  "@appSettings_offlineMapsSummary": {"placeholders": {"count": {"type": "int"}, "size": {"type": "String"}}},
+  "appSettings_offlineMapsUpdates": "{count, plural, =1{1 update available} other{{count} updates available}}",
+  "@appSettings_offlineMapsUpdates": {"placeholders": {"count": {"type": "int"}}},
+  "appSettings_mapDownloadsWifiOnly": "Download maps on Wi‑Fi only",
+  "appSettings_mapDownloadsWifiOnlySubtitle": "Map downloads wait for a Wi‑Fi connection",
+  "offlineMaps_title": "Offline maps",
+  "offlineMaps_tabMaps": "Maps",
+  "offlineMaps_tabDownloaded": "Downloaded",
+  "offlineMaps_refresh": "Check for new maps",
+  "offlineMaps_loading": "Loading available maps…",
+  "offlineMaps_serverError": "Can't reach the map server",
+  "offlineMaps_unavailable": "No maps are available yet",
+  "offlineMaps_unavailableHint": "Check again later.",
+  "offlineMaps_cachedFrom": "Showing the list from {date}",
+  "@offlineMaps_cachedFrom": {"placeholders": {"date": {"type": "String"}}},
+  "offlineMaps_needsNewerApp": "Update MeshTrax to get the newest maps.",
+  "offlineMaps_world": "World",
+  "offlineMaps_suggested": "Suggested",
+  "offlineMaps_regions": "Regions",
+  "offlineMaps_regionsIn": "Regions in {name}",
+  "@offlineMaps_regionsIn": {"placeholders": {"name": {"type": "String"}}},
+  "offlineMaps_inside": "{count} inside",
+  "@offlineMaps_inside": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_storageUsed": "{size} of offline maps on this device",
+  "@offlineMaps_storageUsed": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_updates": "Updates ({count})",
+  "@offlineMaps_updates": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_updateAll": "Update all {size}",
+  "@offlineMaps_updateAll": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_downloading": "Downloading",
+  "offlineMaps_update": "Update",
+  "offlineMaps_downloadedOn": "Downloaded {date}",
+  "@offlineMaps_downloadedOn": {"placeholders": {"date": {"type": "String"}}},
+  "offlineMaps_updateAvailable": "Update available",
+  "offlineMaps_otherFiles": "Other map files",
+  "offlineMaps_emptyTitle": "No offline maps yet",
+  "offlineMaps_emptyBody": "Download a region to use the map without a connection.",
+  "offlineMaps_findMaps": "Find maps",
+  "offlineMaps_deleteTitle": "Delete {name}?",
+  "@offlineMaps_deleteTitle": {"placeholders": {"name": {"type": "String"}}},
+  "offlineMaps_deleteBody": "This frees {size}. You can download it again later.",
+  "@offlineMaps_deleteBody": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_deleted": "{name} deleted",
+  "@offlineMaps_deleted": {"placeholders": {"name": {"type": "String"}}},
+  "offlineMaps_bytesProgress": "{done} of {total}",
+  "@offlineMaps_bytesProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}},
+  "offlineMaps_kindMap": "Map",
+  "offlineMaps_kindMapDetail": "OpenStreetMap streets, trails, places",
+  "offlineMaps_kindContours": "Contours",
+  "offlineMaps_kindContoursDetail": "Elevation lines",
+  "offlineMaps_kindUsgs": "USGS topo map",
+  "offlineMaps_kindUsgsDetail": "Trails, streams, reserves, terrain",
+  "offlineMaps_kindCharts": "NOAA charts",
+  "offlineMaps_usOnly": "United States only",
+  "offlineMaps_download": "Download {size}",
+  "@offlineMaps_download": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_downloadTotal": "Download",
+  "offlineMaps_largeDownload": "Large download ({size}). Use Wi‑Fi and keep your device charging.",
+  "@offlineMaps_largeDownload": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_waiting": "Waiting…",
+  "offlineMaps_checking": "Checking download…",
+  "offlineMaps_retrying": "Retrying…",
+  "offlineMaps_failed": "Download failed: {error}",
+  "@offlineMaps_failed": {"placeholders": {"error": {"type": "String"}}},
+  "offlineMaps_pause": "Pause",
+  "offlineMaps_resume": "Resume",
+  "offlineMaps_deleteRegion": "Delete region",
+  "offlineMaps_notInCatalogue": "Not available for this region",
+  "offlineMaps_chooseRegion": "Choose a region",
+  "offlineMaps_chooseRegionHint": "Tap a region in the list to see its maps.",
+  "offlineMaps_notificationRunning": "Downloading map",
+  "offlineMaps_notificationPaused": "Map download paused",
+  "offlineMaps_notificationFailed": "Map download failed",
+  "offlineMaps_clearTileCache": "Clear cached online map tiles",
+  "offlineMaps_clearTileCachePrompt": "Remove the online map tiles saved while browsing? Downloaded maps stay.",
+  "offlineMaps_tileCacheCleared": "Cached online map tiles removed"
 }

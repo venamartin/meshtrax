@@ -228,19 +228,6 @@
   "appSettings_last6Hours": "Останні 6 годин",
   "appSettings_last24Hours": "Останні 24 години",
   "appSettings_lastWeek": "Минулий тиждень",
-  "appSettings_offlineMapCache": "Офлайн-кеш карти",
-  "appSettings_noAreaSelected": "Область не вибрано",
-  "appSettings_areaSelectedZoom": "Вибрана область (зум {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Налагодження",
   "appSettings_appDebugLogging": "Логування налагодження програми",
   "appSettings_appDebugLoggingSubtitle": "Записувати повідомлення налагодження програми в лог для усунення несправностей.",
@@ -639,91 +626,6 @@
   "map_sharedPin": "Спільний пін",
   "map_joinRoom": "Приєднатися до кімнати",
   "map_manageRepeater": "Керувати ретранслятором",
-  "mapCache_title": "Офлайн-кеш карти",
-  "mapCache_selectAreaFirst": "Спершу виберіть область для кешування",
-  "mapCache_noTilesToDownload": "Немає плиток для завантаження в цій області.",
-  "mapCache_downloadTilesTitle": "Завантажити плитки",
-  "mapCache_downloadTilesPrompt": "Завантажити {count} плиток для використання офлайн?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Завантажити",
-  "mapCache_cachedTiles": "Закешовано {count} плиток",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Плитки в кеші ({downloaded}) ({failed} помилок)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Очистити офлайн-кеш",
-  "mapCache_clearOfflineCachePrompt": "Видалити всі закешовані плитки карти?",
-  "mapCache_offlineCacheCleared": "Офлайн-кеш очищено.",
-  "mapCache_noAreaSelected": "Область не вибрано",
-  "mapCache_cacheArea": "Область кешування",
-  "mapCache_useCurrentView": "Використати поточний вигляд",
-  "mapCache_zoomRange": "Діапазон масштабування",
-  "mapCache_estimatedTiles": "Оцінка плиток: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Завантажено {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Завантажити плитки",
-  "mapCache_clearCacheButton": "Очистити кеш",
-  "mapCache_failedDownloads": "Невдалі завантаження: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "Пн {north}, Пд {south}, Сх {east}, Зх {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Тільки що",
   "time_minutesAgo": "{minutes} хв. тому",
   "@time_minutesAgo": {

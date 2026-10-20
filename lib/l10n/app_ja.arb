@@ -300,22 +300,9 @@
   "appSettings_last6Hours": "過去6時間",
   "appSettings_last24Hours": "過去24時間",
   "appSettings_lastWeek": "先週",
-  "appSettings_offlineMapCache": "オフライン用地図キャッシュ",
   "appSettings_unitsTitle": "単位",
   "appSettings_unitsMetric": "メートル (m) / キロメートル (km)",
   "appSettings_unitsImperial": "帝国 (フィート / マイル)",
-  "appSettings_noAreaSelected": "選択されたエリアはありません",
-  "appSettings_areaSelectedZoom": "選択された範囲（ズームレベル：{minZoom}～{maxZoom}）",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "デバッグ",
   "appSettings_appDebugLogging": "アプリケーションのデバッグ用ログ",
   "appSettings_appDebugLoggingSubtitle": "ログアプリのデバッグメッセージ（トラブルシューティング用）",
@@ -801,91 +788,6 @@
   "map_runTrace": "パスの追跡を実行",
   "map_removeLast": "最後のものを削除",
   "map_pathTraceCancelled": "パスの追跡は中止。",
-  "mapCache_title": "オフライン用地図キャッシュ",
-  "mapCache_selectAreaFirst": "最初にキャッシュする領域を選択してください",
-  "mapCache_noTilesToDownload": "この地域にはダウンロードできるタイルは存在しません。",
-  "mapCache_downloadTilesTitle": "タイルをダウンロードする",
-  "mapCache_downloadTilesPrompt": "オフラインでの使用のために、{count}個のタイルをダウンロードしますか？",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "ダウンロード",
-  "mapCache_cachedTiles": "{count} 個のタイルをキャッシュ",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Cached {downloaded} tiles ({failed} failed)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "オフラインキャッシュをクリアする",
-  "mapCache_clearOfflineCachePrompt": "キャッシュされた地図のタイルをすべて削除しますか？",
-  "mapCache_offlineCacheCleared": "オフラインキャッシュをクリア",
-  "mapCache_noAreaSelected": "選択されたエリアはありません",
-  "mapCache_cacheArea": "キャッシュエリア",
-  "mapCache_useCurrentView": "現在表示されている内容を保持する",
-  "mapCache_zoomRange": "ズーム範囲",
-  "mapCache_estimatedTiles": "推定されるタイル数: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Downloaded {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "タイルをダウンロードする",
-  "mapCache_clearCacheButton": "キャッシュをクリアする",
-  "mapCache_failedDownloads": "失敗したダウンロード: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "まさに今",
   "time_minutesAgo": "{minutes}分前",
   "@time_minutesAgo": {

@@ -15,6 +15,7 @@ import '../widgets/device_tile.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/terms_gate.dart';
 import 'chats_screen.dart';
+import 'offline_maps_screen.dart';
 import 'tcp_screen.dart';
 import 'usb_screen.dart';
 
@@ -260,6 +261,24 @@ class _ScannerScreenState extends State<ScannerScreen> {
               },
               child: const Text('Auto-connect on startup'),
             ),
+            // Maps can be downloaded and managed before any radio is
+            // connected, e.g. at home before a trip.
+            if (!PlatformInfo.isWeb) ...[
+              const PopupMenuDivider(),
+              PopupMenuItem<void>(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const OfflineMapsScreen(),
+                  ),
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.download_for_offline_outlined),
+                  title: Text(context.l10n.scanner_offlineMaps),
+                ),
+              ),
+            ],
           ],
         );
       },

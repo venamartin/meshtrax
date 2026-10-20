@@ -241,19 +241,6 @@
   "appSettings_last6Hours": "过去6小时",
   "appSettings_last24Hours": "过去24小时",
   "appSettings_lastWeek": "上周",
-  "appSettings_offlineMapCache": "离线地图缓存",
-  "appSettings_noAreaSelected": "未选择任何区域",
-  "appSettings_areaSelectedZoom": "已选择区域（缩放 {minZoom} - {maxZoom}）",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "调试",
   "appSettings_appDebugLogging": "应用调试日志",
   "appSettings_appDebugLoggingSubtitle": "记录应用调试消息以进行故障排除。",
@@ -665,91 +652,6 @@
   "map_sharedPin": "共享标记",
   "map_joinRoom": "加入房间",
   "map_manageRepeater": "管理转发节点",
-  "mapCache_title": "离线地图缓存",
-  "mapCache_selectAreaFirst": "请先选择要缓存的区域",
-  "mapCache_noTilesToDownload": "此区域没有可下载的瓦片",
-  "mapCache_downloadTilesTitle": "下载瓦片",
-  "mapCache_downloadTilesPrompt": "这需要下载 {count} 个瓦片",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "下载",
-  "mapCache_cachedTiles": "已缓存 {count} 个瓦片",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "已缓存 {downloaded} 个瓦片（{failed} 个失败）",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "清除离线缓存",
-  "mapCache_clearOfflineCachePrompt": "清除所有缓存的地图瓦片",
-  "mapCache_offlineCacheCleared": "离线缓存已清除",
-  "mapCache_noAreaSelected": "未选择区域",
-  "mapCache_cacheArea": "缓存区域",
-  "mapCache_useCurrentView": "使用当前视图",
-  "mapCache_zoomRange": "缩放范围",
-  "mapCache_estimatedTiles": "估计瓦片数：{count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "已下载 {completed}/{total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "下载瓦片",
-  "mapCache_clearCacheButton": "清除缓存",
-  "mapCache_failedDownloads": "下载失败：{count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "北 {north}, 南 {south}, 东 {east}, 西 {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "刚才",
   "time_minutesAgo": "{minutes}分钟前",
   "@time_minutesAgo": {

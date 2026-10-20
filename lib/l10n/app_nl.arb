@@ -227,19 +227,6 @@
   "appSettings_last6Hours": "Afgelopen 6 uur",
   "appSettings_last24Hours": "Afgelopen 24 uur",
   "appSettings_lastWeek": "Afgelopen week",
-  "appSettings_offlineMapCache": "Offline Kaartcache",
-  "appSettings_noAreaSelected": "Geen gebied geselecteerd",
-  "appSettings_areaSelectedZoom": "Geselecteerd gebied (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Debug",
   "appSettings_appDebugLogging": "App Debuggen Loggen",
   "appSettings_appDebugLoggingSubtitle": "Log app debugberichten voor probleemoplossing",
@@ -638,91 +625,6 @@
   "map_sharedPin": "Gedeelde pin",
   "map_joinRoom": "Kamer Toetreden",
   "map_manageRepeater": "Beheer Repeater",
-  "mapCache_title": "Offline Kaarten Cache",
-  "mapCache_selectAreaFirst": "Select een gebied om eerst in de cache op te slaan",
-  "mapCache_noTilesToDownload": "Geen tiles te downloaden voor dit gebied.",
-  "mapCache_downloadTilesTitle": "Tiles downloaden",
-  "mapCache_downloadTilesPrompt": "Download {count} tegels voor offline gebruik?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Download",
-  "mapCache_cachedTiles": "Opgeslagen {count} tegels",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Opgeslagen {downloaded} tegels ({failed} mislukt)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Cache offline opschonen",
-  "mapCache_clearOfflineCachePrompt": "Alle gecachte kaarttiles verwijderen?",
-  "mapCache_offlineCacheCleared": "Offline cache is leeggezet",
-  "mapCache_noAreaSelected": "Geen gebied geselecteerd",
-  "mapCache_cacheArea": "Cache-gebied",
-  "mapCache_useCurrentView": "Gebruik Huidige Weergave",
-  "mapCache_zoomRange": "Zoom Bereik",
-  "mapCache_estimatedTiles": "Geschatte tegels: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Gedownload {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Tiles downloaden",
-  "mapCache_clearCacheButton": "Cache legen",
-  "mapCache_failedDownloads": "Mislukte downloads: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Net nu",
   "time_minutesAgo": "{minutes} minuten geleden",
   "@time_minutesAgo": {

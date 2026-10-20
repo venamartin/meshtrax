@@ -227,19 +227,6 @@
   "appSettings_last6Hours": "Последни 6 часа",
   "appSettings_last24Hours": "Последно 24 часа",
   "appSettings_lastWeek": "Миналата седмица",
-  "appSettings_offlineMapCache": "Кеш на офлайн карти",
-  "appSettings_noAreaSelected": "Няма избрана област",
-  "appSettings_areaSelectedZoom": "Избрана е област (мащаб {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Отстрани",
   "appSettings_appDebugLogging": "Логване за отстраняване на грешки на приложението",
   "appSettings_appDebugLoggingSubtitle": "Записване на съобщения за отстраняване на грешки от приложението за отстраняване на грешки.",
@@ -638,91 +625,6 @@
   "map_sharedPin": "Споделено копие",
   "map_joinRoom": "Присъедини се към стаята",
   "map_manageRepeater": "Управление на Повтарящ се Елемент",
-  "mapCache_title": "Кеш на офлайн карти",
-  "mapCache_selectAreaFirst": "Изберете област за кеширане първа",
-  "mapCache_noTilesToDownload": "Няма плочки за изтегляне за тази област.",
-  "mapCache_downloadTilesTitle": "Изтегли плочки",
-  "mapCache_downloadTilesPrompt": "Изтегли {count} плочки за офлайн употреба?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Изтегли",
-  "mapCache_cachedTiles": "Кеширани {count} плочки",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Запазени {downloaded} плочки ({failed} неуспешни)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Изчисти офлайн кеша",
-  "mapCache_clearOfflineCachePrompt": "Премахнете всички кеширани плочки на картата?",
-  "mapCache_offlineCacheCleared": "Кешът на устройството е изчистен.",
-  "mapCache_noAreaSelected": "Няма избрана област",
-  "mapCache_cacheArea": "Област с кеш",
-  "mapCache_useCurrentView": "Използвайте текущия изглед",
-  "mapCache_zoomRange": "Обхват на увеличението",
-  "mapCache_estimatedTiles": "Очаквани плочки: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Изтеглено {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Изтегли Плочки",
-  "mapCache_clearCacheButton": "Изчисти кеша",
-  "mapCache_failedDownloads": "Неуспешни изтегляния: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "Север {north}, Юг {south}, Изток {east}, Запад {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Сега",
   "time_minutesAgo": "{minutes} минути преди",
   "@time_minutesAgo": {

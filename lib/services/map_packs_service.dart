@@ -72,6 +72,7 @@ class MapPacksService extends ChangeNotifier {
   CatalogueStatus _status = CatalogueStatus.unknown;
   String? _error;
   List<Pack> _installed = const [];
+  final _files = <String, FileStat>{};
   final _downloads = <String, PackDownload>{};
   Future<void>? _refreshing;
   final _subscriptions = <StreamSubscription<Object?>>[];
@@ -144,6 +145,15 @@ class MapPacksService extends ChangeNotifier {
   DateTime? get fetchedAt => _fetchedAt;
 
   List<Pack> get installed => _installed;
+
+  /// Size on disk of an installed pack.
+  int sizeOf(Pack pack) => _files[pack.file.path]?.size ?? 0;
+
+  /// When an installed pack was downloaded (its file's time).
+  DateTime? installedAt(Pack pack) => _files[pack.file.path]?.modified;
+
+  /// Bytes used by all installed packs.
+  int get installedBytes => _installed.fold(0, (sum, p) => sum + sizeOf(p));
 
   /// Fetches `index.json` and `picker.geojson`. Concurrent calls share one
   /// fetch.
@@ -235,10 +245,15 @@ class MapPacksService extends ChangeNotifier {
 
   /// Re-reads the installed packs from disk.
   Future<void> reloadInstalled() async {
-    _installed = await manager.listInstalled(
+    final packs = await manager.listInstalled(
       onError: (file, e) =>
           appLogger.warn('Unreadable map pack ${file.path}: $e', tag: 'Maps'),
     );
+    _files.clear();
+    for (final pack in packs) {
+      _files[pack.file.path] = await pack.file.stat();
+    }
+    _installed = packs;
     notifyListeners();
   }
 
@@ -320,6 +335,12 @@ class MapPacksService extends ChangeNotifier {
   ];
 
   /// Downloads still going, for the Downloaded tab's badge.
+  /// Downloads still going (or failed, so they can be retried).
+  List<PackDownload> get activeDownloads => [
+    for (final d in _downloads.values)
+      if (!d.state.isFinal || d.state == PackDownloadState.failed) d,
+  ];
+
   int get activeDownloadCount =>
       _downloads.values.where((d) => !d.state.isFinal).length;
 
@@ -339,6 +360,27 @@ class MapPacksService extends ChangeNotifier {
     }
   }
 
+  /// Translated titles for the download notifications (Android).
+  void setNotificationTitles({
+    required String running,
+    required String paused,
+    required String failed,
+  }) {
+    final titles = (running, paused, failed);
+    if (titles == _notificationTitles) return;
+    _notificationTitles = titles;
+    final d = downloader;
+    if (d is BackgroundPackDownloader) {
+      d.configureNotifications(
+        running: running,
+        paused: paused,
+        failed: failed,
+      );
+    }
+  }
+
+  (String, String, String)? _notificationTitles;
+
   Future<void> pause(String id) => downloader.pause(id);
   Future<void> resume(String id) => downloader.resume(id);
   Future<void> cancel(String id) => downloader.cancel(id);
@@ -357,7 +399,7 @@ class MapPacksService extends ChangeNotifier {
     }
     var freed = 0;
     for (final pack in _installed.where((pk) => pk.region == path).toList()) {
-      freed += await manager.sizeOf(pack);
+      freed += sizeOf(pack);
       await manager.delete(pack);
     }
     return freed;

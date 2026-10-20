@@ -318,6 +318,12 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
               // Update notification service with resolved locale
               final locale = Localizations.localeOf(context);
               NotificationService().setLocale(locale);
+              final l10n = AppLocalizations.of(context);
+              widget.mapPacksService?.setNotificationTitles(
+                running: l10n.offlineMaps_notificationRunning,
+                paused: l10n.offlineMaps_notificationPaused,
+                failed: l10n.offlineMaps_notificationFailed,
+              );
               return child ?? const SizedBox.shrink();
             },
             home: (PlatformInfo.isWeb && !PlatformInfo.isChrome)

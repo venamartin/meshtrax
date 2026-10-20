@@ -89,18 +89,6 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(enableMessageTracing: value));
   }
 
-  Future<void> setMapCacheBounds(Map<String, double>? value) async {
-    await updateSettings(_settings.copyWith(mapCacheBounds: value));
-  }
-
-  Future<void> setMapCacheZoomRange(int minZoom, int maxZoom) async {
-    final safeMin = minZoom <= maxZoom ? minZoom : maxZoom;
-    final safeMax = minZoom <= maxZoom ? maxZoom : minZoom;
-    await updateSettings(
-      _settings.copyWith(mapCacheMinZoom: safeMin, mapCacheMaxZoom: safeMax),
-    );
-  }
-
   Future<void> setMapDownloadsWifiOnly(bool value) async {
     await updateSettings(_settings.copyWith(mapDownloadsWifiOnly: value));
   }

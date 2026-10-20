@@ -300,22 +300,9 @@
   "appSettings_last6Hours": "Az utóban 6 óra",
   "appSettings_last24Hours": "Az utóbbi 24 óra",
   "appSettings_lastWeek": "A múlt héten",
-  "appSettings_offlineMapCache": "Offline térkép tárolás",
   "appSettings_unitsTitle": "Egységek",
   "appSettings_unitsMetric": "Méter (m / kilométer)",
   "appSettings_unitsImperial": "Királyi (láb / mérföld)",
-  "appSettings_noAreaSelected": "Nincs kiválasztott terület.",
-  "appSettings_areaSelectedZoom": "Kiválasztott terület (zoom: {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Hibakeresés",
   "appSettings_appDebugLogging": "App-ban történő hibakereséshez használt naplózás",
   "appSettings_appDebugLoggingSubtitle": "Log alkalmazás hibaelhárítási üzenetek",
@@ -801,91 +788,6 @@
   "map_runTrace": "Útvonal követés",
   "map_removeLast": "Törölj utolsó",
   "map_pathTraceCancelled": "Az útvonal követés megszakadt.",
-  "mapCache_title": "Offline térkép tárolás",
-  "mapCache_selectAreaFirst": "Válasszon egy területet, amelyet először cache-oljon.",
-  "mapCache_noTilesToDownload": "Nincsenek letölthető tile-ok ebben a területben.",
-  "mapCache_downloadTilesTitle": "Letöltsd a tile-okat",
-  "mapCache_downloadTilesPrompt": "Töltse le {count} darab tile-t offline használatra?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Letöltés",
-  "mapCache_cachedTiles": "Tárolt {count} darab",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Cached {downloaded} tiles ({failed} failed)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Tiszta offline tárhely",
-  "mapCache_clearOfflineCachePrompt": "Távolítsa el az összes tárolt térképmegjelenítőt?",
-  "mapCache_offlineCacheCleared": "A helyi memóriát töröltük.",
-  "mapCache_noAreaSelected": "Nincs kiválasztott terület.",
-  "mapCache_cacheArea": "Tároló terület",
-  "mapCache_useCurrentView": "Használja a jelenlegi nézetet",
-  "mapCache_zoomRange": "Zoom tartomány",
-  "mapCache_estimatedTiles": "Becsült kerámiák: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Letöltve {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Letöltsd a tile-okat",
-  "mapCache_clearCacheButton": "Ósztótt adatokat",
-  "mapCache_failedDownloads": "Sikertelen letöltések: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Most",
   "time_minutesAgo": "{minutes} perckel ezelőtt",
   "@time_minutesAgo": {

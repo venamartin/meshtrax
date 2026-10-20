@@ -24,9 +24,6 @@ class AppSettings {
   final bool mapShowMarkers;
   final bool mapShowGuessedLocations;
   final bool enableMessageTracing;
-  final Map<String, double>? mapCacheBounds;
-  final int mapCacheMinZoom;
-  final int mapCacheMaxZoom;
 
   /// Hold offline map downloads until the phone is on Wi-Fi.
   final bool mapDownloadsWifiOnly;
@@ -91,9 +88,6 @@ class AppSettings {
     this.mapShowMarkers = true,
     this.mapShowGuessedLocations = true,
     this.enableMessageTracing = true,
-    this.mapCacheBounds,
-    this.mapCacheMinZoom = 10,
-    this.mapCacheMaxZoom = 15,
     this.mapDownloadsWifiOnly = true,
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
@@ -142,9 +136,6 @@ class AppSettings {
       'map_show_markers': mapShowMarkers,
       'map_show_guessed_locations': mapShowGuessedLocations,
       'enable_message_tracing': enableMessageTracing,
-      'map_cache_bounds': mapCacheBounds,
-      'map_cache_min_zoom': mapCacheMinZoom,
-      'map_cache_max_zoom': mapCacheMaxZoom,
       'map_downloads_wifi_only': mapDownloadsWifiOnly,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
@@ -198,11 +189,6 @@ class AppSettings {
       mapShowGuessedLocations:
           json['map_show_guessed_locations'] as bool? ?? true,
       enableMessageTracing: json['enable_message_tracing'] as bool? ?? false,
-      mapCacheBounds: (json['map_cache_bounds'] as Map?)?.map(
-        (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
-      ),
-      mapCacheMinZoom: json['map_cache_min_zoom'] as int? ?? 10,
-      mapCacheMaxZoom: json['map_cache_max_zoom'] as int? ?? 15,
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
@@ -275,9 +261,6 @@ class AppSettings {
     bool? mapShowMarkers,
     bool? mapShowGuessedLocations,
     bool? enableMessageTracing,
-    Object? mapCacheBounds = _unset,
-    int? mapCacheMinZoom,
-    int? mapCacheMaxZoom,
     bool? mapDownloadsWifiOnly,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
@@ -320,11 +303,6 @@ class AppSettings {
       mapShowGuessedLocations:
           mapShowGuessedLocations ?? this.mapShowGuessedLocations,
       enableMessageTracing: enableMessageTracing ?? this.enableMessageTracing,
-      mapCacheBounds: mapCacheBounds == _unset
-          ? this.mapCacheBounds
-          : mapCacheBounds as Map<String, double>?,
-      mapCacheMinZoom: mapCacheMinZoom ?? this.mapCacheMinZoom,
-      mapCacheMaxZoom: mapCacheMaxZoom ?? this.mapCacheMaxZoom,
       mapDownloadsWifiOnly: mapDownloadsWifiOnly ?? this.mapDownloadsWifiOnly,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,

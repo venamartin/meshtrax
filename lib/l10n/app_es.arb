@@ -227,19 +227,6 @@
   "appSettings_last6Hours": "Últimas 6 horas",
   "appSettings_last24Hours": "Últimas 24 horas",
   "appSettings_lastWeek": "La semana pasada",
-  "appSettings_offlineMapCache": "Caché de Mapa Offline",
-  "appSettings_noAreaSelected": "No se ha seleccionado ningún área",
-  "appSettings_areaSelectedZoom": "Área seleccionada (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Depurar",
   "appSettings_appDebugLogging": "Registro de Depuración de la App",
   "appSettings_appDebugLoggingSubtitle": "Registrar mensajes de depuración de la app de registro para solucionar problemas",
@@ -638,91 +625,6 @@
   "map_sharedPin": "Pin compartido",
   "map_joinRoom": "Únete a la sala",
   "map_manageRepeater": "Gestionar Repetidor",
-  "mapCache_title": "Caché de Mapa Offline",
-  "mapCache_selectAreaFirst": "Seleccionar un área para cachear primero",
-  "mapCache_noTilesToDownload": "No hay azulejos para descargar para este área.",
-  "mapCache_downloadTilesTitle": "Descargar ficheros",
-  "mapCache_downloadTilesPrompt": "Descargar {count} ficheros para usar sin conexión?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Descargar",
-  "mapCache_cachedTiles": "Almacenados {count} azulejos",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Archivados {downloaded} azulejos ({failed} fallidos)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Borrar caché offline",
-  "mapCache_clearOfflineCachePrompt": "Eliminar todas las baldosas en caché del mapa?",
-  "mapCache_offlineCacheCleared": "Almacén en caché sin conexión eliminado",
-  "mapCache_noAreaSelected": "No se ha seleccionado ningún área",
-  "mapCache_cacheArea": "Área de Caché",
-  "mapCache_useCurrentView": "Usar Vista Actual",
-  "mapCache_zoomRange": "Rango de Zoom",
-  "mapCache_estimatedTiles": "Tiles estimados: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Descargados {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Descargar Mosaicos",
-  "mapCache_clearCacheButton": "Borrar Caché",
-  "mapCache_failedDownloads": "Descargas fallidas: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Hace un momento",
   "time_minutesAgo": "{minutes} minutos hace.",
   "@time_minutesAgo": {

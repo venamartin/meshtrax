@@ -20,7 +20,7 @@ Not published yet:
 - **Routing (1.5).**
 - **Overlays (1.6).**
 
-**App:** Phase 1 is in progress on the local branch `feat/offline-maps`. Martin asked for local commits only, for now.
+**App:** Phase 1 is done on the local branch `feat/offline-maps` (local commits only, as Martin asked). Still open: the privacy.md map-server section and the translations (`tools/translate.py` needs Ollama, which this Pi doesn't have).
 
 ## How we work
 
@@ -337,8 +337,8 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | A2 | traxmap dependency, `flutter_map ^8.3.2`, SDK `^3.13.5`.<br>• Android backup rules exclude `files/maps/`.<br>• A CI job builds a debug APK.<br>• iOS backup exclusion moves to G2: it needs native code and a Mac to test. |
 | A3 | `MapPacksService`.<br>• Cached catalogue revalidated with ETags.<br>• A 404 means "unavailable".<br>• Pack status (available, queued, running, paused, retrying, verifying, failed, installed, update available), default selection, updates and badge.<br>• Download, pause, resume, cancel and delete region.<br>• Follows the Wi‑Fi setting.<br>• Not created on the web. |
 | A4 | "Download maps on Wi‑Fi only" setting (default on). Fixes B6: the time filter now defaults to 0 (all time) everywhere. Map type, family, contours and theme arrive with `AppMap` (A5), the first code that reads them. |
-| O1 | Offline maps shell, tabs, badge and Downloaded tab.<br>• Scanner ⋮ "Offline maps".<br>• Settings row and Wi‑Fi switch.<br>• **Delete** the map cache screen, the prefetch, and their settings and strings.<br>• `formatBytes`.<br>• privacy.md map-server section. |
-| O2 | Maps tab list (breadcrumb, Suggested, chips, picker credit, every state) and region detail with downloads.<br>• The download integration test moves to `integration_test/pack_download_test.dart`. |
+| O1 | Offline maps shell, tabs, badge and Downloaded tab (storage, updates, downloads, regions, other files, clear the online tile cache).<br>• Scanner ⋮ "Offline maps".<br>• Settings rows: Offline maps, and Wi‑Fi only on phones.<br>• Translated notification titles.<br>• **Deleted:** the map cache screen, the prefetch, and their settings and strings (all locales).<br>• `formatBytes`. |
+| O2 | Maps tab list (breadcrumb, Suggested from the radio position, chips, picker credit, every catalogue state) and region detail (rows with every status, contour interval, Download, Update, Delete; beside the list at ≥ 880 px).<br>• `integration_test/pack_download_test.dart`, against `dev/` by default: passed on the Pi 2026-10-19 (Rhode Island map, paused at 71%, resumed by range request, verified, installed). |
 
 ### Phase 2: map foundations and the picker map
 

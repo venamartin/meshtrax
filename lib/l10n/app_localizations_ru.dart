@@ -878,9 +878,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appSettings_lastWeek => 'Последнюю неделю';
 
   @override
-  String get appSettings_offlineMapCache => 'Кэш офлайн-карты';
-
-  @override
   String get appSettings_unitsTitle => 'Единицы';
 
   @override
@@ -888,14 +885,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appSettings_unitsImperial => 'Имперская (ft / mi)';
-
-  @override
-  String get appSettings_noAreaSelected => 'Область не выбрана';
-
-  @override
-  String appSettings_areaSelectedZoom(int minZoom, int maxZoom) {
-    return 'Область выбрана (масштаб $minZoom–$maxZoom)';
-  }
 
   @override
   String get appSettings_debugCard => 'Отладка';
@@ -1877,91 +1866,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get map_pathTraceCancelled => 'Отмена трассировки пути';
-
-  @override
-  String get mapCache_title => 'Кэш офлайн-карты';
-
-  @override
-  String get mapCache_selectAreaFirst =>
-      'Сначала выберите область для кэширования';
-
-  @override
-  String get mapCache_noTilesToDownload =>
-      'Нет плиток для загрузки в этой области';
-
-  @override
-  String get mapCache_downloadTilesTitle => 'Загрузить плитки';
-
-  @override
-  String mapCache_downloadTilesPrompt(int count) {
-    return 'Загрузить $count плиток для офлайн-использования?';
-  }
-
-  @override
-  String get mapCache_downloadAction => 'Загрузить';
-
-  @override
-  String mapCache_cachedTiles(int count) {
-    return 'Закэшировано $count плиток';
-  }
-
-  @override
-  String mapCache_cachedTilesWithFailed(int downloaded, int failed) {
-    return 'Закэшировано $downloaded плиток ($failed не загружено)';
-  }
-
-  @override
-  String get mapCache_clearOfflineCacheTitle => 'Очистить офлайн-кэш';
-
-  @override
-  String get mapCache_clearOfflineCachePrompt =>
-      'Удалить все закэшированные плитки карты?';
-
-  @override
-  String get mapCache_offlineCacheCleared => 'Офлайн-кэш очищен';
-
-  @override
-  String get mapCache_noAreaSelected => 'Область не выбрана';
-
-  @override
-  String get mapCache_cacheArea => 'Область кэширования';
-
-  @override
-  String get mapCache_useCurrentView => 'Использовать текущий вид';
-
-  @override
-  String get mapCache_zoomRange => 'Диапазон масштаба';
-
-  @override
-  String mapCache_estimatedTiles(int count) {
-    return 'Оценочное количество плиток: $count';
-  }
-
-  @override
-  String mapCache_downloadedTiles(int completed, int total) {
-    return 'Загружено $completed из $total';
-  }
-
-  @override
-  String get mapCache_downloadTilesButton => 'Загрузить плитки';
-
-  @override
-  String get mapCache_clearCacheButton => 'Очистить кэш';
-
-  @override
-  String mapCache_failedDownloads(int count) {
-    return 'Неудачных загрузок: $count';
-  }
-
-  @override
-  String mapCache_boundsLabel(
-    String north,
-    String south,
-    String east,
-    String west,
-  ) {
-    return 'С $north, Ю $south, В $east, З $west';
-  }
 
   @override
   String get time_justNow => 'Только что';
@@ -4113,4 +4017,246 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get room_selfDemoteWarning =>
       'Вы меняете собственный доступ. Если вы лишитесь роли админа, вернуть её сможет только консоль комнаты.';
+
+  @override
+  String get scanner_offlineMaps => 'Offline maps';
+
+  @override
+  String get appSettings_offlineMaps => 'Offline maps';
+
+  @override
+  String get appSettings_offlineMapsNone => 'None downloaded';
+
+  @override
+  String appSettings_offlineMapsSummary(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count regions',
+      one: '1 region',
+    );
+    return '$_temp0 · $size';
+  }
+
+  @override
+  String appSettings_offlineMapsUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count updates available',
+      one: '1 update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+
+  @override
+  String get appSettings_mapDownloadsWifiOnlySubtitle =>
+      'Map downloads wait for a Wi‑Fi connection';
+
+  @override
+  String get offlineMaps_title => 'Offline maps';
+
+  @override
+  String get offlineMaps_tabMaps => 'Maps';
+
+  @override
+  String get offlineMaps_tabDownloaded => 'Downloaded';
+
+  @override
+  String get offlineMaps_refresh => 'Check for new maps';
+
+  @override
+  String get offlineMaps_loading => 'Loading available maps…';
+
+  @override
+  String get offlineMaps_serverError => 'Can\'t reach the map server';
+
+  @override
+  String get offlineMaps_unavailable => 'No maps are available yet';
+
+  @override
+  String get offlineMaps_unavailableHint => 'Check again later.';
+
+  @override
+  String offlineMaps_cachedFrom(String date) {
+    return 'Showing the list from $date';
+  }
+
+  @override
+  String get offlineMaps_needsNewerApp =>
+      'Update MeshTrax to get the newest maps.';
+
+  @override
+  String get offlineMaps_world => 'World';
+
+  @override
+  String get offlineMaps_suggested => 'Suggested';
+
+  @override
+  String get offlineMaps_regions => 'Regions';
+
+  @override
+  String offlineMaps_regionsIn(String name) {
+    return 'Regions in $name';
+  }
+
+  @override
+  String offlineMaps_inside(int count) {
+    return '$count inside';
+  }
+
+  @override
+  String offlineMaps_storageUsed(String size) {
+    return '$size of offline maps on this device';
+  }
+
+  @override
+  String offlineMaps_updates(int count) {
+    return 'Updates ($count)';
+  }
+
+  @override
+  String offlineMaps_updateAll(String size) {
+    return 'Update all $size';
+  }
+
+  @override
+  String get offlineMaps_downloading => 'Downloading';
+
+  @override
+  String get offlineMaps_update => 'Update';
+
+  @override
+  String offlineMaps_downloadedOn(String date) {
+    return 'Downloaded $date';
+  }
+
+  @override
+  String get offlineMaps_updateAvailable => 'Update available';
+
+  @override
+  String get offlineMaps_otherFiles => 'Other map files';
+
+  @override
+  String get offlineMaps_emptyTitle => 'No offline maps yet';
+
+  @override
+  String get offlineMaps_emptyBody =>
+      'Download a region to use the map without a connection.';
+
+  @override
+  String get offlineMaps_findMaps => 'Find maps';
+
+  @override
+  String offlineMaps_deleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String offlineMaps_deleteBody(String size) {
+    return 'This frees $size. You can download it again later.';
+  }
+
+  @override
+  String offlineMaps_deleted(String name) {
+    return '$name deleted';
+  }
+
+  @override
+  String offlineMaps_bytesProgress(String done, String total) {
+    return '$done of $total';
+  }
+
+  @override
+  String get offlineMaps_kindMap => 'Map';
+
+  @override
+  String get offlineMaps_kindMapDetail =>
+      'OpenStreetMap streets, trails, places';
+
+  @override
+  String get offlineMaps_kindContours => 'Contours';
+
+  @override
+  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+
+  @override
+  String get offlineMaps_kindUsgs => 'USGS topo map';
+
+  @override
+  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves, terrain';
+
+  @override
+  String get offlineMaps_kindCharts => 'NOAA charts';
+
+  @override
+  String get offlineMaps_usOnly => 'United States only';
+
+  @override
+  String offlineMaps_download(String size) {
+    return 'Download $size';
+  }
+
+  @override
+  String get offlineMaps_downloadTotal => 'Download';
+
+  @override
+  String offlineMaps_largeDownload(String size) {
+    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+  }
+
+  @override
+  String get offlineMaps_waiting => 'Waiting…';
+
+  @override
+  String get offlineMaps_checking => 'Checking download…';
+
+  @override
+  String get offlineMaps_retrying => 'Retrying…';
+
+  @override
+  String offlineMaps_failed(String error) {
+    return 'Download failed: $error';
+  }
+
+  @override
+  String get offlineMaps_pause => 'Pause';
+
+  @override
+  String get offlineMaps_resume => 'Resume';
+
+  @override
+  String get offlineMaps_deleteRegion => 'Delete region';
+
+  @override
+  String get offlineMaps_notInCatalogue => 'Not available for this region';
+
+  @override
+  String get offlineMaps_chooseRegion => 'Choose a region';
+
+  @override
+  String get offlineMaps_chooseRegionHint =>
+      'Tap a region in the list to see its maps.';
+
+  @override
+  String get offlineMaps_notificationRunning => 'Downloading map';
+
+  @override
+  String get offlineMaps_notificationPaused => 'Map download paused';
+
+  @override
+  String get offlineMaps_notificationFailed => 'Map download failed';
+
+  @override
+  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+
+  @override
+  String get offlineMaps_clearTileCachePrompt =>
+      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+
+  @override
+  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
 }
