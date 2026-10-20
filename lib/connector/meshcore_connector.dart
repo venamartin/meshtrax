@@ -53,6 +53,7 @@ import '../utils/battery_utils.dart';
 import '../utils/platform_info.dart';
 import 'meshcore_uuids.dart';
 import 'meshcore_protocol.dart';
+import 'second_app_detector.dart';
 
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
@@ -865,6 +866,40 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// wifi.* CLI keys; the protocol has no capability bit for it.
   bool? get hasWifi => _hasWifi;
   bool? _hasWifi;
+
+  final SecondAppDetector _secondAppDetector = SecondAppDetector();
+  bool _secondAppSeen = false;
+  bool _secondAppDismissed = false;
+
+  /// Another app seems to be connected to this radio, and the user has not
+  /// dismissed the warning this connection.
+  bool get secondAppSuspected => _secondAppSeen && !_secondAppDismissed;
+
+  void dismissSecondAppWarning() {
+    _secondAppDismissed = true;
+    notifyListeners();
+  }
+
+  void _noteSecondApp(int replyCode) {
+    // During our own handshake, retries and stale frames blur "unrequested".
+    if (!_initialSyncComplete || _secondAppSeen) return;
+    _secondAppSeen = true;
+    _appDebugLogService?.warn(
+      'Another app seems to be connected to this radio: got reply code '
+      '$replyCode to a request MeshTrax never made',
+      tag: 'Connector',
+    );
+    notifyListeners();
+  }
+
+  void _resetSecondApp() {
+    _secondAppDetector.reset();
+    _secondAppSeen = false;
+    _secondAppDismissed = false;
+  }
+
+  @visibleForTesting
+  void markInitialSyncCompleteForTest() => _initialSyncComplete = true;
 
   @visibleForTesting
   Future<void> probeWifiForTest() => _probeWifi();
@@ -3283,6 +3318,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _firmwareVerCode = null;
     _firmwareVersion = null;
     _hasWifi = null;
+    _resetSecondApp();
     _autoAddUsers = false;
     _autoAddRepeaters = false;
     _autoAddRoomServers = false;
@@ -3382,6 +3418,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
     );
+    _secondAppDetector.onSent(data);
 
     if (_activeTransport == MeshCoreTransportType.usb) {
       await _usbManager.write(data);
@@ -5416,6 +5453,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final frame = Uint8List.fromList(data);
     _receivedFramesController.add(frame);
     _bleDebugLogService?.logFrame(frame, outgoing: false);
+
+    if (_secondAppDetector.isForeign(frame) ||
+        (frame[0] == respCodeCliReply && !companionCli.isOwnReply(frame))) {
+      _noteSecondApp(frame[0]);
+    }
 
     final code = frame[0];
     // debugPrint('RX frame: code=$code len=${frame.length}');
@@ -9197,6 +9239,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // A drop mid-handshake must also clear the device-info wait, or the
     // banner sticks on "Reading device info" until the next attempt.
     _initialSyncComplete = false;
+    _resetSecondApp();
     _awaitingSelfInfo = false;
     _selfInfoRetryTimer?.cancel();
     _selfInfoRetryTimer = null;
