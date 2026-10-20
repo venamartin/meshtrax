@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
@@ -21,9 +22,17 @@ class PackException implements Exception {
 ///
 /// The app only ever reads local files here. Downloads from the pack server
 /// (a [PackDownloader]) land through [install] once the file is on disk.
+///
+/// A pack installed with a checksum is stored as `<id>@<sha12>.pmtiles`, so
+/// each build has its own file name. An update is written next to the old
+/// build, which is then deleted. This gives the map a new path to reload
+/// from, and works on Windows, where an open file can't be replaced. If the
+/// old build is still in use, [listInstalled] removes it later.
 class PackManager {
   static const String extension = '.pmtiles';
   static const String _partial = '.part';
+  static const String _buildSeparator = '@';
+  static const int _shaPrefixLength = 12;
 
   final Directory root;
   final _changes = StreamController<void>.broadcast();
@@ -36,40 +45,63 @@ class PackManager {
   /// Closes [changes]; call when the manager is no longer used.
   Future<void> close() => _changes.close();
 
-  /// Every readable pack in [root]. Files that fail to parse are skipped and
-  /// reported through [onError] if given.
+  /// Every readable pack in [root], one per id. Files that fail to parse are
+  /// skipped and reported through [onError] if given. Where an update left
+  /// two builds of one pack, the newer file is listed and the older one
+  /// deleted.
   Future<List<Pack>> listInstalled({
     void Function(File file, Object error)? onError,
   }) async {
     if (!await root.exists()) return const [];
-    final packs = <Pack>[];
+    final byId = <String, Pack>{};
     await for (final entity in root.list()) {
       if (entity is! File || p.extension(entity.path) != extension) continue;
+      final Pack pack;
       try {
-        packs.add(await open(entity));
+        pack = await open(entity);
       } catch (e) {
         onError?.call(entity, e);
+        continue;
       }
+      final other = byId[pack.id];
+      if (other == null) {
+        byId[pack.id] = pack;
+        continue;
+      }
+      final newer =
+          (await pack.file.lastModified()).isAfter(
+            await other.file.lastModified(),
+          )
+          ? pack
+          : other;
+      byId[pack.id] = newer;
+      await _deleteQuietly(identical(newer, pack) ? other.file : pack.file);
     }
-    packs.sort((a, b) => a.id.compareTo(b.id));
-    return packs;
+    return byId.values.toList()..sort((a, b) => a.id.compareTo(b.id));
   }
 
   /// Reads the header and metadata of a PMTiles file without installing it.
   static Future<Pack> open(File file) async {
     final header = await PmTilesHeader.read(file);
     final metadata = await header.readMetadata(file) ?? const {};
+    final name = p.basenameWithoutExtension(file.path);
+    final at = name.lastIndexOf(_buildSeparator);
     return Pack(
-      id: p.basenameWithoutExtension(file.path),
+      id: at < 0 ? name : name.substring(0, at),
       file: file,
       header: header,
       metadata: metadata,
+      sha256Prefix: at < 0 ? null : name.substring(at + 1),
     );
   }
 
-  /// Copies [source] into [root] as `<id>.pmtiles`, replacing any pack with the
-  /// same id. The copy goes to a temporary file and is renamed only after the
-  /// header parses and, if [sha256] is given, the checksum matches.
+  /// Copies [source] into [root], replacing any pack with the same id. The
+  /// copy goes to a temporary file and is renamed only after the header
+  /// parses and, if [sha256] is given, the checksum matches.
+  ///
+  /// With a [sha256] the file is named `<id>@<sha12>.pmtiles`, otherwise
+  /// `<id>.pmtiles`. Other builds of the same id are deleted afterwards,
+  /// where the platform allows (see the class docs).
   ///
   /// With [move], [source] is renamed instead of copied (falling back to a
   /// copy across file systems), so a large download in [root] needs no
@@ -81,11 +113,15 @@ class PackManager {
     bool move = false,
   }) async {
     id ??= p.basenameWithoutExtension(source.path);
-    if (id.isEmpty || id.contains(RegExp(r'[/\\]'))) {
+    if (id.isEmpty || id.contains(RegExp(r'[/\\@]'))) {
       throw PackException('Invalid pack id "$id"');
     }
     await root.create(recursive: true);
-    final target = File(p.join(root.path, '$id$extension'));
+    final sha = sha256?.toLowerCase();
+    final build = sha == null
+        ? ''
+        : '$_buildSeparator${sha.length > _shaPrefixLength ? sha.substring(0, _shaPrefixLength) : sha}';
+    final target = File(p.join(root.path, '$id$build$extension'));
     final temp = File('${target.path}$_partial');
     try {
       if (move) {
@@ -109,6 +145,17 @@ class PackManager {
       throw PackException('Could not install "$id": $e');
     }
     final pack = await open(target);
+    await for (final entity in root.list()) {
+      if (entity is! File ||
+          entity.path == target.path ||
+          p.extension(entity.path) != extension) {
+        continue;
+      }
+      final name = p.basenameWithoutExtension(entity.path);
+      if (name == id || name.startsWith('$id$_buildSeparator')) {
+        await _deleteQuietly(entity);
+      }
+    }
     if (!_changes.isClosed) _changes.add(null);
     return pack;
   }
@@ -151,11 +198,24 @@ class PackManager {
   }
 
   static DateTime _buildDate(Pack pack) =>
-      DateTime.tryParse(pack.metadata['build_date'] as String? ?? '') ??
-      pack.file.statSync().modified;
+      pack.buildDate ?? pack.file.statSync().modified;
 
+  /// Hashes on a background isolate: a multi-GB pack takes many seconds.
   static Future<bool> _matches(File file, String expected) async {
-    final digest = await sha256.bind(file.openRead()).first;
-    return digest.toString() == expected.toLowerCase();
+    final path = file.path;
+    final digest = await Isolate.run(
+      () async => (await sha256.bind(File(path).openRead()).first).toString(),
+    );
+    return digest == expected.toLowerCase();
+  }
+
+  /// Deletes [file] if it can. A build still open elsewhere (Windows) stays
+  /// until a later [listInstalled].
+  static Future<void> _deleteQuietly(File file) async {
+    try {
+      await file.delete();
+    } on FileSystemException {
+      // Still in use; retried on the next listInstalled.
+    }
   }
 }

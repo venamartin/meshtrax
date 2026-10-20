@@ -121,8 +121,21 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
   every response; R2 does. A pack rebuilt mid-download changes its ETag, so
   the download starts over.
 - **Install:** the file lands next to the packs as `<id>.pmtiles.download`.
-  `PackManager.install(move: true)` checks the index's SHA-256 and renames it
-  into place, so there's no second copy, and a bad file is deleted.
+  `PackManager.install(move: true)` checks the index's SHA-256 (on a
+  background isolate) and renames it into place, so there's no second copy,
+  and a bad file is deleted.
+- **Builds and updates:** an installed pack is named
+  `<id>@<first 12 hex of its sha256>.pmtiles`.
+  - **Update check:** `Pack.isBuild(entry.sha256)` tells the app whether
+    the index has a newer build.
+  - **Installing an update:** it goes beside the old build, which is then
+    deleted. The map gets a new file to reload from.
+  - **Windows:** an open file can't be deleted, so `listInstalled` removes
+    the leftover build on a later call.
+- **Wi‑Fi only:** `setRequiresWiFi(true)` holds every download, running
+  ones included, until the device is on Wi‑Fi. Phones only.
+- **Notifications:** `notification`, `pausedNotification` and
+  `failedNotification` take translated titles.
 - **Restore:** `restore()` re-queues downloads the app was killed during, and
   installs ones that finished while it was closed.
   - **Desktop:** a killed download restarts from 0%, and the plugin leaves

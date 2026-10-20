@@ -49,6 +49,78 @@ void main() {
     },
   );
 
+  test('a pack installed with a checksum is named by its build', () async {
+    final src = source(
+      'ri.pmtiles',
+      metadata: {
+        'kind': 'osm',
+        'region': 'north-america/us/rhode-island',
+        'build_date': '2026-10-19',
+      },
+    );
+    final sum = sha256.convert(src.readAsBytesSync()).toString();
+    final pack = await manager.install(src, id: 'us-ri-osm', sha256: sum);
+    expect(pack.id, 'us-ri-osm');
+    expect(pack.sha256Prefix, sum.substring(0, 12));
+    expect(
+      pack.file.path,
+      endsWith('us-ri-osm@${sum.substring(0, 12)}.pmtiles'),
+    );
+    expect(pack.isBuild(sum.toUpperCase()), isTrue);
+    expect(pack.isBuild('f' * 64), isFalse);
+    expect(pack.region, 'north-america/us/rhode-island');
+    expect(pack.buildDate, DateTime(2026, 10, 19));
+
+    final unversioned = await manager.install(source('plain.pmtiles'));
+    expect(unversioned.sha256Prefix, isNull);
+    expect(unversioned.isBuild(sum), isNull);
+  });
+
+  test('an update replaces the old build, and only that pack', () async {
+    final v1 = source('v1.pmtiles', metadata: {'build_date': '2026-10-01'});
+    final v2 = source('v2.pmtiles', metadata: {'build_date': '2026-10-19'});
+    final other = source('o.pmtiles');
+    await manager.install(other, id: 'r-osm');
+    final old = await manager.install(
+      v1,
+      id: 'r',
+      sha256: sha256.convert(v1.readAsBytesSync()).toString(),
+    );
+    final sum2 = sha256.convert(v2.readAsBytesSync()).toString();
+    final fresh = await manager.install(v2, id: 'r', sha256: sum2);
+    expect(old.file.existsSync(), isFalse);
+    expect(fresh.file.path, isNot(old.file.path));
+    final installed = await manager.listInstalled();
+    expect(installed.map((p) => p.id), ['r', 'r-osm']);
+    expect(installed.first.isBuild(sum2), isTrue);
+  });
+
+  test(
+    'listInstalled keeps the newest build when an old one is left',
+    () async {
+      await manager.root.create(recursive: true);
+      final older = File('${manager.root.path}/r@aaaaaaaaaaaa.pmtiles')
+        ..writeAsBytesSync(fakePmTiles(metadata: {'build_date': '2026-10-01'}));
+      older.setLastModifiedSync(DateTime(2026, 10, 1));
+      File(
+        '${manager.root.path}/r@bbbbbbbbbbbb.pmtiles',
+      ).writeAsBytesSync(fakePmTiles(metadata: {'build_date': '2026-10-19'}));
+      final packs = await manager.listInstalled();
+      expect(packs, hasLength(1));
+      expect(packs.single.sha256Prefix, 'bbbbbbbbbbbb');
+      expect(older.existsSync(), isFalse);
+    },
+  );
+
+  test('rejects ids with a path separator or the build separator', () async {
+    for (final id in ['a/b', r'a\b', 'a@b', '']) {
+      await expectLater(
+        manager.install(source('x.pmtiles'), id: id),
+        throwsA(isA<PackException>()),
+      );
+    }
+  });
+
   test('install, list, delete', () async {
     final pack = await manager.install(
       source(

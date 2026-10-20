@@ -21,6 +21,23 @@
     (`needsNewerApp`).
   - Malformed features are skipped and listed in `skipped`. Outlines are
     already split at the antimeridian.
+- **Pack builds and updates:**
+  - A pack installed with a checksum is stored as `<id>@<sha12>.pmtiles`.
+    `Pack.sha256Prefix` and `Pack.isBuild(sha256)` tell whether the index
+    has a newer build.
+  - An update installs beside the old build and then deletes it. The map
+    sees a new path, and Windows, which can't replace an open file, keeps
+    working. `listInstalled` lists one pack per id and removes leftover
+    builds.
+  - Ids may not contain `@`.
+  - `Pack.region` and `Pack.buildDate` come from the metadata.
+- **SHA-256 checks run on a background isolate,** so verifying a
+  multi-GB pack doesn't stall the UI.
+- **`BackgroundPackDownloader`:**
+  - `setRequiresWiFi(bool)` replaces the `requiresWiFi` constructor flag,
+    and applies to running downloads too.
+  - The paused and failed notification titles are parameters, so they can
+    be translated.
 - **Pack downloads:**
   - **`PackDownloader`** (core): `PackDownload` snapshots with state,
     progress and error.

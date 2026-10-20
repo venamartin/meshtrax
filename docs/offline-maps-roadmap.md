@@ -332,7 +332,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | D0 | These docs. |
 | T1 | traxmap index model v2.<br>• `PackIndexEntry` gains `region`, `variant`, `units`, `interval` and `intervalUnit`, round-tripped (so restored downloads keep them).<br>• `PackIndex` gains `generated`, `schemaVersion`, `usable` and `needsNewerApp`.<br>• Tolerant parsing.<br>• The real `dev/index.json` as the test fixture.<br>• The `routing` and `overlays` sections, and the entries' `level` and `overlay` fields, wait for Phases 7 and 8, when their data exists. |
 | T2 | traxmap `RegionIndex` (core).<br>• Parses `picker.geojson`: its members, tree and levels.<br>• `regionAt(LatLng)`: the smallest downloadable region containing the point.<br>• Pairing with packs through `PackIndex.forRegion(path)`. |
-| T4 | traxmap pack lifecycle.<br>• Versioned file names `<id>@<sha12>.pmtiles` (update detection, reload, Windows-safe swap).<br>• New `Pack` fields.<br>• SHA-256 off the UI isolate.<br>• Runtime Wi‑Fi-only setting.<br>• Localizable notification strings. |
+| T4 | traxmap pack lifecycle.<br>• Versioned file names `<id>@<sha12>.pmtiles` (update detection, reload, Windows-safe swap).<br>• `Pack.isBuild`, `region` and `buildDate`; `level` and `overlayId` wait for Phase 8.<br>• SHA-256 off the UI isolate.<br>• Runtime Wi‑Fi-only setting.<br>• Localizable notification strings. |
 | A1 | Map tile User-Agent → `com.vena.meshtrax`. |
 | A2 | traxmap dependency, `flutter_map ^8.3.2`, SDK `^3.13.5`, backup exclusions, CI APK build. |
 | A3 | `MapPacksService`. |

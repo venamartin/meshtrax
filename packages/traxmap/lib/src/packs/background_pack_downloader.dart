@@ -32,9 +32,6 @@ class BackgroundPackDownloader implements PackDownloader {
 
   final PackManager manager;
 
-  /// Hold downloads until the device is on Wi-Fi.
-  final bool requiresWiFi;
-
   final FileDownloader _downloader;
   final _updates = StreamController<PackDownload>.broadcast();
   final _latest = <String, PackDownload>{};
@@ -42,22 +39,31 @@ class BackgroundPackDownloader implements PackDownloader {
   StreamSubscription<TaskUpdate>? _subscription;
 
   /// [scope] isolates traxmap's tasks from the app's own background_downloader
-  /// use. [notification] titles the system notification Android 14+ requires
-  /// for long downloads; `{displayName}` is the pack name.
+  /// use. [notification], [pausedNotification] and [failedNotification]
+  /// title the system notifications (Android 14+ requires one for long
+  /// downloads); pass translated text. The body shows the pack name.
   BackgroundPackDownloader(
     this.manager, {
-    this.requiresWiFi = false,
     String scope = 'traxmap',
     String notification = 'Downloading map',
+    String pausedNotification = 'Map download paused',
+    String failedNotification = 'Map download failed',
   }) : _downloader = FileDownloader.scoped(scope) {
     _downloader.configureNotificationForGroup(
       _group,
       running: TaskNotification(notification, '{displayName}  {progress}'),
-      paused: const TaskNotification('Map download paused', '{displayName}'),
-      error: const TaskNotification('Map download failed', '{displayName}'),
+      paused: TaskNotification(pausedNotification, '{displayName}'),
+      error: TaskNotification(failedNotification, '{displayName}'),
       progressBar: true,
     );
   }
+
+  /// Holds downloads until the device is on Wi-Fi, or lets them use any
+  /// network. Applies to running downloads too. Phones only; desktops
+  /// ignore it.
+  Future<void> setRequiresWiFi(bool required) => _downloader.requireWiFi(
+    required ? RequireWiFi.forAllTasks : RequireWiFi.asSetByTask,
+  );
 
   @override
   Stream<PackDownload> get updates => _updates.stream;
@@ -146,7 +152,6 @@ class BackgroundPackDownloader implements PackDownloader {
       displayName: entry.name,
       metaData: jsonEncode(entry.toJson()),
       updates: Updates.statusAndProgress,
-      requiresWiFi: requiresWiFi,
       retries: 5,
       // UIDT on Android 14+, and pausable (resumes across WorkManager's
       // 9-minute cycles) everywhere.

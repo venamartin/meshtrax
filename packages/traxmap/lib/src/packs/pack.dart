@@ -36,12 +36,31 @@ class Pack {
   /// The archive's JSON metadata, if readable.
   final Map<String, Object?> metadata;
 
+  /// Start of the SHA-256 the pack was installed with, from its file name
+  /// (`<id>@<sha12>.pmtiles`); null for packs installed without one.
+  final String? sha256Prefix;
+
   const Pack({
     required this.id,
     required this.file,
     required this.header,
     this.metadata = const {},
+    this.sha256Prefix,
   });
+
+  /// True when this file is the build with [sha256] (hex, any case), e.g.
+  /// the pack index's current one. False means an update is available;
+  /// null means unknown (installed without a checksum).
+  bool? isBuild(String sha256) => sha256Prefix == null
+      ? null
+      : sha256.toLowerCase().startsWith(sha256Prefix!);
+
+  /// Path of the region the pack was cut for, e.g.
+  /// `north-america/us/rhode-island`.
+  String? get region => metadata['region'] as String?;
+
+  DateTime? get buildDate =>
+      DateTime.tryParse(metadata['build_date'] as String? ?? '');
 
   String get name => (metadata['name'] as String?) ?? id;
 
