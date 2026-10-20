@@ -297,23 +297,37 @@ class _WifiSettingsScreenState extends State<WifiSettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // The action sits under the status, not beside it: beside it, the
+        // title wrapped mid-address ("192.168.4.11" / "6") on a phone.
         Card(
-          child: ListTile(
-            leading: Icon(_connected ? Icons.wifi : Icons.wifi_off),
-            title: Text(
-              _connected && address != null
-                  ? l10n.wifi_connectedTo(address)
-                  : l10n.wifi_notConnected,
-            ),
-            subtitle: address != null
-                ? Text(l10n.wifi_portNote(companionWifiTcpPort))
-                : null,
-            trailing: address != null
-                ? TextButton(
-                    onPressed: _busy ? null : () => _connectOverWifi(address),
-                    child: Text(l10n.wifi_connectOverWifi),
-                  )
-                : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ListTile(
+                leading: Icon(_connected ? Icons.wifi : Icons.wifi_off),
+                title: Text(
+                  _connected && address != null
+                      ? l10n.wifi_connectedTo(address)
+                      : l10n.wifi_notConnected,
+                ),
+                subtitle: address != null
+                    ? Text(l10n.wifi_portNote(companionWifiTcpPort))
+                    : null,
+              ),
+              if (address != null)
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                    child: TextButton(
+                      onPressed: _busy
+                          ? null
+                          : () => _connectOverWifi(address),
+                      child: Text(l10n.wifi_connectOverWifi),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
