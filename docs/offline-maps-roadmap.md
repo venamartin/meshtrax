@@ -462,7 +462,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ### Later
 
 - Night style
-- Bundled world pack
+- World base map: from traxmapmaker, downloaded with the catalogue, built last (see Known issues)
 - Offline line-of-sight elevation
 - Cutting areas on the device
 - Online vector tiles streamed from R2
@@ -474,7 +474,9 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ## Known issues
 
 - **Peak labels had a box before the name on the Pi** ("▯ Bare Rock"). The styles put "▲" before the name, and the renderer draws labels in the platform's default font, which lacks it on Linux. Fixed 2026-10-20 by dropping the "▲" (`tool/make_styles.py`). A proper peak icon comes with sprites (T9); a font for labels needs the font hook (T12).
-- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the dashed outlines and the "Zoom in" card show. The bundled world pack (Later) would fill it.
+- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the dashed outlines and the "Zoom in" card show.
+  - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
+  - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.
 - **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
 
 ## Bugs to fix along the way
