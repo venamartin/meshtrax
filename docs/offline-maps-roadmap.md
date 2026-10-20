@@ -50,7 +50,8 @@ Last updated 2026-10-19, evening. **Resume here.**
    - The Node Map uses the same fallback.
    - Auto-connect while it's open: the scanner moves on to Chats only once it's the top screen again.
 4. **Online mode is the standard look** (Martin, 2026-10-20). Online, the map draws the standard light map everywhere (`mapIsOnline`), because USGS, charts, contours and dark come from downloaded packs. The layers sheet greys those tiles with "Offline only"; tapping one switches to Offline and applies it. The choices are kept for Offline.
-5. **Now: the small maps M1–M4.**
+5. **The small maps M1–M4: done (2026-10-20),** plus the chat cards' location map (`MiniMap`, new in #171). Every map in the app now draws through `AppMap`.
+   - Checked on the Pi with a fake radio and the production Rhode Island pack; tests cover each screen. The path trace test feeds a fake trace reply.
    - The repeater login mini-map uses `AppMap(compact: true)`: it follows the Online | Offline setting with no switch or "No offline map here" card. It's hidden on web, which has no map packs service.
    - The full-screen ones (message path, path trace, line of sight) show the switch like the Node Map, because the switch is what tells online tiles from offline maps.
    - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
@@ -95,7 +96,7 @@ flutter run -d linux
   - Hot reload (save, or `r`) covers widget changes.
   - Hot restart (`R`) is needed after changes to `main()`, providers or service start-up.
   - Changing a `--dart-define` needs a full restart.
-- **Test data:** small production packs, e.g. District of Columbia (12 MB) or Rhode Island (37 MB). Until the charts, contours and USGS masters land, the preview folder in the scratchpad still has Puerto Rico contours, charts and the Rhode Island USGS pilot, downloaded from the retired `dev/`.
+- **Test data:** small production packs, e.g. District of Columbia (12 MB) or Rhode Island (37 MB), and the NOAA charts (live 2026-10-20). There are no contours or USGS packs until those builds land. The scratchpad preview folder was lost when a power cut rebooted the Pi (`/tmp`), and with it the `dev/` copies; harnesses download what they need from production.
 - **Pause and resume:** home internet is too fast to catch a pause. Use traxmapmaker's throttled server instead: publish locally, run `./viewer/serve.py --rate 8`, and point the app at `--dart-define=MAP_INDEX_URL=http://127.0.0.1:8000/out/published/index.json`.
 - **Installed packs on Linux:** `~/.local/share/com.meshtrax.app/maps/`. Delete it for a first-run test.
 - **Offline:** `nmcli networking off` / `on`.
