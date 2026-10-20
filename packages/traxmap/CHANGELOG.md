@@ -1,5 +1,14 @@
 ## Unreleased
 
+- **Pack index v2:** matches traxmapmaker's server contract (FINDINGS §1.1).
+  - `PackIndexEntry` reads `region` (the region path), `variant`, `units`,
+    `interval` and `interval_unit`, and writes them back, so downloads
+    restored after a restart keep them.
+  - `PackIndex` has `generated`, `schemaVersion`, `usable` (known kinds at
+    the bundled styles' schema) and `needsNewerApp`.
+  - A malformed entry is skipped and listed in `skipped`, not fatal. A
+    missing `packs` key is an empty catalogue.
+  - The test fixture is the real `dev/index.json` from maps.meshtrax.io.
 - **Pack downloads:**
   - **`PackDownloader`** (core): `PackDownload` snapshots with state,
     progress and error.
