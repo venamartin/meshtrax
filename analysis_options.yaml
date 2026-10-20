@@ -15,8 +15,9 @@ analyzer:
     - tools/win_ble_patched/**
     - tools/flutter_blue_plus_winrt_patched/**
     - build/**
-    # packages/path_graph has its own pubspec and CI steps; the root analyze
-    # cannot resolve its test dependencies before its own pub get.
+    # packages/path_graph and packages/traxmap have their own pubspecs and CI
+    # steps; the root analyze cannot resolve their dependencies before their
+    # own pub get.
     - packages/**
     - android/**
     - ios/**

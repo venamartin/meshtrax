@@ -36,6 +36,7 @@ import '../widgets/connection_status_banner.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
+import 'companion_cli_screen.dart';
 import 'map_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
@@ -665,6 +666,16 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     );
                   }
+                  if (value == 'commandLine') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CompanionCliScreen(
+                          contact: _resolveContact(connector),
+                        ),
+                      ),
+                    );
+                  }
                   if (value == 'clearChat') {
                     connector.clearMessagesForContact(widget.contact);
                   }
@@ -703,6 +714,18 @@ class _ChatScreenState extends State<ChatScreen> {
                       ],
                     ),
                   ),
+                  if (widget.contact.type == advTypeChat &&
+                      connector.supportsCompanionCli)
+                    PopupMenuItem(
+                      value: 'commandLine',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.terminal, size: 20),
+                          const SizedBox(width: 12),
+                          Text(context.l10n.companionCli_title),
+                        ],
+                      ),
+                    ),
                   if (_isRoom)
                     PopupMenuItem(
                       value: 'reloadPosts',
@@ -745,7 +768,8 @@ class _ChatScreenState extends State<ChatScreen> {
               : visibleMessages.toList();
           return Column(
             children: [
-              ?ConnectionStatusBanner.ifDisconnected(context, connector),
+              ?ConnectionStatusBanner.ifDisconnected(context, connector) ??
+                  ConnectionStatusBanner.ifSecondApp(context, connector),
               if (_isRoom) ?_buildClockSkewBanner(connector),
               ?_buildNarrowHashNotice(),
               Expanded(
@@ -1753,6 +1777,9 @@ class _ChatScreenState extends State<ChatScreen> {
     bool teleBaseEnabled = contact.teleBaseEnabled;
     bool teleLocEnabled = contact.teleLocEnabled;
     bool teleEnvEnabled = contact.teleEnvEnabled;
+    final showRemoteCli =
+        contact.type == advTypeChat && connector.supportsCompanionCli;
+    bool remoteCliAllowed = _resolveContact(connector).remoteCliAllowed;
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -1813,6 +1840,22 @@ class _ChatScreenState extends State<ChatScreen> {
                     setDialogState(() => teleEnvEnabled = value);
                   },
                 ),
+                if (showRemoteCli) ...[
+                  const Divider(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(context.l10n.contact_remoteCli),
+                    subtitle: Text(context.l10n.contact_remoteCliSubtitle),
+                    value: remoteCliAllowed,
+                    onChanged: (value) async {
+                      if (value &&
+                          !await _confirmRemoteCli(context, contact.name)) {
+                        return;
+                      }
+                      setDialogState(() => remoteCliAllowed = value);
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -1824,6 +1867,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   teleBase: teleBaseEnabled,
                   teleLoc: teleLocEnabled,
                   teleEnv: teleEnvEnabled,
+                  remoteCli: showRemoteCli ? remoteCliAllowed : null,
                 );
                 Navigator.pop(context);
               },
@@ -1833,6 +1877,29 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _confirmRemoteCli(BuildContext context, String name) async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: Text(l10n.contact_remoteCliWarningTitle(name)),
+        content: Text(l10n.contact_remoteCliWarning(name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.common_cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.contact_remoteCliAllow),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   Widget _buildInfoRow(String label, String value) {

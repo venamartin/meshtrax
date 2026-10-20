@@ -86,7 +86,24 @@ enum RadioSetting {
   pathHash,
   autoAddMaxHops,
   floodScope,
+  cliSettings,
 }
+
+/// Settings a 1.18 radio has only CLI keys for. Values are kept exactly as
+/// `get` prints them, which `set` takes back. Restore replays nothing outside
+/// these lists, whatever a backup file holds.
+const backupCliKeys = [
+  'txdelay',
+  'direct.txdelay',
+  'cad',
+  'int.thresh',
+  'agc.reset.interval',
+  'radio.rxgain',
+  'tz.offset',
+];
+
+/// Only BLE+WiFi builds know these. The password is never backed up.
+const backupWifiKeys = ['wifi.ssid', 'wifi.enabled'];
 
 /// Whether companion firmware [verCode] (and, where ver_code is ambiguous,
 /// the version string) speaks [setting]. Verified against the companion_radio
@@ -104,6 +121,7 @@ bool firmwareSupports(RadioSetting setting, int? verCode, String? version) {
     RadioSetting.clientRepeat => vc >= 9,
     RadioSetting.pathHash || RadioSetting.autoAddMaxHops => vc >= 10,
     RadioSetting.floodScope => vc >= 11,
+    RadioSetting.cliSettings => vc >= 14,
   };
 }
 
@@ -150,6 +168,7 @@ class DeviceBackup {
   final String? floodScopeKeyHex;
   final BackupTuning? tuning;
   final Map<String, String> customVars;
+  final Map<String, String> cliSettings; // backupCliKeys / backupWifiKeys
   final List<BackupChannel> channels;
   final List<BackupContact> contacts;
 
@@ -185,6 +204,7 @@ class DeviceBackup {
     this.floodScopeKeyHex,
     this.tuning,
     this.customVars = const {},
+    this.cliSettings = const {},
     this.channels = const [],
     this.contacts = const [],
   });
@@ -200,6 +220,13 @@ class DeviceBackup {
     if (pathHashMode == null) 'path hash size',
     if (!hasFloodScope) 'default flood scope',
     if (tuning == null) 'tuning',
+    if (cliSettings.isEmpty &&
+        firmwareSupports(
+          RadioSetting.cliSettings,
+          firmwareVerCode,
+          firmwareVersion,
+        ))
+      'command-line settings',
   ];
 
   Map<String, dynamic> toJson() => {
@@ -239,6 +266,7 @@ class DeviceBackup {
       'floodScope': {'name': floodScopeName, 'key': floodScopeKeyHex},
     'tuning': tuning?.toJson(),
     'customVars': customVars,
+    if (cliSettings.isNotEmpty) 'cli': cliSettings,
   };
 
   factory DeviceBackup.fromJson(
@@ -322,6 +350,15 @@ class DeviceBackup {
       customVars: (json['customVars'] as Map<String, dynamic>? ?? {}).map(
         (k, v) => MapEntry(k, v.toString()),
       ),
+      cliSettings: had(RadioSetting.cliSettings)
+          ? {
+              for (final entry
+                  in (json['cli'] as Map<String, dynamic>? ?? {}).entries)
+                if (backupCliKeys.contains(entry.key) ||
+                    backupWifiKeys.contains(entry.key))
+                  entry.key: entry.value.toString(),
+            }
+          : const {},
       channels: channels,
       contacts: contacts,
     );

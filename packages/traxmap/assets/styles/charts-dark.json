@@ -1,0 +1,672 @@
+{
+  "version": 8,
+  "name": "NOAA Charts (dark)",
+  "metadata": {
+    "ovm:status": "Generated from charts-light.json by tool/make_dark_variants.py.",
+    "ovm:disclaimer": "Not for navigation",
+    "ovm:map": "charts",
+    "ovm:theme": "dark",
+    "ovm:family": "standard",
+    "ovm:dark": true
+  },
+  "glyphs": "{glyphs}",
+  "sources": {
+    "charts": {
+      "type": "vector",
+      "url": "pmtiles://{pack:charts}",
+      "attribution": "NOAA Office of Coast Survey"
+    },
+    "base": {
+      "type": "vector",
+      "url": "pmtiles://{pack:base}",
+      "attribution": "USGS The National Map"
+    },
+    "contours": {
+      "type": "vector",
+      "url": "pmtiles://{pack:contours}",
+      "attribution": "USGS 3DEP"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#22201b"
+      }
+    },
+    {
+      "id": "depth-area",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "depth_area",
+      "paint": {
+        "fill-color": [
+          "step",
+          [
+            "get",
+            "drval1"
+          ],
+          "#2f3a24",
+          0,
+          "#1f4a6b",
+          5,
+          "#173a57",
+          18,
+          "#112c44",
+          30,
+          "#0c1e30"
+        ],
+        "fill-antialias": false
+      }
+    },
+    {
+      "id": "dredged-outline",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "depth_area",
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "dredged"
+      ],
+      "paint": {
+        "line-color": "#4f7fa8",
+        "line-width": 1,
+        "line-dasharray": [
+          3,
+          2
+        ]
+      }
+    },
+    {
+      "id": "land",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "land",
+      "filter": [
+        "==",
+        "$type",
+        "Polygon"
+      ],
+      "paint": {
+        "fill-color": "#22201b"
+      }
+    },
+    {
+      "id": "contour",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contour",
+      "paint": {
+        "line-color": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "idx"
+            ],
+            1
+          ],
+          "#7a6650",
+          "#5e4f3d"
+        ],
+        "line-opacity": 0.85,
+        "line-width": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "idx"
+            ],
+            1
+          ],
+          1.0,
+          0.45
+        ]
+      }
+    },
+    {
+      "id": "road",
+      "type": "line",
+      "source": "base",
+      "source-layer": "road",
+      "filter": [
+        "match",
+        [
+          "get",
+          "kind"
+        ],
+        [
+          "motorway",
+          "major",
+          "minor"
+        ],
+        true,
+        false
+      ],
+      "paint": {
+        "line-color": "#4a4438",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.4,
+          14,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "depth-contour",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "depth_contour",
+      "paint": {
+        "line-color": "#3f6f99",
+        "line-width": 0.7
+      }
+    },
+    {
+      "id": "coastline",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "coastline",
+      "paint": {
+        "line-color": "#b8a07a",
+        "line-width": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "construction",
+          1.5,
+          1
+        ]
+      }
+    },
+    {
+      "id": "islet",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "land",
+      "filter": [
+        "==",
+        "$type",
+        "Point"
+      ],
+      "paint": {
+        "circle-radius": 2,
+        "circle-color": "#22201b",
+        "circle-stroke-color": "#b8a07a",
+        "circle-stroke-width": 1
+      }
+    },
+    {
+      "id": "hazard-area",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "hazard",
+      "filter": [
+        "==",
+        "$type",
+        "Polygon"
+      ],
+      "paint": {
+        "line-color": "#d8d8d8",
+        "line-width": 1,
+        "line-dasharray": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "hazard",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "hazard",
+      "filter": [
+        "==",
+        "$type",
+        "Point"
+      ],
+      "minzoom": 10,
+      "paint": {
+        "circle-radius": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "wreck",
+          4,
+          2.5
+        ],
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "wreck",
+          "#e05aa8",
+          "#e0e0e0"
+        ],
+        "circle-stroke-color": "#0c1e30",
+        "circle-stroke-width": [
+          "case",
+          [
+            "has",
+            "dangerous"
+          ],
+          2,
+          0.8
+        ]
+      }
+    },
+    {
+      "id": "light-flare",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "light",
+      "minzoom": 9,
+      "paint": {
+        "circle-radius": 8,
+        "circle-color": "#ff4fb8",
+        "circle-opacity": 0.45
+      }
+    },
+    {
+      "id": "nav-aid",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "minzoom": 9,
+      "paint": {
+        "circle-radius": 5,
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "colour"
+          ],
+          "red",
+          "#ff4d5e",
+          "green",
+          "#3ccf6e",
+          "yellow",
+          "#ffd23f",
+          "white",
+          "#f2f2f2",
+          "black",
+          "#9aa0a6",
+          "orange",
+          "#ff9f43",
+          "#9aa0a6"
+        ],
+        "circle-stroke-color": "#0c1e30",
+        "circle-stroke-width": 1
+      }
+    },
+    {
+      "id": "depth-contour-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "depth_contour",
+      "minzoom": 12,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "depth_ft"
+            ]
+          ],
+          " ft"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#8fbde6",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "depth-contour-label-m",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "depth_contour",
+      "minzoom": 12,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "depth_m"
+            ]
+          ],
+          " m"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#8fbde6",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "sounding",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "sounding",
+      "minzoom": 11,
+      "layout": {
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "depth_ft"
+          ]
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-padding": 1
+      },
+      "paint": {
+        "text-color": "#9ec3e6"
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "sounding-m",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "sounding",
+      "minzoom": 11,
+      "layout": {
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "depth_m"
+          ]
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-padding": 1
+      },
+      "paint": {
+        "text-color": "#9ec3e6"
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "hazard-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "hazard",
+      "minzoom": 13,
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "wreck"
+      ],
+      "layout": {
+        "text-field": "Wk",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.1
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#f08cc6",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "light-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "light",
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "label"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0.9,
+          -0.9
+        ],
+        "text-anchor": "bottom-left"
+      },
+      "paint": {
+        "text-color": "#ff7fc8",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "nav-aid-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top",
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "#d8dde3",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "sea-name",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "sea_name",
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 13,
+        "text-letter-spacing": 0.1
+      },
+      "paint": {
+        "text-color": "#7fb0e0",
+        "text-halo-color": "#161b20",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "contour-label",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "idx"
+        ],
+        1
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "ele_ft"
+            ]
+          ],
+          " ft"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#a08c72",
+        "text-halo-color": "#22201b",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "contour-label-m",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "idx"
+        ],
+        1
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "ele_m"
+            ]
+          ],
+          " m"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10
+      },
+      "paint": {
+        "text-color": "#a08c72",
+        "text-halo-color": "#22201b",
+        "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "place-label",
+      "type": "symbol",
+      "source": "base",
+      "source-layer": "place",
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "populated_place"
+      ],
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 12
+      },
+      "paint": {
+        "text-color": "#d9c9a8",
+        "text-halo-color": "#22201b",
+        "text-halo-width": 1.5
+      }
+    }
+  ]
+}

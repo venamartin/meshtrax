@@ -970,6 +970,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             Consumer<MeshCoreConnector>(
               builder: (context, connector, _) =>
                   ConnectionStatusBanner.ifDisconnected(context, connector) ??
+                  ConnectionStatusBanner.ifSecondApp(context, connector) ??
                   const SizedBox.shrink(),
             ),
             Expanded(

@@ -44,3 +44,16 @@ jobs:
       - name: Test path_graph package
         working-directory: packages/path_graph
         run: dart test -r github
+
+      # The traxmap package (offline vector maps) is a Flutter package with
+      # its own pubspec. Its real-pack tests skip here: the test packs aren't
+      # in git (see packages/traxmap/README.md).
+      - name: Analyze traxmap package
+        working-directory: packages/traxmap
+        run: |
+          flutter pub get
+          flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Test traxmap package
+        working-directory: packages/traxmap
+        run: flutter test -r github
