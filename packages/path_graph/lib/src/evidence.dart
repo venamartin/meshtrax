@@ -51,6 +51,10 @@ class IngressEntry {
   /// Last time this row was heard (not proven); null on rows from before
   /// the clocks were split, which fall back to [lastSeen].
   int? lastHeardAt;
+
+  /// Self rows: direct sends that started here and got no ACK since the
+  /// last proof. Any proof resets it.
+  int failedSinceProof = 0;
 }
 
 class Candidate {
@@ -63,10 +67,19 @@ class Candidate {
       this.penultimateCount = 0,
       this.provenCount = 0,
       this.provenAt,
-      this.lastSeen = 0});
+      this.lastSeen = 0,
+      this.isSelf = false,
+      this.failedSinceProof = 0});
   final String repeaterHash;
   final double weight;
   final EvidenceTier tier;
+
+  /// One of my own doorsteps (a repeater that hears this radio), as
+  /// opposed to a contact's.
+  final bool isSelf;
+
+  /// Self rows: failed direct sends from here since the last proof.
+  final int failedSinceProof;
 
   /// Tallies behind the ranking, for display: times heard carrying the
   /// owner's packets, times seen second-to-last (my rows), times proven
@@ -92,9 +105,13 @@ class Candidate {
   final double? uplinkSnr;
   final double? downlinkSnr;
 
-  /// The direction that matters for *sending* is the uplink; fall back
-  /// to the downlink by reciprocity, else null (tally-only candidate).
-  double? get bestSnr => uplinkSnr ?? downlinkSnr;
+  /// The level in the direction a send travels. For one of my doorsteps
+  /// only the uplink counts (how it heard me: a trace or a Discover
+  /// answer); how loud I hear it says nothing about that, and a strong
+  /// downlink kept a home repeater ranked first 40 km away (field
+  /// 2026-10-17). A contact's doorstep falls back to the downlink by
+  /// reciprocity. Null = tally-only candidate.
+  double? get sendingSnr => isSelf ? uplinkSnr : (uplinkSnr ?? downlinkSnr);
 }
 
 /// Weighted "who hears them" (contacts) and "who hears me" (self rows,
@@ -123,6 +140,58 @@ class EvidenceStore {
   /// repeater. Memory only: after a restart, direct waits for the next
   /// such packet to end it.
   final Map<String, int> _lastRelayed = {};
+
+  /// Arrival millis of the last packets that showed my own end is alive
+  /// (a repeater heard as my last hop, or a proof). The silence gate asks
+  /// "have I heard enough lately for a doorstep's silence to mean
+  /// anything?" — one stray packet after a quiet night says nothing.
+  /// Memory only, newest last, capped.
+  final List<int> _selfAliveEvents = [];
+
+  void _noteSelfAlive(int arrival) {
+    _selfAliveEvents.add(arrival);
+    if (_selfAliveEvents.length > 64) _selfAliveEvents.removeAt(0);
+  }
+
+  int selfAliveEventsSince(int sinceMillis) =>
+      _selfAliveEvents.where((t) => t >= sinceMillis).length;
+
+  /// Arrival millis of the last time a repeater I had not had for a day
+  /// heard me or was heard by me: the position-free sign that I moved (a
+  /// radio at home meets nobody new). Memory only.
+  int? lastNewSelfRowAt;
+
+  /// Arrival millis of my doorsteps' proofs in the last hour, per hash,
+  /// for the "rides with me" detector. Memory only.
+  final Map<String, List<int>> _selfProofTimes = {};
+
+  void _noteSelfRow(String selfPubkey, String repeaterHash, int arrival) {
+    final e = entries[(selfPubkey, repeaterHash)];
+    if (e == null || arrival - e.lastSeen > Duration.millisecondsPerDay) {
+      lastNewSelfRowAt = arrival;
+    }
+  }
+
+  /// Whether my doorstep [repeaterHash] proved it hears me in each of the
+  /// last [slices] slices of [sliceMs].
+  bool provenInEachSlice(String repeaterHash, int now,
+      {required int sliceMs, required int slices}) {
+    final times = _selfProofTimes[repeaterHash];
+    if (times == null) return false;
+    final filled = {
+      for (final t in times)
+        if (now - t < sliceMs * slices) (now - t) ~/ sliceMs,
+    };
+    return filled.length >= slices;
+  }
+
+  /// A direct send that started at [repeaterHash] got no ACK.
+  void recordFailedEgress(String selfPubkey, String repeaterHash) {
+    final e = entries[(selfPubkey, repeaterHash)];
+    if (e == null) return;
+    e.failedSinceProof++;
+    _dirty.add((selfPubkey, repeaterHash));
+  }
 
   /// Weights before this epoch's supersede, so a doorstep that echoes
   /// the same send a moment later gets its slash back.
@@ -179,7 +248,8 @@ class EvidenceStore {
             penultimateCount: e.penultimateCount,
             provenCount: e.provenCount,
             provenAt: e.provenAt,
-            lastSeen: e.lastHeardAt ?? e.lastSeen));
+            lastSeen: e.lastHeardAt ?? e.lastSeen,
+            isSelf: isSelf));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
@@ -230,12 +300,14 @@ class EvidenceStore {
   void recordLastHop(String selfPubkey, String repeaterHash, int arrival,
       {double? lat, double? lon, double? downlinkSnr}) {
     final proven = entries[(selfPubkey, repeaterHash)]?.proven ?? false;
+    _noteSelfRow(selfPubkey, repeaterHash, arrival);
     final e = _upsert(selfPubkey, repeaterHash, EvidenceTier.inferred,
         proven ? 0.0 : 1.0, arrival);
     _capSelf(e);
     e
       ..finalCount += 1
       ..lastHeardAt = arrival;
+    _noteSelfAlive(arrival);
     if (lat != null) e.observedLat = lat;
     if (lon != null) e.observedLon = lon;
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
@@ -267,12 +339,19 @@ class EvidenceStore {
   /// heard ME, [downlinkSnr] how I heard it. [supersede]: an echo of my
   /// flood — every doorstep had the same chance to echo it, so the
   /// silent ones count against (a direct send or trace only ever tries
-  /// one).
+  /// one). [floodProven]: the hop forwarded a flood of mine, learned
+  /// from a PATH reply rather than its echo; it marks the row as one whose
+  /// silence on later floods counts, without superseding anyone now
+  /// (field 2026-10-17: rows proven only by PATH replies were immune to
+  /// every later supersede and held routes 40 km from home).
   void recordProvenEgress(String selfPubkey, String repeaterHash, int arrival,
-      {double? uplinkSnr, double? downlinkSnr, bool supersede = false}) {
+      {double? uplinkSnr,
+      double? downlinkSnr,
+      bool supersede = false,
+      bool floodProven = false}) {
     _undoSlash((selfPubkey, repeaterHash), arrival);
     final e = _proveSelf(selfPubkey, repeaterHash, 3.0, arrival);
-    if (supersede) e.floodProvenAt = arrival;
+    if (supersede || floodProven) e.floodProvenAt = arrival;
     if (uplinkSnr != null) e.uplinkSnr = _blend(e.uplinkSnr, uplinkSnr);
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
     if (supersede) _supersedeStaleSelf(selfPubkey, arrival);
@@ -284,12 +363,18 @@ class EvidenceStore {
   IngressEntry _proveSelf(
       String selfPubkey, String repeaterHash, double weight, int arrival) {
     final firstProof = entries[(selfPubkey, repeaterHash)]?.provenAt == null;
+    _noteSelfRow(selfPubkey, repeaterHash, arrival);
+    (_selfProofTimes[repeaterHash] ??= [])
+      ..add(arrival)
+      ..removeWhere((t) => arrival - t > Duration.millisecondsPerHour);
     final e =
         _upsert(selfPubkey, repeaterHash, EvidenceTier.proven, weight, arrival)
           ..provenAt = arrival
-          ..provenCount += 1;
+          ..provenCount += 1
+          ..failedSinceProof = 0;
     if (firstProof) e.weight = weight;
     _capSelf(e);
+    _noteSelfAlive(arrival);
     return e;
   }
 
@@ -435,7 +520,9 @@ class EvidenceStore {
             penultimateCount: e.penultimateCount,
             provenCount: e.provenCount,
             provenAt: e.provenAt,
-            lastSeen: e.lastSeen));
+            lastSeen: e.lastSeen,
+            isSelf: isSelf,
+            failedSinceProof: e.failedSinceProof));
       }
     }
     out.sort((a, b) => b.weight.compareTo(a.weight));
@@ -504,6 +591,8 @@ class EvidenceStore {
     _lastSlashMillis.clear();
     _lastSelfSupersedeMillis.clear();
     _slashedThisEpoch.clear();
+    _selfProofTimes.clear();
+    lastNewSelfRowAt = null;
     await _db.delete(_db.contactIngress).go();
     await _db.delete(_db.knownContacts).go();
   }
@@ -549,6 +638,8 @@ class EvidenceStore {
         if ((ghost.lastHeardAt ?? 0) > (target.lastHeardAt ?? 0)) {
           target.lastHeardAt = ghost.lastHeardAt;
         }
+        target.failedSinceProof =
+            math.max(target.failedSinceProof, ghost.failedSinceProof);
         if (ghost.lastSeen > target.lastSeen) {
           target.lastSeen = ghost.lastSeen;
           target.observedLat = ghost.observedLat ?? target.observedLat;
@@ -589,7 +680,8 @@ class EvidenceStore {
         ..penultimateCount = row.penultimateCount
         ..provenCount = row.provenCount
         ..floodProvenAt = row.floodProvenAt
-        ..lastHeardAt = row.lastHeardAt;
+        ..lastHeardAt = row.lastHeardAt
+        ..failedSinceProof = row.failedSinceProof;
     }
     for (final row in await _db.select(_db.knownContacts).get()) {
       knownContacts[row.contactPubkey] =
@@ -636,6 +728,7 @@ class EvidenceStore {
             provenCount: Value(e.provenCount),
             floodProvenAt: Value(e.floodProvenAt),
             lastHeardAt: Value(e.lastHeardAt),
+            failedSinceProof: Value(e.failedSinceProof),
           ),
           mode: InsertMode.insertOrReplace,
         );

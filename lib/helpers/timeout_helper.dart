@@ -33,6 +33,29 @@ class TimeoutHelper {
   /// delay a budget cannot succeed on any path.
   static const int minAttemptMs = 3000;
 
+  /// tx_delay_factor (companion and simple_repeater NodePrefs defaults): a
+  /// repeater forwarding a flood waits a random share of this many airtimes.
+  static const double repeaterTxDelayFactor = 0.5;
+
+  /// getRetransmitDelay draws from 0 to 5 × (airtime × tx_delay_factor).
+  static const int retransmitDelaySpan = 5;
+
+  /// No echo watch is shorter than this: a close repeater's copy arrives
+  /// well inside it, and a shorter watch parks live messages on busy air.
+  static const int minEchoWaitMs = 10000;
+
+  /// How long to wait for the first repeater's copy of my own flood before
+  /// concluding none heard it: my own CAD stall, the repeater's CAD stall,
+  /// its random forwarding delay at its largest, and two airtimes (mine and
+  /// its). Never longer than the attempt's own ACK timeout. ~10 s at 0.6 s
+  /// airtime, ~19 s at 2.4 s.
+  static int echoWaitMs(int airtimeMs, int attemptTimeoutMs) {
+    final wait = 2 * cadCeilingMs +
+        airtimeMs * (2 + retransmitDelaySpan * repeaterTxDelayFactor);
+    final floor = math.min(minEchoWaitMs, attemptTimeoutMs);
+    return wait.round().clamp(floor, math.max(floor, attemptTimeoutMs));
+  }
+
   /// Floor for the final attempt of a retry ladder on a fast path.
   static const int lastAttemptFloorMs = 8000;
 

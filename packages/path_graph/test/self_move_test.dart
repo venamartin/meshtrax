@@ -180,6 +180,21 @@ void main() {
         reason: 'only half-life ages it; its silence on floods is no evidence');
   });
 
+  test('a doorstep proven only by a PATH reply is marked down like one that '
+      'echoed', () {
+    // Field 2026-10-17: the reply to my flood named BEEF as its first hop,
+    // but the echo itself went unheard, so BEEF stayed immune to every
+    // later supersede and kept starting routes 40 km from home.
+    graph.reportSendResult(path([0xBE, 0xEF, 0x10, 0x00]), true,
+        contactPubkey: bobPk, tally: false);
+    final before = egress('BEEF')!.weight;
+
+    nowMillis += 20 * minute;
+    echo([0xA2, 0x77]);
+
+    expect(egress('BEEF')!.weight, lessThan(before * 0.75));
+  });
+
   test('a doorstep that once echoed my floods is still marked down', () {
     echo([0xBE, 0xEF]);
     final before = egress('BEEF')!.weight;

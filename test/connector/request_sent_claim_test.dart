@@ -6,12 +6,13 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
+import 'package:meshtrax/services/path_graph/frame_adapter.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// The radio answers a DM, a login, a status/telemetry/binary/anon request
-// and a trace with RESP_CODE_SENT. A request's SENT used to fall through to
+// The radio answers a DM, a login, a status/telemetry/binary/anon request,
+// a path discovery and a trace with RESP_CODE_SENT. A request's SENT used to fall through to
 // "promote the newest pending DM to sent", so a DM still queued in the app
 // showed as sent although it never went out.
 class _Connector extends MeshCoreConnector {
@@ -121,6 +122,8 @@ void main() {
       buildSendStatusRequestFrame(sensorKey),
       buildSendTelemetryReq(sensorKey),
       buildSendBinaryReq(sensorKey, payload: Uint8List.fromList([0x05, 0, 0])),
+      // Pathfinder's "Discover routes" (2026-10-20: missing from the list).
+      buildPathDiscoveryReq(peerKey),
     ]) {
       await c.sendFrame(frame);
       c.handleFrameForTest(_sent(0x6712A3F0));

@@ -124,6 +124,31 @@ void main() {
           ['graph', 'flood', 'flood', 'flood', 'flood']);
     });
 
+    test('re-planning the rest of a ladder: tried routes are skipped and the '
+        'owed floods still close it', () {
+      // Budget 4 planned [g1, g2, flood, flood]; g1 was sent and failed,
+      // and Pathfinder now ranks g3 first.
+      final tail = planAttempts(contact(),
+          radioWidth: 2,
+          budget: 3,
+          graphRoutes: [g3, g1, g2],
+          tried: [g1],
+          floods: 2);
+      expect(tail.first.pathBytes, g3.pathBytes,
+          reason: 'the best route not yet tried, whatever its score');
+      expect(kinds(tail), ['graph', 'flood', 'flood']);
+
+      // Two rungs sent (g1, g2): only the two floods are owed.
+      expect(
+          kinds(planAttempts(contact(),
+              radioWidth: 2,
+              budget: 2,
+              graphRoutes: [g3],
+              tried: [g1, g2],
+              floods: 2)),
+          ['flood', 'flood']);
+    });
+
     test('a stored route never appears in a Pathfinder ladder', () {
       for (final budget in [1, 2, 3, 4, 5]) {
         for (final routes in [<PathSelection>[], [g1], [g1, g2, g3]]) {

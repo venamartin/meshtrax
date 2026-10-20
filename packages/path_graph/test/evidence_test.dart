@@ -358,6 +358,41 @@ void main() {
         lessThan(graph.doorstepConfidence(byHash['A277']!)));
   });
 
+  // Field 2026-10-17: +11.6 dB measured at home kept the home repeater
+  // ranked first 40 km away through two halvings.
+  group('a measured level belongs to where it was measured', () {
+    Candidate mine(double weight,
+            {double? up, double? down, int provenAgoMinutes = 0}) =>
+        Candidate('A277', weight, EvidenceTier.proven,
+            uplinkSnr: up,
+            downlinkSnr: down,
+            proven: true,
+            provenAt: nowMillis - provenAgoMinutes * 60 * 1000,
+            isSelf: true);
+    double tallyOnly(double w) => w / (w + 2);
+
+    test('it fades with the age of the last proof', () {
+      final fresh = graph.doorstepConfidence(mine(12, up: 11.6));
+      final stale =
+          graph.doorstepConfidence(mine(12, up: 11.6, provenAgoMinutes: 180));
+      expect(fresh, greaterThan(stale));
+      expect(stale, lessThan(tallyOnly(12) * 0.3 + 0.7 * 0.125 + 0.01),
+          reason: 'after four half-lives the level is nearly gone');
+      expect(stale, greaterThanOrEqualTo(tallyOnly(12) * 0.3),
+          reason: 'the tally share never fades here');
+    });
+
+    test('my doorstep ranks on how it hears me, never on how I hear it', () {
+      expect(graph.doorstepConfidence(mine(3, down: 10.0)),
+          closeTo(tallyOnly(3), 1e-9),
+          reason: 'a downlink level alone leaves a self row tally-only');
+      final theirs = Candidate('BEEF', 3, EvidenceTier.proven,
+          downlinkSnr: 10.0, proven: true, provenAt: nowMillis);
+      expect(graph.doorstepConfidence(theirs), greaterThan(tallyOnly(3)),
+          reason: "a contact's doorstep still falls back by reciprocity");
+    });
+  });
+
   test('an echo of my own flood confirms its first hop, nothing after it',
       () {
     // My message came back A277 -> BBBB -> BEEF -> A377. A277 heard me;

@@ -2,6 +2,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 
 void main() {
+  group('isContactEchoObservable', () {
+    // A flooded DM's repeated copy: header(1) + transport(4) + path_len(1)
+    // + one hop + dest(1) + src(1) + MAC(2) + AES blocks of 5 + text.
+    String text(int len) => 'a' * len;
+
+    test('155 bytes echo visibly at 2-byte hashes, 156 never do', () {
+      expect(isContactEchoObservable(text(155), 2), isTrue);
+      expect(isContactEchoObservable(text(156), 2), isFalse);
+    });
+
+    test('the boundary is the AES block edge, whatever the hash width', () {
+      // 1-byte hashes save one byte, but the block still rounds 161 → 176.
+      expect(isContactEchoObservable(text(155), 1), isTrue);
+      expect(isContactEchoObservable(text(156), 1), isFalse);
+      expect(isContactEchoObservable(text(1), 3), isTrue);
+    });
+  });
+
   group('isChannelEchoObservable', () {
     // Pinned to the 2026-09-22 on-air sweep (sender "GWQ∆🚀", 10-byte
     // name, 2-byte path hashes): 140-char sends echoed (repeated raw

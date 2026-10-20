@@ -48,7 +48,8 @@ class AppDebugLogEntry {
 }
 
 class AppDebugLogService extends ChangeNotifier {
-  static const int maxEntries = 1000;
+  // A day of field logging: a 2-hour hike filled 673 lines (2026-10-16).
+  static const int maxEntries = 20000;
   final List<AppDebugLogEntry> _entries = [];
   bool _enabled = false;
 

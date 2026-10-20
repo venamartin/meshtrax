@@ -5,9 +5,22 @@ import 'db/database.dart';
 /// Node metadata precedence: signed advert > anonymous observation.
 enum NodeSource { observed, advert }
 
+/// The user's word on whether a repeater moves; beats every detector.
+enum MovingOverride {
+  /// Someone else's moving repeater.
+  moves,
+
+  /// A repeater travelling with this radio (in my car).
+  withMe,
+
+  /// A fixed repeater, whatever the detectors say.
+  staysPut,
+}
+
 class NodeState {
   NodeState({required this.source, this.name, this.role, this.lat, this.lon,
-      this.lastHeard, this.pubkey});
+      this.lastHeard, this.pubkey, this.movedAt, this.movingOverride,
+      this.autoMovingAt, this.autoRidesWithMeAt});
 
   NodeSource source;
   String? name;
@@ -16,12 +29,22 @@ class NodeState {
   double? lon;
   int? lastHeard; // arrival millis
   String? pubkey;
+
+  /// Arrival millis of the last advert that put this repeater somewhere
+  /// else (same key, both positions real).
+  int? movedAt;
+  MovingOverride? movingOverride;
+
+  /// Watching-only detector results: arrival millis of the last time its
+  /// traffic looked like a moving repeater, and like one riding with me.
+  int? autoMovingAt;
+  int? autoRidesWithMeAt;
 }
 
 /// One direction of one link, as this radio observed it. Nothing here
 /// comes from anywhere but the air.
 class EdgeState {
-  EdgeState({required this.source});
+  EdgeState({required this.source, this.firstObserved});
 
   /// Attempt-counted evidence.
   int s = 0;
@@ -30,6 +53,10 @@ class EdgeState {
   /// Passive-sighting accumulation (decay applied at read).
   double trafficWeight = 0;
   int? lastObserved; // arrival millis
+
+  /// Arrival millis of the first sighting; null for links from before it
+  /// was kept (old).
+  int? firstObserved;
   int obsCount = 0;
   String source;
 
@@ -48,6 +75,9 @@ class GraphStore {
 
   final Map<String, NodeState> nodes = {};
   final Map<(String, String), EdgeState> edges = {};
+
+  /// Called when a sighting creates a link the graph never had.
+  void Function(String from, String to, int arrivalMillis)? onNewLink;
 
   final Set<String> _dirtyNodes = {};
   final Set<(String, String)> _dirtyEdges = {};
@@ -84,8 +114,12 @@ class GraphStore {
     nodeFor(from, NodeSource.observed).lastHeard = arrivalMillis;
     nodeFor(to, NodeSource.observed).lastHeard = arrivalMillis;
 
-    final edge = edges.putIfAbsent(
-        (from, to), () => EdgeState(source: 'observed'));
+    var created = false;
+    final edge = edges.putIfAbsent((from, to), () {
+      created = true;
+      return EdgeState(source: 'observed', firstObserved: arrivalMillis);
+    });
+    if (created) onNewLink?.call(from, to, arrivalMillis);
     edge.trafficWeight += 1;
     edge.obsCount += 1;
     edge.lastObserved = arrivalMillis;
@@ -173,10 +207,16 @@ class GraphStore {
           ..role ??= ghost.role
           ..lat ??= ghost.lat
           ..lon ??= ghost.lon
-          ..pubkey ??= ghost.pubkey;
+          ..pubkey ??= ghost.pubkey
+          ..movingOverride ??= ghost.movingOverride;
         if ((ghost.lastHeard ?? 0) > (target.lastHeard ?? 0)) {
           target.lastHeard = ghost.lastHeard;
         }
+        target
+          ..movedAt = _newer(target.movedAt, ghost.movedAt)
+          ..autoMovingAt = _newer(target.autoMovingAt, ghost.autoMovingAt)
+          ..autoRidesWithMeAt =
+              _newer(target.autoRidesWithMeAt, ghost.autoRidesWithMeAt);
       }
       _dirtyNodes.add(bucket);
     }
@@ -203,10 +243,16 @@ class GraphStore {
         if ((ghost.lastObserved ?? 0) > (target.lastObserved ?? 0)) {
           target.lastObserved = ghost.lastObserved;
         }
+        // The older first sighting; unknown (null) is the oldest.
+        final a = target.firstObserved, b = ghost.firstObserved;
+        target.firstObserved = a == null || b == null ? null : (a < b ? a : b);
       }
       _dirtyEdges.add(bucket);
     }
   }
+
+  static int? _newer(int? a, int? b) =>
+      a == null ? b : (b == null || a >= b ? a : b);
 
   Future<void> load() async {
     for (final row in await _db.select(_db.graphNodes).get()) {
@@ -218,10 +264,17 @@ class GraphStore {
         lon: row.lon,
         lastHeard: row.lastHeard,
         pubkey: row.pubkey,
+        movedAt: row.movedAt,
+        movingOverride: MovingOverride.values
+            .where((v) => v.name == row.movingOverride)
+            .firstOrNull,
+        autoMovingAt: row.autoMovingAt,
+        autoRidesWithMeAt: row.autoRidesWithMeAt,
       );
     }
     for (final row in await _db.select(_db.graphEdges).get()) {
-      edges[(row.fromHash, row.toHash)] = EdgeState(source: row.source)
+      edges[(row.fromHash, row.toHash)] =
+          EdgeState(source: row.source, firstObserved: row.firstObserved)
         ..s = row.s
         ..n = row.n
         ..trafficWeight = row.trafficWeight
@@ -273,6 +326,10 @@ class GraphStore {
             lastHeard: Value(n.lastHeard),
             source: n.source.name,
             pubkey: Value(n.pubkey),
+            movedAt: Value(n.movedAt),
+            movingOverride: Value(n.movingOverride?.name),
+            autoMovingAt: Value(n.autoMovingAt),
+            autoRidesWithMeAt: Value(n.autoRidesWithMeAt),
           ),
           mode: InsertMode.insertOrReplace,
         );
@@ -292,6 +349,7 @@ class GraphStore {
             obsCount: Value(e.obsCount),
             source: e.source,
             measuredSnr: Value(e.measuredSnr),
+            firstObserved: Value(e.firstObserved),
           ),
           mode: InsertMode.insertOrReplace,
         );

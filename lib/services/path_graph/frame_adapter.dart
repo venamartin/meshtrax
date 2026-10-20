@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:path_graph/path_graph.dart';
 
+import '../../connector/meshcore_protocol.dart' show cmdSendPathDiscoveryReq;
 import '../../helpers/path_helper.dart';
 import '../../utils/app_logger.dart';
 
@@ -85,13 +86,10 @@ const int pushPathDiscoveryResponse = 0x8D;
 const int pushControlData = 0x8E;
 const int _ctlNodeDiscoverResp = 0x90;
 
-/// CMD_SEND_PATH_DISCOVERY_REQ (companion_radio MyMesh.cpp:52).
-const int _cmdSendPathDiscoveryReq = 52;
-
 /// `[52][0][pubkey x32]` — firmware forces a flood telemetry REQ to the
 /// contact and reports both proven paths when the response returns.
 Uint8List buildPathDiscoveryReq(Uint8List contactPubkey) =>
-    Uint8List.fromList([_cmdSendPathDiscoveryReq, 0, ...contactPubkey]);
+    Uint8List.fromList([cmdSendPathDiscoveryReq, 0, ...contactPubkey]);
 
 String _hex(List<int> bytes) => bytes
     .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
@@ -320,11 +318,21 @@ class PathLabAdapter {
   PathLabAdapter(this.graph);
 
   final PathGraph graph;
+
+  /// Answers to my current (or last) Discover request, each already filed
+  /// with the graph as it arrived; the bench and the screen read this.
   final List<DiscoverResponse> pendingDiscover = [];
 
   /// Tag of the repeater-discovery request this radio has out, if any;
-  /// replies carrying any other tag answer someone else.
-  int? expectedDiscoverTag;
+  /// replies carrying any other tag answer someone else. A new request
+  /// starts a fresh answer list.
+  int? get expectedDiscoverTag => _expectedDiscoverTag;
+  int? _expectedDiscoverTag;
+  set expectedDiscoverTag(int? tag) {
+    if (tag == _expectedDiscoverTag) return;
+    _expectedDiscoverTag = tag;
+    if (tag != null) pendingDiscover.clear();
+  }
 
   /// Tag of the trace this app has out, if any. The radio pushes every
   /// finished trace it hears — other people's too — and only the tag
@@ -344,6 +352,22 @@ class PathLabAdapter {
   final List<_FloodMessage> _floodMessages = [];
   static const int _floodMessageCap = 32;
   static const Duration _floodMessageWindow = Duration(seconds: 60);
+
+  /// Per contact (lowercase pubkey hex): how many hops their last flooded
+  /// DM or post took to reach me, and when. The decoded message's own
+  /// path_len byte, so it is known even when no raw packet matched.
+  final Map<String, ({int hops, DateTime at})> _lastFloodHops = {};
+
+  /// Hops the contact's last flood took to reach me, if one arrived
+  /// within [within]; their distance for sizing a flood's ACK wait.
+  int? lastFloodHopsFor(String contactPubkeyHex,
+      {Duration within = const Duration(hours: 1)}) {
+    final last = _lastFloodHops[contactPubkeyHex.toLowerCase()];
+    if (last == null || DateTime.now().difference(last.at) > within) {
+      return null;
+    }
+    return last.hops;
+  }
 
   /// PATH_UPDATED follows the logged reply within a second or two (the
   /// log is pushed before the radio decrypts, and the app fetches the
@@ -900,6 +924,10 @@ class PathLabAdapter {
       String contactPubkeyHex, int pathLenRaw, int? snrByte) {
     final hops = PathHelper.pathLenHops(pathLenRaw);
     if (hops < 0) return;
+    if (hops > 0) {
+      _lastFloodHops[contactPubkeyHex.toLowerCase()] =
+          (hops: hops, at: DateTime.now());
+    }
     final width = PathHelper.pathLenWidth(pathLenRaw);
     final srcHash = int.parse(contactPubkeyHex.substring(0, 2), radix: 16);
     final who = contactPubkeyHex.substring(0, 12).toUpperCase();
@@ -1093,8 +1121,14 @@ class PathLabAdapter {
           rxSnr);
       return;
     }
-    pendingDiscover.add(DiscoverResponse(
-        repeaterHash: hash, uplinkSnr: uplinkSnr, rxSnr: rxSnr));
+    final response = DiscoverResponse(
+        repeaterHash: hash, uplinkSnr: uplinkSnr, rxSnr: rxSnr);
+    pendingDiscover.add(response);
+    // Filed at once (owner, 2026-10-17): a send right after a Discover
+    // used to route on the old ranking for up to 30 s. One answer at a
+    // time is safe — the supersede is once per epoch and a doorstep that
+    // answers later in the same epoch gets its weight back.
+    graph.observeDiscoverResults([response], failureEpisode: false);
     // The full key prefix tells two repeaters sharing a short hash apart.
     final key = _hex(pubkey.sublist(0, pubkey.length < 8 ? pubkey.length : 8));
     final verdict = 'heard my request at ${uplinkSnr.toStringAsFixed(1)} dB · '
@@ -1104,10 +1138,9 @@ class PathLabAdapter {
         '${rxSnr.toStringAsFixed(1)} dB', tag: 'PathGraph');
   }
 
-  /// Harness calls this when the discover window closes.
+  /// The answer window closed. Every answer was filed as it arrived; this
+  /// only clears the list the bench and the screen read.
   void commitDiscover({required bool failureEpisode}) {
-    graph.observeDiscoverResults(List.of(pendingDiscover),
-        failureEpisode: failureEpisode);
     pendingDiscover.clear();
   }
 }

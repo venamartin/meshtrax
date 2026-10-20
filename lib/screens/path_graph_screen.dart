@@ -36,6 +36,12 @@ String floodReasonText(FloodReason reason,
         'no chain of repeaters joins it to one this radio hears',
       FloodReason.belowThreshold => 'the links back are too weak',
       FloodReason.overBudget => 'the way back is too long',
+      FloodReason.doorstepsFailing =>
+        'the repeaters that hear me have not answered my last sends',
+      FloodReason.doorstepsQuiet =>
+        'the repeaters that hear me have gone quiet',
+      FloodReason.doorstepsMoving =>
+        'the repeaters that hear me are moving and none has answered me lately',
     };
   }
   if (back) {
@@ -49,6 +55,12 @@ String floodReasonText(FloodReason reason,
             'joins them',
       FloodReason.belowThreshold => 'the links back are too weak',
       FloodReason.overBudget => 'the way back is too long',
+      FloodReason.doorstepsFailing =>
+        'the repeaters that hear me have not answered my last sends',
+      FloodReason.doorstepsQuiet =>
+        'the repeaters that hear me have gone quiet',
+      FloodReason.doorstepsMoving =>
+        'the repeaters that hear me are moving and none has answered me lately',
     };
   }
   return switch (reason) {
@@ -60,8 +72,27 @@ String floodReasonText(FloodReason reason,
       'no chain of repeaters joins one that hears me to one that hears them',
     FloodReason.belowThreshold => 'links too weak',
     FloodReason.overBudget => 'route too long',
+    FloodReason.doorstepsFailing =>
+      'my repeaters have not answered my last sends — flooding so one can '
+          'prove itself again',
+    FloodReason.doorstepsQuiet =>
+      'every repeater that hears me has gone quiet — flooding to find one',
+    FloodReason.doorstepsMoving =>
+      'the repeaters that hear me are moving and none has answered me lately '
+          '— flooding to find one',
   };
 }
+
+/// Why Pathfinder treats a repeater as moving, in plain words.
+String movingReasonText(MovingStatus status) => switch (status.reason) {
+      MovingReason.manual => 'you said it moves',
+      MovingReason.manualWithMe => 'you said it moves with you',
+      MovingReason.advertMoved => 'its advert showed it somewhere else',
+      MovingReason.ridesWithMe =>
+        'it keeps hearing me while meeting repeaters it never had, so it '
+            'seems to ride with me',
+      MovingReason.newLinks => 'it keeps meeting repeaters it never had',
+    };
 
 /// Pathfinder: the repeaters around this radio, and how it would reach
 /// whoever is picked. Laid out like the room server screen. While the
@@ -273,6 +304,7 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           subtitle: _tableSummary(mine)),
       const SizedBox(height: 8),
       _doorstepTable(graph, snap, contactByHash, mine, isSelf: true),
+      ..._movingList(graph, snap, contactByHash, mine),
       const SizedBox(height: 24),
       _sectionTitle('Find a route'),
       const SizedBox(height: 8),
@@ -507,6 +539,121 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     );
   }
 
+  // ---------------------------------------------------------------- moving
+
+  /// Repeaters tagged as moving, whether their tag acts on routes yet or
+  /// is still only watched. Tap one for its sheet and its switch.
+  List<Widget> _movingList(PathGraph graph, GraphSnapshot snap,
+      Map<String, Contact> contactByHash, List<Candidate> mine) {
+    final moving = graph.movingRepeaters().entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    if (moving.isEmpty) return const [];
+    final minutes = graph.config.mobileFreshMinutes.round();
+    return [
+      const SizedBox(height: 24),
+      _sectionTitle('Moving repeaters (${moving.length})',
+          subtitle: 'Their links count for $minutes minutes after they were '
+              'last heard'),
+      const SizedBox(height: 8),
+      Card(
+        child: Column(
+          children: [
+            for (final e in moving)
+              ListTile(
+                leading: Icon(Icons.directions_car,
+                    color: e.value.acts ? Colors.orange : Colors.grey),
+                title: Text(snap.nodes[e.key]?.name ?? e.key),
+                subtitle: Text('${e.key} · ${movingReasonText(e.value)}'
+                    '${e.value.acts ? '' : ' (watching only)'}'),
+                onTap: () => _showRepeaterSheet(
+                    graph, snap, contactByHash, e.key,
+                    row: mine.where((c) => c.repeaterHash == e.key).firstOrNull),
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  /// Whether [hash] moves and why, as one line of its sheet; tapping it
+  /// opens the switch.
+  Widget _movingTile(PathGraph graph, String hash, VoidCallback onChanged) {
+    final status = graph.movingStatus(hash);
+    final minutes = graph.config.mobileFreshMinutes.round();
+    final summary = switch (status) {
+      null => 'Pathfinder treats it as a fixed repeater.',
+      MovingStatus(acts: false) =>
+        'Pathfinder thinks it moves: ${movingReasonText(status)}. Watching '
+            'only — routes still treat it as fixed.',
+      MovingStatus(withMe: true) =>
+        'Moves with me: ${movingReasonText(status)}. It counts as hearing me '
+            'any time; its links count for $minutes minutes after they were '
+            'last heard.',
+      _ => 'Moves: ${movingReasonText(status)}. Everything about it counts '
+          'for $minutes minutes after it was last heard.',
+    };
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.directions_car,
+          color: (status?.acts ?? false) ? Colors.orange : Colors.grey),
+      title: const Text('Does it move?'),
+      subtitle: Text(summary),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _pickMoving(graph, hash, onChanged),
+    );
+  }
+
+  /// The user's word on [hash], in a dialog like the language picker:
+  /// picking one closes it.
+  Future<void> _pickMoving(
+          PathGraph graph, String hash, VoidCallback onChanged) =>
+      showDialog<void>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Does it move?'),
+          contentPadding: const EdgeInsets.only(top: 12, bottom: 8),
+          content: SingleChildScrollView(
+            child: RadioGroup<MovingOverride?>(
+              groupValue: graph.snapshot().nodes[hash]?.movingOverride,
+              onChanged: (value) {
+                context.read<PathGraphService>().setMovingOverride(hash, value);
+                Navigator.pop(dialog);
+                onChanged();
+              },
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Let Pathfinder decide'),
+                    value: null,
+                  ),
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Moves'),
+                    subtitle: Text("Someone else's, in a car or carried"),
+                    value: MovingOverride.moves,
+                  ),
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Moves with me'),
+                    subtitle: Text('In my car: it always hears me'),
+                    value: MovingOverride.withMe,
+                  ),
+                  RadioListTile<MovingOverride?>(
+                    title: Text('Stays put'),
+                    value: MovingOverride.staysPut,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog),
+              child: Text(context.l10n.common_cancel),
+            ),
+          ],
+        ),
+      );
+
   // ---------------------------------------------------------------- tables
 
   /// Doorstep rows in the router's own order (confidence: tally blended
@@ -558,8 +705,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
               ),
             for (final c in ranked)
               InkWell(
-                onTap: () => _showDoorstepSheet(graph, snap, contactByHash, c,
-                    isSelf: isSelf, who: who),
+                onTap: () => _showRepeaterSheet(
+                    graph, snap, contactByHash, c.repeaterHash,
+                    row: c, isSelf: isSelf, who: who),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(children: [
@@ -622,50 +770,68 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         ),
       );
 
-  void _showDoorstepSheet(PathGraph graph, GraphSnapshot snap,
-      Map<String, Contact> contactByHash, Candidate c,
-      {required bool isSelf, required String who}) {
-    final hash = c.repeaterHash;
+  /// A repeater's sheet: what this table row knows about it, when opened
+  /// from one ([row]: one of mine when [isSelf], else one of [who]'s), and
+  /// whether it moves (tap for the switch).
+  void _showRepeaterSheet(PathGraph graph, GraphSnapshot snap,
+      Map<String, Contact> contactByHash, String hash,
+      {Candidate? row, bool isSelf = true, String who = 'them'}) {
     final node = snap.nodes[hash];
     final known = contactByHash[hash];
     final name = node?.name ?? known?.name ?? hash;
     final pubkey = node?.pubkey ?? known?.publicKeyHex;
-    final tier = switch (c.tier) {
-      EvidenceTier.inferred => 'heard only',
-      EvidenceTier.proven => 'confirmed',
-      EvidenceTier.direct => 'direct',
-    };
+    // Draggable: a swipe down from the top of a long sheet closes it
+    // instead of only scrolling it.
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            16, 0, 16, 16 + MediaQuery.paddingOf(context).bottom),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(hash,
-                style: TextStyle(
-                    fontFamily: 'monospace', color: Colors.grey[600])),
-            const Divider(),
-            _infoRow('Public key',
-                pubkey == null ? '—' : '${pubkey.substring(0, 12).toUpperCase()}…'),
-            _infoRow('Confidence', _pct(graph.doorstepConfidence(c))),
-            _infoRow('Weight', c.weight.toStringAsFixed(2)),
-            _infoRow(isSelf ? 'Times I heard it' : 'Times it carried their packets',
-                '${c.finalCount}'),
-            _infoRow(isSelf ? 'Times it heard me' : 'Times it reached $who',
-                '${c.provenCount}'),
-            _infoRow('How it heard me', '${_db(c.uplinkSnr)} dB'),
-            _infoRow('How I heard it', '${_db(c.downlinkSnr)} dB'),
-            _infoRow('Last seen', _timeOf(c.lastSeen)),
-            _infoRow('Last proof', c.provenAt == null ? 'never' : _timeOf(c.provenAt!)),
-            _infoRow('Evidence', tier),
-          ],
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.25,
+        maxChildSize: 0.9,
+        builder: (context, scroll) => StatefulBuilder(
+          builder: (context, setSheetState) => ListView(
+            controller: scroll,
+            padding: EdgeInsets.fromLTRB(
+                16, 0, 16, 16 + MediaQuery.paddingOf(context).bottom),
+            children: [
+              Text(name,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(hash,
+                  style: TextStyle(
+                      fontFamily: 'monospace', color: Colors.grey[600])),
+              const Divider(),
+              _infoRow('Public key',
+                  pubkey == null ? '—' : '${pubkey.substring(0, 12).toUpperCase()}…'),
+              if (row case final c?) ...[
+                _infoRow('Confidence', _pct(graph.doorstepConfidence(c))),
+                _infoRow('Weight', c.weight.toStringAsFixed(2)),
+                _infoRow(
+                    isSelf ? 'Times I heard it' : 'Times it carried their packets',
+                    '${c.finalCount}'),
+                _infoRow(isSelf ? 'Times it heard me' : 'Times it reached $who',
+                    '${c.provenCount}'),
+                _infoRow('How it heard me', '${_db(c.uplinkSnr)} dB'),
+                _infoRow('How I heard it', '${_db(c.downlinkSnr)} dB'),
+                _infoRow('Last seen', _timeOf(c.lastSeen)),
+                _infoRow('Last proof',
+                    c.provenAt == null ? 'never' : _timeOf(c.provenAt!)),
+                _infoRow('Evidence', switch (c.tier) {
+                  EvidenceTier.inferred => 'heard only',
+                  EvidenceTier.proven => 'confirmed',
+                  EvidenceTier.direct => 'direct',
+                }),
+              ],
+              const Divider(),
+              _movingTile(graph, hash, () {
+                setSheetState(() {});
+                setState(() {});
+              }),
+            ],
+          ),
         ),
       ),
     );

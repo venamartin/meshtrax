@@ -905,7 +905,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _secondAppDismissed = false;
   }
 
-  // Requests the radio answers with RESP_CODE_SENT that are not messages.
+  // Requests the radio answers with RESP_CODE_SENT that are not messages
+  // (every RESP_CODE_SENT in companion_radio MyMesh.cpp besides the DM's).
   // Unclaimed, their SENT fell through to "promote the newest pending DM",
   // marking a queued DM sent although it never went out. The telemetry
   // request only answers SENT when it names a contact.
@@ -915,6 +916,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     cmdSendTracePath,
     cmdSendTelemetryReq,
     cmdSendBinaryReq,
+    cmdSendPathDiscoveryReq,
     cmdSendAnonReq,
   };
 
@@ -1335,6 +1337,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             ),
         getSelfPublicKey: () => _selfPublicKey,
         pathHashByteWidth: () => _pathHashByteWidth,
+        estimateAirtime: _estimateAirtimeMs,
         prepareContactOutboundText: prepareContactOutboundText,
         onFloodDelivered: _relearnRoomRouteAfterFlood,
         graphRoutes: (contact) => graphRouteCandidates?.call(contact),
@@ -1507,6 +1510,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void Function(Contact, PathSelection, int attempt)? onSendAttemptStarted;
   void Function(Contact, int ackHash)? onAckHeard;
   List<PathSelection>? Function(Contact contact)? graphRouteCandidates;
+
+  /// Pathfinder's current distance to a contact in hops, or null when it
+  /// has nothing recent (see [estimatedHopsTo]).
+  int? Function(Contact contact)? graphDistanceTo;
 
   /// The last DM ladder to this contact (pubkey hex) ended.
   void Function(String contactKey)? onSendLadderEnded;
@@ -6133,10 +6140,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   static const int _minFloodTimeoutMs = TimeoutHelper.minFloodMs;
   static const int _maxTimeoutMs = TimeoutHelper.maxMs;
 
-  /// Best known distance to [contact] in hops: the firmware's route, else
-  /// how far the contact's last advert travelled, else null.
+  /// Best known distance to [contact] in hops: what Pathfinder saw last
+  /// (the route their PATH reply named, the hops their last flood took),
+  /// else the firmware's route, else how far the contact's last advert
+  /// travelled, else null. Sizes the wait for a flood's ACK: the default
+  /// 8 hops waited ~50–60 s while every ACK on the 2026-10-17 drive came
+  /// back in 15 s or less.
   int? estimatedHopsTo(Contact contact) =>
-      contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount;
+      graphDistanceTo?.call(contact) ??
+      (contact.pathLength >= 0 ? contact.pathLength : contact.inboundHopCount);
 
   /// Timeout for one send attempt.
   ///
@@ -7009,7 +7021,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
-      if (packet == null || packet.payloadType != _payloadTypeGroupText) return;
+      if (packet == null) return;
+      // Message liveness, any hash width (the raw copy of my own flooded
+      // DM carries [their byte][my byte]; a flood with hops passed through
+      // a repeater I can hear). Never evidence for Pathfinder: it keeps
+      // its own, width-checked reading of the same frame.
+      if (packet.isFlood) {
+        if (packet.hopCount > 0) _retryService?.noteRepeaterHeard();
+        final me = _selfPublicKey;
+        if (packet.payloadType == _payloadTypeTxtMsg &&
+            packet.payload.length >= 2 &&
+            me != null &&
+            packet.payload[1] == me[0] &&
+            packet.payload[0] != me[0]) {
+          _retryService?.noteOwnFloodEcho(packet.payload[0]);
+        }
+      }
+      if (packet.payloadType != _payloadTypeGroupText) return;
 
       final payload = BufferReader(packet.payload);
       final channelHash = payload.readByte();
@@ -7128,6 +7156,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (ctlType == ctlTypeNodeDiscoverResp) {
         final nodeType = ctlPayload[0] & 0x0F;
         if (nodeType != advTypeRepeater) return;
+        // Whoever it answered, a repeater's transmission reached me.
+        _retryService?.noteRepeaterHeard();
 
         if (ctlPayload.length < 6) return;
         final tag = ByteData.sublistView(ctlPayload, 2, 6).getUint32(0, Endian.little);
@@ -10610,6 +10640,7 @@ const int _routeTransportFlood = 0x00;
 const int _routeFlood = 0x01;
 const int _routeTransportDirect = 0x03;
 
+const int _payloadTypeTxtMsg = 0x02;
 const int _payloadTypeGroupText = 0x05;
 const int _cipherMacSize = 2;
 
