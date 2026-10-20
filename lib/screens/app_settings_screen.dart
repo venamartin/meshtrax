@@ -547,6 +547,14 @@ class AppSettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
           SwitchListTile(
+            secondary: const Icon(Icons.format_bold),
+            title: Text(context.l10n.appSettings_showTextFormatting),
+            subtitle: Text(context.l10n.appSettings_showTextFormattingSubtitle),
+            value: settingsService.settings.showTextFormatting,
+            onChanged: settingsService.setShowTextFormatting,
+          ),
+          const Divider(height: 1),
+          SwitchListTile(
             secondary: const Icon(Icons.vertical_align_top),
             title: Text(context.l10n.appSettings_jumpToOldestUnread),
             subtitle: Text(context.l10n.appSettings_jumpToOldestUnreadSubtitle),

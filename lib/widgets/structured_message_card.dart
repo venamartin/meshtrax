@@ -8,6 +8,7 @@ import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
 import '../screens/map_screen.dart';
 import '../utils/calendar_export.dart';
+import 'message_text.dart';
 import 'mini_map.dart';
 
 /// Renders a parsed [StructuredMessage] inside a chat bubble: a Location,
@@ -200,8 +201,7 @@ class StructuredMessageCard extends StatelessWidget {
             markerColor: markerColor,
           ),
           const SizedBox(height: 4),
-          LinkHandler.buildLinkifyText(
-            context: context,
+          MessageText(
             text: StructuredMessage.formatCoordinates(position),
             style: TextStyle(color: meta, fontSize: 12 * textScale),
           ),

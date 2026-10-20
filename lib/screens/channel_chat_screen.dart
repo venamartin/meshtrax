@@ -15,7 +15,8 @@ import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
-import '../helpers/link_handler.dart';
+import '../helpers/markdown_helper.dart';
+import '../widgets/message_text.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
@@ -1411,8 +1412,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: LinkHandler.buildLinkifyText(
-                                  context: context,
+                                child: MessageText(
                                   text: cleanDisplayText,
                                   style: TextStyle(
                                     fontSize: bodyFontSize * textScale,
@@ -1739,7 +1739,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ? '$replyText..'
           : replyText;
       contentPreview = Text(
-        previewText,
+        MarkdownHelper.toPlainText(
+          previewText,
+          formatting:
+              context.read<AppSettingsService>().settings.showTextFormatting,
+        ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -2149,7 +2153,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
 
     return Text(
-      message.text,
+      MarkdownHelper.toPlainText(
+        message.text,
+        formatting:
+            context.read<AppSettingsService>().settings.showTextFormatting,
+      ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(fontSize: 11 * textScale, color: textColor),
