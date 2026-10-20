@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
@@ -1045,6 +1046,18 @@ SubscribeGrant? parseSubscribeReply(Uint8List data) {
   if (region.isEmpty) return null;
   return SubscribeGrant(grantedSecs: data[0] | (data[1] << 8), region: region);
 }
+
+/// A push tag for a sensor subscription: random, with the top bit of the
+/// little-endian u32 set. The companion's own request tags are its RTC
+/// seconds, below 2^31 until 2038, so a push is never taken for a reply.
+Uint8List newSensorPushTag([Random? random]) {
+  final value = (random ?? Random.secure()).nextInt(1 << 31) | 0x80000000;
+  final tag = Uint8List(4);
+  ByteData.sublistView(tag).setUint32(0, value, Endian.little);
+  return tag;
+}
+
+bool isSensorPushTag(Uint8List tag) => tag.length == 4 && tag[3] & 0x80 != 0;
 
 /// A telemetry push as the companion forwards it:
 /// `[0x8C][0][push_tag x4][sensor time u32 LE][LPP…]`. It names no sender:

@@ -21,6 +21,10 @@ class TimeoutHelper {
   /// (CLI_REPLY_DELAY_MILLIS, BaseChatMesh.cpp).
   static const int replyDelayMs = 600;
 
+  /// CLI_REPLY_DELAY_MILLIS in simple_sensor/SensorMesh.cpp: a sensor waits
+  /// longer than a repeater before it answers a CLI command.
+  static const int sensorReplyDelayMs = 1000;
+
   /// CADFailMaxDuration (Dispatcher.cpp): a busy channel can defer one
   /// transmission this long before the send is forced out.
   static const int cadCeilingMs = 4000;

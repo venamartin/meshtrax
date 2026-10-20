@@ -384,6 +384,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<BlockedCliCommand> get blockedCliCommands =>
       _blockedCliCommandsController.stream;
 
+  final StreamController<SensorPush> _sensorPushController =
+      StreamController<SensorPush>.broadcast();
+
+  /// Telemetry pushes from subscribed sensors (firmware 1.18). A push names
+  /// no sender: its tag (see [newSensorPushTag]) says which subscription.
+  Stream<SensorPush> get sensorPushes => _sensorPushController.stream;
+
   // Last full (14-byte) LOGIN_OK per room: the server's clock and the
   // permissions byte. Kept apart from the session events: a pushed post
   // proves the session but carries neither, and must not erase them.
@@ -5711,6 +5718,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case pushCodeControlData:
         _handleControlData(frame);
         break;
+      // Replies to our own requests are matched by their awaiting listeners;
+      // a sensor's telemetry push is told apart by its tag.
+      case pushCodeBinaryResponse:
+        final push = parseSensorPush(frame);
+        if (push != null && isSensorPushTag(push.pushTag)) {
+          _sensorPushController.add(push);
+        }
+        break;
       case respCodeChannelInfo:
         _handleChannelInfo(frame);
         break;
@@ -9523,6 +9538,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _receivedFramesController.close();
     _roomLoginEventsController.close();
     _blockedCliCommandsController.close();
+    _sensorPushController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();
 
