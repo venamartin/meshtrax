@@ -4423,6 +4423,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String get structured_past => 'Past';
 
   @override
+  String structured_dayOfDays(int day, int total) {
+    return 'Day $day of $total';
+  }
+
+  @override
+  String structured_days(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dialog_eventEndDate => 'End date';
+
+  @override
+  String get dialog_eventSameDay => 'Same day';
+
+  @override
   String get structured_map => 'Map';
 
   @override

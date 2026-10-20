@@ -312,6 +312,9 @@ class _EventDialogState extends State<_EventDialog> {
   final _title = TextEditingController();
   final _place = TextEditingController();
   DateTime _date = DateTime.now();
+
+  /// Last day of a multi-day event; null = same day as [_date].
+  DateTime? _endDate;
   bool _allDay = false;
   TimeOfDay _start = const TimeOfDay(hour: 18, minute: 0);
   TimeOfDay? _end;
@@ -338,7 +341,27 @@ class _EventDialogState extends State<_EventDialog> {
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked == null) return;
+    setState(() {
+      _date = picked;
+      if (_endDate != null && !_endDate!.isAfter(picked)) _endDate = null;
+    });
+  }
+
+  Future<void> _pickEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate:
+          _endDate ?? DateTime(_date.year, _date.month, _date.day + 1),
+      firstDate: _date,
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    );
+    if (picked == null) return;
+    setState(() {
+      _endDate = picked.isAfter(_date) ? picked : null;
+      // A timed event that ends on another day needs an end time.
+      if (_endDate != null) _end ??= _start;
+    });
   }
 
   Future<void> _pickStart() async {
@@ -358,9 +381,12 @@ class _EventDialogState extends State<_EventDialog> {
     final start = _allDay
         ? _date
         : DateTime(_date.year, _date.month, _date.day, _start.hour, _start.minute);
+    final endDay = _endDate ?? _date;
     DateTime? end;
-    if (!_allDay && _end != null) {
-      end = DateTime(_date.year, _date.month, _date.day, _end!.hour, _end!.minute);
+    if (_allDay) {
+      end = _endDate;
+    } else if (_end != null) {
+      end = DateTime(endDay.year, endDay.month, endDay.day, _end!.hour, _end!.minute);
       if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
     }
     return EventMessage(
@@ -406,11 +432,29 @@ class _EventDialogState extends State<_EventDialog> {
               subtitle: Text(DateFormat.yMMMEd(locale).format(_date)),
               onTap: _pickDate,
             ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.date_range),
+              title: Text(l10n.dialog_eventEndDate),
+              subtitle: Text(_endDate == null
+                  ? l10n.dialog_eventSameDay
+                  : DateFormat.yMMMEd(locale).format(_endDate!)),
+              trailing: _endDate == null
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => _endDate = null),
+                    ),
+              onTap: _pickEndDate,
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.structured_allDay),
               value: _allDay,
-              onChanged: (v) => setState(() => _allDay = v),
+              onChanged: (v) => setState(() {
+                _allDay = v;
+                if (!v && _endDate != null) _end ??= _start;
+              }),
             ),
             if (!_allDay) ...[
               ListTile(
@@ -429,7 +473,11 @@ class _EventDialogState extends State<_EventDialog> {
                     ? null
                     : IconButton(
                         icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _end = null),
+                        // No end time means it ends the day it starts.
+                        onPressed: () => setState(() {
+                          _end = null;
+                          _endDate = null;
+                        }),
                       ),
                 onTap: _pickEnd,
               ),

@@ -7595,6 +7595,30 @@ abstract class AppLocalizations {
   /// **'Past'**
   String get structured_past;
 
+  /// No description provided for @structured_dayOfDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}'**
+  String structured_dayOfDays(int day, int total);
+
+  /// No description provided for @structured_days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String structured_days(int count);
+
+  /// No description provided for @dialog_eventEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get dialog_eventEndDate;
+
+  /// No description provided for @dialog_eventSameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Same day'**
+  String get dialog_eventSameDay;
+
   /// No description provided for @structured_map.
   ///
   /// In en, this message translates to:

@@ -278,19 +278,24 @@ class StructuredMessageCard extends StatelessWidget {
   Widget _event(BuildContext context, StructuredPalette p, EventMessage m) {
     final l10n = context.l10n;
     final clock = now ?? DateTime.now();
-    final past = !m.when.effectiveEnd.isAfter(clock);
-    final days = _daysUntil(m.when.start, clock);
+    final when = m.when;
+    final past = !when.effectiveEnd.isAfter(clock);
+    final days = EventWhen.daysBetween(clock, when.start);
+    final dayCount = when.dayCount;
+    final running = !past && days < 0;
     final relative = past
         ? l10n.structured_past
-        : days <= 0
-            ? l10n.structured_today
-            : days == 1
-                ? l10n.structured_tomorrow
-                : l10n.structured_inDays(days);
+        : running && dayCount > 1
+            ? l10n.structured_dayOfDays(1 - days, dayCount)
+            : days <= 0
+                ? l10n.structured_today
+                : days == 1
+                    ? l10n.structured_tomorrow
+                    : l10n.structured_inDays(days);
     final card = _scaffold(
       context,
       p,
-      lead: _dateTile(context, p, m.when.start),
+      lead: _dateTile(context, p, when),
       overline: l10n.structured_event,
       title: m.title,
       chips: [
@@ -516,11 +521,23 @@ class StructuredMessageCard extends StatelessWidget {
         child: Icon(icon, size: 22 * textScale, color: p.onAccent),
       );
 
-  Widget _dateTile(BuildContext context, StructuredPalette p, DateTime start) {
+  /// Month over day; a multi-day event shows its range, "OCT / 20–22" or
+  /// "OCT–NOV / 30–2".
+  Widget _dateTile(BuildContext context, StructuredPalette p, EventWhen when) {
     final locale = Localizations.localeOf(context).toString();
+    final month = DateFormat.MMM(locale);
+    final day = DateFormat.d(locale);
+    final start = when.start;
+    final end = when.dayCount > 1 ? when.end : null;
+    final months = end == null || end.month == start.month
+        ? month.format(start)
+        : '${month.format(start)}–${month.format(end)}';
+    final days =
+        end == null ? day.format(start) : '${day.format(start)}–${day.format(end)}';
     return Container(
-      width: 56 * textScale,
+      constraints: BoxConstraints(minWidth: 56 * textScale),
       height: 62 * textScale,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: p.accent,
         borderRadius: BorderRadius.circular(12),
@@ -529,7 +546,7 @@ class StructuredMessageCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            DateFormat.MMM(locale).format(start).toUpperCase(),
+            months.toUpperCase(),
             style: TextStyle(
               color: p.onAccent,
               fontSize: 12 * textScale,
@@ -539,10 +556,10 @@ class StructuredMessageCard extends StatelessWidget {
             ),
           ),
           Text(
-            DateFormat.d(locale).format(start),
+            days,
             style: TextStyle(
               color: p.onAccent,
-              fontSize: 26 * textScale,
+              fontSize: (end == null ? 26 : 22) * textScale,
               fontWeight: FontWeight.w700,
               height: 1.1,
             ),
@@ -722,26 +739,23 @@ class StructuredMessageCard extends StatelessWidget {
     );
   }
 
-  /// Whole calendar days from [now] to [start], DST-proof.
-  static int _daysUntil(DateTime start, DateTime now) =>
-      DateTime.utc(start.year, start.month, start.day)
-          .difference(DateTime.utc(now.year, now.month, now.day))
-          .inDays;
-
+  /// "All day", "3 days" (the dates are in the tile), "6:30 PM – 8:00 PM",
+  /// or "6:00 PM – Sat 12:00 PM" when it ends on another day.
   static String _timeChip(BuildContext context, EventWhen when) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
-    final day = DateFormat.MMMd(locale);
+    final weekday = DateFormat.E(locale);
     final time = DateFormat.jm(locale);
     final start = when.start;
     final end = when.end;
     if (when.allDay) {
-      if (end == null || _sameDay(start, end)) return l10n.structured_allDay;
-      return '${day.format(start)} – ${day.format(end)}';
+      return when.dayCount > 1
+          ? l10n.structured_days(when.dayCount)
+          : l10n.structured_allDay;
     }
     if (end == null) return time.format(start);
     if (_sameDay(start, end)) return '${time.format(start)} – ${time.format(end)}';
-    return '${time.format(start)} – ${day.format(end)} ${time.format(end)}';
+    return '${time.format(start)} – ${weekday.format(end)} ${time.format(end)}';
   }
 
   static String _whenText(BuildContext context, EventWhen when) {

@@ -304,6 +304,19 @@ void main() {
     expect(found, [graz]);
   });
 
+  test('EventWhen.dayCount', () {
+    int days(String field) => EventWhen.parse(field)!.dayCount;
+    expect(days('2026-10-20'), 1);
+    expect(days('2026-10-20 18:00-20:00'), 1);
+    expect(days('2026-10-20 - 2026-10-22'), 3);
+    expect(days('2026-10-30 - 2026-11-02'), 4);
+    // Across the end of daylight saving time (US, Nov 1 2026).
+    expect(days('2026-10-31 - 2026-11-02'), 3);
+    // Overnight but shorter than a day stays one day.
+    expect(days('2026-10-20 22:00-02:00'), 1);
+    expect(days('2026-10-20 18:00 - 2026-10-22 09:00'), 3);
+  });
+
   group('meshcore:// share links', () {
     final secret = 'a1' * 16;
     final key = 'C0FFEE${'ab' * 29}';

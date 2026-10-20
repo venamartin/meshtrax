@@ -2488,6 +2488,27 @@
     }
   },
   "structured_past": "Past",
+  "structured_dayOfDays": "Day {day} of {total}",
+  "@structured_dayOfDays": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "structured_days": "{count, plural, =1{1 day} other{{count} days}}",
+  "@structured_days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dialog_eventEndDate": "End date",
+  "dialog_eventSameDay": "Same day",
   "structured_map": "Map",
   "structured_navigate": "Navigate",
   "structured_channel": "Channel",

@@ -397,6 +397,21 @@ class EventWhen {
     return start.add(const Duration(hours: 1));
   }
 
+  /// Calendar days the event spans: 3 for Oct 20 – 22. An overnight event
+  /// shorter than a day (22:00 – 02:00) counts as one.
+  int get dayCount {
+    final e = end;
+    if (e == null) return 1;
+    if (!allDay && e.difference(start) < const Duration(days: 1)) return 1;
+    return daysBetween(start, e) + 1;
+  }
+
+  /// Whole calendar days from [a] to [b], DST-proof.
+  static int daysBetween(DateTime a, DateTime b) =>
+      DateTime.utc(b.year, b.month, b.day)
+          .difference(DateTime.utc(a.year, a.month, a.day))
+          .inDays;
+
   static String _two(int n) => n.toString().padLeft(2, '0');
   static String _dateText(DateTime d) =>
       '${d.year}-${_two(d.month)}-${_two(d.day)}';

@@ -13,7 +13,8 @@ import 'platform_info.dart';
 class CalendarExport {
   static Future<bool> addEvent(EventMessage event) async {
     final when = event.when;
-    final end = when.end ?? when.effectiveEnd;
+    // An all-day range names its last day; calendars want the day after.
+    final end = when.allDay ? when.effectiveEnd : (when.end ?? when.effectiveEnd);
     final location = [
       if (event.place != null && event.place!.isNotEmpty) event.place!,
       if (event.position != null)
