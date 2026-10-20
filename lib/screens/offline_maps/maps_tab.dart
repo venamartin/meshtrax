@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
@@ -34,7 +33,7 @@ class MapsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final maps = context.watch<MapPacksService>();
     final regions = maps.regions;
-    if (regions == null || maps.index == null) return _CatalogueState(maps);
+    if (regions == null || maps.index == null) return CatalogueState(maps);
 
     final selected = selectedPath == null ? null : regions[selectedPath!];
     return Center(
@@ -53,69 +52,6 @@ class MapsTab extends StatelessWidget {
                 region: selected,
                 onBack: () => onSelect(null),
               ),
-      ),
-    );
-  }
-}
-
-/// Loading, empty and error states while there's no catalogue to show.
-class _CatalogueState extends StatelessWidget {
-  final MapPacksService maps;
-  const _CatalogueState(this.maps);
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final (icon, title, body, retry) = switch (maps.status) {
-      CatalogueStatus.unknown ||
-      CatalogueStatus.loading => (null, l10n.offlineMaps_loading, null, false),
-      CatalogueStatus.unavailable => (
-        Icons.map_outlined,
-        l10n.offlineMaps_unavailable,
-        l10n.offlineMaps_unavailableHint,
-        true,
-      ),
-      CatalogueStatus.error || CatalogueStatus.ready => (
-        Icons.cloud_off_outlined,
-        l10n.offlineMaps_serverError,
-        maps.error,
-        true,
-      ),
-    };
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon == null)
-              const CircularProgressIndicator()
-            else
-              Icon(icon, size: 48, color: theme.colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            if (body != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                body,
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-            if (retry) ...[
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: maps.refresh,
-                child: Text(l10n.common_retry),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -146,7 +82,8 @@ class _RegionList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (maps.status == CatalogueStatus.error) _StaleNotice(maps),
+        if (maps.status == CatalogueStatus.error)
+          StaleNotice(maps, at: maps.fetchedAt),
         if (maps.index!.needsNewerApp || regions.needsNewerApp)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -225,36 +162,6 @@ class _RegionList extends StatelessWidget {
       return null;
     }
     return region;
-  }
-}
-
-class _StaleNotice extends StatelessWidget {
-  final MapPacksService maps;
-  const _StaleNotice(this.maps);
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final fetched = maps.fetchedAt;
-    final date = fetched == null
-        ? ''
-        : DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
-              .format(fetched);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.cloud_off_outlined,
-            size: 18,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.offlineMaps_cachedFrom(date))),
-          TextButton(onPressed: maps.refresh, child: Text(l10n.common_retry)),
-        ],
-      ),
-    );
   }
 }
 

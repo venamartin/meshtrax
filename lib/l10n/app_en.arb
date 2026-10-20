@@ -2386,6 +2386,7 @@
   "offlineMaps_serverError": "Can't reach the map server",
   "offlineMaps_unavailable": "No maps are available yet",
   "offlineMaps_unavailableHint": "Check again later.",
+  "offlineMaps_chartsUnavailable": "No NOAA charts are available yet",
   "offlineMaps_cachedFrom": "Showing the list from {date}",
   "@offlineMaps_cachedFrom": {"placeholders": {"date": {"type": "String"}}},
   "offlineMaps_needsNewerApp": "Update MeshTrax to get the newest maps.",

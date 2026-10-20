@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
 import '../../helpers/snack_bar_builder.dart';
@@ -115,6 +117,275 @@ Future<void> confirmDeleteRegion(
     showDismissibleSnackBar(
       context,
       content: Text(l10n.offlineMaps_deleted(name)),
+    );
+  }
+}
+
+/// A pack: tick box (or its state), [title], one-line [detail] or progress,
+/// and size; plus pause / resume / cancel / retry while it downloads.
+class PackRow extends StatelessWidget {
+  final PackIndexEntry entry;
+  final bool ticked;
+  final ValueChanged<bool> onTicked;
+  final Widget title;
+
+  /// Shown under the title while the pack is still to download (or
+  /// installed with no date); none when null or empty.
+  final String? detail;
+
+  const PackRow({
+    super.key,
+    required this.entry,
+    required this.ticked,
+    required this.onTicked,
+    required this.title,
+    this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final maps = context.watch<MapPacksService>();
+    final status = maps.statusOf(entry);
+    final download = maps.downloadOf(entry.id);
+
+    final Widget leading = switch (status) {
+      PackStatus.available => Checkbox(
+        value: ticked,
+        onChanged: (v) => onTicked(v ?? false),
+      ),
+      PackStatus.installed => Icon(
+        Icons.check_circle,
+        color: theme.colorScheme.primary,
+      ),
+      PackStatus.updateAvailable => Icon(
+        Icons.update,
+        color: theme.colorScheme.tertiary,
+      ),
+      PackStatus.failed => Icon(
+        Icons.error_outline,
+        color: theme.colorScheme.error,
+      ),
+      _ => const SizedBox.square(
+        dimension: 24,
+        child: Center(child: Icon(Icons.downloading)),
+      ),
+    };
+
+    final installed = maps.installedPack(entry.id);
+    final installedAt = installed == null ? null : maps.installedAt(installed);
+    final String? subtitle = switch (status) {
+      PackStatus.available => detail,
+      PackStatus.queued => l10n.offlineMaps_waiting,
+      PackStatus.waitingToRetry => l10n.offlineMaps_retrying,
+      PackStatus.verifying => l10n.offlineMaps_checking,
+      PackStatus.running || PackStatus.paused => l10n.offlineMaps_bytesProgress(
+        formatBytes(download?.bytesDone ?? 0),
+        formatBytes(entry.bytes),
+      ),
+      PackStatus.failed => l10n.offlineMaps_failed(download?.error ?? ''),
+      PackStatus.installed =>
+        installedAt == null
+            ? detail
+            : l10n.offlineMaps_downloadedOn(
+                DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+                    .format(installedAt),
+              ),
+      PackStatus.updateAvailable => l10n.offlineMaps_updateAvailable,
+    };
+
+    final active = switch (status) {
+      PackStatus.queued ||
+      PackStatus.running ||
+      PackStatus.paused ||
+      PackStatus.waitingToRetry ||
+      PackStatus.verifying => true,
+      _ => false,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          ListTile(
+            leading: leading,
+            title: title,
+            subtitle: subtitle == null || subtitle.isEmpty
+                ? null
+                : Text(
+                    subtitle,
+                    style: status == PackStatus.failed
+                        ? TextStyle(color: theme.colorScheme.error)
+                        : null,
+                  ),
+            trailing: Text(formatBytes(entry.bytes), style: sizeStyle),
+            onTap: status == PackStatus.available
+                ? () => onTicked(!ticked)
+                : null,
+          ),
+          if (active || status == PackStatus.failed)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: active
+                        ? LinearProgressIndicator(
+                            value:
+                                status == PackStatus.running ||
+                                    status == PackStatus.paused
+                                ? download?.progress
+                                : null,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  if (status == PackStatus.running)
+                    IconButton(
+                      icon: const Icon(Icons.pause),
+                      tooltip: l10n.offlineMaps_pause,
+                      onPressed: () => maps.pause(entry.id),
+                    ),
+                  if (status == PackStatus.paused ||
+                      status == PackStatus.failed)
+                    IconButton(
+                      icon: Icon(
+                        status == PackStatus.failed
+                            ? Icons.refresh
+                            : Icons.play_arrow,
+                      ),
+                      tooltip: status == PackStatus.failed
+                          ? l10n.common_retry
+                          : l10n.offlineMaps_resume,
+                      onPressed: () => maps.resume(entry.id),
+                    ),
+                  if ((active && status != PackStatus.verifying) ||
+                      status == PackStatus.failed)
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: status == PackStatus.failed
+                          ? l10n.common_remove
+                          : l10n.common_cancel,
+                      onPressed: () => maps.cancel(entry.id),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading, empty and error states while a tab has nothing to list: the
+/// Maps tab without the catalogue, or the Charts tab without chart areas.
+class CatalogueState extends StatelessWidget {
+  final MapPacksService maps;
+  final bool charts;
+  const CatalogueState(this.maps, {super.key, this.charts = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final (icon, title, body, retry) = switch (maps.status) {
+      CatalogueStatus.unknown ||
+      CatalogueStatus.loading => (null, l10n.offlineMaps_loading, null, false),
+      CatalogueStatus.unavailable => (
+        Icons.map_outlined,
+        l10n.offlineMaps_unavailable,
+        l10n.offlineMaps_unavailableHint,
+        true,
+      ),
+      CatalogueStatus.error when maps.index == null => (
+        Icons.cloud_off_outlined,
+        l10n.offlineMaps_serverError,
+        maps.error,
+        true,
+      ),
+      // The catalogue is there; what's missing is this tab's file.
+      _ when charts && maps.chartAreasError != null => (
+        Icons.cloud_off_outlined,
+        l10n.offlineMaps_serverError,
+        maps.chartAreasError,
+        true,
+      ),
+      _ => (
+        Icons.map_outlined,
+        charts
+            ? l10n.offlineMaps_chartsUnavailable
+            : l10n.offlineMaps_unavailable,
+        l10n.offlineMaps_unavailableHint,
+        true,
+      ),
+    };
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon == null)
+              const CircularProgressIndicator()
+            else
+              Icon(icon, size: 48, color: theme.colorScheme.outline),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            if (body != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                body,
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (retry) ...[
+              const SizedBox(height: 16),
+              FilledButton.tonal(
+                onPressed: maps.refresh,
+                child: Text(l10n.common_retry),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Showing the list from 20 Oct" with Retry, over a list from the cache
+/// after a refresh failed; [at] is when that list was fetched.
+class StaleNotice extends StatelessWidget {
+  final MapPacksService maps;
+  final DateTime? at;
+  const StaleNotice(this.maps, {super.key, required this.at});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final at = this.at;
+    final date = at == null
+        ? ''
+        : DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+              .format(at);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 18,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(l10n.offlineMaps_cachedFrom(date))),
+          TextButton(onPressed: maps.refresh, child: Text(l10n.common_retry)),
+        ],
+      ),
     );
   }
 }

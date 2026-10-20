@@ -4168,6 +4168,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineMaps_unavailableHint => 'Check again later.';
 
   @override
+  String get offlineMaps_chartsUnavailable =>
+      'No NOAA charts are available yet';
+
+  @override
   String offlineMaps_cachedFrom(String date) {
     return 'Showing the list from $date';
   }

@@ -7452,6 +7452,12 @@ abstract class AppLocalizations {
   /// **'Check again later.'**
   String get offlineMaps_unavailableHint;
 
+  /// No description provided for @offlineMaps_chartsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No NOAA charts are available yet'**
+  String get offlineMaps_chartsUnavailable;
+
   /// No description provided for @offlineMaps_cachedFrom.
   ///
   /// In en, this message translates to:
