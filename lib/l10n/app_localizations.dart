@@ -7271,6 +7271,60 @@ abstract class AppLocalizations {
   /// **'Forgets the WiFi network. Applies after a restart.'**
   String get companionCli_helpWifiClear;
 
+  /// No description provided for @companionCli_remoteNoReply.
+  ///
+  /// In en, this message translates to:
+  /// **'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.'**
+  String get companionCli_remoteNoReply;
+
+  /// No description provided for @companionCli_remoteSentNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent. A radio does not answer a restart or power-off.'**
+  String get companionCli_remoteSentNoAnswer;
+
+  /// No description provided for @companionCli_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} tried to use your radio\'s command line: \"{command}\". It was not allowed.'**
+  String companionCli_blocked(String name, String command);
+
+  /// No description provided for @companionCli_blockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tried to use your radio\'s command line: \"{command}\". It was not allowed.'**
+  String companionCli_blockedBody(String command);
+
+  /// No description provided for @contact_remoteCli.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow remote command line'**
+  String get contact_remoteCli;
+
+  /// No description provided for @contact_remoteCliSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets this contact run commands on your radio'**
+  String get contact_remoteCliSubtitle;
+
+  /// No description provided for @contact_remoteCliWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let {name} control your radio?'**
+  String contact_remoteCliWarningTitle(String name);
+
+  /// No description provided for @contact_remoteCliWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.'**
+  String contact_remoteCliWarning(String name);
+
+  /// No description provided for @contact_remoteCliAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get contact_remoteCliAllow;
+
   /// No description provided for @wifi_title.
   ///
   /// In en, this message translates to:
