@@ -80,7 +80,7 @@ class _MapScreenState extends State<MapScreen> {
   final List<int> _pathTrace = [];
   final List<Contact> _pathTraceContacts = [];
   final List<LatLng> _points = [];
-  bool _legendExpanded = false;
+  bool _legendShown = false;
   List<_GuessedLocation> _cachedGuessedLocations = [];
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
@@ -948,6 +948,20 @@ class _MapScreenState extends State<MapScreen> {
     int markerCount,
     int guessedCount,
   ) {
+    if (!_legendShown) {
+      return Positioned(
+        top: 16,
+        right: 16,
+        child: FloatingActionButton.small(
+          heroTag: null,
+          tooltip: context.l10n.map_legend,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          onPressed: () => setState(() => _legendShown = true),
+          child: const Icon(Icons.info_outline),
+        ),
+      );
+    }
     final filteredContacts = _filterContactsBySettings(
       contacts,
       settings,
@@ -973,11 +987,7 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                setState(() {
-                  _legendExpanded = !_legendExpanded;
-                });
-              },
+              onTap: () => setState(() => _legendShown = false),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Row(
@@ -1056,71 +1066,60 @@ class _MapScreenState extends State<MapScreen> {
                       ],
                     ),
                     const SizedBox(width: 8),
-                    AnimatedRotation(
-                      turns: _legendExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(Icons.expand_more, size: 20),
-                    ),
+                    const Icon(Icons.close, size: 20),
                   ],
                 ),
               ),
             ),
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 6),
+                  _buildLegendItem(
+                    Icons.person,
+                    context.l10n.map_chat,
+                    Colors.blue,
+                  ),
+                  _buildLegendItem(
+                    Icons.router,
+                    context.l10n.map_repeater,
+                    Colors.green,
+                  ),
+                  _buildLegendItem(
+                    Icons.meeting_room,
+                    context.l10n.map_room,
+                    Colors.purple,
+                  ),
+                  _buildLegendItem(
+                    Icons.sensors,
+                    context.l10n.map_sensor,
+                    Colors.orange,
+                  ),
+                  _buildLegendItem(
+                    Icons.flag,
+                    context.l10n.map_pinDm,
+                    Colors.blue,
+                  ),
+                  _buildLegendItem(
+                    Icons.flag,
+                    context.l10n.map_pinPrivate,
+                    Colors.purple,
+                  ),
+                  _buildLegendItem(
+                    Icons.flag,
+                    context.l10n.map_pinPublic,
+                    Colors.orange,
+                  ),
+                  if (settings.mapShowGuessedLocations && guessedCount > 0)
                     _buildLegendItem(
-                      Icons.person,
-                      context.l10n.map_chat,
-                      Colors.blue,
+                      Icons.not_listed_location,
+                      context.l10n.map_guessedLocation,
+                      Colors.grey,
                     ),
-                    _buildLegendItem(
-                      Icons.router,
-                      context.l10n.map_repeater,
-                      Colors.green,
-                    ),
-                    _buildLegendItem(
-                      Icons.meeting_room,
-                      context.l10n.map_room,
-                      Colors.purple,
-                    ),
-                    _buildLegendItem(
-                      Icons.sensors,
-                      context.l10n.map_sensor,
-                      Colors.orange,
-                    ),
-                    _buildLegendItem(
-                      Icons.flag,
-                      context.l10n.map_pinDm,
-                      Colors.blue,
-                    ),
-                    _buildLegendItem(
-                      Icons.flag,
-                      context.l10n.map_pinPrivate,
-                      Colors.purple,
-                    ),
-                    _buildLegendItem(
-                      Icons.flag,
-                      context.l10n.map_pinPublic,
-                      Colors.orange,
-                    ),
-                    if (settings.mapShowGuessedLocations && guessedCount > 0)
-                      _buildLegendItem(
-                        Icons.not_listed_location,
-                        context.l10n.map_guessedLocation,
-                        Colors.grey,
-                      ),
-                  ],
-                ),
+                ],
               ),
-              crossFadeState: _legendExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
             ),
           ],
         ),

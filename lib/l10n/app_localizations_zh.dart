@@ -4061,4 +4061,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+
+  @override
+  String get map_legend => 'Legend';
 }

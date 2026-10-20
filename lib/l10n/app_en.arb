@@ -2330,5 +2330,6 @@
   "mapLayers_pins": "Pins",
   "mapLayers_guessed": "Guessed",
   "mapLayers_moreFilters": "More filters",
-  "mapLayers_moreFiltersDetail": "Last seen, key prefix, overlaps"
+  "mapLayers_moreFiltersDetail": "Last seen, key prefix, overlaps",
+  "map_legend": "Legend"
 }

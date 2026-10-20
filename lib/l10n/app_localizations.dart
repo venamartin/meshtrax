@@ -7445,6 +7445,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last seen, key prefix, overlaps'**
   String get mapLayers_moreFiltersDetail;
+
+  /// No description provided for @map_legend.
+  ///
+  /// In en, this message translates to:
+  /// **'Legend'**
+  String get map_legend;
 }
 
 class _AppLocalizationsDelegate

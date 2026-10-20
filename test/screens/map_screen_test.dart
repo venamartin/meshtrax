@@ -238,6 +238,26 @@ void main() {
     expect(settings.settings.mapContours, isFalse);
   });
 
+  testWidgets('the legend hides behind an info button', (tester) async {
+    await pumpMap(
+      tester,
+      _FakeConnector(
+        nodes: [_node('Hilltop', advTypeRepeater, 1, 41.8, -71.4)],
+      ),
+    );
+    expect(find.textContaining('Nodes:'), findsNothing);
+
+    await tester.tap(find.byTooltip('Legend'));
+    await tester.pump();
+    expect(find.textContaining('Nodes:'), findsOneWidget);
+    expect(find.text('Repeater'), findsOneWidget, reason: 'the key shows too');
+
+    await tester.tap(find.textContaining('Nodes:'));
+    await tester.pump();
+    expect(find.textContaining('Nodes:'), findsNothing);
+    expect(find.byTooltip('Legend'), findsOneWidget);
+  });
+
   testWidgets('a path trace starts without a radio position', (tester) async {
     await pumpMap(
       tester,
