@@ -46,8 +46,10 @@ enum PackStatus {
 /// offline, and refreshed with `If-None-Match`, so an unchanged file costs
 /// a 304. Packs live under `<app support>/maps/packs`.
 class MapPacksService extends ChangeNotifier {
-  /// The pack index. Dev builds point at the frozen test catalogue with
-  /// `--dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/dev/index.json`.
+  /// The pack index: production, for every build (Martin, 2026-10-20: the
+  /// server publishes only finished products, there's no test catalogue).
+  /// `--dart-define=MAP_INDEX_URL=…` points at another one, e.g. a local
+  /// throttled server for testing pause and resume.
   static final defaultIndexUrl = Uri.parse(
     const String.fromEnvironment(
       'MAP_INDEX_URL',
