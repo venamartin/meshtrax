@@ -4261,8 +4261,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get map_notForNavigation => 'Not for navigation';
 
   @override
-  String get map_sourceOffline => 'Offline map';
+  String get map_sourceOnline => 'Online';
 
   @override
-  String get map_sourceOnline => 'Online map';
+  String get map_sourceOffline => 'Offline';
+
+  @override
+  String get map_noOfflineMap => 'No offline map here';
+
+  @override
+  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+
+  @override
+  String map_downloadRegion(String region, String size) {
+    return 'Download $region · $size';
+  }
 }

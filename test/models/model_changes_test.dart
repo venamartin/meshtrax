@@ -21,7 +21,9 @@ Uint8List _buildContactFrame({
   writer.addByte(1); // type
   writer.addByte(0); // flags
   writer.addByte(pathLen);
-  writer.add(Uint8List(64)..setRange(0, path.length, path)); // path, zero padded
+  writer.add(
+    Uint8List(64)..setRange(0, path.length, path),
+  ); // path, zero padded
   // name (32 bytes, null-padded)
   final nameBytes = Uint8List(32);
   final encoded = name.codeUnits;
@@ -160,39 +162,36 @@ void main() {
       expect(contact!.name, equals('Alice'));
     });
 
-    test(
-      'name with mix of printable and replacement chars → returns Contact (not all bad)',
-      () {
-        // Build a name with mostly printable chars and one replacement char (0xFFFD in codeUnits).
-        // utf8 allowMalformed: true maps invalid sequences to U+FFFD.
-        // We embed one invalid UTF-8 byte (0x80) among valid ASCII bytes.
-        // The decoded string will be "Hi\uFFFDThere" — not ALL bad, so should be accepted.
-        final nameBytes = Uint8List(32);
-        nameBytes[0] = 0x48; // 'H'
-        nameBytes[1] = 0x69; // 'i'
-        nameBytes[2] = 0x80; // invalid UTF-8 → decoded as U+FFFD
-        nameBytes[3] = 0x54; // 'T'
-        nameBytes[4] = 0x68; // 'h'
-        nameBytes[5] = 0x65; // 'e'
-        nameBytes[6] = 0x72; // 'r'
-        nameBytes[7] = 0x65; // 'e'
-        // rest are 0x00 (null terminator)
-        final writer = BytesBuilder();
-        writer.addByte(respCodeContact);
-        writer.add(Uint8List.fromList(List.generate(32, (i) => i + 1)));
-        writer.addByte(1); // type
-        writer.addByte(0); // flags
-        writer.addByte(0); // pathLen
-        writer.add(Uint8List(64)); // path
-        writer.add(nameBytes);
-        writer.add(Uint8List.fromList([0x01, 0x00, 0x00, 0x00])); // timestamp
-        writer.add(Uint8List(4)); // lat
-        writer.add(Uint8List(4)); // lon
-        final frame = Uint8List.fromList(writer.toBytes());
-        final contact = Contact.fromFrame(frame);
-        expect(contact, isNotNull);
-      },
-    );
+    test('name with mix of printable and replacement chars → returns Contact (not all bad)', () {
+      // Build a name with mostly printable chars and one replacement char (0xFFFD in codeUnits).
+      // utf8 allowMalformed: true maps invalid sequences to U+FFFD.
+      // We embed one invalid UTF-8 byte (0x80) among valid ASCII bytes.
+      // The decoded string will be "Hi\uFFFDThere" — not ALL bad, so should be accepted.
+      final nameBytes = Uint8List(32);
+      nameBytes[0] = 0x48; // 'H'
+      nameBytes[1] = 0x69; // 'i'
+      nameBytes[2] = 0x80; // invalid UTF-8 → decoded as U+FFFD
+      nameBytes[3] = 0x54; // 'T'
+      nameBytes[4] = 0x68; // 'h'
+      nameBytes[5] = 0x65; // 'e'
+      nameBytes[6] = 0x72; // 'r'
+      nameBytes[7] = 0x65; // 'e'
+      // rest are 0x00 (null terminator)
+      final writer = BytesBuilder();
+      writer.addByte(respCodeContact);
+      writer.add(Uint8List.fromList(List.generate(32, (i) => i + 1)));
+      writer.addByte(1); // type
+      writer.addByte(0); // flags
+      writer.addByte(0); // pathLen
+      writer.add(Uint8List(64)); // path
+      writer.add(nameBytes);
+      writer.add(Uint8List.fromList([0x01, 0x00, 0x00, 0x00])); // timestamp
+      writer.add(Uint8List(4)); // lat
+      writer.add(Uint8List(4)); // lon
+      final frame = Uint8List.fromList(writer.toBytes());
+      final contact = Contact.fromFrame(frame);
+      expect(contact, isNotNull);
+    });
   });
 
   group('AppSettings — maxMessageRetries', () {
@@ -218,7 +217,9 @@ void main() {
     });
 
     test('round-trips through JSON', () {
-      final json = AppSettings().copyWith(incrementalContactSync: true).toJson();
+      final json = AppSettings()
+          .copyWith(incrementalContactSync: true)
+          .toJson();
       expect(json['incremental_contact_sync'], isTrue);
       expect(AppSettings.fromJson(json).incrementalContactSync, isTrue);
     });
@@ -238,29 +239,39 @@ void main() {
   });
 
   group('AppSettings — map choice', () {
-    test('defaults: OSM, contours on, theme follows the app', () {
+    test('defaults: OSM, contours on, theme and source automatic', () {
       for (final s in [AppSettings(), AppSettings.fromJson({})]) {
         expect(s.mapType, 'osm');
         expect(s.mapContours, isTrue);
         expect(s.mapTheme, 'auto');
+        expect(s.mapSource, 'auto');
       }
     });
 
     test('round-trips through JSON', () {
       final json = AppSettings()
-          .copyWith(mapType: 'charts', mapContours: false, mapTheme: 'dark')
+          .copyWith(
+            mapType: 'charts',
+            mapContours: false,
+            mapTheme: 'dark',
+            mapSource: 'offline',
+          )
           .toJson();
       final s = AppSettings.fromJson(json);
       expect(s.mapType, 'charts');
       expect(s.mapContours, isFalse);
       expect(s.mapTheme, 'dark');
+      expect(s.mapSource, 'offline');
     });
   });
 
   group('AppSettings — mapTimeFilterHours', () {
-    test('a fresh install and a saved file without the key agree: all time', () {
-      expect(AppSettings().mapTimeFilterHours, 0);
-      expect(AppSettings.fromJson({}).mapTimeFilterHours, 0);
-    });
+    test(
+      'a fresh install and a saved file without the key agree: all time',
+      () {
+        expect(AppSettings().mapTimeFilterHours, 0);
+        expect(AppSettings.fromJson({}).mapTimeFilterHours, 0);
+      },
+    );
   });
 }

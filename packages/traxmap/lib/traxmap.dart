@@ -9,6 +9,7 @@ library;
 
 export 'core.dart';
 export 'src/packs/background_pack_downloader.dart';
+export 'src/renderer/flutter_map_renderer.dart' show TileCoverage;
 export 'src/styles/asset_style_source.dart';
 export 'src/view/attribution.dart' show AttributionChip;
 export 'src/view/camera.dart';

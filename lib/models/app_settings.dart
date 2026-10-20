@@ -38,6 +38,11 @@ class AppSettings {
   /// Map colours: `auto` follows the app's light or dark theme, or `light`
   /// or `dark`.
   final String mapTheme;
+
+  /// Where maps come from: `online` (online tiles wherever nothing is
+  /// downloaded), `offline` (downloaded maps only), or `auto`: online until
+  /// the first map is downloaded, then offline.
+  final String mapSource;
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
@@ -103,6 +108,7 @@ class AppSettings {
     this.mapType = 'osm',
     this.mapContours = true,
     this.mapTheme = 'auto',
+    this.mapSource = 'auto',
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -154,6 +160,7 @@ class AppSettings {
       'map_type': mapType,
       'map_contours': mapContours,
       'map_theme': mapTheme,
+      'map_source': mapSource,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -210,6 +217,7 @@ class AppSettings {
       mapType: json['map_type'] as String? ?? 'osm',
       mapContours: json['map_contours'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'auto',
+      mapSource: json['map_source'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -217,7 +225,8 @@ class AppSettings {
       notifyOnMention: json['notify_on_mention'] as bool? ?? true,
       notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
       maxMessageRetries: json['max_message_retries'] as int? ?? 3,
-      maxChannelMessageRetries: json['max_channel_message_retries'] as int? ?? 1,
+      maxChannelMessageRetries:
+          json['max_channel_message_retries'] as int? ?? 1,
       themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
@@ -285,6 +294,7 @@ class AppSettings {
     String? mapType,
     bool? mapContours,
     String? mapTheme,
+    String? mapSource,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -330,6 +340,7 @@ class AppSettings {
       mapType: mapType ?? this.mapType,
       mapContours: mapContours ?? this.mapContours,
       mapTheme: mapTheme ?? this.mapTheme,
+      mapSource: mapSource ?? this.mapSource,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:
@@ -337,7 +348,8 @@ class AppSettings {
       notifyOnMention: notifyOnMention ?? this.notifyOnMention,
       notifyOnNewAdvert: notifyOnNewAdvert ?? this.notifyOnNewAdvert,
       maxMessageRetries: maxMessageRetries ?? this.maxMessageRetries,
-      maxChannelMessageRetries: maxChannelMessageRetries ?? this.maxChannelMessageRetries,
+      maxChannelMessageRetries:
+          maxChannelMessageRetries ?? this.maxChannelMessageRetries,
       themeMode: themeMode ?? this.themeMode,
       languageOverride: languageOverride == _unset
           ? this.languageOverride

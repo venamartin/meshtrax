@@ -7332,17 +7332,35 @@ abstract class AppLocalizations {
   /// **'Not for navigation'**
   String get map_notForNavigation;
 
-  /// No description provided for @map_sourceOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline map'**
-  String get map_sourceOffline;
-
   /// No description provided for @map_sourceOnline.
   ///
   /// In en, this message translates to:
-  /// **'Online map'**
+  /// **'Online'**
   String get map_sourceOnline;
+
+  /// No description provided for @map_sourceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get map_sourceOffline;
+
+  /// No description provided for @map_noOfflineMap.
+  ///
+  /// In en, this message translates to:
+  /// **'No offline map here'**
+  String get map_noOfflineMap;
+
+  /// No description provided for @map_zoomInForOfflineMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in to see your offline map'**
+  String get map_zoomInForOfflineMap;
+
+  /// No description provided for @map_downloadRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Download {region} · {size}'**
+  String map_downloadRegion(String region, String size);
 }
 
 class _AppLocalizationsDelegate

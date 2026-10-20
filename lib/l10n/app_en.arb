@@ -2311,6 +2311,10 @@
   "offlineMaps_clearTileCachePrompt": "Remove the online map tiles saved while browsing? Downloaded maps stay.",
   "offlineMaps_tileCacheCleared": "Cached online map tiles removed",
   "map_notForNavigation": "Not for navigation",
-  "map_sourceOffline": "Offline map",
-  "map_sourceOnline": "Online map"
+  "map_sourceOnline": "Online",
+  "map_sourceOffline": "Offline",
+  "map_noOfflineMap": "No offline map here",
+  "map_zoomInForOfflineMap": "Zoom in to see your offline map",
+  "map_downloadRegion": "Download {region} · {size}",
+  "@map_downloadRegion": {"placeholders": {"region": {"type": "String"}, "size": {"type": "String"}}}
 }

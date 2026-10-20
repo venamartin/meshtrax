@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:traxmap/src/renderer/composite_pmtiles_provider.dart';
+import 'package:traxmap/src/renderer/flutter_map_renderer.dart';
 
 import 'support/fake_pmtiles.dart';
 
@@ -84,5 +85,39 @@ void main() {
     addTearDown(after.dispose);
     expect(after.cacheKey, isNot(key));
     expect(bytesOf(await after.load(const vt.TileKey(10, 2, 2))), [2, 2]);
+  });
+
+  test('tile coverage maps web tiles onto the packs\' zooms', () async {
+    final pack = File('${tmp.path}/c.pmtiles')
+      ..writeAsBytesSync(
+        fakePmTiles(
+          minZoom: 6,
+          maxZoom: 14,
+          tiles: {
+            (6, 10, 24): [1],
+            (14, 2650, 6300): [1],
+          },
+        ),
+      );
+    final provider = await CompositePmTilesProvider.open([pack]);
+    addTearDown(provider.dispose);
+    final coverage = TileCoverage([provider]);
+
+    // Web tiles are one level above the packs' MapLibre zooms.
+    expect(await coverage.covers(7, 20, 48), isTrue);
+    expect(await coverage.covers(7, 21, 49), isTrue);
+    expect(await coverage.covers(7, 22, 48), isFalse);
+    expect(await coverage.covers(7, 20 + 128, 48), isTrue, reason: 'wrapped');
+    expect(
+      await coverage.covers(6, 10, 24),
+      isFalse,
+      reason: 'below the lowest zoom the pack draws nothing',
+    );
+    expect(
+      await coverage.covers(17, 2650 * 8 + 3, 6300 * 8 + 5),
+      isTrue,
+      reason: 'above the highest zoom its top tiles are stretched',
+    );
+    expect(await const TileCoverage([]).covers(7, 20, 48), isFalse);
   });
 }

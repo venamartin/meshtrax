@@ -34,8 +34,8 @@ Last updated 2026-10-19, evening. **Resume here.**
 
 **Next:**
 1. **Phase 3, starting with the main Node Map on `AppMap` (M5)**, ahead of the small maps, because that's where Martin sees offline maps. G1 (phone check) is deferred while he tests on the Pi.
-   - The main map gains the coverage banner, the starting camera and fixes B1–B5.
-   - Every `AppMap` already shows an "Offline map" or "Online map" tag at the top left (2026-10-20, Martin's request: both look like OSM). When the banner arrives, decide whether it replaces the "Online map" tag on the main map.
+   - The main map gains the starting camera and fixes B1–B5.
+   - `AppMap` already has the Online | Offline switch (2026-10-20; see S1). The main map just uses it. Decide then whether the small maps (M1–M4) show the switch or follow the setting silently.
    - Then the no-radio map (M5b), then M1–M4.
 2. **The map selector (OSM / USGS / NOAA), right after M5:** a plain text choice in App Settings → Map Display (Martin prefers text over graphics for now). The layers sheet (M6) can come later.
 3. **Waiting for Martin:**
@@ -109,7 +109,7 @@ Test: auto-connect firing while either of these is open.
 ┌──────────────────────────────────────────────┐
 │ ‹(POI/no-radio)  Node Map      ⦿radar  LOS  ⋮ │  radar and ⋮ hidden in no-radio mode
 ├──────────────────────────────────────────────┤
-│ ☁ Online map · Download Rhode Island ›      ✕│  coverage banner (only when not covered)
+│ [Online│▐Offline▌]              ┌───────────┐ │  source switch (AppMap)
 │                                ┌───────────┐ │
 │   vector map  /  online raster │ 12 nodes ▾│ │  legend card (hidden in no-radio mode)
 │      ● teal "You" (radio)      └───────────┘ │
@@ -125,12 +125,11 @@ Test: auto-connect firing while either of these is open.
 └──────────────────────────────────────────────┘
 ```
 
-**Map surface:** vector tiles where an installed pack covers the view centre, and online OSM raster tiles elsewhere. Raster tiles load on demand only, with a disk cache.
-
-**Coverage banner:**
-- Online: "Online map · Download {region} ›", which opens that region's detail (S3b).
-- Offline: "No offline map here · Offline maps ›".
-- ✕ hides the banner for the session.
+**Source switch, Online | Offline** (Martin, 2026-10-20; replaces the coverage banner):
+- **Offline:** downloaded maps only, exactly what works without signal. Where nothing is drawn at the view centre, a card says "No offline map here · Download {region} · {size} ›" (opens S3b) or, inside a downloaded region below the packs' lowest zoom, "Zoom in to see your offline map".
+- **Online:** online OSM raster tiles wherever the packs draw nothing. Tiles the packs cover are never fetched (`TileCoverage`). Raster tiles load on demand only, with a disk cache.
+- **Both:** a dashed line (pink, `#D81B60`) where each downloaded region ends.
+- **Setting `map_source`:** `auto` (online until the first download, then offline), `online` or `offline`. The switch writes it.
 
 **Centre-on-me:**
 
@@ -175,7 +174,7 @@ New: a modal bottom sheet opened by the layers button. It shares one `MapLayerSe
 ### S3. Offline maps screen
 
 New `lib/screens/offline_maps_screen.dart`. It replaces `map_cache_screen.dart`.
-- **Reached from:** the scanner ⋮ menu (S0), App Settings (S4), the map banner (S1) and the layers sheet (S2).
+- **Reached from:** the scanner ⋮ menu (S0), App Settings (S4), the map's "No offline map here" card (S1) and the layers sheet (S2).
 - **App bar:** centred title, a ⟳ refresh button, and the tabs **Maps · Charts · Downloaded**.
   - Downloaded shows a badge for active downloads plus available updates.
   - The screen opens on Downloaded once anything is installed, otherwise on Maps.
@@ -273,7 +272,7 @@ New rows:
 
 ### S5. Secondary maps
 
-Credits and the online fallback come through `AppMap`. These maps get no banner.
+Credits, the source switch and the online fallback come through `AppMap`.
 
 | View | Changes |
 | --- | --- |
@@ -326,8 +325,7 @@ Shown when a park POI is tapped. Its fields come from the overlays catalog's `po
 - style, family and overlays from settings;
 - units and contours;
 - the credits chip and disclaimer;
-- raster `baseLayers` while not covered;
-- the banner;
+- the Online | Offline switch, raster `baseLayers` in the gaps, the dashed region edges and the offline card;
 - `compact` mode.
 
 It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
@@ -377,7 +375,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | --- | --- |
 | T3 | **Done 2026-10-19.** traxmap combined source per kind (`CompositePmTilesProvider`, `StyleContext.packsByKind`, `ovm:urls`), with a cache key that changes when packs change. Checked on the Pi with Puerto Rico + US Virgin Islands from `dev/`: one seamless map, and the Copernicus notice reaches `MapStyleState.notices`. |
 | T5 | traxmap view hooks: `baseLayers`, `onCoverageChanged`, rendering with no packs, `StyleInfo.requiredKinds`, the `labels` slot tag, polygon holes.<br>• `MapStyleState.notices`: licence notices from the packs in use (e.g. Copernicus' liability sentence), for the app to show with the credits. |
-| A5 | `AppMap` (`lib/widgets/app_map.dart`): style from settings (map type, theme following the app, contours), installed packs, units; online OSM tiles in `baseLayers` while `onCoverageChanged` says not covered; credits chip (plus the OSM credit while online tiles show, plus pack notices) and the chart disclaimer. Settings `map_type`, `map_contours`, `map_theme`. `MapPacksService` shares one style registry. The coverage banner and online/offline wording come with the main map (M5). |
+| A5 | `AppMap` (`lib/widgets/app_map.dart`): style from settings (map type, theme following the app, contours), installed packs, units; online OSM tiles in `baseLayers`; credits chip (plus the OSM credit while online tiles show, plus pack notices) and the chart disclaimer. Settings `map_type`, `map_contours`, `map_theme`. `MapPacksService` shares one style registry. 2026-10-20: the Online \| Offline switch, the gap-only online tiles (`TileCoverage`), the dashed region edges and the offline card replaced the planned coverage banner. |
 | O3 | **Dropped for now** (Martin, 2026-10-19: "I don't like the map selector … let's just use text for now"). The picker map was built and checked on the Pi, then removed. The Maps tab stays text only (breadcrumb, Suggested, chips), and the Geofabrik credit stays under the list. `AppMap` itself stays: the map screens use it. |
 | G1 | **Gate on real phones:** frame time, memory, cold start, tile resolution. Go or no-go before the main map. |
 
@@ -442,9 +440,8 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ## Known issues
 
 - **Peak labels show a box before the name on the Pi** ("▯ Bare Rock"). The styles prefix peaks with "▲", and the renderer draws labels in the platform's default font, which lacks that glyph on Linux. The renderer ignores font families (offline-maps.md, "What the renderer can't do"). Fix with a peak sprite (T9) or the font hook (T12); a cheaper stopgap is dropping the "▲" from the style text.
-- **Beyond a pack's outline the map is blank, not online,** while the view centre is inside the pack. That's the trade-off of switching online tiles on by the centre (decided 2026-10-17).
-  - With small packs it's obvious: at DC zoom 12, a quarter of the screen (Arlington, VA) is blank.
-  - Proposed fix, to settle in M5: when online, draw the online tiles *under* the vector tiles, with a tile provider that skips raster tiles the installed packs cover (`contains`), so only the gaps are fetched.
+- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the dashed outlines and the "Zoom in" card show. The bundled world pack (Later) would fill it.
+- **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
 
 ## Bugs to fix along the way
 
@@ -475,7 +472,6 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ## Still to confirm (defaults assumed)
 
 - Wi‑Fi-only downloads on by default (the setting has no effect on Linux).
-- The banner can be dismissed for the session.
 - No first-run prompt.
 - Windows uses the radio's position.
 - The label "Trail routing".

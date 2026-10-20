@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/app_settings.dart';
 
 import '../storage/prefs_manager.dart';
@@ -103,6 +105,10 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setMapTheme(String value) async {
     await updateSettings(_settings.copyWith(mapTheme: value));
+  }
+
+  Future<void> setMapSource(String value) async {
+    await updateSettings(_settings.copyWith(mapSource: value));
   }
 
   Future<void> setNotificationsEnabled(bool value) async {

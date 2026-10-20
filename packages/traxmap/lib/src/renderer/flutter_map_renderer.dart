@@ -45,6 +45,10 @@ class FlutterMapRenderer extends StatefulWidget {
   /// Reports, once the camera settles, whether [coverageSources] have a tile
   /// at the view centre. Called only when the answer changes.
   final ValueChanged<bool>? onCoverageChanged;
+
+  /// Called with the tiles [coverageSources] draw whenever they change (a
+  /// new style or set of packs), for drawing other tiles only in the gaps.
+  final ValueChanged<TileCoverage>? onTileCoverage;
   final OfflineMapController? controller;
   final ValueChanged<MapCamera>? onCameraChanged;
   final ValueChanged<LatLng>? onTap;
@@ -72,6 +76,7 @@ class FlutterMapRenderer extends StatefulWidget {
     this.baseLayers = const [],
     this.coverageSources = const {},
     this.onCoverageChanged,
+    this.onTileCoverage,
     this.controller,
     this.onCameraChanged,
     this.onTap,
@@ -105,6 +110,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   Widget? _vectorLayer; // kept so parent rebuilds don't rebuild it
   Object? _error;
 
+  TileCoverage _coverage = const TileCoverage([]);
   bool? _covered;
   Timer? _coverageTimer;
 
@@ -123,7 +129,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
     super.didUpdateWidget(old);
     if (!identical(old.style, widget.style)) _load();
     if (!setEquals(old.coverageSources, widget.coverageSources)) {
-      _scheduleCoverage();
+      _updateCoverage();
     }
     if (!identical(old.overlays, widget.overlays)) {
       _overlays = _Overlays.from(widget.overlays);
@@ -170,11 +176,27 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
         );
         _error = null;
       });
-      _scheduleCoverage();
+      _updateCoverage();
     } catch (e) {
       vt.TileProviders(providers).dispose();
       if (mounted) setState(() => _error = e);
     }
+  }
+
+  void _updateCoverage() {
+    final coverage = _coverage = TileCoverage([
+      for (final source in widget.coverageSources) ?_local[source],
+    ]);
+    // After the frame: listeners usually call setState, and this can run
+    // while the tree builds (a style without packs loads synchronously).
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) {
+        if (mounted && identical(coverage, _coverage)) {
+          widget.onTileCoverage?.call(coverage);
+        }
+      })
+      ..ensureVisualUpdate();
+    _scheduleCoverage();
   }
 
   /// Checks coverage once the camera has been still for a moment.
@@ -186,20 +208,12 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
 
   Future<void> _checkCoverage() async {
     if (!_ready || !mounted) return;
-    final view = camera;
-    final zoom = view.zoom.floor();
-    var covered = false;
-    for (final source in widget.coverageSources) {
-      final provider = _local[source];
-      // Below a pack's lowest zoom it draws nothing; above its highest the
-      // renderer stretches its top-zoom tiles.
-      if (provider == null || zoom < provider.minimumZoom) continue;
-      final z = math.min(zoom, provider.maximumZoom);
-      if (await provider.contains(_tileAt(view.center, z))) {
-        covered = true;
-        break;
-      }
-    }
+    // flutter_map_vector_tiles draws a pack from the whole flutter_map zoom
+    // that equals its lowest zoom (one level early, stretched); a tile one
+    // level finer than that display level matches what it draws.
+    final display = _map.camera.zoom.floor();
+    final tile = _tileAt(camera.center, display + 1);
+    final covered = await _coverage.covers(tile.z, tile.x, tile.y);
     if (!mounted || covered == _covered) return;
     _covered = covered;
     widget.onCoverageChanged?.call(covered);
@@ -575,5 +589,33 @@ class _MarkerLabelLayer extends StatelessWidget {
             ),
       ],
     );
+  }
+}
+
+/// The web map tiles a map's packs draw, so an app can draw other tiles
+/// (online ones, say) only in the gaps.
+class TileCoverage {
+  final List<CompositePmTilesProvider> _sources;
+
+  @visibleForTesting
+  const TileCoverage(this._sources);
+
+  /// Whether the packs draw tile [z]/[x]/[y] in flutter_map's numbering
+  /// (256-pixel tiles, one zoom level above the packs' MapLibre zooms).
+  ///
+  /// Errs towards false: at the packs' lowest zoom, where the renderer may
+  /// or may not draw them yet depending on the exact zoom, it says false.
+  Future<bool> covers(int z, int x, int y) async {
+    for (final source in _sources) {
+      // Below a pack's lowest zoom it draws nothing; above its highest the
+      // renderer stretches its top-zoom tiles.
+      final zoom = z - 1;
+      if (zoom < source.minimumZoom) continue;
+      final at = math.min(zoom, source.maximumZoom);
+      final shift = z - at;
+      final key = vt.TileKey(at, (x % (1 << z)) >> shift, y >> shift);
+      if (await source.contains(key)) return true;
+    }
+    return false;
   }
 }

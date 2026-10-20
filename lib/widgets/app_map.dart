@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:provider/provider.dart';
@@ -5,13 +9,20 @@ import 'package:traxmap/traxmap.dart';
 
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
+import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/map_tile_cache_service.dart';
+import '../utils/format_bytes.dart';
 
-/// The map every MeshTrax map screen draws: offline vector packs where they
-/// cover the view, and online OpenStreetMap tiles elsewhere, with the
-/// credits (and chart disclaimer) the data's licences require.
+/// The map every MeshTrax map screen draws, with the credits (and chart
+/// disclaimer) the data's licences require.
+///
+/// An Online | Offline switch picks where the map comes from. Offline shows
+/// exactly what works without signal: downloaded maps only, and a "No
+/// offline map here" card elsewhere. Online fills everything not downloaded
+/// with online OpenStreetMap tiles. Either way a dashed line marks where the
+/// downloaded regions end.
 ///
 /// The map, contours and light/dark come from the user's settings unless a
 /// screen overrides them (the region picker always shows OSM without
@@ -56,6 +67,64 @@ class _AppMapState extends State<AppMap> {
   /// Whether installed packs cover the view centre; null until known.
   bool? _covered;
   MapStyleState? _style;
+  TileCoverage? _coverage;
+
+  /// The downloadable region at the view centre, once the camera settles.
+  String? _regionPath;
+  Timer? _settle;
+
+  /// The edges of the downloaded regions plus the screen's overlays, kept
+  /// while their inputs don't change so the map doesn't rebuild its layers.
+  var _overlays = const <MapOverlay>[];
+  List<MapOverlay>? _overlaysFor;
+  RegionIndex? _regionsFor;
+  Set<String>? _installedFor;
+
+  @override
+  void dispose() {
+    _settle?.cancel();
+    super.dispose();
+  }
+
+  void _onCameraChanged(MapCamera camera) {
+    widget.onCameraChanged?.call(camera);
+    _settle?.cancel();
+    _settle = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      final regions = context.read<MapPacksService>().regions;
+      final path = regions?.regionAt(camera.center)?.path;
+      if (path != _regionPath) setState(() => _regionPath = path);
+    });
+  }
+
+  List<MapOverlay> _withEdges(MapPacksService maps) {
+    final regions = maps.regions;
+    final installed = maps.installedRegions;
+    if (!identical(widget.overlays, _overlaysFor) ||
+        !identical(regions, _regionsFor) ||
+        !setEquals(installed, _installedFor)) {
+      _overlaysFor = widget.overlays;
+      _regionsFor = regions;
+      _installedFor = installed;
+      _overlays = [
+        for (final path in installed)
+          if (regions?[path] case final region?)
+            for (final (i, polygon) in region.polygons.indexed)
+              for (final (j, ring) in polygon.indexed)
+                MapLine(
+                  id: 'offline-edge:$path:$i:$j',
+                  points: [...ring, ring.first],
+                  color: _edgeColor,
+                  width: 2,
+                  pattern: MapLinePattern.dashed,
+                ),
+        ...widget.overlays,
+      ];
+    }
+    return _overlays;
+  }
+
+  static const _edgeColor = Color(0xFFD81B60);
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +142,11 @@ class _AppMapState extends State<AppMap> {
     final styleId = maps.styleId(type, dark: dark);
     if (styleId == null) return const SizedBox.expand();
 
-    final online = _covered == false;
+    final online = switch (settings.mapSource) {
+      'online' => true,
+      'offline' => false,
+      _ => maps.installed.isEmpty,
+    };
     final style = _style;
     final credits = [
       if (online) '© OpenStreetMap contributors',
@@ -81,6 +154,7 @@ class _AppMapState extends State<AppMap> {
       ...?style?.notices,
     ];
     final disclaimer = style?.disclaimer;
+    final coverage = _coverage;
 
     return Stack(
       children: [
@@ -98,12 +172,16 @@ class _AppMapState extends State<AppMap> {
           initialFit: widget.initialFit,
           minZoom: widget.minZoom,
           maxZoom: widget.maxZoom,
-          overlays: widget.overlays,
+          overlays: _withEdges(maps),
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
-          onCameraChanged: widget.onCameraChanged,
-          baseLayers: [if (online) const _OnlineTiles()],
+          onCameraChanged: _onCameraChanged,
+          baseLayers: [
+            if (online && coverage != null)
+              _OnlineTiles(key: ObjectKey(coverage), coverage: coverage),
+          ],
           onCoverageChanged: (covered) => setState(() => _covered = covered),
+          onTileCoverage: (coverage) => setState(() => _coverage = coverage),
           onStyleLoaded: (s) => setState(() => _style = s),
         ),
         Positioned(
@@ -114,15 +192,19 @@ class _AppMapState extends State<AppMap> {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 4,
             children: [
+              _SourceSwitch(online: online),
               if (disclaimer != null)
-                _Tag(context.l10n.map_notForNavigation, color: Colors.orange),
-              if (_covered != null)
-                online
-                    ? _Tag(context.l10n.map_sourceOnline, color: Colors.blue)
-                    : _Tag(context.l10n.map_sourceOffline, color: Colors.green),
+                _Disclaimer(context.l10n.map_notForNavigation),
             ],
           ),
         ),
+        if (!online && _covered == false)
+          Positioned(
+            left: 8,
+            right: 8,
+            bottom: 40,
+            child: Center(child: _NoOfflineMap(regionPath: _regionPath)),
+          ),
         if (credits.isNotEmpty)
           Positioned(
             left: 8,
@@ -134,31 +216,183 @@ class _AppMapState extends State<AppMap> {
   }
 }
 
-/// Online OpenStreetMap tiles, cached as viewed, under the overlays.
+/// Online | Offline: where the map comes from.
+class _SourceSwitch extends StatelessWidget {
+  final bool online;
+  const _SourceSwitch({required this.online});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SegmentedButton<bool>(
+      segments: [
+        ButtonSegment(value: true, label: Text(l10n.map_sourceOnline)),
+        ButtonSegment(value: false, label: Text(l10n.map_sourceOffline)),
+      ],
+      selected: {online},
+      showSelectedIcon: false,
+      style: SegmentedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.surface
+            .withValues(alpha: 0.9),
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onSelectionChanged: (selected) => context
+          .read<AppSettingsService>()
+          .setMapSource(selected.single ? 'online' : 'offline'),
+    );
+  }
+}
+
+/// Offline, where nothing downloaded is drawn: why, and what to download.
+class _NoOfflineMap extends StatelessWidget {
+  final String? regionPath;
+  const _NoOfflineMap({required this.regionPath});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final maps = context.watch<MapPacksService>();
+    final units = context.select<AppSettingsService, UnitSystem>(
+      (s) => s.settings.unitSystem,
+    );
+    final region = regionPath == null ? null : maps.regions?[regionPath!];
+
+    // Downloaded, but nothing drawn: below the packs' lowest zoom.
+    if (region != null && maps.installedRegions.contains(region.path)) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(l10n.map_zoomInForOfflineMap),
+        ),
+      );
+    }
+    final packs = region == null
+        ? const <PackIndexEntry>[]
+        : maps.defaultSelection(region.path, units);
+    final size = packs.fold(0, (sum, e) => sum + e.bytes);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          title: Text(l10n.map_noOfflineMap),
+          subtitle: Text(
+            packs.isEmpty
+                ? l10n.offlineMaps_title
+                : l10n.map_downloadRegion(region!.name, formatBytes(size)),
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => OfflineMapsScreen(
+                initialRegionPath: packs.isEmpty ? null : region!.path,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Online OpenStreetMap tiles, cached as viewed, in the gaps the downloaded
+/// packs leave.
 class _OnlineTiles extends StatelessWidget {
-  const _OnlineTiles();
+  final TileCoverage coverage;
+  const _OnlineTiles({super.key, required this.coverage});
 
   @override
   Widget build(BuildContext context) => fm.TileLayer(
     urlTemplate: kMapTileUrlTemplate,
     userAgentPackageName: MapTileCacheService.userAgentPackageName,
-    tileProvider: context.read<MapTileCacheService>().tileProvider,
+    tileProvider: _GapTileProvider(
+      context.read<MapTileCacheService>().tileProvider,
+      coverage,
+    ),
     maxNativeZoom: 19,
   );
 }
 
-/// A short note over the map: the chart styles' "Not for navigation", and
-/// whether the view is drawn from downloaded packs or online tiles.
-class _Tag extends StatelessWidget {
+/// [online]'s tiles, except where [coverage] says the packs draw the tile:
+/// those are left transparent and never fetched.
+class _GapTileProvider extends fm.TileProvider {
+  final fm.TileProvider online;
+  final TileCoverage coverage;
+  _GapTileProvider(this.online, this.coverage);
+
+  @override
+  ImageProvider getImage(
+    fm.TileCoordinates coordinates,
+    fm.TileLayer options,
+  ) => _GapImage(this, coordinates, options);
+}
+
+class _GapImage extends ImageProvider<_GapImage> {
+  final _GapTileProvider provider;
+  final fm.TileCoordinates coordinates;
+  final fm.TileLayer options;
+  const _GapImage(this.provider, this.coordinates, this.options);
+
+  static final Future<ui.Image> _blank = () {
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder);
+    return recorder.endRecording().toImage(1, 1);
+  }();
+
+  @override
+  Future<_GapImage> obtainKey(ImageConfiguration configuration) =>
+      SynchronousFuture(this);
+
+  @override
+  ImageStreamCompleter loadImage(_GapImage key, ImageDecoderCallback decode) =>
+      OneFrameImageStreamCompleter(_load());
+
+  Future<ImageInfo> _load() async {
+    final c = coordinates;
+    if (await provider.coverage.covers(c.z, c.x, c.y)) {
+      return ImageInfo(image: (await _blank).clone());
+    }
+    final done = Completer<ImageInfo>();
+    final stream = provider.online
+        .getImage(c, options)
+        .resolve(ImageConfiguration.empty);
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (image, _) {
+        stream.removeListener(listener);
+        done.complete(image);
+      },
+      onError: (error, stack) {
+        stream.removeListener(listener);
+        done.completeError(error, stack);
+      },
+    );
+    stream.addListener(listener);
+    return done.future;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _GapImage &&
+      identical(other.provider.coverage, provider.coverage) &&
+      other.coordinates == coordinates;
+
+  @override
+  int get hashCode =>
+      Object.hash(identityHashCode(provider.coverage), coordinates);
+}
+
+/// The chart styles' "Not for navigation", in MeshTrax's warning colours.
+class _Disclaimer extends StatelessWidget {
   final String text;
-  final Color color;
-  const _Tag(this.text, {required this.color});
+  const _Disclaimer(this.text);
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-      border: Border(left: BorderSide(color: color, width: 3)),
+      border: const Border(left: BorderSide(color: Colors.orange, width: 3)),
     ),
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

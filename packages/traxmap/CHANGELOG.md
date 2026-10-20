@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **`TileCoverage`:** `OfflineMapView.onTileCoverage` reports which tiles
+  the style's required packs draw, whenever the style or the packs change.
+  `TileCoverage.covers(z, x, y)` takes flutter_map tile numbers, so an app
+  can draw online tiles only in the gaps (MeshTrax does, with a tile
+  provider that never fetches covered tiles). `onCoverageChanged` now uses
+  the same lookup and matches the renderer at the packs' lowest zoom.
 - **Failed downloads can be dismissed:** `PackDownloader.cancel` on a
   failed download forgets it. `BackgroundPackDownloader` deletes the
   plugin's record and emits `canceled`, so the failure isn't restored at

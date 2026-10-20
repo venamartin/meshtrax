@@ -70,14 +70,18 @@ class OfflineMapView extends StatefulWidget {
   final List<Widget> extraLayers;
 
   /// flutter_map 8.x layers drawn above the map's own tiles and below the
-  /// overlays: e.g. online raster tiles while [onCoverageChanged] says no
-  /// pack covers the view.
+  /// overlays: e.g. online raster tiles in the gaps [onTileCoverage]
+  /// reports.
   final List<Widget> baseLayers;
 
   /// Whether the style's required packs ([StyleInfo.requiredKinds]) have a
   /// tile at the view centre, reported when the camera settles and only
   /// when it changes. False below a pack's lowest zoom, and with no packs.
   final ValueChanged<bool>? onCoverageChanged;
+
+  /// The tiles the style's required packs draw, whenever the style or the
+  /// packs change: [TileCoverage.covers] lets [baseLayers] skip them.
+  final ValueChanged<TileCoverage>? onTileCoverage;
 
   final ValueChanged<MapCamera>? onCameraChanged;
 
@@ -115,6 +119,7 @@ class OfflineMapView extends StatefulWidget {
     this.extraLayers = const [],
     this.baseLayers = const [],
     this.onCoverageChanged,
+    this.onTileCoverage,
     this.onCameraChanged,
     this.onTap,
     this.onLongPress,
@@ -237,6 +242,7 @@ class _OfflineMapViewState extends State<OfflineMapView> {
       baseLayers: widget.baseLayers,
       coverageSources: _coverageSources,
       onCoverageChanged: widget.onCoverageChanged,
+      onTileCoverage: widget.onTileCoverage,
       onCameraChanged: _onCamera,
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
