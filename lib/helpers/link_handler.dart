@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:linkify/linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/l10n.dart';
@@ -9,6 +10,11 @@ import '../helpers/snack_bar_builder.dart';
 import '../connector/meshcore_connector.dart';
 import '../models/channel.dart';
 import '../screens/channel_chat_screen.dart';
+import '../screens/map_screen.dart';
+import 'channel_join_helper.dart';
+import 'contact_import_helper.dart';
+import 'maps_link.dart';
+import 'structured_message.dart';
 
 class LinkHandler {
   static TextStyle defaultLinkStyle(BuildContext context, TextStyle base) {
@@ -39,8 +45,10 @@ class LinkHandler {
       text,
       options: options,
       linkifiers: [
-        const UrlLinkifier(), 
+        const UrlLinkifier(),
         const EmailLinkifier(),
+        const MeshCoreLinkifier(),
+        const CoordinateLinkifier(),
         const MentionLinkifier(),
         const HashtagLinkifier(),
         const BoldLinkifier(),
@@ -66,6 +74,18 @@ class LinkHandler {
           text: element.text,
           style: effectiveLinkStyle,
           recognizer: TapGestureRecognizer()..onTap = () => handleHashtagTap(context, element.text),
+        );
+      } else if (element is MeshCoreLinkElement) {
+        return TextSpan(
+          text: element.text,
+          style: effectiveLinkStyle,
+          recognizer: TapGestureRecognizer()..onTap = () => handleMeshCoreLink(context, element.url),
+        );
+      } else if (element is CoordinateElement) {
+        return TextSpan(
+          text: element.text,
+          style: effectiveLinkStyle,
+          recognizer: TapGestureRecognizer()..onTap = () => openMapAt(context, element.position),
         );
       } else if (element is LinkableElement) {
         return TextSpan(
@@ -198,7 +218,38 @@ class LinkHandler {
     );
   }
 
+  static void openMapAt(BuildContext context, LatLng position, {String? label}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapScreen(highlightPosition: position, highlightLabel: label),
+      ),
+    );
+  }
+
+  /// `meshcore://channel/add` joins the channel, `meshcore://contact/add`
+  /// imports the contact, room or repeater.
+  static Future<void> handleMeshCoreLink(BuildContext context, String url) async {
+    if (url.startsWith('meshcore://channel/add')) {
+      await ChannelJoinHelper.joinFromLink(context, url);
+    } else {
+      ContactImportHelper.importFromScannedData(context, url);
+    }
+  }
+
   static Future<void> handleLinkTap(BuildContext context, String url) async {
+    // A maps link with coordinates opens our map, not the browser; a contact
+    // share link imports the contact.
+    final maps = MapsLink.isMapsUrl(url) ? MapsLink.parse(url) : null;
+    if (maps != null) {
+      openMapAt(context, maps.position, label: maps.name);
+      return;
+    }
+    if (url.contains('?public_key=') || url.contains('&public_key=')) {
+      ContactImportHelper.importFromScannedData(context, url);
+      return;
+    }
+
     // Show confirmation dialog
     final shouldOpen = await showDialog<bool>(
       context: context,
@@ -301,6 +352,77 @@ class MentionLinkifier extends Linkifier {
 
 class MentionElement extends LinkableElement {
   MentionElement(String text) : super(text, text);
+}
+
+/// Splits [TextElement]s on [pattern], turning each match into an element
+/// built by [make]. Shared by the custom linkifiers below.
+List<LinkifyElement> _splitOn(
+  List<LinkifyElement> elements,
+  RegExp pattern,
+  LinkifyElement? Function(RegExpMatch match) make,
+) {
+  final list = <LinkifyElement>[];
+  for (final element in elements) {
+    if (element is! TextElement) {
+      list.add(element);
+      continue;
+    }
+    var lastIndex = 0;
+    for (final match in pattern.allMatches(element.text)) {
+      final made = make(match);
+      if (made == null) continue;
+      if (match.start > lastIndex) {
+        list.add(TextElement(element.text.substring(lastIndex, match.start)));
+      }
+      list.add(made);
+      lastIndex = match.end;
+    }
+    if (lastIndex < element.text.length) {
+      list.add(TextElement(element.text.substring(lastIndex)));
+    }
+  }
+  return list;
+}
+
+/// `meshcore://channel/add?...` and `meshcore://contact/add?...` links.
+class MeshCoreLinkifier extends Linkifier {
+  const MeshCoreLinkifier();
+
+  static final _pattern = RegExp(r'meshcore://[^\s<>"]+');
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    return _splitOn(elements, _pattern, (m) => MeshCoreLinkElement(m.group(0)!));
+  }
+}
+
+class MeshCoreLinkElement extends LinkableElement {
+  MeshCoreLinkElement(String url) : super(url, url);
+}
+
+/// A standalone `lat, lon` token or `geo:` URI, tappable to open the map.
+class CoordinateLinkifier extends Linkifier {
+  const CoordinateLinkifier();
+
+  static final _pattern = RegExp(
+    '${StructuredMessage.coordinatePattern.pattern}|geo:[^\\s]+',
+  );
+
+  @override
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    return _splitOn(elements, _pattern, (m) {
+      final text = m.group(0)!;
+      final position = text.startsWith('geo:')
+          ? MapsLink.parse(text)?.position
+          : StructuredMessage.parseCoordinates(text);
+      return position == null ? null : CoordinateElement(text, position);
+    });
+  }
+}
+
+class CoordinateElement extends LinkableElement {
+  final LatLng position;
+  CoordinateElement(String text, this.position) : super(text, text);
 }
 
 class HashtagLinkifier extends Linkifier {

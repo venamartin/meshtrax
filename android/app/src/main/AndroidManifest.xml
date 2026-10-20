@@ -87,5 +87,10 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
         </intent>
+        <!-- Add to calendar from an Event message -->
+        <intent>
+            <action android:name="android.intent.action.INSERT"/>
+            <data android:mimeType="vnd.android.cursor.item/event"/>
+        </intent>
     </queries>
 </manifest>

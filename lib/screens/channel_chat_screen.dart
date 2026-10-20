@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -37,11 +36,17 @@ import '../widgets/mention_composer.dart';
 import '../widgets/message_status_icon.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../widgets/swipe_reply_bubble.dart';
+import '../helpers/structured_message.dart';
+import '../services/short_link_resolver.dart';
+import '../widgets/composer_attach_tray.dart';
+import '../widgets/paste_conversion_bar.dart';
+import '../widgets/pinned_messages_bar.dart';
+import '../widgets/structured_message_card.dart';
+import '../widgets/structured_message_dialogs.dart';
 import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
 import 'chat_screen.dart';
-import 'map_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
   final Channel channel;
@@ -70,6 +75,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   String? _mentionSearchText;
   bool _showMentions = false;
+  bool _trayOpen = false;
   List<Contact> _filteredMentionContacts = [];
 
   // Memoized mention contact map — rebuilt when message list changes
@@ -166,6 +172,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   @override
   void initState() {
     super.initState();
+    _textFieldFocusNode.addListener(_closeTrayOnFocus);
+    ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
     _textController.addListener(_mentionsListener);
@@ -730,6 +738,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
+    _textFieldFocusNode.removeListener(_closeTrayOnFocus);
+    ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -1042,7 +1052,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     if (mounted) _previousMessageCount = currentMessageCount;
                   });
 
-                  return Stack(
+                  final pinnedBar = _buildPinnedBar(messages);
+                  return Column(
+                    children: [
+                      ?pinnedBar,
+                      Expanded(
+                        child: Stack(
                     children: [
                       ExcludeSemantics(
                         child: ChatZoomWrapper(
@@ -1197,6 +1212,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         ),
                       ),
                     ],
+                  ),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -1240,7 +1258,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final senderNameColors = settingsService.settings.senderNameColors;
     final isOutgoing = message.isOutgoing;
     final gifId = GifHelper.parseGif(message.text);
-    final poi = _parsePoiMessage(message.text);
+    final structured = StructuredMessage.parse(
+      message.text,
+      resolveShortLink: ShortLinkResolver.instance.cached,
+    );
+    if (structured == null) ShortLinkResolver.instance.prefetchIn(message.text);
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1255,7 +1277,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               ? message.displayPathVariants.first
               : "");
 
-    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(message.text);
+    final isJumboEmoji =
+        gifId == null && structured == null && _isOnlyEmojis(message.text);
     final warmLight = ChatColors.isLight(context);
     final displayBubbleColor = isJumboEmoji
         ? Colors.transparent
@@ -1352,12 +1375,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         _buildReplyPreview(message, textScale),
                         const SizedBox(height: 8),
                       ],
-                      if (poi != null)
-                        _buildPoiMessage(
-                          context,
-                          poi,
-                          isOutgoing,
-                          textScale,
+                      if (structured != null)
+                        StructuredMessageCard(
+                          message: structured,
+                          textColor: warmLight
+                              ? ChatColors.bubbleText
+                              : (isOutgoing
+                                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                                  : Theme.of(context).colorScheme.onSurface),
+                          textScale: textScale,
                           trailing: (!enableTracing && isOutgoing)
                               ? Padding(
                                   padding: const EdgeInsets.only(bottom: 2),
@@ -1654,7 +1680,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     final previewTextColor = colorScheme.onSurface.withValues(alpha: 0.7);
 
     final gifId = GifHelper.parseGif(replyText);
-    final poi = _parsePoiMessage(replyText);
+    final structured = StructuredMessage.parse(replyText);
 
     Widget contentPreview;
     if (gifId != null) {
@@ -1684,14 +1710,22 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ),
         ),
       );
-    } else if (poi != null) {
+    } else if (structured != null) {
       contentPreview = Row(
         children: [
-          Icon(Icons.location_on_outlined, size: 14, color: previewTextColor),
+          Icon(
+            StructuredMessageCard.iconFor(structured),
+            size: 14,
+            color: previewTextColor,
+          ),
           const SizedBox(width: 4),
-          Text(
-            context.l10n.chat_location,
-            style: TextStyle(fontSize: 12 * textScale, color: previewTextColor),
+          Flexible(
+            child: Text(
+              structured.summary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12 * textScale, color: previewTextColor),
+            ),
           ),
         ],
       );
@@ -1814,77 +1848,107 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  _PoiInfo? _parsePoiMessage(String text) {
-    final trimmed = text.trim();
-    final match = RegExp(
-      r'm:([\-0-9.]+),([\-0-9.]+)\|([^|]*)\|',
-    ).firstMatch(trimmed);
-    if (match == null) return null;
-    final lat = double.tryParse(match.group(1) ?? '');
-    final lon = double.tryParse(match.group(2) ?? '');
-    if (lat == null || lon == null) return null;
-    final label = match.group(3) ?? '';
-    return _PoiInfo(lat: lat, lon: lon, label: label);
+  void _onShortLinkResolved() {
+    if (mounted) setState(() {});
   }
 
-  Widget _buildPoiMessage(
-    BuildContext context,
-    _PoiInfo poi,
-    bool isOutgoing,
-    double textScale, {
-    Widget? trailing,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textColor = isOutgoing
-        ? colorScheme.onPrimaryContainer
-        : colorScheme.onSurface;
-    final metaColor = textColor.withValues(alpha: 0.7);
-    final channelColor = widget.channel.isPublicChannel
-        ? Colors.orange
-        : Colors.blue;
+  void _toggleTray() {
+    if (!_trayOpen) _textFieldFocusNode.unfocus();
+    setState(() => _trayOpen = !_trayOpen);
+  }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: Icon(Icons.location_on_outlined, color: channelColor),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MapScreen(
-                  highlightPosition: LatLng(poi.lat, poi.lon),
-                  highlightLabel: poi.label,
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.chat_poiShared,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14 * textScale,
-                ),
-              ),
-              if (poi.label.isNotEmpty)
-                Text(
-                  poi.label,
-                  style: TextStyle(color: metaColor, fontSize: 12 * textScale),
-                ),
-            ],
+  void _closeTrayOnFocus() {
+    if (_textFieldFocusNode.hasFocus && _trayOpen) {
+      setState(() => _trayOpen = false);
+    }
+  }
+
+  void _insertComposerText(String text) {
+    _textController.text = text;
+    _textController.selection = TextSelection.collapsed(offset: text.length);
+    setState(() => _trayOpen = false);
+    _textFieldFocusNode.requestFocus();
+  }
+
+  Future<void> _runTile(Future<String?> Function() build) async {
+    final wire = await build();
+    if (!mounted || wire == null) return;
+    _insertComposerText(wire);
+  }
+
+  Widget _buildAttachTray(MeshCoreConnector connector) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    return ComposerAttachTray(
+      tiles: [
+        AttachTile(
+          icon: Icons.my_location,
+          label: l10n.tray_myLocation,
+          onTap: () => _runTile(
+            () => StructuredMessageDialogs.myLocation(context, connector),
           ),
         ),
-        if (trailing != null) ...[const SizedBox(width: 4), trailing],
+        AttachTile(
+          icon: Icons.place,
+          label: l10n.tray_pointOnMap,
+          onTap: () =>
+              _runTile(() => StructuredMessageDialogs.pointOnMap(context)),
+        ),
+        AttachTile(
+          icon: Icons.warning_rounded,
+          label: l10n.tray_sos,
+          color: scheme.errorContainer,
+          onTap: () =>
+              _runTile(() => StructuredMessageDialogs.sos(context, connector)),
+        ),
+        AttachTile(
+          icon: Icons.event,
+          label: l10n.tray_event,
+          onTap: () => _runTile(() => StructuredMessageDialogs.event(context)),
+        ),
+        AttachTile(
+          icon: Icons.campaign,
+          label: l10n.tray_notice,
+          onTap: () => _runTile(() => StructuredMessageDialogs.notice(context)),
+        ),
       ],
+    );
+  }
+
+  /// SOS and the next upcoming Event, pinned above the list until dismissed.
+  /// Only the newest 200 messages are read.
+  Widget? _buildPinnedBar(List<ChannelMessage> messages) {
+    final uiState = context.watch<UiViewStateService>();
+    final chatId = widget.channel.idKey;
+    final total = messages.length;
+    final start = total > 200 ? total - 200 : 0;
+    final candidates = <PinCandidate>[
+      for (var i = start; i < total; i++)
+        PinCandidate(
+          id: messages[i].messageId,
+          text: messages[i].text,
+          timestamp: messages[i].timestamp,
+          index: total - 1 - i,
+        ),
+    ];
+    final entries = PinnedMessagesBar.compute(
+      candidates: candidates,
+      dismissed: uiState.dismissedPins(chatId),
+      isRoom: false,
+      resolveShortLink: ShortLinkResolver.instance.cached,
+    );
+    if (entries.isEmpty) return null;
+    return PinnedMessagesBar(
+      entries: entries,
+      onTap: (e) {
+        if (!_itemScrollController.isAttached) return;
+        _itemScrollController.scrollTo(
+          index: e.index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      },
+      onDismiss: (e) => uiState.dismissPin(chatId, e.id),
     );
   }
 
@@ -2055,14 +2119,21 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       );
     }
 
-    final poi = _parsePoiMessage(message.text);
-    if (poi != null) {
+    final structured = StructuredMessage.parse(message.text);
+    if (structured != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.location_on_outlined, size: 14, color: textColor),
+          Icon(StructuredMessageCard.iconFor(structured), size: 14, color: textColor),
           const SizedBox(width: 4),
-          Text(context.l10n.chat_location, style: TextStyle(fontSize: 11 * textScale, color: textColor)),
+          Flexible(
+            child: Text(
+              structured.summary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11 * textScale, color: textColor),
+            ),
+          ),
         ],
       );
     }
@@ -2102,6 +2173,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               return _buildReplyBanner(textScale);
             },
           ),
+        PasteConversionBar(
+          controller: _textController,
+          onReplace: _insertComposerText,
+        ),
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -2248,6 +2323,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 ),
               ),
               const SizedBox(width: 8),
+              AttachButton(open: _trayOpen, onPressed: _toggleTray),
+              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.send),
                 tooltip: context.l10n.chat_sendMessage,
@@ -2256,6 +2333,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               ),
             ],
           ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: _trayOpen
+              ? _buildAttachTray(connector)
+              : const SizedBox(width: double.infinity),
         ),
       ],
     );
@@ -2539,10 +2623,3 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 }
 
-class _PoiInfo {
-  final double lat;
-  final double lon;
-  final String label;
-
-  const _PoiInfo({required this.lat, required this.lon, required this.label});
-}

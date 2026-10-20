@@ -69,7 +69,7 @@ void main() {
   test('declines without the link or a date line', () {
     expect(CalendarShare.parse('Title\nOct 15  •  5 – 6 PM'), isNull);
     expect(CalendarShare.parse('Title\nsometime soon $link'), isNull);
-    expect(CalendarShare.parse('$link'), isNull);
+    expect(CalendarShare.parse(link), isNull);
     expect(CalendarShare.looksLike('hello'), isFalse);
   });
 }

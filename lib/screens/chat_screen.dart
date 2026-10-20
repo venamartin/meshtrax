@@ -11,7 +11,6 @@ import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/platform_info.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
@@ -37,7 +36,6 @@ import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'companion_cli_screen.dart';
-import 'map_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
@@ -46,6 +44,14 @@ import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
 import '../widgets/room_login_dialog.dart';
+import '../helpers/structured_message.dart';
+import '../services/short_link_resolver.dart';
+import '../widgets/composer_attach_tray.dart';
+import '../widgets/paste_conversion_bar.dart';
+import '../widgets/pinned_messages_bar.dart';
+import '../widgets/room_announcement_dialog.dart';
+import '../widgets/structured_message_card.dart';
+import '../widgets/structured_message_dialogs.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../l10n/l10n.dart';
@@ -73,6 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // Reply/mention state — rooms only; a 1-on-1 DM has no one to address.
   Message? _replyingToMessage;
   bool _showMentions = false;
+  bool _trayOpen = false;
   String? _mentionSearchText;
   List<Contact> _filteredMentionContacts = [];
   // Memoized resolved-author list — rebuilt when the message list changes.
@@ -148,6 +155,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _textFieldFocusNode.addListener(_closeTrayOnFocus);
+    ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
@@ -521,6 +530,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
+    _textFieldFocusNode.removeListener(_closeTrayOnFocus);
+    ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -772,6 +783,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ConnectionStatusBanner.ifSecondApp(context, connector),
               if (_isRoom) ?_buildClockSkewBanner(connector),
               ?_buildNarrowHashNotice(),
+              ?_buildPinnedBar(messages, connector),
               Expanded(
                 child: Stack(
                   children: [
@@ -1411,6 +1423,8 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 8),
+            AttachButton(open: _trayOpen, onPressed: _toggleTray),
+            const SizedBox(width: 4),
             IconButton.filled(
               icon: const Icon(Icons.send),
               tooltip: context.l10n.chat_sendMessageTo(
@@ -1434,8 +1448,142 @@ class _ChatScreenState extends State<ChatScreen> {
               return _buildReplyBanner(reply, connector, textScale);
             },
           ),
+        PasteConversionBar(
+          controller: _textController,
+          onReplace: _insertComposerText,
+        ),
         inputBar,
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: _trayOpen
+              ? _buildAttachTray(connector)
+              : const SizedBox(width: double.infinity),
+        ),
       ],
+    );
+  }
+
+  void _onShortLinkResolved() {
+    if (mounted) setState(() {});
+  }
+
+  void _toggleTray() {
+    if (!_trayOpen) _textFieldFocusNode.unfocus();
+    setState(() => _trayOpen = !_trayOpen);
+  }
+
+  void _closeTrayOnFocus() {
+    if (_textFieldFocusNode.hasFocus && _trayOpen) {
+      setState(() => _trayOpen = false);
+    }
+  }
+
+  void _insertComposerText(String text) {
+    _textController.text = text;
+    _textController.selection = TextSelection.collapsed(offset: text.length);
+    setState(() => _trayOpen = false);
+    _textFieldFocusNode.requestFocus();
+  }
+
+  Future<void> _runTile(Future<String?> Function() build) async {
+    final wire = await build();
+    if (!mounted || wire == null) return;
+    _insertComposerText(wire);
+  }
+
+  Widget _buildAttachTray(MeshCoreConnector connector) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final isAdmin = _isRoom && _roomRole(connector) == 3;
+    return ComposerAttachTray(
+      tiles: [
+        AttachTile(
+          icon: Icons.my_location,
+          label: l10n.tray_myLocation,
+          onTap: () => _runTile(
+            () => StructuredMessageDialogs.myLocation(context, connector),
+          ),
+        ),
+        AttachTile(
+          icon: Icons.place,
+          label: l10n.tray_pointOnMap,
+          onTap: () =>
+              _runTile(() => StructuredMessageDialogs.pointOnMap(context)),
+        ),
+        AttachTile(
+          icon: Icons.warning_rounded,
+          label: l10n.tray_sos,
+          color: scheme.errorContainer,
+          onTap: () =>
+              _runTile(() => StructuredMessageDialogs.sos(context, connector)),
+        ),
+        AttachTile(
+          icon: Icons.event,
+          label: l10n.tray_event,
+          onTap: () => _runTile(() => StructuredMessageDialogs.event(context)),
+        ),
+        if (!_isRoom)
+          AttachTile(
+            icon: Icons.campaign,
+            label: l10n.tray_notice,
+            onTap: () =>
+                _runTile(() => StructuredMessageDialogs.notice(context)),
+          )
+        else if (isAdmin)
+          AttachTile(
+            icon: Icons.campaign,
+            label: l10n.tray_notice,
+            onTap: () {
+              setState(() => _trayOpen = false);
+              showDialog(
+                context: context,
+                builder: (_) => RoomAnnouncementDialog(
+                  room: widget.contact,
+                  textPrefix: 'Notice: ',
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  /// SOS, the next upcoming Event and (rooms) the newest server post, pinned
+  /// above the list until dismissed. Only the newest 200 messages are read.
+  Widget? _buildPinnedBar(List<Message> messages, MeshCoreConnector connector) {
+    final uiState = context.watch<UiViewStateService>();
+    final chatId = widget.contact.publicKeyHex;
+    final total = messages.length;
+    final start = total > 200 ? total - 200 : 0;
+    final resolved = _resolveContact(connector);
+    final candidates = <PinCandidate>[
+      for (var i = start; i < total; i++)
+        PinCandidate(
+          id: messages[i].messageId,
+          text: messages[i].text,
+          timestamp: messages[i].timestamp,
+          index: total - 1 - i,
+          serverAuthored: _isRoom &&
+              !messages[i].isOutgoing &&
+              _resolveContactFrom4Bytes(
+                    connector,
+                    messages[i].fourByteRoomContactKey,
+                  )?.publicKeyHex ==
+                  resolved.publicKeyHex,
+        ),
+    ];
+    final entries = PinnedMessagesBar.compute(
+      candidates: candidates,
+      dismissed: uiState.dismissedPins(chatId),
+      isRoom: _isRoom,
+      resolveShortLink: ShortLinkResolver.instance.cached,
+    );
+    if (entries.isEmpty) return null;
+    return PinnedMessagesBar(
+      entries: entries,
+      onTap: (e) => _scrollToIndex(e.index),
+      onDismiss: (e) => uiState.dismissPin(chatId, e.id),
     );
   }
 
@@ -2242,7 +2390,24 @@ class _MessageBubble extends StatelessWidget {
     final messageText = replyInfo?.actualMessage ?? message.text;
 
     final gifId = GifHelper.parseGif(messageText);
-    final poi = _parsePoiMessage(messageText);
+    final parsed = StructuredMessage.parse(
+      messageText,
+      resolveShortLink: ShortLinkResolver.instance.cached,
+    );
+    if (parsed == null) ShortLinkResolver.instance.prefetchIn(messageText);
+    // A post the room server authored (room.post) is a notice even without
+    // the "Notice:" keyword.
+    final announcementLines = isAnnouncement
+        ? messageText
+            .split('\n')
+            .map((l) => l.trim())
+            .where((l) => l.isNotEmpty)
+            .toList()
+        : const <String>[];
+    final structured = parsed ??
+        (announcementLines.isEmpty
+            ? null
+            : NoticeMessage(lines: announcementLines));
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
     // Same palette as the channel chat screen: warm ChatColors in light
@@ -2268,7 +2433,8 @@ class _MessageBubble extends StatelessWidget {
             orphanReaction.emoji
         : GifHelper.stripGif(messageText);
 
-    final isJumboEmoji = gifId == null && poi == null && _isOnlyEmojis(messageText);
+    final isJumboEmoji =
+        gifId == null && structured == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
     final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
     final displayMetaColor = displayTextColor.withValues(alpha: 0.7);
@@ -2370,13 +2536,11 @@ class _MessageBubble extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                         ],
-                        if (poi != null)
-                          _buildPoiMessage(
-                            context,
-                            poi,
-                            textColor,
-                            displayMetaColor,
-                            textScale,
+                        if (structured != null)
+                          StructuredMessageCard(
+                            message: structured,
+                            textColor: textColor,
+                            textScale: textScale,
                             trailing: (!enableTracing && isOutgoing)
                                 ? Padding(
                                     padding: const EdgeInsets.only(bottom: 2),
@@ -2650,72 +2814,6 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  _PoiInfo? _parsePoiMessage(String text) {
-    final trimmed = text.trim();
-    final match = RegExp(
-      r'^m:([\-0-9.]+),([\-0-9.]+)\|([^|]*)\|.*$',
-    ).firstMatch(trimmed);
-    if (match == null) return null;
-    final lat = double.tryParse(match.group(1) ?? '');
-    final lon = double.tryParse(match.group(2) ?? '');
-    if (lat == null || lon == null) return null;
-    final label = match.group(3) ?? '';
-    return _PoiInfo(lat: lat, lon: lon, label: label);
-  }
-
-  Widget _buildPoiMessage(
-    BuildContext context,
-    _PoiInfo poi,
-    Color textColor,
-    Color metaColor,
-    double textScale, {
-    Widget? trailing,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: Icon(Icons.location_on_outlined, color: textColor),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MapScreen(
-                  highlightPosition: LatLng(poi.lat, poi.lon),
-                  highlightLabel: poi.label,
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.chat_poiShared,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14 * textScale,
-                ),
-              ),
-              if (poi.label.isNotEmpty)
-                Text(
-                  poi.label,
-                  style: TextStyle(color: metaColor, fontSize: 12 * textScale),
-                ),
-            ],
-          ),
-        ),
-        if (trailing != null) ...[const SizedBox(width: 4), trailing],
-      ],
-    );
-  }
-
   Widget _buildReactionsDisplay(
     BuildContext context,
     Message message,
@@ -2830,7 +2928,8 @@ class _MessageBubble extends StatelessWidget {
         : (ChannelMessage.parseReply(target.text)?.actualMessage ??
             target.text);
     final gifId = target == null ? null : GifHelper.parseGif(quoteText);
-    final poi = target == null ? null : _parsePoiMessage(quoteText);
+    final structured =
+        target == null ? null : StructuredMessage.parse(quoteText);
 
     Widget? preview;
     if (gifId != null) {
@@ -2858,14 +2957,22 @@ class _MessageBubble extends StatelessWidget {
                 ],
               ),
       );
-    } else if (poi != null) {
+    } else if (structured != null) {
       preview = Row(
         children: [
-          Icon(Icons.location_on_outlined, size: 14, color: snippetColor),
+          Icon(
+            StructuredMessageCard.iconFor(structured),
+            size: 14,
+            color: snippetColor,
+          ),
           const SizedBox(width: 4),
-          Text(
-            context.l10n.chat_location,
-            style: TextStyle(fontSize: 12 * textScale, color: snippetColor),
+          Flexible(
+            child: Text(
+              structured.summary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12 * textScale, color: snippetColor),
+            ),
           ),
         ],
       );
@@ -3091,10 +3198,3 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-class _PoiInfo {
-  final double lat;
-  final double lon;
-  final String label;
-
-  const _PoiInfo({required this.lat, required this.lon, required this.label});
-}

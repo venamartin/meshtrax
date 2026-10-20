@@ -222,7 +222,7 @@ void main() {
       expect(StructuredMessage.hasPrefix('@[Bob] Event: x'), isTrue);
       expect(StructuredMessage.hasPrefix('m:47.1,15.4|x|poi'), isTrue);
       expect(StructuredMessage.hasPrefix('hello'), isFalse);
-      expect(StructuredMessage.hasPrefix('$graz'), isFalse);
+      expect(StructuredMessage.hasPrefix(graz), isFalse);
     });
 
     test('unknown keyword stays plain', () {
