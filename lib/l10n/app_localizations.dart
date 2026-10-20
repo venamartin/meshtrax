@@ -7721,6 +7721,12 @@ abstract class AppLocalizations {
   /// **'Dismiss'**
   String get pinned_dismiss;
 
+  /// No description provided for @tray_gif.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF'**
+  String get tray_gif;
+
   /// No description provided for @link_joinChannelBody.
   ///
   /// In en, this message translates to:

@@ -1291,12 +1291,6 @@ class _ChatScreenState extends State<ChatScreen> {
       child: SafeArea(
         child: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.gif_box),
-              onPressed: () => _showGifPicker(context),
-              tooltip: context.l10n.chat_sendGif,
-            ),
-
             Expanded(
               child: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _textController,
@@ -1423,14 +1417,14 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            AttachButton(open: _trayOpen, onPressed: _toggleTray),
-            const SizedBox(width: 4),
-            IconButton.filled(
-              icon: const Icon(Icons.send),
-              tooltip: context.l10n.chat_sendMessageTo(
+            ComposerActionButton(
+              controller: _textController,
+              trayOpen: _trayOpen,
+              onToggleTray: _toggleTray,
+              onSend: () => _sendMessage(connector),
+              sendTooltip: context.l10n.chat_sendMessageTo(
                 _resolveContact(connector).name,
               ),
-              onPressed: () => _sendMessage(connector),
             ),
           ],
         ),
@@ -1479,11 +1473,13 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Puts [text] in the composer and closes the tray. The keyboard stays
+  /// down: a dialog just closed, and asking for the keyboard while Android
+  /// is still hiding it leaves a black gap where the keyboard should be.
   void _insertComposerText(String text) {
     _textController.text = text;
     _textController.selection = TextSelection.collapsed(offset: text.length);
     setState(() => _trayOpen = false);
-    _textFieldFocusNode.requestFocus();
   }
 
   Future<void> _runTile(Future<String?> Function() build) async {
@@ -1498,6 +1494,14 @@ class _ChatScreenState extends State<ChatScreen> {
     final isAdmin = _isRoom && _roomRole(connector) == 3;
     return ComposerAttachTray(
       tiles: [
+        AttachTile(
+          icon: Icons.gif_box,
+          label: l10n.tray_gif,
+          onTap: () {
+            setState(() => _trayOpen = false);
+            _showGifPicker(context);
+          },
+        ),
         AttachTile(
           icon: Icons.my_location,
           label: l10n.tray_myLocation,
@@ -2495,14 +2499,6 @@ class _MessageBubble extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                if (isAnnouncement) ...[
-                                  Icon(
-                                    Icons.campaign,
-                                    size: 14 * textScale,
-                                    color: colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                ],
                                 Flexible(
                                   child: Text(
                                     senderName,

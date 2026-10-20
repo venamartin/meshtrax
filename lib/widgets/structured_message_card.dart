@@ -28,6 +28,9 @@ class StructuredMessageCard extends StatelessWidget {
     this.trailing,
   });
 
+  /// Accent bar and tint of a Notice card, so it stands apart from an Event.
+  static const Color noticeAccent = Color(0xFFF2A900);
+
   /// The icon that stands for a message type in previews and pinned rows.
   static IconData iconFor(StructuredMessage message) => switch (message) {
         LocationMessage() => Icons.location_on,
@@ -62,6 +65,7 @@ class StructuredMessageCard extends StatelessWidget {
           position: m.position,
           positionLabel: l10n.structured_sos,
           markerColor: scheme.error,
+          accent: scheme.error,
           background: scheme.errorContainer,
           foreground: scheme.onErrorContainer,
         ),
@@ -78,6 +82,7 @@ class StructuredMessageCard extends StatelessWidget {
           position: m.position,
           positionLabel: m.title,
           markerColor: scheme.primary,
+          accent: scheme.primary,
           extraActions: [
             TextButton.icon(
               onPressed: () => _addToCalendar(context, m),
@@ -89,14 +94,14 @@ class StructuredMessageCard extends StatelessWidget {
       NoticeMessage m => _frame(
           context,
           icon: Icons.campaign,
-          iconColor: Colors.purple,
+          iconColor: scheme.primary,
           title: m.headline,
           caption: l10n.structured_notice,
           lines: m.lines.skip(1).toList(),
           position: m.position,
           positionLabel: m.headline,
-          markerColor: Colors.purple,
-          background: Colors.purple.withValues(alpha: 0.12),
+          markerColor: scheme.primary,
+          accent: noticeAccent,
         ),
     };
   }
@@ -111,6 +116,7 @@ class StructuredMessageCard extends StatelessWidget {
     required LatLng? position,
     String? positionLabel,
     required Color markerColor,
+    Color? accent,
     Color? background,
     Color? foreground,
     List<Widget> extraActions = const [],
@@ -147,9 +153,8 @@ class StructuredMessageCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: iconColor, size: 22 * textScale),
+            Icon(icon, color: iconColor, size: 24 * textScale),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -220,19 +225,37 @@ class StructuredMessageCard extends StatelessWidget {
         if (actions.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Wrap(spacing: 4, children: actions),
+            child: TextButtonTheme(
+              data: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              child: Wrap(spacing: 0, children: actions),
+            ),
           ),
       ],
     );
 
-    if (background == null) return body;
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(10),
+    if (accent == null) return body;
+    // Same language as the reply quote: a soft tint with a bar on the left.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+        decoration: BoxDecoration(
+          // Solid, so the tint reads the same on white and green bubbles.
+          color: background ??
+              Color.alphaBlend(
+                accent.withValues(alpha: 0.14),
+                Theme.of(context).colorScheme.surface,
+              ),
+          border: Border(left: BorderSide(color: accent, width: 4)),
+        ),
+        child: body,
       ),
-      child: body,
     );
   }
 

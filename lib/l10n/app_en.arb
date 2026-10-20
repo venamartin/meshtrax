@@ -2502,6 +2502,7 @@
   "paste_resolving": "Resolving link…",
   "paste_resolveFailed": "Could not resolve the link",
   "pinned_dismiss": "Dismiss",
+  "tray_gif": "GIF",
   "link_joinChannelBody": "Join channel {name}?",
   "@link_joinChannelBody": {
     "placeholders": {

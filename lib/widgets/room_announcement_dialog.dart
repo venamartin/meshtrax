@@ -120,7 +120,7 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.campaign, color: Colors.purple),
+          Icon(Icons.campaign, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(l10n.room_postAnnouncement)),
         ],

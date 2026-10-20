@@ -118,7 +118,7 @@ class PinnedMessagesBar extends StatelessWidget {
     final (icon, color) = switch (entry.message) {
       SosMessage() => (Icons.warning_rounded, scheme.error),
       EventMessage() => (Icons.event, scheme.primary),
-      NoticeMessage() => (Icons.campaign, Colors.purple),
+      NoticeMessage() => (Icons.campaign, scheme.primary),
       LocationMessage() => (Icons.location_on, scheme.primary),
     };
     return InkWell(

@@ -4477,6 +4477,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get pinned_dismiss => 'Dismiss';
 
   @override
+  String get tray_gif => 'GIF';
+
+  @override
   String link_joinChannelBody(String name) {
     return 'Join channel $name?';
   }

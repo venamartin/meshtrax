@@ -38,6 +38,52 @@ class AttachButton extends StatelessWidget {
   }
 }
 
+/// The button at the end of the composer: "+" while the text field is empty,
+/// the send button once there is something to send.
+class ComposerActionButton extends StatelessWidget {
+  final TextEditingController controller;
+  final bool trayOpen;
+  final VoidCallback onToggleTray;
+  final VoidCallback onSend;
+  final String sendTooltip;
+
+  const ComposerActionButton({
+    super.key,
+    required this.controller,
+    required this.trayOpen,
+    required this.onToggleTray,
+    required this.onSend,
+    required this.sendTooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final empty = value.text.trim().isEmpty;
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 150),
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
+          child: empty
+              ? AttachButton(
+                  key: const ValueKey('attach'),
+                  open: trayOpen,
+                  onPressed: onToggleTray,
+                )
+              : IconButton.filled(
+                  key: const ValueKey('send'),
+                  icon: const Icon(Icons.send),
+                  tooltip: sendTooltip,
+                  onPressed: onSend,
+                ),
+        );
+      },
+    );
+  }
+}
+
 /// A row of large icon tiles that slides in under the composer, as in
 /// Signal. The host decides when it is open; this just draws the tiles.
 class ComposerAttachTray extends StatelessWidget {
@@ -51,12 +97,12 @@ class ComposerAttachTray extends StatelessWidget {
     return Material(
       color: scheme.surface,
       child: SizedBox(
-        height: 108,
+        height: 118,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           itemCount: tiles.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 16),
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
             final tile = tiles[index];
             final color = tile.color ?? scheme.secondaryContainer;
@@ -67,7 +113,7 @@ class ComposerAttachTray extends StatelessWidget {
               onTap: tile.onTap,
               borderRadius: BorderRadius.circular(16),
               child: SizedBox(
-                width: 72,
+                width: 76,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -83,9 +129,11 @@ class ComposerAttachTray extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       tile.label,
-                      maxLines: 1,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
+                        height: 1.1,
                         fontSize: 12,
                         color: scheme.onSurface,
                       ),
