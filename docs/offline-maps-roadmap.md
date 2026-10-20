@@ -8,19 +8,48 @@ This file says how traxmap's offline vector maps replace MeshTrax's online raste
 
 ## Status
 
-Last updated 2026-10-19.
+Last updated 2026-10-19, evening. **Resume here.**
 
-**Data on R2:** traxmapmaker serves a frozen test catalogue at `https://maps.meshtrax.io/dev/`:
-- `index.json` with Rhode Island (`osm` 34.1 MB, `base`/USGS 15.8 MB, contours 20 ft 1.7 MB and 10 m 1.0 MB) and the Watsonville test packs;
-- `picker.geojson` (version 1, 136 regions).
+**Branch:** local `feat/offline-maps`, 18 commits on master, last `3f8ea79`. Martin wants local commits only: no push, no PRs until he says.
 
-Not published yet:
-- **The root `index.json`:** it returns 404 until the first North America cuts.
-- **Charts (1.4):** Puerto Rico and Virgin Islands come first.
-- **Routing (1.5).**
-- **Overlays (1.6).**
+**Done:**
+- **Phase 1:**
+  - docs;
+  - traxmap: index v2, `RegionIndex`, versioned pack builds;
+  - User-Agent fix, the traxmap dependency, `MapPacksService`, settings;
+  - the Offline maps screen (text only, one column, Downloaded tab);
+  - the old cache screen deleted;
+  - the privacy draft.
+- **Phase 2:**
+  - T5 view hooks;
+  - A5 `AppMap` with the online fallback;
+  - T3 combined source.
+  - O3 (the picker map) was built, then dropped at Martin's request.
+  - Only G1, the phone performance gate, is left.
+- **Checked on the Pi** with a throwaway preview app and the real packs from `dev/`:
+  - Rhode Island at Providence (vector with contours);
+  - Boston (online tiles);
+  - Puerto Rico + US Virgin Islands drawn as one map, with the Copernicus notice in the credits.
+- **Tests:** the app's 769 and traxmap's 67 pass; `flutter analyze --fatal-infos --fatal-warnings` is clean.
 
-**App:** Phase 1 is done on the local branch `feat/offline-maps` (local commits only, as Martin asked). Still open: the privacy.md map-server section and the translations (`tools/translate.py` needs Ollama, which this Pi doesn't have).
+**Next:**
+1. **Phase 3, starting with the main Node Map on `AppMap` (M5)**, ahead of the small maps, because that's where Martin sees offline maps. G1 (phone check) is deferred while he tests on the Pi.
+   - The main map gains the coverage banner, the starting camera and fixes B1–B5.
+   - Then the no-radio map (M5b), then M1–M4.
+2. **The map selector (OSM / USGS / NOAA), right after M5:** a plain text choice in App Settings → Map Display (Martin prefers text over graphics for now). The layers sheet (M6) can come later.
+3. **Waiting for Martin:**
+   - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
+   - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
+   - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
+
+**Data on R2** (from traxmapmaker-d3):
+- **On `dev/`:** Rhode Island, Puerto Rico, US Virgin Islands, the Watsonville test packs, and a Puerto Rico & Virgin Islands charts pack.
+  - The index and picker are served with `charset=utf-8`.
+  - Contours packs carry the Copernicus `notice`.
+- **The root `index.json`** (production default) is at least a day away: the North America OSM master takes 8–10 h or more, plus a 1–9 h download.
+- **Sharing the Pi:** traxmapmaker shares its 4 cores. During its big builds, keep heavy Flutter work (analysis server, full test runs, builds) light. It messages before starting one.
+
+**Known issues:** below.
 
 ## How we work
 
