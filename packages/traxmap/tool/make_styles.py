@@ -48,7 +48,10 @@ def style(name, P, note):
     shadow = P["shade"]
     contour_ft = ["concat", ["to-string", ["get", "ele_ft"]], " ft"]
     contour_m = ["concat", ["to-string", ["get", "ele_m"]], " m"]
-    peak = lambda ele, unit: ["concat", "▲ ", ["coalesce", ["get", "name"], ""], "\n",
+    # No "▲" before the name: the renderer draws labels in the platform's
+    # default font, which lacks it on Linux (a box showed). A peak icon
+    # comes with sprites.
+    peak = lambda ele, unit: ["concat", ["coalesce", ["get", "name"], ""], "\n",
                               ["case", ["has", ele], ["concat", ["to-string", ["get", ele]], unit], ""]]
     L = [
         {"id": "background", "type": "background", "paint": {"background-color": P["bg"]}},

@@ -941,7 +941,6 @@
       "layout": {
         "text-field": [
           "concat",
-          "▲ ",
           [
             "coalesce",
             [
@@ -995,7 +994,6 @@
       "layout": {
         "text-field": [
           "concat",
-          "▲ ",
           [
             "coalesce",
             [
