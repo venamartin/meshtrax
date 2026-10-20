@@ -216,6 +216,9 @@ const int cmdGetCustomVar = 40;
 const int cmdSetCustomVar = 41;
 const int cmdGetTuningParams = 43;
 const int cmdSendBinaryReq = 50;
+// [52][0][pubkey x32]: a flooded telemetry request whose reply carries both
+// routes (companion_radio MyMesh.cpp).
+const int cmdSendPathDiscoveryReq = 52;
 const int cmdSetFloodScopeKey = 54;
 const int cmdSendControlData = 55;
 const int cmdGetStats = 56;

@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:path_graph/path_graph.dart';
 
+import '../../connector/meshcore_protocol.dart' show cmdSendPathDiscoveryReq;
 import '../../helpers/path_helper.dart';
 import '../../utils/app_logger.dart';
 
@@ -85,13 +86,10 @@ const int pushPathDiscoveryResponse = 0x8D;
 const int pushControlData = 0x8E;
 const int _ctlNodeDiscoverResp = 0x90;
 
-/// CMD_SEND_PATH_DISCOVERY_REQ (companion_radio MyMesh.cpp:52).
-const int _cmdSendPathDiscoveryReq = 52;
-
 /// `[52][0][pubkey x32]` — firmware forces a flood telemetry REQ to the
 /// contact and reports both proven paths when the response returns.
 Uint8List buildPathDiscoveryReq(Uint8List contactPubkey) =>
-    Uint8List.fromList([_cmdSendPathDiscoveryReq, 0, ...contactPubkey]);
+    Uint8List.fromList([cmdSendPathDiscoveryReq, 0, ...contactPubkey]);
 
 String _hex(List<int> bytes) => bytes
     .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())

@@ -905,7 +905,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _secondAppDismissed = false;
   }
 
-  // Requests the radio answers with RESP_CODE_SENT that are not messages.
+  // Requests the radio answers with RESP_CODE_SENT that are not messages
+  // (every RESP_CODE_SENT in companion_radio MyMesh.cpp besides the DM's).
   // Unclaimed, their SENT fell through to "promote the newest pending DM",
   // marking a queued DM sent although it never went out. The telemetry
   // request only answers SENT when it names a contact.
@@ -915,6 +916,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     cmdSendTracePath,
     cmdSendTelemetryReq,
     cmdSendBinaryReq,
+    cmdSendPathDiscoveryReq,
     cmdSendAnonReq,
   };
 
