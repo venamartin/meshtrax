@@ -335,7 +335,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | T4 | traxmap pack lifecycle.<br>• Versioned file names `<id>@<sha12>.pmtiles` (update detection, reload, Windows-safe swap).<br>• `Pack.isBuild`, `region` and `buildDate`; `level` and `overlayId` wait for Phase 8.<br>• SHA-256 off the UI isolate.<br>• Runtime Wi‑Fi-only setting.<br>• Localizable notification strings. |
 | A1 | Map tile User-Agent → `com.vena.meshtrax`. |
 | A2 | traxmap dependency, `flutter_map ^8.3.2`, SDK `^3.13.5`.<br>• Android backup rules exclude `files/maps/`.<br>• A CI job builds a debug APK.<br>• iOS backup exclusion moves to G2: it needs native code and a Mac to test. |
-| A3 | `MapPacksService`. |
+| A3 | `MapPacksService`.<br>• Cached catalogue revalidated with ETags.<br>• A 404 means "unavailable".<br>• Pack status (available, queued, running, paused, retrying, verifying, failed, installed, update available), default selection, updates and badge.<br>• Download, pause, resume, cancel and delete region.<br>• Follows the Wi‑Fi setting.<br>• Not created on the web. |
 | A4 | "Download maps on Wi‑Fi only" setting (default on). Fixes B6: the time filter now defaults to 0 (all time) everywhere. Map type, family, contours and theme arrive with `AppMap` (A5), the first code that reads them. |
 | O1 | Offline maps shell, tabs, badge and Downloaded tab.<br>• Scanner ⋮ "Offline maps".<br>• Settings row and Wi‑Fi switch.<br>• **Delete** the map cache screen, the prefetch, and their settings and strings.<br>• `formatBytes`.<br>• privacy.md map-server section. |
 | O2 | Maps tab list (breadcrumb, Suggested, chips, picker credit, every state) and region detail with downloads.<br>• The download integration test moves to `integration_test/pack_download_test.dart`. |
@@ -361,7 +361,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | M3 | Path trace (fixes B8). |
 | M4 | Line of sight. |
 | M5 | Main map core (after G1). Fixes B1–B5. |
-| M5b | No-radio map: scanner ⋮ "Map", no-radio mode, back rule. |
+| M5b | No-radio map: scanner ⋮ "Map", no-radio mode, back rule. `main()` already loads the contact cache at start-up, so the last-known nodes may be cheap to show; decide when building it. |
 
 ### Phase 4: layers and GPS
 
