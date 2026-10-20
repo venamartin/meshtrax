@@ -43,11 +43,15 @@ Last updated 2026-10-19, evening. **Resume here.**
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
 
-**Data on R2** (from traxmapmaker-d3):
-- **On `dev/`:** Rhode Island, Puerto Rico, US Virgin Islands, the Watsonville test packs, and a Puerto Rico & Virgin Islands charts pack.
-  - The index and picker are served with `charset=utf-8`.
-  - Contours packs carry the Copernicus `notice`.
-- **The root `index.json`** (production default) is at least a day away: the North America OSM master takes 8–10 h or more, plus a 1–9 h download.
+**Data on R2** (from traxmapmaker-d3; as of 2026-10-20, 81 packs on `dev/`):
+- **On `dev/`:**
+  - North America OSM packs, border-complete: 52 US states (California split in two), 20 Canadian regions (British Columbia and Nunavut split), and Mexico. The Rhode Island OSM pack is now the border-complete build.
+  - Puerto Rico and US Virgin Islands map and contours packs, plus a Puerto Rico & Virgin Islands charts pack. The charts pack's region gets a chart-areas file in §1.4.
+  - `us-rhode-island` (USGS), kept for the map-selector work until a release USGS pack lands.
+  - The index and picker are served with `charset=utf-8`; contours packs carry the Copernicus `notice`.
+- **Removed 2026-10-20:** the Watsonville test packs and region, and the per-region Rhode Island contours.
+- **Not yet:** contours and USGS for North America. The next build (US contours or the US charts master) is Martin's call. The root `index.json` (production default) still returns 404.
+- **Tested 2026-10-20** through `MapPacksService` and the screens in a preview harness. Every pack's region is in the picker. The Rhode Island update was detected by checksum and installed. Rhode Island + Connecticut and Vermont + Quebec draw seamlessly across the border. Quebec (1.67 GB): 68 s download, 38 s SHA-256 check on the Pi, memory flat. DC (12 MB): 5 s.
 - **Sharing the Pi:** traxmapmaker shares its 4 cores. During its big builds, keep heavy Flutter work (analysis server, full test runs, builds) light. It messages before starting one.
 
 **Known issues:** below.
@@ -438,7 +442,9 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ## Known issues
 
 - **Peak labels show a box before the name on the Pi** ("▯ Bare Rock"). The styles prefix peaks with "▲", and the renderer draws labels in the platform's default font, which lacks that glyph on Linux. The renderer ignores font families (offline-maps.md, "What the renderer can't do"). Fix with a peak sprite (T9) or the font hook (T12); a cheaper stopgap is dropping the "▲" from the style text.
-- **Beyond a pack's outline the map is blank, not online,** while the view centre is inside the pack. That's the accepted trade-off of switching online tiles on by the centre (decided 2026-10-17).
+- **Beyond a pack's outline the map is blank, not online,** while the view centre is inside the pack. That's the trade-off of switching online tiles on by the centre (decided 2026-10-17).
+  - With small packs it's obvious: at DC zoom 12, a quarter of the screen (Arlington, VA) is blank.
+  - Proposed fix, to settle in M5: when online, draw the online tiles *under* the vector tiles, with a tile provider that skips raster tiles the installed packs cover (`contains`), so only the gaps are fetched.
 
 ## Bugs to fix along the way
 
