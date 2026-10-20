@@ -150,13 +150,9 @@ New `lib/screens/offline_maps_screen.dart`. It replaces `map_cache_screen.dart`.
 - **Phone:** the picker map above a `DraggableScrollableSheet`. Until O3 adds the map, it's a plain list.
 - **Look:** follows traxmapmaker's regions mockup, in MeshTrax's Material 3 theme. The mapping table is in the traxmap README, "MeshTrax integration".
 
-**S3a. Maps tab:**
+**S3a. Maps tab** (text only; the picker map was dropped 2026-10-19):
 ```
 │ World › North America › United States        │  breadcrumb TextButtons with ›
-│ ┌ picker map (O3) ─────────────────────────┐ │  regions as MapPolygons over online tiles; tinted by size,
-│ │                                          │ │  downloaded = primary fill, selected = thick stroke
-│ └──────────────────────────────────────────┘ │
-│ ■<100 MB ■100–500 MB ■0.5–1 GB ■>1 GB ■Downloaded │  legend strip (O3)
 │ ⌖ Suggested  Rhode Island          52.6 MB ›  │  phone fix → radio → last camera
 │ Regions in United States                     │
 │ [● Alabama 210 MB] [California · 2 inside ›] [● Rhode Island 52.6 MB ✓] … │
@@ -349,7 +345,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | T3 | (Next, after O3.) traxmap combined source per kind (neighbouring regions), and a cache key that changes when packs change. |
 | T5 | traxmap view hooks: `baseLayers`, `onCoverageChanged`, rendering with no packs, `StyleInfo.requiredKinds`, the `labels` slot tag, polygon holes.<br>• `MapStyleState.notices`: licence notices from the packs in use (e.g. Copernicus' liability sentence), for the app to show with the credits. |
 | A5 | `AppMap` (`lib/widgets/app_map.dart`): style from settings (map type, theme following the app, contours), installed packs, units; online OSM tiles in `baseLayers` while `onCoverageChanged` says not covered; credits chip (plus the OSM credit while online tiles show, plus pack notices) and the chart disclaimer. Settings `map_type`, `map_contours`, `map_theme`. `MapPacksService` shares one style registry. The coverage banner and online/offline wording come with the main map (M5). |
-| O3 | Picker map in the Maps tab: the browsed regions as polygons over `AppMap` (OSM, no contours), tinted by download size, installed ones filled, the selected one outlined; tap a polygon to drill down or select; legend strip; the Geofabrik credit goes into the map's credits chip. **Layout:** phones get the map above the list or detail, not a draggable sheet, so the credits chip is never covered. Wide screens get the map above the list, with the detail panel beside them.<br>• Checked on the Pi 2026-10-19 with a throwaway preview app and the real Rhode Island packs: vector map with contours at Providence; online OSM beyond the packs at Boston; the picker framing Rhode Island. |
+| O3 | **Dropped for now** (Martin, 2026-10-19: "I don't like the map selector … let's just use text for now"). The picker map was built and checked on the Pi, then removed. The Maps tab stays text only (breadcrumb, Suggested, chips), and the Geofabrik credit stays under the list. `AppMap` itself stays: the map screens use it. |
 | G1 | **Gate on real phones:** frame time, memory, cold start, tile resolution. Go or no-go before the main map. |
 
 ### Phase 3: migrate the map views

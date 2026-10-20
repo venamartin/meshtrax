@@ -9,18 +9,17 @@ import '../../models/app_settings.dart';
 import '../../services/app_settings_service.dart';
 import '../../services/map_packs_service.dart';
 import '../../utils/format_bytes.dart';
-import '../../widgets/app_map.dart';
 import 'offline_maps_ui.dart';
 import 'region_detail.dart';
 
-/// Above this width the region detail sits beside the map and list (the
-/// mockup's 880 px breakpoint); below it the map sits above the list, and
-/// the detail replaces the list.
+/// Above this width the region detail sits beside the list (the mockup's
+/// 880 px breakpoint); below it the detail replaces the list.
 const _wideLayout = 880.0;
 
-/// Region browser: a map of the regions being browsed, the breadcrumb, a
-/// suggested region, and the region chips (roadmap screen S3a).
-class MapsTab extends StatefulWidget {
+/// Region browser: breadcrumb, a suggested region, and the regions inside
+/// the one being browsed (roadmap screen S3a). Text only for now: Martin
+/// dropped the picker map on 2026-10-19.
+class MapsTab extends StatelessWidget {
   final String? browsePath;
   final String? selectedPath;
   final ValueChanged<String?> onBrowse;
@@ -35,92 +34,33 @@ class MapsTab extends StatefulWidget {
   });
 
   @override
-  State<MapsTab> createState() => _MapsTabState();
-}
-
-class _MapsTabState extends State<MapsTab> {
-  final _map = OfflineMapController();
-
-  @override
-  void didUpdateWidget(MapsTab old) {
-    super.didUpdateWidget(old);
-    if (old.browsePath != widget.browsePath ||
-        old.selectedPath != widget.selectedPath) {
-      final regions = context.read<MapPacksService>().regions;
-      if (regions != null) {
-        _map.fitBounds(
-          _focusBounds(regions, widget.browsePath, widget.selectedPath),
-          padding: const EdgeInsets.all(24),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _map.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final maps = context.watch<MapPacksService>();
     final regions = maps.regions;
     if (regions == null || maps.index == null) return _CatalogueState(maps);
 
-    final browse = widget.browsePath == null
-        ? null
-        : regions[widget.browsePath!];
-    final selected = widget.selectedPath == null
-        ? null
-        : regions[widget.selectedPath!];
-    final map = _PickerMap(
-      controller: _map,
-      regions: regions,
-      browse: browse,
-      selected: selected,
-      onBrowse: widget.onBrowse,
-      onSelect: widget.onSelect,
-    );
-    final list = _RegionList(
-      regions: regions,
-      browse: browse,
-      selected: selected,
-      onBrowse: widget.onBrowse,
-      onSelect: widget.onSelect,
-    );
+    final selected = selectedPath == null ? null : regions[selectedPath!];
     return LayoutBuilder(
       builder: (context, constraints) {
+        final list = _RegionList(
+          regions: regions,
+          browse: browsePath == null ? null : regions[browsePath!],
+          selected: selected,
+          onBrowse: onBrowse,
+          onSelect: onSelect,
+        );
         if (constraints.maxWidth < _wideLayout) {
-          return Column(
-            children: [
-              SizedBox(
-                height: (constraints.maxHeight * 0.38).clamp(200.0, 420.0),
-                child: map,
-              ),
-              Expanded(
-                child: selected == null
-                    ? list
-                    : RegionDetail(
-                        key: ValueKey(selected.path),
-                        region: selected,
-                        onBack: () => widget.onSelect(null),
-                      ),
-              ),
-            ],
+          if (selected == null) return list;
+          return RegionDetail(
+            key: ValueKey(selected.path),
+            region: selected,
+            onBack: () => onSelect(null),
           );
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(flex: 5, child: map),
-                  Expanded(flex: 4, child: list),
-                ],
-              ),
-            ),
+            Expanded(child: list),
             SizedBox(
               width: 340,
               child: Padding(
@@ -141,173 +81,6 @@ class _MapsTabState extends State<MapsTab> {
       },
     );
   }
-}
-
-/// What the map frames: the selected region, else the one being browsed,
-/// else every top-level region.
-LatLngBounds _focusBounds(
-  RegionIndex regions,
-  String? browsePath,
-  String? selectedPath,
-) {
-  final focus =
-      (selectedPath == null ? null : regions[selectedPath]) ??
-      (browsePath == null ? null : regions[browsePath]);
-  if (focus != null) return focus.bounds;
-  final all = [for (final r in regions.roots) r.bounds];
-  return LatLngBounds(
-    south: all.map((b) => b.south).reduce((a, b) => a < b ? a : b),
-    west: all.map((b) => b.west).reduce((a, b) => a < b ? a : b),
-    north: all.map((b) => b.north).reduce((a, b) => a > b ? a : b),
-    east: all.map((b) => b.east).reduce((a, b) => a > b ? a : b),
-  );
-}
-
-/// The regions being browsed, drawn over the map and tinted by download
-/// size (installed ones filled), with the legend strip below.
-class _PickerMap extends StatelessWidget {
-  final OfflineMapController controller;
-  final RegionIndex regions;
-  final Region? browse;
-  final Region? selected;
-  final ValueChanged<String?> onBrowse;
-  final ValueChanged<String?> onSelect;
-
-  const _PickerMap({
-    required this.controller,
-    required this.regions,
-    required this.browse,
-    required this.selected,
-    required this.onBrowse,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final maps = context.watch<MapPacksService>();
-    final units = context.select<AppSettingsService, UnitSystem>(
-      (s) => s.settings.unitSystem,
-    );
-    final shown = [
-      ...regions.childrenOf(browse),
-      if (selected != null && selected!.parentPath != browse?.path) selected!,
-    ];
-    final overlays = <MapOverlay>[
-      for (final region in shown)
-        for (final (i, polygon) in region.polygons.indexed)
-          if (polygon.isNotEmpty)
-            _regionPolygon(
-              region,
-              i,
-              polygon,
-              scheme: scheme,
-              maps: maps,
-              units: units,
-            ),
-    ];
-    return Column(
-      children: [
-        Expanded(
-          child: AppMap(
-            controller: controller,
-            mapType: MapType.osm,
-            contours: false,
-            initialFit: MapFit.bounds(
-              _focusBounds(regions, browse?.path, selected?.path),
-              padding: const EdgeInsets.all(24),
-            ),
-            overlays: overlays,
-            extraCredits: [?regions.attribution],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 4,
-            children: [
-              for (final (bytes, label) in [
-                (50e6, '< 100 MB'),
-                (2e8, '100–500 MB'),
-                (7e8, '0.5–1 GB'),
-                (2e9, '> 1 GB'),
-              ])
-                _LegendItem(sizeBandColor(scheme, bytes.toInt()), label),
-              _LegendItem(
-                scheme.primary.withValues(alpha: 0.6),
-                l10n.offlineMaps_tabDownloaded,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  MapPolygon _regionPolygon(
-    Region region,
-    int part,
-    List<List<LatLng>> polygon, {
-    required ColorScheme scheme,
-    required MapPacksService maps,
-    required UnitSystem units,
-  }) {
-    final container = regions.childrenOf(region).isNotEmpty;
-    final packs = maps.packsForRegion(region.path);
-    final installed = maps.installedRegions.contains(region.path);
-    final isSelected = region.path == selected?.path;
-    final bytes = maps
-        .defaultSelection(region.path, units)
-        .fold(0, (sum, e) => sum + e.bytes);
-    final fill = installed
-        ? scheme.primary.withValues(alpha: 0.6)
-        : container
-        ? scheme.primary.withValues(alpha: 0.06)
-        : packs.isEmpty
-        ? scheme.outline.withValues(alpha: 0.12)
-        : sizeBandColor(scheme, bytes).withValues(alpha: 0.5);
-    VoidCallback? onTap;
-    if (container) {
-      onTap = () => onBrowse(region.path);
-    } else if (packs.isNotEmpty) {
-      onTap = () => onSelect(region.path);
-    }
-    return MapPolygon(
-      id: '${region.path}#$part',
-      points: polygon.first,
-      holes: polygon.skip(1).toList(),
-      fillColor: fill,
-      strokeColor: isSelected ? scheme.primary : scheme.outline,
-      strokeWidth: isSelected ? 3 : 1,
-      onTap: onTap,
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _LegendItem(this.color, this.label);
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 14,
-        height: 10,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-      const SizedBox(width: 4),
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
-    ],
-  );
 }
 
 /// Loading, empty and error states while there's no catalogue to show.
@@ -454,6 +227,10 @@ class _RegionList extends StatelessWidget {
               ),
           ],
         ),
+        if (regions.attribution != null) ...[
+          const SizedBox(height: 24),
+          Text(regions.attribution!, style: theme.textTheme.bodySmall),
+        ],
       ],
     );
   }
@@ -620,7 +397,7 @@ class _RegionChip extends StatelessWidget {
   }
 }
 
-/// A dot tinted by download size, as on the map.
+/// A dot tinted by download size, as in the mockup's size bands.
 class _SizeDot extends StatelessWidget {
   final int bytes;
   const _SizeDot(this.bytes);
