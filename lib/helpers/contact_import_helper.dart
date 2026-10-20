@@ -7,6 +7,7 @@ import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 
+import 'meshcore_qr.dart';
 import 'snack_bar_builder.dart';
 
 class ContactImportHelper {
@@ -35,26 +36,10 @@ class ContactImportHelper {
   }
 
   static void importFromScannedData(BuildContext context, String data) {
-    // Extract public_key via regex to avoid Uri.queryParameters emoji decode issues
-    final pubKeyMatch =
-        RegExp(r'[?&]public_key=([0-9a-fA-F]{64})').firstMatch(data);
-    if (pubKeyMatch != null) {
-      final pubKeyHex = pubKeyMatch.group(1)!;
-      String name = '';
-      int type = advTypeChat;
-      try {
-        final nameMatch = RegExp(r'[?&]name=([^&]+)').firstMatch(data);
-        if (nameMatch != null) {
-          name = Uri.decodeComponent(nameMatch.group(1)!);
-        }
-        final typeMatch = RegExp(r'[?&]type=(\d+)').firstMatch(data);
-        if (typeMatch != null) {
-          type = int.tryParse(typeMatch.group(1)!) ?? advTypeChat;
-        }
-      } catch (_) {
-        // Name/type decoding failed — add with empty name
-      }
-      _importFromPublicKeyHex(context, pubKeyHex, name: name, type: type);
+    final link = MeshCoreQr.parseContactParams(data);
+    if (link != null) {
+      _importFromPublicKeyHex(context, link.pubKeyHex,
+          name: link.name, type: link.type);
       return;
     }
     // Bare 64-char hex public key

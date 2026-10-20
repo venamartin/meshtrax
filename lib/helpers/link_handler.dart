@@ -8,6 +8,7 @@ import '../connector/meshcore_connector.dart';
 import '../models/channel.dart';
 import '../screens/channel_chat_screen.dart';
 import '../screens/map_screen.dart';
+import '../utils/platform_info.dart';
 import 'channel_join_helper.dart';
 import 'contact_import_helper.dart';
 import 'maps_link.dart';
@@ -101,6 +102,38 @@ class LinkHandler {
         builder: (_) => MapScreen(highlightPosition: position, highlightLabel: label),
       ),
     );
+  }
+
+  /// Hands [position] to the system maps app for directions. Android gets a
+  /// `geo:` URI, so the user picks the app (Google Maps, OsmAnd, …).
+  static Future<void> openInMapsApp(
+    BuildContext context,
+    LatLng position, {
+    String? label,
+  }) async {
+    final coords = '${position.latitude},${position.longitude}';
+    final String url;
+    if (PlatformInfo.isAndroid) {
+      final name = label == null || label.isEmpty
+          ? ''
+          : '(${Uri.encodeComponent(label)})';
+      url = 'geo:$coords?q=$coords$name';
+    } else if (PlatformInfo.isIOS || PlatformInfo.isMacOS) {
+      url = 'https://maps.apple.com/?daddr=$coords';
+    } else {
+      url = 'https://www.google.com/maps/dir/?api=1&destination=$coords';
+    }
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    ).catchError((_) => false);
+    if (!opened && context.mounted) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.chat_couldNotOpenLink(url)),
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   /// `meshcore://channel/add` joins the channel, `meshcore://contact/add`

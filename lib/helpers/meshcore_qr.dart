@@ -68,13 +68,28 @@ class MeshCoreQr {
 
   /// Parse a contact QR
   static ContactQrData? parseContactQr(String data) {
-    if (!isContactQr(data)) return null;
-    
-    final uri = Uri.parse(data);
+    if (!data.startsWith(_contactPrefix)) return null;
+    return parseContactParams(data);
+  }
+
+  /// Name, key and type from any link carrying `public_key=`
+  /// (meshcore://contact/add, letsmesh.net). Read with regexes, not
+  /// Uri.queryParameters, which throws on some emoji names.
+  static ContactQrData? parseContactParams(String data) {
+    final key = RegExp(r'[?&]public_key=([0-9a-fA-F]{64})').firstMatch(data);
+    if (key == null) return null;
+    var name = '';
+    try {
+      final match = RegExp(r'[?&]name=([^&]+)').firstMatch(data);
+      if (match != null) name = Uri.decodeComponent(match.group(1)!);
+    } catch (_) {
+      // Undecodable name: keep the contact, without a name.
+    }
+    final type = RegExp(r'[?&]type=(\d+)').firstMatch(data);
     return ContactQrData(
-      name: uri.queryParameters['name'] ?? '',
-      pubKeyHex: uri.queryParameters['public_key']!,
-      type: int.tryParse(uri.queryParameters['type'] ?? '1') ?? 1,
+      name: name,
+      pubKeyHex: key.group(1)!,
+      type: int.tryParse(type?.group(1) ?? '') ?? 1,
     );
   }
 }

@@ -4405,6 +4405,90 @@ class AppLocalizationsPl extends AppLocalizations {
   String get structured_calendarFailed => 'Could not open the calendar';
 
   @override
+  String get structured_today => 'Today';
+
+  @override
+  String get structured_tomorrow => 'Tomorrow';
+
+  @override
+  String structured_inDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'In $count days',
+      one: 'In 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get structured_past => 'Past';
+
+  @override
+  String structured_dayOfDays(int day, int total) {
+    return 'Day $day of $total';
+  }
+
+  @override
+  String structured_days(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dialog_eventEndDate => 'End date';
+
+  @override
+  String get dialog_eventSameDay => 'Same day';
+
+  @override
+  String get structured_map => 'Map';
+
+  @override
+  String get structured_navigate => 'Navigate';
+
+  @override
+  String get structured_channel => 'Channel';
+
+  @override
+  String get structured_contact => 'Contact';
+
+  @override
+  String get structured_room => 'Room';
+
+  @override
+  String get structured_repeater => 'Repeater';
+
+  @override
+  String get structured_sensor => 'Sensor';
+
+  @override
+  String get structured_joinChannel => 'Join channel';
+
+  @override
+  String get structured_addContact => 'Add contact';
+
+  @override
+  String get structured_addRoom => 'Add room';
+
+  @override
+  String get structured_addRepeater => 'Add repeater';
+
+  @override
+  String get structured_addSensor => 'Add sensor';
+
+  @override
+  String get structured_open => 'Open';
+
+  @override
+  String get structured_added => 'Added';
+
+  @override
   String get tray_add => 'Add';
 
   @override
