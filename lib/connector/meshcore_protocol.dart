@@ -708,6 +708,17 @@ Uint8List buildGetChannelFrame(int channelIndex) {
   return Uint8List.fromList([cmdGetChannel, channelIndex]);
 }
 
+// Build CMD_RUN_CLI_COMMAND frame (firmware ver 14+)
+// Format: [cmd][command] — no terminator, the frame length delimits it.
+Uint8List buildRunCliCommandFrame(String command) {
+  final bytes = utf8.encode(command);
+  if (bytes.length + 1 > maxFrameSize) {
+    throw ArgumentError.value(
+        command, 'command', 'longer than ${maxFrameSize - 1} bytes');
+  }
+  return Uint8List.fromList([cmdRunCliCommand, ...bytes]);
+}
+
 // Build CMD_SET_CHANNEL frame
 // Format: [cmd][idx][name x32][psk x16]
 // Firmware 1.18+ treats a nameless slot as empty and drops its incoming
