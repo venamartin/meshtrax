@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -17,7 +18,7 @@ class _Cli extends CompanionCliService {
     'wifi.enabled': '1',
     'wifi.ssid': 'HomeNet',
     'wifi.status': 'connected',
-    'wifi.ip': '192.168.1.42',
+    'wifi.ip': '192.168.4.116',
     'wifi.pwd': 'hunter22',
   };
   String? refuse;
@@ -79,9 +80,30 @@ void main() {
   testWidgets('shows what the radio reports', (tester) async {
     await pumpScreen(tester);
 
-    expect(find.text('Connected · 192.168.1.42'), findsOneWidget);
+    expect(find.text('Connected · 192.168.4.116'), findsOneWidget);
     expect(find.text('HomeNet'), findsOneWidget);
     expect(find.text('Connect over WiFi'), findsOneWidget);
+  });
+
+  testWidgets('on a phone the address never breaks across lines',
+      (tester) async {
+    // The owner's phone: 1080 px wide at 2.625 → 411 dp. With the button
+    // beside it, the title wrapped as "192.168.4.11" / "6".
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    await pumpScreen(tester);
+
+    final title = tester.renderObject<RenderParagraph>(
+      find.text('Connected · 192.168.4.116'),
+    );
+    final text = title.text.toPlainText();
+    final start = text.indexOf('192.168.4.116');
+    final boxes = title.getBoxesForSelection(
+      TextSelection(baseOffset: start, extentOffset: start + 13),
+    );
+    expect(boxes.map((b) => b.top).toSet(), hasLength(1),
+        reason: 'the address must sit on one line');
   });
 
   testWidgets('saves only what changed, then offers a restart',

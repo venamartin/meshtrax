@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -132,6 +132,20 @@ void main() {
     await cli.run('set wifi.pwd ');
 
     expect(radio.commands.single.substring(3), 'set wifi.pwd ');
+  });
+
+  test('a CLI reply is a known frame, not "Unknown frame code"', () async {
+    final printed = <String>[];
+    final original = debugPrint;
+    debugPrint = (String? message, {int? wrapWidth}) {
+      if (message != null) printed.add(message);
+    };
+    addTearDown(() => debugPrint = original);
+    radio.answer = (_) => '> 20';
+
+    await cli.run('get tx');
+
+    expect(printed.where((m) => m.startsWith('Unknown frame code')), isEmpty);
   });
 
   test('reboot, poweroff and shutdown go out without a token', () async {

@@ -5659,12 +5659,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeCustomVars:
         _handleCustomVars(frame);
         break;
-      // Consumed by awaiting listeners on receivedFrames (backup/restore).
+      // Consumed by awaiting listeners on receivedFrames (backup/restore,
+      // CompanionCliService).
       case respCodePrivateKey:
       case respCodeDisabled:
       case respCodeExportContact:
       case respCodeTuningParams:
       case respCodeDefaultFloodScope:
+      case respCodeCliReply:
         break;
       // RESP_CODE_ERR is a defined firmware response (code 1), not an unknown frame.
       case respCodeErr:
