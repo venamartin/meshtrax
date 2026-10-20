@@ -347,7 +347,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | Task | Change |
 | --- | --- |
 | T3 | traxmap combined source per kind (neighbouring regions), and a cache key that changes when packs change. |
-| T5 | traxmap view hooks: `baseLayers`, `onCoverageChanged`, rendering with no packs, `StyleInfo.requiredKinds`, the `labels` slot tag, polygon holes. |
+| T5 | traxmap view hooks: `baseLayers`, `onCoverageChanged`, rendering with no packs, `StyleInfo.requiredKinds`, the `labels` slot tag, polygon holes.<br>• `MapStyleState.notices`: licence notices from the packs in use (e.g. Copernicus' liability sentence), for the app to show with the credits. |
 | A5 | `AppMap` and the online fallback. |
 | O3 | Picker map: region polygons over online tiles, size tint, tap to select, legend, phone sheet or wide panel. |
 | G1 | **Gate on real phones:** frame time, memory, cold start, tile resolution. Go or no-go before the main map. |

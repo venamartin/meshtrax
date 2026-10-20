@@ -54,6 +54,7 @@ traxmap moved into this repository.
 | 2026-10-19 | **List-first:** the Offline maps list, region detail and downloads come before any map-rendering work. |
 | 2026-10-19 | **The Pi is the test bench** (Linux desktop, hot reload). Phones only at the release gates and for phone-only features. |
 | 2026-10-19 | **A 404 on `index.json` means "no catalogue yet"**: an empty state, not an error. |
+| 2026-10-19 | **Copernicus GLO-30 is approved** for contours outside the US (Canada, Mexico, UK). A contours pack's `attribution` is then "USGS 3DEP", the Copernicus credit, or both, joined with "; ". The licence also requires redistributors to show: "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30." The app shows that alongside the credits wherever such a pack is in use, as it does the charts' "Not for navigation". Proposed to traxmapmaker: carry it as a `notice` in pack metadata, so the app needs no code per data source (T5, `MapStyleState.notices`). |
 
 ## Pitfalls already found
 
