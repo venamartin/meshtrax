@@ -262,7 +262,10 @@ class MapPacksService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _onDownload(PackDownload download) {
+  Future<void> _onDownload(PackDownload download) async {
+    // Until the installed list has the new build, the row would flash
+    // "Download" or "Update" between "Checking" and "Downloaded".
+    if (download.state == PackDownloadState.installed) await reloadInstalled();
     _downloads[download.id] = download;
     notifyListeners();
   }
@@ -298,8 +301,7 @@ class MapPacksService extends ChangeNotifier {
   /// Contours come last so the map's own credit leads the credits.
   List<Pack> mapPacks({required bool contours}) => [
     for (final pack in _installed)
-      if (pack.kind != PackKind.unknown && pack.kind != PackKind.contours)
-        pack,
+      if (pack.kind != PackKind.unknown && pack.kind != PackKind.contours) pack,
     if (contours)
       for (final pack in _installed)
         if (pack.kind == PackKind.contours) pack,

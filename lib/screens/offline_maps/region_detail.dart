@@ -354,10 +354,13 @@ class _PackRow extends StatelessWidget {
                           : l10n.offlineMaps_resume,
                       onPressed: () => maps.resume(entry.id),
                     ),
-                  if (active && status != PackStatus.verifying)
+                  if ((active && status != PackStatus.verifying) ||
+                      status == PackStatus.failed)
                     IconButton(
                       icon: const Icon(Icons.close),
-                      tooltip: l10n.common_cancel,
+                      tooltip: status == PackStatus.failed
+                          ? l10n.common_remove
+                          : l10n.common_cancel,
                       onPressed: () => maps.cancel(entry.id),
                     ),
                 ],

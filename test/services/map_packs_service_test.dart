@@ -231,6 +231,31 @@ void main() {
     expect(maps.badgeCount, 1);
   });
 
+  test(
+    'a finished download goes straight from checking to installed',
+    () async {
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      final osm = maps.index!.packs.firstWhere(
+        (e) => e.id == 'us-rhode-island-osm',
+      );
+      await maps.download([osm]);
+      downloader.emit(PackDownload(osm, PackDownloadState.verifying));
+      await pumpEventQueue();
+      final seen = <PackStatus>[];
+      maps.addListener(() => seen.add(maps.statusOf(osm)));
+
+      await install(maps, osm.id);
+      downloader.emit(PackDownload(osm, PackDownloadState.installed));
+      for (var i = 0; i < 50 && !seen.contains(PackStatus.installed); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(maps.statusOf(osm), PackStatus.installed);
+      expect(seen.toSet(), {PackStatus.verifying, PackStatus.installed});
+    },
+  );
+
   test('deleting a region cancels its downloads and frees its packs', () async {
     final maps = service();
     await maps.start();

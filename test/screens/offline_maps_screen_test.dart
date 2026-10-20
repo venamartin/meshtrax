@@ -26,6 +26,9 @@ final _picker = File('packages/traxmap/test/support/picker.geojson')
 class _FakeDownloader implements PackDownloader {
   final _updates = StreamController<PackDownload>.broadcast();
   final started = <String>[];
+  final cancelled = <String>[];
+
+  void emit(PackDownload d) => _updates.add(d);
 
   @override
   Stream<PackDownload> get updates => _updates.stream;
@@ -42,7 +45,7 @@ class _FakeDownloader implements PackDownloader {
   @override
   Future<void> resume(String packId) async {}
   @override
-  Future<void> cancel(String packId) async {}
+  Future<void> cancel(String packId) async => cancelled.add(packId);
 }
 
 void main() {
@@ -183,5 +186,25 @@ void main() {
     await tester.tap(find.text('Find maps'));
     await tester.pumpAndSettle();
     expect(find.text('World'), findsOneWidget);
+  });
+
+  testWidgets('a failed download can be retried or removed', (tester) async {
+    final osm = maps.index!.packs.firstWhere(
+      (e) => e.id == 'us-rhode-island-osm',
+    );
+    downloader.emit(
+      PackDownload(osm, PackDownloadState.failed, error: 'Not enough storage'),
+    );
+    await open(tester, size: const Size(400, 900));
+    await tester.tap(find.widgetWithText(Tab, 'Downloaded'));
+    await tester.pumpAndSettle();
+    expect(find.text('Download failed: Not enough storage'), findsOneWidget);
+    expect(find.byTooltip('Retry'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Remove'));
+    expect(downloader.cancelled, ['us-rhode-island-osm']);
+    downloader.emit(PackDownload(osm, PackDownloadState.canceled));
+    await tester.pumpAndSettle();
+    expect(find.text('Download failed: Not enough storage'), findsNothing);
   });
 }

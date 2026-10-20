@@ -79,5 +79,7 @@ abstract interface class PackDownloader {
 
   Future<void> pause(String packId);
   Future<void> resume(String packId);
+
+  /// Stops a download, or forgets a failed one so it's no longer listed.
   Future<void> cancel(String packId);
 }

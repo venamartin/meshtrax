@@ -198,6 +198,14 @@ class BackgroundPackDownloader implements PackDownloader {
 
   @override
   Future<void> cancel(String packId) async {
+    final latest = _latest[packId];
+    if (latest?.state == PackDownloadState.failed) {
+      // Nothing is running: drop the plugin's record, or the failure comes
+      // back at every launch.
+      await _downloader.database.deleteRecordWithId(packId);
+      _emit(PackDownload(latest!.entry, PackDownloadState.canceled));
+      return;
+    }
     await _downloader.cancelTaskWithId(packId);
   }
 

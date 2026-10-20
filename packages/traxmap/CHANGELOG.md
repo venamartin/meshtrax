@@ -1,5 +1,9 @@
 ## Unreleased
 
+- **Failed downloads can be dismissed:** `PackDownloader.cancel` on a
+  failed download forgets it. `BackgroundPackDownloader` deletes the
+  plugin's record and emits `canceled`, so the failure isn't restored at
+  the next launch.
 - **Neighbouring regions draw as one map** (breaking for `StyleContext`):
   - `StyleContext.packs` is now `Map<PackKind, List<Pack>>`, in preference
     order from `StyleContext.packsByKind(packs, units:)`: the units

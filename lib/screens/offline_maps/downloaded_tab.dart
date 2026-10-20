@@ -307,10 +307,10 @@ class _DownloadRow extends StatelessWidget {
                   tooltip: failed ? l10n.common_retry : l10n.offlineMaps_resume,
                   onPressed: () => maps.resume(entry.id),
                 ),
-              if (state != PackDownloadState.verifying && !failed)
+              if (state != PackDownloadState.verifying)
                 IconButton(
                   icon: const Icon(Icons.close),
-                  tooltip: l10n.common_cancel,
+                  tooltip: failed ? l10n.common_remove : l10n.common_cancel,
                   onPressed: () => maps.cancel(entry.id),
                 ),
             ],
