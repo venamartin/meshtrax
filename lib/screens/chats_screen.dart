@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +25,9 @@ import '../widgets/connection_status_banner.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/unread_badge.dart';
+
 import 'package:flutter/services.dart';
+
 import 'channel_chat_screen.dart';
 import 'channel_share_screen.dart';
 import 'chat_screen.dart';
@@ -74,7 +77,8 @@ class ChatsScreen extends StatefulWidget {
   State<ChatsScreen> createState() => _ChatsScreenState();
 }
 
-class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixin {
+class _ChatsScreenState extends State<ChatsScreen>
+    with DisconnectNavigationMixin {
   StreamSubscription<int>? _errorSubscription;
   late final VoidCallback _connectorListener;
   bool _versionWarningShown = false;
@@ -84,21 +88,22 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
   void initState() {
     super.initState();
     _connector = context.read<MeshCoreConnector>();
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _errorSubscription = _connector.errorStream.listen((errCode) {
         if (errCode == errCodeTableFull && mounted) {
           _showTableFullDialog(context, _connector);
         }
       });
-      
+
       _connectorListener = () {
         if (!_versionWarningShown && _connector.firmwareVersion != null) {
           _versionWarningShown = true;
-          
-          final match = RegExp(r'v?(\d+\.\d+(?:\.\d+)?)').firstMatch(_connector.firmwareVersion!);
+
+          final match = RegExp(r'v?(\d+\.\d+(?:\.\d+)?)')
+              .firstMatch(_connector.firmwareVersion!);
           final cleanVersion = match?.group(1) ?? 'Unknown';
-          
+
           final parts = cleanVersion.split('.');
           if (parts.length >= 2) {
             final major = int.tryParse(parts[0]) ?? 0;
@@ -107,7 +112,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               if (mounted) {
                 showDismissibleSnackBar(
                   context,
-                  content: Text('Warning: Your companion firmware is out of date ($cleanVersion). MeshTrax requires 1.15 or newer.'),
+                  content: Text(
+                    'Warning: Your companion firmware is out of date ($cleanVersion). MeshTrax requires 1.15 or newer.',
+                  ),
                   duration: const Duration(seconds: 10),
                 );
               }
@@ -135,7 +142,7 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
           title: Text(context.l10n.contactsSettings_overwriteOldestTitle),
           content: Text(
             'The device contact list is completely full (max capacity reached). '
-            'Would you like to enable "Overwrite Oldest Contacts" in your device settings and try again?'
+            'Would you like to enable "Overwrite Oldest Contacts" in your device settings and try again?',
           ),
           actions: [
             TextButton(
@@ -146,7 +153,10 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               onPressed: () {
                 connector.enableOverwriteOldest();
                 Navigator.of(context).pop();
-                showDismissibleSnackBar(context, content: const Text('Overwrite Oldest enabled.'));
+                showDismissibleSnackBar(
+                  context,
+                  content: const Text('Overwrite Oldest enabled.'),
+                );
               },
               child: Text(context.l10n.common_enable),
             ),
@@ -200,10 +210,12 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
       final senderPart = subtitle.substring(0, colonIndex + 2); // includes ': '
       final messagePart = subtitle.substring(colonIndex + 2);
 
-      return RichText(
+      // Text.rich, not RichText: it takes the theme's font and its emoji
+      // fallback.
+      return Text.rich(
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        text: TextSpan(
+        TextSpan(
           children: [
             TextSpan(
               text: senderPart,
@@ -223,22 +235,23 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
       );
     }
 
-    return Text(
-      subtitle,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
+    return Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis);
   }
 
-  void _showChatActions(BuildContext context, _ChatListItem item, MeshCoreConnector connector) {
+  void _showChatActions(
+    BuildContext context,
+    _ChatListItem item,
+    MeshCoreConnector connector,
+  ) {
     final settingsService = context.read<AppSettingsService>();
 
     if (item.channel != null) {
       final channel = item.channel!;
-      final isMuted = settingsService.isChannelMuted(channel.idKey) ||
+      final isMuted =
+          settingsService.isChannelMuted(channel.idKey) ||
           settingsService.isChannelMuted(channel.name) ||
           settingsService.isChannelMuted(channel.displayName);
-      
+
       showModalBottomSheet(
         context: context,
         builder: (sheetContext) => SafeArea(
@@ -254,7 +267,8 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ChannelShareScreen(channel: channel),
+                        builder: (context) =>
+                            ChannelShareScreen(channel: channel),
                       ),
                     );
                   }
@@ -284,31 +298,43 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.cleaning_services, color: Colors.orange),
+                leading: const Icon(
+                  Icons.cleaning_services,
+                  color: Colors.orange,
+                ),
                 title: Text(
                   context.l10n.contact_clearChat,
                   style: const TextStyle(color: Colors.orange),
                 ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: Text(context.l10n.contact_clearChat),
-                      content: const Text('Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(context.l10n.common_cancel),
+                  final confirmed =
+                      await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(context.l10n.contact_clearChat),
+                          content: const Text(
+                            'Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(context.l10n.common_cancel),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(
+                                context.l10n.common_clear,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, true),
-                          child: Text(context.l10n.common_clear, style: const TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  ) ?? false;
-                  
+                      ) ??
+                      false;
+
                   if (confirmed) {
                     connector.clearMessagesForChannel(channel.index);
                   }
@@ -322,29 +348,35 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: Text(context.l10n.channels_deleteChannel),
-                      content: Text(
-                        context.l10n.channels_deleteChannelConfirm(channel.name),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(context.l10n.common_cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, true),
-                          child: Text(
-                            context.l10n.common_delete,
-                            style: const TextStyle(color: Colors.red),
+                  final confirmed =
+                      await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(context.l10n.channels_deleteChannel),
+                          content: Text(
+                            context.l10n.channels_deleteChannelConfirm(
+                              channel.name,
+                            ),
                           ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(context.l10n.common_cancel),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(
+                                context.l10n.common_delete,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ) ?? false;
-                  
+                      ) ??
+                      false;
+
                   if (confirmed) {
                     try {
                       await connector.deleteChannel(channel.index);
@@ -362,7 +394,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                         showDismissibleSnackBar(
                           context,
                           content: Text(
-                            context.l10n.channels_channelDeleteFailed(channel.name),
+                            context.l10n.channels_channelDeleteFailed(
+                              channel.name,
+                            ),
                           ),
                         );
                       }
@@ -381,14 +415,13 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
       );
     } else if (item.contact != null) {
       final contact = item.contact!;
-      
+
       showModalBottomSheet(
         context: context,
         builder: (sheetContext) => SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               ListTile(
                 leading: Icon(
                   contact.isFavorite ? Icons.star : Icons.star_border,
@@ -410,8 +443,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               if (contact.type == advTypeRoom)
                 Builder(
                   builder: (context) {
-                    final isMuted =
-                        settingsService.isContactMuted(contact.publicKeyHex);
+                    final isMuted = settingsService.isContactMuted(
+                      contact.publicKeyHex,
+                    );
                     return ListTile(
                       leading: Icon(
                         isMuted
@@ -426,11 +460,13 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                       onTap: () async {
                         Navigator.pop(sheetContext);
                         if (isMuted) {
-                          await settingsService
-                              .unmuteContact(contact.publicKeyHex);
+                          await settingsService.unmuteContact(
+                            contact.publicKeyHex,
+                          );
                         } else {
-                          await settingsService
-                              .muteContact(contact.publicKeyHex);
+                          await settingsService.muteContact(
+                            contact.publicKeyHex,
+                          );
                         }
                       },
                     );
@@ -474,31 +510,43 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.cleaning_services, color: Colors.orange),
+                leading: const Icon(
+                  Icons.cleaning_services,
+                  color: Colors.orange,
+                ),
                 title: Text(
                   context.l10n.contact_clearChat,
                   style: const TextStyle(color: Colors.orange),
                 ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: Text(context.l10n.contact_clearChat),
-                      content: const Text('Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(context.l10n.common_cancel),
+                  final confirmed =
+                      await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(context.l10n.contact_clearChat),
+                          content: const Text(
+                            'Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(context.l10n.common_cancel),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(
+                                context.l10n.common_clear,
+                                style: const TextStyle(color: Colors.orange),
+                              ),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, true),
-                          child: Text(context.l10n.common_clear, style: const TextStyle(color: Colors.orange)),
-                        ),
-                      ],
-                    ),
-                  ) ?? false;
-                  
+                      ) ??
+                      false;
+
                   if (confirmed) {
                     connector.clearMessagesForContact(contact);
                   }
@@ -512,41 +560,55 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: Text(context.l10n.contacts_deleteContact),
-                      content: Text(dialogContext.l10n.contacts_deleteContactConfirm(contact.name)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(context.l10n.common_cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, true),
-                          child: Text(
-                            dialogContext.l10n.common_delete,
-                            style: const TextStyle(color: Colors.red),
+                  final confirmed =
+                      await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(context.l10n.contacts_deleteContact),
+                          content: Text(
+                            dialogContext.l10n.contacts_deleteContactConfirm(
+                              contact.name,
+                            ),
                           ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(context.l10n.common_cancel),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(
+                                dialogContext.l10n.common_delete,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ) ?? false;
-                  
+                      ) ??
+                      false;
+
                   if (confirmed) {
                     try {
                       await connector.removeContact(contact);
                       if (context.mounted) {
                         showDismissibleSnackBar(
                           context,
-                          content: Text(context.l10n.contacts_contactDeleted(contact.name)),
+                          content: Text(
+                            context.l10n.contacts_contactDeleted(contact.name),
+                          ),
                         );
                       }
                     } catch (e) {
                       if (context.mounted) {
                         showDismissibleSnackBar(
                           context,
-                          content: Text(context.l10n.contacts_contactDeleteFailed(contact.name)),
+                          content: Text(
+                            context.l10n.contacts_contactDeleteFailed(
+                              contact.name,
+                            ),
+                          ),
                         );
                       }
                     }
@@ -601,20 +663,20 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
             // not its "@[Name]\n>snippet" header.
             final previewSource = isRoom
                 ? (ChannelMessage.parseReply(lastMessage.text)?.actualMessage ??
-                    lastMessage.text)
+                      lastMessage.text)
                 : lastMessage.text;
             // Reaction/GIF rows preview as their human-readable form, never
             // raw wire text (a parked MC1 reaction would show its hash).
-            final preview =
-                NotificationService.formatNotificationText(previewSource);
+            final preview = NotificationService.formatNotificationText(
+              previewSource,
+            );
             final String subtitle;
             if (lastMessage.isOutgoing) {
               subtitle = 'You: $preview';
             } else if (isRoom) {
               // A room relays other members' posts — say who wrote it, like
               // the channel rows do.
-              final author =
-                  _resolveRoomAuthor(connector, lastMessage);
+              final author = _resolveRoomAuthor(connector, lastMessage);
               subtitle = '${author ?? 'Unknown'}: $preview';
             } else {
               subtitle = preview;
@@ -638,15 +700,18 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
         for (final channel in connector.channels) {
           final lastMessage = connector.latestChannelMessage(channel);
           if (lastMessage != null) {
-            final preview =
-                NotificationService.formatNotificationText(lastMessage.text);
+            final preview = NotificationService.formatNotificationText(
+              lastMessage.text,
+            );
             final subtitle = lastMessage.isOutgoing
                 ? 'You: $preview'
                 : '${lastMessage.senderName}: $preview';
             chatItems.add(
               _ChatListItem(
                 id: 'channel_${channel.index}',
-                title: channel.name.isEmpty ? 'Channel ${channel.index}' : channel.name,
+                title: channel.name.isEmpty
+                    ? 'Channel ${channel.index}'
+                    : channel.name,
                 subtitle: subtitle,
                 timestamp: lastMessage.timestamp,
                 sortKeyUs: connector.latestChannelArrivalUs(channel),
@@ -658,7 +723,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
             chatItems.add(
               _ChatListItem(
                 id: 'channel_${channel.index}',
-                title: channel.name.isEmpty ? 'Channel ${channel.index}' : channel.name,
+                title: channel.name.isEmpty
+                    ? 'Channel ${channel.index}'
+                    : channel.name,
                 subtitle: 'Tap to chat',
                 timestamp: DateTime.fromMillisecondsSinceEpoch(0),
                 sortKeyUs: 0,
@@ -683,21 +750,24 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
               break;
             case SyncStatus.contacts:
               if (connector.expectedContactsCount > 0) {
-                statusText = '${context.l10n.common_syncing_contacts} (${connector.loadedContactsCount}/${connector.expectedContactsCount})';
+                statusText =
+                    '${context.l10n.common_syncing_contacts} (${connector.loadedContactsCount}/${connector.expectedContactsCount})';
               } else {
                 statusText = context.l10n.common_syncing_contacts;
               }
               break;
             case SyncStatus.channels:
               if (connector.expectedChannelsCount > 0) {
-                statusText = '${context.l10n.common_syncing_channels} (${connector.loadedChannelsCount}/${connector.expectedChannelsCount})';
+                statusText =
+                    '${context.l10n.common_syncing_channels} (${connector.loadedChannelsCount}/${connector.expectedChannelsCount})';
               } else {
                 statusText = context.l10n.common_syncing_channels;
               }
               break;
             case SyncStatus.messages:
               if (connector.queuedMessagesRead > 0) {
-                statusText = '${context.l10n.common_syncing_messages} (${connector.queuedMessagesRead})';
+                statusText =
+                    '${context.l10n.common_syncing_messages} (${connector.queuedMessagesRead})';
               } else {
                 statusText = context.l10n.common_syncing_messages;
               }
@@ -706,331 +776,386 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
 
           syncBanner = ConnectionStatusBanner(text: statusText);
         } else {
-          syncBanner = ConnectionStatusBanner.ifDisconnected(context, connector);
+          syncBanner = ConnectionStatusBanner.ifDisconnected(
+            context,
+            connector,
+          );
         }
 
         return PopScope(
           canPop: false,
           child: Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: AppBarTitle(context.l10n.chats_title),
-            centerTitle: true,
-            actions: [
-              PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.connect_without_contact),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.contacts_zeroHopAdvert),
-                      ],
-                    ),
-                    onTap: () => {
-                      connector.sendSelfAdvert(flood: false),
-                      showDismissibleSnackBar(
-                        context,
-                        content: Text(context.l10n.settings_advertisementSent),
-                      ),
-                    },
-                  ),
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.cell_tower),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.contacts_floodAdvert),
-                      ],
-                    ),
-                    onTap: () => {
-                      connector.sendSelfAdvert(flood: true),
-                      showDismissibleSnackBar(
-                        context,
-                        content: Text(context.l10n.settings_advertisementSent),
-                      ),
-                    },
-                  ),
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.qr_code_2),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.contacts_shareMyQrCode),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ContactShareScreen(
-                            name: (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!,
-                            pubKeyHex: connector.selfPublicKeyHex,
-                            type: advTypeChat,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.copy),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.contacts_copyContactToClipboard),
-                      ],
-                    ),
-                    onTap: () {
-                      final data = MeshCoreQr.encodeContact(
-                        (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!,
-                        connector.selfPublicKeyHex,
-                        advTypeChat,
-                      );
-                      Clipboard.setData(ClipboardData(text: data));
-                      showDismissibleSnackBar(
-                        context,
-                        content: Text(context.l10n.common_copiedToClipboard),
-                      );
-                    },
-                  ),
-
-                ],
-                icon: const Icon(Icons.connect_without_contact),
-              ),
-              PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.logout, color: Colors.red),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.common_disconnect),
-                      ],
-                    ),
-                    onTap: () => _disconnect(context),
-                  ),
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.cell_tower),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.repeaters_title),
-                      ],
-                    ),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RepeatersScreen(),
-                      ),
-                    ),
-                  ),
-                  if (context
-                      .read<AppSettingsService>()
-                      .settings
-                      .pathGraphEnabled)
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: AppBarTitle(context.l10n.chats_title),
+              centerTitle: true,
+              actions: [
+                PopupMenuButton(
+                  itemBuilder: (context) => [
                     PopupMenuItem(
                       child: Row(
                         children: [
-                          Icon(RoutingIcon.icon,
-                              color: RoutingIcon.pathfinderColor(context)),
+                          const Icon(Icons.connect_without_contact),
                           const SizedBox(width: 8),
-                          Text(context.l10n.settings_pathGraph),
+                          Text(context.l10n.contacts_zeroHopAdvert),
+                        ],
+                      ),
+                      onTap: () => {
+                        connector.sendSelfAdvert(flood: false),
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(
+                            context.l10n.settings_advertisementSent,
+                          ),
+                        ),
+                      },
+                    ),
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cell_tower),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.contacts_floodAdvert),
+                        ],
+                      ),
+                      onTap: () => {
+                        connector.sendSelfAdvert(flood: true),
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(
+                            context.l10n.settings_advertisementSent,
+                          ),
+                        ),
+                      },
+                    ),
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.qr_code_2),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.contacts_shareMyQrCode),
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ContactShareScreen(
+                              name: (connector.selfName?.isEmpty ?? true)
+                                  ? 'Unknown'
+                                  : connector.selfName!,
+                              pubKeyHex: connector.selfPublicKeyHex,
+                              type: advTypeChat,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.copy),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.contacts_copyContactToClipboard),
+                        ],
+                      ),
+                      onTap: () {
+                        final data = MeshCoreQr.encodeContact(
+                          (connector.selfName?.isEmpty ?? true)
+                              ? 'Unknown'
+                              : connector.selfName!,
+                          connector.selfPublicKeyHex,
+                          advTypeChat,
+                        );
+                        Clipboard.setData(ClipboardData(text: data));
+                        showDismissibleSnackBar(
+                          context,
+                          content: Text(context.l10n.common_copiedToClipboard),
+                        );
+                      },
+                    ),
+                  ],
+                  icon: const Icon(Icons.connect_without_contact),
+                ),
+                PopupMenuButton(
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.logout, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.common_disconnect),
+                        ],
+                      ),
+                      onTap: () => _disconnect(context),
+                    ),
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cell_tower),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.repeaters_title),
                         ],
                       ),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const PathGraphScreen(),
+                          builder: (context) => const RepeatersScreen(),
                         ),
                       ),
                     ),
-                  PopupMenuItem(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.settings),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.settings_title),
-                      ],
-                    ),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
-                      ),
-                    ),
-                  ),
-                ],
-                icon: const Icon(Icons.more_vert),
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              ?syncBanner,
-              Expanded(
-                child: chatItems.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                    if (context
+                        .read<AppSettingsService>()
+                        .settings
+                        .pathGraphEnabled)
+                      PopupMenuItem(
+                        child: Row(
                           children: [
                             Icon(
-                              Icons.chat_bubble_outline,
-                              size: 64,
-                              color: Colors.grey[400],
+                              RoutingIcon.icon,
+                              color: RoutingIcon.pathfinderColor(context),
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No active chats yet.',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.settings_pathGraph),
                           ],
                         ),
-                      )
-                    : ListView.builder(
-                        itemExtent: 80.0,
-                        itemCount: chatItems.length,
-                        itemBuilder: (context, index) {
-                          final item = chatItems[index];
-                    final isChannel = item.channel != null;
-                    final isRoom = item.contact?.type == advTypeRoom;
-                    final iconColor = isChannel
-                        ? Colors.blue
-                        : isRoom
-                            ? Colors.purple
-                            : Colors.green;
-                    final bgColor = iconColor.withValues(alpha: 0.2);
-                    IconData iconData = Icons.person;
-                    String? emojiIcon;
-
-                    if (isChannel) {
-                      if (item.channel!.isPublicChannel) {
-                        iconData = Icons.public;
-                      } else if (item.channel!.name.startsWith('#')) {
-                        iconData = Icons.tag;
-                      } else {
-                        iconData = Icons.lock;
-                      }
-                    } else {
-                      if (isRoom) {
-                        iconData = Icons.meeting_room;
-                      } else if (item.contact != null) {
-                        emojiIcon = firstEmoji(item.contact!.name);
-                        iconData = Icons.person;
-                      }
-                    }
-
-                    return GestureDetector(
-                      onLongPress: () => _showChatActions(context, item, connector),
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: bgColor,
-                            child: emojiIcon != null 
-                                ? Text(emojiIcon, style: const TextStyle(fontSize: 20))
-                                : Icon(iconData, color: iconColor),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PathGraphScreen(),
                           ),
-                          title: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatTimestamp(context, item.timestamp),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
-                                  fontWeight: item.unreadCount > 0
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                          subtitle: Row(
-                            children: [
-                              Expanded(
-                                child: _buildSubtitleText(context, item),
-                              ),
-                              if (item.unreadCount > 0) ...[
-                                const SizedBox(width: 8),
-                                UnreadBadge(count: item.unreadCount),
-                              ],
-                            ],
-                          ),
-                          onTap: () async {
-                            if (item.contact != null) {
-                              final unread = item.unreadCount;
-                              connector.markContactRead(item.contact!.publicKeyHex);
-                              
-                              final settingsService = context.read<AppSettingsService>();
-                              if (settingsService.settings.autoFavoriteOnChat && !item.contact!.isFavorite) {
-                                await connector.setContactFlags(item.contact!, isFavorite: true);
-                              }
-                              
-                              await Future.delayed(const Duration(milliseconds: 50));
-                              if (context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatScreen(contact: item.contact!, unreadCount: unread),
-                                  ),
-                                );
-                              }
-                            } else if (item.channel != null) {
-                              final unread = item.unreadCount;
-                              connector.markChannelRead(item.channel!.index);
-                              await Future.delayed(const Duration(milliseconds: 50));
-                              if (context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChannelChatScreen(channel: item.channel!, unreadCount: unread),
-                                  ),
-                                );
-                              }
-                            }
-                          },
                         ),
                       ),
-                    );
-                  },
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.settings),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.settings_title),
+                        ],
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
+                  icon: const Icon(Icons.more_vert),
                 ),
-              ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NewChatScreen(),
-                ),
-              );
-            },
-            child: const Icon(Icons.add),
-          ),
-          bottomNavigationBar: SafeArea(
-            top: false,
-            child: QuickSwitchBar(
-              selectedIndex: 0,
-              onDestinationSelected: (index) => _handleQuickSwitch(index, context),
+              ],
             ),
-          ),
+            body: Column(
+              children: [
+                ?syncBanner,
+                Expanded(
+                  child: chatItems.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No active chats yet.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemExtent: 80.0,
+                          itemCount: chatItems.length,
+                          itemBuilder: (context, index) {
+                            final item = chatItems[index];
+                            final isChannel = item.channel != null;
+                            final isRoom = item.contact?.type == advTypeRoom;
+                            final iconColor = isChannel
+                                ? Colors.blue
+                                : isRoom
+                                ? Colors.purple
+                                : Colors.green;
+                            final bgColor = iconColor.withValues(alpha: 0.2);
+                            IconData iconData = Icons.person;
+                            String? emojiIcon;
+
+                            if (isChannel) {
+                              if (item.channel!.isPublicChannel) {
+                                iconData = Icons.public;
+                              } else if (item.channel!.name.startsWith('#')) {
+                                iconData = Icons.tag;
+                              } else {
+                                iconData = Icons.lock;
+                              }
+                            } else {
+                              if (isRoom) {
+                                iconData = Icons.meeting_room;
+                              } else if (item.contact != null) {
+                                emojiIcon = firstEmoji(item.contact!.name);
+                                iconData = Icons.person;
+                              }
+                            }
+
+                            return GestureDetector(
+                              onLongPress: () =>
+                                  _showChatActions(context, item, connector),
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: bgColor,
+                                    child: emojiIcon != null
+                                        ? Text(
+                                            emojiIcon,
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                            ),
+                                          )
+                                        : Icon(iconData, color: iconColor),
+                                  ),
+                                  title: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _formatTimestamp(
+                                          context,
+                                          item.timestamp,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color,
+                                          fontWeight: item.unreadCount > 0
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildSubtitleText(
+                                          context,
+                                          item,
+                                        ),
+                                      ),
+                                      if (item.unreadCount > 0) ...[
+                                        const SizedBox(width: 8),
+                                        UnreadBadge(count: item.unreadCount),
+                                      ],
+                                    ],
+                                  ),
+                                  onTap: () async {
+                                    if (item.contact != null) {
+                                      final unread = item.unreadCount;
+                                      connector.markContactRead(
+                                        item.contact!.publicKeyHex,
+                                      );
+
+                                      final settingsService = context
+                                          .read<AppSettingsService>();
+                                      if (settingsService
+                                              .settings
+                                              .autoFavoriteOnChat &&
+                                          !item.contact!.isFavorite) {
+                                        await connector.setContactFlags(
+                                          item.contact!,
+                                          isFavorite: true,
+                                        );
+                                      }
+
+                                      await Future.delayed(
+                                        const Duration(milliseconds: 50),
+                                      );
+                                      if (context.mounted) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ChatScreen(
+                                              contact: item.contact!,
+                                              unreadCount: unread,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } else if (item.channel != null) {
+                                      final unread = item.unreadCount;
+                                      connector.markChannelRead(
+                                        item.channel!.index,
+                                      );
+                                      await Future.delayed(
+                                        const Duration(milliseconds: 50),
+                                      );
+                                      if (context.mounted) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ChannelChatScreen(
+                                                  channel: item.channel!,
+                                                  unreadCount: unread,
+                                                ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewChatScreen(),
+                  ),
+                );
+              },
+              child: const Icon(Icons.add),
+            ),
+            bottomNavigationBar: SafeArea(
+              top: false,
+              child: QuickSwitchBar(
+                selectedIndex: 0,
+                onDestinationSelected: (index) =>
+                    _handleQuickSwitch(index, context),
+              ),
+            ),
           ),
         );
       },
     );
   }
-
 }
