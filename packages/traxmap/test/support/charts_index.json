@@ -1,0 +1,720 @@
+{
+ "generated": "2026-10-20T21:04:34+00:00",
+ "schema_version": 1,
+ "packs": [
+  {
+   "id": "charts-us-ak-charts",
+   "name": "Alaska (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -180.0,
+    50.4,
+    180.0,
+    71.7
+   ],
+   "bytes": 382063620,
+   "sha256": "f91b4217e1fe703a2ac59a63675927296b601de7cdb8bf68ec7c8167315fd850",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/alaska/charts.pmtiles",
+   "region": "charts/us/alaska"
+  },
+  {
+   "id": "charts-us-al-charts",
+   "name": "Alabama (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -88.8,
+    28.8,
+    -87.6,
+    31.2
+   ],
+   "bytes": 5630289,
+   "sha256": "c36eaccfa5dc67bf077edaa0c66fcbabd845cc5759c08ac01e4d9373d6d787d8",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/alabama/charts.pmtiles",
+   "region": "charts/us/alabama"
+  },
+  {
+   "id": "charts-us-aq-charts",
+   "name": "Antarctica (McMurdo) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -40.0,
+    -78.33333,
+    -30.0,
+    -75.0
+   ],
+   "bytes": 1224285,
+   "sha256": "4e2bcf6d07a3ca218d15e99ce62e9b06e77caf5e65165630d8493371a9838eea",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/antarctica/charts.pmtiles",
+   "region": "charts/us/antarctica"
+  },
+  {
+   "id": "charts-us-bs-charts",
+   "name": "Bahamas (Cay Sal Bank) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -81.0,
+    23.34,
+    -79.24,
+    25.0
+   ],
+   "bytes": 2135019,
+   "sha256": "2561618ccd905388074dfa53550f80e11a4c22f3a8335f260e73cfbeeabc6790",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/bahamas-cay-sal/charts.pmtiles",
+   "region": "charts/us/bahamas-cay-sal"
+  },
+  {
+   "id": "charts-us-ca-charts",
+   "name": "California (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -126.0,
+    32.4,
+    -116.4,
+    42.0
+   ],
+   "bytes": 49010328,
+   "sha256": "9d7abfea3e2a9ba1774c7896a29f9941b7459633fbf96042f796292d40328e20",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/california/charts.pmtiles",
+   "region": "charts/us/california"
+  },
+  {
+   "id": "charts-us-ct-charts",
+   "name": "Connecticut (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -73.725,
+    40.8,
+    -71.7,
+    42.0
+   ],
+   "bytes": 9838231,
+   "sha256": "50c6e83ceff8a521204f844b0ad8536fc937cf87fdfab9e574fdac70017c0524",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/connecticut/charts.pmtiles",
+   "region": "charts/us/connecticut"
+  },
+  {
+   "id": "charts-us-de-charts",
+   "name": "Delaware (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -76.8,
+    38.4,
+    -74.4,
+    39.825
+   ],
+   "bytes": 17970241,
+   "sha256": "dd2a1d676ad7cbf44251be2dc14c7a285777d10bda08230b84731ef2842f4cae",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/delaware/charts.pmtiles",
+   "region": "charts/us/delaware"
+  },
+  {
+   "id": "charts-us-fl-charts",
+   "name": "Florida (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -87.6,
+    23.63453,
+    -77.9325099,
+    31.2
+   ],
+   "bytes": 66003276,
+   "sha256": "46a4321fcc15329c406fea5fd84b36d14beafae127bef95e45626def6051338a",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/florida/charts.pmtiles",
+   "region": "charts/us/florida"
+  },
+  {
+   "id": "charts-us-fm-charts",
+   "name": "Micronesia & Palau (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    137.29767,
+    1.00463,
+    163.15965,
+    10.1375
+   ],
+   "bytes": 5993316,
+   "sha256": "dfe9bffdcbf6b78da590289efae50bac43f82b5bd1d01a4bba5faf62c0375dea",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/micronesia-palau/charts.pmtiles",
+   "region": "charts/us/micronesia-palau"
+  },
+  {
+   "id": "charts-us-ga-charts",
+   "name": "Georgia (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -84.0,
+    30.0,
+    -78.0,
+    33.6
+   ],
+   "bytes": 19390035,
+   "sha256": "2de0c31a0e759e8c0dee472bf7488635efb8b09ced4bf189d7f49c7cf77a4d03",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/georgia/charts.pmtiles",
+   "region": "charts/us/georgia"
+  },
+  {
+   "id": "charts-us-gt-charts",
+   "name": "Guatemala (Puerto Barrios) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -88.82359,
+    15.66772,
+    -88.49025,
+    16.11753
+   ],
+   "bytes": 392247,
+   "sha256": "fa8e986ef73357162453ace4cdd880317b99daaf3bcc13ff797cdb1c919b1c80",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/guatemala/charts.pmtiles",
+   "region": "charts/us/guatemala"
+  },
+  {
+   "id": "charts-us-hi-charts",
+   "name": "Hawaii (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -178.8,
+    -64.85,
+    -63.9,
+    28.8
+   ],
+   "bytes": 27390225,
+   "sha256": "5d2ef9f52a586ef92b2a5d96df3a7070b075075b900a3ee047a2ca0809c515a1",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/hawaii/charts.pmtiles",
+   "region": "charts/us/hawaii"
+  },
+  {
+   "id": "charts-us-ht-charts",
+   "name": "Haiti (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -75.3997,
+    16.5,
+    -71.61667,
+    20.53333
+   ],
+   "bytes": 8985087,
+   "sha256": "c5f4939e8961a4e9f1b2f14912f40d36e245c17ec9f9aaf052df0d7f826e7a47",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/haiti/charts.pmtiles",
+   "region": "charts/us/haiti"
+  },
+  {
+   "id": "charts-us-id-charts",
+   "name": "Lake Pend Oreille (Idaho) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -116.7,
+    47.7,
+    -116.1,
+    48.6
+   ],
+   "bytes": 598635,
+   "sha256": "a93608e067cd4a1ba0a89bb6506720d420b9580d9517fa05f441ab78941b2a7f",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/lake-pend-oreille/charts.pmtiles",
+   "region": "charts/us/lake-pend-oreille"
+  },
+  {
+   "id": "charts-us-il-charts",
+   "name": "Illinois (Lake Michigan) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -87.9,
+    41.4,
+    -87.0,
+    42.6
+   ],
+   "bytes": 1778244,
+   "sha256": "aaa59e62bc42cea34b78aa7092204478c5b1542bdc32b9171d6b76c953d6bd9e",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/illinois/charts.pmtiles",
+   "region": "charts/us/illinois"
+  },
+  {
+   "id": "charts-us-in-charts",
+   "name": "Indiana (Lake Michigan) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -87.525,
+    41.4,
+    -86.7,
+    42.0
+   ],
+   "bytes": 819130,
+   "sha256": "fd535528cf0843d4b7d5eac33235f7f5b62f520e5d9da94f96a853ab29cd9261",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/indiana/charts.pmtiles",
+   "region": "charts/us/indiana"
+  },
+  {
+   "id": "charts-us-la-charts",
+   "name": "Louisiana (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -93.9,
+    26.4,
+    -87.6,
+    31.2
+   ],
+   "bytes": 39416628,
+   "sha256": "65bba1acc3d42888d68d3990ce56bd2a0430571fbbe3c950926ba978e889e52c",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/louisiana/charts.pmtiles",
+   "region": "charts/us/louisiana"
+  },
+  {
+   "id": "charts-us-ma-charts",
+   "name": "Massachusetts (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -72.0,
+    39.6,
+    -65.283,
+    43.2
+   ],
+   "bytes": 33830522,
+   "sha256": "032a43649f237df2f7af7eb26ab926d064d51e4e99815322290e71cb6c35a02e",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/massachusetts/charts.pmtiles",
+   "region": "charts/us/massachusetts"
+  },
+  {
+   "id": "charts-us-md-charts",
+   "name": "Maryland (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -78.0,
+    37.2,
+    -72.0,
+    39.675
+   ],
+   "bytes": 35045575,
+   "sha256": "45a101915454a8f6c46f720d3a851d8a06b8c49c959999b11e52ce8917cf8eff",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/maryland/charts.pmtiles",
+   "region": "charts/us/maryland"
+  },
+  {
+   "id": "charts-us-me-charts",
+   "name": "Maine (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -70.8,
+    42.975,
+    -66.9,
+    45.6
+   ],
+   "bytes": 40202057,
+   "sha256": "71c4229873f5f76bdc23760e420ffe410fdc535e3fd1d1bb15f7ecc2570b3560",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/maine/charts.pmtiles",
+   "region": "charts/us/maine"
+  },
+  {
+   "id": "charts-us-mh-charts",
+   "name": "Marshall Islands (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    160.75348,
+    4.0,
+    173.0,
+    14.76
+   ],
+   "bytes": 12672377,
+   "sha256": "4dedb0c0af2c7a1521208798eea2a1f4d1efe603312729af798ac62cea180a34",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/marshall-islands/charts.pmtiles",
+   "region": "charts/us/marshall-islands"
+  },
+  {
+   "id": "charts-us-mi-charts",
+   "name": "Michigan (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -91.68108,
+    41.34897,
+    -82.12279,
+    48.30551
+   ],
+   "bytes": 36064179,
+   "sha256": "034c8fa8627c5964c03736522caee21c831848b5436b448b58d403bf42ab8289",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/michigan/charts.pmtiles",
+   "region": "charts/us/michigan"
+  },
+  {
+   "id": "charts-us-mn-charts",
+   "name": "Minnesota (Lake Superior) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -92.325,
+    46.575,
+    -89.4,
+    48.0237399
+   ],
+   "bytes": 2377401,
+   "sha256": "108293d012254a7ee21cc7adb693eae183b5e6ecdc7dc0976426ae508ef3ed70",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/minnesota/charts.pmtiles",
+   "region": "charts/us/minnesota"
+  },
+  {
+   "id": "charts-us-ms-charts",
+   "name": "Mississippi (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -90.0,
+    30.0,
+    -88.425,
+    31.2
+   ],
+   "bytes": 4850457,
+   "sha256": "138c8dafc222a559752cf0b53be276ecc587f980ad01b5eb4d62380fda15a633",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/mississippi/charts.pmtiles",
+   "region": "charts/us/mississippi"
+  },
+  {
+   "id": "charts-us-nc-charts",
+   "name": "North Carolina (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -79.2,
+    32.4,
+    -72.0,
+    37.2
+   ],
+   "bytes": 27505857,
+   "sha256": "37a9668a4874d8e93153dfc27869431bb61dd31f837dab362f40e24dc7776ddf",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/north-carolina/charts.pmtiles",
+   "region": "charts/us/north-carolina"
+  },
+  {
+   "id": "charts-us-nh-charts",
+   "name": "New Hampshire (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -71.1,
+    42.9,
+    -69.6,
+    43.2
+   ],
+   "bytes": 3431793,
+   "sha256": "a730c7e1c0ed668cb4642199deab37c038a839777e741b2fbddb4dc694e2b4d4",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/new-hampshire/charts.pmtiles",
+   "region": "charts/us/new-hampshire"
+  },
+  {
+   "id": "charts-us-nj-charts",
+   "name": "New Jersey (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -75.6,
+    38.4,
+    -68.4,
+    40.95
+   ],
+   "bytes": 16622614,
+   "sha256": "8eb08bf21629457ab5991546e6fec77d07a603aef823c9519b68a8bbbb65a9d0",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/new-jersey/charts.pmtiles",
+   "region": "charts/us/new-jersey"
+  },
+  {
+   "id": "charts-us-nv-charts",
+   "name": "Lake Mead (Nevada, Arizona) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -114.9,
+    35.7,
+    -113.7,
+    36.6
+   ],
+   "bytes": 2189883,
+   "sha256": "1b7621dc98039c1430d029091aa01a27ab16c345fdcaaebd7e836acc27c6d4ff",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/lake-mead/charts.pmtiles",
+   "region": "charts/us/lake-mead"
+  },
+  {
+   "id": "charts-us-ny-charts",
+   "name": "New York (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -79.8,
+    39.6,
+    -70.8,
+    45.3
+   ],
+   "bytes": 34650229,
+   "sha256": "8ea83df93d0e1a515d58260715d653942f40fcc69ed9709f6287a9d06c2aa9f1",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/new-york/charts.pmtiles",
+   "region": "charts/us/new-york"
+  },
+  {
+   "id": "charts-us-oh-charts",
+   "name": "Ohio (Lake Erie) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -83.7,
+    41.1,
+    -80.4,
+    42.34378
+   ],
+   "bytes": 4582032,
+   "sha256": "062fece965376e71f775a515bad6ad124b6cb28723e77a4a31b426b57cad40ab",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/ohio/charts.pmtiles",
+   "region": "charts/us/ohio"
+  },
+  {
+   "id": "charts-us-or-charts",
+   "name": "Oregon (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -126.0,
+    42.0,
+    -118.875,
+    46.8
+   ],
+   "bytes": 20978114,
+   "sha256": "a2cb3757de7473593e9a5d6fa166c419a6697f22a48fd3366987d789301ec77c",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/oregon/charts.pmtiles",
+   "region": "charts/us/oregon"
+  },
+  {
+   "id": "charts-us-pa-charts",
+   "name": "Pennsylvania (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -80.56986,
+    39.75,
+    -74.7,
+    42.5127
+   ],
+   "bytes": 1618862,
+   "sha256": "0f25c6e36ea32ab0b0dbb6f6b1da09e57f538015b8bc76ee18fe29ac752e453a",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/pennsylvania/charts.pmtiles",
+   "region": "charts/us/pennsylvania"
+  },
+  {
+   "id": "charts-us-po-charts",
+   "name": "Pacific islands (Guam, Northern Marianas, American Samoa) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -176.63684,
+    -14.7,
+    166.67316,
+    25.00899
+   ],
+   "bytes": 12611565,
+   "sha256": "699b3867c1476bf00d1d8fd763f0942659b78bc108dbc7a84b0f5002b14cf9d6",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/pacific-islands/charts.pmtiles",
+   "region": "charts/us/pacific-islands"
+  },
+  {
+   "id": "charts-us-pr-charts",
+   "name": "Puerto Rico & Virgin Islands (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -75.3,
+    17.17078,
+    -64.3662499,
+    19.00636
+   ],
+   "bytes": 10749463,
+   "sha256": "fb71d10ff216b8bcac4b8055ef12d9cb768819ecb62a61afa64f4b50a2f2a47c",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/puerto-rico/charts.pmtiles",
+   "region": "charts/us/puerto-rico"
+  },
+  {
+   "id": "charts-us-ri-charts",
+   "name": "Rhode Island (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -72.0,
+    40.8,
+    -70.8,
+    42.0
+   ],
+   "bytes": 7486567,
+   "sha256": "48ea06046c3dedc0b7bff55df82176b15dda5122ef4b438cbb8108ee05b6eadf",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/rhode-island/charts.pmtiles",
+   "region": "charts/us/rhode-island"
+  },
+  {
+   "id": "charts-us-sc-charts",
+   "name": "South Carolina (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -81.6,
+    31.2,
+    -74.4,
+    34.8
+   ],
+   "bytes": 21358841,
+   "sha256": "be6e826d6117fab3fc476ddc20939831b466063e354cc50352de5d3831abf4dd",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/south-carolina/charts.pmtiles",
+   "region": "charts/us/south-carolina"
+  },
+  {
+   "id": "charts-us-tx-charts",
+   "name": "Texas (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -98.4,
+    25.2,
+    -93.6,
+    30.3
+   ],
+   "bytes": 20099324,
+   "sha256": "0b2a8e09b9c855f64c4bee0913eeebdbd4443472de5d584f97bed439e533ed88",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/texas/charts.pmtiles",
+   "region": "charts/us/texas"
+  },
+  {
+   "id": "charts-us-va-charts",
+   "name": "Virginia (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -78.0,
+    36.0,
+    -72.0,
+    39.6
+   ],
+   "bytes": 34251664,
+   "sha256": "89fd4a6627a5be7f9e6d5eac29cff43e4074e2bd1fabd4971d66d9977d506080",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/virginia/charts.pmtiles",
+   "region": "charts/us/virginia"
+  },
+  {
+   "id": "charts-us-vt-charts",
+   "name": "Lake Champlain (Vermont) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -73.275,
+    44.4,
+    -73.2,
+    44.55
+   ],
+   "bytes": 226764,
+   "sha256": "14d41336787f9ce7ce2077e127dbd1d0a353ca17bff70f93ba24c070dbad7edf",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/lake-champlain/charts.pmtiles",
+   "region": "charts/us/lake-champlain"
+  },
+  {
+   "id": "charts-us-wa-charts",
+   "name": "Washington (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -126.0,
+    45.6,
+    -116.925,
+    49.2
+   ],
+   "bytes": 42943055,
+   "sha256": "e2fcef85522e16fa5858a4a485832aecabfc7091158aa9931519d91b97f5ac36",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/washington/charts.pmtiles",
+   "region": "charts/us/washington"
+  },
+  {
+   "id": "charts-us-wi-charts",
+   "name": "Wisconsin (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -92.4,
+    42.48111,
+    -86.7,
+    47.1
+   ],
+   "bytes": 9436499,
+   "sha256": "2a04e7a4692278e25cbf914530f6273618ef3ecd31355201b18158abe23880ce",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/wisconsin/charts.pmtiles",
+   "region": "charts/us/wisconsin"
+  },
+  {
+   "id": "us-rhode-island-osm",
+   "name": "Rhode Island (osm)",
+   "kind": "osm",
+   "bbox": [
+    -71.91456,
+    40.9992,
+    -71.0636899,
+    42.01938
+   ],
+   "bytes": 36562636,
+   "sha256": "c04c8e755a653e42d7744f32ffd3d4067744c9e5642d550a7b677253adf517df",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/north-america/us/rhode-island/osm.pmtiles",
+   "region": "north-america/us/rhode-island"
+  }
+ ]
+}
