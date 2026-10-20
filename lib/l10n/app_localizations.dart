@@ -7331,6 +7331,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not for navigation'**
   String get map_notForNavigation;
+
+  /// No description provided for @map_sourceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline map'**
+  String get map_sourceOffline;
+
+  /// No description provided for @map_sourceOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online map'**
+  String get map_sourceOnline;
 }
 
 class _AppLocalizationsDelegate

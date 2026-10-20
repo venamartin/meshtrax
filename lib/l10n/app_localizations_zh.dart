@@ -4002,4 +4002,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get map_notForNavigation => 'Not for navigation';
+
+  @override
+  String get map_sourceOffline => 'Offline map';
+
+  @override
+  String get map_sourceOnline => 'Online map';
 }

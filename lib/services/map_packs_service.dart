@@ -295,11 +295,14 @@ class MapPacksService extends ChangeNotifier {
   }
 
   /// The installed packs a map draws from; the style uses those it needs.
+  /// Contours come last so the map's own credit leads the credits.
   List<Pack> mapPacks({required bool contours}) => [
     for (final pack in _installed)
-      if (pack.kind != PackKind.unknown &&
-          (contours || pack.kind != PackKind.contours))
+      if (pack.kind != PackKind.unknown && pack.kind != PackKind.contours)
         pack,
+    if (contours)
+      for (final pack in _installed)
+        if (pack.kind == PackKind.contours) pack,
   ];
 
   // --- Catalogue queries ---------------------------------------------------

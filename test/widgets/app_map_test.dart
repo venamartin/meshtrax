@@ -87,6 +87,8 @@ void main() {
     );
     expect(find.byType(fm.TileLayer), findsOneWidget);
     expect(find.textContaining('OpenStreetMap contributors'), findsOneWidget);
+    expect(find.text('Online map'), findsOneWidget);
+    expect(find.text('Offline map'), findsNothing);
     expect(find.text('Not for navigation'), findsNothing);
   });
 

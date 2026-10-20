@@ -35,6 +35,7 @@ Last updated 2026-10-19, evening. **Resume here.**
 **Next:**
 1. **Phase 3, starting with the main Node Map on `AppMap` (M5)**, ahead of the small maps, because that's where Martin sees offline maps. G1 (phone check) is deferred while he tests on the Pi.
    - The main map gains the coverage banner, the starting camera and fixes B1–B5.
+   - Every `AppMap` already shows an "Offline map" or "Online map" tag at the top left (2026-10-20, Martin's request: both look like OSM). When the banner arrives, decide whether it replaces the "Online map" tag on the main map.
    - Then the no-radio map (M5b), then M1–M4.
 2. **The map selector (OSM / USGS / NOAA), right after M5:** a plain text choice in App Settings → Map Display (Martin prefers text over graphics for now). The layers sheet (M6) can come later.
 3. **Waiting for Martin:**

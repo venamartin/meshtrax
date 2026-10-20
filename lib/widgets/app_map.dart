@@ -76,8 +76,8 @@ class _AppMapState extends State<AppMap> {
     final online = _covered == false;
     final style = _style;
     final credits = [
-      ...?style?.credits,
       if (online) '© OpenStreetMap contributors',
+      ...?style?.credits,
       ...?style?.notices,
     ];
     final disclaimer = style?.disclaimer;
@@ -106,12 +106,23 @@ class _AppMapState extends State<AppMap> {
           onCoverageChanged: (covered) => setState(() => _covered = covered),
           onStyleLoaded: (s) => setState(() => _style = s),
         ),
-        if (disclaimer != null)
-          Positioned(
-            top: 8,
-            left: 8,
-            child: _Disclaimer(context.l10n.map_notForNavigation),
+        Positioned(
+          top: 8,
+          left: 8,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 4,
+            children: [
+              if (disclaimer != null)
+                _Tag(context.l10n.map_notForNavigation, color: Colors.orange),
+              if (_covered != null)
+                online
+                    ? _Tag(context.l10n.map_sourceOnline, color: Colors.blue)
+                    : _Tag(context.l10n.map_sourceOffline, color: Colors.green),
+            ],
           ),
+        ),
         if (credits.isNotEmpty)
           Positioned(
             left: 8,
@@ -136,16 +147,18 @@ class _OnlineTiles extends StatelessWidget {
   );
 }
 
-/// The chart styles' "Not for navigation", in MeshTrax's warning colours.
-class _Disclaimer extends StatelessWidget {
+/// A short note over the map: the chart styles' "Not for navigation", and
+/// whether the view is drawn from downloaded packs or online tiles.
+class _Tag extends StatelessWidget {
   final String text;
-  const _Disclaimer(this.text);
+  final Color color;
+  const _Tag(this.text, {required this.color});
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-      border: const Border(left: BorderSide(color: Colors.orange, width: 3)),
+      border: Border(left: BorderSide(color: color, width: 3)),
     ),
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
