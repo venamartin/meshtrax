@@ -14,9 +14,12 @@ const bobPk = 'b0' 'b0' 'b0';
 /// first flood copy to arrive, a race won on hop count.
 void main() {
   late PathGraph graph;
+  var nowMillis = 1000000000;
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    nowMillis = 1000000000;
+    graph = PathGraph(NativeDatabase.memory(),
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });
@@ -63,12 +66,9 @@ void main() {
         closeTo(before, 1e-6));
   });
 
-  test('loses to a corridor we have delivered on', () {
-    learnFirmwareRoute();
-    graph.observePath(path([0x10, 0x00, 0xA2, 0x77]), 2,
-        const ObservationOrigin.anonymous(), lastHopHeard: false);
+  final longer = path([0xA2, 0x77, 0xA1, 0x77, 0x10, 0x00]);
 
-    final longer = path([0xA2, 0x77, 0xA1, 0x77, 0x10, 0x00]);
+  void deliverOnLonger() {
     for (var i = 0; i < 5; i++) {
       graph.reportSendResult(longer, true, contactPubkey: bobPk, stride: 2);
     }
@@ -76,9 +76,56 @@ void main() {
         const ObservationOrigin.anonymous(), lastHopHeard: false);
     graph.observePath(path([0xA1, 0x77, 0xA2, 0x77]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
+  }
 
-    final result = graph.findPath(bobPk);
-    expect(result, isA<RouteResult>());
-    expect((result as RouteResult).pathBytes, longer);
+  Uint8List? best() => switch (graph.findPath(bobPk)) {
+        RouteResult(:final pathBytes) => pathBytes,
+        _ => null,
+      };
+
+  test('leads while live: the corridor a flood of mine just took to them',
+      () {
+    deliverOnLonger();
+    learnFirmwareRoute();
+    expect(best(), firmwareRoute);
+    expect(graph.findAlternatives(bobPk).first.pathBytes, longer,
+        reason: 'history still ranks everything after it');
+  });
+
+  test('loses to a corridor we have delivered on once it is no longer live',
+      () {
+    learnFirmwareRoute();
+    deliverOnLonger();
+    nowMillis += const Duration(minutes: 11).inMilliseconds;
+    expect(best(), longer);
+  });
+
+  test('a failed send on the live route ends its lead at once', () {
+    deliverOnLonger();
+    learnFirmwareRoute();
+    graph.reportSendResult(firmwareRoute, false,
+        contactPubkey: bobPk, stride: 2);
+    expect(best(), longer);
+  });
+
+  test('a newer PATH reply replaces the live route', () {
+    deliverOnLonger();
+    learnFirmwareRoute();
+    nowMillis += 1000;
+    graph.reportSendResult(longer, true,
+        contactPubkey: bobPk, stride: 2, tally: false);
+    expect(best(), longer);
+    graph.reportSendResult(firmwareRoute, false,
+        contactPubkey: bobPk, stride: 2);
+    expect(best(), longer, reason: 'the old live route failing changes nothing');
+  });
+
+  test('the live route is priced like any other route', () {
+    learnFirmwareRoute();
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.estDelivery, greaterThan(0));
+    expect(route.estDelivery, lessThan(1));
+    expect(route.egressProven, isTrue);
+    expect(route.ingressProven, isTrue);
   });
 }

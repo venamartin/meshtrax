@@ -293,6 +293,46 @@ void main() {
     expect(graph.findPath(bobPk), isA<DirectResult>());
   });
 
+  // Field 2026-10-16: delivered direct at home, then walking away; their
+  // DMs came over 2-5 hops while "direct" won for half an hour.
+  group('direct ends when they come only through a repeater', () {
+    void heardDirect() =>
+        graph.reportSendResult(Uint8List(0), true, contactPubkey: bobPk);
+    bool relayed({bool confirmed = true}) => graph.observeContactSender(
+        bobPk, path([0xA2, 0x77]), 2,
+        confirmed: confirmed);
+
+    test('a later DM of theirs over a repeater ends it at once', () {
+      heardDirect();
+      nowMillis += 5 * 60 * 1000;
+      relayed();
+      expect(graph.findPath(bobPk), isNot(isA<DirectResult>()));
+    });
+
+    test('a relayed copy of the packet that came direct does not', () {
+      heardDirect();
+      nowMillis += 15 * 1000;
+      relayed();
+      expect(graph.findPath(bobPk), isA<DirectResult>());
+    });
+
+    test('a name match proves nothing, either way', () {
+      heardDirect();
+      nowMillis += 5 * 60 * 1000;
+      relayed(confirmed: false);
+      expect(graph.findPath(bobPk), isA<DirectResult>());
+    });
+
+    test('hearing them direct again brings it back', () {
+      heardDirect();
+      nowMillis += 5 * 60 * 1000;
+      relayed();
+      nowMillis += 60 * 1000;
+      graph.observeContactSender(bobPk, Uint8List(0), 2, confirmed: true);
+      expect(graph.findPath(bobPk), isA<DirectResult>());
+    });
+  });
+
   test('the level I heard the last hop at is kept as its downlink', () {
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.anonymous(), rxSnr: 5.0);

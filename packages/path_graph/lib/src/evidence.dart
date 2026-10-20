@@ -119,6 +119,11 @@ class EvidenceStore {
   final Map<String, int> _lastSlashMillis = {};
   final Map<String, int> _lastSelfSupersedeMillis = {};
 
+  /// When a key-confirmed packet of a contact last reached me through a
+  /// repeater. Memory only: after a restart, direct waits for the next
+  /// such packet to end it.
+  final Map<String, int> _lastRelayed = {};
+
   /// Weights before this epoch's supersede, so a doorstep that echoes
   /// the same send a moment later gets its slash back.
   final Map<(String, String), double> _slashedThisEpoch = {};
@@ -439,13 +444,21 @@ class EvidenceStore {
 
   /// Fresh direct-reception evidence for this contact? With
   /// [provenOnly], only when an empty-path send to them was delivered.
+  /// A packet of theirs that came only through a repeater after it ends
+  /// direct at once (see [PathGraphConfig.directFreshMinutes]).
   bool hasFreshDirect(String contactPubkey, int now,
       {bool provenOnly = false}) {
     final e = entries[(contactPubkey, directHash)];
     if (e == null) return false;
     if (provenOnly && !e.proven) return false;
-    return now - e.lastSeen <= config.directFreshMinutes * 60 * 1000;
+    if (now - e.lastSeen > config.directFreshMinutes * 60 * 1000) return false;
+    final relayed = _lastRelayed[contactPubkey];
+    return relayed == null ||
+        relayed - e.lastSeen <= config.relayedCopyGraceSeconds * 1000;
   }
+
+  void recordRelayedSighting(String contactPubkey, int arrival) =>
+      _lastRelayed[contactPubkey] = arrival;
 
   void markDirty((String, String) key) => _dirty.add(key);
 

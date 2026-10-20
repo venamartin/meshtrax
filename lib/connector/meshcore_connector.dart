@@ -1292,6 +1292,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         onAttemptStarted: (contact, selection, attempt) =>
             onSendAttemptStarted?.call(contact, selection, attempt),
         onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
+        onLadderEnded: (contactKey) => onSendLadderEnded?.call(contactKey),
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
       ),
@@ -1455,6 +1456,28 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void Function(Contact, PathSelection, int attempt)? onSendAttemptStarted;
   void Function(Contact, int ackHash)? onAckHeard;
   List<PathSelection>? Function(Contact contact)? graphRouteCandidates;
+
+  /// The last DM ladder to this contact (pubkey hex) ended.
+  void Function(String contactKey)? onSendLadderEnded;
+
+  /// A DM or room post from [contact] arrived while connected (copies
+  /// drained after a reconnect are not passed on): its sender timestamp,
+  /// txt_type and text identify the message, so a retry copy repeats them;
+  /// [direct] when it came on a route, not a flood. The radio ACKed it
+  /// already, on its stored route when [direct].
+  void Function(Contact contact, int senderTimestamp, int txtType,
+      String text, bool direct)? onContactMessageCopy;
+
+  /// Whether a DM ladder to [contactKey] is running.
+  bool isSendingTo(String contactKey) =>
+      _retryService?.isSendingTo(contactKey) ?? false;
+
+  /// Attempts one DM gets (the Max Message Retries setting).
+  int get messageAttemptBudget => _retryService?.maxRetries ?? 3;
+
+  /// Contacts with a DM either way since [since], on this radio.
+  Future<Set<String>> contactsWithMessagesSince(DateTime since) =>
+      _messageStore.contactsWithMessagesSince(since);
 
   /// Routes this app wrote into the radio ("width:hex" per contact): a
   /// graph route or a user override. The contact list carries them back
@@ -6464,6 +6487,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             layout.pathLen,
             frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
           );
+          if (_completedFirstQueueDrain) {
+            onContactMessageCopy?.call(contact, layout.timestampRaw,
+                layout.txtType, layout.text, layout.pathLen == 0xFF);
+          }
         }
         // The frame's path_len is the hops THIS packet traveled — keep it.
         // Attach our known route's bytes only when its length agrees, so a

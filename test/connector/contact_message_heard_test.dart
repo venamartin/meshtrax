@@ -151,4 +151,27 @@ void main() {
 
     expect(heard, isEmpty);
   });
+
+  // The radio ACKed each copy already; the route keeper only needs the
+  // ones that arrived while the sender may still be retrying.
+  test('copies drained after a reconnect are not passed on as live', () {
+    final copies = <(String, int, int, String, bool)>[];
+    c.onContactMessageCopy = (contact, stamp, txtType, text, direct) =>
+        copies.add((contact.name, stamp, txtType, text, direct));
+
+    c.handleFrameForTest(_msgFrame(
+        code: respCodeContactMsgRecvV3, sender: chatKey, pathLen: 0xFF));
+    expect(copies, isEmpty);
+
+    c.handleFrameForTest(Uint8List.fromList([respCodeNoMoreMessages]));
+    c.handleFrameForTest(_msgFrame(
+        code: respCodeContactMsgRecvV3, sender: chatKey, pathLen: 0xFF));
+    c.handleFrameForTest(_msgFrame(
+        code: respCodeContactMsgRecvV3, sender: chatKey, pathLen: 0x42));
+
+    expect(copies, [
+      ('WHALE', 1752854400, txtTypePlain, 'hello', true),
+      ('WHALE', 1752854400, txtTypePlain, 'hello', false),
+    ]);
+  });
 }
