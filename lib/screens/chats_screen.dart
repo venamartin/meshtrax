@@ -588,6 +588,9 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
     return Consumer<MeshCoreConnector>(
       builder: (context, connector, child) {
         final List<_ChatListItem> chatItems = [];
+        final formatting = context.select<AppSettingsService, bool>(
+          (s) => s.settings.showTextFormatting,
+        );
 
         // Add Active Contacts (exclude repeaters) — "latest" comes from the
         // watched SQL query, so ordering can never disagree with the DB.
@@ -605,8 +608,10 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
                 : lastMessage.text;
             // Reaction/GIF rows preview as their human-readable form, never
             // raw wire text (a parked MC1 reaction would show its hash).
-            final preview =
-                NotificationService.formatNotificationText(previewSource);
+            final preview = NotificationService.formatNotificationText(
+              previewSource,
+              formatting: formatting,
+            );
             final String subtitle;
             if (lastMessage.isOutgoing) {
               subtitle = 'You: $preview';
@@ -638,8 +643,10 @@ class _ChatsScreenState extends State<ChatsScreen> with DisconnectNavigationMixi
         for (final channel in connector.channels) {
           final lastMessage = connector.latestChannelMessage(channel);
           if (lastMessage != null) {
-            final preview =
-                NotificationService.formatNotificationText(lastMessage.text);
+            final preview = NotificationService.formatNotificationText(
+              lastMessage.text,
+              formatting: formatting,
+            );
             final subtitle = lastMessage.isOutgoing
                 ? 'You: $preview'
                 : '${lastMessage.senderName}: $preview';

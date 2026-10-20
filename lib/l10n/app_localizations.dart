@@ -1450,6 +1450,18 @@ abstract class AppLocalizations {
   /// **'Give each channel sender their own name color. Off uses the theme color for everyone.'**
   String get appSettings_senderNameColorsSubtitle;
 
+  /// No description provided for @appSettings_showTextFormatting.
+  ///
+  /// In en, this message translates to:
+  /// **'Show text formatting'**
+  String get appSettings_showTextFormatting;
+
+  /// No description provided for @appSettings_showTextFormattingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.'**
+  String get appSettings_showTextFormattingSubtitle;
+
   /// No description provided for @appSettings_notifications.
   ///
   /// In en, this message translates to:

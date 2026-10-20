@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../helpers/gif_helper.dart';
+import '../helpers/markdown_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../l10n/app_localizations.dart';
 
@@ -161,7 +162,9 @@ class NotificationService {
   }
 
   /// Format special message types for human-readable notifications.
-  static String formatNotificationText(String text) {
+  /// Markdown is stripped unless [formatting] is off; notifications always
+  /// strip it so a spoiler never shows on the lock screen.
+  static String formatNotificationText(String text, {bool formatting = true}) {
     final trimmed = text.trim();
     final reaction = ReactionHelper.parseIncomingReaction(trimmed);
     if (reaction != null) {
@@ -170,7 +173,7 @@ class NotificationService {
     if (GifHelper.isGifOnly(trimmed)) {
       return 'Sent a GIF';
     }
-    return text;
+    return MarkdownHelper.toPlainText(text, formatting: formatting);
   }
 
   Future<void> _showMessageNotificationImpl({

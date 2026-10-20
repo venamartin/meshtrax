@@ -699,6 +699,13 @@ class AppLocalizationsZh extends AppLocalizations {
       'Give each channel sender their own name color. Off uses the theme color for everyone.';
 
   @override
+  String get appSettings_showTextFormatting => 'Show text formatting';
+
+  @override
+  String get appSettings_showTextFormattingSubtitle =>
+      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+
+  @override
   String get appSettings_notifications => '通知';
 
   @override

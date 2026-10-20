@@ -18,7 +18,8 @@ import '../helpers/reaction_helper.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
-import '../helpers/link_handler.dart';
+import '../helpers/markdown_helper.dart';
+import '../widgets/message_text.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
@@ -1645,7 +1646,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   )
                 else
                   Text(
-                    previewSource,
+                    MarkdownHelper.toPlainText(
+                      previewSource,
+                      formatting: context
+                          .read<AppSettingsService>()
+                          .settings
+                          .showTextFormatting,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -2614,8 +2621,7 @@ class _MessageBubble extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: LinkHandler.buildLinkifyText(
-                                  context: context,
+                                child: MessageText(
                                   text: cleanDisplayText,
                                   style: TextStyle(
                                     color: isJumboEmoji ? null : displayTextColor,
@@ -2904,8 +2910,8 @@ class _MessageBubble extends StatelessWidget {
     final connector = context.read<MeshCoreConnector>();
     final isOwnNode =
         replyTargetIsSelf || reply.mentionedNode == connector.selfName;
-    final senderNameColors =
-        context.read<AppSettingsService>().settings.senderNameColors;
+    final settings = context.read<AppSettingsService>().settings;
+    final senderNameColors = settings.senderNameColors;
     final headerColor = isOwnNode
         ? colorScheme.secondary
         : senderNameColors
@@ -2974,7 +2980,10 @@ class _MessageBubble extends StatelessWidget {
       );
     } else if (quoteText.isNotEmpty) {
       preview = Text(
-        quoteText,
+        MarkdownHelper.toPlainText(
+          quoteText,
+          formatting: settings.showTextFormatting,
+        ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(

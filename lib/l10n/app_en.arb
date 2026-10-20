@@ -290,6 +290,8 @@
   "appSettings_enableMessageTracingSubtitle": "Show detailed routing and timing metadata for messages",
   "appSettings_senderNameColors": "Colorful sender names",
   "appSettings_senderNameColorsSubtitle": "Give each channel sender their own name color. Off uses the theme color for everyone.",
+  "appSettings_showTextFormatting": "Show text formatting",
+  "appSettings_showTextFormattingSubtitle": "Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.",
   "appSettings_notifications": "Notifications",
   "appSettings_enableNotifications": "Enable Notifications",
   "appSettings_enableNotificationsSubtitle": "Receive notifications for messages and adverts",
