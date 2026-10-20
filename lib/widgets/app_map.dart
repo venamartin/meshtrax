@@ -53,6 +53,10 @@ class AppMap extends StatefulWidget {
   /// Overrides the contours setting.
   final bool? contours;
 
+  /// A small map (e.g. in a dialog): it follows the Online | Offline setting
+  /// without showing the switch or the "No offline map here" card.
+  final bool compact;
+
   const AppMap({
     super.key,
     this.overlays = const [],
@@ -66,6 +70,7 @@ class AppMap extends StatefulWidget {
     this.onCameraChanged,
     this.mapType,
     this.contours,
+    this.compact = false,
   });
 
   @override
@@ -196,13 +201,13 @@ class _AppMapState extends State<AppMap> {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 4,
             children: [
-              _SourceSwitch(online: online),
+              if (!widget.compact) _SourceSwitch(online: online),
               if (disclaimer != null)
                 _Disclaimer(context.l10n.map_notForNavigation),
             ],
           ),
         ),
-        if (!online && _covered == false)
+        if (!widget.compact && !online && _covered == false)
           Positioned(
             left: 8,
             right: 8,

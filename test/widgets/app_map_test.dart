@@ -51,7 +51,11 @@ void main() {
   });
   tearDown(() => tmp.delete(recursive: true));
 
-  Future<void> pumpMap(WidgetTester tester, {Brightness? brightness}) async {
+  Future<void> pumpMap(
+    WidgetTester tester, {
+    Brightness? brightness,
+    bool compact = false,
+  }) async {
     tester.view.physicalSize = const Size(600, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -66,9 +70,13 @@ void main() {
           theme: ThemeData(brightness: brightness ?? Brightness.light),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(
+          home: Scaffold(
             body: AppMap(
-              initialCamera: MapCamera(center: LatLng(41.8, -71.4), zoom: 10),
+              initialCamera: const MapCamera(
+                center: LatLng(41.8, -71.4),
+                zoom: 10,
+              ),
+              compact: compact,
             ),
           ),
         ),
@@ -111,6 +119,17 @@ void main() {
     expect(find.textContaining('OpenStreetMap contributors'), findsNothing);
     expect(find.text('No offline map here'), findsOneWidget);
     expect(find.text('Offline maps'), findsOneWidget, reason: 'no catalogue');
+  });
+
+  testWidgets('compact: no switch and no card, but follows the setting', (
+    tester,
+  ) async {
+    await settings.setMapSource('offline');
+    await pumpMap(tester, compact: true);
+    expect(find.byType(SegmentedButton<bool>), findsNothing);
+    expect(find.text('No offline map here'), findsNothing);
+    expect(find.byType(fm.TileLayer), findsNothing, reason: 'offline');
+    expect(find.textContaining('OpenStreetMap'), findsNothing);
   });
 
   testWidgets('the switch changes the setting', (tester) async {

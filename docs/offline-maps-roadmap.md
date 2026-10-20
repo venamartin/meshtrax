@@ -25,7 +25,7 @@ Last updated 2026-10-19, evening. **Resume here.**
   - A5 `AppMap` with the online fallback;
   - T3 combined source.
   - O3 (the picker map) was built, then dropped at Martin's request.
-  - Only G1, the phone performance gate, is left.
+  - G1, the phone performance gate: Martin built the APK and tested on his phone (2026-10-20). Performance seems good.
 - **Checked on the Pi** with a throwaway preview app and the real packs from `dev/`:
   - Rhode Island at Providence (vector with contours);
   - Boston (online tiles);
@@ -50,7 +50,9 @@ Last updated 2026-10-19, evening. **Resume here.**
    - The Node Map uses the same fallback.
    - Auto-connect while it's open: the scanner moves on to Chats only once it's the top screen again.
 4. **Online mode is the standard look** (Martin, 2026-10-20). Online, the map draws the standard light map everywhere (`mapIsOnline`), because USGS, charts, contours and dark come from downloaded packs. The layers sheet greys those tiles with "Offline only"; tapping one switches to Offline and applies it. The choices are kept for Offline.
-5. **Next:** the small maps M1–M4. Small maps follow the Online | Offline setting without showing the switch (Martin, 2026-10-20).
+5. **Now: the small maps M1–M4.**
+   - The repeater login mini-map uses `AppMap(compact: true)`: it follows the Online | Offline setting with no switch or "No offline map here" card. It's hidden on web, which has no map packs service.
+   - The full-screen ones (message path, path trace, line of sight) show the switch like the Node Map, because the switch is what tells online tiles from offline maps.
    - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
    - The map is Light by default, whatever the app's theme (Martin, 2026-10-20; `map_theme` is `light` or `dark`). The Light/Dark choice goes in the layers sheet.
    - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
