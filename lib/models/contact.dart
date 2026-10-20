@@ -347,4 +347,5 @@ class Contact {
   bool get teleBaseEnabled => (flags & contactFlagTeleBase) != 0;
   bool get teleLocEnabled => (flags & contactFlagTeleLoc) != 0;
   bool get teleEnvEnabled => (flags & contactFlagTeleEnv) != 0;
+  bool get remoteCliAllowed => (flags & contactFlagRemoteCli) != 0;
 }

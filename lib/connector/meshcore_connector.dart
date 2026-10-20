@@ -27,6 +27,7 @@ import '../helpers/smaz.dart';
 import '../helpers/timeout_helper.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/ble_debug_log_service.dart';
+import '../services/companion_cli_service.dart';
 import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
     if (dart.library.io) '../services/linux_ble_pairing_service.dart';
@@ -52,6 +53,7 @@ import '../utils/battery_utils.dart';
 import '../utils/platform_info.dart';
 import 'meshcore_uuids.dart';
 import 'meshcore_protocol.dart';
+import 'second_app_detector.dart';
 
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
@@ -375,6 +377,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   Stream<RoomLoginEvent> get roomLoginEvents =>
       _roomLoginEventsController.stream;
+
+  final StreamController<BlockedCliCommand> _blockedCliCommandsController =
+      StreamController<BlockedCliCommand>.broadcast();
+
+  Stream<BlockedCliCommand> get blockedCliCommands =>
+      _blockedCliCommandsController.stream;
+
+  final StreamController<SensorPush> _sensorPushController =
+      StreamController<SensorPush>.broadcast();
+
+  /// Telemetry pushes from subscribed sensors (firmware 1.18). A push names
+  /// no sender: its tag (see [newSensorPushTag]) says which subscription.
+  Stream<SensorPush> get sensorPushes => _sensorPushController.stream;
 
   // Last full (14-byte) LOGIN_OK per room: the server's clock and the
   // permissions byte. Kept apart from the session events: a pushed post
@@ -849,6 +864,107 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   CompanionRadioStats? get latestRadioStats => _latestRadioStats;
 
   bool get supportsCompanionRadioStats => (_firmwareVerCode ?? 0) >= 8;
+
+  bool get supportsCompanionCli => (_firmwareVerCode ?? 0) >= 14;
+
+  late final CompanionCliService companionCli = CompanionCliService(this);
+
+  /// Null until probed. Only BLE+WiFi builds of firmware 1.18+ know the
+  /// wifi.* CLI keys; the protocol has no capability bit for it.
+  bool? get hasWifi => _hasWifi;
+  bool? _hasWifi;
+
+  final SecondAppDetector _secondAppDetector = SecondAppDetector();
+  bool _secondAppSeen = false;
+  bool _secondAppDismissed = false;
+
+  /// Another app seems to be connected to this radio, and the user has not
+  /// dismissed the warning this connection.
+  bool get secondAppSuspected => _secondAppSeen && !_secondAppDismissed;
+
+  void dismissSecondAppWarning() {
+    _secondAppDismissed = true;
+    notifyListeners();
+  }
+
+  void _noteSecondApp(int replyCode) {
+    // During our own handshake, retries and stale frames blur "unrequested".
+    if (!_initialSyncComplete || _secondAppSeen) return;
+    _secondAppSeen = true;
+    _appDebugLogService?.warn(
+      'Another app seems to be connected to this radio: got reply code '
+      '$replyCode to a request MeshTrax never made',
+      tag: 'Connector',
+    );
+    notifyListeners();
+  }
+
+  void _resetSecondApp() {
+    _secondAppDetector.reset();
+    _secondAppSeen = false;
+    _secondAppDismissed = false;
+  }
+
+  // Requests the radio answers with RESP_CODE_SENT that are not messages.
+  // Unclaimed, their SENT fell through to "promote the newest pending DM",
+  // marking a queued DM sent although it never went out. The telemetry
+  // request only answers SENT when it names a contact.
+  static const Set<int> _requestCommandsAnsweredBySent = {
+    cmdSendLogin,
+    cmdSendStatusReq,
+    cmdSendTracePath,
+    cmdSendTelemetryReq,
+    cmdSendBinaryReq,
+    cmdSendAnonReq,
+  };
+
+  // When each still-unanswered request went out. A refused request gets ERR
+  // instead of SENT, so a claim also lapses after [_requestSentWindow].
+  final List<DateTime> _requestSentClaims = [];
+  static const Duration _requestSentWindow = Duration(seconds: 10);
+
+  void _recordOutgoing(Uint8List frame) {
+    _secondAppDetector.onSent(frame);
+    if (frame.isEmpty || !_requestCommandsAnsweredBySent.contains(frame[0])) {
+      return;
+    }
+    if (frame[0] == cmdSendTelemetryReq && frame.length < 4 + pubKeySize) {
+      return;
+    }
+    _requestSentClaims.add(DateTime.now());
+  }
+
+  bool _takeRequestSentClaim() {
+    final now = DateTime.now();
+    _requestSentClaims.removeWhere(
+      (at) => now.difference(at) > _requestSentWindow,
+    );
+    if (_requestSentClaims.isEmpty) return false;
+    _requestSentClaims.removeAt(0);
+    return true;
+  }
+
+  /// The bookkeeping [sendFrame] does before a write, for tests that
+  /// replace the transport write.
+  @visibleForTesting
+  void recordOutgoingForTest(Uint8List frame) => _recordOutgoing(frame);
+
+  @visibleForTesting
+  void markInitialSyncCompleteForTest() => _initialSyncComplete = true;
+
+  @visibleForTesting
+  Future<void> probeWifiForTest() => _probeWifi();
+
+  Future<void> _probeWifi() async {
+    if (!supportsCompanionCli) return;
+    try {
+      final reply = CliReply(await companionCli.run('get wifi.enabled'));
+      _hasWifi = reply.kind == CliReplyKind.value;
+    } catch (_) {
+      return; // No answer: stays unknown until the next connect.
+    }
+    notifyListeners();
+  }
 
   bool get radioStatsAirActivityPulse {
     final sw = _airtimeBumpStopwatch;
@@ -3275,6 +3391,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
     _firmwareVersion = null;
+    _hasWifi = null;
+    _resetSecondApp();
+    _requestSentClaims.clear();
     _autoAddUsers = false;
     _autoAddRepeaters = false;
     _autoAddRoomServers = false;
@@ -3374,6 +3493,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
     );
+    _recordOutgoing(data);
 
     if (_activeTransport == MeshCoreTransportType.usb) {
       await _usbManager.write(data);
@@ -3891,6 +4011,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool? teleBase,
     bool? teleLoc,
     bool? teleEnv,
+    bool? remoteCli,
   }) async {
     if (!isConnected) return;
     final latestContact =
@@ -3914,6 +4035,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         ? (teleEnv
               ? (updatedFlags | contactFlagTeleEnv)
               : (updatedFlags & ~contactFlagTeleEnv))
+        : updatedFlags;
+    updatedFlags = remoteCli != null
+        ? (remoteCli
+              ? (updatedFlags | contactFlagRemoteCli)
+              : (updatedFlags & ~contactFlagRemoteCli))
         : updatedFlags;
 
     await sendFrame(
@@ -5403,6 +5529,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _receivedFramesController.add(frame);
     _bleDebugLogService?.logFrame(frame, outgoing: false);
 
+    if (_secondAppDetector.isForeign(frame) ||
+        (frame[0] == respCodeCliReply && !companionCli.isOwnReply(frame))) {
+      _noteSecondApp(frame[0]);
+    }
+
     final code = frame[0];
     // debugPrint('RX frame: code=$code len=${frame.length}');
 
@@ -5587,6 +5718,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case pushCodeControlData:
         _handleControlData(frame);
         break;
+      // Replies to our own requests are matched by their awaiting listeners;
+      // a sensor's telemetry push is told apart by its tag.
+      case pushCodeBinaryResponse:
+        final push = parseSensorPush(frame);
+        if (push != null && isSensorPushTag(push.pushTag)) {
+          _sensorPushController.add(push);
+        }
+        break;
       case respCodeChannelInfo:
         _handleChannelInfo(frame);
         break;
@@ -5603,12 +5742,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeCustomVars:
         _handleCustomVars(frame);
         break;
-      // Consumed by awaiting listeners on receivedFrames (backup/restore).
+      // Consumed by awaiting listeners on receivedFrames (backup/restore,
+      // CompanionCliService).
       case respCodePrivateKey:
       case respCodeDisabled:
       case respCodeExportContact:
       case respCodeTuningParams:
       case respCodeDefaultFloodScope:
+      case respCodeCliReply:
         break;
       // RESP_CODE_ERR is a defined firmware response (code 1), not an unknown frame.
       case respCodeErr:
@@ -6342,6 +6483,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleIncomingMessage(Uint8List frame) async {
     if (_selfPublicKey == null) return;
 
+    final layout = parseContactMsgLayout(frame);
+    if (layout != null && layout.txtType == txtTypeCliCommand) {
+      _reportBlockedCliCommand(layout.senderPrefix, layout.text);
+      _handleQueuedMessageReceived();
+      return;
+    }
+
     var message = _parseContactMessage(frame);
 
     // If message parsing failed due to unknown contact, refresh contacts and retry
@@ -6467,6 +6615,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _handleQueuedMessageReceived();
     } else if (_isSyncingQueuedMessages) {
       _handleQueuedMessageReceived();
+    }
+  }
+
+  /// Firmware 1.18 queues a CLI command a contact tried to run on our radio
+  /// without the remote-CLI permission. It did not run, so it is reported,
+  /// never shown as a chat message.
+  void _reportBlockedCliCommand(Uint8List senderPrefix, String command) {
+    final contact = _contacts.cast<Contact?>().firstWhere(
+      (c) => _matchesPrefix(c!.publicKey, senderPrefix),
+      orElse: () => null,
+    );
+    final name = contact?.name ?? pubKeyToHex(senderPrefix);
+    _appDebugLogService?.warn(
+      'Blocked a command line request from $name: "$command"',
+      tag: 'Connector',
+    );
+    _blockedCliCommandsController.add(BlockedCliCommand(
+      contactName: name,
+      contactKeyHex: contact?.publicKeyHex,
+      command: command,
+    ));
+    if (_appSettingsService?.settings.notificationsEnabled ?? false) {
+      _notificationService.showBlockedCliNotification(
+        contactName: name,
+        command: command,
+        contactId: contact?.publicKeyHex,
+      );
     }
   }
 
@@ -7087,6 +7262,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final retryService = _retryService;
       if (retryService != null &&
           retryService.updateMessageFromSent(ackHash, timeoutMs)) {
+        return;
+      }
+
+      // A request's SENT (its tag, not an ACK hash): no message owns it.
+      if (_takeRequestSentClaim()) {
         return;
       }
 
@@ -9153,6 +9333,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // A drop mid-handshake must also clear the device-info wait, or the
     // banner sticks on "Reading device info" until the next attempt.
     _initialSyncComplete = false;
+    _resetSecondApp();
+    _requestSentClaims.clear();
     _awaitingSelfInfo = false;
     _selfInfoRetryTimer?.cancel();
     _selfInfoRetryTimer = null;
@@ -9323,6 +9505,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingDeferredChannelSyncAfterContacts &&
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
+      unawaited(_probeWifi());
       if (_contactFullResyncPending) {
         _contactFullResyncPending = false;
         _appDebugLogService?.info(
@@ -9354,6 +9537,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     radioStatsNotifier.dispose();
     _receivedFramesController.close();
     _roomLoginEventsController.close();
+    _blockedCliCommandsController.close();
+    _sensorPushController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();
 
@@ -9641,6 +9826,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     }
 
+    final cliSettings = <String, String>{};
+    if (has(RadioSetting.cliSettings)) {
+      for (final key in [
+        ...backupCliKeys,
+        if (_hasWifi == true) ...backupWifiKeys,
+      ]) {
+        try {
+          final reply = CliReply(await companionCli.run('get $key'));
+          if (reply.kind == CliReplyKind.value && reply.value != '(not set)') {
+            cliSettings[key] = reply.value;
+          }
+        } catch (e) {
+          appLogger.warn('Backup: get $key: $e', tag: 'Connector');
+        }
+      }
+    }
+
     final deviceContacts = contacts;
     final backupContacts = <BackupContact>[];
     for (var i = 0; i < deviceContacts.length; i++) {
@@ -9694,6 +9896,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           floodScope != null ? pubKeyToHex(floodScope.key) : null,
       tuning: tuning,
       customVars: Map.of(_currentCustomVars ?? {}),
+      cliSettings: cliSettings,
       channels: [
         for (final ch in channels)
           if (!ch.isEmpty)
@@ -9764,6 +9967,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       if (!ok) report.failures.add('${w.label} was not accepted');
       await Future.delayed(frameGap);
+    }
+    final cliPlan = planRestoreCliSettings(
+      backup,
+      targetVerCode: _firmwareVerCode,
+      targetVersion: _firmwareVersion,
+      targetHasWifi: _hasWifi == true,
+    );
+    report.notes.addAll(cliPlan.notes);
+    for (final command in cliPlan.commands) {
+      try {
+        final kind = CliReply(await companionCli.run(command)).kind;
+        if (kind == CliReplyKind.error || kind == CliReplyKind.unknown) {
+          report.failures.add('"$command" was not accepted');
+        }
+      } catch (_) {
+        report.failures.add('"$command" got no reply');
+      }
     }
     onProgress?.call(RestoreStep.settings, writes.length, writes.length);
 

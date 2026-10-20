@@ -18,8 +18,16 @@ import 'bench_config.dart';
 /// connectTcp() path: app frame (0x3c) in -> raw bytes to NUS RX; NUS TX
 /// notification -> radio frame (0x3e) out.
 class BleNusTcpBridge {
+  /// The bench BLE radio, or with [address] a given radio (exact MAC,
+  /// `aa:bb:cc:dd:ee:ff`) on its own [port], so two bridges can run.
+  BleNusTcpBridge({String? address, int? port})
+    : _targetAddress = address,
+      port = port ?? BenchConfig.bridgePort;
+
   static bool _winBleInitialized = false;
 
+  final String? _targetAddress;
+  final int port;
   String? _address;
   ServerSocket? _server;
   Socket? _client;
@@ -56,16 +64,39 @@ class BleNusTcpBridge {
     return WinServer.path();
   }
 
-  Future<void> start() async {
-    if (!_winBleInitialized) {
-      final serverPath = await _bleServerPath();
-      _log('BLE server: $serverPath');
-      await WinBle.initialize(serverPath: serverPath);
-      _winBleInitialized = true;
-    }
+  Future<void> _initWinBle() async {
+    if (_winBleInitialized) return;
+    final serverPath = await _bleServerPath();
+    _log('BLE server: $serverPath');
+    await WinBle.initialize(serverPath: serverPath);
+    _winBleInitialized = true;
+  }
 
-    _address = await _scanForRadio();
-    _log('found ${BenchConfig.bleName} at $_address');
+  /// Every advertising device whose name contains [nameContains]
+  /// (case-insensitive), as address → name, after scanning for [duration].
+  Future<Map<String, String>> scan({
+    String nameContains = 'meshcore',
+    Duration duration = const Duration(seconds: 20),
+  }) async {
+    await _initWinBle();
+    final found = <String, String>{};
+    final sub = WinBle.scanStream.listen((device) {
+      if (device.name.toLowerCase().contains(nameContains.toLowerCase())) {
+        found[device.address.toLowerCase()] = device.name;
+      }
+    });
+    WinBle.startScanning();
+    await Future<void>.delayed(duration);
+    WinBle.stopScanning();
+    await sub.cancel();
+    return found;
+  }
+
+  Future<void> start() async {
+    await _initWinBle();
+
+    _address = _targetAddress ?? await _scanForRadio();
+    _log('radio at $_address');
     await Future<void>.delayed(const Duration(milliseconds: 500));
 
     await _connectBle();
@@ -90,12 +121,9 @@ class BleNusTcpBridge {
       }
     });
 
-    _server = await ServerSocket.bind(
-      InternetAddress.loopbackIPv4,
-      BenchConfig.bridgePort,
-    );
+    _server = await ServerSocket.bind(InternetAddress.loopbackIPv4, port);
     _server!.listen(_onClient);
-    _log('listening on 127.0.0.1:${BenchConfig.bridgePort}');
+    _log('listening on 127.0.0.1:$port');
   }
 
   Future<String> _scanForRadio() async {

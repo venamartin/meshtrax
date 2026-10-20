@@ -66,7 +66,8 @@ class RepeaterCommandService {
       _connector.planRequestAttempts(repeater, attempts);
 
   /// Pass [plan] from [preparePath] when sending several commands in a
-  /// row; omit it for one-offs and it is planned per call.
+  /// row; omit it for one-offs and it is planned per call. [txtType] is
+  /// txtTypeCliCommand when the target is another companion.
   Future<String> sendCommand(
     Contact repeater,
     String command, {
@@ -74,6 +75,7 @@ class RepeaterCommandService {
     Function(int)? onAttempt,
     int retries = maxRetries,
     List<PathSelection>? plan,
+    int txtType = txtTypeCliData,
   }) async {
     final repeaterKey = repeater.publicKeyHex;
     final hasPending = _pendingCommands.keys.any(
@@ -95,6 +97,7 @@ class RepeaterCommandService {
           _routeFor(routes, attempt),
           attempt,
           attemptCount,
+          txtType,
         );
         onResponse?.call(response);
         return response;
@@ -112,6 +115,7 @@ class RepeaterCommandService {
     PathSelection selection,
     int attempt,
     int attemptCount,
+    int txtType,
   ) async {
     final repeaterKey = repeater.publicKeyHex;
     final commandId = '${repeaterKey}_${DateTime.now().millisecondsSinceEpoch}';
@@ -139,6 +143,7 @@ class RepeaterCommandService {
         framedCommand,
         attempt: attempt,
         timestampSeconds: timestampSeconds,
+        txtType: txtType,
       );
       responseBytes = frame.length > maxFrameSize ? frame.length : maxFrameSize;
       final baseTimeoutMs = _connector.calculateRoundTripTimeout(

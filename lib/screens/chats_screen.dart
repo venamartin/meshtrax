@@ -776,10 +776,9 @@ class _ChatsScreenState extends State<ChatsScreen>
 
           syncBanner = ConnectionStatusBanner(text: statusText);
         } else {
-          syncBanner = ConnectionStatusBanner.ifDisconnected(
-            context,
-            connector,
-          );
+          syncBanner =
+              ConnectionStatusBanner.ifDisconnected(context, connector) ??
+              ConnectionStatusBanner.ifSecondApp(context, connector);
         }
 
         return PopScope(

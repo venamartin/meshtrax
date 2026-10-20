@@ -1604,6 +1604,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get debugFrame_textTypeCli => 'CLI';
 
   @override
+  String get debugFrame_textTypeCliCommand => 'CLI command';
+
+  @override
   String get debugFrame_textTypePlain => 'Обычный';
 
   @override
@@ -4013,6 +4016,244 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get room_reloadFailed => 'Не удалось сбросить комнату на радио';
+
+  @override
+  String get companionCli_title => 'Command line';
+
+  @override
+  String get companionCli_settingsSubtitle =>
+      'Type text commands for this radio';
+
+  @override
+  String get companionCli_rebooting => 'Restarting the radio…';
+
+  @override
+  String get companionCli_cancelled => 'Cancelled';
+
+  @override
+  String get companionCli_poweringOff => 'Turning the radio off…';
+
+  @override
+  String get companionCli_noReply => 'No reply from the radio. Try again.';
+
+  @override
+  String get companionCli_powerOffTitle => 'Turn the radio off?';
+
+  @override
+  String get companionCli_powerOffBody =>
+      'It stays off until you press its button or plug it in.';
+
+  @override
+  String get companionCli_powerOff => 'Turn off';
+
+  @override
+  String get companionCli_quickBoard => 'Board';
+
+  @override
+  String get companionCli_quickWifiStatus => 'WiFi status';
+
+  @override
+  String get companionCli_quickWifiAddress => 'WiFi address';
+
+  @override
+  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+
+  @override
+  String get companionCli_helpReboot => 'Restarts the radio.';
+
+  @override
+  String get companionCli_helpPowerOff => 'Turns the radio off.';
+
+  @override
+  String get companionCli_helpSetPin =>
+      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+
+  @override
+  String get companionCli_helpSetTzOffset =>
+      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+
+  @override
+  String get companionCli_helpSetTx =>
+      'Sets the transmit power in dBm. Applies at once.';
+
+  @override
+  String get companionCli_helpSetIntThresh =>
+      'Sets the interference threshold in dB. 0 turns interference detection off.';
+
+  @override
+  String get companionCli_helpSetCad =>
+      'Listens for other radios before sending (channel activity detection).';
+
+  @override
+  String get companionCli_helpSetRxGain =>
+      'Boosted receive gain, on SX126x radios.';
+
+  @override
+  String get companionCli_helpSetPathHashMode =>
+      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+
+  @override
+  String get companionCli_helpWifiStatus =>
+      'Shows whether the radio is on the WiFi network.';
+
+  @override
+  String get companionCli_helpWifiIp =>
+      'Shows the radio\'s address on the WiFi network.';
+
+  @override
+  String get companionCli_helpWifiSsid =>
+      'Sets the WiFi network name. Applies after a restart.';
+
+  @override
+  String get companionCli_helpWifiPwd =>
+      'Sets the WiFi password. Applies after a restart.';
+
+  @override
+  String get companionCli_helpWifiEnabled =>
+      'Turns WiFi on (1) or off (0). Applies after a restart.';
+
+  @override
+  String get companionCli_helpWifiClear =>
+      'Forgets the WiFi network. Applies after a restart.';
+
+  @override
+  String get companionCli_remoteNoReply =>
+      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+
+  @override
+  String get companionCli_remoteSentNoAnswer =>
+      'Sent. A radio does not answer a restart or power-off.';
+
+  @override
+  String companionCli_blocked(String name, String command) {
+    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+  }
+
+  @override
+  String companionCli_blockedBody(String command) {
+    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+  }
+
+  @override
+  String get contact_remoteCli => 'Allow remote command line';
+
+  @override
+  String get contact_remoteCliSubtitle =>
+      'Lets this contact run commands on your radio';
+
+  @override
+  String contact_remoteCliWarningTitle(String name) {
+    return 'Let $name control your radio?';
+  }
+
+  @override
+  String contact_remoteCliWarning(String name) {
+    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+  }
+
+  @override
+  String get contact_remoteCliAllow => 'Allow';
+
+  @override
+  String get connection_secondApp =>
+      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+
+  @override
+  String get wifi_title => 'WiFi';
+
+  @override
+  String get wifi_settingsSubtitle => 'Network, password and connection';
+
+  @override
+  String get wifi_use => 'Use WiFi';
+
+  @override
+  String get wifi_networkName => 'Network name';
+
+  @override
+  String get wifi_password => 'Password';
+
+  @override
+  String get wifi_passwordUnchanged => 'Unchanged';
+
+  @override
+  String get wifi_showPassword => 'Show password';
+
+  @override
+  String get wifi_nameMissing => 'Enter the network name';
+
+  @override
+  String get wifi_nameTooLong =>
+      'The network name is too long (32 bytes at most)';
+
+  @override
+  String get wifi_passwordTooLong =>
+      'The password is too long (63 bytes at most)';
+
+  @override
+  String get wifi_savedRestart =>
+      'Saved. WiFi changes apply after the radio restarts.';
+
+  @override
+  String get wifi_forget => 'Forget network';
+
+  @override
+  String get wifi_forgetConfirm =>
+      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+
+  @override
+  String wifi_notAccepted(String reply) {
+    return 'The radio did not accept that: $reply';
+  }
+
+  @override
+  String get wifi_noReply => 'No reply from the radio. Try again.';
+
+  @override
+  String get wifi_restartTitle => 'Restart the radio?';
+
+  @override
+  String get wifi_later => 'Later';
+
+  @override
+  String get wifi_loadFailed =>
+      'Could not read the WiFi settings from the radio.';
+
+  @override
+  String wifi_connectedTo(String address) {
+    return 'Connected · $address';
+  }
+
+  @override
+  String get wifi_notConnected => 'Not connected to WiFi';
+
+  @override
+  String wifi_portNote(int port) {
+    return 'Apps on the same network can connect on port $port';
+  }
+
+  @override
+  String get wifi_connectOverWifi => 'Connect over WiFi';
+
+  @override
+  String wifi_connectOverWifiBody(String address, int port) {
+    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+  }
+
+  @override
+  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+
+  @override
+  String get wifi_noteSecurity =>
+      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+
+  @override
+  String get wifi_noteBattery =>
+      'WiFi keeps the radio awake, so the battery runs down faster.';
+
+  @override
+  String get wifi_noteWrongPassword =>
+      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
 
   @override
   String get room_selfDemoteWarning =>

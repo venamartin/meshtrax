@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
+import 'helpers/snack_bar_builder.dart';
 import 'l10n/app_localizations.dart';
+import 'l10n/l10n.dart';
 import 'package:provider/provider.dart';
 
 
@@ -19,6 +23,7 @@ import 'services/message_retry_service.dart';
 import 'services/path_graph/path_graph_service.dart';
 import 'services/app_settings_service.dart';
 import 'services/notification_service.dart';
+import 'services/companion_cli_service.dart';
 import 'services/ble_debug_log_service.dart';
 import 'services/app_debug_log_service.dart';
 import 'services/background_service.dart';
@@ -174,6 +179,7 @@ class MeshTraxApp extends StatefulWidget {
 
 class _MeshTraxAppState extends State<MeshTraxApp> {
   late final AppLifecycleListener _lifecycleListener;
+  late final StreamSubscription<BlockedCliCommand> _blockedCliSubscription;
 
   @override
   void initState() {
@@ -182,6 +188,23 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       onResume: () => NotificationService().cancelAll(),
       onDetach: () => widget.connector.disconnect(manual: true),
     );
+    // Notifications don't show on desktop; the snackbar covers every
+    // platform while the app is open.
+    _blockedCliSubscription = widget.connector.blockedCliCommands.listen((
+      blocked,
+    ) {
+      final context = NotificationService.navigatorKey.currentContext;
+      if (context == null || !context.mounted) return;
+      showDismissibleSnackBar(
+        context,
+        content: Text(
+          context.l10n.companionCli_blocked(
+            blocked.contactName,
+            blocked.command,
+          ),
+        ),
+      );
+    });
 
     // Route notification taps to the relevant chat, and handle a notification
     // that cold-started the app once the first frame is ready.
@@ -254,6 +277,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
   @override
   void dispose() {
     _lifecycleListener.dispose();
+    _blockedCliSubscription.cancel();
     super.dispose();
   }
 

@@ -3,6 +3,23 @@ import 'package:meshtrax/utils/app_logger.dart';
 
 import '../connector/meshcore_protocol.dart';
 
+/// One summarised series from a sensor's min/max/average reply.
+class LppMinMaxAvg {
+  final int channel;
+  final int type;
+  final double min;
+  final double max;
+  final double avg;
+
+  const LppMinMaxAvg({
+    required this.channel,
+    required this.type,
+    required this.min,
+    required this.max,
+    required this.avg,
+  });
+}
+
 class CayenneLpp {
   static const int lppDigitalInput = 0; // 1 byte
   static const int lppDigitalOutput = 1; // 1 byte
@@ -34,55 +51,97 @@ class CayenneLpp {
   static const int lppPolyline =
       240; // 1 byte size, 1 byte delta factor, 3 byte lon/lat 0.0001° * factor, n (size-8) bytes deltas
 
-  final BufferWriter _writer = BufferWriter();
+  /// The key each decoded type is shown under in [parseByChannel].
+  static const Map<int, String> _valueKeys = {
+    lppDigitalInput: 'digitalInput',
+    lppDigitalOutput: 'digitalOutput',
+    lppAnalogInput: 'analogInput',
+    lppAnalogOutput: 'analogOutput',
+    lppGenericSensor: 'generic',
+    lppLuminosity: 'luminosity',
+    lppPresence: 'presence',
+    lppTemperature: 'temperature',
+    lppRelativeHumidity: 'humidity',
+    lppBarometricPressure: 'pressure',
+    lppVoltage: 'voltage',
+    lppCurrent: 'current',
+    lppFrequency: 'frequency',
+    lppPercentage: 'percentage',
+    lppAltitude: 'altitude',
+    lppConcentration: 'concentration',
+    lppPower: 'power',
+    lppDistance: 'distance',
+    lppEnergy: 'energy',
+    lppDirection: 'direction',
+    lppUnixTime: 'unixTime',
+    lppSwitch: 'switch',
+    lppGps: 'gps',
+  };
 
-  Uint8List toBytes() {
-    return _writer.toBytes();
+  /// Types whose size is known but whose value isn't shown; skipped so the
+  /// readings after them still parse.
+  static const Map<int, int> _skippedSizes = {
+    lppAccelerometer: 6,
+    lppGyrometer: 6,
+    lppColour: 3,
+  };
+
+  /// One value, or null after skipping a known-size type. Throws
+  /// [FormatException] for a type whose size is unknown: nothing after it
+  /// can be read.
+  static Object? _readValue(BufferReader b, int type) {
+    switch (type) {
+      case lppDigitalInput:
+      case lppDigitalOutput:
+      case lppPercentage:
+      case lppSwitch:
+        return b.readUInt8();
+      case lppPresence:
+        return b.readUInt8() != 0;
+      case lppAnalogInput:
+      case lppAnalogOutput:
+        return b.readInt16BE() / 100.0;
+      case lppGenericSensor:
+      case lppFrequency:
+      case lppUnixTime:
+        return b.readUInt32BE();
+      case lppLuminosity:
+      case lppConcentration:
+      case lppPower:
+      case lppDirection:
+        return b.readUInt16BE();
+      case lppTemperature:
+        return b.readInt16BE() / 10.0;
+      case lppRelativeHumidity:
+        return b.readUInt8() / 2.0;
+      case lppBarometricPressure:
+        return b.readUInt16BE() / 10.0;
+      // Signed on purpose: a negative current arrives in two's complement.
+      case lppVoltage:
+        return b.readInt16BE() / 100.0;
+      case lppCurrent:
+        return b.readInt16BE() / 1000.0;
+      case lppAltitude:
+        return b.readInt16BE().toDouble();
+      case lppDistance:
+      case lppEnergy:
+        return b.readUInt32BE() / 1000.0;
+      case lppGps:
+        return {
+          'latitude': b.readInt24BE() / 10000.0,
+          'longitude': b.readInt24BE() / 10000.0,
+          'altitude': b.readInt24BE() / 100.0,
+        };
+    }
+    final size = _skippedSizes[type];
+    if (size == null) throw FormatException('unknown LPP type $type');
+    b.skipBytes(size);
+    return null;
   }
 
-  void addDigitalInput(int channel, int value) {
-    _writer.writeByte(channel);
-    _writer.writeByte(lppDigitalInput);
-    _writer.writeByte(value);
-  }
-
-  void addTemperature(int channel, double value) {
-    _writer.writeByte(channel);
-    _writer.writeByte(lppTemperature);
-    final val = (value * 10).toInt();
-    _writer.writeBytes(_int16ToBE(val));
-  }
-
-  void addVoltage(int channel, double value) {
-    _writer.writeByte(channel);
-    _writer.writeByte(lppVoltage);
-    final val = (value * 100).toInt();
-    _writer.writeBytes(_int16ToBE(val));
-  }
-
-  void addGps(int channel, double lat, double lon, double alt) {
-    _writer.writeByte(channel);
-    _writer.writeByte(lppGps);
-    _writer.writeBytes(_int24ToBE((lat * 10000).toInt()));
-    _writer.writeBytes(_int24ToBE((lon * 10000).toInt()));
-    _writer.writeBytes(_int24ToBE((alt * 100).toInt()));
-  }
-
-  Uint8List _int16ToBE(int value) {
-    final bytes = Uint8List(2);
-    final data = ByteData.view(bytes.buffer);
-    data.setInt16(0, value, Endian.big);
-    return bytes;
-  }
-
-  Uint8List _int24ToBE(int value) {
-    final bytes = Uint8List(3);
-    bytes[0] = (value >> 16) & 0xFF;
-    bytes[1] = (value >> 8) & 0xFF;
-    bytes[2] = value & 0xFF;
-    return bytes;
-  }
-
+  /// Every reading in order as `{channel, type, value}`. Stops at `00 00`
+  /// padding, at a type of unknown size, or at a truncated reading, and
+  /// keeps what it read before that.
   static List<Map<String, dynamic>> parse(Uint8List bytes) {
     final buffer = BufferReader(bytes);
     final telemetry = <Map<String, dynamic>>[];
@@ -90,188 +149,124 @@ class CayenneLpp {
       while (buffer.remaining >= 2) {
         final channel = buffer.readUInt8();
         final type = buffer.readUInt8();
-
-        if (channel == 0 && type == 0) {
-          break;
-        }
-
-        switch (type) {
-          case lppGenericSensor:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt32BE(),
-            });
-            break;
-          case lppLuminosity:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt16BE(),
-            });
-            break;
-          case lppPresence:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt8(),
-            });
-            break;
-          case lppTemperature:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readInt16BE() / 10,
-            });
-            break;
-          case lppRelativeHumidity:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt8() / 2,
-            });
-            break;
-          case lppBarometricPressure:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt16BE() / 10,
-            });
-            break;
-          case lppVoltage:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readInt16BE() / 100,
-            });
-            break;
-          case lppCurrent:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readInt16BE() / 1000,
-            });
-            break;
-          case lppPercentage:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt8(),
-            });
-            break;
-          case lppConcentration:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt16BE(),
-            });
-            break;
-          case lppPower:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': buffer.readUInt16BE(),
-            });
-            break;
-          case lppGps:
-            telemetry.add({
-              'channel': channel,
-              'type': type,
-              'value': {
-                'latitude': buffer.readInt24BE() / 10000,
-                'longitude': buffer.readInt24BE() / 10000,
-                'altitude': buffer.readInt24BE() / 100,
-              },
-            });
-            break;
-          default:
-            return telemetry;
-        }
+        if (channel == 0 && type == 0) break;
+        final value = _readValue(buffer, type);
+        if (value == null) continue;
+        telemetry.add({'channel': channel, 'type': type, 'value': value});
       }
-      return telemetry;
+    } on FormatException {
+      // Unknown type: the rest can't be aligned.
     } catch (e) {
-      // Handle parsing errors, possibly due to malformed data
       appLogger.error('Error parsing Cayenne LPP data: $e');
-      // Return any telemetry parsed so far to preserve partial data
-      return telemetry;
     }
+    return telemetry;
   }
 
+  /// Readings grouped by channel, sorted by channel:
+  /// `[{channel, values: {temperature: 21.5, voltage: 3.97, ...}}]`.
   static List<Map<String, dynamic>> parseByChannel(Uint8List bytes) {
-    final buffer = BufferReader(bytes);
-    final Map<int, Map<String, dynamic>> channels = {};
-    try {
-      while (buffer.remaining >= 2) {
-        final channel = buffer.readUInt8();
-        final type = buffer.readUInt8();
-
-        // Optional: stop on padding (00 00)
-        if (channel == 0 && type == 0) {
-          break;
-        }
-
-        final channelData = channels.putIfAbsent(
-          channel,
-          () => {'channel': channel, 'values': <String, dynamic>{}},
-        );
-
-        switch (type) {
-          case lppGenericSensor:
-            channelData['values']['generic'] = buffer.readUInt32BE();
-            break;
-          case lppLuminosity:
-            channelData['values']['luminosity'] = buffer.readUInt16BE();
-            break;
-          case lppPresence:
-            channelData['values']['presence'] = buffer.readUInt8() != 0;
-            break;
-          case lppTemperature:
-            channelData['values']['temperature'] = buffer.readInt16BE() / 10.0;
-            break;
-          case lppRelativeHumidity:
-            channelData['values']['humidity'] = buffer.readUInt8() / 2.0;
-            break;
-          case lppBarometricPressure:
-            channelData['values']['pressure'] = buffer.readUInt16BE() / 10.0;
-            break;
-          case lppVoltage:
-            channelData['values']['voltage'] = buffer.readInt16BE() / 100.0;
-            break;
-          case lppCurrent:
-            channelData['values']['current'] = buffer.readInt16BE() / 1000.0;
-            break;
-          case lppPercentage:
-            channelData['values']['percentage'] = buffer.readUInt8();
-            break;
-          case lppConcentration:
-            channelData['values']['concentration'] = buffer.readUInt16BE();
-            break;
-          case lppPower:
-            channelData['values']['power'] = buffer.readUInt16BE();
-            break;
-          case lppGps:
-            channelData['values']['gps'] = {
-              'latitude': buffer.readInt24BE() / 10000.0,
-              'longitude': buffer.readInt24BE() / 10000.0,
-              'altitude': buffer.readInt24BE() / 100.0,
-            };
-            break;
-          // Add more types as needed...
-          default:
-            //Stopped parsing to avoid misalignment
-            return channels.values.toList();
-        }
-      }
-
-      final List<Map<String, dynamic>> channelsOut = channels.values.toList();
-      channelsOut.sort((a, b) => a['channel'].compareTo(b['channel']));
-      return channelsOut;
-    } catch (e) {
-      // Handle parsing errors, possibly due to malformed data
-      appLogger.error('Error parsing Cayenne LPP data: $e');
-      return <
-        Map<String, dynamic>
-      >[]; // Return an empty list on error to avoid crashing the app
+    final channels = <int, Map<String, dynamic>>{};
+    for (final reading in parse(bytes)) {
+      final channel = reading['channel'] as int;
+      final channelData = channels.putIfAbsent(
+        channel,
+        () => {'channel': channel, 'values': <String, dynamic>{}},
+      );
+      channelData['values'][_valueKeys[reading['type']]] = reading['value'];
     }
+    return channels.values.toList()
+      ..sort((a, b) => (a['channel'] as int).compareTo(b['channel'] as int));
+  }
+
+  /// How a sensor stores one value of [type] in its own messages (LPPData
+  /// in LPPDataHelpers.h): bytes, multiplier, signed. It differs from the
+  /// telemetry encoding for humidity: 2 bytes ×10 there, 1 byte ×2 in the
+  /// telemetry. Null for multi-value types (GPS, accelerometer, gyrometer,
+  /// colour, polyline).
+  static (int, int, bool)? lppDataFormat(int type) => switch (type) {
+    lppCurrent => (2, 1000, false),
+    lppDistance || lppEnergy => (4, 1000, false),
+    lppVoltage => (2, 100, false),
+    lppAnalogInput || lppAnalogOutput => (2, 100, true),
+    lppTemperature => (2, 10, true),
+    lppBarometricPressure || lppRelativeHumidity => (2, 10, false),
+    lppAltitude => (2, 1, true),
+    lppLuminosity || lppConcentration || lppDirection || lppPower => (
+      2,
+      1,
+      false,
+    ),
+    lppGenericSensor || lppFrequency || lppUnixTime => (4, 1, false),
+    lppDigitalInput ||
+    lppDigitalOutput ||
+    lppPresence ||
+    lppPercentage ||
+    lppSwitch => (1, 1, false),
+    _ => null,
+  };
+
+  static double _readLppData(Uint8List b, int offset, (int, int, bool) f) {
+    final (size, multiplier, signed) = f;
+    var raw = 0;
+    for (var i = 0; i < size; i++) {
+      raw = (raw << 8) | b[offset + i];
+    }
+    final bits = 8 * size;
+    if (signed && raw & (1 << (bits - 1)) != 0) raw -= 1 << bits;
+    return raw / multiplier;
+  }
+
+  /// The min/max/average reply after its tag (REQ 0x04): `[sensor time u32
+  /// LE]` then up to 8 `[channel][type][min][max][avg]`, each value in
+  /// [lppDataFormat] form. Null when even the time is missing.
+  static ({DateTime sensorTime, List<LppMinMaxAvg> series})? parseMinMaxAvg(
+    Uint8List data,
+  ) {
+    if (data.length < 4) return null;
+    final seconds = ByteData.sublistView(data, 0, 4).getUint32(0, Endian.little);
+    final series = <LppMinMaxAvg>[];
+    var i = 4;
+    while (i + 2 <= data.length) {
+      final channel = data[i];
+      final type = data[i + 1];
+      if (channel == 0 && type == 0) break;
+      final format = lppDataFormat(type);
+      if (format == null) break;
+      final size = format.$1;
+      if (i + 2 + 3 * size > data.length) break;
+      series.add(LppMinMaxAvg(
+        channel: channel,
+        type: type,
+        min: _readLppData(data, i + 2, format),
+        max: _readLppData(data, i + 2 + size, format),
+        avg: _readLppData(data, i + 2 + 2 * size, format),
+      ));
+      i += 2 + 3 * size;
+    }
+    return (
+      sensorTime: DateTime.fromMillisecondsSinceEpoch(seconds * 1000),
+      series: series,
+    );
+  }
+
+  /// One `min_deltas` entry of a telemetry push subscription (firmware
+  /// 1.18, REQ_TYPE_SUBSCRIBE): `[channel][type][delta]`, big-endian, in
+  /// the [lppDataFormat] the sensor reads it back with.
+  static Uint8List encodeDelta(int channel, int type, double delta) {
+    final format = lppDataFormat(type);
+    if (format == null) {
+      throw ArgumentError.value(type, 'type', 'cannot carry a delta');
+    }
+    final (size, multiplier, _) = format;
+    if (delta <= 0) throw ArgumentError.value(delta, 'delta', 'must be > 0');
+    final maxRaw = (1 << (8 * size)) - 1;
+    final raw = (delta * multiplier).round().clamp(1, maxRaw);
+    final out = Uint8List(2 + size)
+      ..[0] = channel
+      ..[1] = type;
+    for (var i = 0; i < size; i++) {
+      out[2 + i] = (raw >> (8 * (size - 1 - i))) & 0xFF;
+    }
+    return out;
   }
 }
