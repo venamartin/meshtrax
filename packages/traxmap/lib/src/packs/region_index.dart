@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'geo.dart';
+import 'outline.dart';
 
 /// A region from the pack server's `picker.geojson` (traxmapmaker
 /// FINDINGS §1.2): a node in the download picker's tree.
@@ -40,13 +41,7 @@ class Region {
     required this.polygons,
   });
 
-  bool contains(LatLng p) {
-    for (final polygon in polygons) {
-      if (polygon.isEmpty || !_inRing(polygon.first, p)) continue;
-      if (!polygon.skip(1).any((hole) => _inRing(hole, p))) return true;
-    }
-    return false;
-  }
+  bool contains(LatLng p) => polygons.any((poly) => polygonContains(poly, p));
 
   @override
   String toString() => 'Region($path)';
@@ -147,7 +142,7 @@ class RegionIndex {
     Region? best;
     for (final r in regions) {
       if (!r.downloadable || !r.contains(p)) continue;
-      if (best == null || _area(r.bounds) < _area(best.bounds)) best = r;
+      if (best == null || boxArea(r.bounds) < boxArea(best.bounds)) best = r;
     }
     return best;
   }
@@ -155,7 +150,7 @@ class RegionIndex {
 
 Region _regionFromFeature(Map<String, Object?> f) {
   final props = f['properties'] as Map<String, Object?>;
-  final polygons = _polygons(f['geometry'] as Map<String, Object?>);
+  final polygons = parsePolygons(f['geometry'] as Map<String, Object?>);
   final bbox = props['display_bbox'] as List<Object?>?;
   return Region(
     id: props['id'] as String,
@@ -164,62 +159,7 @@ Region _regionFromFeature(Map<String, Object?> f) {
     parentPath: props['parent'] as String?,
     level: props['level'] as String? ?? 'subregion',
     downloadable: props['downloadable'] as bool? ?? false,
-    bounds: bbox != null ? LatLngBounds.fromList(bbox) : _extent(polygons),
+    bounds: bbox != null ? LatLngBounds.fromList(bbox) : outerExtent(polygons),
     polygons: polygons,
   );
-}
-
-List<List<List<LatLng>>> _polygons(Map<String, Object?> geometry) {
-  List<LatLng> ring(Object? r) => [
-    for (final c in r as List<Object?>)
-      LatLng(
-        ((c as List<Object?>)[1] as num).toDouble(),
-        (c[0] as num).toDouble(),
-      ),
-  ];
-  List<List<LatLng>> polygon(Object? p) => [
-    for (final r in p as List<Object?>) ring(r),
-  ];
-  final coordinates = geometry['coordinates'] as List<Object?>;
-  return switch (geometry['type']) {
-    'Polygon' => [polygon(coordinates)],
-    'MultiPolygon' => [for (final p in coordinates) polygon(p)],
-    final type => throw FormatException('unsupported geometry $type'),
-  };
-}
-
-LatLngBounds _extent(List<List<List<LatLng>>> polygons) {
-  final points = [
-    for (final p in polygons)
-      if (p.isNotEmpty) ...p.first,
-  ];
-  if (points.isEmpty) throw const FormatException('empty outline');
-  var south = points.first.latitude, north = south;
-  var west = points.first.longitude, east = west;
-  for (final q in points) {
-    if (q.latitude < south) south = q.latitude;
-    if (q.latitude > north) north = q.latitude;
-    if (q.longitude < west) west = q.longitude;
-    if (q.longitude > east) east = q.longitude;
-  }
-  return LatLngBounds(south: south, west: west, north: north, east: east);
-}
-
-double _area(LatLngBounds b) => (b.east - b.west) * (b.north - b.south);
-
-/// Ray casting in degree space; fine because rings never cross ±180°.
-bool _inRing(List<LatLng> ring, LatLng p) {
-  var inside = false;
-  for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    final a = ring[i], b = ring[j];
-    if ((a.latitude > p.latitude) != (b.latitude > p.latitude) &&
-        p.longitude <
-            (b.longitude - a.longitude) *
-                    (p.latitude - a.latitude) /
-                    (b.latitude - a.latitude) +
-                a.longitude) {
-      inside = !inside;
-    }
-  }
-  return inside;
 }
