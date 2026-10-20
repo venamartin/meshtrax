@@ -6,12 +6,14 @@ import 'db/database.dart';
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'moving.dart';
 import 'retention.dart';
 import 'search.dart';
 
 export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
-export 'graph_store.dart' show EdgeState, NodeState, NodeSource;
+export 'graph_store.dart' show EdgeState, MovingOverride, NodeState, NodeSource;
+export 'moving.dart' show MovingReason, MovingStatus;
 export 'retention.dart' show RetentionPolicy, RetentionReport;
 
 /// Attribution quality of an observed path's originator.
@@ -80,6 +82,20 @@ enum FloodReason {
   noCorridor,
   belowThreshold,
   overBudget,
+
+  /// Every doorstep of mine that could start a route has failed my last
+  /// sends since it last proved it hears me
+  /// ([PathGraphConfig.selfFailGate]).
+  doorstepsFailing,
+
+  /// Every doorstep of mine that could start a route has gone quiet
+  /// while I hear others ([PathGraphConfig.selfSilenceMinutes]).
+  doorstepsQuiet,
+
+  /// Every doorstep of mine that could start a route is a moving repeater
+  /// that has not proved it hears me for
+  /// [PathGraphConfig.mobileFreshMinutes].
+  doorstepsMoving,
 }
 
 /// The three-tier return contract: direct | bidirectional path | flood.
@@ -169,7 +185,8 @@ class PathGraph {
         _db = PathGraphDatabase(executor),
         _now = now ?? DateTime.now,
         _estimator = Estimator(config) {
-    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes);
+    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes)
+      ..onNewLink = _onNewLink;
     _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
   }
 
@@ -204,6 +221,17 @@ class PathGraph {
   // Per contact: the route their latest PATH reply named, and when
   // (see PathGraphConfig.liveRouteMinutes). Memory only.
   final Map<String, ({List<String> hops, int at})> _liveRoutes = {};
+
+  // Watching-only moving-repeater detectors (PathGraphConfig.mobileNewLinks)
+  // and, per node, the first sighting of its oldest link (0 = from before
+  // first sightings were kept), built on first use. Memory only.
+  final _strangerNovelty = NoveltyCounter(sliceMs: 30 * 60 * 1000);
+  final _riderNovelty = NoveltyCounter(sliceMs: 20 * 60 * 1000);
+  Map<String, int>? _knownSince;
+
+  /// Told when a watching-only detector starts seeing [hash] move (at
+  /// most once a day per repeater and reason).
+  void Function(String hash, MovingReason reason)? onMovingSign;
 
   /// Loads persisted state into the in-memory working set.
   Future<void> init() async {
@@ -497,7 +525,7 @@ class PathGraph {
   bool _movedFar(String fromHash, String toHash) {
     final a = _store.nodes[fromHash];
     final b = _store.nodes[toHash];
-    if (a?.lat == null || a?.lon == null || b?.lat == null || b?.lon == null) {
+    if (!isRealPosition(a?.lat, a?.lon) || !isRealPosition(b?.lat, b?.lon)) {
       return false;
     }
     return haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) >
@@ -571,6 +599,12 @@ class PathGraph {
     }
     if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
+    if (!success && _selfPubkey != null) {
+      // The break cannot be localised, but a doorstep that keeps failing
+      // my sends since it last proved itself stops starting routes
+      // (PathGraphConfig.selfFailGate); any proof resets it.
+      _evidence.recordFailedEgress(_selfPubkey!, _hopHex(pathBytes, stride, 0));
+    }
     if (contactPubkey != null) {
       final hops = [
         for (var i = 0; i < hopCount; i++) _hopHex(pathBytes, stride, i)
@@ -591,8 +625,8 @@ class PathGraph {
       }
       _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
       _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
-      final edge = _store.edges.putIfAbsent(
-          (from, to), () => EdgeState(source: 'observed'));
+      final edge = _store.edges.putIfAbsent((from, to),
+          () => EdgeState(source: 'observed', firstObserved: arrival));
       if (success) edge.s++;
       edge.n++;
       edge.lastObserved = arrival;
@@ -602,9 +636,12 @@ class PathGraph {
       final self = _selfPubkey;
       // [proveEgress] false: an echo of this very send already proved the
       // first hop heard me; counting the delivery too would double it.
+      // A route the firmware learned ([tally] false) is the path a flood
+      // of mine took: its first hop forwarded that flood.
       if (self != null && proveEgress) {
         _evidence.recordProvenEgress(
-            self, _hopHex(pathBytes, stride, 0), arrival);
+            self, _hopHex(pathBytes, stride, 0), arrival,
+            floodProven: !tally);
       }
       if (contactPubkey != null) {
         _evidence.recordProvenIngress(
@@ -640,8 +677,8 @@ class PathGraph {
     for (var i = 1; i < hops.length; i++) {
       final from = hops[i - 1].toUpperCase();
       final to = hops[i].toUpperCase();
-      final edge = _store.edges
-          .putIfAbsent((from, to), () => EdgeState(source: 'trace'));
+      final edge = _store.edges.putIfAbsent(
+          (from, to), () => EdgeState(source: 'trace', firstObserved: arrival));
       if (i < snrs.length) {
         // EWMA so repeated traces refine rather than overwrite.
         edge.measuredSnr = edge.measuredSnr == null
@@ -657,7 +694,11 @@ class PathGraph {
     _scheduleFlush();
   }
 
-  /// Repeater advert metadata enrichment (advert outranks import).
+  /// Repeater advert metadata enrichment (advert outranks import). An
+  /// advert without a position fix (0,0) leaves the known position alone.
+  /// The same key advertising a real position [PathGraphConfig.mobileMoveKm]
+  /// from its last one marks the repeater as moving; another key on the
+  /// same hash is a code twin, not a move.
   void ingestNode(
     String hashBytes, {
     String? name,
@@ -665,16 +706,106 @@ class PathGraph {
     double? lat,
     double? lon,
   }) {
+    final hash = hashBytes.toUpperCase();
+    final real = isRealPosition(lat, lon);
+    final before = _store.nodes[hash];
+    if (real &&
+        before != null &&
+        before.source == NodeSource.advert &&
+        pubkey != null &&
+        before.pubkey?.toLowerCase() == pubkey.toLowerCase() &&
+        isRealPosition(before.lat, before.lon) &&
+        haversineKm(before.lat!, before.lon!, lat!, lon!) >=
+            config.mobileMoveKm) {
+      before.movedAt = _arrivalMillis;
+    }
     _store.enrichNode(
-      hashBytes.toUpperCase(),
+      hash,
       NodeSource.advert,
       name: name,
       pubkey: pubkey,
-      lat: lat,
-      lon: lon,
+      lat: real ? lat : null,
+      lon: real ? lon : null,
     );
-    _store.nodeFor(hashBytes.toUpperCase(), NodeSource.advert).lastHeard =
-        _arrivalMillis;
+    _store.nodeFor(hash, NodeSource.advert).lastHeard = _arrivalMillis;
+    _scheduleFlush();
+  }
+
+  /// Whether [hash] moves, and why; null for a fixed repeater.
+  MovingStatus? movingStatus(String hash) {
+    final node = _store.nodes[hash.toUpperCase()];
+    return node == null ? null : movingStatusOf(node, config, _arrivalMillis);
+  }
+
+  /// Every repeater tagged as moving, acting or watching-only.
+  Map<String, MovingStatus> movingRepeaters() {
+    final now = _arrivalMillis;
+    return {
+      for (final e in _store.nodes.entries)
+        if (movingStatusOf(e.value, config, now) case final status?)
+          e.key: status,
+    };
+  }
+
+  /// A sighting created a link the graph never had: news for both ends.
+  /// One that proved it hears me in each of the last three 20-minute
+  /// slices and keeps meeting new repeaters rides with me (no stationary
+  /// gate: I move with it). Anyone else known for a day that keeps meeting
+  /// new ones while I stay put moves — "stay put" being no repeater new to
+  /// me for an hour, so my own drive does not make fixed ones look new.
+  void _onNewLink(String from, String to, int at) {
+    final known = _knownSince ??= _buildKnownSince();
+    final lastNew = _evidence.lastNewSelfRowAt;
+    final stationary =
+        lastNew == null || at - lastNew > Duration.millisecondsPerHour;
+    final minLinks = config.mobileNewLinks;
+    for (final hash in [from, to]) {
+      final since = known.putIfAbsent(hash, () => at);
+      final meetsSteadily = _riderNovelty.add(hash, at, minLinks: minLinks);
+      if (_selfPubkey != null &&
+          _evidence.provenInEachSlice(hash, at,
+              sliceMs: _riderNovelty.sliceMs, slices: 3)) {
+        if (meetsSteadily) _markMoving(hash, MovingReason.ridesWithMe, at);
+      } else if (stationary &&
+          at - since >= Duration.millisecondsPerDay &&
+          _strangerNovelty.add(hash, at, minLinks: minLinks)) {
+        _markMoving(hash, MovingReason.newLinks, at);
+      }
+    }
+  }
+
+  void _markMoving(String hash, MovingReason reason, int at) {
+    final node = _store.nodeFor(hash, NodeSource.observed);
+    final rides = reason == MovingReason.ridesWithMe;
+    final last = rides ? node.autoRidesWithMeAt : node.autoMovingAt;
+    if (rides) {
+      node.autoRidesWithMeAt = at;
+    } else {
+      node.autoMovingAt = at;
+    }
+    _store.markNodeDirty(hash);
+    if (last == null || at - last > Duration.millisecondsPerDay) {
+      onMovingSign?.call(hash, reason);
+    }
+  }
+
+  Map<String, int> _buildKnownSince() {
+    final known = <String, int>{};
+    for (final e in _store.edges.entries) {
+      final t = e.value.firstObserved ?? 0;
+      for (final h in [e.key.$1, e.key.$2]) {
+        final k = known[h];
+        if (k == null || t < k) known[h] = t;
+      }
+    }
+    return known;
+  }
+
+  /// The user's word on [hash]; null hands it back to the detectors.
+  void setMovingOverride(String hash, MovingOverride? value) {
+    final key = hash.toUpperCase();
+    _store.nodeFor(key, NodeSource.observed).movingOverride = value;
+    _store.markNodeDirty(key);
     _scheduleFlush();
   }
 
@@ -712,10 +843,11 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final egress = _egressCandidates(self, now);
+    final mine = _egressCandidates(self, now);
+    final egress = mine.candidates;
     if (egress == null) return const PathResult.flood(FloodReason.noEvidence);
     if (egress.isEmpty) {
-      return const PathResult.flood(FloodReason.noProvenEndpoint);
+      return PathResult.flood(mine.gate ?? FloodReason.noProvenEndpoint);
     }
 
     final route = PathFinder(estimator.config, estimator).search(
@@ -725,6 +857,7 @@ class PathGraph {
       ingress: [_selfTarget(repeaterHash)],
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -744,8 +877,10 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final theirs = _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false);
-    final mine = _evidence.heardCandidatesFor(self, now, isSelf: true);
+    final theirs = _freshRows(
+        _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false), now);
+    final mine =
+        _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now);
     if (theirs.isEmpty || mine.isEmpty) {
       return const PathResult.flood(FloodReason.noEvidence);
     }
@@ -754,6 +889,7 @@ class PathGraph {
       ingress: mine,
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -769,13 +905,15 @@ class PathGraph {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final mine = _evidence.heardCandidatesFor(self, now, isSelf: true);
+    final mine =
+        _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now);
     if (mine.isEmpty) return const PathResult.flood(FloodReason.noEvidence);
     final route = PathFinder(estimator.config, estimator).search(
       egress: [_selfTarget(repeaterHash)],
       ingress: mine,
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -793,7 +931,8 @@ class PathGraph {
     if (self == null) return const [];
     return _divergentRoutes(
       egress: [_selfTarget(repeaterHash)],
-      ingress: _evidence.heardCandidatesFor(self, now, isSelf: true),
+      ingress:
+          _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now),
       count: count,
       now: now,
     );
@@ -809,8 +948,10 @@ class PathGraph {
     final self = _selfPubkey;
     if (self == null) return const [];
     return _divergentRoutes(
-      egress: _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false),
-      ingress: _evidence.heardCandidatesFor(self, now, isSelf: true),
+      egress: _freshRows(
+          _evidence.heardCandidatesFor(contactPubkey, now, isSelf: false), now),
+      ingress:
+          _freshRows(_evidence.heardCandidatesFor(self, now, isSelf: true), now),
       count: count,
       now: now,
     );
@@ -833,6 +974,7 @@ class PathGraph {
       ingress: [_selfTarget(bHash)],
       edges: _store.edges,
       nowMillis: _arrivalMillis,
+      moving: _movingNow(_arrivalMillis),
     );
     if (leg == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -860,12 +1002,53 @@ class PathGraph {
 
   bool get _provenOnly => !config.allowInferredEndpoints;
 
-  /// Egress candidates for routing: null when nothing is known at all,
-  /// empty when doorsteps are known but none is proven.
-  List<Candidate>? _egressCandidates(String self, int now) {
+  /// Egress candidates for routing. [candidates] is null when nothing is
+  /// known at all, empty when doorsteps are known but none may start a
+  /// route. [held] names the proven doorsteps the gate kept out, each
+  /// with its reason; [gate] is the reason of the heaviest held one, for
+  /// the flood when nothing survives.
+  ({List<Candidate>? candidates, Map<String, FloodReason> held, FloodReason? gate})
+      _egressCandidates(String self, int now) {
     final all = _evidence.candidatesFor(self, now, isSelf: true);
-    if (all.isEmpty) return null;
-    return _provenOnly ? all.where((c) => c.proven).toList() : all;
+    if (all.isEmpty) return (candidates: null, held: const {}, gate: null);
+    final eligible = _provenOnly ? all.where((c) => c.proven).toList() : all;
+    final held = <String, FloodReason>{};
+    FloodReason? gate;
+    final kept = <Candidate>[];
+    // candidatesFor sorts by weight, so the first held one is the heaviest.
+    for (final c in eligible) {
+      final hold = doorstepHold(c, now: now);
+      if (hold == null) {
+        kept.add(c);
+      } else {
+        held[c.repeaterHash] = hold;
+        gate ??= hold;
+      }
+    }
+    return (candidates: kept, held: held, gate: gate);
+  }
+
+  /// Why [c], one of my proven doorsteps, may not start a route right now,
+  /// or null when it may (see [PathGraphConfig.selfFailGate]). Failures
+  /// are checked first: they are this doorstep's own record.
+  FloodReason? doorstepHold(Candidate c, {int? now}) {
+    final self = _selfPubkey;
+    if (self == null || !c.isSelf || !c.proven) return null;
+    if (c.failedSinceProof >= config.selfFailGate) {
+      return FloodReason.doorstepsFailing;
+    }
+    now ??= _arrivalMillis;
+    if (_staleMoving(c, now, byProof: true)) return FloodReason.doorstepsMoving;
+    final windowMs = (config.selfSilenceMinutes * 60 * 1000).round();
+    final newest = _evidence
+        .candidatesFor(self, now, isSelf: true)
+        .fold(0, (m, x) => x.lastSeen > m ? x.lastSeen : m);
+    if (newest - c.lastSeen > windowMs &&
+        _evidence.selfAliveEventsSince(newest - windowMs) >=
+            config.selfSilenceMinEvents) {
+      return FloodReason.doorstepsQuiet;
+    }
+    return null;
   }
 
   /// A contact's route end may be a doorstep proven by a delivery or one
@@ -876,10 +1059,34 @@ class PathGraph {
   List<Candidate>? _ingressCandidates(String contactPubkey, int now) {
     final all = _evidence.candidatesFor(contactPubkey.toLowerCase(), now, isSelf: false);
     if (all.isEmpty) return null;
-    return _provenOnly
-        ? all.where((c) => c.proven || c.heard).toList()
-        : all;
+    return _freshRows(
+        _provenOnly ? all.where((c) => c.proven || c.heard).toList() : all,
+        now);
   }
+
+  int get _mobileFreshMs => (config.mobileFreshMinutes * 60 * 1000).round();
+
+  /// Repeaters whose moving tag acts on routing right now.
+  Set<String> _movingNow(int now) => {
+        for (final e in _store.nodes.entries)
+          if (movingStatusOf(e.value, config, now)?.acts ?? false) e.key,
+      };
+
+  /// [c] sits on a moving repeater and was last refreshed longer ago than
+  /// [PathGraphConfig.mobileFreshMinutes]: by its last proof when
+  /// [byProof] (my end stays proven-only), else by its last sighting. My
+  /// own row for one riding with me never goes stale.
+  bool _staleMoving(Candidate c, int now, {bool byProof = false}) {
+    final node = _store.nodes[c.repeaterHash];
+    final status = node == null ? null : movingStatusOf(node, config, now);
+    if (status == null || !status.acts) return false;
+    if (c.isSelf && status.withMe) return false;
+    final at = byProof ? (c.provenAt ?? 0) : c.lastSeen;
+    return now - at > _mobileFreshMs;
+  }
+
+  List<Candidate> _freshRows(List<Candidate> rows, int now) =>
+      rows.where((c) => !_staleMoving(c, now)).toList();
 
   RouteResult _toResult(RouteFound route) => RouteResult(
         _hopsToBytes(route.hops),
@@ -922,7 +1129,7 @@ class PathGraph {
     final self = _selfPubkey;
     if (self == null) return const [];
     return _divergentRoutes(
-      egress: _egressCandidates(self, now) ?? const [],
+      egress: _egressCandidates(self, now).candidates ?? const [],
       ingress: ingressFor(now),
       count: count,
       now: now,
@@ -940,6 +1147,7 @@ class PathGraph {
     ingress = List.of(ingress);
 
     final finder = PathFinder(estimator.config, estimator);
+    final moving = _movingNow(now);
     final penalties = <(String, String), double>{};
     final results = <RouteResult>[];
     final seen = <String>{};
@@ -950,6 +1158,7 @@ class PathGraph {
         edges: _store.edges,
         nowMillis: now,
         penalties: penalties,
+        moving: moving,
       );
       if (route == null) break;
       final key = route.hops.join('>');
@@ -974,8 +1183,8 @@ class PathGraph {
 
   /// The confidence the router prices a doorstep at (UI/debug): tally
   /// blended with the measured link when one exists.
-  double doorstepConfidence(Candidate c) =>
-      PathFinder(estimator.config, estimator).candidateConfidence(c);
+  double doorstepConfidence(Candidate c) => PathFinder(estimator.config, estimator)
+      .candidateConfidence(c, _arrivalMillis);
 
   /// Ranked egress candidates for the connected radio (UI/debug).
   List<Candidate> egressCandidates() {
@@ -1067,6 +1276,8 @@ class PathGraph {
         if (e.n > 0) 'attempts': e.n,
         if (e.lastObserved != null)
           'last_observed': _isoFromMillis(e.lastObserved!),
+        if (e.firstObserved != null)
+          'first_observed': _isoFromMillis(e.firstObserved!),
       });
     }
 
@@ -1139,6 +1350,13 @@ class PathGraph {
             if (e.value.lon != null) 'lon': e.value.lon,
             if (e.value.lastHeard != null) 'last_heard': e.value.lastHeard,
             if (e.value.pubkey != null) 'pubkey': e.value.pubkey,
+            if (e.value.movedAt != null) 'moved_at': e.value.movedAt,
+            if (e.value.movingOverride != null)
+              'moving_override': e.value.movingOverride!.name,
+            if (e.value.autoMovingAt != null)
+              'auto_moving_at': e.value.autoMovingAt,
+            if (e.value.autoRidesWithMeAt != null)
+              'auto_rides_with_me_at': e.value.autoRidesWithMeAt,
           }
       ],
       'edges': [
@@ -1155,6 +1373,8 @@ class PathGraph {
               'last_observed': e.value.lastObserved,
             if (e.value.measuredSnr != null)
               'measured_snr': e.value.measuredSnr,
+            if (e.value.firstObserved != null)
+              'first_observed': e.value.firstObserved,
           }
       ],
       'ingress': [
@@ -1178,6 +1398,8 @@ class PathGraph {
               'flood_proven_at': e.value.floodProvenAt,
             if (e.value.lastHeardAt != null)
               'last_heard_at': e.value.lastHeardAt,
+            if (e.value.failedSinceProof != 0)
+              'failed_since_proof': e.value.failedSinceProof,
           }
       ],
       'contacts': [
@@ -1225,12 +1447,20 @@ class PathGraph {
           lon: (n['lon'] as num?)?.toDouble(),
           lastHeard: (n['last_heard'] as num?)?.toInt(),
           pubkey: n['pubkey'] as String?,
+          movedAt: (n['moved_at'] as num?)?.toInt(),
+          movingOverride: MovingOverride.values
+              .where((v) => v.name == n['moving_override'])
+              .firstOrNull,
+          autoMovingAt: (n['auto_moving_at'] as num?)?.toInt(),
+          autoRidesWithMeAt: (n['auto_rides_with_me_at'] as num?)?.toInt(),
         );
       }
       for (final raw in (document['edges'] as List?) ?? const []) {
         final e = raw as Map;
         edges[(e['from'] as String, e['to'] as String)] =
-            EdgeState(source: e['source'] as String? ?? 'observed')
+            EdgeState(
+                source: e['source'] as String? ?? 'observed',
+                firstObserved: (e['first_observed'] as num?)?.toInt())
               ..s = (e['s'] as num?)?.toInt() ?? 0
               ..n = (e['n'] as num?)?.toInt() ?? 0
               ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
@@ -1258,7 +1488,9 @@ class PathGraph {
               ..provenCount = (i['proven_count'] as num?)?.toInt() ??
                   (i['proven_at'] == null ? 0 : 1)
               ..floodProvenAt = (i['flood_proven_at'] as num?)?.toInt()
-              ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt();
+              ..lastHeardAt = (i['last_heard_at'] as num?)?.toInt()
+              ..failedSinceProof =
+                  (i['failed_since_proof'] as num?)?.toInt() ?? 0;
       }
       for (final raw in (document['contacts'] as List?) ?? const []) {
         final c = raw as Map;
@@ -1277,6 +1509,9 @@ class PathGraph {
     _flushTimer = null;
     await _store.clear();
     await _evidence.clear();
+    _knownSince = null;
+    _strangerNovelty.clear();
+    _riderNovelty.clear();
     _store.nodes.addAll(nodes);
     _store.edges.addAll(edges);
     _evidence.entries.addAll(ingress);
@@ -1327,12 +1562,16 @@ class PathGraph {
     // Tier 3: bidirectional route over candidate lists.
     final self = _selfPubkey;
     if (self == null) return const PathResult.flood(FloodReason.noEvidence);
-    final egress = _egressCandidates(self, now);
+    final mine = _egressCandidates(self, now);
+    final egress = mine.candidates;
     final ingress = _ingressCandidates(contactPubkey, now);
     if (egress == null || ingress == null) {
       return const PathResult.flood(FloodReason.noEvidence);
     }
-    if (egress.isEmpty || ingress.isEmpty) {
+    if (egress.isEmpty) {
+      return PathResult.flood(mine.gate ?? FloodReason.noProvenEndpoint);
+    }
+    if (ingress.isEmpty) {
       return const PathResult.flood(FloodReason.noProvenEndpoint);
     }
 
@@ -1341,11 +1580,23 @@ class PathGraph {
       ingress: ingress,
       edges: _store.edges,
       nowMillis: now,
+      moving: _movingNow(now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
     }
     return _toResult(route);
+  }
+
+  /// Hop count of their latest PATH reply's route while it is live, else
+  /// null: the freshest distance to them the graph knows.
+  int? liveRouteHops(String contactPubkey) {
+    final live = _liveRoutes[contactPubkey.toLowerCase()];
+    if (live == null) return null;
+    if (_arrivalMillis - live.at > config.liveRouteMinutes * 60 * 1000) {
+      return null;
+    }
+    return live.hops.length;
   }
 
   /// Their latest PATH reply's route while it leads, priced like any
@@ -1358,6 +1609,11 @@ class PathGraph {
       return null;
     }
     final self = _selfPubkey;
+    // Its first hop may have failed my sends or gone quiet since.
+    if (self != null &&
+        _egressCandidates(self, now).held.containsKey(live.hops.first)) {
+      return null;
+    }
     return _toResult(PathFinder(estimator.config, estimator).score(
       live.hops,
       egress: self == null

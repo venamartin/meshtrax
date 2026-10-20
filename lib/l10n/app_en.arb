@@ -2113,6 +2113,15 @@
     }
   },
   "chat_statusQueued": "Queued",
+  "chat_statusNoRepeaterHeard": "No repeater heard you. Will try again when one is in range.",
+  "chat_narrowHashNotice": "{name}'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.",
+  "@chat_narrowHashNotice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "chat_statusSending": "Sending · {kind}",
   "@chat_statusSending": {
     "placeholders": {

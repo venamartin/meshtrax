@@ -108,6 +108,12 @@ PathSelection resolvePathSelection(
 /// ([floodFirst], which an override outranks) the ladder is the firmware
 /// one: the known route for one try (two at a budget of 4 or more), then
 /// floods.
+///
+/// Re-planning the rest of a ladder mid-message: [tried] are the rungs
+/// already sent (their routes are never tried again) and [floods] how many
+/// of the remaining [budget] close it (the floods the original ladder
+/// still owes), so a route Pathfinder now ranks first after a failure is
+/// tried next instead of being skipped.
 List<PathSelection> planAttempts(
   Contact contact, {
   required int radioWidth,
@@ -115,6 +121,8 @@ List<PathSelection> planAttempts(
   List<PathSelection>? graphRoutes,
   bool floodFirst = false,
   double minDelivery = minRouteDelivery,
+  Iterable<PathSelection> tried = const [],
+  int? floods,
 }) {
   final flood = PathSelection.flood(radioWidth);
   final resend = floodFirst && contact.pathOverride == null;
@@ -132,16 +140,19 @@ List<PathSelection> planAttempts(
   String key(PathSelection s) => s.hopCount == 0
       ? 'direct'
       : '${s.hashSize}:${s.pathBytes.join(',')}';
-  final seen = <String>{};
-  final routes = <PathSelection>[
-    for (final g in graphRoutes)
-      if ((seen.isEmpty || (g.estDelivery ?? 1) >= minDelivery) &&
-          seen.add(key(g)))
-        g,
-  ];
+  final seen = <String>{for (final t in tried) if (!t.useFlood) key(t)};
+  final routes = <PathSelection>[];
+  for (final g in graphRoutes) {
+    final k = key(g);
+    if (seen.contains(k)) continue;
+    // The best remaining route is tried whatever its score.
+    if (routes.isNotEmpty && (g.estDelivery ?? 1) < minDelivery) continue;
+    seen.add(k);
+    routes.add(g);
+  }
 
-  final floods = budget <= 2 ? budget - 1 : 2;
-  final slots = budget - floods;
+  final floodCount = (floods ?? (budget <= 2 ? budget - 1 : 2)).clamp(0, budget);
+  final slots = budget - floodCount;
   return [
     ...routes.take(slots),
     for (var i = routes.length.clamp(0, slots); i < budget; i++) flood,

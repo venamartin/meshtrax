@@ -26,8 +26,17 @@ class PathGraphConfig {
     this.selfWeightCap = 12,
     this.doorstepWeight = 3,
     this.directFreshMinutes = 30,
+    this.measuredSnrHalfLifeMinutes = 45,
+    this.selfFailGate = 2,
+    this.selfSilenceMinutes = 30,
+    this.selfSilenceMinEvents = 3,
     this.relayedCopyGraceSeconds = 60,
     this.liveRouteMinutes = 10,
+    this.mobileFreshMinutes = 15,
+    this.mobileNewLinks = 5,
+    this.mobileMoveKm = 2,
+    this.mobileTagDays = 14,
+    this.mobileAutoTagsRoute = false,
     this.slashEpochMinutes = 2,
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
@@ -138,6 +147,35 @@ class PathGraphConfig {
   /// half an hour while their DMs arrived over 2-5 hops).
   final double directFreshMinutes;
 
+  /// A measured level (trace, Discover answer) belongs to the place it was
+  /// measured: its share of a doorstep's confidence halves every this many
+  /// minutes since the doorstep's last proof. Proven weights decay
+  /// [egressProvenDecayFactor] times slower, which is why the dB needs its
+  /// own clock (field 2026-10-17: a home measurement propped a doorstep
+  /// 40 km away).
+  final double measuredSnrHalfLifeMinutes;
+
+  /// The route-start gate on my own doorsteps (owner, 2026-10-17). A
+  /// failed one-hop route marks nothing down, Dijkstra never drops a
+  /// source by weight and the ladder always tries the best route, so a
+  /// stale home doorstep held every route 40 km away; only exclusion can
+  /// turn that into a flood, whose echo and PATH reply then teach the
+  /// graph where I am. Negative-only: nothing here mints a proof.
+  ///
+  /// [selfFailGate]: this many direct sends failed from a doorstep since
+  /// its last proof and it stops starting routes (replay of that drive:
+  /// at 2, 113 of 186 failed route attempts skipped, 2 of 7 deliveries
+  /// blocked). [selfSilenceMinutes]: a doorstep this much quieter than
+  /// the newest-heard of my doorsteps stops too — a repeater out-transmits
+  /// a handheld, so not hearing it for that long while hearing others is
+  /// as good as it not hearing me. Self-gated: the clock is my own
+  /// newest hearing, so a quiet mesh excludes nothing, and silence only
+  /// counts once [selfSilenceMinEvents] packets have been heard inside
+  /// the window.
+  final int selfFailGate;
+  final double selfSilenceMinutes;
+  final int selfSilenceMinEvents;
+
   /// Copies of one flood land within seconds of each other: a relayed
   /// copy this soon after a direct one is the same packet, not a move.
   final double relayedCopyGraceSeconds;
@@ -149,6 +187,34 @@ class PathGraphConfig {
   /// 2026-10-16: an older favourite that had stopped working replaced it
   /// within milliseconds, and the ACKs that followed were lost).
   final double liveRouteMinutes;
+
+  /// A moving repeater (owner, 2026-10-19) collects links to every
+  /// repeater it passes, and old ones make it a wormhole: "A hears it"
+  /// in Oakland at 10:00 plus "it reaches B" in Sacramento at 14:00 reads
+  /// as a two-hop corridor. Everything about one — its links, my doorstep
+  /// row for it (from its last proof), a contact's row for it (from the
+  /// last sighting) — counts for this long after it was last refreshed.
+  /// A hard window, not a faster fade: a faded two-hop shortcut still
+  /// beats a real five-hop corridor. One riding with me keeps my doorstep
+  /// row; its links still expire.
+  final double mobileFreshMinutes;
+
+  /// Watching-only detector ("keeps meeting new repeaters"): this many
+  /// links first seen in the last three hours, spread over at least three
+  /// of its half-hours, from a repeater known for a day.
+  final int mobileNewLinks;
+
+  /// An advert from the same key this far from its last real position
+  /// marks the repeater as moving.
+  final double mobileMoveKm;
+
+  /// A moving sign (advert move, detector) lasts this long.
+  final double mobileTagDays;
+
+  /// Off: the traffic detectors only watch (shown, logged, exported),
+  /// until a week of field data has set their thresholds (owner,
+  /// 2026-10-19). The user's tags and advert moves always act.
+  final bool mobileAutoTagsRoute;
 
   /// Supersede slash: epoch-limited, floored (proven keeps ≥ this).
   final double slashEpochMinutes;
@@ -162,6 +228,8 @@ class PathGraphConfig {
           double? pThreshold,
           int? maxHops,
           double? doorstepWeight,
+          double? mobileFreshMinutes,
+          bool? mobileAutoTagsRoute,
           bool? allowInferredEndpoints}) =>
       PathGraphConfig(
         beta: beta ?? this.beta,
@@ -184,8 +252,17 @@ class PathGraphConfig {
         selfWeightCap: selfWeightCap,
         doorstepWeight: doorstepWeight ?? this.doorstepWeight,
         directFreshMinutes: directFreshMinutes,
+        measuredSnrHalfLifeMinutes: measuredSnrHalfLifeMinutes,
+        selfFailGate: selfFailGate,
+        selfSilenceMinutes: selfSilenceMinutes,
+        selfSilenceMinEvents: selfSilenceMinEvents,
         relayedCopyGraceSeconds: relayedCopyGraceSeconds,
         liveRouteMinutes: liveRouteMinutes,
+        mobileFreshMinutes: mobileFreshMinutes ?? this.mobileFreshMinutes,
+        mobileNewLinks: mobileNewLinks,
+        mobileMoveKm: mobileMoveKm,
+        mobileTagDays: mobileTagDays,
+        mobileAutoTagsRoute: mobileAutoTagsRoute ?? this.mobileAutoTagsRoute,
         slashEpochMinutes: slashEpochMinutes,
         slashFactorProven: slashFactorProven,
         slashFactorInferred: slashFactorInferred,

@@ -34,6 +34,9 @@ class Message {
   // The ACK arrived after every attempt had timed out and the message had
   // already been marked failed.
   final bool deliveredLate;
+  // A flood of it was heard by no repeater; it waits for one to be in range
+  // before it is sent again. Lives only in memory: a restart starts over.
+  final bool waitingForRepeater;
   final Map<String, int> reactions;
   // Who reacted, per emoji. Rows written before attribution existed have
   // counts with no names, so this can be shorter than the count.
@@ -65,6 +68,7 @@ class Message {
     this.pathHashSize,
     this.routeSource = RouteSource.firmware,
     this.deliveredLate = false,
+    this.waitingForRepeater = false,
   }) : messageId = messageId ??
            '${timestamp.millisecondsSinceEpoch}_${pubKeyToHex(senderKey)}_${text.hashCode}',
        pathBytes = pathBytes ?? Uint8List(0),
@@ -90,6 +94,7 @@ class Message {
     RouteSource? routeSource,
     bool? isCli,
     bool? deliveredLate,
+    bool? waitingForRepeater,
 
     Map<String, int>? reactions,
     Map<String, List<String>>? reactionSenders,
@@ -116,6 +121,7 @@ class Message {
       pathHashSize: pathHashSize ?? this.pathHashSize,
       routeSource: routeSource ?? this.routeSource,
       deliveredLate: deliveredLate ?? this.deliveredLate,
+      waitingForRepeater: waitingForRepeater ?? this.waitingForRepeater,
       reactions: reactions ?? this.reactions,
       reactionSenders: reactionSenders ?? this.reactionSenders,
       reactionStatuses: reactionStatuses ?? this.reactionStatuses,

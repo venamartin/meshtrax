@@ -10,6 +10,7 @@ import '../../connector/meshcore_connector.dart';
 import '../../helpers/path_helper.dart';
 import '../../models/contact.dart';
 import '../../models/path_selection.dart';
+import '../../storage/prefs_manager.dart';
 import '../../utils/app_logger.dart';
 import 'frame_adapter.dart';
 import 'radio_route_keeper.dart';
@@ -34,7 +35,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   bool _radioReady = false;
   MeshCoreConnector? _connector;
   StreamSubscription<Uint8List>? _frames;
-  Timer? _discoverWindow;
   Timer? _sweepTimer;
 
   // start() and stop() only record what is wanted; the open and close run
@@ -94,7 +94,20 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     _lastError = null;
-    _graph = graph;
+    final live = _graph = graph;
+    live.onMovingSign = (hash, reason) {
+      final name = live.snapshot().nodes[hash]?.name;
+      final who = name == null ? hash : '$hash ($name)';
+      final watching =
+          live.config.mobileAutoTagsRoute ? '' : ' (watching only)';
+      appLogger.info(
+          reason == MovingReason.ridesWithMe
+              ? 'Pathfinder thinks $who rides with me: it keeps proving it '
+                  'hears me while meeting repeaters it never had$watching'
+              : 'Pathfinder thinks $who moves: it keeps meeting repeaters it '
+                  'never had$watching',
+          tag: 'PathGraph');
+    };
     _adapter = PathLabAdapter(graph)..onPathDiscovery = notifyListeners;
     _connector = connector;
     _frames = connector.receivedFrames.listen(_onFrame);
@@ -104,6 +117,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onSendAttemptStarted = _onAttemptStarted;
     connector.onAckHeard = _onAckHeard;
     connector.graphRouteCandidates = candidatesFor;
+    connector.graphDistanceTo = distanceTo;
     connector.onChannelPacketHeard = _onChannelPacket;
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
@@ -149,7 +163,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _sweepTimer?.cancel();
     _sweepTimer = null;
-    _discoverWindow?.cancel();
     _notifyThrottle?.cancel();
     _notifyThrottle = null;
     await _frames?.cancel();
@@ -159,6 +172,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onSendAttemptStarted = null;
     _connector?.onAckHeard = null;
     _connector?.graphRouteCandidates = null;
+    _connector?.graphDistanceTo = null;
     _connector?.onChannelPacketHeard = null;
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
@@ -176,6 +190,23 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     }
     appLogger.info('path graph stopped', tag: 'PathGraph');
     notifyListeners();
+  }
+
+  /// The user's word on whether repeater [hash] moves; null lets the
+  /// detectors decide. Routes change at once; the radio's stored routes
+  /// follow on the keeper's next check.
+  void setMovingOverride(String hash, MovingOverride? value) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.setMovingOverride(hash, value);
+    final how = switch (value) {
+      null => 'left to Pathfinder',
+      MovingOverride.moves => 'marked as moving',
+      MovingOverride.withMe => 'marked as moving with me',
+      MovingOverride.staysPut => 'marked as staying put',
+    };
+    appLogger.info('repeater $hash $how', tag: 'PathGraph');
+    _notifySoon();
   }
 
   /// Listeners (the debug screen) are told about new observations at
@@ -196,19 +227,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     adapter.expectedDiscoverTag = _connector?.pendingDiscoverTag;
     adapter.expectedTraceTag = _connector?.pendingTraceTag;
     adapter.handleFrame(frame);
-    if (adapter.framesSeen != before || frame[0] == pushTraceData) {
+    if (adapter.framesSeen != before ||
+        frame[0] == pushTraceData ||
+        frame[0] == pushControlData) {
       _notifySoon();
-    }
-    // Discover answers arrive one push per responder; commit the batch
-    // once the radio's answer window has passed.
-    if (frame.isNotEmpty &&
-        frame[0] == pushControlData &&
-        adapter.pendingDiscover.isNotEmpty) {
-      _discoverWindow?.cancel();
-      _discoverWindow = Timer(const Duration(seconds: 30), () {
-        adapter.commitDiscover(failureEpisode: false);
-        notifyListeners();
-      });
     }
   }
 
@@ -388,6 +410,15 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     ].nonNulls.toList();
   }
 
+  /// The freshest distance to [contact] in hops: the route their last PATH
+  /// reply named while it is live, else the hops their last flood took to
+  /// reach me (within the hour), else null. The connector sizes a flood's
+  /// ACK wait from it instead of assuming 8 hops.
+  int? distanceTo(Contact contact) {
+    final key = contact.publicKeyHex;
+    return _graph?.liveRouteHops(key) ?? _adapter?.lastFloodHopsFor(key);
+  }
+
   /// A channel message names its sender; if that name belongs to exactly
   /// one contact, the packet's first hop is a repeater that heard them.
   void _onChannelPacket(String senderName, Uint8List pathBytes, int stride) {
@@ -401,7 +432,44 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// the raw packet it came from and credits the sender's doorstep.
   void _onContactMessage(String pubkeyHex, int pathLenRaw, int? snrByte) {
     _adapter?.attributeContactMessage(pubkeyHex, pathLenRaw, snrByte);
+    // Their flood came with repeater codes narrower than the graph's: the
+    // graph drops such paths, so it can never learn where they are.
+    final graph = _graph;
+    if (graph != null &&
+        PathHelper.pathLenHops(pathLenRaw) > 0 &&
+        PathHelper.pathLenWidth(pathLenRaw) < graph.hashWidthBytes &&
+        _narrowSenders.add(pubkeyHex.toLowerCase())) {
+      notifyListeners();
+    }
     _notifySoon();
+  }
+
+  // Contacts whose floods arrived with 1-byte repeater codes this session.
+  final Set<String> _narrowSenders = {};
+  static const _narrowNoticeDismissedKey =
+      'pathfinder_narrow_notice_dismissed';
+
+  /// Whether to tell the user, once, that [contactPubkeyHex]'s radio sends
+  /// short repeater codes so Pathfinder cannot learn routes to them.
+  bool showNarrowNotice(String contactPubkeyHex) {
+    final key = contactPubkeyHex.toLowerCase();
+    if (!isRunning || !_narrowSenders.contains(key)) return false;
+    final dismissed =
+        PrefsManager.instance.getStringList(_narrowNoticeDismissedKey) ??
+            const [];
+    return !dismissed.contains(key);
+  }
+
+  /// The user has read the notice for this contact: never show it again.
+  Future<void> dismissNarrowNotice(String contactPubkeyHex) async {
+    final key = contactPubkeyHex.toLowerCase();
+    final dismissed = {
+      ...?PrefsManager.instance.getStringList(_narrowNoticeDismissedKey),
+      key,
+    };
+    await PrefsManager.instance
+        .setStringList(_narrowNoticeDismissedKey, dismissed.toList());
+    notifyListeners();
   }
 
   /// My own channel message came back through the mesh: its first hop

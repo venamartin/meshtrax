@@ -82,6 +82,11 @@ class RadioRouteKeeper {
     if (_disposed || !_eligible(contact)) return;
     final key = _key(contact.publicKeyHex);
     final id = '$txtType:$senderTimestamp:$text';
+    appLogger.info(
+        'DM from ${contact.name} arrived ${direct ? "on a route" : "as a flood"}; '
+        'the radio ACKed it '
+        '${!direct ? "inside its flooded path reply" : contact.pathLength < 0 ? "by flood (no stored route)" : "on ${_describeStored(contact)}"}',
+        tag: 'PathGraph');
     var episode = _episodes[key];
     if (episode == null || episode.message != id) {
       episode?.expiry?.cancel();
@@ -160,10 +165,9 @@ class RadioRouteKeeper {
           continue;
         }
         final last = _lastWrite[key];
-        if (last != null && DateTime.now().difference(last) < rewriteCooldown) {
-          continue;
-        }
-        await _apply(key);
+        await _apply(key,
+            clearOnly: last != null &&
+                DateTime.now().difference(last) < rewriteCooldown);
       }
     } catch (e) {
       appLogger.warn('stored route check failed: $e', tag: 'PathGraph');
@@ -172,7 +176,10 @@ class RadioRouteKeeper {
     }
   }
 
-  Future<void> _apply(String key) async {
+  /// [clearOnly]: inside the rewrite cooldown only a clear goes out — a
+  /// route Pathfinder no longer stands behind (a moving repeater's link
+  /// went stale) would have the radio ACK on a dead route meanwhile.
+  Future<void> _apply(String key, {bool clearOnly = false}) async {
     try {
       await withRouteLock(() async {
         if (_disposed) return;
@@ -186,6 +193,7 @@ class RadioRouteKeeper {
         }
         final want = _wanted(contact);
         if (want == null || holds(contact, want)) return;
+        if (clearOnly && !want.useFlood) return;
         _lastWrite[key] = DateTime.now();
         appLogger.info(
             'stored route to ${contact.name} set to '
@@ -229,6 +237,10 @@ class RadioRouteKeeper {
   static String _describe(PathSelection route) => route.hopCount == 0
       ? 'direct (no repeater)'
       : PathHelper.formatPathHex(route.pathBytes, stride: route.hashSize);
+
+  static String _describeStored(Contact contact) => contact.pathLength == 0
+      ? 'direct (no repeater)'
+      : PathHelper.formatPathHex(contact.path, stride: contact.pathHashSize);
 }
 
 /// The copies of one message from one contact.

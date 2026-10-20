@@ -7,6 +7,21 @@ import 'package:meshtrax/helpers/timeout_helper.dart';
 const int _airtime = 564;
 
 void main() {
+  group('echoWaitMs (a repeater\'s copy of my own flood)', () {
+    test('two CAD stalls plus airtime × (2 + 5 × 0.5), floored and capped',
+        () {
+      // 8000 + 564 × 4.5 = 10538
+      expect(TimeoutHelper.echoWaitMs(_airtime, 60000), 10538);
+      // A fast preset: 8000 + 100 × 4.5 = 8450 → the 10 s floor.
+      expect(TimeoutHelper.echoWaitMs(100, 60000), 10000);
+      // A slow preset: 8000 + 2400 × 4.5 = 18800.
+      expect(TimeoutHelper.echoWaitMs(2400, 60000), 18800);
+      // Never past the attempt's own ACK wait.
+      expect(TimeoutHelper.echoWaitMs(2400, 12000), 12000);
+      expect(TimeoutHelper.echoWaitMs(100, 6000), 6000);
+    });
+  });
+
   group('sendLegMs (firmware send bound)', () {
     test('matches the firmware formula the connector used inline', () {
       // 500 + (airtime*6 + 250) * (hops+1)

@@ -616,15 +616,47 @@ void main() {
     });
   });
 
-  test('discover responses parse uplink SNR and commit as egress', () {
+  test('a discover answer parses its uplink SNR and proves egress at once',
+      () {
     // [0x8E][rx snr][rssi][path_len] then ctl: [0x92][uplink snr][tag x4][pk]
     adapter.expectedDiscoverTag = 0x04030201;
     adapter.handleFrame(Uint8List.fromList(
         [0x8E, 40, 0, 0, 0x92, 30, 1, 2, 3, 4, ...pubkey]));
     expect(adapter.pendingDiscover.single.uplinkSnr, closeTo(7.5, 1e-9));
+    // Filed on arrival, before any window closes (2026-10-17: a send right
+    // after a Discover routed on the old ranking for 30 s).
+    final mine = graph.egressCandidates().single;
+    expect(mine.repeaterHash, 'A277');
+    expect(mine.tier, EvidenceTier.proven);
+    expect(mine.provenCount, 1);
     adapter.commitDiscover(failureEpisode: false);
-    expect(graph.egressCandidates().single.repeaterHash, 'A277');
-    expect(graph.egressCandidates().single.tier, EvidenceTier.proven);
+    expect(graph.egressCandidates().single.provenCount, 1,
+        reason: 'closing the window files nothing twice');
+    expect(adapter.pendingDiscover, isEmpty);
+  });
+
+  test('the hops of a contact\'s last flood are kept as their distance', () {
+    final bob = 'b0' * 32;
+    expect(adapter.lastFloodHopsFor(bob), isNull);
+    adapter.attributeContactMessage(bob, 0x43, null); // 3 hops, 2-byte
+    expect(adapter.lastFloodHopsFor(bob), 3);
+    adapter.attributeContactMessage(bob, 0xFF, null); // direct: no distance
+    expect(adapter.lastFloodHopsFor(bob), 3, reason: 'a direct copy says nothing');
+    adapter.attributeContactMessage(bob, 0x02, null); // 2 hops, 1-byte
+    expect(adapter.lastFloodHopsFor(bob), 2,
+        reason: 'the decoded message\'s own path_len, whatever its width');
+  });
+
+  test('a new request of mine starts a fresh answer list', () {
+    adapter.expectedDiscoverTag = 0x04030201;
+    adapter.handleFrame(Uint8List.fromList(
+        [0x8E, 40, 0, 0, 0x92, 30, 1, 2, 3, 4, ...pubkey]));
+    expect(adapter.pendingDiscover, hasLength(1));
+    adapter.expectedDiscoverTag = null; // window closed
+    expect(adapter.pendingDiscover, hasLength(1),
+        reason: 'the screen still shows the last request\'s answers');
+    adapter.expectedDiscoverTag = 0x08070605; // asked again
+    expect(adapter.pendingDiscover, isEmpty);
   });
 
   test('a discover reply to a request that is not mine proves nothing', () {

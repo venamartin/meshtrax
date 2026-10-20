@@ -6648,6 +6648,18 @@ abstract class AppLocalizations {
   /// **'Queued'**
   String get chat_statusQueued;
 
+  /// No description provided for @chat_statusNoRepeaterHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'No repeater heard you. Will try again when one is in range.'**
+  String get chat_statusNoRepeaterHeard;
+
+  /// No description provided for @chat_narrowHashNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.'**
+  String chat_narrowHashNotice(String name);
+
   /// No description provided for @chat_statusSending.
   ///
   /// In en, this message translates to:
