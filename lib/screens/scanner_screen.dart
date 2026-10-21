@@ -28,6 +28,7 @@ class ScannerScreen extends StatefulWidget {
 
 class _ScannerScreenState extends State<ScannerScreen> {
   bool _changedNavigation = false;
+  bool _showAllDevices = false;
   late final MeshCoreConnector _connector;
   late final VoidCallback _connectionListener;
   BluetoothAdapterState _bluetoothState = BluetoothAdapterState.unknown;
@@ -117,7 +118,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
         title: AdaptiveAppBarTitle(context.l10n.scanner_title),
         centerTitle: true,
         automaticallyImplyLeading: false,
-        actions: [_buildAutoConnectMenu(context)],
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showAllDevices ? Icons.filter_alt_off : Icons.filter_alt,
+            ),
+            tooltip: _showAllDevices
+                ? context.l10n.scanner_showMeshCoreOnly
+                : context.l10n.scanner_showAllDevices,
+            onPressed: _toggleShowAllDevices,
+          ),
+          _buildAutoConnectMenu(context),
+        ],
       ),
       body: Stack(
         children: [
@@ -213,14 +225,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                             if (isScanning) {
                               connector.stopScan();
                             } else {
-                              unawaited(
-                                connector.startScan().catchError((e) {
-                                  appLogger.warn(
-                                    'startScan error: $e',
-                                    tag: 'ScannerScreen',
-                                  );
-                                }),
-                              );
+                              _startScan();
                             }
                           },
                     icon: isScanning
@@ -243,6 +248,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
         },
       ),
     );
+  }
+
+  void _startScan() {
+    unawaited(
+      _connector.startScan(showAll: _showAllDevices).catchError((e) {
+        appLogger.warn('startScan error: $e', tag: 'ScannerScreen');
+      }),
+    );
+  }
+
+  Future<void> _toggleShowAllDevices() async {
+    setState(() => _showAllDevices = !_showAllDevices);
+    if (_connector.state != MeshCoreConnectionState.scanning) return;
+    await _connector.stopScan();
+    if (mounted) _startScan();
   }
 
   Widget _buildAutoConnectMenu(BuildContext context) {
@@ -321,19 +341,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Widget _buildDeviceList(BuildContext context, MeshCoreConnector connector) {
     if (connector.scanResults.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.bluetooth, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              connector.state == MeshCoreConnectionState.scanning
-                  ? context.l10n.scanner_searchingDevices
-                  : context.l10n.scanner_tapToScan,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
+        child: Icon(Icons.bluetooth, size: 64, color: Colors.grey[400]),
       );
     }
 

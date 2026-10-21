@@ -65,8 +65,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "Пошук пристроїв MeshCore...",
-  "scanner_tapToScan": "Натисніть «Сканувати», щоб знайти пристрої MeshCore",
   "scanner_connectionFailed": "Помилка підключення: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {

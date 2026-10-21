@@ -528,6 +528,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
+  int _scanGeneration = 0;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<int>>? _notifySubscription;
   Timer? _notifyListenersTimer;
@@ -1632,8 +1633,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
+    bool showAll = false,
   }) async {
     if (_state == MeshCoreConnectionState.scanning) return;
+    final generation = ++_scanGeneration;
 
     // Scanning is explicit user intent to pick a device — it outranks any
     // pending auto-reconnect (BLE or TCP), which would otherwise fire
@@ -1681,7 +1684,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     if (PlatformInfo.isLinux) {
-      await _loadLinuxSystemDevicesForScan();
+      await _loadLinuxSystemDevicesForScan(showAll: showAll);
     }
 
     _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
@@ -1690,7 +1693,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         // The Windows plugin ignores withKeywords and reports every
         // advertiser, so apply the same name filter here.
         ..addAll(
-          PlatformInfo.isWindows
+          showAll
+              ? results.where((result) => _advertisedName(result).isNotEmpty)
+              : PlatformInfo.isWindows
               ? results.where(_advertisesMeshCoreName)
               : results,
         );
@@ -1700,7 +1705,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       await FlutterBluePlus.startScan(
-        withKeywords: MeshCoreUuids.deviceNamePrefixes,
+        withKeywords: showAll ? const [] : MeshCoreUuids.deviceNamePrefixes,
         webOptionalServices: [Guid(MeshCoreUuids.service)],
         timeout: timeout,
         androidScanMode: AndroidScanMode.lowLatency,
@@ -1712,13 +1717,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     await Future.delayed(timeout);
-    await stopScan();
+    // A stop-and-rescan inside the timeout owns the scan now; leave it running.
+    if (generation == _scanGeneration) await stopScan();
   }
 
+  static String _advertisedName(ScanResult result) =>
+      result.advertisementData.advName.isNotEmpty
+      ? result.advertisementData.advName
+      : result.device.platformName;
+
   static bool _advertisesMeshCoreName(ScanResult result) {
-    final name = result.advertisementData.advName.isNotEmpty
-        ? result.advertisementData.advName
-        : result.device.platformName;
+    final name = _advertisedName(result);
     if (name.isEmpty) return false;
     final lower = name.toLowerCase();
     return MeshCoreUuids.deviceNamePrefixes.any(
@@ -1726,7 +1735,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _loadLinuxSystemDevicesForScan() async {
+  Future<void> _loadLinuxSystemDevicesForScan({required bool showAll}) async {
     try {
       final systemDevices = await FlutterBluePlus.systemDevices([
         Guid(MeshCoreUuids.service),
@@ -1736,9 +1745,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         ..addAll(
           systemDevices
               .where(
-                (device) => MeshCoreUuids.deviceNamePrefixes.any(
-                  device.platformName.startsWith,
-                ),
+                (device) =>
+                    showAll ||
+                    MeshCoreUuids.deviceNamePrefixes.any(
+                      device.platformName.startsWith,
+                    ),
               )
               .map(
                 (device) => ScanResult(

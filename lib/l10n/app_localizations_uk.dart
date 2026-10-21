@@ -314,11 +314,10 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get scanner_searchingDevices => 'Пошук пристроїв MeshCore...';
+  String get scanner_showAllDevices => 'Show all Bluetooth devices';
 
   @override
-  String get scanner_tapToScan =>
-      'Натисніть «Сканувати», щоб знайти пристрої MeshCore';
+  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
 
   @override
   String get scanner_radioNotResponding =>

@@ -65,8 +65,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "Söker efter MeshCore-enheter...",
-  "scanner_tapToScan": "Tryck Skanna för att hitta MeshCore-enheter",
   "scanner_connectionFailed": "Anslutning misslyckades: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {
