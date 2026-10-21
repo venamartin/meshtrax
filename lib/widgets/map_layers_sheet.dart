@@ -53,10 +53,12 @@ class MapLayersSheet extends StatelessWidget {
       apply();
     }
 
-    void openOfflineMaps() => Navigator.of(context)
+    void openOfflineMaps({OfflineMapsTab? tab}) => Navigator.of(context)
       ..pop()
       ..push(
-        MaterialPageRoute<void>(builder: (_) => const OfflineMapsScreen()),
+        MaterialPageRoute<void>(
+          builder: (_) => OfflineMapsScreen(initialTab: tab),
+        ),
       );
 
     Widget mapTile(MapType type, String picture, String label) {
@@ -73,7 +75,9 @@ class MapLayersSheet extends StatelessWidget {
         selected: available && type == current,
         enabled: available && !offlineOnly,
         onTap: !available
-            ? openOfflineMaps
+            ? () => openOfflineMaps(
+                tab: type == MapType.charts ? OfflineMapsTab.charts : null,
+              )
             : offlineOnly
             ? () => offline(() => settingsService.setMapType(type.name))
             : () => settingsService.setMapType(type.name),
@@ -156,7 +160,7 @@ class MapLayersSheet extends StatelessWidget {
                   const Icon(Icons.chevron_right),
                 ],
               ),
-              onTap: openOfflineMaps,
+              onTap: () => openOfflineMaps(),
             ),
           ],
         ),

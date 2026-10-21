@@ -247,6 +247,25 @@ void main() {
     expect(settings.settings.mapShowRepeaters, isFalse);
   });
 
+  testWidgets('the layers Charts tile, not downloaded, opens the Charts tab', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.text('Charts'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Map type'), findsNothing, reason: 'the sheet closed');
+    expect(
+      tester.widget<TabBar>(find.byType(TabBar)).controller!.index,
+      OfflineMapsTab.charts.index,
+    );
+  });
+
   testWidgets('the legend hides behind an info button', (tester) async {
     await pumpMap(
       tester,

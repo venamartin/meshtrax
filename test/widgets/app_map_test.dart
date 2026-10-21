@@ -1,20 +1,32 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxmap/traxmap.dart';
 
+import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:meshtrax/utils/format_bytes.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 
 import '../helpers/map_fakes.dart';
+
+/// The live charts files from maps.meshtrax.io, kept in traxmap's tests.
+final _chartsIndex = File('packages/traxmap/test/support/charts_index.json')
+    .readAsStringSync();
+final _chartAreas = File('packages/traxmap/test/support/chart_areas.geojson')
+    .readAsStringSync();
 
 class _NoDownloads implements PackDownloader {
   @override
@@ -62,6 +74,9 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider<MeshCoreConnector>(
+            create: (_) => MeshCoreConnector(),
+          ),
           ChangeNotifierProvider<AppSettingsService>.value(value: settings),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           Provider<MapTileCacheService>.value(value: BlankTileCache()),
@@ -119,6 +134,52 @@ void main() {
     expect(find.textContaining('OpenStreetMap contributors'), findsNothing);
     expect(find.text('No offline map here'), findsOneWidget);
     expect(find.text('Offline maps'), findsOneWidget, reason: 'no catalogue');
+  });
+
+  testWidgets('offline on the Charts map: the card offers the area here', (
+    tester,
+  ) async {
+    maps = MapPacksService(
+      manager: PackManager(Directory('${tmp.path}/packs')),
+      downloader: _NoDownloads(),
+      cacheDir: tmp,
+      indexUrl: Uri.parse('https://maps.example/maps/index.json'),
+      styles: StyleRegistry(MemoryStyles(maps: ['osm', 'charts'])),
+      client: MockClient(
+        (request) async => switch (request.url.path) {
+          '/maps/index.json' => http.Response.bytes(
+            utf8.encode(_chartsIndex),
+            200,
+          ),
+          '/maps/chart_areas.geojson' => http.Response.bytes(
+            utf8.encode(_chartAreas),
+            200,
+          ),
+          _ => http.Response('', 404),
+        },
+      ),
+    );
+    await tester.runAsync(maps.refresh);
+    await settings.setMapSource('offline');
+    await settings.setMapType('charts');
+    await pumpMap(tester);
+    final ri = maps.chartPackOf('charts/us/rhode-island')!;
+    expect(find.text('No charts here'), findsOneWidget);
+    expect(find.text('No offline map here'), findsNothing);
+    expect(
+      find.text('Download Rhode Island NOAA charts · ${formatBytes(ri.bytes)}'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('No charts here'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      tester
+          .widget<OfflineMapsScreen>(find.byType(OfflineMapsScreen))
+          .initialChartArea,
+      'charts/us/rhode-island',
+    );
   });
 
   testWidgets('compact: no switch and no card, but follows the setting', (

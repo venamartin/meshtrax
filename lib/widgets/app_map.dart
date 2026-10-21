@@ -85,6 +85,9 @@ class _AppMapState extends State<AppMap> {
 
   /// The downloadable region at the view centre, once the camera settles.
   String? _regionPath;
+
+  /// The NOAA chart areas at the view centre, once the camera settles.
+  List<ChartArea> _chartsHere = const [];
   Timer? _settle;
 
   /// The edges of the downloaded regions plus the screen's overlays, kept
@@ -105,9 +108,15 @@ class _AppMapState extends State<AppMap> {
     _settle?.cancel();
     _settle = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) return;
-      final regions = context.read<MapPacksService>().regions;
-      final path = regions?.regionAt(camera.center)?.path;
-      if (path != _regionPath) setState(() => _regionPath = path);
+      final maps = context.read<MapPacksService>();
+      final path = maps.regions?.regionAt(camera.center)?.path;
+      final charts = maps.chartAreas?.areasAt(camera.center) ?? const [];
+      if (path != _regionPath || !listEquals(charts, _chartsHere)) {
+        setState(() {
+          _regionPath = path;
+          _chartsHere = charts;
+        });
+      }
     });
   }
 
@@ -213,7 +222,11 @@ class _AppMapState extends State<AppMap> {
             right: 8,
             // Clear of a screen's floating action button.
             bottom: 88,
-            child: Center(child: _NoOfflineMap(regionPath: _regionPath)),
+            child: Center(
+              child: type == MapType.charts
+                  ? _NoCharts(areas: _chartsHere)
+                  : _NoOfflineMap(regionPath: _regionPath),
+            ),
           ),
         if (credits.isNotEmpty)
           Positioned(
@@ -298,6 +311,59 @@ class _NoOfflineMap extends StatelessWidget {
               builder: (_) => OfflineMapsScreen(
                 initialRegionPath: packs.isEmpty ? null : region!.path,
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Offline on the Charts map, where no chart is drawn: why, and which
+/// chart area to download.
+class _NoCharts extends StatelessWidget {
+  final List<ChartArea> areas;
+  const _NoCharts({required this.areas});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final maps = context.watch<MapPacksService>();
+    // Downloaded, but nothing drawn: charts start at closer zooms.
+    if (areas.any((a) => maps.installedRegions.contains(a.packRegion))) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(l10n.map_zoomInForCharts),
+        ),
+      );
+    }
+    final (area, entry) =
+        [
+          for (final a in areas)
+            if (maps.chartPackOf(a.packRegion) case final e?) (a, e),
+        ].firstOrNull ??
+        (null, null);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          title: Text(l10n.map_noCharts),
+          subtitle: Text(
+            area == null || entry == null
+                ? l10n.offlineMaps_title
+                : l10n.map_downloadRegion(
+                    l10n.offlineMaps_chartsName(area.name),
+                    formatBytes(entry.bytes),
+                  ),
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => area == null
+                  ? const OfflineMapsScreen(initialTab: OfflineMapsTab.charts)
+                  : OfflineMapsScreen(initialChartArea: area.packRegion),
             ),
           ),
         ),
