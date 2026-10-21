@@ -8,9 +8,9 @@ This file says how traxmap's offline vector maps replace MeshTrax's online raste
 
 ## Status
 
-Last updated 2026-10-19, evening. **Resume here.**
+Last updated 2026-10-20, evening. **Resume here.**
 
-**Branch:** local `feat/offline-maps`, 18 commits on master, last `3f8ea79`. Martin wants local commits only: no push, no PRs until he says.
+**Branch:** `feature/offline-maps`, PR #169. Push only when Martin asks.
 
 **Done:**
 - **Phase 1:**
@@ -57,7 +57,24 @@ Last updated 2026-10-19, evening. **Resume here.**
    - The Node Map's ⋮ menu has **Offline maps** (2026-10-20, Martin: no other way to the downloads from the map).
    - The map is Light by default, whatever the app's theme (Martin, 2026-10-20; `map_theme` is `light` or `dark`). The Light/Dark choice goes in the layers sheet.
    - **Open: web.** `AppMap` needs `MapPacksService`, which is null on web, so the Node Map has no map there. Either drop web or give web an online-only map.
-6. **Waiting for Martin:**
+6. **Phase 6, the Charts tab: done (2026-10-20)** except the chart styles for the rebuilt data. See S3d.
+   - `ChartAreaIndex` (traxmap) reads `chart_areas.geojson`. `MapPacksService` fetches and caches it with the catalogue; a 404 keeps the cached copy.
+   - The Offline maps screen has three tabs: Maps · Charts · Downloaded.
+   - Downloaded lists chart areas in their own "NOAA charts" section. App Settings counts them apart: "1 region · 2 chart areas · 1.2 GB".
+   - Links:
+     - a coastal region's detail says "NOAA charts are picked by coast, in the Charts tab";
+     - the layers sheet's Charts tile, when not downloaded, opens the Charts tab;
+     - Offline on the Charts map, where nothing is drawn, a card says "No charts here · Download {area} NOAA charts · {size}", or "Zoom in to see your charts" when the area is downloaded.
+   - **Charts data is being rebuilt with the real chart content** (Martin, 2026-10-20). Simplified charts were a misunderstanding. The current 9 layers stay. traxmapmaker adds:
+     - traffic separation schemes;
+     - anchorages;
+     - restricted areas;
+     - bridges and overhead clearances;
+     - caution areas.
+     The app's chart styles follow once traxmapmaker sends the schema.
+   - **`chart_areas.geojson` republished (2026-10-20, 17:10 PDT):** 42 areas in 9 coasts, with Atlantic before Gulf, Panama under Caribbean and Micronesia at `charts/us/micronesia`. Every area has a pack. `coast_areas` gives the coastline order the app uses (Maine → Florida, then Florida → Texas). `display_bbox` isn't used yet, because the Charts tab has no map. The test fixtures are these live files. Their mock server sends UTF-8 bytes like R2 (index.json escapes non-ASCII; chart_areas.geojson has raw "Colón").
+7. **Waiting for Martin:**
+   - the Charts notice wording (A is in for now: "Not for navigation. A simplified view of NOAA charts…", which no longer fits the real-data rebuild);
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
@@ -285,14 +302,32 @@ New `lib/screens/offline_maps_screen.dart`. It replaces `map_cache_screen.dart`.
 ```
 When nothing is installed: "No offline maps yet", with [Find maps].
 
-**S3d. Charts tab (Phase 6):**
-- **Map:** chart-area coverage.
-- **Coast groups:** multi-select `FilterChip`s, with "Select all" per group.
-- **Panel:**
-  - the selected areas as `InputChip`s;
-  - "{n} areas · {cells} cells · {size}";
-  - an always-on orange "Not for navigation…" callout;
-  - a Download button.
+**S3d. Charts tab (Phase 6; built 2026-10-20, text only):** Martin chose a coast list with ticks, areas alphabetical until `coast_areas` gives coastline order.
+```
+│ ▍Not for navigation. …                       │  always-on orange callout
+│ ┌──────────────────────────────────────────┐ │
+│ │ ☐ Rhode Island                  12.3 MB  │ │  Suggested: the area at the radio's position
+│ │   Suggested · Atlantic Coast             │ │
+│ └──────────────────────────────────────────┘ │
+│ Chart areas by coast                         │
+│ ┌──────────────────────────────────────────┐ │
+│ │ Atlantic Coast                         ▾ │ │  ExpansionTile per coast, server order
+│ │ 15 areas · 1.4 GB · 1 downloaded · 2 sel… │ │
+│ │                            [Select all]  │ │  Clear when all are ticked
+│ │ ☑ Florida                      310 MB    │ │
+│ │   Also in Gulf Coast                     │ │  one tick for both coasts
+│ │ ☐ Maine                         96 MB    │ │
+│ ├──────────────────────────────────────────┤ │
+│ │ Gulf Coast                             ▸ │ │
+│ └──────────────────────────────────────────┘ │
+│ NOAA Office of Coast Survey                  │  the file's attribution
+├──────────────────────────────────────────────┤
+│ 2 areas                           406 MB     │
+│ [            Download 406 MB               ] │  FilledButton; large-download callout ≥ 1 GB
+```
+- The ticks belong to the screen, so they survive switching tabs. They're keyed by pack region, so Florida is one tick under Atlantic and Gulf.
+- An area whose pack isn't in the index is greyed: "Not available yet".
+- Deep link: `OfflineMapsScreen(initialChartArea:)` opens the Charts tab with that area ticked and its coast open.
 
 ### S4. App Settings → Map Display
 
@@ -446,9 +481,10 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 ### Phase 6: Charts
 
 Needs traxmapmaker 1.4.
-- `ChartAreaIndex`.
-- The Charts tab (S3d), and charts in Downloaded.
-- Links from the layers sheet and region detail.
+- `ChartAreaIndex`. **Done** (CH1).
+- The Charts tab (S3d), and charts in Downloaded. **Done** (CH2).
+- Links from the layers sheet, region detail and the Charts map's "No charts here" card. **Done.**
+- Chart styles for the rebuilt charts data (TSS, anchorages, restricted areas, bridges and clearances, caution areas). **Waiting** for traxmapmaker's schema.
 
 ### Phase 7: trail routing (Android only)
 

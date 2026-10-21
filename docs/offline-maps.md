@@ -58,6 +58,8 @@ traxmap moved into this repository.
 | 2026-10-20 | **A world base map from traxmapmaker, downloaded with the catalogue.** It's a simple world map for Offline mode when zoomed out or outside downloaded regions: land and water, country and state/province lines worldwide, and country, state and major-city names, from Natural Earth. traxmapmaker builds it **last** (after Mexico, the charts master, contours and USGS) and lists it in `index.json`. MeshTrax fetches it with the catalogue and updates it by checksum. It isn't embedded, so it matches the downloadable regions. Until then an empty world is fine. |
 | 2026-10-20 | **One catalogue: production.** The server publishes only products from full master builds to `https://maps.meshtrax.io/index.json`; the `dev/` test catalogue is retired. Every build uses the production catalogue. |
 | 2026-10-20 | **A Google-Maps-style layers sheet** on the main map: map type tiles (OSM, USGS, NOAA), map details (contours, dark map) and node types (repeaters, chat, rooms…). It replaces the plain-text map selector. **The map is light by default**, whatever the app's theme. |
+| 2026-10-20 | **The Charts tab is a coast list with ticks.** Coasts as the file lists them; areas alphabetical until `coast_areas` gives coastline order; Download takes every ticked area. Text only, one column, like the Maps tab. |
+| 2026-10-20 | **Charts carry the real NOAA content,** not a simplified view (Martin). traxmapmaker rebuilds the charts with traffic separation schemes, anchorages, restricted areas, bridges and overhead clearances, and caution areas. The current 9 layers stay. |
 | 2026-10-19 | **Copernicus GLO-30 is approved** for contours outside the US (Canada, Mexico, UK). A contours pack's `attribution` is then "USGS 3DEP", the Copernicus credit, or both, joined with "; ". The licence also requires redistributors to show: "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30." The app shows that alongside the credits wherever such a pack is in use, as it does the charts' "Not for navigation". **Agreed with traxmapmaker (SCHEMA.md "Pack metadata", FINDINGS §1.1):**<br>• Packs carry an optional plain-text `notice` metadata key, present only when a licence requires one.<br>• Several notices in one pack are joined by newlines.<br>• The key is in pack metadata only, not in `index.json`.<br>• The app shows every distinct notice of the packs in use (T5, `MapStyleState.notices`), and never matches on "Copernicus".<br>• First data: the Puerto Rico and US Virgin Islands contours. Two of their blocks have no 3DEP tile and use GLO-30. |
 
 ## Pitfalls already found
@@ -108,6 +110,8 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
   `com.apple.security.network.client` entitlement. The plugin's native code
   is built into the app as soon as traxmap is in `pubspec.yaml`, so add the
   setup in the same PR.
+
+- **Widget tests and real file I/O deadlock.** I/O started inside `testWidgets` (e.g. the Offline maps screen's refresh after its first frame) completes in real time, but its callbacks run only when the fake clock is pumped. Awaiting that future inside `tester.runAsync` never returns. Alternate `runAsync(() => Future.delayed(5 ms))` and `pump()` until it completes, as `finishRefresh` in `offline_maps_charts_test.dart` does. Start services with real I/O inside `runAsync` before `pumpWidget`.
 
 ### Noticed in MeshTrax while planning the migration (not map issues)
 
@@ -178,6 +182,6 @@ Each item now has a task in the [roadmap](offline-maps-roadmap.md).
   - `picker.geojson`: done, served by traxmapmaker on `dev/`;
   - the bundled world pack is deferred, because the picker draws on online
     tiles (decided 2026-10-17).
-- **Charts get their own picker,** by coastal state (Phase 6).
+- **Charts get their own picker,** by coastal state (Phase 6): built as the Charts tab (S3d).
 - **Night style** (red on black, for night vision) and **SDF icons** (buoys,
   peaks, trailheads). Sprites come with task T9.
