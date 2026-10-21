@@ -112,12 +112,9 @@ Last updated 2026-10-20, evening. **Resume here.**
        - magnetic variation;
        - the other regulated areas.
        The app's chart styles for these come after the schema lands.
-     - **On hold (Martin, 2026-10-21):** whether NOAA's SCAMIN decluttering applies to today's layers.
-     - **Plan (Martin approved):** traxmapmaker builds Puerto Rico test packs, not published, after the contours build:
-       - SCAMIN off;
-       - SCAMIN on at offset 0 (NOAA's scale on a desktop);
-       - SCAMIN on at +1 (on a phone), if it's cheap.
-       MeshTrax renders the same views from each (San Juan harbour at z12–14, open water) for Martin to compare;
+     - **Decluttering: variant C (Martin, 2026-10-21),** chosen from side-by-side renders of four Puerto Rico test packs. NOAA's SCAMIN applies on every layer at offset 0, NOAA's scale for a standard screen. At z13 a harbour keeps its buoys and lights, and soundings come in at z14.
+       The other variants: A, no decluttering; B, the new layers only; D, NOAA's scale on a phone, which left harbours almost bare at z13.
+       The renders were made headless in flutter-tester;
    - **traxmapmaker's USGS base design** (2026-10-21, `traxmapmaker/experiments/designs/2026-10-20-usgs-base-master.md`), decisions D1–D14:
      - **D1:** hillshade and elevation bands as their own `terrain` kind (`terrain.pmtiles`, z6–13, overzoomed). MeshTrax agreed: OSM maps get relief without the 2–5 GB USGS pack, and it costs the app about half a day. UX to decide with it: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
      - **D2:** base z14 or z13, compared on the Rhode Island pilot in the app;
