@@ -102,8 +102,7 @@ Last updated 2026-10-20, evening. **Resume here.**
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time";
    - **traxmapmaker's full-data charts** (2026-10-20): Option A, B (its recommendation) or C. MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps.md, renderer notes).
-     - **Decided (Martin, 2026-10-21):** NOAA's SCAMIN decluttering applies to today's layers too ("if noaa specifies decluttering we should follow their recommendation").
-     - Still open: SCAMIN_OFFSET. NOAA's scale on a phone is about +1 zoom (0.16 mm pixels against the 0.28 mm the formula assumes); on a desktop it is 0. Compare both on the Puerto Rico pilot;
+     - **On hold (Martin, 2026-10-21):** whether NOAA's SCAMIN decluttering applies to today's layers. Seeing it on the Puerto Rico pilot, with and without, would help decide. If it's applied, the pixel-size offset (phone about +1 zoom, desktop 0) is a second choice;
    - **traxmapmaker's USGS base design** (2026-10-21, `traxmapmaker/experiments/designs/2026-10-20-usgs-base-master.md`), decisions D1–D14:
      - **D1:** hillshade and elevation bands as their own `terrain` kind (`terrain.pmtiles`, z6–13, overzoomed). MeshTrax agreed: OSM maps get relief without the 2–5 GB USGS pack, and it costs the app about half a day. UX to decide with it: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
      - **D2:** base z14 or z13, compared on the Rhode Island pilot in the app;
