@@ -303,4 +303,105 @@ void main() {
         .toList();
     expect(found, [graz]);
   });
+
+  test('EventWhen.dayCount', () {
+    int days(String field) => EventWhen.parse(field)!.dayCount;
+    expect(days('2026-10-20'), 1);
+    expect(days('2026-10-20 18:00-20:00'), 1);
+    expect(days('2026-10-20 - 2026-10-22'), 3);
+    expect(days('2026-10-30 - 2026-11-02'), 4);
+    // Across the end of daylight saving time (US, Nov 1 2026).
+    expect(days('2026-10-31 - 2026-11-02'), 3);
+    // Overnight but shorter than a day stays one day.
+    expect(days('2026-10-20 22:00-02:00'), 1);
+    expect(days('2026-10-20 18:00 - 2026-10-22 09:00'), 3);
+  });
+
+  group('meshcore:// share links', () {
+    final secret = 'a1' * 16;
+    final key = 'C0FFEE${'ab' * 29}';
+    final channel = 'meshcore://channel/add?name=%23hike&secret=$secret';
+    String contact(int type, [String name = 'Watsonville%20BBS']) =>
+        'meshcore://contact/add?name=$name&public_key=$key&type=$type';
+
+    test('a channel link alone', () {
+      final m = StructuredMessage.parse(channel) as ShareMessage;
+      expect(m.kind, ShareKind.channel);
+      expect(m.name, '#hike');
+      expect(m.keyHex, secret);
+      expect(m.url, channel);
+      expect(m.note, isNull);
+      expect(m.summary, 'Channel: #hike');
+      expect(m.toWire(), channel);
+    });
+
+    test('contact types map to kinds', () {
+      final kinds = {
+        1: ShareKind.contact,
+        2: ShareKind.repeater,
+        3: ShareKind.room,
+        4: ShareKind.sensor,
+        9: ShareKind.contact,
+      };
+      kinds.forEach((type, kind) {
+        final m = StructuredMessage.parse(contact(type)) as ShareMessage;
+        expect(m.kind, kind, reason: 'type $type');
+        expect(m.name, 'Watsonville BBS');
+        expect(m.keyHex, key);
+      });
+      expect(
+        (StructuredMessage.parse(contact(3)) as ShareMessage).summary,
+        'Room: Watsonville BBS',
+      );
+    });
+
+    test('text around the link becomes the note', () {
+      final m = StructuredMessage.parse(
+        'Join our hike channel!\n$channel\nsee you there',
+      ) as ShareMessage;
+      expect(m.note, 'Join our hike channel!');
+      expect(m.extraText, ['see you there']);
+      expect(m.toWire(), 'Join our hike channel!\n$channel\nsee you there');
+    });
+
+    test('a reply mention in front still makes a card', () {
+      expect(StructuredMessage.parse('@[Bob] ${contact(1)}'), isA<ShareMessage>());
+    });
+
+    test('emoji names decode', () {
+      final m = StructuredMessage.parse(
+        contact(1, Uri.encodeComponent('🚲 Ride')),
+      ) as ShareMessage;
+      expect(m.name, '🚲 Ride');
+    });
+
+    test('a bad escape keeps the contact without a name', () {
+      final m = StructuredMessage.parse(contact(1, '%E0%A4%A')) as ShareMessage;
+      expect(m.name, '');
+      expect(m.summary, 'Contact');
+    });
+
+    test('invalid or embedded links stay text', () {
+      // Secret is not 32 hex characters.
+      expect(
+        StructuredMessage.parse('meshcore://channel/add?name=x&secret=abcd'),
+        isNull,
+      );
+      expect(
+        StructuredMessage.parse('meshcore://contact/add?name=x&public_key=ab'),
+        isNull,
+      );
+      // A bad % escape in a channel name.
+      expect(
+        StructuredMessage.parse(
+            'meshcore://channel/add?name=%E0%A4%A&secret=$secret'),
+        isNull,
+      );
+      // Inside a sentence, or more than two lines of text around it.
+      expect(StructuredMessage.parse('join $channel tonight'), isNull);
+      expect(StructuredMessage.parse('a\nb\nc\n$channel'), isNull);
+      // Two links.
+      expect(StructuredMessage.parse('$channel\n${contact(1)}'), isNull);
+    });
+  });
 }

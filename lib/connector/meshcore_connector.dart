@@ -1159,6 +1159,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // re-verifies sits on the pending clock forever, with no failure to retry.
   final Map<String, Timer> _unverifiedSendTimers = {};
   static const Duration _unverifiedSendMaxWait = Duration(seconds: 60);
+  // Pending sends stamped before this belong to an earlier run of the app:
+  // their timers are gone, so they are failed when the store is scoped.
+  final DateTime _startedAt = DateTime.now();
   // Re-attempts a channel sync that died with the connection still up —
   // without it the session stays send-gated until the next reconnect.
   Timer? _channelSyncRetryTimer;
@@ -4422,6 +4425,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+    // A link drop during the wait already failed this row and cleared its
+    // timer; transmitting now would use a slot map nobody has re-verified.
+    if (!_channelMessageTimers.containsKey(message.messageId)) return;
     // Stamp here (the same instant the builder used to) and remember it:
     // radio-quiet waits can push the wire clock seconds past the row's
     // construction clock, and MeshCore One reaction hashes are computed
@@ -4523,6 +4529,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       lastInboundRxTime: _lastChannelMsgRxTime,
       maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
     );
+    // Same as sendChannelMessage: a link drop (or a repeat of the earlier
+    // attempt) during the wait settled this row already.
+    if (!_channelMessageTimers.containsKey(messageId)) return;
     // Retries re-stamp on purpose (an identical payload would be dropped by
     // mesh dedup); record this stamp too so reactions to the retry copy
     // still hash-match our row.
@@ -5356,6 +5365,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }());
   }
 
+  void _failPendingChannelSends(List<String> messageIds) {
+    for (final messageId in messageIds) {
+      unawaited(() async {
+        final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
+          messageId,
+          (m) => m.status == ChannelMessageStatus.pending
+              ? m.copyWith(status: ChannelMessageStatus.failed)
+              : m,
+        );
+        if (updated) notifyListeners();
+      }());
+    }
+  }
+
+  Future<void> _failPendingSendsFromEarlierRuns() async {
+    final failed = await _channelMessageStore.failPendingSendsBefore(_startedAt);
+    if (failed == 0) return;
+    appLogger.info(
+      'Failed $failed channel send(s) left pending by an earlier run',
+      tag: 'Connector',
+    );
+    notifyListeners();
+  }
+
   void _startWaitForRepeatTimer(int channelIndex, String messageId) {
     _channelRepeatTimers[messageId]?.cancel();
     _channelRepeatTimers[messageId] = Timer(const Duration(seconds: 30), () {
@@ -5904,6 +5937,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _drainFloorByIdKey.clear();
     }
     _lastLoadedNodeKey = selfPublicKeyHex;
+    unawaited(_failPendingSendsFromEarlierRuns());
 
     _channelStore.setPublicKeyHex = selfPublicKeyHex;
     _resubscribeChannelUnreadWatch();
@@ -9414,7 +9448,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _pendingChannelSentQueue.clear();
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
-    
+
+    // These timers were the only thing that would ever settle their rows.
+    _failPendingChannelSends(_channelMessageTimers.keys.toList());
     for (final timer in _channelMessageTimers.values) {
       timer.cancel();
     }

@@ -18,7 +18,8 @@ import '../helpers/reaction_helper.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
-import '../helpers/link_handler.dart';
+import '../helpers/markdown_helper.dart';
+import '../widgets/message_text.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
@@ -1288,173 +1289,180 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _textController,
-                builder: (context, value, child) {
-                  final renderGifs = context.read<UiViewStateService>().renderGifs;
-                  final gifId = GifHelper.parseGif(value.text);
-                  if (gifId != null) {
-                    return Focus(
-                      autofocus: true,
-                      onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent &&
-                            (event.logicalKey == LogicalKeyboardKey.enter ||
-                                event.logicalKey ==
-                                    LogicalKeyboardKey.numpadEnter)) {
-                          _sendMessage(connector);
-                          return KeyEventResult.handled;
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: renderGifs ? GifMessage(
-                                url:
-                                    'https://media.giphy.com/media/$gifId/giphy.gif',
-                                backgroundColor:
-                                    colorScheme.surfaceContainerHighest,
-                                fallbackTextColor: colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
-                                maxSize: 160,
-                              ) : Container(
-                                height: 60,
-                                color: colorScheme.surfaceContainerHighest,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.gif_box, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      "GIF",
-                                      style: TextStyle(
-                                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              _textController.clear();
-                              _textFieldFocusNode.requestFocus();
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+      child: Row(
+        children: [
+          Expanded(
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _textController,
+              builder: (context, value, child) {
+                final renderGifs = context.read<UiViewStateService>().renderGifs;
+                final gifId = GifHelper.parseGif(value.text);
+                if (gifId != null) {
                   return Focus(
+                    autofocus: true,
                     onKeyEvent: (node, event) {
-                      if (PlatformInfo.isDesktop && event is KeyDownEvent) {
-                        if (event.logicalKey == LogicalKeyboardKey.enter ||
-                            event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-                          if (HardwareKeyboard.instance.isControlPressed ||
-                              HardwareKeyboard.instance.isShiftPressed) {
-                            final text = _textController.text;
-                            final selection = _textController.selection;
-                            final start = selection.start;
-                            final end = selection.end;
-                            if (start >= 0 && end >= 0) {
-                              _textController.text = text.replaceRange(start, end, '\n');
-                              _textController.selection = TextSelection.collapsed(offset: start + 1);
-                            } else {
-                              _textController.text += '\n';
-                            }
-                            return KeyEventResult.handled;
-                          } else {
-                            _sendMessage(connector);
-                            return KeyEventResult.handled;
-                          }
-                        }
+                      if (event is KeyDownEvent &&
+                          (event.logicalKey == LogicalKeyboardKey.enter ||
+                              event.logicalKey ==
+                                  LogicalKeyboardKey.numpadEnter)) {
+                        _sendMessage(connector);
+                        return KeyEventResult.handled;
                       }
                       return KeyEventResult.ignored;
                     },
-                    child: ByteCountedTextField(
-                      maxBytes: maxBytes,
-                      controller: _textController,
-                      focusNode: _textFieldFocusNode,
-                      textInputAction: TextInputAction.newline,
-                      hintText: context.l10n.chat_typeMessage,
-                      onSubmitted: (_) => _sendMessage(connector),
-                      encoder:
-                          connector.isContactSmazEnabled(
-                            widget.contact.publicKeyHex,
-                          )
-                          ? (text) => connector.prepareContactOutboundText(
-                              widget.contact,
-                              text,
-                            )
-                          : null,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.chat_typeMessage,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: renderGifs ? GifMessage(
+                              url:
+                                  'https://media.giphy.com/media/$gifId/giphy.gif',
+                              backgroundColor:
+                                  colorScheme.surfaceContainerHighest,
+                              fallbackTextColor: colorScheme.onSurface
+                                  .withValues(alpha: 0.6),
+                              maxSize: 160,
+                            ) : Container(
+                              height: 60,
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.gif_box, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "GIF",
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLow,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _textController.clear();
+                            _textFieldFocusNode.requestFocus();
+                          },
                         ),
-                      ),
+                      ],
                     ),
                   );
+                }
+                return Focus(
+                  onKeyEvent: (node, event) {
+                    if (PlatformInfo.isDesktop && event is KeyDownEvent) {
+                      if (event.logicalKey == LogicalKeyboardKey.enter ||
+                          event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+                        if (HardwareKeyboard.instance.isControlPressed ||
+                            HardwareKeyboard.instance.isShiftPressed) {
+                          final text = _textController.text;
+                          final selection = _textController.selection;
+                          final start = selection.start;
+                          final end = selection.end;
+                          if (start >= 0 && end >= 0) {
+                            _textController.text = text.replaceRange(start, end, '\n');
+                            _textController.selection = TextSelection.collapsed(offset: start + 1);
+                          } else {
+                            _textController.text += '\n';
+                          }
+                          return KeyEventResult.handled;
+                        } else {
+                          _sendMessage(connector);
+                          return KeyEventResult.handled;
+                        }
+                      }
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: ByteCountedTextField(
+                    maxBytes: maxBytes,
+                    controller: _textController,
+                    focusNode: _textFieldFocusNode,
+                    textInputAction: TextInputAction.newline,
+                    hintText: context.l10n.chat_typeMessage,
+                    onSubmitted: (_) => _sendMessage(connector),
+                    encoder:
+                        connector.isContactSmazEnabled(
+                          widget.contact.publicKeyHex,
+                        )
+                        ? (text) => connector.prepareContactOutboundText(
+                            widget.contact,
+                            text,
+                          )
+                        : null,
+                    decoration: InputDecoration(
+                      hintText: context.l10n.chat_typeMessage,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLow,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          ComposerActionButton(
+            controller: _textController,
+            trayOpen: _trayOpen,
+            onToggleTray: _toggleTray,
+            onSend: () => _sendMessage(connector),
+            sendTooltip: context.l10n.chat_sendMessageTo(
+              _resolveContact(connector).name,
+            ),
+          ),
+        ],
+      ),
+    );
+    // One bottom inset under the whole composer, so the tray opens right
+    // under the input row and stays above the system navigation bar.
+    return ColoredBox(
+      color: colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (reply != null)
+              Builder(
+                builder: (context) {
+                  final textScale =
+                      context.select<ChatTextScaleService, double>(
+                    (service) => service.scale,
+                  );
+                  return _buildReplyBanner(reply, connector, textScale);
                 },
               ),
-            ),
-            const SizedBox(width: 8),
-            ComposerActionButton(
+            PasteConversionBar(
               controller: _textController,
-              trayOpen: _trayOpen,
-              onToggleTray: _toggleTray,
-              onSend: () => _sendMessage(connector),
-              sendTooltip: context.l10n.chat_sendMessageTo(
-                _resolveContact(connector).name,
-              ),
+              onReplace: _insertComposerText,
+            ),
+            inputBar,
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              child: _trayOpen
+                  ? _buildAttachTray(connector)
+                  : const SizedBox(width: double.infinity),
             ),
           ],
         ),
       ),
-    );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (reply != null)
-          Builder(
-            builder: (context) {
-              final textScale = context.select<ChatTextScaleService, double>(
-                (service) => service.scale,
-              );
-              return _buildReplyBanner(reply, connector, textScale);
-            },
-          ),
-        PasteConversionBar(
-          controller: _textController,
-          onReplace: _insertComposerText,
-        ),
-        inputBar,
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: _trayOpen
-              ? _buildAttachTray(connector)
-              : const SizedBox(width: double.infinity),
-        ),
-      ],
     );
   }
 
@@ -1645,7 +1653,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   )
                 else
                   Text(
-                    previewSource,
+                    MarkdownHelper.toPlainText(
+                      previewSource,
+                      formatting: context
+                          .read<AppSettingsService>()
+                          .settings
+                          .showTextFormatting,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -2441,7 +2455,9 @@ class _MessageBubble extends StatelessWidget {
         gifId == null && structured == null && _isOnlyEmojis(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
     final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
-    final displayMetaColor = displayTextColor.withValues(alpha: 0.7);
+    final displayMetaColor = structured != null
+        ? StructuredPalette.of(context, structured).muted
+        : displayTextColor.withValues(alpha: 0.7);
     final bodyFontSize = isJumboEmoji ? 48.0 : 14.0;
 
     return Padding(
@@ -2469,21 +2485,31 @@ class _MessageBubble extends StatelessWidget {
                 ],
                 Flexible(
                   child: Container(
-                    padding: gifId != null
-                        ? const EdgeInsets.all(4)
-                        : isJumboEmoji
-                            ? EdgeInsets.zero
-                            : const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
+                    padding: structured != null
+                        ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
+                        : gifId != null
+                            ? const EdgeInsets.all(4)
+                            : isJumboEmoji
+                                ? EdgeInsets.zero
+                                : const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                      maxWidth: structured != null
+                          ? StructuredMessageCard.maxBubbleWidth(context)
+                          : MediaQuery.of(context).size.width * 0.65,
                     ),
-                    decoration: BoxDecoration(
-                      color: displayBubbleColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    decoration: structured != null
+                        ? StructuredMessageCard.bubbleDecoration(
+                            context,
+                            structured,
+                            failed: isFailed,
+                          )
+                        : BoxDecoration(
+                            color: displayBubbleColor,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2535,20 +2561,7 @@ class _MessageBubble extends StatelessWidget {
                         if (structured != null)
                           StructuredMessageCard(
                             message: structured,
-                            textColor: textColor,
                             textScale: textScale,
-                            trailing: (!enableTracing && isOutgoing)
-                                ? Padding(
-                                    padding: const EdgeInsets.only(bottom: 2),
-                                    child: MessageStatusIcon(
-                                      isAcked:
-                                          message.status == MessageStatus.delivered,
-                                      isFailed:
-                                          message.status ==
-                                          MessageStatus.failed,
-                                    ),
-                                  )
-                                : null,
                           )
                         else if (gifId != null)
                           Stack(
@@ -2614,8 +2627,7 @@ class _MessageBubble extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: LinkHandler.buildLinkifyText(
-                                  context: context,
+                                child: MessageText(
                                   text: cleanDisplayText,
                                   style: TextStyle(
                                     color: isJumboEmoji ? null : displayTextColor,
@@ -2657,7 +2669,9 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                           ),
-                        if (enableTracing && viaLabel != null) ...[
+                        if (enableTracing &&
+                            viaLabel != null &&
+                            structured == null) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -2728,7 +2742,33 @@ class _MessageBubble extends StatelessWidget {
                             },
                           ),
                         ],
-                        if (enableTracing) ...[
+                        if (structured != null &&
+                            (enableTracing || isOutgoing))
+                          StructuredCardFooter(
+                            message: structured,
+                            time: enableTracing
+                                ? _formatTime(message.timestamp)
+                                : null,
+                            path: enableTracing ? viaLabel : null,
+                            extra: [
+                              if (enableTracing && !isOutgoing) ...[
+                                ?_receivedKindLabel(context),
+                                if (message.tripTimeMs != null &&
+                                    message.status == MessageStatus.delivered)
+                                  '${(message.tripTimeMs! / 1000).toStringAsFixed(1)}s',
+                              ],
+                            ],
+                            status: !isOutgoing
+                                ? null
+                                : enableTracing
+                                    ? _buildStatusIcon(displayMetaColor)
+                                    : MessageStatusIcon(
+                                        isAcked: message.status ==
+                                            MessageStatus.delivered,
+                                        isFailed: isFailed,
+                                      ),
+                          )
+                        else if (enableTracing) ...[
                           const SizedBox(height: 4),
                           Padding(
                             padding: gifId != null
@@ -2904,8 +2944,8 @@ class _MessageBubble extends StatelessWidget {
     final connector = context.read<MeshCoreConnector>();
     final isOwnNode =
         replyTargetIsSelf || reply.mentionedNode == connector.selfName;
-    final senderNameColors =
-        context.read<AppSettingsService>().settings.senderNameColors;
+    final settings = context.read<AppSettingsService>().settings;
+    final senderNameColors = settings.senderNameColors;
     final headerColor = isOwnNode
         ? colorScheme.secondary
         : senderNameColors
@@ -2959,7 +2999,7 @@ class _MessageBubble extends StatelessWidget {
           Icon(
             StructuredMessageCard.iconFor(structured),
             size: 14,
-            color: snippetColor,
+            color: StructuredPalette.of(context, structured).ink,
           ),
           const SizedBox(width: 4),
           Flexible(
@@ -2974,7 +3014,10 @@ class _MessageBubble extends StatelessWidget {
       );
     } else if (quoteText.isNotEmpty) {
       preview = Text(
-        quoteText,
+        MarkdownHelper.toPlainText(
+          quoteText,
+          formatting: settings.showTextFormatting,
+        ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(

@@ -259,6 +259,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(senderNameColors: value));
   }
 
+  Future<void> setShowTextFormatting(bool value) async {
+    await updateSettings(_settings.copyWith(showTextFormatting: value));
+  }
+
   // --- Blocking (user-generated content moderation) -------------------------
 
   bool isContactBlocked(String publicKeyHex) =>

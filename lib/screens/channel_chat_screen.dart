@@ -15,7 +15,8 @@ import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
-import '../helpers/link_handler.dart';
+import '../helpers/markdown_helper.dart';
+import '../widgets/message_text.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
@@ -1253,7 +1254,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }) {
     final settingsService = context.read<AppSettingsService>();
     final uiState = context.read<UiViewStateService>();
-    final connector = context.read<MeshCoreConnector>();
     final enableTracing = settingsService.settings.enableMessageTracing;
     final senderNameColors = settingsService.settings.senderNameColors;
     final isOutgoing = message.isOutgoing;
@@ -1316,18 +1316,24 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     ? (_) => _showMessageActions(message)
                     : null,
                 child: Container(
-                  padding: gifId != null
-                      ? const EdgeInsets.all(4)
-                      : isJumboEmoji
-                          ? EdgeInsets.zero
-                          : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: structured != null
+                      ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
+                      : gifId != null
+                          ? const EdgeInsets.all(4)
+                          : isJumboEmoji
+                              ? EdgeInsets.zero
+                              : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.65,
+                    maxWidth: structured != null
+                        ? StructuredMessageCard.maxBubbleWidth(context)
+                        : MediaQuery.of(context).size.width * 0.65,
                   ),
-                  decoration: BoxDecoration(
-                    color: displayBubbleColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: structured != null
+                      ? StructuredMessageCard.bubbleDecoration(context, structured)
+                      : BoxDecoration(
+                          color: displayBubbleColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1375,44 +1381,39 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         _buildReplyPreview(message, textScale),
                         const SizedBox(height: 8),
                       ],
-                      if (structured != null)
+                      if (structured != null) ...[
                         StructuredMessageCard(
                           message: structured,
-                          textColor: warmLight
-                              ? ChatColors.bubbleText
-                              : (isOutgoing
-                                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                                  : Theme.of(context).colorScheme.onSurface),
                           textScale: textScale,
-                          trailing: (!enableTracing && isOutgoing)
-                              ? Padding(
-                                  padding: const EdgeInsets.only(bottom: 2),
-                                  child: MessageStatusIcon(
-                                      isAcked:
-                                          (message.status ==
-                                              ChannelMessageStatus.sent ||
-                                          message.status ==
-                                              ChannelMessageStatus.delivered) &&
-                                          displayPathString.isNotEmpty,
-                                      isDelivered: message.status ==
-                                          ChannelMessageStatus.delivered,
-                                      isFailed:
-                                          message.status ==
-                                          ChannelMessageStatus.failed,
-                                      isChannelMessage: true,
-                                  ),
-                                )
-                              : null,
-                        )
-                      else ...[
+                        ),
+                        if (enableTracing || isOutgoing)
+                          StructuredCardFooter(
+                            message: structured,
+                            time: enableTracing
+                                ? _formatTime(message.timestamp)
+                                : null,
+                            path: enableTracing ? displayPathString : null,
+                            repeats: enableTracing ? message.repeatCount : 0,
+                            extra: [
+                              if (enableTracing &&
+                                  isOutgoing &&
+                                  _isRetrying(message))
+                                'Retrying (${message.sendRetryCount}/${settingsService.settings.maxChannelMessageRetries})',
+                            ],
+                            status: !isOutgoing
+                                ? null
+                                : enableTracing
+                                    ? _tracingStatusIcon(message)
+                                    : _statusIcon(message, displayPathString),
+                          ),
+                      ] else ...[
                         if (cleanDisplayText.isNotEmpty)
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: LinkHandler.buildLinkifyText(
-                                  context: context,
+                                child: MessageText(
                                   text: cleanDisplayText,
                                   style: TextStyle(
                                     fontSize: bodyFontSize * textScale,
@@ -1446,18 +1447,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               const SizedBox(width: 4),
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 2),
-                                child: MessageStatusIcon(
-                                  isAcked: (message.status ==
-                                              ChannelMessageStatus.sent ||
-                                          message.status ==
-                                              ChannelMessageStatus.delivered) &&
-                                      displayPathString.isNotEmpty,
-                                  isDelivered: message.status ==
-                                      ChannelMessageStatus.delivered,
-                                  isFailed: message.status ==
-                                      ChannelMessageStatus.failed,
-                                  isChannelMessage: true,
-                                ),
+                                child: _statusIcon(message, displayPathString),
                               ),
                             ],
                           ],
@@ -1531,25 +1521,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                         topRight: Radius.circular(8),
                                       ),
                                     ),
-                                    child: MessageStatusIcon(
-                                      isAcked: (message.status ==
-                                                  ChannelMessageStatus.sent ||
-                                              message.status ==
-                                                  ChannelMessageStatus.delivered) &&
-                                          displayPathString.isNotEmpty,
-                                      isDelivered: message.status ==
-                                          ChannelMessageStatus.delivered,
-                                      isFailed: message.status ==
-                                          ChannelMessageStatus.failed,
-                                      isChannelMessage: true,
-                                    ),
+                                    child: _statusIcon(message, displayPathString),
                                   ),
                                 ),
                             ],
                           ),
                         ],
                       ],
-                      if (enableTracing) ...[
+                      if (enableTracing && structured == null) ...[
                         if (displayPathString.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Padding(
@@ -1602,10 +1581,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               ],
                               if (isOutgoing) ...[
                                 const SizedBox(width: 4),
-                                if (message.sendRetryCount > 0 &&
-                                    connector.isChannelMessageRetrying(message.messageId) &&
-                                    message.status !=
-                                        ChannelMessageStatus.delivered) ...[
+                                if (_isRetrying(message)) ...[
                                   Text(
                                     'Retrying (${message.sendRetryCount}/${settingsService.settings.maxChannelMessageRetries})',
                                     style: TextStyle(
@@ -1615,20 +1591,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                 ],
-                                Icon(
-                                  message.status == ChannelMessageStatus.delivered
-                                      ? Icons.done_all
-                                      : (message.status == ChannelMessageStatus.sent || 
-                                         message.status == ChannelMessageStatus.failed)
-                                          ? Icons.check
-                                          : message.status == ChannelMessageStatus.pending
-                                              ? Icons.schedule
-                                              : Icons.error_outline,
-                                  size: 14,
-                                  color: message.status == ChannelMessageStatus.failed
-                                      ? Colors.amber[700]
-                                      : Colors.grey[600],
-                                ),
+                                _tracingStatusIcon(message),
                               ],
                             ],
                           ),
@@ -1670,6 +1633,36 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       );
     }
   }
+
+  bool _isRetrying(ChannelMessage message) =>
+      message.sendRetryCount > 0 &&
+      context.read<MeshCoreConnector>().isChannelMessageRetrying(message.messageId) &&
+      message.status != ChannelMessageStatus.delivered;
+
+  Widget _statusIcon(ChannelMessage message, String displayPathString) =>
+      MessageStatusIcon(
+        isAcked: (message.status == ChannelMessageStatus.sent ||
+                message.status == ChannelMessageStatus.delivered) &&
+            displayPathString.isNotEmpty,
+        isDelivered: message.status == ChannelMessageStatus.delivered,
+        isFailed: message.status == ChannelMessageStatus.failed,
+        isChannelMessage: true,
+      );
+
+  Widget _tracingStatusIcon(ChannelMessage message) => Icon(
+        message.status == ChannelMessageStatus.delivered
+            ? Icons.done_all
+            : (message.status == ChannelMessageStatus.sent ||
+                    message.status == ChannelMessageStatus.failed)
+                ? Icons.check
+                : message.status == ChannelMessageStatus.pending
+                    ? Icons.schedule
+                    : Icons.error_outline,
+        size: 14,
+        color: message.status == ChannelMessageStatus.failed
+            ? Colors.amber[700]
+            : Colors.grey[600],
+      );
 
   Widget _buildReplyPreview(ChannelMessage message, double textScale) {
     final connector = context.read<MeshCoreConnector>();
@@ -1716,7 +1709,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           Icon(
             StructuredMessageCard.iconFor(structured),
             size: 14,
-            color: previewTextColor,
+            color: StructuredPalette.of(context, structured).ink,
           ),
           const SizedBox(width: 4),
           Flexible(
@@ -1739,7 +1732,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           ? '$replyText..'
           : replyText;
       contentPreview = Text(
-        previewText,
+        MarkdownHelper.toPlainText(
+          previewText,
+          formatting:
+              context.read<AppSettingsService>().settings.showTextFormatting,
+        ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -2134,7 +2131,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(StructuredMessageCard.iconFor(structured), size: 14, color: textColor),
+          Icon(StructuredMessageCard.iconFor(structured), size: 14, color: StructuredPalette.of(context, structured).ink),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -2149,7 +2146,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
 
     return Text(
-      message.text,
+      MarkdownHelper.toPlainText(
+        message.text,
+        formatting:
+            context.read<AppSettingsService>().settings.showTextFormatting,
+      ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(fontSize: 11 * textScale, color: textColor),

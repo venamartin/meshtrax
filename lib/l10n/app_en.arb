@@ -290,6 +290,8 @@
   "appSettings_enableMessageTracingSubtitle": "Show detailed routing and timing metadata for messages",
   "appSettings_senderNameColors": "Colorful sender names",
   "appSettings_senderNameColorsSubtitle": "Give each channel sender their own name color. Off uses the theme color for everyone.",
+  "appSettings_showTextFormatting": "Show text formatting",
+  "appSettings_showTextFormattingSubtitle": "Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.",
   "appSettings_notifications": "Notifications",
   "appSettings_enableNotifications": "Enable Notifications",
   "appSettings_enableNotificationsSubtitle": "Receive notifications for messages and adverts",
@@ -2507,6 +2509,52 @@
   "structured_notice": "Notice",
   "structured_allDay": "All day",
   "structured_calendarFailed": "Could not open the calendar",
+  "structured_today": "Today",
+  "structured_tomorrow": "Tomorrow",
+  "structured_inDays": "{count, plural, =1{In 1 day} other{In {count} days}}",
+  "@structured_inDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "structured_past": "Past",
+  "structured_dayOfDays": "Day {day} of {total}",
+  "@structured_dayOfDays": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "structured_days": "{count, plural, =1{1 day} other{{count} days}}",
+  "@structured_days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dialog_eventEndDate": "End date",
+  "dialog_eventSameDay": "Same day",
+  "structured_map": "Map",
+  "structured_navigate": "Navigate",
+  "structured_channel": "Channel",
+  "structured_contact": "Contact",
+  "structured_room": "Room",
+  "structured_repeater": "Repeater",
+  "structured_sensor": "Sensor",
+  "structured_joinChannel": "Join channel",
+  "structured_addContact": "Add contact",
+  "structured_addRoom": "Add room",
+  "structured_addRepeater": "Add repeater",
+  "structured_addSensor": "Add sensor",
+  "structured_open": "Open",
+  "structured_added": "Added",
   "tray_add": "Add",
   "tray_myLocation": "My location",
   "tray_pointOnMap": "Point on map",

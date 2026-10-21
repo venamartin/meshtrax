@@ -1450,6 +1450,18 @@ abstract class AppLocalizations {
   /// **'Give each channel sender their own name color. Off uses the theme color for everyone.'**
   String get appSettings_senderNameColorsSubtitle;
 
+  /// No description provided for @appSettings_showTextFormatting.
+  ///
+  /// In en, this message translates to:
+  /// **'Show text formatting'**
+  String get appSettings_showTextFormatting;
+
+  /// No description provided for @appSettings_showTextFormattingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.'**
+  String get appSettings_showTextFormattingSubtitle;
+
   /// No description provided for @appSettings_notifications.
   ///
   /// In en, this message translates to:
@@ -8039,6 +8051,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the calendar'**
   String get structured_calendarFailed;
+
+  /// No description provided for @structured_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get structured_today;
+
+  /// No description provided for @structured_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get structured_tomorrow;
+
+  /// No description provided for @structured_inDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{In 1 day} other{In {count} days}}'**
+  String structured_inDays(int count);
+
+  /// No description provided for @structured_past.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get structured_past;
+
+  /// No description provided for @structured_dayOfDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}'**
+  String structured_dayOfDays(int day, int total);
+
+  /// No description provided for @structured_days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String structured_days(int count);
+
+  /// No description provided for @dialog_eventEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get dialog_eventEndDate;
+
+  /// No description provided for @dialog_eventSameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Same day'**
+  String get dialog_eventSameDay;
+
+  /// No description provided for @structured_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get structured_map;
+
+  /// No description provided for @structured_navigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate'**
+  String get structured_navigate;
+
+  /// No description provided for @structured_channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get structured_channel;
+
+  /// No description provided for @structured_contact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get structured_contact;
+
+  /// No description provided for @structured_room.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get structured_room;
+
+  /// No description provided for @structured_repeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeater'**
+  String get structured_repeater;
+
+  /// No description provided for @structured_sensor.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensor'**
+  String get structured_sensor;
+
+  /// No description provided for @structured_joinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel'**
+  String get structured_joinChannel;
+
+  /// No description provided for @structured_addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get structured_addContact;
+
+  /// No description provided for @structured_addRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Add room'**
+  String get structured_addRoom;
+
+  /// No description provided for @structured_addRepeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Add repeater'**
+  String get structured_addRepeater;
+
+  /// No description provided for @structured_addSensor.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sensor'**
+  String get structured_addSensor;
+
+  /// No description provided for @structured_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get structured_open;
+
+  /// No description provided for @structured_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get structured_added;
 
   /// No description provided for @tray_add.
   ///

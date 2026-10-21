@@ -28,7 +28,7 @@ class MiniMap extends StatelessWidget {
     // Web has no map packs service, so no map.
     if (PlatformInfo.isWeb) return const SizedBox.shrink();
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         height: height,
         child: Stack(

@@ -1,144 +1,21 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:linkify/linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/l10n.dart';
 import 'package:provider/provider.dart';
-import '../utils/platform_info.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../connector/meshcore_connector.dart';
 import '../models/channel.dart';
 import '../screens/channel_chat_screen.dart';
 import '../screens/map_screen.dart';
+import '../utils/platform_info.dart';
 import 'channel_join_helper.dart';
 import 'contact_import_helper.dart';
 import 'maps_link.dart';
-import 'structured_message.dart';
 
+/// What happens when a link, hashtag, coordinate or meshcore:// link in a
+/// message is tapped.
 class LinkHandler {
-  static TextStyle defaultLinkStyle(BuildContext context, TextStyle base) {
-    return base.copyWith(
-      decoration: TextDecoration.underline,
-      decorationColor: base.color,
-      fontWeight: FontWeight.w600,
-    );
-  }
-
-  static String _getMonospaceFontFamily() {
-    if (PlatformInfo.isWindows) return 'Consolas';
-    if (PlatformInfo.isMacOS || PlatformInfo.isIOS) return 'Menlo';
-    return 'monospace';
-  }
-
-  /// Returns a [SelectableText.rich] on desktop or a [Text.rich] on mobile with custom styling for mentions.
-  static Widget buildLinkifyText({
-    required BuildContext context,
-    required String text,
-    required TextStyle style,
-    TextStyle? linkStyle,
-  }) {
-    final effectiveLinkStyle = linkStyle ?? defaultLinkStyle(context, style);
-    const options = LinkifyOptions(humanize: false, defaultToHttps: false);
-    
-    final elements = linkify(
-      text,
-      options: options,
-      linkifiers: [
-        const UrlLinkifier(),
-        const EmailLinkifier(),
-        const MeshCoreLinkifier(),
-        const CoordinateLinkifier(),
-        const MentionLinkifier(),
-        const HashtagLinkifier(),
-        const BoldLinkifier(),
-        const ItalicLinkifier(),
-        const StrikethroughLinkifier(),
-        const MultilineCodeLinkifier(),
-        const CodeLinkifier(),
-      ],
-    );
-
-    final spans = elements.map((element) {
-      if (element is MentionElement) {
-        return TextSpan(
-          text: element.text,
-          style: style.copyWith(
-            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-            fontWeight: FontWeight.bold,
-            decoration: TextDecoration.none,
-          ),
-        );
-      } else if (element is HashtagElement) {
-        return TextSpan(
-          text: element.text,
-          style: effectiveLinkStyle,
-          recognizer: TapGestureRecognizer()..onTap = () => handleHashtagTap(context, element.text),
-        );
-      } else if (element is MeshCoreLinkElement) {
-        return TextSpan(
-          text: element.text,
-          style: effectiveLinkStyle,
-          recognizer: TapGestureRecognizer()..onTap = () => handleMeshCoreLink(context, element.url),
-        );
-      } else if (element is CoordinateElement) {
-        return TextSpan(
-          text: element.text,
-          style: effectiveLinkStyle,
-          recognizer: TapGestureRecognizer()..onTap = () => openMapAt(context, element.position),
-        );
-      } else if (element is LinkableElement) {
-        return TextSpan(
-          text: element.text,
-          style: effectiveLinkStyle,
-          recognizer: TapGestureRecognizer()..onTap = () => handleLinkTap(context, element.url),
-        );
-      } else if (element is BoldElement) {
-        return TextSpan(text: element.innerText, style: style.copyWith(fontWeight: FontWeight.bold));
-      } else if (element is ItalicElement) {
-        return TextSpan(text: element.innerText, style: style.copyWith(fontStyle: FontStyle.italic));
-      } else if (element is StrikethroughElement) {
-        return TextSpan(
-          text: element.innerText,
-          style: style.copyWith(
-            decoration: TextDecoration.lineThrough,
-            decorationColor: style.color,
-            decorationThickness: 2.0,
-          ),
-        );
-      } else if (element is MultilineCodeElement) {
-        return TextSpan(
-          text: element.innerText.trim(),
-          style: style.copyWith(
-            fontFamily: _getMonospaceFontFamily(),
-            fontFamilyFallback: ['Courier New', 'Courier', 'Roboto Mono', 'Monaco'],
-            color: style.color?.withValues(alpha: 0.85),
-          ),
-        );
-      } else if (element is CodeElement) {
-        return TextSpan(
-          text: element.innerText,
-          style: style.copyWith(
-            fontFamily: _getMonospaceFontFamily(),
-            fontFamilyFallback: ['Courier New', 'Courier', 'Roboto Mono', 'Monaco'],
-            color: style.color?.withValues(alpha: 0.85),
-          ),
-        );
-      } else {
-        return TextSpan(text: element.text, style: style);
-      }
-    }).toList();
-
-    if (PlatformInfo.isDesktop) {
-      return SelectableText.rich(
-        TextSpan(children: spans),
-      );
-    }
-    return Text.rich(
-      TextSpan(children: spans),
-    );
-  }
-
   static Future<void> handleHashtagTap(BuildContext context, String hashtag) async {
     final connector = context.read<MeshCoreConnector>();
 
@@ -225,6 +102,38 @@ class LinkHandler {
         builder: (_) => MapScreen(highlightPosition: position, highlightLabel: label),
       ),
     );
+  }
+
+  /// Hands [position] to the system maps app for directions. Android gets a
+  /// `geo:` URI, so the user picks the app (Google Maps, OsmAnd, …).
+  static Future<void> openInMapsApp(
+    BuildContext context,
+    LatLng position, {
+    String? label,
+  }) async {
+    final coords = '${position.latitude},${position.longitude}';
+    final String url;
+    if (PlatformInfo.isAndroid) {
+      final name = label == null || label.isEmpty
+          ? ''
+          : '(${Uri.encodeComponent(label)})';
+      url = 'geo:$coords?q=$coords$name';
+    } else if (PlatformInfo.isIOS || PlatformInfo.isMacOS) {
+      url = 'https://maps.apple.com/?daddr=$coords';
+    } else {
+      url = 'https://www.google.com/maps/dir/?api=1&destination=$coords';
+    }
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    ).catchError((_) => false);
+    if (!opened && context.mounted) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.chat_couldNotOpenLink(url)),
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   /// `meshcore://channel/add` joins the channel, `meshcore://contact/add`
@@ -315,347 +224,3 @@ class LinkHandler {
     }
   }
 }
-
-class MentionLinkifier extends Linkifier {
-  const MentionLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'@\[([^\]]+)\]').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(MentionElement(match.group(0)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class MentionElement extends LinkableElement {
-  MentionElement(String text) : super(text, text);
-}
-
-/// Splits [TextElement]s on [pattern], turning each match into an element
-/// built by [make]. Shared by the custom linkifiers below.
-List<LinkifyElement> _splitOn(
-  List<LinkifyElement> elements,
-  RegExp pattern,
-  LinkifyElement? Function(RegExpMatch match) make,
-) {
-  final list = <LinkifyElement>[];
-  for (final element in elements) {
-    if (element is! TextElement) {
-      list.add(element);
-      continue;
-    }
-    var lastIndex = 0;
-    for (final match in pattern.allMatches(element.text)) {
-      final made = make(match);
-      if (made == null) continue;
-      if (match.start > lastIndex) {
-        list.add(TextElement(element.text.substring(lastIndex, match.start)));
-      }
-      list.add(made);
-      lastIndex = match.end;
-    }
-    if (lastIndex < element.text.length) {
-      list.add(TextElement(element.text.substring(lastIndex)));
-    }
-  }
-  return list;
-}
-
-/// `meshcore://channel/add?...` and `meshcore://contact/add?...` links.
-class MeshCoreLinkifier extends Linkifier {
-  const MeshCoreLinkifier();
-
-  static final _pattern = RegExp(r'meshcore://[^\s<>"]+');
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    return _splitOn(elements, _pattern, (m) => MeshCoreLinkElement(m.group(0)!));
-  }
-}
-
-class MeshCoreLinkElement extends LinkableElement {
-  MeshCoreLinkElement(String url) : super(url, url);
-}
-
-/// A standalone `lat, lon` token or `geo:` URI, tappable to open the map.
-class CoordinateLinkifier extends Linkifier {
-  const CoordinateLinkifier();
-
-  static final _pattern = RegExp(
-    '${StructuredMessage.coordinatePattern.pattern}|geo:[^\\s]+',
-  );
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    return _splitOn(elements, _pattern, (m) {
-      final text = m.group(0)!;
-      final position = text.startsWith('geo:')
-          ? MapsLink.parse(text)?.position
-          : StructuredMessage.parseCoordinates(text);
-      return position == null ? null : CoordinateElement(text, position);
-    });
-  }
-}
-
-class CoordinateElement extends LinkableElement {
-  final LatLng position;
-  CoordinateElement(String text, this.position) : super(text, text);
-}
-
-class HashtagLinkifier extends Linkifier {
-  const HashtagLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'#[a-zA-Z0-9_-]+').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(HashtagElement(match.group(0)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class HashtagElement extends LinkableElement {
-  HashtagElement(String text) : super(text, text);
-}
-
-class BoldLinkifier extends Linkifier {
-  const BoldLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'\*\*(.+?)\*\*').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(BoldElement(match.group(0)!, match.group(1)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class BoldElement extends LinkifyElement {
-  final String innerText;
-  BoldElement(super.text, this.innerText);
-}
-
-class ItalicLinkifier extends Linkifier {
-  const ItalicLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'\*(.+?)\*').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(ItalicElement(match.group(0)!, match.group(1)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class ItalicElement extends LinkifyElement {
-  final String innerText;
-  ItalicElement(super.text, this.innerText);
-}
-
-class StrikethroughLinkifier extends Linkifier {
-  const StrikethroughLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'~~(.+?)~~').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(StrikethroughElement(match.group(0)!, match.group(1)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class StrikethroughElement extends LinkifyElement {
-  final String innerText;
-  StrikethroughElement(super.text, this.innerText);
-}
-
-class CodeLinkifier extends Linkifier {
-  const CodeLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'`([^`]+?)`').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(CodeElement(match.group(0)!, match.group(1)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class CodeElement extends LinkifyElement {
-  final String innerText;
-  CodeElement(super.text, this.innerText);
-}
-
-class MultilineCodeLinkifier extends Linkifier {
-  const MultilineCodeLinkifier();
-
-  @override
-  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
-    final list = <LinkifyElement>[];
-    for (var element in elements) {
-      if (element is TextElement) {
-        final matches = RegExp(r'```([\s\S]+?)```').allMatches(element.text);
-        if (matches.isEmpty) {
-          list.add(element);
-          continue;
-        }
-
-        int lastIndex = 0;
-        for (var match in matches) {
-          if (match.start > lastIndex) {
-            list.add(TextElement(element.text.substring(lastIndex, match.start)));
-          }
-          list.add(MultilineCodeElement(match.group(0)!, match.group(1)!));
-          lastIndex = match.end;
-        }
-
-        if (lastIndex < element.text.length) {
-          list.add(TextElement(element.text.substring(lastIndex)));
-        }
-      } else {
-        list.add(element);
-      }
-    }
-    return list;
-  }
-}
-
-class MultilineCodeElement extends LinkifyElement {
-  final String innerText;
-  MultilineCodeElement(super.text, this.innerText);
-}
-
-

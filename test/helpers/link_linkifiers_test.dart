@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:linkify/linkify.dart';
-import 'package:meshtrax/helpers/link_handler.dart';
+import 'package:meshtrax/helpers/linkifiers.dart';
 
 void main() {
   List<LinkifyElement> run(String text) => linkify(

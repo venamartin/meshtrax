@@ -298,6 +298,45 @@ class ChannelMessageStore {
     }
   }
 
+  /// Fails own sends still `pending` from before [cutoff]: their attempt
+  /// timers died with the process that started them, so nothing else will
+  /// ever settle them. Returns how many rows changed.
+  Future<int> failPendingSendsBefore(DateTime cutoff) async {
+    if (publicKeyHex.isEmpty) return 0;
+    // The payload, not the isOutgoing column: pre-v3 rows default that
+    // column to false. The two keys are encoded side by side.
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.timestampMs.isSmallerThanValue(
+                      cutoff.millisecondsSinceEpoch,
+                    ) &
+                    r.payload.like('%"isOutgoing":true,"status":0,%'),
+              ))
+            .get();
+    var failed = 0;
+    for (final row in rows) {
+      try {
+        final msg = _messageFromJson(
+          jsonDecode(row.payload) as Map<String, dynamic>,
+        );
+        if (!msg.isOutgoing || msg.status != ChannelMessageStatus.pending) {
+          continue;
+        }
+        await upsertMessage(
+          row.channelIdKey,
+          msg.copyWith(status: ChannelMessageStatus.failed),
+        );
+        failed++;
+      } catch (e) {
+        appLogger.warn('Skipping unreadable channel message row: $e');
+      }
+    }
+    return failed;
+  }
+
   /// Load-transform-upsert of a single row; returns false when the row
   /// does not exist. The only mutation primitive live paths may use.
   Future<bool> updateMessage(

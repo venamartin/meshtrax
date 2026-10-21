@@ -78,6 +78,10 @@ class AppSettings {
   /// every sender name in the theme color, as before.
   final bool senderNameColors;
 
+  /// Markdown in message bubbles (bold, italic, spoilers, headers, links).
+  /// Off shows the raw characters; links, mentions and hashtags still work.
+  final bool showTextFormatting;
+
   /// One-time "channel names can be imitated" warning on DM-from-channel;
   /// set when the user checks "don't show again".
   final bool dmIdentityWarningDismissed;
@@ -133,6 +137,7 @@ class AppSettings {
     this.autoConnectLastDevice = true,
     this.incrementalContactSync = false,
     this.senderNameColors = true,
+    this.showTextFormatting = true,
     this.dmIdentityWarningDismissed = false,
     this.batterySleepWarningDismissed = false,
     Set<String>? blockedContactKeys,
@@ -185,6 +190,7 @@ class AppSettings {
       'auto_connect_last_device': autoConnectLastDevice,
       'incremental_contact_sync': incrementalContactSync,
       'sender_name_colors': senderNameColors,
+      'show_text_formatting': showTextFormatting,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
@@ -262,6 +268,7 @@ class AppSettings {
       incrementalContactSync:
           json['incremental_contact_sync'] as bool? ?? false,
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
+      showTextFormatting: json['show_text_formatting'] as bool? ?? true,
       dmIdentityWarningDismissed:
           json['dm_identity_warning_dismissed'] as bool? ?? false,
       batterySleepWarningDismissed:
@@ -319,6 +326,7 @@ class AppSettings {
     bool? autoConnectLastDevice,
     bool? incrementalContactSync,
     bool? senderNameColors,
+    bool? showTextFormatting,
     bool? dmIdentityWarningDismissed,
     bool? batterySleepWarningDismissed,
     Set<String>? blockedContactKeys,
@@ -374,6 +382,7 @@ class AppSettings {
       incrementalContactSync:
           incrementalContactSync ?? this.incrementalContactSync,
       senderNameColors: senderNameColors ?? this.senderNameColors,
+      showTextFormatting: showTextFormatting ?? this.showTextFormatting,
       dmIdentityWarningDismissed:
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
       batterySleepWarningDismissed:
