@@ -96,6 +96,17 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
   - **Fonts:** `text-font` only picks weight and italic. There's no font family, and no glyph PBFs are used.
   - **Sprites:** one `SpriteAtlas` per layer, so icon sheets must be merged. Sprites, `line-pattern` and every `*-opacity` do work, but traxmap doesn't load sprites yet.
   - **Tapping features:** there's no query API for vector features.
+- **Style arithmetic and style cost, measured on real chart tiles** (2026-10-20, for traxmapmaker's full-data charts proposal; traxmapmaker's local Puerto Rico test packs, the real 2.9.1 pipeline in `flutter test`):
+  - **Arithmetic works:**
+    - `["to-string",["round",["*",["get","depth_m"],3.28084]]]` matched the pack's `depth_ft` on 3,446 of 3,446 soundings;
+    - `concat` builds "142 ft";
+    - `to-string` drops a whole number's ".0";
+    - one decimal is `["/",["round",["*",x,10]],10]`.
+  - **Guard optional numbers:** a missing attribute makes `*` null, and `to-string` makes that "", so a label reads "VC  ft". Use `["case",["has","clearance_m"],…,""]`.
+  - **List attributes:** `in` against a string is a substring test ("restricted" matches "entry_restricted"). For an exact match, wrap both in commas: `["in",",entry_restricted,",["concat",",",["get","restrictions"],","]]`.
+  - **Cost** ≈ (style layers on a source layer) × (its features in the tile), at about 0.5–1 µs per filter evaluation, paid once per tile when it's rasterized.
+    - 96 per-class layers added 0.5–1.2 ms per dense Puerto Rico harbour tile, where today's depth layers cost 2–20 ms.
+    - In big harbours (structure about 2k features per tile), draw the dense layers with a few `match`-driven layers, not one layer per class.
 - `RandomAccessFile` allows one pending operation at a time, so local tile reads need serializing.
 - **Test hang:** `rootBundle` caches asset futures. A future created inside one `testWidgets` fake-async zone never completes when awaited from another. Load assets in plain `test()` with `TestWidgetsFlutterBinding.ensureInitialized()`.
 - A bundled pack copied into app storage goes stale after a pipeline rebuild. Compare size plus the first 16 KiB, and reinstall when they differ.
