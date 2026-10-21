@@ -74,6 +74,7 @@ void main() {
     Brightness? brightness,
     bool compact = false,
     LatLng center = const LatLng(41.8, -71.4),
+    double controlsWidth = 0,
   }) async {
     tester.view.physicalSize = const Size(600, 600);
     tester.view.devicePixelRatio = 1;
@@ -95,6 +96,7 @@ void main() {
           home: Scaffold(
             body: AppMap(
               initialCamera: MapCamera(center: center, zoom: 10),
+              controlsWidth: controlsWidth,
               compact: compact,
             ),
           ),
@@ -250,6 +252,21 @@ void main() {
     await install('us-rhode-island-osm', 'osm', _ri);
     await tester.pump();
     expect(switchState(tester), {false});
+  });
+
+  testWidgets("the card sits beside a screen's map buttons", (tester) async {
+    await settings.setMapSource('offline');
+    await pumpMap(tester, controlsWidth: 80);
+    final slot = tester.widget<Positioned>(
+      find
+          .ancestor(
+            of: find.text('No offline map here'),
+            matching: find.byType(Positioned),
+          )
+          .first,
+    );
+    expect(slot.right, 80);
+    expect(slot.bottom, 40, reason: 'above the credits chip');
   });
 
   testWidgets('compact: no switch and no card, but follows the setting', (

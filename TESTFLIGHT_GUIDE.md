@@ -47,8 +47,13 @@ any other change.
 
 ```bash
 flutter clean
-flutter build ipa
+BYPASS_PERMISSION_LOCATION_ALWAYS=1 flutter build ipa
 ```
+
+`BYPASS_PERMISSION_LOCATION_ALWAYS=1` keeps the geolocator plugin (My location
+on the map) from referencing "Always" location, which the app never asks for.
+Without it App Store Connect warns about a missing
+`NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683).
 
 Takes a few minutes. Outputs:
 
@@ -284,7 +289,7 @@ development-signed copy instead:
 
 ```bash
 flutter devices                                   # get the device id
-flutter build ios --release
+BYPASS_PERMISSION_LOCATION_ALWAYS=1 flutter build ios --release
 flutter install -d <device-id> --release
 ```
 

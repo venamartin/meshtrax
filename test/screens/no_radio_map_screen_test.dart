@@ -11,6 +11,7 @@ import 'package:meshtrax/screens/no_radio_map_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
+import 'package:meshtrax/services/phone_location_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
@@ -37,12 +38,14 @@ void main() {
   late Directory tmp;
   late MapPacksService maps;
   late UiViewStateService viewState;
+  late FakePhoneLocation phone;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
     viewState = UiViewStateService();
+    phone = FakePhoneLocation(supported: false);
     tmp = await Directory.systemTemp.createTemp('noradiomap');
     maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/packs')),
@@ -64,6 +67,7 @@ void main() {
           ChangeNotifierProvider.value(value: viewState),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           Provider<MapTileCacheService>.value(value: BlankTileCache()),
+          ChangeNotifierProvider(create: (_) => PhoneLocationService(phone)),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -101,5 +105,22 @@ void main() {
     expect(find.text('Nodes'), findsNothing);
     expect(find.text('More filters'), findsNothing);
     expect(find.text('Offline maps'), findsOneWidget);
+  });
+
+  testWidgets("My location: the phone's GPS", (tester) async {
+    phone = FakePhoneLocation(here: const LatLng(41.7, -71.5));
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip('My location'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final map = tester.widget<AppMap>(find.byType(AppMap)).controller!;
+    expect(map.camera!.center.longitude, closeTo(-71.5, 1e-6));
+  });
+
+  testWidgets('no GPS (Linux) and no radio: no My location', (tester) async {
+    await pumpScreen(tester);
+    expect(find.byTooltip('My location'), findsNothing);
+    expect(find.byTooltip('Map layers'), findsOneWidget);
   });
 }

@@ -4594,6 +4594,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get map_noCharts => 'No charts here';
 
   @override
+  String get map_myLocation => 'My location';
+
+  @override
+  String get map_zoomIn => 'Zoom in';
+
+  @override
+  String get map_zoomOut => 'Zoom out';
+
+  @override
+  String get map_positionUnknown => 'Your position isn\'t known yet';
+
+  @override
+  String get map_locationServiceOff => 'Turn on location to show where you are';
+
+  @override
+  String get map_locationDenied => 'Location access is off for MeshTrax';
+
+  @override
   String get map_zoomInForCharts => 'Zoom in to see your charts';
 
   @override

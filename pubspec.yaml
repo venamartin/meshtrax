@@ -87,10 +87,14 @@ dependencies:
   traxmap:
     path: packages/traxmap
   emoji_picker_flutter: ^4.4.0
+  geolocator: ^14.1.2
 
 
 dev_dependencies:
   fake_async: ^1.3.1
+  # A fake location platform for GeolocatorSource's tests.
+  geolocator_platform_interface: ^4.4.1
+  plugin_platform_interface: ^2.1.8
   flutter_test:
     sdk: flutter
   integration_test:
@@ -159,7 +163,7 @@ msix_config:
   identity_name: MartinGreatorex.MeshTrax
   publisher: CN=E72E7FF4-BD6B-4759-80C4-0775BB9E77E5
   logo_path: mesh-icon.png
-  capabilities: internetClient,bluetooth
+  capabilities: internetClient,bluetooth,location
   build_windows: false
 
   # To add assets to your application, add an assets section, like this:

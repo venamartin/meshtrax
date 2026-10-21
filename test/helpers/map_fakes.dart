@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:traxmap/traxmap.dart';
 
 import 'package:meshtrax/services/map_tile_cache_service.dart';
+import 'package:meshtrax/services/phone_location_service.dart';
 
 /// Map styles held in memory (`osm-light`, `osm-dark`, and the same for any
 /// other [maps]): no asset bundle, so no fake-async hang in widget tests.
@@ -69,3 +71,52 @@ class _BlankTileProvider extends fm.TileProvider {
 /// A cache manager that's never used: the real one opens a cache store
 /// through path_provider, which tests don't have.
 class _NoCacheManager extends Fake implements BaseCacheManager {}
+
+/// The phone's location without a phone, behaving like a real one: never
+/// asked reads as denied, and asking again while denied shows the prompt.
+class FakePhoneLocation implements PhoneLocationSource {
+  @override
+  final bool supported;
+
+  /// The OS permission as it stands.
+  PhoneLocationState permission;
+
+  /// What the user answers when asked.
+  PhoneLocationState answer;
+  bool serviceOn;
+  LatLng? here;
+  var requests = 0;
+  var openedSettings = false;
+  final updates = StreamController<LatLng>.broadcast();
+
+  FakePhoneLocation({
+    this.supported = true,
+    this.permission = PhoneLocationState.denied,
+    this.answer = PhoneLocationState.granted,
+    this.serviceOn = true,
+    this.here,
+  });
+
+  @override
+  Future<PhoneLocationState> check() async =>
+      serviceOn ? permission : PhoneLocationState.serviceOff;
+
+  @override
+  Future<PhoneLocationState> request() async {
+    if (!serviceOn) return PhoneLocationState.serviceOff;
+    if (permission == PhoneLocationState.denied) {
+      requests++;
+      permission = answer;
+    }
+    return permission;
+  }
+
+  @override
+  Future<LatLng?> current() async => here;
+
+  @override
+  Stream<LatLng> positions() => updates.stream;
+
+  @override
+  Future<void> openSettings() async => openedSettings = true;
+}

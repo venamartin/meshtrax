@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 import '../services/map_packs_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/app_map.dart';
+import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 
 /// The map without a radio, opened from the scanner: downloaded and online
@@ -21,6 +22,7 @@ class NoRadioMapScreen extends StatefulWidget {
 }
 
 class _NoRadioMapScreenState extends State<NoRadioMapScreen> {
+  final _controller = OfflineMapController();
   Timer? _saveCamera;
 
   @override
@@ -42,16 +44,18 @@ class _NoRadioMapScreenState extends State<NoRadioMapScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.scanner_map), centerTitle: true),
       body: AppMap(
+        controller: _controller,
+        showPhone: true,
+        controlsWidth: MapControls.width,
         initialCamera: last ?? const MapCamera(center: LatLng(20, 0), zoom: 1),
         initialFit: last == null
             ? context.read<MapPacksService>().latestMapFit
             : null,
         onCameraChanged: _onCameraChanged,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showMapLayersSheet(context),
-        tooltip: context.l10n.mapLayers_title,
-        child: const Icon(Icons.layers_outlined),
+      floatingActionButton: MapControls(
+        controller: _controller,
+        onLayers: () => showMapLayersSheet(context),
       ),
     );
   }

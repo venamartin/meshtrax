@@ -28,6 +28,7 @@ import '../utils/contact_search.dart';
 import '../utils/platform_info.dart';
 import '../utils/route_transitions.dart';
 import '../widgets/app_map.dart';
+import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
@@ -347,8 +348,12 @@ class _MapScreenState extends State<MapScreen> {
           });
         }
 
+        // A radio with no position reports 0, 0.
         final selfPosition =
-            connector.selfLatitude != null && connector.selfLongitude != null
+            connector.hasValidLocation(
+              connector.selfLatitude,
+              connector.selfLongitude,
+            )
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
         final isPoiLink = highlightPosition != null;
@@ -468,6 +473,8 @@ class _MapScreenState extends State<MapScreen> {
                 AppMap(
                   controller: _mapController,
                   initialCamera: startCamera,
+                  showPhone: true,
+                  controlsWidth: MapControls.width,
                   onTap: widget.pickPosition
                       ? (position) =>
                             Navigator.pop(context, position.toLatLong2())
@@ -548,15 +555,15 @@ class _MapScreenState extends State<MapScreen> {
                           _handleQuickSwitch(index, context),
                     ),
                   ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () => showMapLayersSheet(
+            floatingActionButton: MapControls(
+              controller: _mapController,
+              radioPosition: selfPosition?.toOvm(),
+              onLayers: () => showMapLayersSheet(
                 context,
                 extra: _nodeLayers,
                 onMoreFilters: () =>
                     _showFilterDialog(context, settingsService),
               ),
-              tooltip: context.l10n.mapLayers_title,
-              child: const Icon(Icons.layers_outlined),
             ),
           ),
         );
