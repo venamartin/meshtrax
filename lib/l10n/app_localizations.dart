@@ -7407,7 +7407,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineMaps_chartsNotice.
   ///
   /// In en, this message translates to:
-  /// **'Not for navigation. A simplified view of NOAA charts: some chart features are left out, and it isn\'t updated weekly like official charts.'**
+  /// **'Not for navigation. Use official, up-to-date NOAA charts to navigate.'**
   String get offlineMaps_chartsNotice;
 
   /// No description provided for @offlineMaps_chartsSuggested.

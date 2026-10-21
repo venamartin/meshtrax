@@ -2379,7 +2379,7 @@
   "offlineMaps_title": "Offline maps",
   "offlineMaps_tabMaps": "Maps",
   "offlineMaps_tabCharts": "Charts",
-  "offlineMaps_chartsNotice": "Not for navigation. A simplified view of NOAA charts: some chart features are left out, and it isn't updated weekly like official charts.",
+  "offlineMaps_chartsNotice": "Not for navigation. Use official, up-to-date NOAA charts to navigate.",
   "offlineMaps_chartsSuggested": "Suggested · {coast}",
   "@offlineMaps_chartsSuggested": {"placeholders": {"coast": {"type": "String"}}},
   "offlineMaps_chartsByCoast": "Chart areas by coast",

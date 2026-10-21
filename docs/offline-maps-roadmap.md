@@ -60,6 +60,7 @@ Last updated 2026-10-20, evening. **Resume here.**
 6. **Phase 6, the Charts tab: done (2026-10-20)** except the chart styles for the rebuilt data. See S3d.
    - `ChartAreaIndex` (traxmap) reads `chart_areas.geojson`. `MapPacksService` fetches and caches it with the catalogue; a 404 keeps the cached copy.
    - The Offline maps screen has three tabs: Maps · Charts · Downloaded.
+   - The Charts tab's notice (Martin, 2026-10-20): "Not for navigation. Use official, up-to-date NOAA charts to navigate."
    - Downloaded lists chart areas in their own "NOAA charts" section. App Settings counts them apart: "1 region · 2 chart areas · 1.2 GB".
    - Links:
      - a coastal region's detail says "NOAA charts are picked by coast, in the Charts tab";
@@ -75,7 +76,6 @@ Last updated 2026-10-20, evening. **Resume here.**
    - **`chart_areas.geojson` republished (2026-10-20, 17:10 PDT):** 42 areas in 9 coasts, with Atlantic before Gulf, Panama under Caribbean and Micronesia at `charts/us/micronesia`. Every area has a pack. `coast_areas` gives the coastline order the app uses (Maine → Florida, then Florida → Texas). `display_bbox` isn't used yet, because the Charts tab has no map. The test fixtures are these live files. Their mock server sends UTF-8 bytes like R2.
    - **Encoding (FINDINGS §1.1, 2026-10-20):** every root JSON file is UTF-8, no BOM, written ASCII-only with `\u` escapes, and served with `charset=utf-8`. The picker and chart_areas.geojson become ASCII on their next publish. Their content is unchanged, but the new ETags make the app fetch both once. The app decodes the body bytes as UTF-8 either way.
 7. **Waiting for Martin:**
-   - the Charts notice wording (A is in for now: "Not for navigation. A simplified view of NOAA charts…", which no longer fits the real-data rebuild);
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".

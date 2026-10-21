@@ -4249,7 +4249,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineMaps_chartsNotice =>
-      'Not for navigation. A simplified view of NOAA charts: some chart features are left out, and it isn\'t updated weekly like official charts.';
+      'Not for navigation. Use official, up-to-date NOAA charts to navigate.';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
