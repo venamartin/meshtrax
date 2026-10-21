@@ -271,8 +271,8 @@ class MapPacksService extends ChangeNotifier {
         } else if (await etagFile.exists()) {
           await etagFile.delete();
         }
-        // JSON is UTF-8 (RFC 8259). The server names no charset, and
-        // response.body would then decode as Latin-1.
+        // JSON is UTF-8 (RFC 8259, FINDINGS §1.1). Decoded here, not by
+        // response.body, which falls back to Latin-1 without a charset.
         return utf8.decode(response.bodyBytes);
       case 304 when cached:
         await file.setLastModified(DateTime.now());

@@ -72,7 +72,8 @@ Last updated 2026-10-20, evening. **Resume here.**
      - bridges and overhead clearances;
      - caution areas.
      The app's chart styles follow once traxmapmaker sends the schema.
-   - **`chart_areas.geojson` republished (2026-10-20, 17:10 PDT):** 42 areas in 9 coasts, with Atlantic before Gulf, Panama under Caribbean and Micronesia at `charts/us/micronesia`. Every area has a pack. `coast_areas` gives the coastline order the app uses (Maine → Florida, then Florida → Texas). `display_bbox` isn't used yet, because the Charts tab has no map. The test fixtures are these live files. Their mock server sends UTF-8 bytes like R2 (index.json escapes non-ASCII; chart_areas.geojson has raw "Colón").
+   - **`chart_areas.geojson` republished (2026-10-20, 17:10 PDT):** 42 areas in 9 coasts, with Atlantic before Gulf, Panama under Caribbean and Micronesia at `charts/us/micronesia`. Every area has a pack. `coast_areas` gives the coastline order the app uses (Maine → Florida, then Florida → Texas). `display_bbox` isn't used yet, because the Charts tab has no map. The test fixtures are these live files. Their mock server sends UTF-8 bytes like R2.
+   - **Encoding (FINDINGS §1.1, 2026-10-20):** every root JSON file is UTF-8, no BOM, written ASCII-only with `\u` escapes, and served with `charset=utf-8`. The picker and chart_areas.geojson become ASCII on their next publish. Their content is unchanged, but the new ETags make the app fetch both once. The app decodes the body bytes as UTF-8 either way.
 7. **Waiting for Martin:**
    - the Charts notice wording (A is in for now: "Not for navigation. A simplified view of NOAA charts…", which no longer fits the real-data rebuild);
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";

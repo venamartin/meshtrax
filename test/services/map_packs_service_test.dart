@@ -156,8 +156,9 @@ void main() {
   test(
     'reads the catalogue as UTF-8 when the server names no charset',
     () async {
-      // R2 serves application/geo+json with no charset; the live picker has
-      // raw UTF-8 (e.g. the en dash in "Watsonville – Monterey").
+      // The server writes ASCII with \u escapes and names charset=utf-8
+      // (FINDINGS §1.1), but it once sent raw UTF-8 with no charset (e.g.
+      // the en dash in "Watsonville – Monterey"), and that must still work.
       final picker = _picker.replaceAll(r'\u2013', '–');
       expect(picker, contains('Watsonville – Monterey'));
       routes['/dev/picker.geojson'] = (_) => http.Response.bytes(
