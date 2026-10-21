@@ -100,7 +100,12 @@ Last updated 2026-10-20, evening. **Resume here.**
 8. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
-   - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
+   - assumed defaults: Wi‑Fi-only on (phones), time filter "all time";
+   - **traxmapmaker's full-data charts** (2026-10-20): Option A, B (its recommendation) or C, and whether NOAA's SCAMIN declutter applies to today's layers. MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps.md, renderer notes);
+   - **traxmapmaker's USGS base design** (2026-10-21, `traxmapmaker/experiments/designs/2026-10-20-usgs-base-master.md`), decisions D1–D14:
+     - **D1:** hillshade and elevation bands as their own `terrain` kind (`terrain.pmtiles`, z6–13, overzoomed). MeshTrax agreed: OSM maps get relief without the 2–5 GB USGS pack, and it costs the app about half a day. UX to decide with it: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
+     - **D2:** base z14 or z13, compared on the Rhode Island pilot in the app;
+     - **D3:** the hillshade highlights appear for the first time, reviewed on the pilot.
 
 **Data on R2** (from traxmapmaker-d3, 2026-10-20):
 - **Production only** (Martin): `https://maps.meshtrax.io/index.json` is the one catalogue, and it gets only products from full master builds. `dev/` is retired.
