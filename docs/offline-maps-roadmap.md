@@ -120,8 +120,11 @@ Last updated 2026-10-20, evening. **Resume here.**
        - App work, about half a day: `PackKind.terrain`, the four styles re-pointed to `{pack:terrain}`, a label, the Downloaded order and a region-detail row.
        - It ships in the release that lists the kind, before traxmapmaker publishes any terrain pack.
        - Still to preview with Martin: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
-     - **D2:** base z14 or z13, compared on the Rhode Island pilot in the app;
-     - **D3:** the hillshade highlights appear for the first time, reviewed on the pilot.
+     - **D2: base stays z6–14** (Martin: "we have them broken into small regions anyway"). The Rhode Island pilot also builds a z13 copy to compare in the app;
+     - **D3: the hill-shading highlight bug gets fixed.** Sun-facing slopes (level −1) appear for the first time; retune their 0.25–0.28 opacity on the pilot;
+     - **D6: sea is filled where there's no USGS quad,** as `ocean` (`lake` in the Great Lakes cells), never over foreign land;
+     - **Approved:** the USGS pilot, once its code is written, and the national charts rebuild (Option B, decluttered), local until Martin publishes.
+     - **US contours:** all 1,447 blocks done in 21.6 h (20 ft master 10.5 GB). Region cut sizes go to Martin before any publish; the app already handles both contour variants.
 
 **Data on R2** (from traxmapmaker-d3, 2026-10-20):
 - **Production only** (Martin): `https://maps.meshtrax.io/index.json` is the one catalogue, and it gets only products from full master builds. `dev/` is retired.
