@@ -12,6 +12,7 @@ import 'package:traxmap/traxmap.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/app_settings_screen.dart';
+import 'package:meshtrax/screens/offline_maps/offline_maps_ui.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/chat_text_scale_service.dart';
@@ -36,12 +37,16 @@ class _FakeDownloader implements PackDownloader {
   final _updates = StreamController<PackDownload>.broadcast();
   final started = <String>[];
 
+  /// When set, starting waits for it, like a permission prompt would.
+  Completer<void>? gate;
+
   @override
   Stream<PackDownload> get updates => _updates.stream;
   @override
   List<PackDownload> get downloads => const [];
   @override
   Future<void> start(PackIndexEntry entry) async {
+    await gate?.future;
     started.add(entry.id);
     _updates.add(PackDownload(entry, PackDownloadState.queued, progress: 0));
   }
@@ -100,17 +105,20 @@ void main() {
     return maps;
   }
 
-  /// Installs the current build of [entry].
+  /// Installs the current build of [entry], written straight to its final
+  /// name: PackManager.install would also set off a reload of its own.
   Future<void> install(MapPacksService maps, PackIndexEntry entry) async {
-    final file = File('${tmp.path}/${entry.id}.src')
-      ..writeAsBytesSync(
-        fakePmTiles(
-          metadata: {'kind': entry.kind.name, 'region': entry.region},
-        ),
-      );
-    final pack = await maps.manager.install(file, id: entry.id);
-    await pack.file.rename(
+    await maps.manager.root.create(recursive: true);
+    File(
       '${maps.manager.root.path}/${entry.id}@${entry.sha256.substring(0, 12)}.pmtiles',
+    ).writeAsBytesSync(
+      fakePmTiles(
+        metadata: {
+          'kind': entry.kind.name,
+          'region': entry.region,
+          'name': entry.name,
+        },
+      ),
     );
     await maps.reloadInstalled();
   }
@@ -274,6 +282,58 @@ void main() {
     );
     expect(find.textContaining('Download '), findsNothing);
     expect(find.text('Waiting…'), findsNWidgets(2));
+
+    // Cancelled, Maine can be downloaded again, and comes back unticked.
+    downloader._updates.add(
+      PackDownload(
+        maps.chartPackOf('charts/us/maine')!,
+        PackDownloadState.canceled,
+        progress: 0,
+      ),
+    );
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final maine = tester.widget<Checkbox>(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('Maine'),
+          matching: find.byType(PackRow),
+        ),
+        matching: find.byType(Checkbox),
+      ),
+    );
+    expect(maine.value, isFalse);
+    expect(find.textContaining('Download '), findsNothing);
+  });
+
+  testWidgets('ticks made while the downloads start are kept', (tester) async {
+    final maps = (await tester.runAsync(service))!;
+    await open(tester, maps, chartArea: 'charts/us/maine');
+    downloader.gate = Completer();
+    await tester.tap(find.textContaining('Download '));
+    await tester.pump();
+    expect(downloader.started, isEmpty, reason: 'still starting');
+    expect(find.textContaining('Download '), findsNothing, reason: 'cleared');
+
+    await tester.tap(find.text('New Hampshire'));
+    await tester.pump();
+    downloader.gate!.complete();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(downloader.started, ['charts-us-me-charts']);
+    expect(find.text('1 area'), findsOneWidget, reason: 'New Hampshire');
+    final nh = tester.widget<Checkbox>(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('New Hampshire'),
+          matching: find.byType(PackRow),
+        ),
+        matching: find.byType(Checkbox),
+      ),
+    );
+    expect(nh.value, isTrue);
   });
 
   testWidgets(
@@ -322,6 +382,16 @@ void main() {
     expect(find.text('No NOAA charts are available yet'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
 
+    // Offline with the catalogue cached: the server can't be reached, not
+    // "no charts".
+    routes['/maps/index.json'] = () => http.Response('', 500);
+    await tester.runAsync(maps.refresh);
+    await tester.pumpAndSettle();
+    expect(find.text("Can't reach the map server"), findsOneWidget);
+    expect(find.text('No NOAA charts are available yet'), findsNothing);
+
+    routes['/maps/index.json'] = () =>
+        http.Response.bytes(utf8.encode(_chartsIndex), 200);
     routes['/maps/chart_areas.geojson'] = () => http.Response('', 500);
     await tester.runAsync(maps.refresh);
     await tester.pumpAndSettle();
@@ -356,16 +426,50 @@ void main() {
 
   testWidgets('Downloaded lists chart areas apart, by name', (tester) async {
     final maps = (await tester.runAsync(service))!;
-    await tester.runAsync(() => installCharts(maps, 'charts/us/rhode-island'));
+    await tester.runAsync(() async {
+      for (final area in ['texas', 'rhode-island', 'lake-champlain']) {
+        await installCharts(maps, 'charts/us/$area');
+      }
+    });
     await open(tester, maps, tab: OfflineMapsTab.downloaded);
     expect(find.text('NOAA charts'), findsOneWidget);
     expect(find.text('Rhode Island'), findsOneWidget);
     expect(find.textContaining('rhode-island'), findsNothing);
     expect(find.text('Other map files'), findsNothing);
+    final tops = [
+      for (final name in ['Lake Champlain (Vermont)', 'Rhode Island', 'Texas'])
+        tester.getTopLeft(find.text(name)).dy,
+    ];
+    expect(tops, [...tops]..sort(), reason: 'by name, not by id');
+
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(Card, 'Rhode Island'),
+        matching: find.text('Delete'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Delete Rhode Island NOAA charts?'), findsOneWidget);
+  });
+
+  testWidgets('an installed area the file no longer lists keeps a name', (
+    tester,
+  ) async {
+    final areas = jsonDecode(_chartAreas) as Map<String, Object?>;
+    (areas['features'] as List).removeWhere(
+      (f) => ((f as Map)['properties'] as Map)['id'] == 'charts-us-ri',
+    );
+    routes['/maps/chart_areas.geojson'] = () =>
+        http.Response.bytes(utf8.encode(jsonEncode(areas)), 200);
+    final maps = (await tester.runAsync(service))!;
+    await tester.runAsync(() => installCharts(maps, 'charts/us/rhode-island'));
+    await open(tester, maps, tab: OfflineMapsTab.downloaded);
+    expect(find.text('Rhode Island (NOAA charts)'), findsOneWidget);
+    expect(find.textContaining('rhode-island'), findsNothing);
 
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
-    expect(find.text('Delete Rhode Island NOAA charts?'), findsOneWidget);
+    expect(find.text('Delete Rhode Island (NOAA charts)?'), findsOneWidget);
   });
 
   testWidgets('ticks and open coasts survive switching tabs', (tester) async {
@@ -392,7 +496,6 @@ void main() {
       region: 'north-america/us/rhode-island',
     );
     expect(find.text('Map'), findsOneWidget, reason: 'the region detail');
-    expect(find.text('NOAA charts'), findsNothing, reason: 'no charts row');
     await tester.tap(
       find.text('NOAA charts are picked by coast, in the Charts tab.'),
     );
@@ -402,6 +505,46 @@ void main() {
       OfflineMapsTab.charts.index,
     );
     expect(find.text('Atlantic Coast'), findsOneWidget);
+  });
+
+  testWidgets('an inland region has no Charts link', (tester) async {
+    // Iowa's box meets the box of Michigan's Lake Superior part, but no
+    // chart water reaches Iowa.
+    final picker = jsonDecode(_picker) as Map<String, Object?>;
+    final (w, s, e, n) = (-96.6426, 40.37266, -90.13581, 43.50182);
+    (picker['features'] as List).add({
+      'type': 'Feature',
+      'properties': {
+        'id': 'us-iowa',
+        'name': 'Iowa',
+        'path': 'north-america/us/iowa',
+        'parent': 'north-america/us',
+        'level': 'state',
+        'downloadable': true,
+        'display_bbox': [w, s, e, n],
+      },
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
+          [
+            [w, s],
+            [e, s],
+            [e, n],
+            [w, n],
+            [w, s],
+          ],
+        ],
+      },
+    });
+    routes['/maps/picker.geojson'] = () =>
+        http.Response.bytes(utf8.encode(jsonEncode(picker)), 200);
+    final maps = (await tester.runAsync(service))!;
+    await open(tester, maps, tab: null, region: 'north-america/us/iowa');
+    expect(find.text('Iowa'), findsWidgets, reason: 'the region detail');
+    expect(
+      find.text('NOAA charts are picked by coast, in the Charts tab.'),
+      findsNothing,
+    );
   });
 
   testWidgets('App Settings counts chart areas apart from regions', (

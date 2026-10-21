@@ -170,7 +170,7 @@ Test: auto-connect firing while either of these is open.
 - **Offline:** downloaded maps only, exactly what works without signal. Where nothing is drawn at the view centre, a card says "No offline map here · Download {region} · {size} ›" (opens S3b) or, inside a downloaded region below the packs' lowest zoom, "Zoom in to see your offline map".
 - **Online:** online OSM raster tiles wherever the packs draw nothing. Tiles the packs cover are never fetched (`TileCoverage`). Raster tiles load on demand only, with a disk cache.
 - **Both:** a dashed line (pink, `#D81B60`) where each downloaded region ends.
-- **Setting `map_source`:** `auto` (online until the first download, then offline), `online` or `offline`. The switch writes it.
+- **Setting `map_source`:** `auto` (online until a street or topo map is downloaded, then offline; charts or contours alone don't count), `online` or `offline`. The switch writes it.
 
 **Centre-on-me:**
 

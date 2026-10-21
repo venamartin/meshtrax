@@ -297,13 +297,15 @@ class CatalogueState extends StatelessWidget {
         l10n.offlineMaps_unavailableHint,
         true,
       ),
-      CatalogueStatus.error when maps.index == null => (
+      // A tab shows this only when its data is missing, so a failed
+      // refresh explains it, whatever is cached.
+      CatalogueStatus.error => (
         Icons.cloud_off_outlined,
         l10n.offlineMaps_serverError,
         maps.error,
         true,
       ),
-      // The catalogue is there; what's missing is this tab's file.
+      // The catalogue loaded; what failed is this tab's file.
       _ when charts && maps.chartAreasError != null => (
         Icons.cloud_off_outlined,
         l10n.offlineMaps_serverError,

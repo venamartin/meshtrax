@@ -158,6 +158,11 @@ void main() {
     await tester.tap(find.textContaining('Watsonville'));
     await tester.pumpAndSettle();
     expect(find.text('Map'), findsOneWidget);
+    expect(
+      find.text('NOAA charts'),
+      findsNothing,
+      reason: 'charts are picked in the Charts tab, not per region',
+    );
     expect(find.text('Regions in Test'), findsNothing);
 
     await tester.tap(find.widgetWithText(TextButton, 'Test'));

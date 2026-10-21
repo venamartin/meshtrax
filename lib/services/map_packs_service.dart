@@ -221,6 +221,8 @@ class MapPacksService extends ChangeNotifier {
         'picker.geojson',
       );
       if (pickerBody != null) _regions = RegionIndex.parse(pickerBody);
+      // Before "ready": until then the Charts tab would say there are none.
+      await _refreshChartAreas();
       _fetchedAt = DateTime.now();
       _status = CatalogueStatus.ready;
     } on Object catch (e) {
@@ -228,7 +230,6 @@ class MapPacksService extends ChangeNotifier {
       _error = '$e';
       _status = CatalogueStatus.error;
     }
-    if (_status == CatalogueStatus.ready) await _refreshChartAreas();
     notifyListeners();
   }
 

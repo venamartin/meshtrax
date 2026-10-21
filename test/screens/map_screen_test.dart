@@ -259,7 +259,11 @@ void main() {
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.text('Map type'), findsNothing, reason: 'the sheet closed');
+    expect(
+      find.text('Map type', skipOffstage: false),
+      findsNothing,
+      reason: 'the sheet closed, not left under Offline maps',
+    );
     expect(
       tester.widget<TabBar>(find.byType(TabBar)).controller!.index,
       OfflineMapsTab.charts.index,

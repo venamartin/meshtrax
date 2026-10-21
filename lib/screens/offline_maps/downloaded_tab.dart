@@ -56,10 +56,18 @@ class DownloadedTab extends StatelessWidget {
       for (final path in byRegion.keys)
         if (!chartsOnly(path)) path,
     ]..sort(byName);
-    final chartPaths = [
-      for (final path in byRegion.keys)
-        if (chartsOnly(path)) path,
-    ]..sort(byName);
+    // An area chart_areas.geojson doesn't know goes by its pack's name,
+    // "Rhode Island (NOAA charts)", as its download row does.
+    String chartName(String path) =>
+        maps.chartAreas?.byPackRegion(path)?.name ?? byRegion[path]!.first.name;
+    final chartPaths =
+        [
+          for (final path in byRegion.keys)
+            if (chartsOnly(path)) path,
+        ]..sort(
+          (a, b) =>
+              chartName(a).toLowerCase().compareTo(chartName(b).toLowerCase()),
+        );
 
     final children = <Widget>[
       if (maps.installed.isEmpty && active.isEmpty)
@@ -120,10 +128,10 @@ class DownloadedTab extends StatelessWidget {
             _RegionCard(
               path: path,
               packs: byRegion[path]!,
-              name: _regionName(maps, path),
+              name: chartName(path),
               deleteName: switch (maps.chartAreas?.byPackRegion(path)) {
                 final area? => l10n.offlineMaps_chartsName(area.name),
-                null => _regionName(maps, path),
+                null => chartName(path),
               },
             ),
           ],

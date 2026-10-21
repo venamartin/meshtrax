@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,6 +21,7 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 
+import '../../packages/traxmap/test/support/fake_pmtiles.dart';
 import '../helpers/map_fakes.dart';
 
 /// The live charts files from maps.meshtrax.io, kept in traxmap's tests.
@@ -28,9 +30,13 @@ final _chartsIndex = File('packages/traxmap/test/support/charts_index.json')
 final _chartAreas = File('packages/traxmap/test/support/chart_areas.geojson')
     .readAsStringSync();
 
-class _NoDownloads implements PackDownloader {
+const _ri = 'north-america/us/rhode-island';
+
+class _Downloads implements PackDownloader {
+  final _updates = StreamController<PackDownload>.broadcast();
+
   @override
-  Stream<PackDownload> get updates => const Stream.empty();
+  Stream<PackDownload> get updates => _updates.stream;
   @override
   List<PackDownload> get downloads => const [];
   @override
@@ -56,7 +62,7 @@ void main() {
     tmp = await Directory.systemTemp.createTemp('appmap');
     maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/packs')),
-      downloader: _NoDownloads(),
+      downloader: _Downloads(),
       cacheDir: tmp,
       styles: StyleRegistry(MemoryStyles()),
     );
@@ -67,6 +73,7 @@ void main() {
     WidgetTester tester, {
     Brightness? brightness,
     bool compact = false,
+    LatLng center = const LatLng(41.8, -71.4),
   }) async {
     tester.view.physicalSize = const Size(600, 600);
     tester.view.devicePixelRatio = 1;
@@ -87,10 +94,7 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: AppMap(
-              initialCamera: const MapCamera(
-                center: LatLng(41.8, -71.4),
-                zoom: 10,
-              ),
+              initialCamera: MapCamera(center: center, zoom: 10),
               compact: compact,
             ),
           ),
@@ -136,12 +140,11 @@ void main() {
     expect(find.text('Offline maps'), findsOneWidget, reason: 'no catalogue');
   });
 
-  testWidgets('offline on the Charts map: the card offers the area here', (
-    tester,
-  ) async {
+  /// [maps] with the live charts catalogue, following [downloads].
+  Future<void> withCharts(WidgetTester tester, _Downloads downloads) async {
     maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/packs')),
-      downloader: _NoDownloads(),
+      downloader: downloads,
       cacheDir: tmp,
       indexUrl: Uri.parse('https://maps.example/maps/index.json'),
       styles: StyleRegistry(MemoryStyles(maps: ['osm', 'charts'])),
@@ -159,9 +162,19 @@ void main() {
         },
       ),
     );
-    await tester.runAsync(maps.refresh);
+    await tester.runAsync(() async {
+      await maps.start();
+      await maps.refresh();
+    });
     await settings.setMapSource('offline');
     await settings.setMapType('charts');
+  }
+
+  testWidgets('offline on the Charts map: the card offers the area here', (
+    tester,
+  ) async {
+    final downloads = _Downloads();
+    await withCharts(tester, downloads);
     await pumpMap(tester);
     final ri = maps.chartPackOf('charts/us/rhode-island')!;
     expect(find.text('No charts here'), findsOneWidget);
@@ -180,6 +193,63 @@ void main() {
           .initialChartArea,
       'charts/us/rhode-island',
     );
+
+    // Back on the map while it downloads: no second offer of it.
+    await tester.pageBack();
+    downloads._updates.add(
+      PackDownload(ri, PackDownloadState.running, progress: 0.2),
+    );
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('No charts here'), findsOneWidget);
+    expect(find.textContaining('Download Rhode Island'), findsNothing);
+    expect(find.text('Offline maps'), findsOneWidget);
+  });
+
+  testWidgets('where areas overlap, one downloading: no neighbour offered', (
+    tester,
+  ) async {
+    final downloads = _Downloads();
+    await withCharts(tester, downloads);
+    // Fishers Island Sound: Rhode Island, Connecticut and New York.
+    const here = LatLng(41.3, -71.85);
+    final areas = maps.chartAreas!.areasAt(here);
+    expect(areas.length, greaterThan(1));
+    downloads._updates.add(
+      PackDownload(
+        maps.chartPackOf(areas.first.packRegion)!,
+        PackDownloadState.running,
+        progress: 0.2,
+      ),
+    );
+    await pumpMap(tester, center: here);
+    expect(find.text('No charts here'), findsOneWidget);
+    expect(find.textContaining('Download '), findsNothing);
+    expect(find.text('Offline maps'), findsOneWidget);
+  });
+
+  testWidgets('auto goes offline with a street map, not charts or contours', (
+    tester,
+  ) async {
+    Future<void> install(String id, String kind, String region) =>
+        tester.runAsync(() async {
+          await maps.manager.root.create(recursive: true);
+          File('${maps.manager.root.path}/$id.pmtiles').writeAsBytesSync(
+            fakePmTiles(metadata: {'kind': kind, 'region': region}),
+          );
+          await maps.reloadInstalled();
+        });
+    await install('charts-us-ri-charts', 'charts', 'charts/us/rhode-island');
+    await install('us-ri-contours-20ft', 'contours', _ri);
+    expect(maps.installed, hasLength(2));
+    await pumpMap(tester);
+    expect(switchState(tester), {true});
+    expect(find.text('No offline map here'), findsNothing);
+
+    await install('us-rhode-island-osm', 'osm', _ri);
+    await tester.pump();
+    expect(switchState(tester), {false});
   });
 
   testWidgets('compact: no switch and no card, but follows the setting', (

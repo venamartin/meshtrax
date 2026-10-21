@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
@@ -130,12 +132,12 @@ class ChartsTab extends StatelessWidget {
               _DownloadBar(
                 count: toDownload.length,
                 bytes: bytes,
-                onDownload: () async {
-                  await maps.download(toDownload);
-                  onSelectionChanged({
-                    for (final path in selected)
-                      if (!toDownload.any((e) => e.region == path)) path,
-                  });
+                onDownload: () {
+                  onSelectionChanged(
+                    {...selected}
+                      ..removeAll([for (final e in toDownload) e.region]),
+                  );
+                  unawaited(maps.download(toDownload));
                 },
               ),
           ],

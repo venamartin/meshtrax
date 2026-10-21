@@ -16,12 +16,15 @@ import '../services/map_tile_cache_service.dart';
 import '../utils/format_bytes.dart';
 
 /// Whether maps are in Online mode (the Online | Offline switch): `map_source`,
-/// where `auto` is online until the first download.
+/// where `auto` is online until a street or topo map is downloaded (charts
+/// or contours alone leave the standard map with nothing to draw).
 bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
     switch (settings.mapSource) {
       'online' => true,
       'offline' => false,
-      _ => maps.installed.isEmpty,
+      _ => !maps.installed.any(
+        (p) => p.kind == PackKind.osm || p.kind == PackKind.base,
+      ),
     };
 
 /// The map every MeshTrax map screen draws, with the credits (and chart
@@ -338,12 +341,15 @@ class _NoCharts extends StatelessWidget {
         ),
       );
     }
+    final offers = [
+      for (final a in areas)
+        if (maps.chartPackOf(a.packRegion) case final e?) (a, e),
+    ];
+    // One of them already on its way: offer no neighbour meanwhile.
     final (area, entry) =
-        [
-          for (final a in areas)
-            if (maps.chartPackOf(a.packRegion) case final e?) (a, e),
-        ].firstOrNull ??
-        (null, null);
+        offers.any((o) => maps.statusOf(o.$2) != PackStatus.available)
+        ? (null, null)
+        : offers.firstOrNull ?? (null, null);
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 400),
       child: Card(

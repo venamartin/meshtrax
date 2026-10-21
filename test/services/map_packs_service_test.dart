@@ -185,6 +185,21 @@ void main() {
   );
 
   group('chart areas', () {
+    test('the catalogue reads as ready only once they are in', () async {
+      late MapPacksService maps;
+      CatalogueStatus? during;
+      routes['/dev/chart_areas.geojson'] = (_) {
+        during = maps.status;
+        return http.Response.bytes(utf8.encode(_chartAreas), 200);
+      };
+      maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(during, CatalogueStatus.loading);
+      expect(maps.status, CatalogueStatus.ready);
+      expect(maps.chartAreas, isNotNull);
+    });
+
     test('none published (404): the catalogue is still ready', () async {
       routes.remove('/dev/chart_areas.geojson');
       final maps = service();
