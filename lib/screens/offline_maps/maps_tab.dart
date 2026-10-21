@@ -20,6 +20,7 @@ class MapsTab extends StatelessWidget {
   final String? selectedPath;
   final ValueChanged<String?> onBrowse;
   final ValueChanged<String?> onSelect;
+  final VoidCallback onOpenCharts;
 
   const MapsTab({
     super.key,
@@ -27,6 +28,7 @@ class MapsTab extends StatelessWidget {
     required this.selectedPath,
     required this.onBrowse,
     required this.onSelect,
+    required this.onOpenCharts,
   });
 
   @override
@@ -51,6 +53,7 @@ class MapsTab extends StatelessWidget {
                 key: ValueKey(selected.path),
                 region: selected,
                 onBack: () => onSelect(null),
+                onOpenCharts: onOpenCharts,
               ),
       ),
     );

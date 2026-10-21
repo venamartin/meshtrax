@@ -7380,11 +7380,17 @@ abstract class AppLocalizations {
   /// **'None downloaded'**
   String get appSettings_offlineMapsNone;
 
-  /// No description provided for @appSettings_offlineMapsSummary.
+  /// No description provided for @appSettings_offlineMapsRegions.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 region} other{{count} regions}} · {size}'**
-  String appSettings_offlineMapsSummary(int count, String size);
+  /// **'{count, plural, =1{1 region} other{{count} regions}}'**
+  String appSettings_offlineMapsRegions(int count);
+
+  /// No description provided for @appSettings_offlineMapsChartAreas.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 chart area} other{{count} chart areas}}'**
+  String appSettings_offlineMapsChartAreas(int count);
 
   /// No description provided for @appSettings_offlineMapsUpdates.
   ///
@@ -7415,6 +7421,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Maps'**
   String get offlineMaps_tabMaps;
+
+  /// No description provided for @offlineMaps_tabCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'Charts'**
+  String get offlineMaps_tabCharts;
+
+  /// No description provided for @offlineMaps_chartsNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Not for navigation. A simplified view of NOAA charts: some chart features are left out, and it isn\'t updated weekly like official charts.'**
+  String get offlineMaps_chartsNotice;
+
+  /// No description provided for @offlineMaps_chartsSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested · {coast}'**
+  String offlineMaps_chartsSuggested(String coast);
+
+  /// No description provided for @offlineMaps_chartsByCoast.
+  ///
+  /// In en, this message translates to:
+  /// **'Chart areas by coast'**
+  String get offlineMaps_chartsByCoast;
+
+  /// No description provided for @offlineMaps_chartsCoastSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 area} other{{count} areas}} · {size}'**
+  String offlineMaps_chartsCoastSummary(int count, String size);
+
+  /// No description provided for @offlineMaps_chartsDownloadedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} downloaded'**
+  String offlineMaps_chartsDownloadedCount(int count);
+
+  /// No description provided for @offlineMaps_chartsSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String offlineMaps_chartsSelectedCount(int count);
+
+  /// No description provided for @offlineMaps_selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get offlineMaps_selectAll;
+
+  /// No description provided for @offlineMaps_clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get offlineMaps_clearSelection;
+
+  /// No description provided for @offlineMaps_chartsAlsoIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Also in {coasts}'**
+  String offlineMaps_chartsAlsoIn(String coasts);
+
+  /// No description provided for @offlineMaps_chartsNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available yet'**
+  String get offlineMaps_chartsNotAvailable;
+
+  /// No description provided for @offlineMaps_chartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NOAA charts are picked by coast, in the Charts tab.'**
+  String get offlineMaps_chartsHint;
+
+  /// No description provided for @offlineMaps_chartsName.
+  ///
+  /// In en, this message translates to:
+  /// **'{area} NOAA charts'**
+  String offlineMaps_chartsName(String area);
+
+  /// No description provided for @offlineMaps_chartsAreaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 area} other{{count} areas}}'**
+  String offlineMaps_chartsAreaCount(int count);
 
   /// No description provided for @offlineMaps_tabDownloaded.
   ///
@@ -7769,6 +7859,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Zoom in to see your offline map'**
   String get map_zoomInForOfflineMap;
+
+  /// No description provided for @map_noCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'No charts here'**
+  String get map_noCharts;
+
+  /// No description provided for @map_zoomInForCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in to see your charts'**
+  String get map_zoomInForCharts;
 
   /// No description provided for @map_downloadRegion.
   ///

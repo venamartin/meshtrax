@@ -5,17 +5,32 @@ import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
 import '../services/map_packs_service.dart';
+import 'offline_maps/charts_tab.dart';
 import 'offline_maps/downloaded_tab.dart';
 import 'offline_maps/maps_tab.dart';
 
-/// Download and manage offline map packs: browse regions (Maps) and see
-/// what's on the device (Downloaded). Layout and wording follow
-/// docs/offline-maps-roadmap.md, screen S3.
+/// The Offline maps screen's tabs, in order.
+enum OfflineMapsTab { maps, charts, downloaded }
+
+/// Download and manage offline map packs: browse regions (Maps), pick NOAA
+/// chart areas by coast (Charts) and see what's on the device (Downloaded).
+/// Layout and wording follow docs/offline-maps-roadmap.md, screen S3.
 class OfflineMapsScreen extends StatefulWidget {
   /// Opens the Maps tab on this region's detail (a picker `path`).
   final String? initialRegionPath;
 
-  const OfflineMapsScreen({super.key, this.initialRegionPath});
+  /// Opens on this tab.
+  final OfflineMapsTab? initialTab;
+
+  /// Opens the Charts tab with this chart area ticked (its pack region).
+  final String? initialChartArea;
+
+  const OfflineMapsScreen({
+    super.key,
+    this.initialRegionPath,
+    this.initialTab,
+    this.initialChartArea,
+  });
 
   @override
   State<OfflineMapsScreen> createState() => _OfflineMapsScreenState();
@@ -31,6 +46,9 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
   /// The region whose detail is open.
   String? _selectedPath;
 
+  /// Chart areas ticked for download, by pack region.
+  late Set<String> _chartSelection;
+
   @override
   void initState() {
     super.initState();
@@ -39,13 +57,19 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
     _browsePath = _selectedPath == null
         ? null
         : maps.regions?[_selectedPath!]?.parentPath;
-    final openDownloaded =
-        _selectedPath == null &&
-        (maps.installed.isNotEmpty || maps.activeDownloadCount > 0);
+    _chartSelection = {?widget.initialChartArea};
+    final tab = widget.initialChartArea != null
+        ? OfflineMapsTab.charts
+        : widget.initialTab ??
+              (_selectedPath == null &&
+                      (maps.installed.isNotEmpty ||
+                          maps.activeDownloadCount > 0)
+                  ? OfflineMapsTab.downloaded
+                  : OfflineMapsTab.maps);
     _tabs = TabController(
-      length: 2,
+      length: OfflineMapsTab.values.length,
       vsync: this,
-      initialIndex: openDownloaded ? 1 : 0,
+      initialIndex: tab.index,
     );
     // After the first frame: refreshing notifies listeners at once.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,7 +91,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
       _selectedPath = path;
       _browsePath = regions?[path]?.parentPath;
     });
-    _tabs.animateTo(0);
+    _tabs.animateTo(OfflineMapsTab.maps.index);
   }
 
   @override
@@ -94,6 +118,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
           controller: _tabs,
           tabs: [
             Tab(text: l10n.offlineMaps_tabMaps),
+            Tab(text: l10n.offlineMaps_tabCharts),
             Tab(
               child: Badge(
                 isLabelVisible: badge > 0,
@@ -115,10 +140,16 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
               _selectedPath = null;
             }),
             onSelect: (path) => setState(() => _selectedPath = path),
+            onOpenCharts: () => _tabs.animateTo(OfflineMapsTab.charts.index),
+          ),
+          ChartsTab(
+            openArea: widget.initialChartArea,
+            selected: _chartSelection,
+            onSelectionChanged: (s) => setState(() => _chartSelection = s),
           ),
           DownloadedTab(
             onOpenRegion: _openRegion,
-            onFindMaps: () => _tabs.animateTo(0),
+            onFindMaps: () => _tabs.animateTo(OfflineMapsTab.maps.index),
           ),
         ],
       ),

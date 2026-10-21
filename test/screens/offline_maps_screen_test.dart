@@ -157,7 +157,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Watsonville'));
     await tester.pumpAndSettle();
-    expect(find.text('NOAA charts'), findsOneWidget);
+    expect(find.text('Map'), findsOneWidget);
     expect(find.text('Regions in Test'), findsNothing);
 
     await tester.tap(find.widgetWithText(TextButton, 'Test'));

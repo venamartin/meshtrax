@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:traxmap/traxmap.dart' show PackKind;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -1179,7 +1180,15 @@ class _OfflineMapsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final maps = context.watch<MapPacksService>();
-    final regions = maps.installedRegions.length;
+    // Chart areas count apart from land regions: paths holding only charts.
+    final kinds = <String, Set<PackKind>>{};
+    for (final p in maps.installed) {
+      if (p.region case final region?) (kinds[region] ??= {}).add(p.kind);
+    }
+    final charts = kinds.values
+        .where((k) => k.every((kind) => kind == PackKind.charts))
+        .length;
+    final regions = kinds.length - charts;
     final updates = maps.updates.length;
     return ListTile(
       leading: const Icon(Icons.download_for_offline_outlined),
@@ -1187,12 +1196,13 @@ class _OfflineMapsTile extends StatelessWidget {
       subtitle: Text(
         updates > 0
             ? l10n.appSettings_offlineMapsUpdates(updates)
-            : regions == 0
+            : kinds.isEmpty
             ? l10n.appSettings_offlineMapsNone
-            : l10n.appSettings_offlineMapsSummary(
-                regions,
+            : [
+                if (regions > 0) l10n.appSettings_offlineMapsRegions(regions),
+                if (charts > 0) l10n.appSettings_offlineMapsChartAreas(charts),
                 formatBytes(maps.installedBytes),
-              ),
+              ].join(' · '),
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.push(

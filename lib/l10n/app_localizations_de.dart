@@ -4285,14 +4285,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appSettings_offlineMapsNone => 'None downloaded';
 
   @override
-  String appSettings_offlineMapsSummary(int count, String size) {
+  String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other: '$count regions',
       one: '1 region',
     );
-    return '$_temp0 · $size';
+    return '$_temp0';
+  }
+
+  @override
+  String appSettings_offlineMapsChartAreas(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chart areas',
+      one: '1 chart area',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4318,6 +4329,76 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get offlineMaps_tabMaps => 'Maps';
+
+  @override
+  String get offlineMaps_tabCharts => 'Charts';
+
+  @override
+  String get offlineMaps_chartsNotice =>
+      'Not for navigation. A simplified view of NOAA charts: some chart features are left out, and it isn\'t updated weekly like official charts.';
+
+  @override
+  String offlineMaps_chartsSuggested(String coast) {
+    return 'Suggested · $coast';
+  }
+
+  @override
+  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+
+  @override
+  String offlineMaps_chartsCoastSummary(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count areas',
+      one: '1 area',
+    );
+    return '$_temp0 · $size';
+  }
+
+  @override
+  String offlineMaps_chartsDownloadedCount(int count) {
+    return '$count downloaded';
+  }
+
+  @override
+  String offlineMaps_chartsSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get offlineMaps_selectAll => 'Select all';
+
+  @override
+  String get offlineMaps_clearSelection => 'Clear';
+
+  @override
+  String offlineMaps_chartsAlsoIn(String coasts) {
+    return 'Also in $coasts';
+  }
+
+  @override
+  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+
+  @override
+  String get offlineMaps_chartsHint =>
+      'NOAA charts are picked by coast, in the Charts tab.';
+
+  @override
+  String offlineMaps_chartsName(String area) {
+    return '$area NOAA charts';
+  }
+
+  @override
+  String offlineMaps_chartsAreaCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count areas',
+      one: '1 area',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get offlineMaps_tabDownloaded => 'Downloaded';
@@ -4528,6 +4609,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+
+  @override
+  String get map_noCharts => 'No charts here';
+
+  @override
+  String get map_zoomInForCharts => 'Zoom in to see your charts';
 
   @override
   String map_downloadRegion(String region, String size) {

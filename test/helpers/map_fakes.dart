@@ -1,37 +1,51 @@
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:flutter_test/flutter_test.dart';
 import 'package:traxmap/traxmap.dart';
 
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 
-/// Map styles held in memory (`osm-light`, `osm-dark`): no asset bundle, so
-/// no fake-async hang in widget tests.
+/// Map styles held in memory (`osm-light`, `osm-dark`, and the same for any
+/// other [maps]): no asset bundle, so no fake-async hang in widget tests.
 class MemoryStyles implements StyleSource {
-  @override
-  Future<List<String>> ids() async => ['osm-dark', 'osm-light'];
+  /// Map types with a style, each needing packs of the kind of that name.
+  final List<String> maps;
+
+  MemoryStyles({this.maps = const ['osm']});
 
   @override
-  Future<Map<String, Object?>> load(String id) async => {
-    'version': 8,
-    'name': id,
-    'metadata': {
-      'ovm:map': 'osm',
-      'ovm:theme': id.endsWith('dark') ? 'dark' : 'light',
-      'ovm:requires': ['osm'],
-    },
-    'sources': {
-      'osm': {'type': 'vector', 'url': 'pmtiles://{pack:osm}'},
-    },
-    'layers': [
-      {'id': 'bg', 'type': 'background'},
-    ],
-  };
+  Future<List<String>> ids() async => [
+    for (final map in maps) ...['$map-dark', '$map-light'],
+  ];
+
+  @override
+  Future<Map<String, Object?>> load(String id) async {
+    final map = id.substring(0, id.lastIndexOf('-'));
+    return {
+      'version': 8,
+      'name': id,
+      'metadata': {
+        'ovm:map': map,
+        'ovm:theme': id.endsWith('dark') ? 'dark' : 'light',
+        'ovm:requires': [map],
+      },
+      'sources': {
+        map: {'type': 'vector', 'url': 'pmtiles://{pack:$map}'},
+      },
+      'layers': [
+        {'id': 'bg', 'type': 'background'},
+      ],
+    };
+  }
 }
 
 /// Online map tiles that never touch the network or disk.
 class BlankTileCache extends MapTileCacheService {
+  BlankTileCache() : super(cacheManager: _NoCacheManager());
+
   @override
   fm.TileProvider get tileProvider => _BlankTileProvider();
 }
@@ -51,3 +65,7 @@ class _BlankTileProvider extends fm.TileProvider {
   ImageProvider getImage(fm.TileCoordinates c, fm.TileLayer options) =>
       MemoryImage(_png);
 }
+
+/// A cache manager that's never used: the real one opens a cache store
+/// through path_provider, which tests don't have.
+class _NoCacheManager extends Fake implements BaseCacheManager {}

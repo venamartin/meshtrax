@@ -16,7 +16,15 @@ class RegionDetail extends StatefulWidget {
   /// Shown as "‹ Parent": the detail replaces the region list.
   final VoidCallback onBack;
 
-  const RegionDetail({super.key, required this.region, required this.onBack});
+  /// Switches to the Charts tab, where NOAA charts are picked by coast.
+  final VoidCallback onOpenCharts;
+
+  const RegionDetail({
+    super.key,
+    required this.region,
+    required this.onBack,
+    required this.onOpenCharts,
+  });
 
   @override
   State<RegionDetail> createState() => _RegionDetailState();
@@ -62,7 +70,6 @@ class _RegionDetailState extends State<RegionDetail> {
       ...packs.where((e) => e.kind == PackKind.osm),
       ...contours.where((e) => e.id == _contoursId),
       ...packs.where((e) => e.kind == PackKind.base),
-      ...packs.where((e) => e.kind == PackKind.charts),
     ];
     final inUs = region.path.startsWith('north-america/us/');
     final hasUsgs = packs.any((e) => e.kind == PackKind.base);
@@ -79,6 +86,8 @@ class _RegionDetailState extends State<RegionDetail> {
     final downloadBytes = toDownload.fold(0, (sum, e) => sum + e.bytes);
     final updateBytes = updates.fold(0, (sum, e) => sum + e.bytes);
     final hasInstalled = maps.installedRegions.contains(region.path);
+    final chartWaters =
+        maps.chartAreas?.areasIn(region.bounds).isNotEmpty ?? false;
     final ancestors = regions?.ancestorsOf(region) ?? const <Region>[];
 
     return ListView(
@@ -135,6 +144,13 @@ class _RegionDetailState extends State<RegionDetail> {
             ],
           ),
         ),
+        if (chartWaters)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.offlineMaps_chartsHint),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: widget.onOpenCharts,
+          ),
         const SizedBox(height: 16),
         Row(
           children: [

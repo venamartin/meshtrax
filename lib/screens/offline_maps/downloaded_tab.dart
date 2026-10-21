@@ -37,14 +37,29 @@ class DownloadedTab extends StatelessWidget {
       final region = pack.region;
       if (region != null &&
           (maps.regions?[region] != null ||
-              maps.packsForRegion(region).isNotEmpty)) {
+              maps.packsForRegion(region).isNotEmpty ||
+              maps.chartAreas?.byPackRegion(region) != null)) {
         (byRegion[region] ??= []).add(pack);
       } else {
         other.add(pack);
       }
     }
-    final regionPaths = byRegion.keys.toList()
-      ..sort((a, b) => _regionName(maps, a).compareTo(_regionName(maps, b)));
+    // Chart areas get their own section. Only paths holding nothing but
+    // charts: a card's Delete removes everything on its path.
+    bool chartsOnly(String path) =>
+        byRegion[path]!.every((p) => p.kind == PackKind.charts);
+    int byName(String a, String b) => _regionName(
+      maps,
+      a,
+    ).toLowerCase().compareTo(_regionName(maps, b).toLowerCase());
+    final regionPaths = [
+      for (final path in byRegion.keys)
+        if (!chartsOnly(path)) path,
+    ]..sort(byName);
+    final chartPaths = [
+      for (final path in byRegion.keys)
+        if (chartsOnly(path)) path,
+    ]..sort(byName);
 
     final children = <Widget>[
       if (maps.installed.isEmpty && active.isEmpty)
@@ -90,10 +105,28 @@ class DownloadedTab extends StatelessWidget {
           _RegionCard(
             path: path,
             packs: byRegion[path]!,
+            name: _regionName(maps, path),
+            deleteName: _regionName(maps, path),
             onOpen: maps.regions?[path] == null
                 ? null
                 : () => onOpenRegion(path),
           ),
+        ],
+        if (chartPaths.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _SectionLabel(l10n.offlineMaps_kindCharts),
+          for (final (i, path) in chartPaths.indexed) ...[
+            if (i > 0) const SizedBox(height: 12),
+            _RegionCard(
+              path: path,
+              packs: byRegion[path]!,
+              name: _regionName(maps, path),
+              deleteName: switch (maps.chartAreas?.byPackRegion(path)) {
+                final area? => l10n.offlineMaps_chartsName(area.name),
+                null => _regionName(maps, path),
+              },
+            ),
+          ],
         ],
         if (other.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -182,7 +215,9 @@ const _kindOrder = [
 ];
 
 String _regionName(MapPacksService maps, String path) =>
-    maps.regions?[path]?.name ?? path.split('/').last;
+    maps.regions?[path]?.name ??
+    maps.chartAreas?.byPackRegion(path)?.name ??
+    path.split('/').last;
 
 class _SectionLabel extends StatelessWidget {
   final String text;
@@ -250,9 +285,15 @@ class _DownloadRow extends StatelessWidget {
     final theme = Theme.of(context);
     final maps = context.read<MapPacksService>();
     final entry = download.entry;
-    final region = entry.region == null
+    final region = entry.region;
+    // "Massachusetts · NOAA charts", or the pack's own name ("… (NOAA
+    // charts)") alone when its chart area isn't known.
+    final title =
+        entry.kind == PackKind.charts &&
+            (region == null || maps.chartAreas?.byPackRegion(region) == null)
         ? entry.name
-        : _regionName(maps, entry.region!);
+        : '${region == null ? entry.name : _regionName(maps, region)}'
+              ' · ${entryLabel(l10n, entry)}';
     final state = download.state;
     final failed = state == PackDownloadState.failed;
     final status = switch (state) {
@@ -270,7 +311,7 @@ class _DownloadRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$region · ${entryLabel(l10n, entry)}'),
+          Text(title),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -321,20 +362,30 @@ class _DownloadRow extends StatelessWidget {
   }
 }
 
-/// An installed region: its packs, size, date, and Update / Delete.
+/// An installed region or chart area: its packs, size, date, and Update /
+/// Delete.
 class _RegionCard extends StatelessWidget {
   final String path;
   final List<Pack> packs;
+  final String name;
+
+  /// What the delete dialog calls it, e.g. "Rhode Island NOAA charts".
+  final String deleteName;
   final VoidCallback? onOpen;
 
-  const _RegionCard({required this.path, required this.packs, this.onOpen});
+  const _RegionCard({
+    required this.path,
+    required this.packs,
+    required this.name,
+    required this.deleteName,
+    this.onOpen,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
-    final name = _regionName(maps, path);
     final bytes = packs.fold(0, (sum, p) => sum + maps.sizeOf(p));
     final updates = [
       for (final e in maps.packsForRegion(path))
@@ -346,13 +397,15 @@ class _RegionCard extends StatelessWidget {
         : DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
               .format(dates.last);
     final details = [
-      (packs.toList()..sort(
-            (a, b) => _kindOrder
-                .indexOf(a.kind)
-                .compareTo(_kindOrder.indexOf(b.kind)),
-          ))
-          .map((p) => installedLabel(l10n, p))
-          .join(' · '),
+      // A chart area's card needs no "NOAA charts" line: its section says so.
+      if (!packs.every((p) => p.kind == PackKind.charts))
+        (packs.toList()..sort(
+              (a, b) => _kindOrder
+                  .indexOf(a.kind)
+                  .compareTo(_kindOrder.indexOf(b.kind)),
+            ))
+            .map((p) => installedLabel(l10n, p))
+            .join(' · '),
       [
         if (date != null) l10n.offlineMaps_downloadedOn(date),
         if (updates.isNotEmpty) l10n.offlineMaps_updateAvailable,
@@ -386,7 +439,7 @@ class _RegionCard extends StatelessWidget {
                     foregroundColor: theme.colorScheme.error,
                   ),
                   onPressed: () =>
-                      confirmDeleteRegion(context, maps, path, name),
+                      confirmDeleteRegion(context, maps, path, deleteName),
                   child: Text(l10n.common_delete),
                 ),
               ],
