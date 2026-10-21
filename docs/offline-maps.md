@@ -59,6 +59,18 @@ traxmap moved into this repository.
 | 2026-10-20 | **One catalogue: production.** The server publishes only products from full master builds to `https://maps.meshtrax.io/index.json`; the `dev/` test catalogue is retired. Every build uses the production catalogue. |
 | 2026-10-20 | **A Google-Maps-style layers sheet** on the main map: map type tiles (OSM, USGS, NOAA), map details (contours, dark map) and node types (repeaters, chat, rooms…). It replaces the plain-text map selector. **The map is light by default**, whatever the app's theme. |
 | 2026-10-20 | **The Charts tab is a coast list with ticks.** Coasts as the file lists them; areas alphabetical until `coast_areas` gives coastline order; Download takes every ticked area. Text only, one column, like the Maps tab. |
+| 2026-10-21 | **Charts get NOAA's navigational set (Option B, Martin).** Today's 9 layers stay as they are. New layers, grouped by role, each carry the S-57 class:
+  - routes;
+  - regulated areas;
+  - overhead clearances;
+  - cables and pipelines;
+  - harbour structures and facilities;
+  - seabed;
+  - tide and current;
+  - extra aids (fog signals, daymarks, racons, virtual AIS);
+  - landmarks;
+  - magnetic variation.
+  About 1.2–1.3 GB for the 42 areas. Whether NOAA's SCAMIN decluttering applies is on hold until the Puerto Rico test packs are compared. |
 | 2026-10-20 | **Charts carry the real NOAA content,** not a simplified view (Martin). traxmapmaker rebuilds the charts with traffic separation schemes, anchorages, restricted areas, bridges and overhead clearances, and caution areas. The current 9 layers stay. |
 | 2026-10-20 | **My location: the phone's GPS where allowed, else the radio's position.** It asks while-in-use on the first tap. The phone is **its own marker** (Martin), a blue dot apart from the radio's "You". Nothing is read until the user has used My location once (remembered), and then only while a map is open with the app in front. Linux has no GPS and uses the radio. Desktop gets +/− buttons; phones pinch. |
 | 2026-10-19 | **Copernicus GLO-30 is approved** for contours outside the US (Canada, Mexico, UK). A contours pack's `attribution` is then "USGS 3DEP", the Copernicus credit, or both, joined with "; ". The licence also requires redistributors to show: "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30." The app shows that alongside the credits wherever such a pack is in use, as it does the charts' "Not for navigation". **Agreed with traxmapmaker (SCHEMA.md "Pack metadata", FINDINGS §1.1):**<br>• Packs carry an optional plain-text `notice` metadata key, present only when a licence requires one.<br>• Several notices in one pack are joined by newlines.<br>• The key is in pack metadata only, not in `index.json`.<br>• The app shows every distinct notice of the packs in use (T5, `MapStyleState.notices`), and never matches on "Copernicus".<br>• First data: the Puerto Rico and US Virgin Islands contours. Two of their blocks have no 3DEP tile and use GLO-30. |

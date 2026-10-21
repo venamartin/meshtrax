@@ -101,7 +101,17 @@ Last updated 2026-10-20, evening. **Resume here.**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time";
-   - **traxmapmaker's full-data charts** (2026-10-20): Option A, B (its recommendation) or C. MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps.md, renderer notes).
+   - **traxmapmaker's full-data charts** (2026-10-20). MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps.md, renderer notes).
+     - **Chosen (Martin, 2026-10-21): Option B, the navigational set**, about 1.2–1.3 GB for all 42 areas. Option A's routes, regulated areas and overhead clearances, plus:
+       - submarine cables and pipelines;
+       - harbour structures and facilities;
+       - seabed type;
+       - tidal stream and current arrows;
+       - fog signals, daymarks, racons and virtual AIS aids;
+       - landmarks;
+       - magnetic variation;
+       - the other regulated areas.
+       The app's chart styles for these come after the schema lands.
      - **On hold (Martin, 2026-10-21):** whether NOAA's SCAMIN decluttering applies to today's layers.
      - **Plan (Martin approved):** traxmapmaker builds Puerto Rico test packs, not published, after the contours build:
        - SCAMIN off;
