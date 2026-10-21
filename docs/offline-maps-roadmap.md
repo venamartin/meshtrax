@@ -116,7 +116,10 @@ Last updated 2026-10-20, evening. **Resume here.**
        The other variants: A, no decluttering; B, the new layers only; D, NOAA's scale on a phone, which left harbours almost bare at z13.
        The renders were made headless in flutter-tester;
    - **traxmapmaker's USGS base design** (2026-10-21, `traxmapmaker/experiments/designs/2026-10-20-usgs-base-master.md`), decisions D1–D14:
-     - **D1:** hillshade and elevation bands as their own `terrain` kind (`terrain.pmtiles`, z6–13, overzoomed). MeshTrax agreed: OSM maps get relief without the 2–5 GB USGS pack, and it costs the app about half a day. UX to decide with it: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
+     - **D1: chosen (Martin, 2026-10-21, in traxmapmaker's session).** Hillshade and elevation bands become their own `terrain` kind: `terrain.pmtiles`, z6–13, overzoomed, one per land region. OSM maps get relief without the 2–5 GB USGS pack.
+       - App work, about half a day: `PackKind.terrain`, the four styles re-pointed to `{pack:terrain}`, a label, the Downloaded order and a region-detail row.
+       - It ships in the release that lists the kind, before traxmapmaker publishes any terrain pack.
+       - Still to preview with Martin: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
      - **D2:** base z14 or z13, compared on the Rhode Island pilot in the app;
      - **D3:** the hillshade highlights appear for the first time, reviewed on the pilot.
 
