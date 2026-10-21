@@ -89,24 +89,34 @@ void main() {
     );
   });
 
-  test('finds the areas overlapping a box', () {
-    final rhodeIsland = const LatLngBounds(
-      south: 41.1,
-      west: -71.9,
-      north: 42.0,
-      east: -71.1,
-    );
+  test('finds the areas overlapping an outline, not just its box', () {
+    List<List<List<LatLng>>> box(double w, double s, double e, double n) => [
+      [
+        [LatLng(s, w), LatLng(s, e), LatLng(n, e), LatLng(n, w), LatLng(s, w)],
+      ],
+    ];
     expect(
-      index.areasIn(rhodeIsland).map((a) => a.name),
+      index.areasOverlapping(box(-71.9, 41.1, -71.1, 42.0)).map((a) => a.name),
       contains('Rhode Island'),
     );
-    final colorado = const LatLngBounds(
-      south: 37,
-      west: -109,
-      north: 41,
-      east: -102,
+    expect(index.areasOverlapping(box(-109, 37, -102, 41)), isEmpty);
+    // Iowa's box meets the box of Michigan's Lake Superior part, but no
+    // chart water reaches Iowa.
+    final iowa = box(-96.6426, 40.37266, -90.13581, 43.50182);
+    final michigan = index.byPackRegion('charts/us/michigan')!;
+    const iowaBox = LatLngBounds(
+      west: -96.6426,
+      south: 40.37266,
+      east: -90.13581,
+      north: 43.50182,
     );
-    expect(index.areasIn(colorado), isEmpty);
+    expect(michigan.parts.any(iowaBox.intersects), isTrue);
+    expect(index.areasOverlapping(iowa), isEmpty);
+    // A region wholly inside an area's outline still overlaps it.
+    expect(
+      index.areasOverlapping(box(-71.5, 41.4, -71.45, 41.45)).map((a) => a.id),
+      contains('charts-us-ri'),
+    );
     for (final part in index.byPackRegion('charts/us/alaska')!.parts) {
       expect(part.east - part.west, lessThan(360));
     }

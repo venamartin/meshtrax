@@ -4,7 +4,8 @@
   (FINDINGS §1.4): NOAA chart areas, each one charts pack (`packRegion`),
   grouped by coast in the server's order (`coasts`, and `coast_areas` for a
   coastline order when present). `inCoast`, `byPackRegion`, `areasAt` (most
-  specific first) and `areasIn`. Bad features are skipped and named.
+  specific first) and `areasOverlapping` (a region's outline, say). Bad
+  features are skipped and named.
 - **`MapFit.minZoom`** (and `OfflineMapController.fitBounds(minZoom:)`):
   a fit never zooms out past it; a bigger area shows its middle. MeshTrax
   frames a downloaded region no further out than its packs draw.

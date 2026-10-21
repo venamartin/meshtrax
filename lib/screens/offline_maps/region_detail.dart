@@ -87,7 +87,7 @@ class _RegionDetailState extends State<RegionDetail> {
     final updateBytes = updates.fold(0, (sum, e) => sum + e.bytes);
     final hasInstalled = maps.installedRegions.contains(region.path);
     final chartWaters =
-        maps.chartAreas?.areasIn(region.bounds).isNotEmpty ?? false;
+        maps.chartAreas?.areasOverlapping(region.polygons).isNotEmpty ?? false;
     final ancestors = regions?.ancestorsOf(region) ?? const <Region>[];
 
     return ListView(

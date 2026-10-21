@@ -172,11 +172,32 @@ class ChartAreaIndex {
     return [for (final (a, _) in found) a];
   }
 
-  /// The areas with a part whose box overlaps [box].
-  List<ChartArea> areasIn(LatLngBounds box) => [
-    for (final a in areas)
-      if (a.parts.any(box.intersects)) a,
-  ];
+  /// The areas overlapping [outline] (e.g. a region's polygons): an outline
+  /// point of one lies inside the other. Boxes alone aren't enough: Iowa's
+  /// box overlaps the box of Michigan's Lake Superior part.
+  List<ChartArea> areasOverlapping(List<List<List<LatLng>>> outline) {
+    final boxes = [
+      for (final p in outline)
+        if (p.isNotEmpty && p.first.isNotEmpty) outerExtent([p]),
+    ];
+    bool inOutline(LatLng q) =>
+        boxes.any((b) => b.contains(q)) &&
+        outline.any((p) => polygonContains(p, q));
+    bool overlaps(ChartArea a) =>
+        a.parts.any((part) => boxes.any(part.intersects)) &&
+        (a.polygons.any((p) => p.isNotEmpty && p.first.any(inOutline)) ||
+            outline.any(
+              (p) =>
+                  p.isNotEmpty &&
+                  p.first.any(
+                    (q) => a.parts.any((b) => b.contains(q)) && a.contains(q),
+                  ),
+            ));
+    return [
+      for (final a in areas)
+        if (overlaps(a)) a,
+    ];
+  }
 }
 
 ChartArea _areaFromFeature(Map<String, Object?> f) {
