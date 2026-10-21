@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:traxmap/core.dart';
 
 /// `chart_areas.geojson` is the live file from maps.meshtrax.io
-/// (2026-10-20); `charts_index.json` is the live index.json's 41 charts
-/// entries plus Rhode Island's map.
+/// (2026-10-20, 17:10 PDT, with `coast_areas`); `charts_index.json` is the
+/// live index.json's 42 charts entries plus Rhode Island's map.
 void main() {
   final json = File('test/support/chart_areas.geojson').readAsStringSync();
   final index = ChartAreaIndex.parse(json);
@@ -17,13 +17,13 @@ void main() {
     expect(index.source, startsWith('NOAA ENC'));
     expect(index.attribution, 'NOAA Office of Coast Survey');
     expect(index.skipped, isEmpty);
-    expect(index.areas, hasLength(41));
+    expect(index.areas, hasLength(42));
     expect(index.coasts, [
       'West Coast',
       'Alaska',
       'Hawaii & Pacific',
-      'Gulf Coast',
       'Atlantic Coast',
+      'Gulf Coast',
       'Great Lakes',
       'Caribbean',
       'Inland lakes',
@@ -31,26 +31,27 @@ void main() {
     ]);
   });
 
-  test('coasts list their areas by name; some areas are in two', () {
+  test('coasts list their areas along the coast; some areas are in two', () {
     final counts = {for (final c in index.coasts) c: index.inCoast(c).length};
     expect(counts, {
       'West Coast': 3,
       'Alaska': 1,
       'Hawaii & Pacific': 4,
-      'Gulf Coast': 5,
       'Atlantic Coast': 15,
+      'Gulf Coast': 5,
       'Great Lakes': 8,
-      'Caribbean': 4,
+      'Caribbean': 5,
       'Inland lakes': 3,
       'Other': 1,
     });
-    for (final coast in index.coasts) {
-      final names = [for (final a in index.inCoast(coast)) a.name];
-      expect(
-        names,
-        [...names]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())),
-      );
-    }
+    List<String> ids(String coast) => [
+      for (final a in index.inCoast(coast)) a.id,
+    ];
+    expect(ids('West Coast'), ['charts-us-wa', 'charts-us-or', 'charts-us-ca']);
+    expect(ids('Atlantic Coast').first, 'charts-us-me');
+    expect(ids('Atlantic Coast').last, 'charts-us-fl');
+    expect(ids('Gulf Coast').first, 'charts-us-fl');
+    expect(ids('Gulf Coast').last, 'charts-us-tx');
     final florida = index.byPackRegion('charts/us/florida')!;
     expect(florida.coasts, containsAll(['Atlantic Coast', 'Gulf Coast']));
     expect(index.inCoast('Gulf Coast'), contains(florida));

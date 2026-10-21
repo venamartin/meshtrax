@@ -117,7 +117,7 @@ void main() {
       expect(maps.status, CatalogueStatus.ready);
       expect(maps.index!.packs, hasLength(9));
       expect(maps.regions!.attribution, contains('Geofabrik'));
-      expect(maps.chartAreas!.areas, hasLength(41));
+      expect(maps.chartAreas!.areas, hasLength(42));
       expect(requests.map((r) => r.url.path), [
         '/dev/index.json',
         '/dev/picker.geojson',
@@ -143,7 +143,7 @@ void main() {
       ]);
       expect(maps.status, CatalogueStatus.ready);
       expect(maps.index!.packs, hasLength(9));
-      expect(maps.chartAreas!.areas, hasLength(41));
+      expect(maps.chartAreas!.areas, hasLength(42));
 
       // A new service starts from the cache, with no network.
       final again = service();
@@ -209,7 +209,7 @@ void main() {
         expect(maps.error, isNull);
         expect(maps.fetchedAt, isNot(fetchedAt));
         expect(maps.chartAreasError, contains('500'));
-        expect(maps.chartAreas!.areas, hasLength(41));
+        expect(maps.chartAreas!.areas, hasLength(42));
 
         routes['/dev/chart_areas.geojson'] = (_) => http.Response('', 304);
         await maps.refresh();
@@ -228,7 +228,7 @@ void main() {
         final again = service();
         await again.start();
         expect(again.regions, isNull);
-        expect(again.chartAreas!.areas, hasLength(41));
+        expect(again.chartAreas!.areas, hasLength(42));
         expect(again.chartAreasFetchedAt, isNotNull);
       },
     );
@@ -246,7 +246,8 @@ void main() {
     });
 
     test('each area pairs with its charts pack by region', () async {
-      routes['/dev/index.json'] = (_) => http.Response(_chartsIndex, 200);
+      routes['/dev/index.json'] = (_) =>
+          http.Response.bytes(utf8.encode(_chartsIndex), 200);
       final maps = service();
       await maps.start();
       await maps.refresh();

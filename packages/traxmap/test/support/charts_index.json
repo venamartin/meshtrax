@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-20T21:04:34+00:00",
+ "generated": "2026-10-20T23:29:03+00:00",
  "schema_version": 1,
  "packs": [
   {
@@ -38,16 +38,16 @@
   },
   {
    "id": "charts-us-aq-charts",
-   "name": "Antarctica (McMurdo) (NOAA charts)",
+   "name": "Antarctica (Weddell Sea, Palmer Station) (NOAA charts)",
    "kind": "charts",
    "bbox": [
-    -40.0,
+    -64.475,
     -78.33333,
     -30.0,
-    -75.0
+    -64.68333
    ],
-   "bytes": 1224285,
-   "sha256": "4e2bcf6d07a3ca218d15e99ce62e9b06e77caf5e65165630d8493371a9838eea",
+   "bytes": 1918238,
+   "sha256": "93e5bdd82dfb11830cd57f284e1f686a6e32057db2e06c3caafde9e86ee95968",
    "build_date": "2026-10-20",
    "schema_version": 1,
    "url": "https://maps.meshtrax.io/v1/charts/us/antarctica/charts.pmtiles",
@@ -140,7 +140,7 @@
   },
   {
    "id": "charts-us-fm-charts",
-   "name": "Micronesia & Palau (NOAA charts)",
+   "name": "Micronesia (Yap, Pohnpei, Kosrae, outer Chuuk islands) (NOAA charts)",
    "kind": "charts",
    "bbox": [
     137.29767,
@@ -148,12 +148,12 @@
     163.15965,
     10.1375
    ],
-   "bytes": 5993316,
-   "sha256": "dfe9bffdcbf6b78da590289efae50bac43f82b5bd1d01a4bba5faf62c0375dea",
+   "bytes": 5993338,
+   "sha256": "f039687af84d6f4a459143d25203278fd7acc0027f797c5464abbdd160f22e8b",
    "build_date": "2026-10-20",
    "schema_version": 1,
-   "url": "https://maps.meshtrax.io/v1/charts/us/micronesia-palau/charts.pmtiles",
-   "region": "charts/us/micronesia-palau"
+   "url": "https://maps.meshtrax.io/v1/charts/us/micronesia/charts.pmtiles",
+   "region": "charts/us/micronesia"
   },
   {
    "id": "charts-us-ga-charts",
@@ -195,12 +195,12 @@
    "kind": "charts",
    "bbox": [
     -178.8,
-    -64.85,
-    -63.9,
+    18.0,
+    -153.6,
     28.8
    ],
-   "bytes": 27390225,
-   "sha256": "5d2ef9f52a586ef92b2a5d96df3a7070b075075b900a3ee047a2ca0809c515a1",
+   "bytes": 22443750,
+   "sha256": "108fd5c668cbdfabdd1640a522a1523d99617adacf6380cc4200604c3cb58971",
    "build_date": "2026-10-20",
    "schema_version": 1,
    "url": "https://maps.meshtrax.io/v1/charts/us/hawaii/charts.pmtiles",
@@ -547,17 +547,34 @@
    "region": "charts/us/pennsylvania"
   },
   {
+   "id": "charts-us-pan-charts",
+   "name": "Panama (Col\u00f3n, San Blas) (NOAA charts)",
+   "kind": "charts",
+   "bbox": [
+    -80.05833,
+    9.21667,
+    -78.01666,
+    9.83333
+   ],
+   "bytes": 4257599,
+   "sha256": "0b7581971c2fa217807073a0cc46d896dcb05663eb039a053696bea115b98f7f",
+   "build_date": "2026-10-20",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/v1/charts/us/panama/charts.pmtiles",
+   "region": "charts/us/panama"
+  },
+  {
    "id": "charts-us-po-charts",
-   "name": "Pacific islands (Guam, Northern Marianas, American Samoa) (NOAA charts)",
+   "name": "Pacific islands (Guam, Northern Marianas, Palau, American Samoa) (NOAA charts)",
    "kind": "charts",
    "bbox": [
     -176.63684,
     -14.7,
     166.67316,
-    25.00899
+    20.58061
    ],
-   "bytes": 12611565,
-   "sha256": "699b3867c1476bf00d1d8fd763f0942659b78bc108dbc7a84b0f5002b14cf9d6",
+   "bytes": 9272559,
+   "sha256": "b79b2bcff51e08915934df85f3612be6720faa7aa8cd25b50cd442c5b2e6d69d",
    "build_date": "2026-10-20",
    "schema_version": 1,
    "url": "https://maps.meshtrax.io/v1/charts/us/pacific-islands/charts.pmtiles",
