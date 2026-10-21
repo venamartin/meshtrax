@@ -1816,9 +1816,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get map_filterNodes => 'Szűrési pontok';
 
   @override
-  String get map_nodeTypes => 'Vonalak típusai';
-
-  @override
   String get map_chatNodes => 'Csevegési pontok';
 
   @override
@@ -1838,16 +1835,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Névfelhasználó kulc-prefix';
-
-  @override
-  String get map_markers => 'Jelölők';
-
-  @override
-  String get map_showSharedMarkers => 'Mutassa meg a közös jeleket';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Megjelenítsa a megjósolt csomópontok helyét';
 
   @override
   String get map_showDiscoveryContacts =>

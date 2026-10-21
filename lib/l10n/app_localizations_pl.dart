@@ -1817,9 +1817,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get map_filterNodes => 'Filtruj Węzły';
 
   @override
-  String get map_nodeTypes => 'Typy węzłów';
-
-  @override
   String get map_chatNodes => 'Węzły czatu';
 
   @override
@@ -1839,16 +1836,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Prefiks klucza publicznego';
-
-  @override
-  String get map_markers => 'Znaczniki';
-
-  @override
-  String get map_showSharedMarkers => 'Pokaż udostępnione znaczniki.';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Pokaż przypuszczalne lokalizacje węzłów';
 
   @override
   String get map_showDiscoveryContacts => 'Pokaż odkryte kontakty';

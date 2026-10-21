@@ -1787,9 +1787,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get map_filterNodes => 'Filtrera noder';
 
   @override
-  String get map_nodeTypes => 'Nodtyper';
-
-  @override
   String get map_chatNodes => 'Chatnoder';
 
   @override
@@ -1809,16 +1806,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Allmänt nyckelprästegenskap';
-
-  @override
-  String get map_markers => 'Markörer';
-
-  @override
-  String get map_showSharedMarkers => 'Visa delade markörer';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Visa upp de antagna nodernas placeringar';
 
   @override
   String get map_showDiscoveryContacts => 'Visa Discovery-kontakter';

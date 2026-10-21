@@ -1811,9 +1811,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get map_filterNodes => 'Filtrer les nœuds';
 
   @override
-  String get map_nodeTypes => 'Types de nœuds';
-
-  @override
   String get map_chatNodes => 'Nœuds de Chat';
 
   @override
@@ -1833,16 +1830,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Préfixe de clé publique';
-
-  @override
-  String get map_markers => 'Marqueurs';
-
-  @override
-  String get map_showSharedMarkers => 'Afficher les marqueurs partagés';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Afficher les emplacements des nœuds estimés';
 
   @override
   String get map_showDiscoveryContacts => 'Afficher les contacts de découverte';

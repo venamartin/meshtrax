@@ -1805,9 +1805,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get map_filterNodes => 'Filtrar Nodos';
 
   @override
-  String get map_nodeTypes => 'Tipos de nodo';
-
-  @override
   String get map_chatNodes => 'Nodos de Chat';
 
   @override
@@ -1827,16 +1824,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Prefijo de clave pública';
-
-  @override
-  String get map_markers => 'Marcadores';
-
-  @override
-  String get map_showSharedMarkers => 'Mostrar marcadores compartidos';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Mostrar las ubicaciones estimadas de los nodos.';
 
   @override
   String get map_showDiscoveryContacts => 'Mostrar Contactos de Descubrimiento';

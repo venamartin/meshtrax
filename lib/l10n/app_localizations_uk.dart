@@ -1802,9 +1802,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get map_filterNodes => 'Фільтрувати вузли';
 
   @override
-  String get map_nodeTypes => 'Типи вузлів';
-
-  @override
   String get map_chatNodes => 'Вузли чату';
 
   @override
@@ -1824,16 +1821,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Префікс відкритого ключа';
-
-  @override
-  String get map_markers => 'Маркери';
-
-  @override
-  String get map_showSharedMarkers => 'Показувати спільні маркери';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Показати місцезнаходження передбачених вузлів';
 
   @override
   String get map_showDiscoveryContacts => 'Показати контакти Відкриття';

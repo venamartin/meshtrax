@@ -1806,9 +1806,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get map_filterNodes => 'Филтрирайте възли';
 
   @override
-  String get map_nodeTypes => 'Типове възли';
-
-  @override
   String get map_chatNodes => 'Възли на чата';
 
   @override
@@ -1828,16 +1825,6 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Префикс на публичен ключ';
-
-  @override
-  String get map_markers => 'Маркери';
-
-  @override
-  String get map_showSharedMarkers => 'Покажи споделени маркери';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Покажете местоположенията на предположените възли.';
 
   @override
   String get map_showDiscoveryContacts => 'Покажи контакти за откриване';

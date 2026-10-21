@@ -1796,9 +1796,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get map_filterNodes => 'Filter Nodes';
 
   @override
-  String get map_nodeTypes => 'Nodetypes';
-
-  @override
   String get map_chatNodes => 'Chatnodes';
 
   @override
@@ -1818,16 +1815,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Openbare sleutelvoorgemeld';
-
-  @override
-  String get map_markers => 'Markeringen';
-
-  @override
-  String get map_showSharedMarkers => 'Toon gedeelde markeringen';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Toon de voorspelde locaties van de knopen';
 
   @override
   String get map_showDiscoveryContacts => 'Ontdek contacten weergeven';

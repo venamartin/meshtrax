@@ -1796,9 +1796,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get map_filterNodes => 'Filtrovať uzly';
 
   @override
-  String get map_nodeTypes => 'Typy uzlov';
-
-  @override
   String get map_chatNodes => 'Chatové uzly';
 
   @override
@@ -1818,16 +1815,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Prefix verejného kľúča';
-
-  @override
-  String get map_markers => 'Označkovače';
-
-  @override
-  String get map_showSharedMarkers => 'Zobraziť zdieľané značky';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Zobraziť umiestnenia odhadnutých uzlov';
 
   @override
   String get map_showDiscoveryContacts => 'Zobraziť kontakty objavov';

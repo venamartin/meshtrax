@@ -3292,12 +3292,6 @@ abstract class AppLocalizations {
   /// **'Filter Nodes'**
   String get map_filterNodes;
 
-  /// No description provided for @map_nodeTypes.
-  ///
-  /// In en, this message translates to:
-  /// **'Node Types'**
-  String get map_nodeTypes;
-
   /// No description provided for @map_chatNodes.
   ///
   /// In en, this message translates to:
@@ -3339,24 +3333,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Public key prefix'**
   String get map_publicKeyPrefix;
-
-  /// No description provided for @map_markers.
-  ///
-  /// In en, this message translates to:
-  /// **'Markers'**
-  String get map_markers;
-
-  /// No description provided for @map_showSharedMarkers.
-  ///
-  /// In en, this message translates to:
-  /// **'Show shared markers'**
-  String get map_showSharedMarkers;
-
-  /// No description provided for @map_showGuessedLocations.
-  ///
-  /// In en, this message translates to:
-  /// **'Show guessed node locations'**
-  String get map_showGuessedLocations;
 
   /// No description provided for @map_showDiscoveryContacts.
   ///

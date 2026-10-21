@@ -1792,9 +1792,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get map_filterNodes => 'Filtirirajte člene';
 
   @override
-  String get map_nodeTypes => 'Vrste knope';
-
-  @override
   String get map_chatNodes => 'Čuti zvezde';
 
   @override
@@ -1814,15 +1811,6 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Predifika javnega ključa';
-
-  @override
-  String get map_markers => 'Označitelji';
-
-  @override
-  String get map_showSharedMarkers => 'Pokaži skupno označenja';
-
-  @override
-  String get map_showGuessedLocations => 'Pokaži lokacije domnevnih not.';
 
   @override
   String get map_showDiscoveryContacts => 'Prikaži odkritja kontaktov';

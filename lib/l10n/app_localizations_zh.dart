@@ -1727,9 +1727,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get map_filterNodes => '过滤节点';
 
   @override
-  String get map_nodeTypes => '节点类型';
-
-  @override
   String get map_chatNodes => '聊天节点';
 
   @override
@@ -1749,15 +1746,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => '关键字前缀';
-
-  @override
-  String get map_markers => '标记';
-
-  @override
-  String get map_showSharedMarkers => '显示共享标记';
-
-  @override
-  String get map_showGuessedLocations => '显示猜测的节点位置';
 
   @override
   String get map_showDiscoveryContacts => '显示发现联系人';

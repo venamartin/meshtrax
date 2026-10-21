@@ -1804,9 +1804,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get map_filterNodes => 'Фильтр нод';
 
   @override
-  String get map_nodeTypes => 'Типы нод';
-
-  @override
   String get map_chatNodes => 'Чат-ноды';
 
   @override
@@ -1826,16 +1823,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Префикс публичного ключа';
-
-  @override
-  String get map_markers => 'Метки';
-
-  @override
-  String get map_showSharedMarkers => 'Показывать общие метки';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Отобразить предполагаемые места расположения узлов';
 
   @override
   String get map_showDiscoveryContacts => 'Показать контакты Discovery';

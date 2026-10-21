@@ -1745,9 +1745,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get map_filterNodes => '필터 노드';
 
   @override
-  String get map_nodeTypes => '노드 유형';
-
-  @override
   String get map_chatNodes => '채팅 노드';
 
   @override
@@ -1767,15 +1764,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => '공개 키 접두사';
-
-  @override
-  String get map_markers => '마커';
-
-  @override
-  String get map_showSharedMarkers => '공통 마커 표시';
-
-  @override
-  String get map_showGuessedLocations => '추정된 노드 위치 표시';
 
   @override
   String get map_showDiscoveryContacts => '디스커버리 담당자 연락처 보기';

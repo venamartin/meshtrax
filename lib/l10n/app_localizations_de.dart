@@ -1806,9 +1806,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get map_filterNodes => 'Knotenfilter';
 
   @override
-  String get map_nodeTypes => 'Knotentypen';
-
-  @override
   String get map_chatNodes => 'Chat-Knoten';
 
   @override
@@ -1828,16 +1825,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Schlüsselpräfix';
-
-  @override
-  String get map_markers => 'Marker';
-
-  @override
-  String get map_showSharedMarkers => 'Zeige gemeinsam genutzte Marker';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Zeige die vermuteten Knotenpositionen';
 
   @override
   String get map_showDiscoveryContacts => 'Entdeckungs-Kontakte anzeigen';

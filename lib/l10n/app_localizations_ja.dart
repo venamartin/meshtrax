@@ -1750,9 +1750,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get map_filterNodes => 'フィルタノード';
 
   @override
-  String get map_nodeTypes => 'ノードの種類';
-
-  @override
   String get map_chatNodes => 'チャットノード';
 
   @override
@@ -1772,15 +1769,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => '公開鍵のプレフィックス';
-
-  @override
-  String get map_markers => 'マーカー';
-
-  @override
-  String get map_showSharedMarkers => '共有のマーカーを表示する';
-
-  @override
-  String get map_showGuessedLocations => '推測されたノードの位置を表示する';
 
   @override
   String get map_showDiscoveryContacts => 'Discovery社の連絡先を表示する';
