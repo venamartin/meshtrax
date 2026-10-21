@@ -126,6 +126,7 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
   - **Stream errors don't close the stream.** Cancel the subscription on error, or a later tap can't start following again.
   - **Never asked reads as `denied`** on Android and iOS, not "unknown", so asking again on `denied` is what shows the prompt.
   - **iOS builds** need `BYPASS_PERMISSION_LOCATION_ALWAYS=1` in the environment (Swift Package Manager; the Podfile sets it for CocoaPods), or the binary references Always location (ITMS-90683).
+- **Headless previews with real fonts, no native build** (2026-10-21): `flutter --show-test-device run -d flutter-tester -t <app.dart>` runs an app in the test engine without `flutter test`'s box-glyph test fonts and without the Linux desktop build. That build couldn't finish in 25 minutes on the busy Pi. Capture with `RepaintBoundary.toImage` and `exit(0)` when done. Inside `flutter test`, map labels always draw as boxes: the label painter names no font family, and `--use-test-fonts` is hard-wired.
 - `RandomAccessFile` allows one pending operation at a time, so local tile reads need serializing.
 - **Test hang:** `rootBundle` caches asset futures. A future created inside one `testWidgets` fake-async zone never completes when awaited from another. Load assets in plain `test()` with `TestWidgetsFlutterBinding.ensureInitialized()`.
 - A bundled pack copied into app storage goes stale after a pipeline rebuild. Compare size plus the first 16 KiB, and reinstall when they differ.
