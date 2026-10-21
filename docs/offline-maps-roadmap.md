@@ -75,7 +75,29 @@ Last updated 2026-10-20, evening. **Resume here.**
      The app's chart styles follow once traxmapmaker sends the schema.
    - **`chart_areas.geojson` republished (2026-10-20, 17:10 PDT):** 42 areas in 9 coasts, with Atlantic before Gulf, Panama under Caribbean and Micronesia at `charts/us/micronesia`. Every area has a pack. `coast_areas` gives the coastline order the app uses (Maine → Florida, then Florida → Texas). `display_bbox` isn't used yet, because the Charts tab has no map. The test fixtures are these live files. Their mock server sends UTF-8 bytes like R2.
    - **Encoding (FINDINGS §1.1, 2026-10-20):** every root JSON file is UTF-8, no BOM, written ASCII-only with `\u` escapes, and served with `charset=utf-8`. The picker and chart_areas.geojson become ASCII on their next publish. Their content is unchanged, but the new ETags make the app fetch both once. The app decodes the body bytes as UTF-8 either way.
-7. **Waiting for Martin:**
+7. **M6 desktop +/− and M7 My location: done (2026-10-20),** on the Node Map and the no-radio map.
+   - **Buttons, bottom right:** +/− (desktop only; phones pinch), then My location, then layers (`MapControls`). The "No offline map here" card sits beside them (`AppMap.controlsWidth`).
+   - **My location:**
+     - uses the phone's GPS where the user allows it (Android, iOS, macOS, Windows; `PhoneLocationService` over geolocator), else the radio's own position;
+     - asks while-in-use on the first tap only;
+     - zooms to at least 14;
+     - with no position, says why, and offers Settings when location is denied for good.
+   - **The phone is its own marker** (Martin): a blue dot, apart from the radio's teal "You".
+     - Nothing is read until the user has tapped My location once (remembered). The OS permission alone doesn't count.
+     - After that, it follows while a map is open with the app in front.
+     - My location is hidden where there's no GPS and no radio position (a radio's 0, 0 counts as none).
+   - **Linux (the Pi):** no GPS, so My location uses the radio.
+   - **Platform:**
+     - Android location permissions no longer stop at Android 11 (BLE scan keeps `neverForLocation`);
+     - iOS `NSLocationWhenInUseUsageDescription`;
+     - macOS `NSLocationUsageDescription` and the location entitlement;
+     - MSIX `location` capability;
+     - iOS builds set `BYPASS_PERMISSION_LOCATION_ALWAYS=1` (TESTFLIGHT_GUIDE.md, Podfiles).
+   - **Needs Martin:**
+     - a phone test of the permission prompt (Android, iOS);
+     - review of the privacy-policy changes (My location: read only on tap, never stored or sent), with its "Last updated" date;
+     - the store forms: Play Data safety (location permission, used on the device only), App Store privacy labels, and the Microsoft Store listing.
+8. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time".
@@ -467,8 +489,8 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 
 | Task | Change |
 | --- | --- |
-| M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types. **Done** except desktop +/−. |
-| M7 | Phone GPS (geolocator), plus the privacy, platform and store updates. On the Pi it uses the radio fallback; the permission flow needs a phone. |
+| M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types; desktop +/−. **Done.** |
+| M7 | Phone GPS (geolocator): My location and the phone's own marker, plus the privacy and platform updates. On the Pi it uses the radio fallback. **Done** (2026-10-20); the permission prompt and the store forms need Martin's phone and accounts. |
 
 ### Phase 5: cleanup and release gate
 
