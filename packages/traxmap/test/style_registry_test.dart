@@ -29,11 +29,81 @@ void main() {
     ],
   };
 
+  Pack packOf(String id, Map<String, Object?> metadata) => Pack(
+    id: id,
+    file: File('/data/packs/$id.pmtiles'),
+    header: PmTilesHeader.parse(_header()),
+    metadata: metadata,
+  );
+
+  test('several packs of a kind become one source, in order', () {
+    final nv = packOf('nv-base', const {'kind': 'base'});
+    final out = StyleRegistry.resolve(
+      style,
+      StyleContext(
+        packs: {
+          PackKind.base: [base, nv],
+        },
+      ),
+    );
+    final source = (out['sources'] as Map)['base'] as Map;
+    expect(source['url'], 'pmtiles://file:///data/packs/ca-base.pmtiles');
+    expect(source['ovm:urls'], [
+      'pmtiles://file:///data/packs/ca-base.pmtiles',
+      'pmtiles://file:///data/packs/nv-base.pmtiles',
+    ]);
+    // One pack: no list.
+    final single = StyleRegistry.resolve(
+      style,
+      StyleContext(
+        packs: {
+          PackKind.base: [base],
+        },
+      ),
+    );
+    expect(((single['sources'] as Map)['base'] as Map)['ovm:urls'], isNull);
+  });
+
+  test('packsByKind puts the units variant first, then the newest', () {
+    final ft = packOf('ca-contours-20ft', const {
+      'kind': 'contours',
+      'units': 'imperial',
+      'build_date': '2026-10-01',
+    });
+    final m = packOf('nv-contours-10m', const {
+      'kind': 'contours',
+      'units': 'metric',
+      'build_date': '2026-10-19',
+    });
+    final oldOsm = packOf('ca-osm', const {
+      'kind': 'osm',
+      'build_date': '2026-10-01',
+    });
+    final newOsm = packOf('nv-osm', const {
+      'kind': 'osm',
+      'build_date': '2026-10-19',
+    });
+    final byKind = StyleContext.packsByKind([
+      m,
+      oldOsm,
+      ft,
+      newOsm,
+    ], units: Units.imperial);
+    expect(byKind[PackKind.contours], [ft, m]);
+    expect(byKind[PackKind.osm], [newOsm, oldOsm]);
+    expect(
+      StyleContext.packsByKind([ft, m], units: Units.metric)[PackKind.contours],
+      [m, ft],
+    );
+  });
+
   test('rewrites pack, glyph and sprite urls', () {
     final out = StyleRegistry.resolve(
       style,
       StyleContext(
-        packs: {PackKind.base: base},
+        packs: {
+          PackKind.base: [base],
+        },
         glyphs: 'file:///g/{fontstack}/{range}.pbf',
         sprite: 'file:///s/sprite',
       ),
@@ -50,7 +120,11 @@ void main() {
   test('drops sources for missing packs and their layers', () {
     final out = StyleRegistry.resolve(
       style,
-      StyleContext(packs: {PackKind.base: base}),
+      StyleContext(
+        packs: {
+          PackKind.base: [base],
+        },
+      ),
     );
     expect((out['sources'] as Map).keys, ['base']);
     expect([for (final l in out['layers'] as List) l['id']], ['bg', 'water']);
@@ -99,7 +173,11 @@ void main() {
     for (final id in ['charts-light', 'charts-dark']) {
       final chart = await bundledStyles().load(
         id,
-        StyleContext(packs: {PackKind.base: base}),
+        StyleContext(
+          packs: {
+            PackKind.base: [base],
+          },
+        ),
       );
       expect(StyleInfo.fromStyle(id, chart).disclaimer, 'Not for navigation');
       expect((chart['sources'] as Map).keys, ['base']);
@@ -122,7 +200,11 @@ void main() {
     for (final id in await registry.available()) {
       final on = await registry.load(
         id,
-        StyleContext(packs: {PackKind.contours: contours}),
+        StyleContext(
+          packs: {
+            PackKind.contours: [contours],
+          },
+        ),
       );
       final url = ((on['sources'] as Map)['contours'] as Map)['url'];
       expect(url, 'pmtiles://${Uri.file(contours.file.path)}', reason: id);
@@ -156,6 +238,20 @@ void main() {
       await registry.styleFor(MapType.osm, dark: true, family: 'outdoor'),
       'osm-dark',
     );
+  });
+
+  test('each map names the pack kinds it requires', () async {
+    final registry = bundledStyles();
+    for (final (type, kind) in [
+      (MapType.osm, PackKind.osm),
+      (MapType.usgs, PackKind.base),
+      (MapType.charts, PackKind.charts),
+    ]) {
+      for (final dark in [false, true]) {
+        final id = await registry.styleFor(type, dark: dark);
+        expect((await registry.info(id!)).requiredKinds, {kind}, reason: id);
+      }
+    }
   });
 
   test('bundled styles load and resolve', () async {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
+import 'package:traxmap/latlong2.dart';
+import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 
 import '../screens/map_screen.dart';
-import '../services/map_tile_cache_service.dart';
+import '../utils/platform_info.dart';
+import 'app_map.dart';
 
 /// A small, non-interactive map with one pin, for cards in chat. Tapping it
 /// opens the full map centred on the pin.
@@ -24,6 +25,8 @@ class MiniMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Web has no map packs service, so no map.
+    if (PlatformInfo.isWeb) return const SizedBox.shrink();
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
@@ -33,39 +36,24 @@ class MiniMap extends StatelessWidget {
           children: [
             ExcludeSemantics(
               child: IgnorePointer(
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: position,
-                    initialZoom: 14,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.none,
-                    ),
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: kMapTileUrlTemplate,
-                      userAgentPackageName:
-                          MapTileCacheService.userAgentPackageName,
-                      tileProvider:
-                          context.read<MapTileCacheService>().tileProvider,
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: position,
-                          width: 40,
-                          height: 40,
-                          alignment: Alignment.topCenter,
-                          child: Icon(
-                            Icons.location_on,
-                            color: markerColor,
-                            size: 36,
-                            shadows: const [
-                              Shadow(color: Colors.black45, blurRadius: 4),
-                            ],
-                          ),
-                        ),
-                      ],
+                child: AppMap(
+                  compact: true,
+                  initialCamera: MapCamera(center: position.toOvm(), zoom: 13),
+                  overlays: [
+                    MapMarker(
+                      id: 'pin',
+                      position: position.toOvm(),
+                      size: const Size(40, 40),
+                      anchor: Alignment.bottomCenter,
+                      interactive: false,
+                      child: Icon(
+                        Icons.location_on,
+                        color: markerColor,
+                        size: 36,
+                        shadows: const [
+                          Shadow(color: Colors.black45, blurRadius: 4),
+                        ],
+                      ),
                     ),
                   ],
                 ),

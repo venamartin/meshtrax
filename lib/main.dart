@@ -29,6 +29,8 @@ import 'services/ble_debug_log_service.dart';
 import 'services/app_debug_log_service.dart';
 import 'services/background_service.dart';
 import 'services/map_tile_cache_service.dart';
+import 'services/phone_location_service.dart';
+import 'services/map_packs_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
 import 'storage/prefs_manager.dart';
@@ -112,6 +114,12 @@ void main() async {
   appSettingsService.addListener(syncPathGraph);
   await syncPathGraph();
 
+  // Offline map packs: cached catalogue, installed packs, and downloads
+  // restored from the last run. Pack storage doesn't exist on the web.
+  final mapPacksService = PlatformInfo.isWeb
+      ? null
+      : await MapPacksService.create(appSettingsService);
+
   await connector.loadContactCache();
   // Channel settings and messages are keyed by channel identity, so the
   // cached channel list must load first.
@@ -131,6 +139,7 @@ void main() async {
       bleDebugLogService: bleDebugLogService,
       appDebugLogService: appDebugLogService,
       mapTileCacheService: mapTileCacheService,
+      mapPacksService: mapPacksService,
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
     ),
@@ -167,6 +176,9 @@ class MeshTraxApp extends StatefulWidget {
   final BleDebugLogService bleDebugLogService;
   final AppDebugLogService appDebugLogService;
   final MapTileCacheService mapTileCacheService;
+
+  /// Null on the web, where offline maps aren't available.
+  final MapPacksService? mapPacksService;
   final ChatTextScaleService chatTextScaleService;
   final UiViewStateService uiViewStateService;
 
@@ -180,6 +192,7 @@ class MeshTraxApp extends StatefulWidget {
     required this.bleDebugLogService,
     required this.appDebugLogService,
     required this.mapTileCacheService,
+    required this.mapPacksService,
     required this.chatTextScaleService,
     required this.uiViewStateService,
   });
@@ -306,6 +319,9 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         Provider.value(value: widget.storage),
         Provider.value(value: widget.mapTileCacheService),
+        if (widget.mapPacksService case final maps?)
+          ChangeNotifierProvider.value(value: maps),
+        ChangeNotifierProvider(create: (_) => PhoneLocationService()),
       ],
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {
@@ -351,6 +367,12 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
               // Update notification service with resolved locale
               final locale = Localizations.localeOf(context);
               NotificationService().setLocale(locale);
+              final l10n = AppLocalizations.of(context);
+              widget.mapPacksService?.setNotificationTitles(
+                running: l10n.offlineMaps_notificationRunning,
+                paused: l10n.offlineMaps_notificationPaused,
+                failed: l10n.offlineMaps_notificationFailed,
+              );
               return child ?? const SizedBox.shrink();
             },
             home: (PlatformInfo.isWeb && !PlatformInfo.isChrome)

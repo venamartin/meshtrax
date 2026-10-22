@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -11,7 +12,8 @@ import '../packs/geo.dart';
 import '../view/camera.dart';
 import '../view/map_controller.dart';
 import '../view/overlays.dart';
-import 'local_pmtiles_provider.dart';
+import '../packs/attribution.dart';
+import 'composite_pmtiles_provider.dart';
 
 /// Renders a resolved style with flutter_map + flutter_map_vector_tiles.
 ///
@@ -32,6 +34,21 @@ class FlutterMapRenderer extends StatefulWidget {
   final List<MapOverlay> overlays;
   final MapLabelStyle labelStyle;
   final List<Widget> extraLayers;
+
+  /// Raw flutter_map layers drawn above the vector tiles and below the
+  /// overlays, e.g. online raster tiles where no pack covers the view.
+  final List<Widget> baseLayers;
+
+  /// Style sources whose tiles count as "the map is covered here".
+  final Set<String> coverageSources;
+
+  /// Reports, once the camera settles, whether [coverageSources] have a tile
+  /// at the view centre. Called only when the answer changes.
+  final ValueChanged<bool>? onCoverageChanged;
+
+  /// Called with the tiles [coverageSources] draw whenever they change (a
+  /// new style or set of packs), for drawing other tiles only in the gaps.
+  final ValueChanged<TileCoverage>? onTileCoverage;
   final OfflineMapController? controller;
   final ValueChanged<MapCamera>? onCameraChanged;
   final ValueChanged<LatLng>? onTap;
@@ -56,6 +73,10 @@ class FlutterMapRenderer extends StatefulWidget {
     this.overlays = const [],
     this.labelStyle = const MapLabelStyle(),
     this.extraLayers = const [],
+    this.baseLayers = const [],
+    this.coverageSources = const {},
+    this.onCoverageChanged,
+    this.onTileCoverage,
     this.controller,
     this.onCameraChanged,
     this.onTap,
@@ -85,8 +106,13 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   bool _ready = false;
 
   vt.TileProviders? _providers;
+  var _local = <String, CompositePmTilesProvider>{};
   Widget? _vectorLayer; // kept so parent rebuilds don't rebuild it
   Object? _error;
+
+  TileCoverage _coverage = const TileCoverage([]);
+  bool? _covered;
+  Timer? _coverageTimer;
 
   final _lineHits = fm.LayerHitNotifier<MapOverlay>(null);
   final _polygonHits = fm.LayerHitNotifier<MapOverlay>(null);
@@ -102,6 +128,9 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   void didUpdateWidget(FlutterMapRenderer old) {
     super.didUpdateWidget(old);
     if (!identical(old.style, widget.style)) _load();
+    if (!setEquals(old.coverageSources, widget.coverageSources)) {
+      _updateCoverage();
+    }
     if (!identical(old.overlays, widget.overlays)) {
       _overlays = _Overlays.from(widget.overlays);
     }
@@ -113,18 +142,21 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
 
   Future<void> _load() async {
     final style = widget.style;
-    final providers = <String, vt.VectorTileProvider>{};
+    final providers = <String, CompositePmTilesProvider>{};
     try {
       final sources = (style['sources'] as Map<String, Object?>?) ?? {};
       for (final MapEntry(:key, :value) in sources.entries) {
         final source = value as Map<String, Object?>;
-        final url = source['url'];
-        if (source['type'] != 'vector' || url is! String) continue;
-        if (!url.startsWith('pmtiles://')) {
-          throw UnsupportedError('Source "$key" is not a local pack: $url');
-        }
-        final path = Uri.parse(url.substring('pmtiles://'.length)).toFilePath();
-        providers[key] = await LocalPmTilesVectorTileProvider.open(File(path));
+        final urls = sourceUrls(source);
+        if (source['type'] != 'vector' || urls.isEmpty) continue;
+        final files = [
+          for (final url in urls)
+            if (url.startsWith('pmtiles://'))
+              File(Uri.parse(url.substring('pmtiles://'.length)).toFilePath())
+            else
+              throw UnsupportedError('Source "$key" is not a local pack: $url'),
+        ];
+        providers[key] = await CompositePmTilesProvider.open(files);
       }
       final theme = vt.ThemeReader(
         logger: kDebugMode ? const vt.Logger.console() : const vt.Logger.noop(),
@@ -137,20 +169,70 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       final tileProviders = vt.TileProviders(providers);
       setState(() {
         _providers = tileProviders;
+        _local = providers;
         _vectorLayer = vt.VectorTileLayer(
           theme: theme,
           tileProviders: tileProviders,
         );
         _error = null;
       });
+      _updateCoverage();
     } catch (e) {
       vt.TileProviders(providers).dispose();
       if (mounted) setState(() => _error = e);
     }
   }
 
+  void _updateCoverage() {
+    final coverage = _coverage = TileCoverage([
+      for (final source in widget.coverageSources) ?_local[source],
+    ]);
+    // After the frame: listeners usually call setState, and this can run
+    // while the tree builds (a style without packs loads synchronously).
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) {
+        if (mounted && identical(coverage, _coverage)) {
+          widget.onTileCoverage?.call(coverage);
+        }
+      })
+      ..ensureVisualUpdate();
+    _scheduleCoverage();
+  }
+
+  /// Checks coverage once the camera has been still for a moment.
+  void _scheduleCoverage() {
+    if (widget.onCoverageChanged == null) return;
+    _coverageTimer?.cancel();
+    _coverageTimer = Timer(const Duration(milliseconds: 250), _checkCoverage);
+  }
+
+  Future<void> _checkCoverage() async {
+    if (!_ready || !mounted) return;
+    // flutter_map_vector_tiles draws a pack from the whole flutter_map zoom
+    // that equals its lowest zoom (one level early, stretched); a tile one
+    // level finer than that display level matches what it draws.
+    final display = _map.camera.zoom.floor();
+    final tile = _tileAt(camera.center, display + 1);
+    final covered = await _coverage.covers(tile.z, tile.x, tile.y);
+    if (!mounted || covered == _covered) return;
+    _covered = covered;
+    widget.onCoverageChanged?.call(covered);
+  }
+
+  static vt.TileKey _tileAt(LatLng p, int z) {
+    final n = 1 << z;
+    final lat = p.latitude.clamp(-85.0511, 85.0511) * math.pi / 180;
+    final x = ((p.longitude + 180) / 360 * n).floor().clamp(0, n - 1);
+    final y =
+        ((1 - math.log(math.tan(lat) + 1 / math.cos(lat)) / math.pi) / 2 * n)
+            .floor()
+            .clamp(0, n - 1);
+    return vt.TileKey(z, x, y);
+  }
+
   @override
   void dispose() {
+    _coverageTimer?.cancel();
     widget.controller?.detach(this);
     _map.dispose();
     _providers?.dispose();
@@ -198,11 +280,13 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
     coordinates: [for (final p in fit.coordinates) _ll(p)],
     padding: fit.padding,
     maxZoom: fit.maxZoom == null ? null : fit.maxZoom! + _zoomOffset,
+    minZoom: fit.minZoom == null ? 0 : fit.minZoom! + _zoomOffset,
   );
 
   void _onMapReady() {
     _ready = true;
     widget.controller?.attach(this);
+    _scheduleCoverage();
     // Report the starting camera too (apps derive label visibility etc. from
     // it); after the frame, as listeners usually call setState.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -222,6 +306,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       MapCamera(center: _ovm(c.center), zoom: c.zoom - _zoomOffset),
     );
     if (_ready) widget.controller?.cameraChanged();
+    _scheduleCoverage();
   }
 
   /// Wraps an interactive line/polygon layer: a tap or long-press on an
@@ -306,6 +391,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
             );
           },
         ),
+        ...widget.baseLayers,
         if (o.passivePolygons.isNotEmpty)
           fm.PolygonLayer(polygons: o.passivePolygons),
         if (o.activePolygons.isNotEmpty)
@@ -354,10 +440,14 @@ class _Overlays {
       switch (o) {
         case MapPolygon():
           final points = [for (final p in o.points) _pt(p)];
+          final holes = [
+            for (final hole in o.holes) [for (final p in hole) _pt(p)],
+          ];
           if (o.hasHandlers) {
             activePolygons.add(
               fm.Polygon<MapOverlay>(
                 points: points,
+                holePointsList: holes,
                 color: o.fillColor,
                 borderColor: o.strokeColor,
                 borderStrokeWidth: o.strokeWidth,
@@ -368,6 +458,7 @@ class _Overlays {
             passivePolygons.add(
               fm.Polygon<Object>(
                 points: points,
+                holePointsList: holes,
                 color: o.fillColor,
                 borderColor: o.strokeColor,
                 borderStrokeWidth: o.strokeWidth,
@@ -499,5 +590,33 @@ class _MarkerLabelLayer extends StatelessWidget {
             ),
       ],
     );
+  }
+}
+
+/// The web map tiles a map's packs draw, so an app can draw other tiles
+/// (online ones, say) only in the gaps.
+class TileCoverage {
+  final List<CompositePmTilesProvider> _sources;
+
+  @visibleForTesting
+  const TileCoverage(this._sources);
+
+  /// Whether the packs draw tile [z]/[x]/[y] in flutter_map's numbering
+  /// (256-pixel tiles, one zoom level above the packs' MapLibre zooms).
+  ///
+  /// Errs towards false: at the packs' lowest zoom, where the renderer may
+  /// or may not draw them yet depending on the exact zoom, it says false.
+  Future<bool> covers(int z, int x, int y) async {
+    for (final source in _sources) {
+      // Below a pack's lowest zoom it draws nothing; above its highest the
+      // renderer stretches its top-zoom tiles.
+      final zoom = z - 1;
+      if (zoom < source.minimumZoom) continue;
+      final at = math.min(zoom, source.maximumZoom);
+      final shift = z - at;
+      final key = vt.TileKey(at, (x % (1 << z)) >> shift, y >> shift);
+      if (await source.contains(key)) return true;
+    }
+    return false;
   }
 }

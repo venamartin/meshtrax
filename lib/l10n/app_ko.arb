@@ -298,22 +298,9 @@
   "appSettings_last6Hours": "지난 6시간",
   "appSettings_last24Hours": "지난 24시간",
   "appSettings_lastWeek": "지난 주",
-  "appSettings_offlineMapCache": "오프라인 지도 캐시",
   "appSettings_unitsTitle": "단위",
   "appSettings_unitsMetric": "단위 (m / km)",
   "appSettings_unitsImperial": "제국 (피트/마일)",
-  "appSettings_noAreaSelected": "선택된 영역 없음",
-  "appSettings_areaSelectedZoom": "선택된 영역 (줌 레벨: {minZoom} - {maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "디버깅",
   "appSettings_appDebugLogging": "앱 디버깅 로깅",
   "appSettings_appDebugLoggingSubtitle": "로그 앱 디버깅 메시지 (문제 해결을 위한)",
@@ -779,16 +766,12 @@
   },
   "map_connectToShareMarkers": "장치를 연결하여 마커를 공유",
   "map_filterNodes": "필터 노드",
-  "map_nodeTypes": "노드 유형",
   "map_chatNodes": "채팅 노드",
   "map_repeaters": "다시 보내는 장치",
   "map_otherNodes": "다른 노드",
   "map_keyPrefix": "핵심 접두사",
   "map_filterByKeyPrefix": "주요 접두사 기준으로 필터링",
   "map_publicKeyPrefix": "공개 키 접두사",
-  "map_markers": "마커",
-  "map_showSharedMarkers": "공통 마커 표시",
-  "map_showGuessedLocations": "추정된 노드 위치 표시",
   "map_showDiscoveryContacts": "디스커버리 담당자 연락처 보기",
   "map_guessedLocation": "추측된 위치",
   "map_lastSeenTime": "마지막으로 확인된 시간",
@@ -799,91 +782,6 @@
   "map_runTrace": "경로 추적",
   "map_removeLast": "마지막 항목 삭제",
   "map_pathTraceCancelled": "경로 추적 기능이 취소되었습니다.",
-  "mapCache_title": "오프라인 지도 캐시",
-  "mapCache_selectAreaFirst": "캐시할 영역을 먼저 선택하세요",
-  "mapCache_noTilesToDownload": "이 지역에 다운로드할 타일이 없습니다.",
-  "mapCache_downloadTilesTitle": "타일 다운로드",
-  "mapCache_downloadTilesPrompt": "{count}개의 타일을 오프라인 사용을 위해 다운로드하시겠습니까?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "다운로드",
-  "mapCache_cachedTiles": "{count} 개의 타일 캐시",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Cached {downloaded} tiles ({failed} failed)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "오프라인 캐시 삭제",
-  "mapCache_clearOfflineCachePrompt": "모든 캐시된 지도 템플릿을 삭제하시겠습니까?",
-  "mapCache_offlineCacheCleared": "오프라인 캐시 삭제",
-  "mapCache_noAreaSelected": "선택된 영역 없음",
-  "mapCache_cacheArea": "캐시 영역",
-  "mapCache_useCurrentView": "현재 보기 유지",
-  "mapCache_zoomRange": "줌 기능 범위",
-  "mapCache_estimatedTiles": "예상되는 타일 개수: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Downloaded {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "타일 다운로드",
-  "mapCache_clearCacheButton": "캐시 삭제",
-  "mapCache_failedDownloads": "실패한 다운로드: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "방금",
   "time_minutesAgo": "{minutes}분 전",
   "@time_minutesAgo": {

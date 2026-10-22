@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below. Same rule as data_extraction_rules.xml: offline
+     map packs (files/maps/) stay out of Auto Backup. -->
+<full-backup-content>
+    <exclude domain="file" path="maps/" />
+</full-backup-content>

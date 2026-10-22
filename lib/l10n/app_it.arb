@@ -225,19 +225,6 @@
   "appSettings_last6Hours": "Ultimi 6 ore",
   "appSettings_last24Hours": "Ultime 24 ore",
   "appSettings_lastWeek": "La settimana scorsa",
-  "appSettings_offlineMapCache": "Cache Mappa Offline",
-  "appSettings_noAreaSelected": "Nessun'area selezionata",
-  "appSettings_areaSelectedZoom": "Area selezionata (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Risoluzione dei problemi",
   "appSettings_appDebugLogging": "Registrazione Debug App",
   "appSettings_appDebugLoggingSubtitle": "Messaggi di debug dell'app Log per la risoluzione dei problemi",
@@ -623,104 +610,16 @@
   },
   "map_connectToShareMarkers": "Connetti a un dispositivo per condividere i segnaposti",
   "map_filterNodes": "Filtra Nodi",
-  "map_nodeTypes": "Tipi di Nodo",
   "map_chatNodes": "Nodi di Chat",
   "map_repeaters": "Ripetitori",
   "map_otherNodes": "Altri Nodi",
   "map_keyPrefix": "Prefisso Chiave",
   "map_filterByKeyPrefix": "Filtra per prefisso chiave",
   "map_publicKeyPrefix": "Prefisso chiave pubblica",
-  "map_markers": "Segnaposto",
-  "map_showSharedMarkers": "Mostra i segnaposto condivisi",
   "map_lastSeenTime": "Ultimo Tempo di Visualizzazione",
   "map_sharedPin": "Condividi PIN",
   "map_joinRoom": "Unisciti alla stanza",
   "map_manageRepeater": "Gestisci Ripetitore",
-  "mapCache_title": "Cache Mappa Offline",
-  "mapCache_selectAreaFirst": "Seleziona un'area da memorizzare nella cache per prima.",
-  "mapCache_noTilesToDownload": "Nessun tile da scaricare per questa area",
-  "mapCache_downloadTilesTitle": "Scarica mattoncini",
-  "mapCache_downloadTilesPrompt": "Scarica {count} tile per l'uso offline?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Scarica",
-  "mapCache_cachedTiles": "Cacheggiate {count} tile",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Tile memorizzati {downloaded} ({failed} falliti)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Cancella cache offline",
-  "mapCache_clearOfflineCachePrompt": "Eliminare tutte le tile di mappa memorizzate nella cache?",
-  "mapCache_offlineCacheCleared": "Cache offline eliminata",
-  "mapCache_noAreaSelected": "Nessun'area selezionata",
-  "mapCache_cacheArea": "Area Cache",
-  "mapCache_useCurrentView": "Utilizza la visualizzazione corrente",
-  "mapCache_zoomRange": "Intervallo Zoom",
-  "mapCache_estimatedTiles": "Stima dei mattoni: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Scaricati {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Scarica Tessere",
-  "mapCache_clearCacheButton": "Svuota Cache",
-  "mapCache_failedDownloads": "Download falliti: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Proprio ora",
   "time_minutesAgo": "{minutes} minuti fa",
   "@time_minutesAgo": {
@@ -1756,7 +1655,6 @@
   "discoveredContacts_deleteContactAllContent": "Sei sicuro di voler eliminare tutti i contatti scoperti?",
   "discoveredContacts_deleteContactAll": "Eliminare tutti i contatti scoperti",
   "map_guessedLocation": "Località indovinata",
-  "map_showGuessedLocations": "Mostra le posizioni stimate dei nodi",
   "connectionChoiceBluetoothLabel": "Bluetooth",
   "usbScreenSubtitle": "Seleziona il dispositivo seriale rilevato e connettilo direttamente al tuo nodo MeshCore.",
   "connectionChoiceUsbLabel": "USB",

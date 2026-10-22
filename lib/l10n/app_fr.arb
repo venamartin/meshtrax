@@ -225,19 +225,6 @@
   "appSettings_last6Hours": "Dernières 6 heures",
   "appSettings_last24Hours": "Dernières 24 heures",
   "appSettings_lastWeek": "La semaine dernière",
-  "appSettings_offlineMapCache": "Cache de Carte Hors Ligne",
-  "appSettings_noAreaSelected": "Aucune zone sélectionnée",
-  "appSettings_areaSelectedZoom": "Zone sélectionnée (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Déboguer",
   "appSettings_appDebugLogging": "Journalisation de débogage de l'application",
   "appSettings_appDebugLoggingSubtitle": "Enregistrez les messages de débogage de l'application Log pour le dépannage.",
@@ -623,104 +610,16 @@
   },
   "map_connectToShareMarkers": "Connectez-vous à un appareil pour partager des marqueurs",
   "map_filterNodes": "Filtrer les nœuds",
-  "map_nodeTypes": "Types de nœuds",
   "map_chatNodes": "Nœuds de Chat",
   "map_repeaters": "Répéteurs",
   "map_otherNodes": "Autres nœuds",
   "map_keyPrefix": "Préfixe clé",
   "map_filterByKeyPrefix": "Filtrer par préfixe de clé",
   "map_publicKeyPrefix": "Préfixe de clé publique",
-  "map_markers": "Marqueurs",
-  "map_showSharedMarkers": "Afficher les marqueurs partagés",
   "map_lastSeenTime": "Dernière fois vu",
   "map_sharedPin": "Clé partagée",
   "map_joinRoom": "Rejoindre le room server",
   "map_manageRepeater": "Gérer le répéteur",
-  "mapCache_title": "Cache de Carte Hors Ligne",
-  "mapCache_selectAreaFirst": "Sélectionner une zone pour la mise en cache en premier",
-  "mapCache_noTilesToDownload": "Aucun tuilage à télécharger pour cette zone.",
-  "mapCache_downloadTilesTitle": "Télécharger les tuiles",
-  "mapCache_downloadTilesPrompt": "Télécharger {count} tuiles pour un usage hors ligne ?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Télécharger",
-  "mapCache_cachedTiles": "Cachez {count} tuiles",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Tuiles mis en cache ({downloaded}) ({failed} ratés)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Vider le cache hors ligne",
-  "mapCache_clearOfflineCachePrompt": "Supprimer toutes les tuiles de carte mises en cache ?",
-  "mapCache_offlineCacheCleared": "Le cache hors ligne a été effacé.",
-  "mapCache_noAreaSelected": "Aucune zone sélectionnée",
-  "mapCache_cacheArea": "Zone de cache",
-  "mapCache_useCurrentView": "Utiliser la Vue Actuelle",
-  "mapCache_zoomRange": "Plage de zoom",
-  "mapCache_estimatedTiles": "Estimation des tuiles : {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Téléchargé {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Télécharger les tuiles",
-  "mapCache_clearCacheButton": "Vider le Cache",
-  "mapCache_failedDownloads": "Téléchargements échoués : {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, O {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Maintenant",
   "time_minutesAgo": "{minutes} minutes auparavant",
   "@time_minutesAgo": {
@@ -1755,7 +1654,6 @@
   "common_deleteAll": "Supprimer tout",
   "discoveredContacts_deleteContactAll": "Supprimer tous les contacts découverts",
   "discoveredContacts_deleteContactAllContent": "Êtes-vous sûr de vouloir supprimer tous les contacts découverts ?",
-  "map_showGuessedLocations": "Afficher les emplacements des nœuds estimés",
   "map_guessedLocation": "Lieu deviné",
   "connectionChoiceUsbLabel": "USB",
   "usbScreenTitle": "Connectez via USB",

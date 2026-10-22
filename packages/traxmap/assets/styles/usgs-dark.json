@@ -4,6 +4,9 @@
   "metadata": {
     "ovm:status": "Generated from usgs-light.json by tool/make_dark_variants.py.",
     "ovm:map": "usgs",
+    "ovm:requires": [
+      "base"
+    ],
     "ovm:theme": "dark",
     "ovm:family": "standard",
     "ovm:dark": true

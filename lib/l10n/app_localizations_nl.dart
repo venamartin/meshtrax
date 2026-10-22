@@ -880,9 +880,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appSettings_lastWeek => 'Afgelopen week';
 
   @override
-  String get appSettings_offlineMapCache => 'Offline Kaartcache';
-
-  @override
   String get appSettings_unitsTitle => 'Eenheden';
 
   @override
@@ -890,14 +887,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get appSettings_unitsImperial => 'Imperiaal (ft / mi)';
-
-  @override
-  String get appSettings_noAreaSelected => 'Geen gebied geselecteerd';
-
-  @override
-  String appSettings_areaSelectedZoom(int minZoom, int maxZoom) {
-    return 'Geselecteerd gebied (zoom $minZoom-$maxZoom)';
-  }
 
   @override
   String get appSettings_debugCard => 'Debug';
@@ -1814,9 +1803,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get map_filterNodes => 'Filter Nodes';
 
   @override
-  String get map_nodeTypes => 'Nodetypes';
-
-  @override
   String get map_chatNodes => 'Chatnodes';
 
   @override
@@ -1836,16 +1822,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get map_publicKeyPrefix => 'Openbare sleutelvoorgemeld';
-
-  @override
-  String get map_markers => 'Markeringen';
-
-  @override
-  String get map_showSharedMarkers => 'Toon gedeelde markeringen';
-
-  @override
-  String get map_showGuessedLocations =>
-      'Toon de voorspelde locaties van de knopen';
 
   @override
   String get map_showDiscoveryContacts => 'Ontdek contacten weergeven';
@@ -1880,91 +1856,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get map_pathTraceCancelled => 'Pad traceren geannuleerd';
-
-  @override
-  String get mapCache_title => 'Offline Kaarten Cache';
-
-  @override
-  String get mapCache_selectAreaFirst =>
-      'Select een gebied om eerst in de cache op te slaan';
-
-  @override
-  String get mapCache_noTilesToDownload =>
-      'Geen tiles te downloaden voor dit gebied.';
-
-  @override
-  String get mapCache_downloadTilesTitle => 'Tiles downloaden';
-
-  @override
-  String mapCache_downloadTilesPrompt(int count) {
-    return 'Download $count tegels voor offline gebruik?';
-  }
-
-  @override
-  String get mapCache_downloadAction => 'Download';
-
-  @override
-  String mapCache_cachedTiles(int count) {
-    return 'Opgeslagen $count tegels';
-  }
-
-  @override
-  String mapCache_cachedTilesWithFailed(int downloaded, int failed) {
-    return 'Opgeslagen $downloaded tegels ($failed mislukt)';
-  }
-
-  @override
-  String get mapCache_clearOfflineCacheTitle => 'Cache offline opschonen';
-
-  @override
-  String get mapCache_clearOfflineCachePrompt =>
-      'Alle gecachte kaarttiles verwijderen?';
-
-  @override
-  String get mapCache_offlineCacheCleared => 'Offline cache is leeggezet';
-
-  @override
-  String get mapCache_noAreaSelected => 'Geen gebied geselecteerd';
-
-  @override
-  String get mapCache_cacheArea => 'Cache-gebied';
-
-  @override
-  String get mapCache_useCurrentView => 'Gebruik Huidige Weergave';
-
-  @override
-  String get mapCache_zoomRange => 'Zoom Bereik';
-
-  @override
-  String mapCache_estimatedTiles(int count) {
-    return 'Geschatte tegels: $count';
-  }
-
-  @override
-  String mapCache_downloadedTiles(int completed, int total) {
-    return 'Gedownload $completed / $total';
-  }
-
-  @override
-  String get mapCache_downloadTilesButton => 'Tiles downloaden';
-
-  @override
-  String get mapCache_clearCacheButton => 'Cache legen';
-
-  @override
-  String mapCache_failedDownloads(int count) {
-    return 'Mislukte downloads: $count';
-  }
-
-  @override
-  String mapCache_boundsLabel(
-    String north,
-    String south,
-    String east,
-    String west,
-  ) {
-    return 'N $north, S $south, E $east, W $west';
-  }
 
   @override
   String get time_justNow => 'Net nu';
@@ -4352,6 +4243,450 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get room_selfDemoteWarning =>
       'Je wijzigt je eigen toegang. Als je je beheerdersrol opgeeft, kan alleen de console van de ruimte die teruggeven.';
+
+  @override
+  String get scanner_offlineMaps => 'Offline maps';
+
+  @override
+  String get appSettings_offlineMaps => 'Offline maps';
+
+  @override
+  String get appSettings_offlineMapsNone => 'None downloaded';
+
+  @override
+  String appSettings_offlineMapsRegions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count regions',
+      one: '1 region',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String appSettings_offlineMapsChartAreas(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chart areas',
+      one: '1 chart area',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String appSettings_offlineMapsUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count updates available',
+      one: '1 update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+
+  @override
+  String get appSettings_mapDownloadsWifiOnlySubtitle =>
+      'Map downloads wait for a Wi‑Fi connection';
+
+  @override
+  String get offlineMaps_title => 'Offline maps';
+
+  @override
+  String get offlineMaps_tabMaps => 'Maps';
+
+  @override
+  String get offlineMaps_tabCharts => 'Charts';
+
+  @override
+  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+
+  @override
+  String offlineMaps_chartsSuggested(String coast) {
+    return 'Suggested · $coast';
+  }
+
+  @override
+  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+
+  @override
+  String offlineMaps_chartsCoastSummary(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count areas',
+      one: '1 area',
+    );
+    return '$_temp0 · $size';
+  }
+
+  @override
+  String offlineMaps_chartsDownloadedCount(int count) {
+    return '$count downloaded';
+  }
+
+  @override
+  String offlineMaps_chartsSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get offlineMaps_selectAll => 'Select all';
+
+  @override
+  String get offlineMaps_clearSelection => 'Clear';
+
+  @override
+  String offlineMaps_chartsAlsoIn(String coasts) {
+    return 'Also in $coasts';
+  }
+
+  @override
+  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+
+  @override
+  String get offlineMaps_chartsHint =>
+      'NOAA charts are picked by coast, in the Charts tab.';
+
+  @override
+  String offlineMaps_chartsName(String area) {
+    return '$area NOAA charts';
+  }
+
+  @override
+  String offlineMaps_chartsAreaCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count areas',
+      one: '1 area',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineMaps_tabDownloaded => 'Downloaded';
+
+  @override
+  String get offlineMaps_refresh => 'Check for new maps';
+
+  @override
+  String get offlineMaps_loading => 'Loading available maps…';
+
+  @override
+  String get offlineMaps_serverError => 'Can\'t reach the map server';
+
+  @override
+  String get offlineMaps_unavailable => 'No maps are available yet';
+
+  @override
+  String get offlineMaps_unavailableHint => 'Check again later.';
+
+  @override
+  String get offlineMaps_chartsUnavailable =>
+      'No NOAA charts are available yet';
+
+  @override
+  String offlineMaps_cachedFrom(String date) {
+    return 'Showing the list from $date';
+  }
+
+  @override
+  String get offlineMaps_needsNewerApp =>
+      'Update MeshTrax to get the newest maps.';
+
+  @override
+  String get offlineMaps_world => 'World';
+
+  @override
+  String get offlineMaps_suggested => 'Suggested';
+
+  @override
+  String get offlineMaps_regions => 'Regions';
+
+  @override
+  String offlineMaps_regionsIn(String name) {
+    return 'Regions in $name';
+  }
+
+  @override
+  String offlineMaps_inside(int count) {
+    return '$count inside';
+  }
+
+  @override
+  String offlineMaps_storageUsed(String size) {
+    return '$size of offline maps on this device';
+  }
+
+  @override
+  String offlineMaps_updates(int count) {
+    return 'Updates ($count)';
+  }
+
+  @override
+  String offlineMaps_updateAll(String size) {
+    return 'Update all $size';
+  }
+
+  @override
+  String get offlineMaps_downloading => 'Downloading';
+
+  @override
+  String get offlineMaps_update => 'Update';
+
+  @override
+  String offlineMaps_downloadedOn(String date) {
+    return 'Downloaded $date';
+  }
+
+  @override
+  String get offlineMaps_updateAvailable => 'Update available';
+
+  @override
+  String get offlineMaps_otherFiles => 'Other map files';
+
+  @override
+  String get offlineMaps_emptyTitle => 'No offline maps yet';
+
+  @override
+  String get offlineMaps_emptyBody =>
+      'Download a region to use the map without a connection.';
+
+  @override
+  String get offlineMaps_findMaps => 'Find maps';
+
+  @override
+  String offlineMaps_deleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String offlineMaps_deleteBody(String size) {
+    return 'This frees $size. You can download it again later.';
+  }
+
+  @override
+  String offlineMaps_deleted(String name) {
+    return '$name deleted';
+  }
+
+  @override
+  String offlineMaps_bytesProgress(String done, String total) {
+    return '$done of $total';
+  }
+
+  @override
+  String get offlineMaps_kindMap => 'Map';
+
+  @override
+  String get offlineMaps_kindMapDetail =>
+      'OpenStreetMap streets, trails, places';
+
+  @override
+  String get offlineMaps_kindContours => 'Contours';
+
+  @override
+  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+
+  @override
+  String get offlineMaps_kindUsgs => 'USGS topo map';
+
+  @override
+  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves, terrain';
+
+  @override
+  String get offlineMaps_kindCharts => 'NOAA charts';
+
+  @override
+  String get offlineMaps_usOnly => 'United States only';
+
+  @override
+  String offlineMaps_download(String size) {
+    return 'Download $size';
+  }
+
+  @override
+  String get offlineMaps_downloadTotal => 'Download';
+
+  @override
+  String offlineMaps_largeDownload(String size) {
+    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+  }
+
+  @override
+  String get offlineMaps_waiting => 'Waiting…';
+
+  @override
+  String get offlineMaps_checking => 'Checking download…';
+
+  @override
+  String get offlineMaps_retrying => 'Retrying…';
+
+  @override
+  String offlineMaps_failed(String error) {
+    return 'Download failed: $error';
+  }
+
+  @override
+  String get offlineMaps_pause => 'Pause';
+
+  @override
+  String get offlineMaps_resume => 'Resume';
+
+  @override
+  String get offlineMaps_deleteRegion => 'Delete region';
+
+  @override
+  String get offlineMaps_notInCatalogue => 'Not available for this region';
+
+  @override
+  String get offlineMaps_notificationRunning => 'Downloading map';
+
+  @override
+  String get offlineMaps_notificationPaused => 'Map download paused';
+
+  @override
+  String get offlineMaps_notificationFailed => 'Map download failed';
+
+  @override
+  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+
+  @override
+  String get offlineMaps_clearTileCachePrompt =>
+      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+
+  @override
+  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+
+  @override
+  String get map_notForNavigation => 'Not for navigation';
+
+  @override
+  String get map_chartsNoticeIntro =>
+      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+
+  @override
+  String get map_chartsNoticeWhy => 'Why:';
+
+  @override
+  String get map_chartsNoticeOutOfDate =>
+      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+
+  @override
+  String get map_chartsNoticeLeftOut =>
+      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+
+  @override
+  String get map_chartsNoticePositions =>
+      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+
+  @override
+  String get map_chartsNoticeNotPlotter =>
+      'MeshTrax isn\'t a certified chart plotter.';
+
+  @override
+  String get map_chartsNoticeUse =>
+      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+
+  @override
+  String get map_sourceOnline => 'Online';
+
+  @override
+  String get map_sourceOffline => 'Offline';
+
+  @override
+  String get map_noOfflineMap => 'No offline map here';
+
+  @override
+  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+
+  @override
+  String get map_noCharts => 'No charts here';
+
+  @override
+  String get map_myLocation => 'My location';
+
+  @override
+  String get map_zoomIn => 'Zoom in';
+
+  @override
+  String get map_zoomOut => 'Zoom out';
+
+  @override
+  String get map_positionUnknown => 'Your position isn\'t known yet';
+
+  @override
+  String get map_locationServiceOff => 'Turn on location to show where you are';
+
+  @override
+  String get map_locationDenied => 'Location access is off for MeshTrax';
+
+  @override
+  String get map_zoomInForCharts => 'Zoom in to see your charts';
+
+  @override
+  String map_downloadRegion(String region, String size) {
+    return 'Download $region · $size';
+  }
+
+  @override
+  String get mapLayers_title => 'Map layers';
+
+  @override
+  String get mapLayers_mapType => 'Map type';
+
+  @override
+  String get mapLayers_standard => 'Standard';
+
+  @override
+  String get mapLayers_usgs => 'USGS topo';
+
+  @override
+  String get mapLayers_charts => 'Charts';
+
+  @override
+  String get mapLayers_notDownloaded => 'Not downloaded';
+
+  @override
+  String get mapLayers_offlineOnly => 'Offline only';
+
+  @override
+  String get mapLayers_details => 'Map details';
+
+  @override
+  String get mapLayers_contours => 'Contours';
+
+  @override
+  String get mapLayers_dark => 'Dark map';
+
+  @override
+  String get mapLayers_downloadedAreas => 'Downloaded areas';
+
+  @override
+  String get mapLayers_nodes => 'Nodes';
+
+  @override
+  String get mapLayers_pins => 'Pins';
+
+  @override
+  String get mapLayers_guessed => 'Guessed';
+
+  @override
+  String get mapLayers_moreFilters => 'More filters';
+
+  @override
+  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+
+  @override
+  String get map_legend => 'Legend';
+
+  @override
+  String get scanner_map => 'Map';
 
   @override
   String get structured_openMap => 'Open map';

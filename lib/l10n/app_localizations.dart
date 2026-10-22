@@ -1708,12 +1708,6 @@ abstract class AppLocalizations {
   /// **'Last week'**
   String get appSettings_lastWeek;
 
-  /// No description provided for @appSettings_offlineMapCache.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline Map Cache'**
-  String get appSettings_offlineMapCache;
-
   /// No description provided for @appSettings_unitsTitle.
   ///
   /// In en, this message translates to:
@@ -1731,18 +1725,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Imperial (ft / mi)'**
   String get appSettings_unitsImperial;
-
-  /// No description provided for @appSettings_noAreaSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'No area selected'**
-  String get appSettings_noAreaSelected;
-
-  /// No description provided for @appSettings_areaSelectedZoom.
-  ///
-  /// In en, this message translates to:
-  /// **'Area selected (zoom {minZoom}-{maxZoom})'**
-  String appSettings_areaSelectedZoom(int minZoom, int maxZoom);
 
   /// No description provided for @appSettings_debugCard.
   ///
@@ -3322,12 +3304,6 @@ abstract class AppLocalizations {
   /// **'Filter Nodes'**
   String get map_filterNodes;
 
-  /// No description provided for @map_nodeTypes.
-  ///
-  /// In en, this message translates to:
-  /// **'Node Types'**
-  String get map_nodeTypes;
-
   /// No description provided for @map_chatNodes.
   ///
   /// In en, this message translates to:
@@ -3369,24 +3345,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Public key prefix'**
   String get map_publicKeyPrefix;
-
-  /// No description provided for @map_markers.
-  ///
-  /// In en, this message translates to:
-  /// **'Markers'**
-  String get map_markers;
-
-  /// No description provided for @map_showSharedMarkers.
-  ///
-  /// In en, this message translates to:
-  /// **'Show shared markers'**
-  String get map_showSharedMarkers;
-
-  /// No description provided for @map_showGuessedLocations.
-  ///
-  /// In en, this message translates to:
-  /// **'Show guessed node locations'**
-  String get map_showGuessedLocations;
 
   /// No description provided for @map_showDiscoveryContacts.
   ///
@@ -3453,137 +3411,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Path trace cancelled.'**
   String get map_pathTraceCancelled;
-
-  /// No description provided for @mapCache_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline Map Cache'**
-  String get mapCache_title;
-
-  /// No description provided for @mapCache_selectAreaFirst.
-  ///
-  /// In en, this message translates to:
-  /// **'Select an area to cache first'**
-  String get mapCache_selectAreaFirst;
-
-  /// No description provided for @mapCache_noTilesToDownload.
-  ///
-  /// In en, this message translates to:
-  /// **'No tiles to download for this area'**
-  String get mapCache_noTilesToDownload;
-
-  /// No description provided for @mapCache_downloadTilesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Download tiles'**
-  String get mapCache_downloadTilesTitle;
-
-  /// No description provided for @mapCache_downloadTilesPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Download {count} tiles for offline use?'**
-  String mapCache_downloadTilesPrompt(int count);
-
-  /// No description provided for @mapCache_downloadAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Download'**
-  String get mapCache_downloadAction;
-
-  /// No description provided for @mapCache_cachedTiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Cached {count} tiles'**
-  String mapCache_cachedTiles(int count);
-
-  /// No description provided for @mapCache_cachedTilesWithFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Cached {downloaded} tiles ({failed} failed)'**
-  String mapCache_cachedTilesWithFailed(int downloaded, int failed);
-
-  /// No description provided for @mapCache_clearOfflineCacheTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear offline cache'**
-  String get mapCache_clearOfflineCacheTitle;
-
-  /// No description provided for @mapCache_clearOfflineCachePrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove all cached map tiles?'**
-  String get mapCache_clearOfflineCachePrompt;
-
-  /// No description provided for @mapCache_offlineCacheCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline cache cleared'**
-  String get mapCache_offlineCacheCleared;
-
-  /// No description provided for @mapCache_noAreaSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'No area selected'**
-  String get mapCache_noAreaSelected;
-
-  /// No description provided for @mapCache_cacheArea.
-  ///
-  /// In en, this message translates to:
-  /// **'Cache Area'**
-  String get mapCache_cacheArea;
-
-  /// No description provided for @mapCache_useCurrentView.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Current View'**
-  String get mapCache_useCurrentView;
-
-  /// No description provided for @mapCache_zoomRange.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom Range'**
-  String get mapCache_zoomRange;
-
-  /// No description provided for @mapCache_estimatedTiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Estimated tiles: {count}'**
-  String mapCache_estimatedTiles(int count);
-
-  /// No description provided for @mapCache_downloadedTiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded {completed} / {total}'**
-  String mapCache_downloadedTiles(int completed, int total);
-
-  /// No description provided for @mapCache_downloadTilesButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Download Tiles'**
-  String get mapCache_downloadTilesButton;
-
-  /// No description provided for @mapCache_clearCacheButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Cache'**
-  String get mapCache_clearCacheButton;
-
-  /// No description provided for @mapCache_failedDownloads.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed downloads: {count}'**
-  String mapCache_failedDownloads(int count);
-
-  /// No description provided for @mapCache_boundsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'N {north}, S {south}, E {east}, W {west}'**
-  String mapCache_boundsLabel(
-    String north,
-    String south,
-    String east,
-    String west,
-  );
 
   /// No description provided for @time_justNow.
   ///
@@ -7522,6 +7349,708 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'re changing your own access. If you drop your admin role, only the room\'s own console can give it back.'**
   String get room_selfDemoteWarning;
+
+  /// No description provided for @scanner_offlineMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get scanner_offlineMaps;
+
+  /// No description provided for @appSettings_offlineMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get appSettings_offlineMaps;
+
+  /// No description provided for @appSettings_offlineMapsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None downloaded'**
+  String get appSettings_offlineMapsNone;
+
+  /// No description provided for @appSettings_offlineMapsRegions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 region} other{{count} regions}}'**
+  String appSettings_offlineMapsRegions(int count);
+
+  /// No description provided for @appSettings_offlineMapsChartAreas.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 chart area} other{{count} chart areas}}'**
+  String appSettings_offlineMapsChartAreas(int count);
+
+  /// No description provided for @appSettings_offlineMapsUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 update available} other{{count} updates available}}'**
+  String appSettings_offlineMapsUpdates(int count);
+
+  /// No description provided for @appSettings_mapDownloadsWifiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Download maps on Wi‑Fi only'**
+  String get appSettings_mapDownloadsWifiOnly;
+
+  /// No description provided for @appSettings_mapDownloadsWifiOnlySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map downloads wait for a Wi‑Fi connection'**
+  String get appSettings_mapDownloadsWifiOnlySubtitle;
+
+  /// No description provided for @offlineMaps_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get offlineMaps_title;
+
+  /// No description provided for @offlineMaps_tabMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Maps'**
+  String get offlineMaps_tabMaps;
+
+  /// No description provided for @offlineMaps_tabCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'Charts'**
+  String get offlineMaps_tabCharts;
+
+  /// No description provided for @offlineMaps_chartsNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Not for navigation · Why?'**
+  String get offlineMaps_chartsNotice;
+
+  /// No description provided for @offlineMaps_chartsSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested · {coast}'**
+  String offlineMaps_chartsSuggested(String coast);
+
+  /// No description provided for @offlineMaps_chartsByCoast.
+  ///
+  /// In en, this message translates to:
+  /// **'Chart areas by coast'**
+  String get offlineMaps_chartsByCoast;
+
+  /// No description provided for @offlineMaps_chartsCoastSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 area} other{{count} areas}} · {size}'**
+  String offlineMaps_chartsCoastSummary(int count, String size);
+
+  /// No description provided for @offlineMaps_chartsDownloadedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} downloaded'**
+  String offlineMaps_chartsDownloadedCount(int count);
+
+  /// No description provided for @offlineMaps_chartsSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String offlineMaps_chartsSelectedCount(int count);
+
+  /// No description provided for @offlineMaps_selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get offlineMaps_selectAll;
+
+  /// No description provided for @offlineMaps_clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get offlineMaps_clearSelection;
+
+  /// No description provided for @offlineMaps_chartsAlsoIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Also in {coasts}'**
+  String offlineMaps_chartsAlsoIn(String coasts);
+
+  /// No description provided for @offlineMaps_chartsNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available yet'**
+  String get offlineMaps_chartsNotAvailable;
+
+  /// No description provided for @offlineMaps_chartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NOAA charts are picked by coast, in the Charts tab.'**
+  String get offlineMaps_chartsHint;
+
+  /// No description provided for @offlineMaps_chartsName.
+  ///
+  /// In en, this message translates to:
+  /// **'{area} NOAA charts'**
+  String offlineMaps_chartsName(String area);
+
+  /// No description provided for @offlineMaps_chartsAreaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 area} other{{count} areas}}'**
+  String offlineMaps_chartsAreaCount(int count);
+
+  /// No description provided for @offlineMaps_tabDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get offlineMaps_tabDownloaded;
+
+  /// No description provided for @offlineMaps_refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for new maps'**
+  String get offlineMaps_refresh;
+
+  /// No description provided for @offlineMaps_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading available maps…'**
+  String get offlineMaps_loading;
+
+  /// No description provided for @offlineMaps_serverError.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the map server'**
+  String get offlineMaps_serverError;
+
+  /// No description provided for @offlineMaps_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No maps are available yet'**
+  String get offlineMaps_unavailable;
+
+  /// No description provided for @offlineMaps_unavailableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again later.'**
+  String get offlineMaps_unavailableHint;
+
+  /// No description provided for @offlineMaps_chartsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No NOAA charts are available yet'**
+  String get offlineMaps_chartsUnavailable;
+
+  /// No description provided for @offlineMaps_cachedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the list from {date}'**
+  String offlineMaps_cachedFrom(String date);
+
+  /// No description provided for @offlineMaps_needsNewerApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Update MeshTrax to get the newest maps.'**
+  String get offlineMaps_needsNewerApp;
+
+  /// No description provided for @offlineMaps_world.
+  ///
+  /// In en, this message translates to:
+  /// **'World'**
+  String get offlineMaps_world;
+
+  /// No description provided for @offlineMaps_suggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get offlineMaps_suggested;
+
+  /// No description provided for @offlineMaps_regions.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions'**
+  String get offlineMaps_regions;
+
+  /// No description provided for @offlineMaps_regionsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions in {name}'**
+  String offlineMaps_regionsIn(String name);
+
+  /// No description provided for @offlineMaps_inside.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} inside'**
+  String offlineMaps_inside(int count);
+
+  /// No description provided for @offlineMaps_storageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} of offline maps on this device'**
+  String offlineMaps_storageUsed(String size);
+
+  /// No description provided for @offlineMaps_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates ({count})'**
+  String offlineMaps_updates(int count);
+
+  /// No description provided for @offlineMaps_updateAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Update all {size}'**
+  String offlineMaps_updateAll(String size);
+
+  /// No description provided for @offlineMaps_downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get offlineMaps_downloading;
+
+  /// No description provided for @offlineMaps_update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get offlineMaps_update;
+
+  /// No description provided for @offlineMaps_downloadedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded {date}'**
+  String offlineMaps_downloadedOn(String date);
+
+  /// No description provided for @offlineMaps_updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get offlineMaps_updateAvailable;
+
+  /// No description provided for @offlineMaps_otherFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Other map files'**
+  String get offlineMaps_otherFiles;
+
+  /// No description provided for @offlineMaps_emptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No offline maps yet'**
+  String get offlineMaps_emptyTitle;
+
+  /// No description provided for @offlineMaps_emptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Download a region to use the map without a connection.'**
+  String get offlineMaps_emptyBody;
+
+  /// No description provided for @offlineMaps_findMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Find maps'**
+  String get offlineMaps_findMaps;
+
+  /// No description provided for @offlineMaps_deleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String offlineMaps_deleteTitle(String name);
+
+  /// No description provided for @offlineMaps_deleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This frees {size}. You can download it again later.'**
+  String offlineMaps_deleteBody(String size);
+
+  /// No description provided for @offlineMaps_deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} deleted'**
+  String offlineMaps_deleted(String name);
+
+  /// No description provided for @offlineMaps_bytesProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String offlineMaps_bytesProgress(String done, String total);
+
+  /// No description provided for @offlineMaps_kindMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get offlineMaps_kindMap;
+
+  /// No description provided for @offlineMaps_kindMapDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenStreetMap streets, trails, places'**
+  String get offlineMaps_kindMapDetail;
+
+  /// No description provided for @offlineMaps_kindContours.
+  ///
+  /// In en, this message translates to:
+  /// **'Contours'**
+  String get offlineMaps_kindContours;
+
+  /// No description provided for @offlineMaps_kindContoursDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation lines'**
+  String get offlineMaps_kindContoursDetail;
+
+  /// No description provided for @offlineMaps_kindUsgs.
+  ///
+  /// In en, this message translates to:
+  /// **'USGS topo map'**
+  String get offlineMaps_kindUsgs;
+
+  /// No description provided for @offlineMaps_kindUsgsDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trails, streams, reserves, terrain'**
+  String get offlineMaps_kindUsgsDetail;
+
+  /// No description provided for @offlineMaps_kindCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'NOAA charts'**
+  String get offlineMaps_kindCharts;
+
+  /// No description provided for @offlineMaps_usOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'United States only'**
+  String get offlineMaps_usOnly;
+
+  /// No description provided for @offlineMaps_download.
+  ///
+  /// In en, this message translates to:
+  /// **'Download {size}'**
+  String offlineMaps_download(String size);
+
+  /// No description provided for @offlineMaps_downloadTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get offlineMaps_downloadTotal;
+
+  /// No description provided for @offlineMaps_largeDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Large download ({size}). Use Wi‑Fi and keep your device charging.'**
+  String offlineMaps_largeDownload(String size);
+
+  /// No description provided for @offlineMaps_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting…'**
+  String get offlineMaps_waiting;
+
+  /// No description provided for @offlineMaps_checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking download…'**
+  String get offlineMaps_checking;
+
+  /// No description provided for @offlineMaps_retrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying…'**
+  String get offlineMaps_retrying;
+
+  /// No description provided for @offlineMaps_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed: {error}'**
+  String offlineMaps_failed(String error);
+
+  /// No description provided for @offlineMaps_pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get offlineMaps_pause;
+
+  /// No description provided for @offlineMaps_resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get offlineMaps_resume;
+
+  /// No description provided for @offlineMaps_deleteRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete region'**
+  String get offlineMaps_deleteRegion;
+
+  /// No description provided for @offlineMaps_notInCatalogue.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available for this region'**
+  String get offlineMaps_notInCatalogue;
+
+  /// No description provided for @offlineMaps_notificationRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading map'**
+  String get offlineMaps_notificationRunning;
+
+  /// No description provided for @offlineMaps_notificationPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Map download paused'**
+  String get offlineMaps_notificationPaused;
+
+  /// No description provided for @offlineMaps_notificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Map download failed'**
+  String get offlineMaps_notificationFailed;
+
+  /// No description provided for @offlineMaps_clearTileCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cached online map tiles'**
+  String get offlineMaps_clearTileCache;
+
+  /// No description provided for @offlineMaps_clearTileCachePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the online map tiles saved while browsing? Downloaded maps stay.'**
+  String get offlineMaps_clearTileCachePrompt;
+
+  /// No description provided for @offlineMaps_tileCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached online map tiles removed'**
+  String get offlineMaps_tileCacheCleared;
+
+  /// No description provided for @map_notForNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Not for navigation'**
+  String get map_notForNavigation;
+
+  /// No description provided for @map_chartsNoticeIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.'**
+  String get map_chartsNoticeIntro;
+
+  /// No description provided for @map_chartsNoticeWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why:'**
+  String get map_chartsNoticeWhy;
+
+  /// No description provided for @map_chartsNoticeOutOfDate.
+  ///
+  /// In en, this message translates to:
+  /// **'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.'**
+  String get map_chartsNoticeOutOfDate;
+
+  /// No description provided for @map_chartsNoticeLeftOut.
+  ///
+  /// In en, this message translates to:
+  /// **'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.'**
+  String get map_chartsNoticeLeftOut;
+
+  /// No description provided for @map_chartsNoticePositions.
+  ///
+  /// In en, this message translates to:
+  /// **'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.'**
+  String get map_chartsNoticePositions;
+
+  /// No description provided for @map_chartsNoticeNotPlotter.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax isn\'t a certified chart plotter.'**
+  String get map_chartsNoticeNotPlotter;
+
+  /// No description provided for @map_chartsNoticeUse.
+  ///
+  /// In en, this message translates to:
+  /// **'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.'**
+  String get map_chartsNoticeUse;
+
+  /// No description provided for @map_sourceOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get map_sourceOnline;
+
+  /// No description provided for @map_sourceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get map_sourceOffline;
+
+  /// No description provided for @map_noOfflineMap.
+  ///
+  /// In en, this message translates to:
+  /// **'No offline map here'**
+  String get map_noOfflineMap;
+
+  /// No description provided for @map_zoomInForOfflineMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in to see your offline map'**
+  String get map_zoomInForOfflineMap;
+
+  /// No description provided for @map_noCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'No charts here'**
+  String get map_noCharts;
+
+  /// No description provided for @map_myLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get map_myLocation;
+
+  /// No description provided for @map_zoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get map_zoomIn;
+
+  /// No description provided for @map_zoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get map_zoomOut;
+
+  /// No description provided for @map_positionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Your position isn\'t known yet'**
+  String get map_positionUnknown;
+
+  /// No description provided for @map_locationServiceOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to show where you are'**
+  String get map_locationServiceOff;
+
+  /// No description provided for @map_locationDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is off for MeshTrax'**
+  String get map_locationDenied;
+
+  /// No description provided for @map_zoomInForCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in to see your charts'**
+  String get map_zoomInForCharts;
+
+  /// No description provided for @map_downloadRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Download {region} · {size}'**
+  String map_downloadRegion(String region, String size);
+
+  /// No description provided for @mapLayers_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Map layers'**
+  String get mapLayers_title;
+
+  /// No description provided for @mapLayers_mapType.
+  ///
+  /// In en, this message translates to:
+  /// **'Map type'**
+  String get mapLayers_mapType;
+
+  /// No description provided for @mapLayers_standard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get mapLayers_standard;
+
+  /// No description provided for @mapLayers_usgs.
+  ///
+  /// In en, this message translates to:
+  /// **'USGS topo'**
+  String get mapLayers_usgs;
+
+  /// No description provided for @mapLayers_charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Charts'**
+  String get mapLayers_charts;
+
+  /// No description provided for @mapLayers_notDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not downloaded'**
+  String get mapLayers_notDownloaded;
+
+  /// No description provided for @mapLayers_offlineOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline only'**
+  String get mapLayers_offlineOnly;
+
+  /// No description provided for @mapLayers_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Map details'**
+  String get mapLayers_details;
+
+  /// No description provided for @mapLayers_contours.
+  ///
+  /// In en, this message translates to:
+  /// **'Contours'**
+  String get mapLayers_contours;
+
+  /// No description provided for @mapLayers_dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark map'**
+  String get mapLayers_dark;
+
+  /// No description provided for @mapLayers_downloadedAreas.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded areas'**
+  String get mapLayers_downloadedAreas;
+
+  /// No description provided for @mapLayers_nodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Nodes'**
+  String get mapLayers_nodes;
+
+  /// No description provided for @mapLayers_pins.
+  ///
+  /// In en, this message translates to:
+  /// **'Pins'**
+  String get mapLayers_pins;
+
+  /// No description provided for @mapLayers_guessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Guessed'**
+  String get mapLayers_guessed;
+
+  /// No description provided for @mapLayers_moreFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'More filters'**
+  String get mapLayers_moreFilters;
+
+  /// No description provided for @mapLayers_moreFiltersDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen, key prefix, overlaps'**
+  String get mapLayers_moreFiltersDetail;
+
+  /// No description provided for @map_legend.
+  ///
+  /// In en, this message translates to:
+  /// **'Legend'**
+  String get map_legend;
+
+  /// No description provided for @scanner_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get scanner_map;
 
   /// No description provided for @structured_openMap.
   ///

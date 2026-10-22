@@ -347,22 +347,9 @@
   "appSettings_last6Hours": "Last 6 hours",
   "appSettings_last24Hours": "Last 24 hours",
   "appSettings_lastWeek": "Last week",
-  "appSettings_offlineMapCache": "Offline Map Cache",
   "appSettings_unitsTitle": "Units",
   "appSettings_unitsMetric": "Metric (m / km)",
   "appSettings_unitsImperial": "Imperial (ft / mi)",
-  "appSettings_noAreaSelected": "No area selected",
-  "appSettings_areaSelectedZoom": "Area selected (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Debug",
   "appSettings_appDebugLogging": "App Debug Logging",
   "appSettings_appDebugLoggingSubtitle": "Log app debug messages for troubleshooting",
@@ -952,7 +939,6 @@
   },
   "map_connectToShareMarkers": "Connect to a device to share markers",
   "map_filterNodes": "Filter Nodes",
-  "map_nodeTypes": "Node Types",
   "map_chatNodes": "Chat Nodes",
   "map_repeaters": "Repeaters",
   "map_otherNodes": "Other Nodes",
@@ -960,9 +946,6 @@
   "map_keyPrefix": "Key Prefix",
   "map_filterByKeyPrefix": "Filter by key prefix",
   "map_publicKeyPrefix": "Public key prefix",
-  "map_markers": "Markers",
-  "map_showSharedMarkers": "Show shared markers",
-  "map_showGuessedLocations": "Show guessed node locations",
   "map_showDiscoveryContacts": "Show Discovery Contacts",
   "map_guessedLocation": "Guessed location",
   "map_lastSeenTime": "Last Seen Time",
@@ -974,91 +957,6 @@
   "map_runTraceWithReturnPath": "Return back on the same path.",
   "map_removeLast": "Remove Last",
   "map_pathTraceCancelled": "Path trace cancelled.",
-  "mapCache_title": "Offline Map Cache",
-  "mapCache_selectAreaFirst": "Select an area to cache first",
-  "mapCache_noTilesToDownload": "No tiles to download for this area",
-  "mapCache_downloadTilesTitle": "Download tiles",
-  "mapCache_downloadTilesPrompt": "Download {count} tiles for offline use?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Download",
-  "mapCache_cachedTiles": "Cached {count} tiles",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Cached {downloaded} tiles ({failed} failed)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Clear offline cache",
-  "mapCache_clearOfflineCachePrompt": "Remove all cached map tiles?",
-  "mapCache_offlineCacheCleared": "Offline cache cleared",
-  "mapCache_noAreaSelected": "No area selected",
-  "mapCache_cacheArea": "Cache Area",
-  "mapCache_useCurrentView": "Use Current View",
-  "mapCache_zoomRange": "Zoom Range",
-  "mapCache_estimatedTiles": "Estimated tiles: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Downloaded {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Download Tiles",
-  "mapCache_clearCacheButton": "Clear Cache",
-  "mapCache_failedDownloads": "Failed downloads: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Just now",
   "time_minutesAgo": "{minutes}m ago",
   "@time_minutesAgo": {
@@ -2469,6 +2367,148 @@
   "wifi_noteBattery": "WiFi keeps the radio awake, so the battery runs down faster.",
   "wifi_noteWrongPassword": "If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.",
   "room_selfDemoteWarning": "You're changing your own access. If you drop your admin role, only the room's own console can give it back.",
+  "scanner_offlineMaps": "Offline maps",
+  "appSettings_offlineMaps": "Offline maps",
+  "appSettings_offlineMapsNone": "None downloaded",
+  "appSettings_offlineMapsRegions": "{count, plural, =1{1 region} other{{count} regions}}",
+  "@appSettings_offlineMapsRegions": {"placeholders": {"count": {"type": "int"}}},
+  "appSettings_offlineMapsChartAreas": "{count, plural, =1{1 chart area} other{{count} chart areas}}",
+  "@appSettings_offlineMapsChartAreas": {"placeholders": {"count": {"type": "int"}}},
+  "appSettings_offlineMapsUpdates": "{count, plural, =1{1 update available} other{{count} updates available}}",
+  "@appSettings_offlineMapsUpdates": {"placeholders": {"count": {"type": "int"}}},
+  "appSettings_mapDownloadsWifiOnly": "Download maps on Wi‑Fi only",
+  "appSettings_mapDownloadsWifiOnlySubtitle": "Map downloads wait for a Wi‑Fi connection",
+  "offlineMaps_title": "Offline maps",
+  "offlineMaps_tabMaps": "Maps",
+  "offlineMaps_tabCharts": "Charts",
+  "offlineMaps_chartsNotice": "Not for navigation · Why?",
+  "offlineMaps_chartsSuggested": "Suggested · {coast}",
+  "@offlineMaps_chartsSuggested": {"placeholders": {"coast": {"type": "String"}}},
+  "offlineMaps_chartsByCoast": "Chart areas by coast",
+  "offlineMaps_chartsCoastSummary": "{count, plural, =1{1 area} other{{count} areas}} · {size}",
+  "@offlineMaps_chartsCoastSummary": {"placeholders": {"count": {"type": "int"}, "size": {"type": "String"}}},
+  "offlineMaps_chartsDownloadedCount": "{count} downloaded",
+  "@offlineMaps_chartsDownloadedCount": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_chartsSelectedCount": "{count} selected",
+  "@offlineMaps_chartsSelectedCount": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_selectAll": "Select all",
+  "offlineMaps_clearSelection": "Clear",
+  "offlineMaps_chartsAlsoIn": "Also in {coasts}",
+  "@offlineMaps_chartsAlsoIn": {"placeholders": {"coasts": {"type": "String"}}},
+  "offlineMaps_chartsNotAvailable": "Not available yet",
+  "offlineMaps_chartsHint": "NOAA charts are picked by coast, in the Charts tab.",
+  "offlineMaps_chartsName": "{area} NOAA charts",
+  "@offlineMaps_chartsName": {"placeholders": {"area": {"type": "String"}}},
+  "offlineMaps_chartsAreaCount": "{count, plural, =1{1 area} other{{count} areas}}",
+  "@offlineMaps_chartsAreaCount": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_tabDownloaded": "Downloaded",
+  "offlineMaps_refresh": "Check for new maps",
+  "offlineMaps_loading": "Loading available maps…",
+  "offlineMaps_serverError": "Can't reach the map server",
+  "offlineMaps_unavailable": "No maps are available yet",
+  "offlineMaps_unavailableHint": "Check again later.",
+  "offlineMaps_chartsUnavailable": "No NOAA charts are available yet",
+  "offlineMaps_cachedFrom": "Showing the list from {date}",
+  "@offlineMaps_cachedFrom": {"placeholders": {"date": {"type": "String"}}},
+  "offlineMaps_needsNewerApp": "Update MeshTrax to get the newest maps.",
+  "offlineMaps_world": "World",
+  "offlineMaps_suggested": "Suggested",
+  "offlineMaps_regions": "Regions",
+  "offlineMaps_regionsIn": "Regions in {name}",
+  "@offlineMaps_regionsIn": {"placeholders": {"name": {"type": "String"}}},
+  "offlineMaps_inside": "{count} inside",
+  "@offlineMaps_inside": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_storageUsed": "{size} of offline maps on this device",
+  "@offlineMaps_storageUsed": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_updates": "Updates ({count})",
+  "@offlineMaps_updates": {"placeholders": {"count": {"type": "int"}}},
+  "offlineMaps_updateAll": "Update all {size}",
+  "@offlineMaps_updateAll": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_downloading": "Downloading",
+  "offlineMaps_update": "Update",
+  "offlineMaps_downloadedOn": "Downloaded {date}",
+  "@offlineMaps_downloadedOn": {"placeholders": {"date": {"type": "String"}}},
+  "offlineMaps_updateAvailable": "Update available",
+  "offlineMaps_otherFiles": "Other map files",
+  "offlineMaps_emptyTitle": "No offline maps yet",
+  "offlineMaps_emptyBody": "Download a region to use the map without a connection.",
+  "offlineMaps_findMaps": "Find maps",
+  "offlineMaps_deleteTitle": "Delete {name}?",
+  "@offlineMaps_deleteTitle": {"placeholders": {"name": {"type": "String"}}},
+  "offlineMaps_deleteBody": "This frees {size}. You can download it again later.",
+  "@offlineMaps_deleteBody": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_deleted": "{name} deleted",
+  "@offlineMaps_deleted": {"placeholders": {"name": {"type": "String"}}},
+  "offlineMaps_bytesProgress": "{done} of {total}",
+  "@offlineMaps_bytesProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}},
+  "offlineMaps_kindMap": "Map",
+  "offlineMaps_kindMapDetail": "OpenStreetMap streets, trails, places",
+  "offlineMaps_kindContours": "Contours",
+  "offlineMaps_kindContoursDetail": "Elevation lines",
+  "offlineMaps_kindUsgs": "USGS topo map",
+  "offlineMaps_kindUsgsDetail": "Trails, streams, reserves, terrain",
+  "offlineMaps_kindCharts": "NOAA charts",
+  "offlineMaps_usOnly": "United States only",
+  "offlineMaps_download": "Download {size}",
+  "@offlineMaps_download": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_downloadTotal": "Download",
+  "offlineMaps_largeDownload": "Large download ({size}). Use Wi‑Fi and keep your device charging.",
+  "@offlineMaps_largeDownload": {"placeholders": {"size": {"type": "String"}}},
+  "offlineMaps_waiting": "Waiting…",
+  "offlineMaps_checking": "Checking download…",
+  "offlineMaps_retrying": "Retrying…",
+  "offlineMaps_failed": "Download failed: {error}",
+  "@offlineMaps_failed": {"placeholders": {"error": {"type": "String"}}},
+  "offlineMaps_pause": "Pause",
+  "offlineMaps_resume": "Resume",
+  "offlineMaps_deleteRegion": "Delete region",
+  "offlineMaps_notInCatalogue": "Not available for this region",
+  "offlineMaps_notificationRunning": "Downloading map",
+  "offlineMaps_notificationPaused": "Map download paused",
+  "offlineMaps_notificationFailed": "Map download failed",
+  "offlineMaps_clearTileCache": "Clear cached online map tiles",
+  "offlineMaps_clearTileCachePrompt": "Remove the online map tiles saved while browsing? Downloaded maps stay.",
+  "offlineMaps_tileCacheCleared": "Cached online map tiles removed",
+  "map_notForNavigation": "Not for navigation",
+  "map_chartsNoticeIntro": "MeshTrax draws these charts from NOAA's chart data to help you see the water around your radios and plan. They are not official charts. Don't steer by them.",
+  "map_chartsNoticeWhy": "Why:",
+  "map_chartsNoticeOutOfDate": "They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.",
+  "map_chartsNoticeLeftOut": "They leave things out. Many chart symbols, light sectors and notes aren't drawn, and some labels hide until you zoom in.",
+  "map_chartsNoticePositions": "Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.",
+  "map_chartsNoticeNotPlotter": "MeshTrax isn't a certified chart plotter.",
+  "map_chartsNoticeUse": "To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.",
+  "map_sourceOnline": "Online",
+  "map_sourceOffline": "Offline",
+  "map_noOfflineMap": "No offline map here",
+  "map_zoomInForOfflineMap": "Zoom in to see your offline map",
+  "map_noCharts": "No charts here",
+  "map_myLocation": "My location",
+  "map_zoomIn": "Zoom in",
+  "map_zoomOut": "Zoom out",
+  "map_positionUnknown": "Your position isn't known yet",
+  "map_locationServiceOff": "Turn on location to show where you are",
+  "map_locationDenied": "Location access is off for MeshTrax",
+  "map_zoomInForCharts": "Zoom in to see your charts",
+  "map_downloadRegion": "Download {region} · {size}",
+  "@map_downloadRegion": {"placeholders": {"region": {"type": "String"}, "size": {"type": "String"}}},
+  "mapLayers_title": "Map layers",
+  "mapLayers_mapType": "Map type",
+  "mapLayers_standard": "Standard",
+  "mapLayers_usgs": "USGS topo",
+  "mapLayers_charts": "Charts",
+  "mapLayers_notDownloaded": "Not downloaded",
+  "mapLayers_offlineOnly": "Offline only",
+  "mapLayers_details": "Map details",
+  "mapLayers_contours": "Contours",
+  "mapLayers_dark": "Dark map",
+  "mapLayers_downloadedAreas": "Downloaded areas",
+  "mapLayers_nodes": "Nodes",
+  "mapLayers_pins": "Pins",
+  "mapLayers_guessed": "Guessed",
+  "mapLayers_moreFilters": "More filters",
+  "mapLayers_moreFiltersDetail": "Last seen, key prefix, overlaps",
+  "map_legend": "Legend",
+  "scanner_map": "Map",
   "structured_openMap": "Open map",
   "structured_addToCalendar": "Add to calendar",
   "structured_details": "Details",

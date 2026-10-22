@@ -39,4 +39,14 @@ void main() {
       isA<vt.TileResponseNotFound>(),
     );
   }, skip: skip);
+
+  test('contains answers from the directories alone', () async {
+    final provider = await LocalPmTilesVectorTileProvider.open(file);
+    addTearDown(provider.dispose);
+    expect(await provider.contains(const vt.TileKey(14, 2650, 6382)), isTrue);
+    expect(await provider.contains(const vt.TileKey(6, 10, 24)), isTrue);
+    expect(await provider.contains(const vt.TileKey(14, 0, 0)), isFalse);
+    expect(await provider.contains(const vt.TileKey(5, 5, 12)), isFalse);
+    expect(await provider.contains(const vt.TileKey(15, 5300, 12764)), isFalse);
+  }, skip: skip);
 }

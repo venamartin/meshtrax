@@ -5,11 +5,13 @@
 library;
 
 export 'src/packs/attribution.dart';
+export 'src/packs/chart_area_index.dart';
 export 'src/packs/geo.dart';
 export 'src/packs/pack.dart';
 export 'src/packs/pack_download.dart';
 export 'src/packs/pack_index.dart';
 export 'src/packs/pack_manager.dart' show PackManager, PackException;
 export 'src/packs/pmtiles_header.dart';
+export 'src/packs/region_index.dart';
 export 'src/styles/style_info.dart';
 export 'src/styles/style_registry.dart';

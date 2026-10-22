@@ -225,19 +225,6 @@
   "appSettings_last6Hours": "Posledné 6 hodín",
   "appSettings_last24Hours": "Posledných 24 hodín",
   "appSettings_lastWeek": "Minul týždeň",
-  "appSettings_offlineMapCache": "Offline Mapa Pamäť",
-  "appSettings_noAreaSelected": "Neoznačila sa žiadna oblasť",
-  "appSettings_areaSelectedZoom": "Vyberená oblasť (zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Ladenie",
   "appSettings_appDebugLogging": "Záznamy ladenia aplikácie",
   "appSettings_appDebugLoggingSubtitle": "Logovací správy aplikácie pre ladenie",
@@ -623,104 +610,16 @@
   },
   "map_connectToShareMarkers": "Pripojte sa k zariadeniu na zdieľanie značiek",
   "map_filterNodes": "Filtrovať uzly",
-  "map_nodeTypes": "Typy uzlov",
   "map_chatNodes": "Chatové uzly",
   "map_repeaters": "Opakovadlá",
   "map_otherNodes": "Ostatné uzly",
   "map_keyPrefix": "Päťciferné predpona",
   "map_filterByKeyPrefix": "Filtrovať podľa predponového kľúča",
   "map_publicKeyPrefix": "Prefix verejného kľúča",
-  "map_markers": "Označkovače",
-  "map_showSharedMarkers": "Zobraziť zdieľané značky",
   "map_lastSeenTime": "Posledný čas sledovania",
   "map_sharedPin": "Zdieľaný PIN",
   "map_joinRoom": "Pripojiť miestnosť",
   "map_manageRepeater": "Spravovať Opakovanie",
-  "mapCache_title": "Offline Mapa Pamäť",
-  "mapCache_selectAreaFirst": "Vyberte si oblasť na predprerúčenie.",
-  "mapCache_noTilesToDownload": "Žiadne dlaždice na stiahnutie pre toto zóna",
-  "mapCache_downloadTilesTitle": "Stiahnuť dlaždice",
-  "mapCache_downloadTilesPrompt": "Stiahnuť {count} dlaždíc na offline použitie?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Stiahnuť",
-  "mapCache_cachedTiles": "Zabudené {count} dlaždíc",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Uložené {downloaded} dlaždice ({failed} neúspešné)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Vymazať offline uloženie",
-  "mapCache_clearOfflineCachePrompt": "Odstrániť všetky uložené mapové dlaždice?",
-  "mapCache_offlineCacheCleared": "Offline polia vymazaná",
-  "mapCache_noAreaSelected": "Neoznačila sa žiadna oblasť",
-  "mapCache_cacheArea": "Obdĺžková oblasť",
-  "mapCache_useCurrentView": "Použite aktuálny zobrazenie",
-  "mapCache_zoomRange": "Rozsah zväčšenia",
-  "mapCache_estimatedTiles": "Odhadnuté dlaždice: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Stiahnuté {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Stiahnuť dlaždice",
-  "mapCache_clearCacheButton": "Vyprázdniť Vädsť",
-  "mapCache_failedDownloads": "Neúspešné stiahnutia: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Príbeh",
   "time_minutesAgo": "{minutes} min dozadu",
   "@time_minutesAgo": {
@@ -1755,7 +1654,6 @@
   "discoveredContacts_deleteContactAll": "Zmazať všetky objavené kontakty",
   "common_deleteAll": "Zmazať všetko",
   "discoveredContacts_deleteContactAllContent": "Ste si istí, že chcete zmazať všetky objavené kontakty?",
-  "map_showGuessedLocations": "Zobraziť umiestnenia odhadnutých uzlov",
   "map_guessedLocation": "Odhadnutá lokalita",
   "usbScreenTitle": "Pripojte cez USB",
   "usbScreenSubtitle": "Vyberte detekovaný sériový zariadenie a pripojte ho priamo k vašej MeshCore uzlu.",

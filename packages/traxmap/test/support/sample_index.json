@@ -1,7 +1,83 @@
 {
- "generated": "2026-10-16T18:40:44+00:00",
+ "generated": "2026-10-19T23:29:08+00:00",
  "schema_version": 1,
  "packs": [
+  {
+   "id": "us-rhode-island",
+   "name": "Rhode Island",
+   "kind": "base",
+   "bbox": [
+    -71.91456,
+    40.9992,
+    -71.0636899,
+    42.01938
+   ],
+   "bytes": 15795670,
+   "sha256": "0ad47f8bcf5df3c9d393f54fb7f795a1091a1e47fb82fe41fbe8b598bb4a8723",
+   "build_date": "2026-10-19",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/dev/v1/north-america/us/rhode-island/usgs.pmtiles",
+   "region": "north-america/us/rhode-island"
+  },
+  {
+   "id": "us-rhode-island-contours-10m",
+   "name": "Rhode Island (contours, 10m)",
+   "kind": "contours",
+   "bbox": [
+    -71.91456,
+    40.9992,
+    -71.0636899,
+    42.01938
+   ],
+   "bytes": 1003591,
+   "sha256": "310b1b17dcd53b4d914c21c3b123df03820669101e9707d2d2f0710ba9d05012",
+   "build_date": "2026-10-19",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/dev/v1/north-america/us/rhode-island/contours-10m.pmtiles",
+   "region": "north-america/us/rhode-island",
+   "variant": "10m",
+   "units": "metric",
+   "interval": 10,
+   "interval_unit": "m"
+  },
+  {
+   "id": "us-rhode-island-contours-20ft",
+   "name": "Rhode Island (contours, 20ft)",
+   "kind": "contours",
+   "bbox": [
+    -71.91456,
+    40.9992,
+    -71.0636899,
+    42.01938
+   ],
+   "bytes": 1657784,
+   "sha256": "a3bdda2de5efe1f41d45ea22b0fae5c434455752ee10a67591d117b6de6d16e2",
+   "build_date": "2026-10-19",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/dev/v1/north-america/us/rhode-island/contours-20ft.pmtiles",
+   "region": "north-america/us/rhode-island",
+   "variant": "20ft",
+   "units": "imperial",
+   "interval": 20,
+   "interval_unit": "ft"
+  },
+  {
+   "id": "us-rhode-island-osm",
+   "name": "Rhode Island (osm)",
+   "kind": "osm",
+   "bbox": [
+    -71.91456,
+    40.9992,
+    -71.0636899,
+    42.01938
+   ],
+   "bytes": 34105402,
+   "sha256": "1e7a46d0fe970866255b8458d435597c7edce51aedb5c1336551bc8dcd101b98",
+   "build_date": "2026-10-19",
+   "schema_version": 1,
+   "url": "https://maps.meshtrax.io/dev/v1/north-america/us/rhode-island/osm.pmtiles",
+   "region": "north-america/us/rhode-island"
+  },
   {
    "id": "watsonville-test",
    "name": "Watsonville \u2013 Monterey (test)",
@@ -12,11 +88,11 @@
     -121.65,
     37.0
    ],
-   "bytes": 4917635,
-   "sha256": "ec51385452cf136f8f988fa24270202d608c528a6f20ad34b44ca0b032f60aea",
-   "build_date": "2026-10-16",
+   "bytes": 4917640,
+   "sha256": "ff35f4de048cc0fe905ac0226d7546d3a4796dce2fcf6ba95a51151b9a86d4ba",
+   "build_date": "2026-10-19",
    "schema_version": 1,
-   "url": "https://maps.example.com/v1/test/watsonville-test/usgs.pmtiles",
+   "url": "https://maps.meshtrax.io/dev/v1/test/watsonville-test/usgs.pmtiles",
    "region": "test/watsonville-test"
   },
   {
@@ -29,11 +105,11 @@
     -121.65,
     37.0
    ],
-   "bytes": 905888,
-   "sha256": "479d509440c1346ab8df1aa2ed29f447af913daf3d3bbc2e5b5b9c7a85b0899b",
-   "build_date": "2026-10-16",
+   "bytes": 905893,
+   "sha256": "dc7e4ac49cc0498a89bac251698a783fb76a7fd989f710301751aa1fe0b7c2e4",
+   "build_date": "2026-10-19",
    "schema_version": 1,
-   "url": "https://maps.example.com/v1/test/watsonville-test/charts.pmtiles",
+   "url": "https://maps.meshtrax.io/dev/v1/test/watsonville-test/charts.pmtiles",
    "region": "test/watsonville-test"
   },
   {
@@ -46,11 +122,11 @@
     -121.65,
     37.0
    ],
-   "bytes": 729587,
-   "sha256": "e342be50be178c251f54309c0cfbe3b10a600726f06e42a44117024b4e75d870",
-   "build_date": "2026-10-16",
+   "bytes": 729589,
+   "sha256": "22f17a02f1f946f5d853bc58713f2b119658745b15f6f3bd111ed73ed9f7b535",
+   "build_date": "2026-10-19",
    "schema_version": 1,
-   "url": "https://maps.example.com/v1/test/watsonville-test/contours-10m.pmtiles",
+   "url": "https://maps.meshtrax.io/dev/v1/test/watsonville-test/contours-10m.pmtiles",
    "region": "test/watsonville-test",
    "variant": "10m",
    "units": "metric",
@@ -67,11 +143,11 @@
     -121.65,
     37.0
    ],
-   "bytes": 1200813,
-   "sha256": "ebd6aad1499f608385e518f3f0b741be0608250b3a26d6dea847716ca4ffd038",
-   "build_date": "2026-10-16",
+   "bytes": 1200818,
+   "sha256": "e4f51abd38e461611d1cbdfd9a329a30ecd060e3d3ba41941f8952ae43e4d79e",
+   "build_date": "2026-10-19",
    "schema_version": 1,
-   "url": "https://maps.example.com/v1/test/watsonville-test/contours-20ft.pmtiles",
+   "url": "https://maps.meshtrax.io/dev/v1/test/watsonville-test/contours-20ft.pmtiles",
    "region": "test/watsonville-test",
    "variant": "20ft",
    "units": "imperial",
@@ -89,10 +165,10 @@
     37.0
    ],
    "bytes": 9116849,
-   "sha256": "e7a54aea0807bd9661bacd4d928fe1cce3da13230b0fd279fe268be4aa75952e",
-   "build_date": "2026-10-16",
+   "sha256": "cf4e7a3a9b70a6b03201c12e25817af0c5f3a2798011b168aa6e44586956cd4f",
+   "build_date": "2026-10-19",
    "schema_version": 1,
-   "url": "https://maps.example.com/v1/test/watsonville-test/osm.pmtiles",
+   "url": "https://maps.meshtrax.io/dev/v1/test/watsonville-test/osm.pmtiles",
    "region": "test/watsonville-test"
   }
  ]

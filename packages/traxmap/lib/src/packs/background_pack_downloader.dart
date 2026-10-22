@@ -32,9 +32,6 @@ class BackgroundPackDownloader implements PackDownloader {
 
   final PackManager manager;
 
-  /// Hold downloads until the device is on Wi-Fi.
-  final bool requiresWiFi;
-
   final FileDownloader _downloader;
   final _updates = StreamController<PackDownload>.broadcast();
   final _latest = <String, PackDownload>{};
@@ -42,22 +39,36 @@ class BackgroundPackDownloader implements PackDownloader {
   StreamSubscription<TaskUpdate>? _subscription;
 
   /// [scope] isolates traxmap's tasks from the app's own background_downloader
-  /// use. [notification] titles the system notification Android 14+ requires
-  /// for long downloads; `{displayName}` is the pack name.
-  BackgroundPackDownloader(
-    this.manager, {
-    this.requiresWiFi = false,
-    String scope = 'traxmap',
-    String notification = 'Downloading map',
-  }) : _downloader = FileDownloader.scoped(scope) {
+  /// use. Notifications start with English titles; see
+  /// [configureNotifications].
+  BackgroundPackDownloader(this.manager, {String scope = 'traxmap'})
+    : _downloader = FileDownloader.scoped(scope) {
+    configureNotifications();
+  }
+
+  /// Titles the system notifications (Android 14+ requires one for long
+  /// downloads). Pass translated text once the app knows its locale; the
+  /// body shows the pack name.
+  void configureNotifications({
+    String running = 'Downloading map',
+    String paused = 'Map download paused',
+    String failed = 'Map download failed',
+  }) {
     _downloader.configureNotificationForGroup(
       _group,
-      running: TaskNotification(notification, '{displayName}  {progress}'),
-      paused: const TaskNotification('Map download paused', '{displayName}'),
-      error: const TaskNotification('Map download failed', '{displayName}'),
+      running: TaskNotification(running, '{displayName}  {progress}'),
+      paused: TaskNotification(paused, '{displayName}'),
+      error: TaskNotification(failed, '{displayName}'),
       progressBar: true,
     );
   }
+
+  /// Holds downloads until the device is on Wi-Fi, or lets them use any
+  /// network. Applies to running downloads too. Phones only; desktops
+  /// ignore it.
+  Future<void> setRequiresWiFi(bool required) => _downloader.requireWiFi(
+    required ? RequireWiFi.forAllTasks : RequireWiFi.asSetByTask,
+  );
 
   @override
   Stream<PackDownload> get updates => _updates.stream;
@@ -146,7 +157,6 @@ class BackgroundPackDownloader implements PackDownloader {
       displayName: entry.name,
       metaData: jsonEncode(entry.toJson()),
       updates: Updates.statusAndProgress,
-      requiresWiFi: requiresWiFi,
       retries: 5,
       // UIDT on Android 14+, and pausable (resumes across WorkManager's
       // 9-minute cycles) everywhere.
@@ -188,6 +198,14 @@ class BackgroundPackDownloader implements PackDownloader {
 
   @override
   Future<void> cancel(String packId) async {
+    final latest = _latest[packId];
+    if (latest?.state == PackDownloadState.failed) {
+      // Nothing is running: drop the plugin's record, or the failure comes
+      // back at every launch.
+      await _downloader.database.deleteRecordWithId(packId);
+      _emit(PackDownload(latest!.entry, PackDownloadState.canceled));
+      return;
+    }
     await _downloader.cancelTaskWithId(packId);
   }
 
@@ -236,6 +254,17 @@ class BackgroundPackDownloader implements PackDownloader {
     final file = File(await task.filePath());
     try {
       if (!await file.exists()) {
+        // The plugin can report or record a completion twice (live, then
+        // again from its database at the next launch). If the first one
+        // installed this build, there's nothing left to do.
+        final installed = await manager.listInstalled();
+        if (installed.any(
+          (p) => p.id == entry.id && p.isBuild(entry.sha256) == true,
+        )) {
+          _emit(PackDownload(entry, PackDownloadState.installed, progress: 1));
+          await _downloader.database.deleteRecordWithId(task.taskId);
+          return;
+        }
         throw const PackException('Downloaded file is missing');
       }
       await manager.install(

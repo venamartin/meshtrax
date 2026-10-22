@@ -19,8 +19,15 @@ traxmap moved into this repository.
   [`SCHEMA.md`](https://github.com/venamartin/traxmapmaker/blob/main/SCHEMA.md) is the contract the styles are
   written against. Its [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md) keeps the
   data-side record: sources, measurements, server layout and build design.
-- **Status:** MeshTrax doesn't depend on traxmap yet (`pubspec.yaml` is
-  untouched). Integration starts in its own branch and PR.
+- **Pack server:** `https://maps.meshtrax.io` (Cloudflare R2). traxmapmaker's
+  FINDINGS §1 is the contract. A frozen test catalogue lives under `dev/`;
+  the root `index.json` returns 404 until the first real publish.
+- **Integration roadmap:** [`offline-maps-roadmap.md`](offline-maps-roadmap.md)
+  covers the screens, phases, how to test on the Pi, and coordination with
+  traxmapmaker.
+- **Park overlays:** [`park-maps.md`](park-maps.md).
+- **Status (2026-10-19):** Phase 1 (the download screen) is in progress on
+  the local branch `feat/offline-maps`.
 
 ## Decisions that shape the app
 
@@ -37,6 +44,47 @@ traxmap moved into this repository.
 | 2026-10-16 | **Pack downloads use background_downloader**, not Android's DownloadManager: scoped tasks, Android 14+ UIDT, range-request resume, restore at launch, SHA-256 check, then `PackManager.install(move: true)`. |
 | 2026-10-16 | **Offline routing (trails, dirt roads or a mix) with the BRouter library embedded in MeshTrax, Android only.** See "Routing" below. |
 | 2026-10-17 | **Routing is an opt-in download, off by default** (Android only). |
+| 2026-10-17 | **Online OSM raster tiles where no pack is installed.** They load on demand only, from a disk cache of tiles already viewed. The bulk "Offline Map Cache" prefetch goes (it breaks OSM's tile policy), the User-Agent becomes `com.vena.meshtrax`, and "© OpenStreetMap contributors" shows whenever raster tiles do. The bundled world pack is deferred. Martin: about 95% of users are online. |
+| 2026-10-17 | **Phone GPS** (geolocator, when-in-use, asked on the first tap of centre-on-me) arrives with the main map. The radio's position is the fallback, and the only source on Linux. privacy.md and the store forms change in the same step. |
+| 2026-10-17 | **Offline maps screen: three tabs, Maps · Charts · Downloaded,** plus a layers button on the main map (mirrored in App Settings). |
+| 2026-10-17 | **Order:** the download screen and the map migration first, then charts, then routing, then park overlays. |
+| 2026-10-18 | **Park maps are overlays** in a generic level model: per region and per source (NPS first). See [`park-maps.md`](park-maps.md). |
+| 2026-10-18 | **The server data is modular:** one module per data set (traxmapmaker FINDINGS §1). Routing and overlays stay separate. |
+| 2026-10-19 | **Maps work without a radio.** The scanner's ⋮ menu gets Offline maps and Map; with no radio, the map shows no nodes and hides radio-only actions. |
+| 2026-10-19 | **List-first:** the Offline maps list, region detail and downloads come before any map-rendering work. |
+| 2026-10-19 | **The Pi is the test bench** (Linux desktop, hot reload). Phones only at the release gates and for phone-only features. |
+| 2026-10-19 | **A 404 on `index.json` means "no catalogue yet"**: an empty state, not an error. |
+| 2026-10-20 | **An Online \| Offline switch on the map, replacing the coverage banner.** Martin: online tiles that look like the offline map make people think they have it offline. **Offline** draws downloaded maps only: exactly what works without signal, with a "No offline map here · Download {region} ›" card where nothing is drawn. **Online** draws online OSM tiles everywhere the packs don't (only those tiles are fetched). Both modes draw a dashed line where the downloaded regions end. Setting `map_source`: `auto` (online until the first street or topo map download, then offline; charts or contours alone don't count, because the standard map would have nothing to draw), `online` or `offline`. |
+| 2026-10-20 | **A world base map from traxmapmaker, downloaded with the catalogue.** It's a simple world map for Offline mode when zoomed out or outside downloaded regions: land and water, country and state/province lines worldwide, and country, state and major-city names, from Natural Earth. traxmapmaker builds it **last** (after Mexico, the charts master, contours and USGS) and lists it in `index.json`. MeshTrax fetches it with the catalogue and updates it by checksum. It isn't embedded, so it matches the downloadable regions. Until then an empty world is fine. |
+| 2026-10-20 | **One catalogue: production.** The server publishes only products from full master builds to `https://maps.meshtrax.io/index.json`; the `dev/` test catalogue is retired. Every build uses the production catalogue. |
+| 2026-10-20 | **A Google-Maps-style layers sheet** on the main map: map type tiles (OSM, USGS, NOAA), map details (contours, dark map) and node types (repeaters, chat, rooms…). It replaces the plain-text map selector. **The map is light by default**, whatever the app's theme. |
+| 2026-10-20 | **The Charts tab is a coast list with ticks.** Coasts as the file lists them; areas alphabetical until `coast_areas` gives coastline order; Download takes every ticked area. Text only, one column, like the Maps tab. |
+| 2026-10-21 | **Charts get NOAA's navigational set (Option B, Martin).** Today's 9 layers stay as they are. New layers, grouped by role, each carry the S-57 class:
+  - routes;
+  - regulated areas;
+  - overhead clearances;
+  - cables and pipelines;
+  - harbour structures and facilities;
+  - seabed;
+  - tide and current;
+  - extra aids (fog signals, daymarks, racons, virtual AIS);
+  - landmarks;
+  - magnetic variation.
+  About 1.2–1.3 GB for the 42 areas. |
+| 2026-10-22 | **Chart styles follow paper-chart conventions within the renderer's limits** (Martin approved from renders):
+  - magenta dashed limits;
+  - INT-1 abbreviations;
+  - clearances never overstated;
+  - restrictions worded exactly;
+  - buoy names as the chart's number ("2") below z15.
+  Symbols that need icons (arrows, anchors, T-ticks, topmarks) wait for sprites rather than being faked. |
+| 2026-10-22 | **Depths in feet never read deeper than charted** (Martin). traxmapmaker's `depth_ft` keeps `round` for feet- and fathom-charted depths, which recovers the chart's figure exactly, and rounds down for metre-charted ones. It decides the units per feature, because NOAA cells don't flag units and mix them. It lands in the next charts rebuild; the app's styles keep reading `depth_ft`. |
+| 2026-10-22 | **"Not for navigation" is a dialog that says why,** not a label always on the map (Martin). It opens the first time the map draws charts in each app run, with "Don't show this again". The Charts tab's line "Not for navigation · Why?" opens it any time, and can undo that choice. The reasons: charts go out of date (a download changes only when updated), leave things out (symbols, light sectors, notes; labels hidden until zoomed in), positions can be wrong or old, and MeshTrax isn't a certified chart plotter. |
+| 2026-10-22 | **Downloaded areas: a teal outline of what the map showing draws** (Martin). Standard outlines the regions with a street map, USGS topo those with a USGS pack, and Charts the downloaded NOAA chart areas; Online it's the street map's. It's filled only Online, where it sets downloads apart from the online tiles: Offline everything drawn is downloaded, so a fill would tint the whole map. None on small maps (chat cards, mini maps). A **Downloaded areas** tile under Map details turns it off (setting `map_downloaded_areas`, on by default). Replaces the dashed pink region edges. |
+| 2026-10-21 | **Charts follow NOAA's decluttering (SCAMIN) on every layer, at NOAA's standard-screen scale** (variant C, Martin, chosen from side-by-side renders of Puerto Rico test packs). Each feature appears from round(log2(279,541,132 × cos(lat) / SCAMIN)), at the earliest from its band's minzoom. In harbours, soundings come in one step after buoys and lights. |
+| 2026-10-20 | **Charts carry the real NOAA content,** not a simplified view (Martin). traxmapmaker rebuilds the charts with traffic separation schemes, anchorages, restricted areas, bridges and overhead clearances, and caution areas. The current 9 layers stay. |
+| 2026-10-20 | **My location: the phone's GPS where allowed, else the radio's position.** It asks while-in-use on the first tap. The phone is **its own marker** (Martin), a blue dot apart from the radio's "You". Nothing is read until the user has used My location once (remembered), and then only while a map is open with the app in front. Linux has no GPS and uses the radio. Desktop gets +/− buttons; phones pinch. |
+| 2026-10-19 | **Copernicus GLO-30 is approved** for contours outside the US (Canada, Mexico, UK). A contours pack's `attribution` is then "USGS 3DEP", the Copernicus credit, or both, joined with "; ". The licence also requires redistributors to show: "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30." The app shows that alongside the credits wherever such a pack is in use, as it does the charts' "Not for navigation". **Agreed with traxmapmaker (SCHEMA.md "Pack metadata", FINDINGS §1.1):**<br>• Packs carry an optional plain-text `notice` metadata key, present only when a licence requires one.<br>• Several notices in one pack are joined by newlines.<br>• The key is in pack metadata only, not in `index.json`.<br>• The app shows every distinct notice of the packs in use (T5, `MapStyleState.notices`), and never matches on "Copernicus".<br>• First data: the Puerto Rico and US Virgin Islands contours. Two of their blocks have no 3DEP tile and use GLO-30. |
 
 ## Pitfalls already found
 
@@ -67,6 +115,29 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
 - **Tiles look soft just below each whole zoom (fixed 2026-10-16).** flutter_map_vector_tiles draws each tile once into a bitmap at `floor(zoom)` and stretches it up to 2× until the next level; labels stay sharp because they're drawn every frame. The renderer now gives the tile layer a higher `devicePixelRatio` through `MediaQuery` (default 2× the screen density, capped at 4; `OfflineMapView.tileResolution` overrides it). Measured on the Pi at z13.9, edge sharpness rose from 105 to 184 (z13.0 is 238). Cost: tile bitmap memory and raster time grow with the square of the factor. Check frame times and memory on phones in Phase 2.
 - **Report the starting camera.** flutter_map's `onPositionChanged` doesn't fire until the user moves. The renderer reports the camera once the map is ready (after the frame), so zoom-derived UI is right from the start.
 - **Two `LatLng`s and the latlong2 range.** MeshTrax pins `latlong2 ^0.9.1`; the package accepts `>=0.9.1 <0.11.0`, as do flutter_map 8.3 and flutter_map_vector_tiles 2.9. The package's own `LatLng` clashes by name: import `package:traxmap/traxmap.dart` with `hide LatLng, LatLngBounds` where latlong2 is used, and convert with `package:traxmap/latlong2.dart` (`toOvm()`, `toLatLong2()`).
+- **What the renderer can't do** (2026-10-18). This shapes the styles and the park overlays; the full list is in traxmapmaker FINDINGS §4, "App renderer limits for style authors".
+  - **No `within`:** the parser rejects it.
+  - **Fonts:** `text-font` only picks weight and italic. There's no font family, and no glyph PBFs are used.
+  - **Sprites:** one `SpriteAtlas` per layer, so icon sheets must be merged. Sprites, `line-pattern` and every `*-opacity` do work, but traxmap doesn't load sprites yet.
+  - **Tapping features:** there's no query API for vector features.
+- **Style arithmetic and style cost, measured on real chart tiles** (2026-10-20, for traxmapmaker's full-data charts proposal; traxmapmaker's local Puerto Rico test packs, the real 2.9.1 pipeline in `flutter test`):
+  - **Arithmetic works:**
+    - `["to-string",["round",["*",["get","depth_m"],3.28084]]]` matched the pack's `depth_ft` on 3,446 of 3,446 soundings;
+    - `concat` builds "142 ft";
+    - `to-string` drops a whole number's ".0";
+    - one decimal is `["/",["round",["*",x,10]],10]`.
+  - **Guard optional numbers:** a missing attribute makes `*` null, and `to-string` makes that "", so a label reads "VC  ft". Use `["case",["has","clearance_m"],…,""]`.
+  - **List attributes:** `in` against a string is a substring test ("restricted" matches "entry_restricted"). For an exact match, wrap both in commas: `["in",",entry_restricted,",["concat",",",["get","restrictions"],","]]`.
+  - **Cost** ≈ (style layers on a source layer) × (its features in the tile), at about 0.5–1 µs per filter evaluation, paid once per tile when it's rasterized.
+    - 96 per-class layers added 0.5–1.2 ms per dense Puerto Rico harbour tile, where today's depth layers cost 2–20 ms.
+    - In big harbours (structure about 2k features per tile), draw the dense layers with a few `match`-driven layers, not one layer per class.
+- **Phone location (geolocator 14, 2026-10-20):**
+  - **The OS permission is no opt-in.** Android 11 and below grant location for every Bluetooth scan, and on Windows `checkPermission` *is* `RequestAccessAsync`, which can show the consent prompt. So `PhoneLocationService` reads nothing until My location has been tapped once.
+  - **Location off:** with Location off, following (`getPositionStream`) makes Android pop Google's "turn on location" dialog by itself. Check `isLocationServiceEnabled` first.
+  - **Stream errors don't close the stream.** Cancel the subscription on error, or a later tap can't start following again.
+  - **Never asked reads as `denied`** on Android and iOS, not "unknown", so asking again on `denied` is what shows the prompt.
+  - **iOS builds** need `BYPASS_PERMISSION_LOCATION_ALWAYS=1` in the environment (Swift Package Manager; the Podfile sets it for CocoaPods), or the binary references Always location (ITMS-90683).
+- **Headless previews with real fonts, no native build** (2026-10-21): `flutter --show-test-device run -d flutter-tester -t <app.dart>` runs an app in the test engine without `flutter test`'s box-glyph test fonts and without the Linux desktop build. That build couldn't finish in 25 minutes on the busy Pi. Capture with `RepaintBoundary.toImage` and `exit(0)` when done. Inside `flutter test`, map labels always draw as boxes: the label painter names no font family, and `--use-test-fonts` is hard-wired.
 - `RandomAccessFile` allows one pending operation at a time, so local tile reads need serializing.
 - **Test hang:** `rootBundle` caches asset futures. A future created inside one `testWidgets` fake-async zone never completes when awaited from another. Load assets in plain `test()` with `TestWidgetsFlutterBinding.ensureInitialized()`.
 - A bundled pack copied into app storage goes stale after a pipeline rebuild. Compare size plus the first 16 KiB, and reinstall when they differ.
@@ -81,6 +152,8 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
   `com.apple.security.network.client` entitlement. The plugin's native code
   is built into the app as soon as traxmap is in `pubspec.yaml`, so add the
   setup in the same PR.
+
+- **Widget tests and real file I/O deadlock.** I/O started inside `testWidgets` (e.g. the Offline maps screen's refresh after its first frame) completes in real time, but its callbacks run only when the fake clock is pumped. Awaiting that future inside `tester.runAsync` never returns. Alternate `runAsync(() => Future.delayed(5 ms))` and `pump()` until it completes, as `finishRefresh` in `offline_maps_charts_test.dart` does. Start services with real I/O inside `runAsync` before `pumpWidget`.
 
 ### Noticed in MeshTrax while planning the migration (not map issues)
 
@@ -135,20 +208,22 @@ time, memory and APK size.
 
 ## Open questions for the app
 
-- **Renderer on phones:** measure frame time, memory and cold start on real
-  Android and iOS phones, and compare with maplibre_gl. Check the tile
-  resolution factor (2× screen density, capped at 4) there too.
-- **Combined multi-pack source per kind:** each tile should come from
-  whichever installed pack has it (e.g. Lake Tahoe across California and
-  Nevada). Today `StyleContext` maps one pack per kind. This is needed as
-  soon as users install neighbouring regions.
-- **`StyleInfo` could list the pack kinds a style needs**, so the picker
-  hides or greys out styles whose packs aren't installed.
-- **Still to build for the Offline maps screen:**
-  - a `RegionIndex` in `core.dart` (tree, outlines, `regionAt(LatLng)`,
-    pairing with `PackIndexEntry`s);
-  - the bundled world pack;
-  - `picker.geojson` from traxmapmaker.
-- **Charts get their own picker,** by coastal state.
+Each item now has a task in the [roadmap](offline-maps-roadmap.md).
+
+- **Renderer on phones** (gate G1): measure frame time, memory and cold start
+  on real Android and iOS phones, and compare with maplibre_gl. Check the
+  tile resolution factor (2× screen density, capped at 4) there too.
+- **Combined multi-pack source per kind** (task T3): each tile should come
+  from whichever installed pack has it (e.g. Lake Tahoe across California
+  and Nevada). Today `StyleContext` maps one pack per kind. This is needed
+  as soon as users install neighbouring regions.
+- **`StyleInfo` lists the pack kinds a style needs** (task T5), so the
+  layers sheet can grey out maps whose packs aren't installed.
+- **Offline maps screen:**
+  - `RegionIndex` in `core.dart` (task T2);
+  - `picker.geojson`: done, served by traxmapmaker on `dev/`;
+  - the bundled world pack is deferred, because the picker draws on online
+    tiles (decided 2026-10-17).
+- **Charts get their own picker,** by coastal state (Phase 6): built as the Charts tab (S3d).
 - **Night style** (red on black, for night vision) and **SDF icons** (buoys,
-  peaks, trailheads).
+  peaks, trailheads). Sprites come with task T9.

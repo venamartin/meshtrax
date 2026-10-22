@@ -24,9 +24,28 @@ class AppSettings {
   final bool mapShowMarkers;
   final bool mapShowGuessedLocations;
   final bool enableMessageTracing;
-  final Map<String, double>? mapCacheBounds;
-  final int mapCacheMinZoom;
-  final int mapCacheMaxZoom;
+
+  /// Hold offline map downloads until the phone is on Wi-Fi.
+  final bool mapDownloadsWifiOnly;
+
+  /// Which map the map screens draw: `osm`, `usgs` or `charts` (traxmap's
+  /// MapType names).
+  final String mapType;
+
+  /// Draw contour lines when a contours pack is installed.
+  final bool mapContours;
+
+  /// Outline the downloaded areas of the map that's showing.
+  final bool mapDownloadedAreas;
+
+  /// Map colours, `light` or `dark`, whatever the app's theme (Martin,
+  /// 2026-10-20: light reads better outdoors).
+  final String mapTheme;
+
+  /// Where maps come from: `online` (online tiles wherever nothing is
+  /// downloaded), `offline` (downloaded maps only), or `auto`: online until
+  /// the first map is downloaded, then offline.
+  final String mapSource;
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
@@ -74,6 +93,10 @@ class AppSettings {
   /// user checks "don't show again".
   final bool batterySleepWarningDismissed;
 
+  /// The "Not for navigation" dialog, shown once per run when the map
+  /// first draws charts; set when the user checks "don't show again".
+  final bool chartsNoticeDismissed;
+
   /// Public-key hexes of blocked direct-message contacts.
   final Set<String> blockedContactKeys;
 
@@ -86,15 +109,18 @@ class AppSettings {
     this.mapShowChatNodes = true,
     this.mapShowOtherNodes = true,
     this.mapShowOverlaps = false,
-    this.mapTimeFilterHours = 48, // Default to all time
+    this.mapTimeFilterHours = 0, // all time
     this.mapKeyPrefixEnabled = false,
     this.mapKeyPrefix = '',
     this.mapShowMarkers = true,
     this.mapShowGuessedLocations = true,
     this.enableMessageTracing = true,
-    this.mapCacheBounds,
-    this.mapCacheMinZoom = 10,
-    this.mapCacheMaxZoom = 15,
+    this.mapDownloadsWifiOnly = true,
+    this.mapType = 'osm',
+    this.mapContours = true,
+    this.mapDownloadedAreas = true,
+    this.mapTheme = 'light',
+    this.mapSource = 'auto',
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -122,6 +148,7 @@ class AppSettings {
     this.showTextFormatting = true,
     this.dmIdentityWarningDismissed = false,
     this.batterySleepWarningDismissed = false,
+    this.chartsNoticeDismissed = false,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
@@ -143,9 +170,12 @@ class AppSettings {
       'map_show_markers': mapShowMarkers,
       'map_show_guessed_locations': mapShowGuessedLocations,
       'enable_message_tracing': enableMessageTracing,
-      'map_cache_bounds': mapCacheBounds,
-      'map_cache_min_zoom': mapCacheMinZoom,
-      'map_cache_max_zoom': mapCacheMaxZoom,
+      'map_downloads_wifi_only': mapDownloadsWifiOnly,
+      'map_type': mapType,
+      'map_contours': mapContours,
+      'map_downloaded_areas': mapDownloadedAreas,
+      'map_theme': mapTheme,
+      'map_source': mapSource,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -173,6 +203,7 @@ class AppSettings {
       'show_text_formatting': showTextFormatting,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
+      'charts_notice_dismissed': chartsNoticeDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
     };
@@ -199,11 +230,12 @@ class AppSettings {
       mapShowGuessedLocations:
           json['map_show_guessed_locations'] as bool? ?? true,
       enableMessageTracing: json['enable_message_tracing'] as bool? ?? false,
-      mapCacheBounds: (json['map_cache_bounds'] as Map?)?.map(
-        (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
-      ),
-      mapCacheMinZoom: json['map_cache_min_zoom'] as int? ?? 10,
-      mapCacheMaxZoom: json['map_cache_max_zoom'] as int? ?? 15,
+      mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
+      mapType: json['map_type'] as String? ?? 'osm',
+      mapContours: json['map_contours'] as bool? ?? true,
+      mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
+      mapTheme: json['map_theme'] as String? ?? 'light',
+      mapSource: json['map_source'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -211,7 +243,8 @@ class AppSettings {
       notifyOnMention: json['notify_on_mention'] as bool? ?? true,
       notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
       maxMessageRetries: json['max_message_retries'] as int? ?? 3,
-      maxChannelMessageRetries: json['max_channel_message_retries'] as int? ?? 1,
+      maxChannelMessageRetries:
+          json['max_channel_message_retries'] as int? ?? 1,
       themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
@@ -252,6 +285,7 @@ class AppSettings {
           json['dm_identity_warning_dismissed'] as bool? ?? false,
       batterySleepWarningDismissed:
           json['battery_sleep_warning_dismissed'] as bool? ?? false,
+      chartsNoticeDismissed: json['charts_notice_dismissed'] as bool? ?? false,
       blockedContactKeys:
           ((json['blocked_contact_keys'] as List?)
               ?.map((e) => e.toString())
@@ -276,9 +310,12 @@ class AppSettings {
     bool? mapShowMarkers,
     bool? mapShowGuessedLocations,
     bool? enableMessageTracing,
-    Object? mapCacheBounds = _unset,
-    int? mapCacheMinZoom,
-    int? mapCacheMaxZoom,
+    bool? mapDownloadsWifiOnly,
+    String? mapType,
+    bool? mapContours,
+    bool? mapDownloadedAreas,
+    String? mapTheme,
+    String? mapSource,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -306,6 +343,7 @@ class AppSettings {
     bool? showTextFormatting,
     bool? dmIdentityWarningDismissed,
     bool? batterySleepWarningDismissed,
+    bool? chartsNoticeDismissed,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) {
@@ -321,11 +359,12 @@ class AppSettings {
       mapShowGuessedLocations:
           mapShowGuessedLocations ?? this.mapShowGuessedLocations,
       enableMessageTracing: enableMessageTracing ?? this.enableMessageTracing,
-      mapCacheBounds: mapCacheBounds == _unset
-          ? this.mapCacheBounds
-          : mapCacheBounds as Map<String, double>?,
-      mapCacheMinZoom: mapCacheMinZoom ?? this.mapCacheMinZoom,
-      mapCacheMaxZoom: mapCacheMaxZoom ?? this.mapCacheMaxZoom,
+      mapDownloadsWifiOnly: mapDownloadsWifiOnly ?? this.mapDownloadsWifiOnly,
+      mapType: mapType ?? this.mapType,
+      mapContours: mapContours ?? this.mapContours,
+      mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
+      mapTheme: mapTheme ?? this.mapTheme,
+      mapSource: mapSource ?? this.mapSource,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:
@@ -333,7 +372,8 @@ class AppSettings {
       notifyOnMention: notifyOnMention ?? this.notifyOnMention,
       notifyOnNewAdvert: notifyOnNewAdvert ?? this.notifyOnNewAdvert,
       maxMessageRetries: maxMessageRetries ?? this.maxMessageRetries,
-      maxChannelMessageRetries: maxChannelMessageRetries ?? this.maxChannelMessageRetries,
+      maxChannelMessageRetries:
+          maxChannelMessageRetries ?? this.maxChannelMessageRetries,
       themeMode: themeMode ?? this.themeMode,
       languageOverride: languageOverride == _unset
           ? this.languageOverride
@@ -363,6 +403,8 @@ class AppSettings {
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
       batterySleepWarningDismissed:
           batterySleepWarningDismissed ?? this.batterySleepWarningDismissed,
+      chartsNoticeDismissed:
+          chartsNoticeDismissed ?? this.chartsNoticeDismissed,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
     );

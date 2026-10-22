@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/app_settings.dart';
 
 import '../storage/prefs_manager.dart';
@@ -89,16 +91,28 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(enableMessageTracing: value));
   }
 
-  Future<void> setMapCacheBounds(Map<String, double>? value) async {
-    await updateSettings(_settings.copyWith(mapCacheBounds: value));
+  Future<void> setMapDownloadsWifiOnly(bool value) async {
+    await updateSettings(_settings.copyWith(mapDownloadsWifiOnly: value));
   }
 
-  Future<void> setMapCacheZoomRange(int minZoom, int maxZoom) async {
-    final safeMin = minZoom <= maxZoom ? minZoom : maxZoom;
-    final safeMax = minZoom <= maxZoom ? maxZoom : minZoom;
-    await updateSettings(
-      _settings.copyWith(mapCacheMinZoom: safeMin, mapCacheMaxZoom: safeMax),
-    );
+  Future<void> setMapType(String value) async {
+    await updateSettings(_settings.copyWith(mapType: value));
+  }
+
+  Future<void> setMapContours(bool value) async {
+    await updateSettings(_settings.copyWith(mapContours: value));
+  }
+
+  Future<void> setMapDownloadedAreas(bool value) async {
+    await updateSettings(_settings.copyWith(mapDownloadedAreas: value));
+  }
+
+  Future<void> setMapTheme(String value) async {
+    await updateSettings(_settings.copyWith(mapTheme: value));
+  }
+
+  Future<void> setMapSource(String value) async {
+    await updateSettings(_settings.copyWith(mapSource: value));
   }
 
   Future<void> setNotificationsEnabled(bool value) async {
@@ -243,6 +257,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(
       _settings.copyWith(batterySleepWarningDismissed: true),
     );
+  }
+
+  Future<void> setChartsNoticeDismissed(bool value) async {
+    await updateSettings(_settings.copyWith(chartsNoticeDismissed: value));
   }
 
   Future<void> setSenderNameColors(bool value) async {

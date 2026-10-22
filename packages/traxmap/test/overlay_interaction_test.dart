@@ -35,6 +35,8 @@ void main() {
     WidgetTester tester, {
     List<MapOverlay> overlays = const [],
     List<Widget> extraLayers = const [],
+    List<Widget> baseLayers = const [],
+    ValueChanged<bool>? onCoverageChanged,
     MapCamera? camera = _camera,
     MapFit? fit,
   }) async {
@@ -49,6 +51,8 @@ void main() {
           initialFit: fit,
           overlays: overlays,
           extraLayers: extraLayers,
+          baseLayers: baseLayers,
+          onCoverageChanged: onCoverageChanged,
           controller: controller,
           onTap: taps.add,
           onLongPress: longPresses.add,
@@ -187,6 +191,15 @@ void main() {
     await tester.pump();
     expect(controller.camera!.zoom, lessThanOrEqualTo(14 + 1e-6));
     expect(controller.visibleBounds, isNotNull);
+
+    // A box too big for the view stops at minZoom, around its centre.
+    controller.fitBounds(
+      const LatLngBounds(south: 45, west: -80, north: 62, east: -57),
+      minZoom: 6,
+    );
+    await tester.pump();
+    expect(controller.camera!.zoom, closeTo(6, 1e-6));
+    expect(controller.camera!.center.longitude, closeTo(-68.5, 0.01));
   });
 
   testWidgets('initialFit frames the points', (tester) async {
@@ -221,6 +234,73 @@ void main() {
       identical(tester.state(find.byType(fm.FlutterMap)), mapState),
       isTrue,
     );
+  });
+
+  testWidgets('baseLayers sit between the map tiles and the overlays', (
+    tester,
+  ) async {
+    const base = SizedBox(key: Key('base'));
+    await pumpMap(
+      tester,
+      baseLayers: const [base],
+      overlays: const [
+        MapPolygon(
+          id: 'p',
+          points: [_center, LatLng(36.9, -121.8), LatLng(36.9, -121.7)],
+        ),
+        MapMarker(id: 'm', position: _center),
+      ],
+    );
+    final children = tester
+        .widget<fm.FlutterMap>(find.byType(fm.FlutterMap))
+        .children;
+    final baseAt = children.indexWhere((w) => w.key == const Key('base'));
+    expect(baseAt, 1, reason: 'right after the vector tile layer');
+    expect(
+      children.indexWhere((w) => w is fm.PolygonLayer),
+      greaterThan(baseAt),
+    );
+    expect(
+      children.indexWhere((w) => w is fm.MarkerLayer),
+      greaterThan(baseAt),
+    );
+  });
+
+  testWidgets('polygons keep their holes', (tester) async {
+    await pumpMap(
+      tester,
+      overlays: const [
+        MapPolygon(
+          id: 'p',
+          points: [
+            LatLng(36.7, -121.9),
+            LatLng(36.9, -121.9),
+            LatLng(36.9, -121.7),
+            LatLng(36.7, -121.7),
+          ],
+          holes: [
+            [
+              LatLng(36.75, -121.85),
+              LatLng(36.85, -121.85),
+              LatLng(36.8, -121.75),
+            ],
+          ],
+        ),
+      ],
+    );
+    final layer = tester.widget<fm.PolygonLayer>(find.byType(fm.PolygonLayer));
+    expect(layer.polygons.single.holePointsList, hasLength(1));
+  });
+
+  testWidgets('coverage is reported once, false without packs', (tester) async {
+    final reports = <bool>[];
+    await pumpMap(tester, onCoverageChanged: reports.add);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(reports, [false]);
+
+    controller.move(const LatLng(37.2, -122.0), zoom: 12);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(reports, [false], reason: 'only changes are reported');
   });
 
   test('tile bitmaps default to twice the screen density, capped at 4', () {

@@ -18,9 +18,13 @@ the styles here are written against.
 | Downloads packs in the background, with pause, resume and SHA-256 checks (`PackDownloader`); installs, verifies, lists and deletes them (`PackManager`) | Choosing what to download (the app's screen) |
 | Bundled styles: OSM, USGS and NOAA Charts, each light and dark; units | |
 
-**The app must show** the credits from `MapStyleState.credits` (required by
-the OpenStreetMap licence and the data sources), and `MapStyleState.disclaimer`
-when present (chart styles: "Not for navigation").
+**The app must show** these alongside the map:
+- the credits from `MapStyleState.credits`, required by the OpenStreetMap
+  licence and the data sources;
+- `MapStyleState.notices`, the licence notices packs carry in their `notice`
+  metadata (e.g. Copernicus' liability statement);
+- `MapStyleState.disclaimer` when present (chart styles: "Not for
+  navigation").
 
 ## Libraries
 
@@ -76,18 +80,36 @@ controller.fitPoints(points, maxZoom: 15);
 
 - **Zooms are MapLibre zooms**, one lower than flutter_map's. Use
   `MapCamera.fromFlutterMapZoom` when porting numbers.
-- **Packs:** one per kind is used (`base`, `osm`, `contours`, `charts`).
-  Among contours variants (`20ft`, `10m`, …) the one matching `units` wins.
-  A style source whose pack kind isn't installed is dropped, along with its
-  layers.
+- **Packs:**
+  - **Every installed pack of a kind** (`base`, `osm`, `contours`,
+    `charts`) serves that kind's style source together, so neighbouring
+    regions draw as one map. Each tile comes from the first pack that has
+    it (`CompositePmTilesProvider`). Packs cut from one master hold
+    identical tiles where they overlap.
+  - **Pack order** (`StyleContext.packsByKind`): the contours variant
+    matching `units` first (`20ft` vs `10m`), then the newest build. A
+    region that only has the other variant still draws.
+  - **Missing kinds:** a style source whose pack kind isn't installed is
+    dropped, along with its layers.
+  - **Caching:** the decoded-tile cache key covers each file's size and
+    time, so an updated pack never shows stale tiles.
 - **Map and mode:** the user picks a `MapType` (`osm`, `usgs`, `charts`) and
   light or dark. `styles.styleFor(type, dark: …)` (or `styleForBrightness`)
   returns the style id. Contours on/off is the app's choice of whether to
   pass the contours pack. It applies to all three maps, which draw land
   contours from the same contours pack (on charts, over the land fill).
 - **Escape hatch:** `extraLayers` takes raw flutter_map 8.x layers, for
-  anything not yet ported to `MapOverlay`s. It's the only part tied to
-  flutter_map.
+  anything not yet ported to `MapOverlay`s, drawn above everything.
+- **Where no pack covers the view:**
+  - `onCoverageChanged(bool)` reports whether the style's required packs
+    (`StyleInfo.requiredKinds`, from `ovm:requires`) have a tile at the view
+    centre. It fires when the camera settles, and only on a change. It's
+    false below a pack's lowest zoom, and with no packs.
+  - `baseLayers` takes raw flutter_map layers drawn above the map's tiles
+    and below the overlays. MeshTrax puts online raster tiles there while
+    the view isn't covered.
+  - `extraLayers` and `baseLayers` are the only parts of the API tied to
+    flutter_map.
 - **Sharpness:** tile bitmaps are drawn at twice the screen density, capped
   at 4, so lines stay crisp between whole zoom levels. `tileResolution`
   overrides it on memory-constrained devices.
@@ -121,8 +143,21 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
   every response; R2 does. A pack rebuilt mid-download changes its ETag, so
   the download starts over.
 - **Install:** the file lands next to the packs as `<id>.pmtiles.download`.
-  `PackManager.install(move: true)` checks the index's SHA-256 and renames it
-  into place, so there's no second copy, and a bad file is deleted.
+  `PackManager.install(move: true)` checks the index's SHA-256 (on a
+  background isolate) and renames it into place, so there's no second copy,
+  and a bad file is deleted.
+- **Builds and updates:** an installed pack is named
+  `<id>@<first 12 hex of its sha256>.pmtiles`.
+  - **Update check:** `Pack.isBuild(entry.sha256)` tells the app whether
+    the index has a newer build.
+  - **Installing an update:** it goes beside the old build, which is then
+    deleted. The map gets a new file to reload from.
+  - **Windows:** an open file can't be deleted, so `listInstalled` removes
+    the leftover build on a later call.
+- **Wi‑Fi only:** `setRequiresWiFi(true)` holds every download, running
+  ones included, until the device is on Wi‑Fi. Phones only.
+- **Notifications:** `configureNotifications(running:, paused:, failed:)`
+  sets translated titles; call it once the app knows its locale.
 - **Restore:** `restore()` re-queues downloads the app was killed during, and
   installs ones that finished while it was closed.
   - **Desktop:** a killed download restarts from 0%, and the plugin leaves
@@ -138,6 +173,11 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
 
 The app-side notebook (decisions, pitfalls found so far, routing, open
 questions) is [`docs/offline-maps.md`](../../docs/offline-maps.md).
+The integration roadmap (screens, phases, testing on the Pi) is
+[`docs/offline-maps-roadmap.md`](../../docs/offline-maps-roadmap.md). Where it
+differs from the notes below, the roadmap wins. For example, the picker
+draws on online tiles instead of a bundled world pack, and packs pair with
+regions by region path.
 
 | MeshTrax today | traxmap |
 | --- | --- |

@@ -2,16 +2,15 @@ import '../utils/platform_info.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:traxmap/traxmap.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/server_login_service.dart';
 import '../services/storage_service.dart';
-import '../services/map_tile_cache_service.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../utils/app_logger.dart';
+import 'app_map.dart';
 import 'routing_dialog.dart';
 
 class RepeaterLoginDialog extends StatefulWidget {
@@ -258,42 +257,33 @@ class _RepeaterLoginDialogState extends State<RepeaterLoginDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (repeater.hasLocation) ...[
+                  // Web has no map packs service, so no map.
+                  if (repeater.hasLocation && !PlatformInfo.isWeb) ...[
                     SizedBox(
                       height: 180,
                       child: ExcludeSemantics(
-                        child: FlutterMap(
-                          options: MapOptions(
-                          initialCenter: LatLng(repeater.latitude!, repeater.longitude!),
-                          initialZoom: 14.0,
-                          interactionOptions: const InteractionOptions(
-                            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                        child: AppMap(
+                          compact: true,
+                          initialCamera: MapCamera(
+                            center: LatLng(repeater.latitude!, repeater.longitude!),
+                            zoom: 13,
                           ),
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate: kMapTileUrlTemplate,
-                            userAgentPackageName: MapTileCacheService.userAgentPackageName,
-                            tileProvider: context.read<MapTileCacheService>().tileProvider,
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: LatLng(repeater.latitude!, repeater.longitude!),
-                                width: 40,
-                                height: 40,
-                                child: const Icon(
-                                  Icons.cell_tower,
-                                  color: Colors.red,
-                                  size: 32,
-                                ),
+                          overlays: [
+                            MapMarker(
+                              id: 'repeater',
+                              position: LatLng(repeater.latitude!, repeater.longitude!),
+                              size: const Size(40, 40),
+                              interactive: false,
+                              child: const Icon(
+                                Icons.cell_tower,
+                                color: Colors.red,
+                                size: 32,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 16),
                   ],
                   Text(

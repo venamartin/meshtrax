@@ -82,6 +82,9 @@ class MapLine extends MapOverlay {
 
 class MapPolygon extends MapOverlay {
   final List<LatLng> points;
+
+  /// Rings cut out of the polygon (lakes, enclaves).
+  final List<List<LatLng>> holes;
   final Color fillColor;
   final Color strokeColor;
   final double strokeWidth;
@@ -89,6 +92,7 @@ class MapPolygon extends MapOverlay {
   const MapPolygon({
     required super.id,
     required this.points,
+    this.holes = const [],
     this.fillColor = const Color(0x332E7D32),
     this.strokeColor = const Color(0xFF2E7D32),
     this.strokeWidth = 1.5,

@@ -225,19 +225,6 @@
   "appSettings_last6Hours": "Letzte 6 Stunden",
   "appSettings_last24Hours": "Letzte 24 Stunden",
   "appSettings_lastWeek": "Letzte Woche",
-  "appSettings_offlineMapCache": "Offline-Karten-Cache",
-  "appSettings_noAreaSelected": "Kein Bereich ausgewählt",
-  "appSettings_areaSelectedZoom": "Ausgewählte Fläche (Zoom {minZoom}-{maxZoom})",
-  "@appSettings_areaSelectedZoom": {
-    "placeholders": {
-      "minZoom": {
-        "type": "int"
-      },
-      "maxZoom": {
-        "type": "int"
-      }
-    }
-  },
   "appSettings_debugCard": "Fehlerbehebung",
   "appSettings_appDebugLogging": "App-Debug-Protokollierung",
   "appSettings_appDebugLoggingSubtitle": "Protokolliere App-Debug-Nachrichten zur Fehlerbehebung",
@@ -623,104 +610,16 @@
   },
   "map_connectToShareMarkers": "Verbinde ein Gerät, um Marker zu teilen",
   "map_filterNodes": "Knotenfilter",
-  "map_nodeTypes": "Knotentypen",
   "map_chatNodes": "Chat-Knoten",
   "map_repeaters": "Repeater",
   "map_otherNodes": "Andere Knoten",
   "map_keyPrefix": "Schlüsselpräfix",
   "map_filterByKeyPrefix": "Filter nach Schlüsselpräfix",
   "map_publicKeyPrefix": "Schlüsselpräfix",
-  "map_markers": "Marker",
-  "map_showSharedMarkers": "Zeige gemeinsam genutzte Marker",
   "map_lastSeenTime": "Letzte Sichtung",
   "map_sharedPin": "Gemeinsames Passwort",
   "map_joinRoom": "Beitreten Sie dem Raum",
   "map_manageRepeater": "Repeater verwalten",
-  "mapCache_title": "Offline-Karten-Cache",
-  "mapCache_selectAreaFirst": "Wählen Sie zuerst einen Bereich zum Zwischenspeichern aus.",
-  "mapCache_noTilesToDownload": "Keine Kacheln für diese Region zum Herunterladen verfügbar.",
-  "mapCache_downloadTilesTitle": "Herunterladen von Kacheln",
-  "mapCache_downloadTilesPrompt": "Laden {count} Kacheln für den Offline-Bereich herunter?",
-  "@mapCache_downloadTilesPrompt": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadAction": "Herunterladen",
-  "mapCache_cachedTiles": "Zwischengespeicherte {count} Kacheln",
-  "@mapCache_cachedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_cachedTilesWithFailed": "Zwischengespeicherte {downloaded} Kacheln ({failed} fehlgeschlagen)",
-  "@mapCache_cachedTilesWithFailed": {
-    "placeholders": {
-      "downloaded": {
-        "type": "int"
-      },
-      "failed": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_clearOfflineCacheTitle": "Leere Offline-Cache",
-  "mapCache_clearOfflineCachePrompt": "Alle zwischengespeicherten Kartenraster entfernen?",
-  "mapCache_offlineCacheCleared": "Offline-Cache gelöscht",
-  "mapCache_noAreaSelected": "Kein Bereich ausgewählt",
-  "mapCache_cacheArea": "Zwischenspeicherbereich",
-  "mapCache_useCurrentView": "Aktuelle Ansicht verwenden",
-  "mapCache_zoomRange": "Zoom Bereich",
-  "mapCache_estimatedTiles": "Geschätzte Kacheln: {count}",
-  "@mapCache_estimatedTiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadedTiles": "Heruntergeladen {completed} / {total}",
-  "@mapCache_downloadedTiles": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_downloadTilesButton": "Herunterladen von Kacheln",
-  "mapCache_clearCacheButton": "Cache leeren",
-  "mapCache_failedDownloads": "Fehlgeschlagene Downloads: {count}",
-  "@mapCache_failedDownloads": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "mapCache_boundsLabel": "N {north}, S {south}, E {east}, W {west}",
-  "@mapCache_boundsLabel": {
-    "placeholders": {
-      "north": {
-        "type": "String"
-      },
-      "south": {
-        "type": "String"
-      },
-      "east": {
-        "type": "String"
-      },
-      "west": {
-        "type": "String"
-      }
-    }
-  },
   "time_justNow": "Gerade eben",
   "time_minutesAgo": "{minutes} Minuten her",
   "@time_minutesAgo": {
@@ -1783,7 +1682,6 @@
   "common_deleteAll": "Alles löschen",
   "discoveredContacts_deleteContactAllContent": "Sind Sie sicher, dass Sie alle gefundenen Kontakte löschen möchten?",
   "discoveredContacts_deleteContactAll": "Alle entdeckten Kontakte löschen",
-  "map_showGuessedLocations": "Zeige die vermuteten Knotenpositionen",
   "map_guessedLocation": "Geschätzter Ort",
   "usbScreenSubtitle": "Wählen Sie ein erkannten serielles Gerät aus und verbinden Sie es direkt mit Ihrem MeshCore-Knoten.",
   "connectionChoiceUsbLabel": "USB",

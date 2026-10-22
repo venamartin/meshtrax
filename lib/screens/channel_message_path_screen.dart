@@ -2,13 +2,13 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
+import 'package:traxmap/latlong2.dart';
+import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 
 import '../connector/meshcore_connector.dart';
-import '../services/map_tile_cache_service.dart';
 import '../services/app_settings_service.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
@@ -19,6 +19,7 @@ import '../models/resolved_hop.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/path_resolver.dart';
 import '../widgets/adaptive_app_bar_title.dart';
+import '../widgets/app_map.dart';
 
 class ChannelMessagePathScreen extends StatelessWidget {
   final ChannelMessage message;
@@ -295,14 +296,19 @@ class ChannelMessagePathMapScreen extends StatefulWidget {
 
 class _ChannelMessagePathMapScreenState
     extends State<ChannelMessagePathMapScreen> {
-  static const double _labelZoomThreshold = 8.5;
+  // MapLibre zoom from which hop labels show.
+  static const double _labelMinZoom = 7.5;
 
-  final MapController _mapController = MapController();
+  final _mapController = OfflineMapController();
   Uint8List? _selectedPath;
   double _pathDistance = 0.0;
-  bool _showNodeLabels = true;
-  bool _didReceivePositionUpdate = false;
   int? _focusedHopIndex;
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -335,10 +341,10 @@ class _ChannelMessagePathMapScreenState
 
   void _focusHop(ResolvedHop hop) {
     if (!hop.hasLocation) return;
-    final targetZoom = _didReceivePositionUpdate
-        ? max(_mapController.camera.zoom, 10.0)
-        : 12.0;
-    _mapController.move(hop.effectivePosition!, targetZoom);
+    _mapController.move(
+      hop.effectivePosition!.toOvm(),
+      zoom: max(_mapController.camera?.zoom ?? 0, 9.0),
+    );
   }
 
   void _onHopTapped(ResolvedHop hop) {
@@ -355,7 +361,6 @@ class _ChannelMessagePathMapScreenState
       builder: (context, connector, _) {
         final settings = context.watch<AppSettingsService>().settings;
         final isImperial = settings.unitSystem == UnitSystem.imperial;
-        final tileCache = context.read<MapTileCacheService>();
         final primaryPath = PathResolver.selectPrimaryPath(
           widget.message.pathBytes,
           widget.message.pathVariants,
@@ -396,44 +401,17 @@ class _ChannelMessagePathMapScreenState
           stride: widget.message.pathHashSize,
         );
 
-        final points = <LatLng>[];
-
-        if ((widget.message.isOutgoing && !widget.channelMessage) ||
-            (widget.message.isOutgoing && widget.channelMessage)) {
-          points.add(LatLng(connector.selfLatitude!, connector.selfLongitude!));
-        }
-
-        for (final hop in hops) {
-          if (hop.hasLocation) {
-            points.add(hop.effectivePosition!);
-          }
-        }
-
-        if ((!widget.message.isOutgoing && !widget.channelMessage) ||
-            (!widget.message.isOutgoing && widget.channelMessage)) {
-          points.add(LatLng(connector.selfLatitude!, connector.selfLongitude!));
-        }
-
-        final polylines = points.length > 1
-            ? [
-                Polyline(
-                  points: points,
-                  strokeWidth: 4,
-                  color: Colors.blueAccent,
-                ),
-              ]
-            : <Polyline>[];
-
-        final initialCenter = points.isNotEmpty
-            ? points.first
-            : const LatLng(0, 0);
-        final initialZoom = points.isNotEmpty ? 13.0 : 2.0;
-        if (!_didReceivePositionUpdate) {
-          _showNodeLabels = initialZoom >= _labelZoomThreshold;
-        }
-        final bounds = points.length > 1
-            ? LatLngBounds.fromPoints(points)
+        // The radio's own position, when it has one, ends or starts the line.
+        final self =
+            connector.selfLatitude != null && connector.selfLongitude != null
+            ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
+        final points = <LatLng>[
+          if (widget.message.isOutgoing) ?self,
+          for (final hop in hops)
+            if (hop.hasLocation) hop.effectivePosition!,
+          if (!widget.message.isOutgoing) ?self,
+        ];
         final mapKey = ValueKey(
           '${PathHelper.formatPathHex(selectedPath, stride: widget.message.pathHashSize)},${context.l10n.pathTrace_you}',
         );
@@ -445,56 +423,8 @@ class _ChannelMessagePathMapScreenState
           ),
           body: SafeArea(
             top: false,
-            child: Stack(
+            child: Column(
               children: [
-                FlutterMap(
-                  key: mapKey,
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: initialCenter,
-                    initialZoom: initialZoom,
-                    initialCameraFit: bounds == null
-                        ? null
-                        : CameraFit.bounds(
-                            bounds: bounds,
-                            padding: const EdgeInsets.all(64),
-                            maxZoom: 16,
-                          ),
-                    minZoom: 2.0,
-                    maxZoom: 18.0,
-                    interactionOptions: InteractionOptions(
-                      flags: ~InteractiveFlag.rotate,
-                    ),
-                    onPositionChanged: (camera, hasGesture) {
-                      final shouldShow = camera.zoom >= _labelZoomThreshold;
-                      if (!_didReceivePositionUpdate ||
-                          shouldShow != _showNodeLabels) {
-                        if (!mounted) return;
-                        setState(() {
-                          _didReceivePositionUpdate = true;
-                          _showNodeLabels = shouldShow;
-                        });
-                      }
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: kMapTileUrlTemplate,
-                      tileProvider: tileCache.tileProvider,
-                      userAgentPackageName:
-                          MapTileCacheService.userAgentPackageName,
-                      maxZoom: 19,
-                    ),
-                    if (polylines.isNotEmpty)
-                      PolylineLayer(polylines: polylines),
-                    MarkerLayer(
-                      markers: _buildHopMarkers(
-                        hops,
-                        showLabels: _showNodeLabels,
-                      ),
-                    ),
-                  ],
-                ),
                 if (observedPaths.length > 1)
                   _buildPathSelector(context, observedPaths, selectedIndex, (
                     index,
@@ -504,18 +434,50 @@ class _ChannelMessagePathMapScreenState
                       _focusedHopIndex = null;
                     });
                   }),
-                if (points.isEmpty)
-                  Center(
-                    child: Card(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      child: Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text(
-                          context.l10n.channelPath_noRepeaterLocations,
+                Expanded(
+                  child: Stack(
+                    children: [
+                      AppMap(
+                        key: mapKey,
+                        controller: _mapController,
+                        initialCamera: MapCamera(
+                          center: (points.firstOrNull ?? const LatLng(0, 0))
+                              .toOvm(),
+                          zoom: points.isNotEmpty ? 12 : 1,
                         ),
+                        initialFit: points.length > 1
+                            ? MapFit.points(
+                                points.toOvm(),
+                                padding: const EdgeInsets.all(64),
+                                maxZoom: 15,
+                              )
+                            : null,
+                        overlays: [
+                          if (points.length > 1)
+                            MapLine(
+                              id: 'path',
+                              points: points.toOvm(),
+                              color: Colors.blueAccent,
+                              width: 4,
+                            ),
+                          ..._buildHopMarkers(hops, self),
+                        ],
                       ),
-                    ),
+                      if (points.isEmpty)
+                        Center(
+                          child: Card(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: Text(
+                                context.l10n.channelPath_noRepeaterLocations,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
                 _buildLegendCard(context, hops, isImperial),
               ],
             ),
@@ -536,187 +498,100 @@ class _ChannelMessagePathMapScreenState
     final label = selectedPath.isPrimary
         ? l10n.channelPath_primaryPath(selectedIndex + 1)
         : l10n.channelPath_pathLabel(selectedIndex + 1);
-    return Positioned(
-      left: 16,
-      right: 16,
-      top: 16,
-      child: SafeArea(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.channelPath_observedPathHeader,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    isExpanded: true,
-                    value: selectedIndex,
-                    items: [
-                      for (int i = 0; i < paths.length; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text(
-                            '${paths[i].isPrimary ? l10n.channelPath_primaryPath(i + 1) : l10n.channelPath_pathLabel(i + 1)}'
-                            ' • ${_formatHopCount(paths[i].getHopCount(widget.message.pathHashSize), l10n)}',
-                          ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.channelPath_observedPathHeader,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  isExpanded: true,
+                  value: selectedIndex,
+                  items: [
+                    for (int i = 0; i < paths.length; i++)
+                      DropdownMenuItem(
+                        value: i,
+                        child: Text(
+                          '${paths[i].isPrimary ? l10n.channelPath_primaryPath(i + 1) : l10n.channelPath_pathLabel(i + 1)}'
+                          ' • ${_formatHopCount(paths[i].getHopCount(widget.message.pathHashSize), l10n)}',
                         ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      onSelected(value);
-                    },
-                  ),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    onSelected(value);
+                  },
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.channelPath_selectedPathLabel(
-                    label,
-                    PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize),
-                  ),
-                  style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.channelPath_selectedPathLabel(
+                  label,
+                  PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize),
                 ),
-              ],
-            ),
+                style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  List<Marker> _buildHopMarkers(
-    List<ResolvedHop> hops, {
-    required bool showLabels,
-  }) {
-    final markers = <Marker>[];
-    for (final hop in hops) {
-      if (!hop.hasLocation) continue;
-      final point = hop.effectivePosition!;
-      markers.add(
-        Marker(
-          point: point,
-          width: 35,
-          height: 35,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              hop.index.toString(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
+  List<MapMarker> _buildHopMarkers(List<ResolvedHop> hops, LatLng? self) => [
+    for (final hop in hops)
+      if (hop.hasLocation)
+        MapMarker(
+          id: 'hop:${hop.index}',
+          position: hop.effectivePosition!.toOvm(),
+          size: const Size(35, 35),
+          label: hop.contact?.name ?? hop.fullPrefixLabel,
+          labelMinZoom: _labelMinZoom,
+          child: _badge(Colors.green, hop.index.toString()),
         ),
-      );
-      if (showLabels) {
-        markers.add(
-          _buildNodeLabelMarker(
-            point: point,
-            label: hop.contact?.name ?? hop.fullPrefixLabel,
-          ),
-        );
-      }
-    }
-
-    final selfLat = context.read<MeshCoreConnector>().selfLatitude;
-    final selfLon = context.read<MeshCoreConnector>().selfLongitude;
-    if (selfLat != null && selfLon != null) {
-      final selfPoint = LatLng(selfLat, selfLon);
-      markers.add(
-        Marker(
-          point: selfPoint,
-          width: 35,
-          height: 35,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.teal,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              context.l10n.pathTrace_you,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ),
-      );
-      if (showLabels) {
-        markers.add(
-          _buildNodeLabelMarker(
-            point: selfPoint,
-            label: context.l10n.pathTrace_you,
-          ),
-        );
-      }
-    }
-
-    return markers;
-  }
-
-  Marker _buildNodeLabelMarker({required LatLng point, required String label}) {
-    return Marker(
-      point: point,
-      width: 120,
-      height: 24,
-      alignment: Alignment.topCenter,
-      child: IgnorePointer(
-        child: Transform.translate(
-          offset: const Offset(0, -20),
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ),
+    if (self != null)
+      MapMarker(
+        id: 'self',
+        position: self.toOvm(),
+        size: const Size(35, 35),
+        label: context.l10n.pathTrace_you,
+        labelMinZoom: _labelMinZoom,
+        child: _badge(Colors.teal, context.l10n.pathTrace_you),
       ),
-    );
-  }
+  ];
+
+  /// A round white-ringed badge with [text] in it.
+  Widget _badge(Color color, String text) => Container(
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 2),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 12,
+      ),
+    ),
+  );
 
   Widget _buildLegendCard(
     BuildContext context,
@@ -728,10 +603,8 @@ class _ChannelMessagePathMapScreenState
     final estimatedHeight = 72.0 + (hops.length * 56.0);
     final cardHeight = max(96.0, min(maxHeight, estimatedHeight));
 
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: 16,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: SizedBox(
         height: cardHeight,
         child: Card(

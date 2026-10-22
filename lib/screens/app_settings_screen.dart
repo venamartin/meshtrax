@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:traxmap/traxmap.dart' show PackKind;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -8,13 +9,15 @@ import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
 import '../services/chat_text_scale_service.dart';
+import '../services/map_packs_service.dart';
 import '../services/notification_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
+import '../utils/format_bytes.dart';
 import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
-import 'map_cache_screen.dart';
+import 'offline_maps_screen.dart';
 import 'path_graph_screen.dart';
 
 class AppSettingsScreen extends StatelessWidget {
@@ -687,26 +690,24 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showUnitsDialog(context, settingsService),
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.download_outlined),
-            title: Text(context.l10n.appSettings_offlineMapCache),
-            subtitle: Text(
-              settingsService.settings.mapCacheBounds == null
-                  ? context.l10n.appSettings_noAreaSelected
-                  : context.l10n.appSettings_areaSelectedZoom(
-                      settingsService.settings.mapCacheMinZoom,
-                      settingsService.settings.mapCacheMaxZoom,
-                    ),
+          if (!PlatformInfo.isWeb) ...[
+            const Divider(height: 1),
+            const _OfflineMapsTile(),
+          ],
+          // Downloads run in the app on desktops, so only phones can wait
+          // for Wi-Fi.
+          if (PlatformInfo.isMobile) ...[
+            const Divider(height: 1),
+            SwitchListTile(
+              secondary: const Icon(Icons.wifi),
+              title: Text(context.l10n.appSettings_mapDownloadsWifiOnly),
+              subtitle: Text(
+                context.l10n.appSettings_mapDownloadsWifiOnlySubtitle,
+              ),
+              value: settingsService.settings.mapDownloadsWifiOnly,
+              onChanged: settingsService.setMapDownloadsWifiOnly,
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MapCacheScreen()),
-              );
-            },
-          ),
+          ],
         ],
       ),
     );
@@ -1179,3 +1180,43 @@ class AppSettingsScreen extends StatelessWidget {
   }
 }
 
+/// "Offline maps" row: what's downloaded, or how many updates wait.
+class _OfflineMapsTile extends StatelessWidget {
+  const _OfflineMapsTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final maps = context.watch<MapPacksService>();
+    // Chart areas count apart from land regions: paths holding only charts.
+    final kinds = <String, Set<PackKind>>{};
+    for (final p in maps.installed) {
+      if (p.region case final region?) (kinds[region] ??= {}).add(p.kind);
+    }
+    final charts = kinds.values
+        .where((k) => k.every((kind) => kind == PackKind.charts))
+        .length;
+    final regions = kinds.length - charts;
+    final updates = maps.updates.length;
+    return ListTile(
+      leading: const Icon(Icons.download_for_offline_outlined),
+      title: Text(l10n.appSettings_offlineMaps),
+      subtitle: Text(
+        updates > 0
+            ? l10n.appSettings_offlineMapsUpdates(updates)
+            : kinds.isEmpty
+            ? l10n.appSettings_offlineMapsNone
+            : [
+                if (regions > 0) l10n.appSettings_offlineMapsRegions(regions),
+                if (charts > 0) l10n.appSettings_offlineMapsChartAreas(charts),
+                formatBytes(maps.installedBytes),
+              ].join(' · '),
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const OfflineMapsScreen()),
+      ),
+    );
+  }
+}
