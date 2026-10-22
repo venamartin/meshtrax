@@ -1788,7 +1788,6 @@
   "appSettings_languageHu": "Hongaars",
   "appSettings_languageJa": "Japanisch",
   "appSettings_languageKo": "Koreaans",
-  "radioStats_tooltip": "Statistieken voor radio en mesh-netwerken",
   "radioStats_screenTitle": "Statistieken over radio",
   "radioStats_notConnected": "Verbind met een apparaat om radio-statistieken te bekijken.",
   "radioStats_firmwareTooOld": "Om de statistieken via radio te kunnen gebruiken, is firmware versie 8 of een nieuwere vereist.",

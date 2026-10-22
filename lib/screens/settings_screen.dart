@@ -786,11 +786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: isGPSEnabled,
                   onChanged: (value) async {
                     setDialogState(() => isGPSEnabled = value);
-                    if (value) {
-                      await connector.setCustomVar("gps:1");
-                    } else {
-                      await connector.setCustomVar("gps:0");
-                    }
+                    await connector.setGps(value);
                   },
                 ),
               ],

@@ -1759,7 +1759,6 @@
   "appSettings_languageHu": "ハンガリー語",
   "appSettings_languageJa": "日本語",
   "appSettings_languageKo": "韓国語",
-  "radioStats_tooltip": "ラジオおよびメッシュに関する統計",
   "radioStats_screenTitle": "ラジオの統計",
   "radioStats_notConnected": "ラジオの統計情報を表示するために、デバイスに接続してください。",
   "radioStats_firmwareTooOld": "ラジオの統計機能を使用するには、v8またはそれ以降のファームウェアが必要です。",

@@ -1816,7 +1816,6 @@
   "appSettings_jumpToOldestUnreadSubtitle": "Cuando abras una conversación con mensajes sin leer, desplázate hacia el primer mensaje sin leer en lugar del más reciente.",
   "appSettings_languageJa": "Japonés",
   "appSettings_languageKo": "Coreano",
-  "radioStats_tooltip": "Estadísticas de radio y malla",
   "radioStats_screenTitle": "Estadísticas de radio",
   "radioStats_notConnected": "Conéctese a un dispositivo para visualizar estadísticas de radio.",
   "radioStats_firmwareTooOld": "Las estadísticas de radio requieren un firmware compatible v8 o posterior.",

@@ -93,19 +93,19 @@ class _MapScreenState extends State<MapScreen> {
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
+  late final MeshCoreConnector _connector;
 
   @override
   void initState() {
     super.initState();
     _loadRemovedMarkers();
-    final connector = context.read<MeshCoreConnector>();
+    final connector = _connector = context.read<MeshCoreConnector>();
     // A new channel message may carry a pin.
     _channelLatest = connector.watchChannelLatest().listen((_) {
       if (mounted) unawaited(_refreshChannelMarkers(connector));
     });
-    // A radio with GPS moves with its owner: start "You" from where it is
-    // now; the connector refreshes it every 30 s after that.
-    unawaited(connector.requestSelfPosition());
+    // A radio with GPS moves with its owner: "You" follows it every 10 s.
+    connector.addSelfPositionViewer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) connector.getChannels();
     });
@@ -114,9 +114,45 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _saveCamera?.cancel();
+    _connector.removeSelfPositionViewer();
     unawaited(_channelLatest?.cancel());
     _mapController.dispose();
     super.dispose();
+  }
+
+  /// My location: the radio's GPS position. With the GPS off, offers to turn
+  /// it on, since a first fix can take minutes.
+  Future<void> _myLocation(
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+  ) async {
+    final l10n = context.l10n;
+    if (!connector.gpsOn) {
+      final turnOn = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.gps_turnOnTitle),
+          content: Text(l10n.gps_turnOnBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.gps_notNow),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.gps_turnOn),
+            ),
+          ],
+        ),
+      );
+      if (turnOn == true) await connector.setGps(true);
+      return;
+    }
+    if (selfPosition == null) {
+      showDismissibleSnackBar(context, content: Text(l10n.gps_noPosition));
+      return;
+    }
+    MapControls.centerOn(_mapController, selfPosition.toOvm());
   }
 
   void _onCameraChanged(MapCamera camera) {
@@ -524,7 +560,17 @@ class _MapScreenState extends State<MapScreen> {
                       connector.pathHashByteWidth,
                     ),
                     ...sharedMarkers.map(_buildSharedMarker),
-                    if (selfPosition != null)
+                    // The GPS's live position is a blue dot; a position typed
+                    // into the radio is the "You" pin.
+                    if (selfPosition != null && connector.gpsOn)
+                      MapMarker(
+                        id: 'self',
+                        position: selfPosition.toOvm(),
+                        size: const Size(24, 24),
+                        interactive: false,
+                        child: const _GpsDot(),
+                      )
+                    else if (selfPosition != null)
                       MapMarker(
                         id: 'self',
                         position: selfPosition.toOvm(),
@@ -560,7 +606,10 @@ class _MapScreenState extends State<MapScreen> {
                   ),
             floatingActionButton: MapControls(
               controller: _mapController,
-              radioPosition: selfPosition?.toOvm(),
+              onMyLocation: connector.hasGps
+                  ? () => unawaited(_myLocation(connector, selfPosition))
+                  : null,
+              gpsOff: !connector.gpsOn,
               onLayers: () => showMapLayersSheet(
                 context,
                 extra: _nodeLayers,
@@ -2491,6 +2540,21 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
+}
+
+/// The radio's live GPS position: a blue dot.
+class _GpsDot extends StatelessWidget {
+  const _GpsDot();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.blue[600],
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 3),
+      boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
+    ),
+  );
 }
 
 class _GuessedLocation {

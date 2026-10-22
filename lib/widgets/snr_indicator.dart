@@ -81,15 +81,6 @@ class SNRIndicator extends StatelessWidget {
 
   const SNRIndicator({super.key, required this.connector});
 
-  bool _isValidSelfLocation(double lat, double lon) {
-    const double epsilon = 1e-6;
-    return (lat.abs() > epsilon || lon.abs() > epsilon) &&
-        lat >= -90.0 &&
-        lat <= 90.0 &&
-        lon >= -180.0 &&
-        lon <= 180.0;
-  }
-
   @override
   Widget build(BuildContext context) {
     final directRepeaters = connector.directRepeaters;
@@ -103,18 +94,6 @@ class SNRIndicator extends StatelessWidget {
       directBestRepeaters.isNotEmpty ? directRepeater!.snr : null,
       connector.currentSf,
     );
-
-    final selfLat = connector.selfLatitude;
-    final selfLon = connector.selfLongitude;
-    final hasValidLocation = selfLat != null && selfLon != null && _isValidSelfLocation(selfLat, selfLon);
-    final isLiveGps = connector.advertLocationPolicy == 1;
-
-    IconData locationIcon;
-    if (hasValidLocation) {
-      locationIcon = isLiveGps ? Icons.satellite_alt : Icons.location_on;
-    } else {
-      locationIcon = Icons.location_off;
-    }
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -130,24 +109,13 @@ class SNRIndicator extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  connector.isDiscovering
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(snrUi.icon, size: 18, color: snrUi.color),
-                  const SizedBox(width: 4),
-                  Icon(
-                    locationIcon,
-                    size: 14,
-                    color: hasValidLocation ? Colors.green : Colors.red,
-                  ),
-                ],
-              ),
+              connector.isDiscovering
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(snrUi.icon, size: 18, color: snrUi.color),
               Text(
                 connector.isDiscovering ? 'Wait' : snrUi.text,
                 style: TextStyle(fontSize: 12, color: snrUi.color),

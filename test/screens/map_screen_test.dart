@@ -29,10 +29,25 @@ import 'package:meshtrax/widgets/quick_switch_bar.dart';
 import '../helpers/map_fakes.dart';
 
 class _FakeConnector extends MeshCoreConnector {
-  _FakeConnector({required this.nodes, this.self});
+  _FakeConnector({required this.nodes, this.self, this.gps});
 
   final List<Contact> nodes;
   final ll.LatLng? self;
+
+  /// The radio's `gps` setting: null when it has no GPS module.
+  String? gps;
+  final gpsSets = <bool>[];
+
+  @override
+  bool get hasGps => gps != null;
+  @override
+  bool get gpsOn => gps == '1';
+  @override
+  Future<void> setGps(bool on) async {
+    gpsSets.add(on);
+    gps = on ? '1' : '0';
+    notifyListeners();
+  }
 
   @override
   List<Contact> get allContacts => nodes;
@@ -276,36 +291,85 @@ void main() {
   MapCamera camera(WidgetTester tester) =>
       tester.widget<AppMap>(find.byType(AppMap)).controller!.camera!;
 
-  testWidgets("My location: the radio's position", (tester) async {
+  testWidgets("GPS on: My location goes to the GPS's blue dot", (
+    tester,
+  ) async {
     await pumpMap(
       tester,
-      _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+      _FakeConnector(
+        nodes: const [],
+        self: const ll.LatLng(41.81, -71.42),
+        gps: '1',
+      ),
     );
     await tester.tap(find.byTooltip('My location'));
     await tester.pump();
     expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
     expect(camera(tester).zoom, greaterThanOrEqualTo(14));
+    expect(
+      overlay<MapMarker>(tester, 'self').label,
+      isNull,
+      reason: 'the blue dot, not the "You" pin',
+    );
+  });
+
+  testWidgets('GPS off: My location offers to turn it on', (tester) async {
+    final connector = _FakeConnector(
+      nodes: const [],
+      self: const ll.LatLng(41.81, -71.42),
+      gps: '0',
+    );
+    await pumpMap(tester, connector);
+    expect(overlay<MapMarker>(tester, 'self').label, 'You');
+    await tester.tap(find.byTooltip('My location'));
+    await tester.pump();
+    expect(find.text('Turn on GPS?'), findsOneWidget);
+    await tester.tap(find.text('Turn on'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(connector.gpsSets, [true]);
+    expect(overlay<MapMarker>(tester, 'self').label, isNull);
+  });
+
+  testWidgets('GPS on, no position yet: says so', (tester) async {
+    await pumpMap(
+      tester,
+      _FakeConnector(nodes: const [], self: const ll.LatLng(0, 0), gps: '1'),
+    );
+    await tester.tap(find.byTooltip('My location'));
+    await tester.pump();
+    expect(find.textContaining('No position yet'), findsOneWidget);
+  });
+
+  testWidgets('no GPS module: no My location; "You" is the typed position', (
+    tester,
+  ) async {
+    await pumpMap(
+      tester,
+      _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+    );
+    expect(find.byTooltip('My location'), findsNothing);
     expect(overlay<MapMarker>(tester, 'self').label, 'You');
   });
 
-  testWidgets('a radio without a position: no My location', (tester) async {
+  testWidgets('a radio without a position: no "You"', (tester) async {
     // A radio with no position reports 0, 0: never centre on it.
     await pumpMap(
       tester,
       _FakeConnector(nodes: const [], self: const ll.LatLng(0, 0)),
     );
-    expect(find.byTooltip('My location'), findsNothing);
-    expect(
-      overlays(tester).where((o) => o.id == 'self'),
-      isEmpty,
-      reason: 'no "You" at 0, 0 either',
-    );
+    expect(overlays(tester).where((o) => o.id == 'self'), isEmpty);
   });
 
   testWidgets('no zoom buttons on phones: they pinch', (tester) async {
     await pumpMap(
       tester,
-      _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+      _FakeConnector(
+        nodes: const [],
+        self: const ll.LatLng(41.81, -71.42),
+        gps: '1',
+      ),
     );
     expect(find.byTooltip('Zoom in'), findsNothing);
     expect(find.byTooltip('My location'), findsOneWidget);

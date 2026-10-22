@@ -1794,7 +1794,6 @@
   "appSettings_languageHu": "匈牙利",
   "appSettings_languageJa": "日语",
   "appSettings_languageKo": "韩语",
-  "radioStats_tooltip": "无线电和网状结构统计数据",
   "radioStats_screenTitle": "广播统计数据",
   "radioStats_notConnected": "连接到设备以查看收音机统计信息。",
   "radioStats_firmwareTooOld": "使用无线电统计功能需要配合使用 v8 或更高版本的固件。",

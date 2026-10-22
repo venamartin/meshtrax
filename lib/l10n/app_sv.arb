@@ -1788,7 +1788,6 @@
   "appSettings_languageHu": "Ungerskt",
   "appSettings_languageJa": "Japanska",
   "appSettings_languageKo": "Koreanska",
-  "radioStats_tooltip": "Radio- och mesh-statistik",
   "radioStats_screenTitle": "Radiostation",
   "radioStats_notConnected": "Anslut till en enhet för att visa radiostatistik.",
   "radioStats_firmwareTooOld": "Radio statistik kräver kompatibel firmware version 8 eller senare.",

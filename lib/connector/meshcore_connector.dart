@@ -290,6 +290,14 @@ class RoomLoginEvent {
   int? get role => permissions == null ? null : permissions! & 0x3;
 }
 
+/// The radio's own GPS reading, and when the app read it.
+typedef SelfGpsReading = ({
+  double latitude,
+  double longitude,
+  double altitude,
+  DateTime at,
+});
+
 class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Message windowing to limit memory usage
 
@@ -541,9 +549,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, Timer> _channelMessageTimers = {};
   final Map<String, Timer> _channelRepeatTimers = {};
   final Map<String, int> _channelMessageRetries = {};
-  int _radioStatsPollRefCount = 0;
+  // The connector holds one itself: send pacing reads the radio's airtime
+  // from these stats ([_airtimeBumpStopwatch]).
+  int _radioStatsPollRefCount = 1;
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
+  int _selfPositionViewers = 0;
+
+  /// The radio's latest GPS reading ([requestSelfPosition]), for the GPS
+  /// dialog. A notifier, so a reading that changes nothing rebuilds only it.
+  final ValueNotifier<SelfGpsReading?> selfGps = ValueNotifier(null);
   int _reconnectAttempts = 0;
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
@@ -982,12 +997,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  bool get radioStatsAirActivityPulse {
-    final sw = _airtimeBumpStopwatch;
-    if (sw == null || !sw.isRunning) return false;
-    return sw.elapsed < const Duration(seconds: 2);
-  }
-
   int? get currentFreqHz => _currentFreqHz;
   int? get currentBwHz => _currentBwHz;
   int? get currentSf => _currentSf;
@@ -1013,6 +1022,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int? get firmwareVerCode => _firmwareVerCode;
   String? get firmwareVersion => _firmwareVersion;
   Map<String, String>? get currentCustomVars => _currentCustomVars;
+
+  /// The radio lists a `gps` setting only when it detected a GPS module.
+  bool get hasGps => _currentCustomVars?.containsKey('gps') ?? false;
+  bool get gpsOn => _currentCustomVars?['gps'] == '1';
   int? get batteryMillivolts => _batteryMillivolts;
   int? get storageUsedKb => _storageUsedKb;
   int? get storageTotalKb => _storageTotalKb;
@@ -1446,7 +1459,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// Start of the post-inbound cool-down: the later of BLE message RX time and
-  /// companion airtime bump ([_airtimeBumpStopwatch], same as the activity dot).
+  /// companion airtime bump ([_airtimeBumpStopwatch]).
   DateTime _postTxBackoffAnchor(DateTime lastInboundRxTime) {
     if (!supportsCompanionRadioStats) return lastInboundRxTime;
     final sw = _airtimeBumpStopwatch;
@@ -3603,20 +3616,45 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _batteryPollTimer = null;
   }
 
-  /// A radio with its GPS on can move: ask for its position every 30 s.
-  /// The radio itself refreshes that position from the GPS only every
-  /// `gps_interval` seconds (1 s unless set).
+  /// A radio with its GPS on can move: ask for its position every 60 s, or
+  /// every 10 s while a screen shows it ([addSelfPositionViewer]). The
+  /// position comes in 0.0001° steps (about 11 m), and walking crosses one
+  /// in about 8 s, so asking faster adds little. The radio refreshes it from
+  /// the GPS every `gps_interval` seconds (1 s unless set).
   void _updateGpsPolling() {
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
-    if (!isConnected || _currentCustomVars?['gps'] != '1') return;
-    _gpsPollTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    if (!isConnected || !gpsOn) return;
+    final every = Duration(seconds: _selfPositionViewers > 0 ? 10 : 60);
+    _gpsPollTimer = Timer.periodic(every, (timer) {
       if (!isConnected) {
         timer.cancel();
         return;
       }
       unawaited(requestSelfPosition());
     });
+  }
+
+  /// A screen showing the radio's position opened (the Node Map, the GPS
+  /// dialog): ask now, then every 10 s until the last one closes.
+  void addSelfPositionViewer() {
+    _selfPositionViewers++;
+    unawaited(requestSelfPosition());
+    _updateGpsPolling();
+  }
+
+  void removeSelfPositionViewer() {
+    if (_selfPositionViewers == 0) return;
+    _selfPositionViewers--;
+    _updateGpsPolling();
+  }
+
+  /// Turns the radio's GPS on or off; only off saves power. On also sets the
+  /// radio's default refresh, every second: earlier versions of the app set
+  /// 15 minutes.
+  Future<void> setGps(bool on) async {
+    await setCustomVar('gps:${on ? 1 : 0}');
+    if (on) await setCustomVar('gps_interval:0');
   }
 
   void setPollingInterval(int i) {
@@ -5054,7 +5092,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// ver code 6 is the first that surely has it.
   Future<void> requestSelfPosition() async {
     if (!isConnected ||
-        _currentCustomVars?['gps'] != '1' ||
+        !gpsOn ||
         (_firmwareVerCode ?? 0) < 6) {
       return;
     }
@@ -5075,6 +5113,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       final gps = reading['value'] as Map;
       final lat = gps['latitude'] as double;
       final lon = gps['longitude'] as double;
+      selfGps.value = (
+        latitude: lat,
+        longitude: lon,
+        altitude: gps['altitude'] as double,
+        at: DateTime.now(),
+      );
       // LPP carries 0.0001° (about 11 m), coarser than SELF_INFO: a radio
       // standing still keeps SELF_INFO's figure.
       if (!hasValidLocation(lat, lon) ||
@@ -5101,6 +5145,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         value.substring(0, sep): value.substring(sep + 1),
       };
       _updateGpsPolling();
+      notifyListeners();
     }
   }
 
@@ -9498,6 +9543,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _stopBatteryPolling();
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
+    selfGps.value = null;
     _stopRadioStatsPolling();
     _latestRadioStats = null;
     radioStatsNotifier.value = null;
@@ -9639,6 +9685,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     try {
       _currentCustomVars = _parseKeyValueString(buf.readCString());
       _updateGpsPolling();
+      notifyListeners();
     } catch (e) {
       appLogger.warn('Malformed custom vars frame: $e', tag: 'Connector');
     }
@@ -9734,6 +9781,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _channelMessageTimers.clear();
     radioStatsNotifier.dispose();
+    selfGps.dispose();
     _receivedFramesController.close();
     _roomLoginEventsController.close();
     _blockedCliCommandsController.close();

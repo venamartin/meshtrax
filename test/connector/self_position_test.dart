@@ -50,20 +50,25 @@ Uint8List _selfInfo(Uint8List pubKey, double lat, double lon) {
   return w.toBytes();
 }
 
-List<int> _int24(double degrees) {
-  final v = (degrees * 10000).round() & 0xFFFFFF;
+List<int> _int24(double value, int scale) {
+  final v = (value * scale).round() & 0xFFFFFF;
   return [v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF];
 }
 
 /// PUSH_CODE_TELEMETRY_RESPONSE: [0x8B][reserved][key prefix x6][LPP].
-Uint8List _telemetry(Uint8List pubKey, double lat, double lon) =>
-    Uint8List.fromList([
-      pushCodeTelemetryResponse,
-      0,
-      ...pubKey.sublist(0, 6),
-      1, CayenneLpp.lppVoltage, 0x01, 0x8D, // 3.97 V
-      1, CayenneLpp.lppGps, ..._int24(lat), ..._int24(lon), 0, 0, 0,
-    ]);
+Uint8List _telemetry(
+  Uint8List pubKey,
+  double lat,
+  double lon, {
+  double alt = 0,
+}) => Uint8List.fromList([
+  pushCodeTelemetryResponse,
+  0,
+  ...pubKey.sublist(0, 6),
+  1, CayenneLpp.lppVoltage, 0x01, 0x8D, // 3.97 V
+  1, CayenneLpp.lppGps,
+  ..._int24(lat, 10000), ..._int24(lon, 10000), ..._int24(alt, 100),
+]);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -92,28 +97,48 @@ void main() {
   // GPS off stops the refresh timer.
   tearDown(() => radio(verCode: 9, gps: '0'));
 
-  test('GPS on: asks every 30 s, never with APP_START', () {
+  test('GPS on: asks every 60 s, every 10 s while shown, never APP_START', () {
     fakeAsync((async) {
       final appStarts = c.sentOf(cmdAppStart);
       radio(verCode: 9, gps: '1');
       async.elapse(const Duration(seconds: 61));
-      expect(c.sentOf(cmdSendTelemetryReq), 2);
+      expect(c.sentOf(cmdSendTelemetryReq), 1);
+
+      c.addSelfPositionViewer();
+      expect(c.sentOf(cmdSendTelemetryReq), 2, reason: 'asks on opening');
+      async.elapse(const Duration(seconds: 21));
+      expect(c.sentOf(cmdSendTelemetryReq), 4);
+
+      c.removeSelfPositionViewer();
+      async.elapse(const Duration(seconds: 59));
+      expect(c.sentOf(cmdSendTelemetryReq), 4, reason: 'back to 60 s');
+      async.elapse(const Duration(seconds: 2));
+      expect(c.sentOf(cmdSendTelemetryReq), 5);
 
       radio(verCode: 9, gps: '0');
       async.elapse(const Duration(seconds: 61));
-      expect(c.sentOf(cmdSendTelemetryReq), 2, reason: 'GPS off: no asking');
+      expect(c.sentOf(cmdSendTelemetryReq), 5, reason: 'GPS off: no asking');
       expect(c.sentOf(cmdAppStart), appStarts);
     });
   });
 
-  test('GPS turned on from the app starts the refresh', () {
+  test("GPS on from the app sets the radio's default refresh", () {
     fakeAsync((async) {
+      expect(c.hasGps, isFalse, reason: 'no gps setting: no module');
       radio(verCode: 9, gps: '0');
-      unawaited(c.setCustomVar('gps:1'));
-      unawaited(c.setCustomVar('gps_interval:0'));
-      async.elapse(const Duration(seconds: 31));
-      expect(c.sentOf(cmdSendTelemetryReq), 1);
-      expect(c.currentCustomVars, {'gps': '1', 'gps_interval': '0'});
+      expect((c.hasGps, c.gpsOn), (true, false));
+
+      unawaited(c.setGps(true));
+      async.flushMicrotasks();
+      expect(
+        c.sent
+            .where((f) => f[0] == cmdSetCustomVar)
+            .map((f) => utf8.decode(f.sublist(1)).replaceAll('\x00', '')),
+        ['gps:1', 'gps_interval:0'],
+      );
+      expect(c.gpsOn, isTrue);
+      async.elapse(const Duration(seconds: 61));
+      expect(c.sentOf(cmdSendTelemetryReq), 1, reason: 'the refresh started');
     });
   });
 
@@ -135,9 +160,10 @@ void main() {
 
   test('the reply moves the radio, with no contact sync', () async {
     final syncs = c.sentOf(cmdGetContacts);
-    c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012));
+    c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012, alt: 34.3));
     expect(c.selfLatitude, closeTo(41.8301, 1e-9));
     expect(c.selfLongitude, closeTo(-71.4012, 1e-9));
+    expect(c.selfGps.value?.altitude, closeTo(34.3, 1e-9));
     await settle();
     expect(c.sentOf(cmdGetContacts), syncs);
   });
@@ -148,8 +174,13 @@ void main() {
   });
 
   test("standing still keeps SELF_INFO's finer figure", () {
-    c.handleFrameForTest(_telemetry(selfKey, 41.8123, -71.4123));
+    c.handleFrameForTest(_telemetry(selfKey, 41.8123, -71.4123, alt: 30.7));
     expect(c.selfLatitude, closeTo(41.812345, 1e-9));
     expect(c.selfLongitude, closeTo(-71.412345, 1e-9));
+    expect(
+      c.selfGps.value?.altitude,
+      closeTo(30.7, 1e-9),
+      reason: 'the GPS dialog still sees the new reading',
+    );
   });
 }

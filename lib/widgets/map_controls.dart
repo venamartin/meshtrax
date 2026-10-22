@@ -7,14 +7,17 @@ import 'package:traxmap/traxmap.dart';
 import '../l10n/l10n.dart';
 
 /// The map's buttons, bottom right: zoom (desktop only; phones pinch), My
-/// location, and the layers button. My location goes to the radio's own
-/// position, and is hidden when the radio reports none.
+/// location, and the layers button. My location shows only when the screen
+/// handles it ([onMyLocation]).
 class MapControls extends StatelessWidget {
   final OfflineMapController controller;
-
-  /// The radio's own position, when it reports one.
-  final LatLng? radioPosition;
   final VoidCallback onLayers;
+
+  /// My location: the screen decides what a tap does (the radio's GPS).
+  final VoidCallback? onMyLocation;
+
+  /// The radio's GPS is off: My location shows it crossed out.
+  final bool gpsOff;
 
   /// The room the buttons take at the map's right edge
   /// ([AppMap.controlsWidth]).
@@ -27,8 +30,16 @@ class MapControls extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onLayers,
-    this.radioPosition,
+    this.onMyLocation,
+    this.gpsOff = false,
   });
+
+  /// Centres [controller] on [here], zoomed in to at least [locateZoom].
+  static void centerOn(OfflineMapController controller, LatLng here) =>
+      controller.move(
+        here,
+        zoom: math.max(controller.camera?.zoom ?? 0, locateZoom),
+      );
 
   static bool get _desktop =>
       !kIsWeb &&
@@ -44,15 +55,9 @@ class MapControls extends StatelessWidget {
     if (camera != null) controller.move(camera.center, zoom: camera.zoom + by);
   }
 
-  void _locate(LatLng here) => controller.move(
-    here,
-    zoom: math.max(controller.camera?.zoom ?? 0, locateZoom),
-  );
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final here = radioPosition;
     return Column(
       mainAxisSize: MainAxisSize.min,
       spacing: 12,
@@ -78,12 +83,12 @@ class MapControls extends StatelessWidget {
               ],
             ),
           ),
-        if (here != null)
+        if (onMyLocation != null)
           FloatingActionButton.small(
             heroTag: null,
             tooltip: l10n.map_myLocation,
-            onPressed: () => _locate(here),
-            child: const Icon(Icons.my_location),
+            onPressed: onMyLocation,
+            child: Icon(gpsOff ? Icons.location_disabled : Icons.my_location),
           ),
         FloatingActionButton(
           onPressed: onLayers,

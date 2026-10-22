@@ -3553,9 +3553,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appSettings_languageKo => 'Koreaans';
 
   @override
-  String get radioStats_tooltip => 'Statistieken voor radio en mesh-netwerken';
-
-  @override
   String get radioStats_screenTitle => 'Statistieken over radio';
 
   @override
@@ -4609,6 +4606,53 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get map_zoomOut => 'Zoom out';
+
+  @override
+  String get gps_title => 'GPS';
+
+  @override
+  String get gps_on => 'GPS on';
+
+  @override
+  String get gps_off => 'GPS off';
+
+  @override
+  String get gps_onHint => 'The radio updates its position from the GPS.';
+
+  @override
+  String get gps_offHint =>
+      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+
+  @override
+  String get gps_asking => 'Asking the radio...';
+
+  @override
+  String get gps_noPosition =>
+      'No position yet. Outdoors, the first one can take a few minutes.';
+
+  @override
+  String get gps_position => 'Position';
+
+  @override
+  String get gps_altitude => 'Altitude';
+
+  @override
+  String gps_readAgo(String ago) {
+    return 'Read from the radio $ago ago';
+  }
+
+  @override
+  String get gps_turnOnTitle => 'Turn on GPS?';
+
+  @override
+  String get gps_turnOnBody =>
+      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+
+  @override
+  String get gps_turnOn => 'Turn on';
+
+  @override
+  String get gps_notNow => 'Not now';
 
   @override
   String get map_zoomInForCharts => 'Zoom in to see your charts';

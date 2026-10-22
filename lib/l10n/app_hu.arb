@@ -1759,7 +1759,6 @@
   "appSettings_languageHu": "Magyar",
   "appSettings_languageJa": "Japán",
   "appSettings_languageKo": "Koreai",
-  "radioStats_tooltip": "Rádió és hálózati statisztikák",
   "radioStats_screenTitle": "Rádió statisztikák",
   "radioStats_notConnected": "Csatlakozzon egy eszközhöz, hogy megtekinthesse a rádió adatok statisztikáit.",
   "radioStats_firmwareTooOld": "A rádió statisztikákhoz v8 vagy újabb verziójú szoftver szükséges.",
