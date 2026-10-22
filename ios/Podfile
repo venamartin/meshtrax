@@ -32,15 +32,5 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    # Location "when in use" only: keep geolocator from referencing
-    # requestAlwaysAuthorization (App Store check ITMS-90683). Swift Package
-    # Manager builds take BYPASS_PERMISSION_LOCATION_ALWAYS=1 from the
-    # environment instead (TESTFLIGHT_GUIDE.md).
-    if target.name == 'geolocator_apple'
-      target.build_configurations.each do |config|
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'BYPASS_PERMISSION_LOCATION_ALWAYS=1'
-      end
-    end
   end
 end

@@ -7914,24 +7914,6 @@ abstract class AppLocalizations {
   /// **'Zoom out'**
   String get map_zoomOut;
 
-  /// No description provided for @map_positionUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Your position isn\'t known yet'**
-  String get map_positionUnknown;
-
-  /// No description provided for @map_locationServiceOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn on location to show where you are'**
-  String get map_locationServiceOff;
-
-  /// No description provided for @map_locationDenied.
-  ///
-  /// In en, this message translates to:
-  /// **'Location access is off for MeshTrax'**
-  String get map_locationDenied;
-
   /// No description provided for @map_zoomInForCharts.
   ///
   /// In en, this message translates to:

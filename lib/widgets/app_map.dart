@@ -13,7 +13,6 @@ import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/map_tile_cache_service.dart';
-import '../services/phone_location_service.dart';
 import '../utils/format_bytes.dart';
 import 'charts_notice_dialog.dart';
 
@@ -63,10 +62,6 @@ class AppMap extends StatefulWidget {
   /// without showing the switch or the "No offline map here" card.
   final bool compact;
 
-  /// Shows this phone's own position, once the user has allowed it
-  /// ([PhoneLocationService]).
-  final bool showPhone;
-
   /// Width of the screen's map buttons at the right edge: the offline card
   /// sits beside them rather than above.
   final double controlsWidth;
@@ -89,7 +84,6 @@ class AppMap extends StatefulWidget {
     this.mapType,
     this.contours,
     this.compact = false,
-    this.showPhone = false,
     this.controlsWidth = 0,
   });
 
@@ -114,21 +108,10 @@ class _AppMapState extends State<AppMap> {
   /// their inputs don't change so the map doesn't rebuild its layers.
   var _overlays = const <MapOverlay>[];
   Object? _overlaysKey;
-  PhoneLocationService? _phone;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.showPhone) {
-      _phone = context.read<PhoneLocationService>();
-      unawaited(_phone!.mapOpened());
-    }
-  }
 
   @override
   void dispose() {
     _settle?.cancel();
-    _phone?.mapClosed();
     super.dispose();
   }
 
@@ -154,7 +137,6 @@ class _AppMapState extends State<AppMap> {
     required MapType type,
     required bool online,
     required bool outline,
-    required LatLng? phone,
   }) {
     final key = (
       widget.overlays,
@@ -164,7 +146,6 @@ class _AppMapState extends State<AppMap> {
       maps.installed,
       maps.regions,
       maps.chartAreas,
-      phone,
     );
     if (key != _overlaysKey) {
       _overlaysKey = key;
@@ -185,14 +166,6 @@ class _AppMapState extends State<AppMap> {
                   strokeWidth: 3,
                 ),
         ...widget.overlays,
-        if (phone != null)
-          MapMarker(
-            id: 'phone',
-            position: phone,
-            size: const Size(24, 24),
-            interactive: false,
-            child: const _PhoneDot(),
-          ),
       ];
     }
     return _overlays;
@@ -243,11 +216,6 @@ class _AppMapState extends State<AppMap> {
             type: type,
             online: online,
             outline: !widget.compact && settings.mapDownloadedAreas,
-            phone: widget.showPhone
-                ? context.select<PhoneLocationService, LatLng?>(
-                    (s) => s.position,
-                  )
-                : null,
           ),
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
@@ -427,21 +395,6 @@ class _NoCharts extends StatelessWidget {
       ),
     );
   }
-}
-
-/// This phone's position: a blue dot, apart from the radio's "You" marker.
-class _PhoneDot extends StatelessWidget {
-  const _PhoneDot();
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: Colors.blue[600],
-      shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 3),
-      boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
-    ),
-  );
 }
 
 /// Online OpenStreetMap tiles, cached as viewed, in the gaps the downloaded

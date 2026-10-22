@@ -19,6 +19,7 @@ import '../models/device_backup.dart';
 import '../models/message.dart';
 import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
+import '../helpers/cayenne_lpp.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
 import '../helpers/path_helper.dart';
@@ -5053,6 +5054,49 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await sendFrame(buildSetAdvertLatLonFrame(lat, lon));
   }
 
+  /// Asks a radio with its GPS on for its position, answered in
+  /// [_handleSelfTelemetry]. The radio answers this "self telemetry" request
+  /// itself, with nothing sent over the air. APP_START would also return the
+  /// position, but its SELF_INFO reloads the contacts and starts a sync.
+  /// Self telemetry came in companion v1.7.0, still firmware ver code 5, so
+  /// ver code 6 is the first that surely has it.
+  Future<void> requestSelfPosition() async {
+    if (!isConnected ||
+        _currentCustomVars?['gps'] != '1' ||
+        (_firmwareVerCode ?? 0) < 6) {
+      return;
+    }
+    await sendFrame(buildSendTelemetryReq(null));
+  }
+
+  /// The radio's own telemetry carries its key prefix; a contact's is
+  /// matched by its awaiting request instead.
+  void _handleSelfTelemetry(Uint8List frame) {
+    final self = _selfPublicKey;
+    if (self == null ||
+        frame.length < 8 ||
+        !listEquals(frame.sublist(2, 8), self.sublist(0, 6))) {
+      return;
+    }
+    for (final reading in CayenneLpp.parse(frame.sublist(8))) {
+      if (reading['type'] != CayenneLpp.lppGps) continue;
+      final gps = reading['value'] as Map;
+      final lat = gps['latitude'] as double;
+      final lon = gps['longitude'] as double;
+      // LPP carries 0.0001° (about 11 m), coarser than SELF_INFO: a radio
+      // standing still keeps SELF_INFO's figure.
+      if (!hasValidLocation(lat, lon) ||
+          ((lat - (_selfLatitude ?? 0)).abs() < 1e-4 &&
+              (lon - (_selfLongitude ?? 0)).abs() < 1e-4)) {
+        return;
+      }
+      _selfLatitude = lat;
+      _selfLongitude = lon;
+      notifyListeners();
+      return;
+    }
+  }
+
   Future<void> setCustomVar(String value) async {
     if (!isConnected) return;
     await sendFrame(buildSetCustomVarFrame(value));
@@ -5796,6 +5840,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case pushCodeControlData:
         _handleControlData(frame);
+        break;
+      case pushCodeTelemetryResponse:
+        _handleSelfTelemetry(frame);
         break;
       // Replies to our own requests are matched by their awaiting listeners;
       // a sensor's telemetry push is told apart by its tag.
