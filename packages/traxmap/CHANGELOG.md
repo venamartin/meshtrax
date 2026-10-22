@@ -1,5 +1,12 @@
 ## Unreleased
 
+- **Area limits leave out the shore** (charts_revision 3). Restricted,
+  caution, anchorage and other regulated areas, route areas
+  (precautionary areas, fairways) and hazard areas draw their limits from
+  traxmapmaker's `area_limit` lines, which leave out the stretches along
+  the shore and the chart-cell edges that split areas. Packs without them
+  keep drawing the areas' outlines: `limit_lines` on an area says its
+  limit is a line, so old and new packs can be installed side by side.
 - **Chart symbols.** Buoys, beacons, daymarks, topmarks, light flares,
   rocks, wrecks and obstructions, anchorages, caution areas, traffic-lane
   and tidal-stream arrows and landmarks are icons, following US Chart

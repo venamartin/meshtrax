@@ -52,7 +52,6 @@ CHARTS_DARK = {
     "depth-contour": {"line-color": "#3f6f99"},
     "coastline": {"line-color": "#b8a07a"},
     "islet": {"circle-color": "#22201b", "circle-stroke-color": "#b8a07a"},
-    "hazard-area": {"line-color": "#d8d8d8"},
     "depth-contour-label": {"text-color": "#8fbde6", **HALO},
     "depth-contour-label-m": {"text-color": "#8fbde6", **HALO},
     "contour-label": {"text-color": "#a08c72", "text-halo-color": "#22201b"},

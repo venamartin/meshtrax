@@ -330,6 +330,20 @@
       "filter": [
         "all",
         [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "limit_lines"
+          ]
+        ],
+        [
           "match",
           [
             "get",
@@ -342,13 +356,53 @@
           ],
           true,
           false
-        ],
+        ]
+      ],
+      "minzoom": 9,
+      "paint": {
+        "line-color": "#b5186e",
+        "line-width": 1.2,
+        "line-dasharray": [
+          5,
+          3
+        ]
+      }
+    },
+    {
+      "id": "precautionary-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "area_limit",
+      "filter": [
+        "all",
         [
           "==",
           [
             "geometry-type"
           ],
-          "Polygon"
+          "LineString"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "layer"
+          ],
+          "route"
+        ],
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "PRCARE",
+            "TWRTPT",
+            "DWRTPT"
+          ],
+          true,
+          false
         ]
       ],
       "minzoom": 9,
@@ -371,17 +425,66 @@
         [
           "==",
           [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "limit_lines"
+          ]
+        ],
+        [
+          "==",
+          [
             "get",
             "class"
           ],
           "FAIRWY"
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "line-color": "#5d7d99",
+        "line-width": 1,
+        "line-dasharray": [
+          6,
+          4
         ],
+        "line-opacity": 0.6
+      }
+    },
+    {
+      "id": "fairway-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "area_limit",
+      "filter": [
+        "all",
         [
           "==",
           [
             "geometry-type"
           ],
-          "Polygon"
+          "LineString"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "layer"
+          ],
+          "route"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "FAIRWY"
         ]
       ],
       "minzoom": 13,
@@ -519,31 +622,6 @@
       "filter": [
         "all",
         [
-          "match",
-          [
-            "get",
-            "class"
-          ],
-          [
-            "RESARE",
-            "CTNARE",
-            "ACHARE",
-            "DMPGRD",
-            "CBLARE",
-            "PIPARE",
-            "MARCUL",
-            "SPLARE",
-            "CTSARE",
-            "OSPARE",
-            "FSHGRD",
-            "ICNARE",
-            "FRPARE",
-            "CUSZNE"
-          ],
-          true,
-          false
-        ],
-        [
           "==",
           [
             "geometry-type"
@@ -553,33 +631,248 @@
         [
           "!",
           [
-            "any",
+            "has",
+            "limit_lines"
+          ]
+        ],
+        [
+          "all",
+          [
+            "match",
             [
-              "all",
+              "get",
+              "class"
+            ],
+            [
+              "RESARE",
+              "CTNARE",
+              "ACHARE",
+              "DMPGRD",
+              "CBLARE",
+              "PIPARE",
+              "MARCUL",
+              "SPLARE",
+              "CTSARE",
+              "OSPARE",
+              "FSHGRD",
+              "ICNARE",
+              "FRPARE",
+              "CUSZNE"
+            ],
+            true,
+            false
+          ],
+          [
+            "!",
+            [
+              "any",
+              [
+                "all",
+                [
+                  "==",
+                  [
+                    "get",
+                    "class"
+                  ],
+                  "RESARE"
+                ],
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "entry"
+                ]
+              ],
               [
                 "==",
                 [
                   "get",
                   "class"
                 ],
-                "RESARE"
-              ],
-              [
-                "==",
-                [
-                  "get",
-                  "restriction"
-                ],
-                "entry"
+                "MIPARE"
               ]
-            ],
+            ]
+          ]
+        ]
+      ],
+      "minzoom": 10,
+      "paint": {
+        "line-color": [
+          "case",
+          [
+            "all",
             [
               "==",
               [
                 "get",
                 "class"
               ],
-              "MIPARE"
+              "DMPGRD"
+            ],
+            [
+              "in",
+              ",explosives,",
+              [
+                "concat",
+                ",",
+                [
+                  "get",
+                  "categories"
+                ],
+                ","
+              ]
+            ]
+          ],
+          "#b5186e",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "DMPGRD",
+              "MARCUL",
+              "FSHGRD"
+            ],
+            true,
+            false
+          ],
+          "#7d7d7d",
+          "#b5186e"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "restriction"
+            ],
+            "entry",
+            1.2,
+            0.8
+          ],
+          14,
+          [
+            "match",
+            [
+              "get",
+              "restriction"
+            ],
+            "entry",
+            1.8,
+            1.1
+          ]
+        ],
+        "line-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.6,
+          13,
+          0.85
+        ],
+        "line-dasharray": [
+          5,
+          3
+        ]
+      }
+    },
+    {
+      "id": "regulated-limit-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "area_limit",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "layer"
+          ],
+          "regulated_area"
+        ],
+        [
+          "all",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "RESARE",
+              "CTNARE",
+              "ACHARE",
+              "DMPGRD",
+              "CBLARE",
+              "PIPARE",
+              "MARCUL",
+              "SPLARE",
+              "CTSARE",
+              "OSPARE",
+              "FSHGRD",
+              "ICNARE",
+              "FRPARE",
+              "CUSZNE"
+            ],
+            true,
+            false
+          ],
+          [
+            "!",
+            [
+              "any",
+              [
+                "all",
+                [
+                  "==",
+                  [
+                    "get",
+                    "class"
+                  ],
+                  "RESARE"
+                ],
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "entry"
+                ]
+              ],
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "MIPARE"
+              ]
             ]
           ]
         ]
@@ -693,6 +986,97 @@
             "geometry-type"
           ],
           "Polygon"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "limit_lines"
+          ]
+        ],
+        [
+          "any",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "RESARE"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "restriction"
+              ],
+              "entry"
+            ]
+          ],
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "MIPARE"
+          ]
+        ]
+      ],
+      "minzoom": 10,
+      "paint": {
+        "line-pattern": "pattern-restricted",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          6,
+          14,
+          8
+        ],
+        "line-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.6,
+          13,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "restricted-limit-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "area_limit",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "layer"
+          ],
+          "regulated_area"
         ],
         [
           "any",
@@ -1165,9 +1549,53 @@
       "source": "charts",
       "source-layer": "hazard",
       "filter": [
-        "==",
-        "$type",
-        "Polygon"
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "limit_lines"
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "#333333",
+        "line-width": 1,
+        "line-dasharray": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "hazard-area-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "area_limit",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "layer"
+          ],
+          "hazard"
+        ]
       ],
       "paint": {
         "line-color": "#333333",

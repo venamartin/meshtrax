@@ -548,7 +548,7 @@ Needs traxmapmaker 1.4.
   - Before that, a three-lens review (chart conventions, phone legibility, data) fixed misleading labels: entry *restricted* areas shown as "prohibited", AM broadcast towers shown as "R Bn", clearances rounded up, and mooring buoys in nav-aid yellow.
   - Buoy names show the chart number below z15 (Martin).
 - Chart symbols (T9). **Done** (2026-10-22): sprite sheets from `tool/make_sprites.py`. Buoys, beacons, daymarks, topmarks, light flares, rocks, wrecks, obstructions, anchorages, caution areas, lane and stream arrows, landmarks; the T-tick limit and the cable wave. Martin chose magenta flares and leaning buoys.
-  - Open: restricted-area limits that run along the shore. traxmapmaker is asked for limit lines without the shoreline parts in the next charts rebuild; the styles switch to them when packs carry them.
+  - Area limits without the shore (2026-10-22): regulated, route and hazard areas draw traxmapmaker's `area_limit` lines (charts_revision 3, extractor enc5), which leave out the shore and the cell edges that split areas. Older packs keep drawing outlines; `limit_lines` flags the areas that have lines, so mixed packs work. Checked on the Rhode Island pilot; live with the next charts rebuild.
 
 ### Phase 7: trail routing (Android only)
 

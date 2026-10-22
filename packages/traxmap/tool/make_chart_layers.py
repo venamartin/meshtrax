@@ -30,7 +30,7 @@ LIGHT = {
     "tank": "#b8ad97", "structure": "#a59f92", "bridge": "#8f8a80", "bridge_edge": "#3d3a35",
     "bridge_line": "#5c5852", "overhead": "#3d3a35", "region_text": "#6b5a3a",
     "harbour_text": "#1f5f99", "mooring": "#ffffff", "mooring_yellow": "#f2c200",
-    "edge": "#222222",
+    "edge": "#222222", "hazard_edge": "#333333",
     "day": {"red": "#d7263d", "green": "#2a9d4b", "yellow": "#f2c200", "white": "#ffffff",
             "black": "#222222", "orange": "#f28c28", "other": "#888888"},
 }
@@ -42,7 +42,7 @@ DARK = {
     "tank": "#5a5246", "structure": "#5a564e", "bridge": "#6a655c", "bridge_edge": "#d0c8b8",
     "bridge_line": "#a39d92", "overhead": "#c8c0b0", "region_text": "#cbb894",
     "harbour_text": "#7fb0e0", "mooring": "#f2f2f2", "mooring_yellow": "#ffd23f",
-    "edge": "#0c1e30",
+    "edge": "#0c1e30", "hazard_edge": "#d8d8d8",
     "day": {"red": "#ff4d5e", "green": "#3ccf6e", "yellow": "#ffd23f", "white": "#f2f2f2",
             "black": "#9aa0a6", "orange": "#ff9f43", "other": "#9aa0a6"},
 }
@@ -76,8 +76,9 @@ CAT = lambda slug: has_code("categories", slug)
 
 
 def layer(id_, type_, source_layer, filter_, minzoom, paint, layout=None, units=None):
-    l = {"id": id_, "type": type_, "source": "charts", "source-layer": source_layer,
-         "filter": filter_, "minzoom": minzoom}
+    l = {"id": id_, "type": type_, "source": "charts", "source-layer": source_layer, "filter": filter_}
+    if minzoom is not None:
+        l["minzoom"] = minzoom
     if layout:
         l["layout"] = layout
     l["paint"] = paint
@@ -288,6 +289,39 @@ HARBOUR_TEXT = ["match", ["get", "class"],
                 NAME]
 
 
+def limit_layers(id_, source_layer, filter_, minzoom, paint):
+    """An area's limit, twice: from `area_limit` lines in charts_revision 3
+    packs, which leave out the stretches along the shore and cell edges,
+    and from the area's outline in older packs (`limit_lines` flags the
+    areas whose limits are lines). Both run with the area on the right."""
+    only = [filter_] if filter_ else []
+    return [layer(id_, "line", source_layer, all_(POLY, ["!", ["has", "limit_lines"]], *only), minzoom, paint),
+            layer(f"{id_}-line", "line", "area_limit",
+                  all_(LINE, ["==", ["get", "layer"], source_layer], *only), minzoom, paint)]
+
+
+def regulated_limits(P):
+    return [
+        # Magenta dashed limits, entry restrictions heavier; explosives
+        # dumping grounds magenta, spoil grounds, farms and fishing grey.
+        *limit_layers(
+            "regulated-limit", "regulated_area",
+            all_(cls("RESARE", "CTNARE", "ACHARE", "DMPGRD", "CBLARE", "PIPARE", "MARCUL",
+                     "SPLARE", "CTSARE", "OSPARE", "FSHGRD", "ICNARE", "FRPARE", "CUSZNE"), ["!", T_TICKS]), 10,
+            {"line-color": ["case", ["all", cls("DMPGRD"), CAT("explosives")], P["magenta"],
+                            cls("DMPGRD", "MARCUL", "FSHGRD"), P["grey"], P["magenta"]],
+             "line-width": ["interpolate", ["linear"], ["zoom"],
+                            10, ["match", ["get", "restriction"], "entry", 1.2, 0.8],
+                            14, ["match", ["get", "restriction"], "entry", 1.8, 1.1]],
+             "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 13, 0.85],
+             "line-dasharray": [5, 3]}),
+        # The pattern is as tall as the line is wide, its ticks inside the area.
+        *limit_layers("restricted-limit", "regulated_area", T_TICKS, 10,
+                      {"line-pattern": "pattern-restricted", "line-width": zoom_size(10, 6, 14, 8),
+                       "line-opacity": zoom_size(10, 0.6, 13, 0.9)}),
+    ]
+
+
 def groups(P):
     """The new layers in splice order, built with palette P."""
     under = [  # fills and limits, under the coastline
@@ -305,10 +339,11 @@ def groups(P):
               {"line-color": P["magenta"], "line-width": 1.2, "line-dasharray": [6, 3], "line-opacity": 0.8}),
         layer("tss-separation-line", "line", "route", cls("TSELNE"), 9,
               {"line-color": P["magenta"], "line-width": 5, "line-opacity": 0.25}),
-        layer("precautionary", "line", "route", all_(cls("PRCARE", "TWRTPT", "DWRTPT"), POLY), 9,
-              {"line-color": P["magenta"], "line-width": 1.2, "line-dasharray": [5, 3]}),
-        layer("fairway", "line", "route", all_(cls("FAIRWY"), POLY), 13,
-              {"line-color": P["fairway"], "line-width": 1, "line-dasharray": [6, 4], "line-opacity": 0.6}),
+        *limit_layers("precautionary", "route", cls("PRCARE", "TWRTPT", "DWRTPT"), 9,
+                      {"line-color": P["magenta"], "line-width": 1.2, "line-dasharray": [5, 3]}),
+        *limit_layers("fairway", "route", cls("FAIRWY"), 13,
+                      {"line-color": P["fairway"], "line-width": 1, "line-dasharray": [6, 4],
+                       "line-opacity": 0.6}),
         layer("track", "line", "route",
               all_(cls("RECTRC", "DWRTCL", "RCRTCL", "RCTLPT", "FERYRT", "RDOCAL"), LINE), 10,
               {"line-color": P["ink"], "line-width": 1,
@@ -318,23 +353,7 @@ def groups(P):
                                   ["literal", [1, 0]]]}),
         layer("leading-line", "line", "route", all_(cls("NAVLNE"), LINE), 11,
               {"line-color": P["ink"], "line-width": 0.8, "line-dasharray": [8, 3]}),
-        # Magenta dashed limits, entry restrictions heavier; explosives
-        # dumping grounds magenta, spoil grounds, farms and fishing grey.
-        layer("regulated-limit", "line", "regulated_area",
-              all_(cls("RESARE", "CTNARE", "ACHARE", "DMPGRD", "CBLARE", "PIPARE", "MARCUL",
-                       "SPLARE", "CTSARE", "OSPARE", "FSHGRD", "ICNARE", "FRPARE", "CUSZNE"), POLY,
-                   ["!", T_TICKS]), 10,
-              {"line-color": ["case", ["all", cls("DMPGRD"), CAT("explosives")], P["magenta"],
-                              cls("DMPGRD", "MARCUL", "FSHGRD"), P["grey"], P["magenta"]],
-               "line-width": ["interpolate", ["linear"], ["zoom"],
-                              10, ["match", ["get", "restriction"], "entry", 1.2, 0.8],
-                              14, ["match", ["get", "restriction"], "entry", 1.8, 1.1]],
-               "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 13, 0.85],
-               "line-dasharray": [5, 3]}),
-        # The pattern is as tall as the line is wide, its ticks inside the area.
-        layer("restricted-limit", "line", "regulated_area", all_(POLY, T_TICKS), 10,
-              {"line-pattern": "pattern-restricted", "line-width": zoom_size(10, 6, 14, 8),
-               "line-opacity": zoom_size(10, 0.6, 13, 0.9)}),
+        *regulated_limits(P),
         layer("swept-limit", "line", "regulated_area", all_(cls("SWPARE"), POLY), 14,
               {"line-color": P["swept"], "line-width": 0.8, "line-dasharray": [2, 2]}),
         # Cables wavy, disused broken; pipelines dash-dot, outfalls, intakes
@@ -365,7 +384,9 @@ def groups(P):
         layer("overhead-line", "line", "overhead", cls("CBLOHD", "PIPOHD", "CONVYR"), 11,
               {"line-color": P["overhead"], "line-width": 1, "line-dasharray": [4, 2]}),
     ]
-    points = [  # small structures and services, under the icons
+    points = [  # hazard area limits, small structures and services, under the icons
+        *limit_layers("hazard-area", "hazard", None, None,
+                      {"line-color": P["hazard_edge"], "line-width": 1, "line-dasharray": [2, 2]}),
         layer("pile", "circle", "structure", all_(cls("PILPNT", "PYLONS"), NOT_ANCHOR), 14,
               {"circle-radius": 1.4, "circle-color": P["ink"]}),
         # Dolphins and platforms small and plain; mooring buoys white (or
@@ -523,7 +544,7 @@ def main(out):
     under, over, points, symbols, low, mid, high = groups(LIGHT)
     insert(ids.index("coastline"), under)
     insert(ids.index("coastline") + 1, over)
-    insert(ids.index("hazard-area") + 1, points + symbols)
+    insert(ids.index("islet") + 1, points + symbols)
     insert(ids.index("depth-contour-label"), low)
     insert(ids.index("hazard-label"), mid)
     insert(ids.index("sea-name"), high)
