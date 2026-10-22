@@ -257,9 +257,16 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
 
     // Names from everyone the radio knows, saved or merely discovered —
     // a Public sender need not be in the contact list to get a doorstep.
-    for (final contact in connector.allContacts) {
+    final sw = Stopwatch()..start();
+    final all = connector.allContacts;
+    for (final contact in all) {
       graph.ingestContact(contact.publicKeyHex, contact.name);
     }
+    appLogger.perf(
+      'Pathfinder contact re-ingest',
+      sw,
+      detail: '${all.length} contacts',
+    );
     // Routes are proved only from PATH_UPDATED (_onFirmwarePath), never
     // from the contact list: the list cannot tell a firmware route from
     // one this app wrote in an earlier session (a graph route, a Custom

@@ -66,8 +66,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "正在搜索 MeshCore 设备...",
-  "scanner_tapToScan": "点击“扫描”按钮以查找 MeshCore 设备。",
   "scanner_connectionFailed": "连接失败：{error}",
   "@scanner_connectionFailed": {
     "placeholders": {

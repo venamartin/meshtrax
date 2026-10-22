@@ -24,6 +24,7 @@ import '../helpers/path_helper.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/ui_view_state_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/contact_search.dart';
 import '../utils/platform_info.dart';
 import '../utils/route_transitions.dart';
@@ -1183,14 +1184,17 @@ class _MapScreenState extends State<MapScreen> {
 
   int? _directMessagesKey;
 
-  Future<void> _collectContactMarkers(
+  /// Returns how many messages were scanned.
+  Future<int> _collectContactMarkers(
     MeshCoreConnector connector,
     List<_SharedMarker> markers,
   ) async {
     final selfName = connector.selfName ?? 'Me';
+    var scanned = 0;
 
     for (final contact in connector.contacts) {
       final messages = await connector.loadMessagesFor(contact);
+      scanned += messages.length;
       for (final message in messages) {
         final payload = _parseMarkerText(message.text);
         if (payload == null) continue;
@@ -1214,6 +1218,7 @@ class _MapScreenState extends State<MapScreen> {
         );
       }
     }
+    return scanned;
   }
 
   List<_SharedMarker> _channelMarkers = const [];
@@ -1227,11 +1232,13 @@ class _MapScreenState extends State<MapScreen> {
     }
     _refreshingChannelMarkers = true;
     try {
+      final sw = Stopwatch()..start();
       final markers = <_SharedMarker>[];
-      await _collectContactMarkers(connector, markers);
+      var scanned = await _collectContactMarkers(connector, markers);
       for (final channel in connector.channels.where((c) => !c.isEmpty)) {
         final isPublic = _isPublicChannel(channel);
         final messages = await connector.loadChannelMessagesFor(channel);
+        scanned += messages.length;
         for (final message in messages) {
           final payload = _parseMarkerText(message.text);
           if (payload == null) continue;
@@ -1256,6 +1263,7 @@ class _MapScreenState extends State<MapScreen> {
           );
         }
       }
+      appLogger.perf('map marker scan over $scanned messages', sw);
       if (!mounted) return;
       final newIds = markers.map((m) => m.id).toSet();
       final oldIds = _channelMarkers.map((m) => m.id).toSet();

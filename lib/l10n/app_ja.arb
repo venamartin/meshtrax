@@ -117,8 +117,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "MeshCoreデバイスの検索",
-  "scanner_tapToScan": "MeshCore デバイスを検索するには、「スキャン」ボタンをタップしてください。",
   "scanner_connectionFailed": "接続に失敗しました：{error}",
   "@scanner_connectionFailed": {
     "placeholders": {

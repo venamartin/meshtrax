@@ -304,10 +304,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get scanner_searchingDevices => 'MeshCore 장치를 검색 중...';
+  String get scanner_showAllDevices => 'Show all Bluetooth devices';
 
   @override
-  String get scanner_tapToScan => 'MeshCore 장치를 찾기 위해 스캔 버튼을 누르세요.';
+  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
 
   @override
   String get scanner_radioNotResponding =>

@@ -682,17 +682,17 @@ abstract class AppLocalizations {
   /// **'Connected to {deviceName}'**
   String scanner_connectedTo(String deviceName);
 
-  /// No description provided for @scanner_searchingDevices.
+  /// No description provided for @scanner_showAllDevices.
   ///
   /// In en, this message translates to:
-  /// **'Searching for MeshCore devices...'**
-  String get scanner_searchingDevices;
+  /// **'Show all Bluetooth devices'**
+  String get scanner_showAllDevices;
 
-  /// No description provided for @scanner_tapToScan.
+  /// No description provided for @scanner_showMeshCoreOnly.
   ///
   /// In en, this message translates to:
-  /// **'Tap Scan to find MeshCore devices'**
-  String get scanner_tapToScan;
+  /// **'Show MeshCore radios only'**
+  String get scanner_showMeshCoreOnly;
 
   /// No description provided for @scanner_radioNotResponding.
   ///

@@ -302,10 +302,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get scanner_searchingDevices => '正在搜索 MeshCore 设备...';
+  String get scanner_showAllDevices => 'Show all Bluetooth devices';
 
   @override
-  String get scanner_tapToScan => '点击“扫描”按钮以查找 MeshCore 设备。';
+  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
 
   @override
   String get scanner_radioNotResponding =>

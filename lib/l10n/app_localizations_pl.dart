@@ -317,11 +317,10 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get scanner_searchingDevices => 'Wyszukiwanie urządzeń MeshCore...';
+  String get scanner_showAllDevices => 'Show all Bluetooth devices';
 
   @override
-  String get scanner_tapToScan =>
-      'Naciśnij Skan, aby znaleźć urządzenia MeshCore';
+  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
 
   @override
   String get scanner_radioNotResponding =>

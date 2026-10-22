@@ -313,11 +313,10 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get scanner_searchingDevices => 'MeshCore eszközök keresése...';
+  String get scanner_showAllDevices => 'Show all Bluetooth devices';
 
   @override
-  String get scanner_tapToScan =>
-      'A Tap Scan funkció segítségével kereshet MeshCore eszközöket.';
+  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
 
   @override
   String get scanner_radioNotResponding =>

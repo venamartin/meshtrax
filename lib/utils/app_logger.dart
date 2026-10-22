@@ -51,6 +51,16 @@ class AppLogger {
     }
   }
 
+  /// One line when a step took a frame (16 ms) or longer, nothing
+  /// otherwise, and nothing at all while the log is off. Wall time: a step
+  /// that awaits the database includes the wait, so read these next to the
+  /// UI stall lines, which are the UI thread's own figures.
+  void perf(String what, Stopwatch sw, {String detail = ''}) {
+    if (!_enabled || sw.elapsedMilliseconds < 16) return;
+    final suffix = detail.isEmpty ? '' : ' ($detail)';
+    info('$what ${sw.elapsedMilliseconds} ms$suffix', tag: 'Perf', noNotify: true);
+  }
+
   /// Log a message with custom level
   void log(
     String message, {

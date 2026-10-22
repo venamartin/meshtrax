@@ -65,8 +65,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "Iskanje naprav MeshCore...",
-  "scanner_tapToScan": "Nagneš na skeniranje za najdene naprave MeshCore.",
   "scanner_connectionFailed": "Pošlo je z povezavo: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {

@@ -65,8 +65,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "Zoeken naar MeshCore apparaten...",
-  "scanner_tapToScan": "Tik Scan om MeshCore apparaten te vinden",
   "scanner_connectionFailed": "Verbinding mislukt: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {

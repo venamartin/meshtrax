@@ -528,6 +528,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
+  int _scanGeneration = 0;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<int>>? _notifySubscription;
   Timer? _notifyListenersTimer;
@@ -1632,8 +1633,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
+    bool showAll = false,
   }) async {
     if (_state == MeshCoreConnectionState.scanning) return;
+    final generation = ++_scanGeneration;
 
     // Scanning is explicit user intent to pick a device — it outranks any
     // pending auto-reconnect (BLE or TCP), which would otherwise fire
@@ -1681,7 +1684,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     if (PlatformInfo.isLinux) {
-      await _loadLinuxSystemDevicesForScan();
+      await _loadLinuxSystemDevicesForScan(showAll: showAll);
     }
 
     _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
@@ -1690,7 +1693,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         // The Windows plugin ignores withKeywords and reports every
         // advertiser, so apply the same name filter here.
         ..addAll(
-          PlatformInfo.isWindows
+          showAll
+              ? results.where((result) => _advertisedName(result).isNotEmpty)
+              : PlatformInfo.isWindows
               ? results.where(_advertisesMeshCoreName)
               : results,
         );
@@ -1700,7 +1705,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       await FlutterBluePlus.startScan(
-        withKeywords: MeshCoreUuids.deviceNamePrefixes,
+        withKeywords: showAll ? const [] : MeshCoreUuids.deviceNamePrefixes,
         webOptionalServices: [Guid(MeshCoreUuids.service)],
         timeout: timeout,
         androidScanMode: AndroidScanMode.lowLatency,
@@ -1712,13 +1717,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     await Future.delayed(timeout);
-    await stopScan();
+    // A stop-and-rescan inside the timeout owns the scan now; leave it running.
+    if (generation == _scanGeneration) await stopScan();
   }
 
+  static String _advertisedName(ScanResult result) =>
+      result.advertisementData.advName.isNotEmpty
+      ? result.advertisementData.advName
+      : result.device.platformName;
+
   static bool _advertisesMeshCoreName(ScanResult result) {
-    final name = result.advertisementData.advName.isNotEmpty
-        ? result.advertisementData.advName
-        : result.device.platformName;
+    final name = _advertisedName(result);
     if (name.isEmpty) return false;
     final lower = name.toLowerCase();
     return MeshCoreUuids.deviceNamePrefixes.any(
@@ -1726,7 +1735,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _loadLinuxSystemDevicesForScan() async {
+  Future<void> _loadLinuxSystemDevicesForScan({required bool showAll}) async {
     try {
       final systemDevices = await FlutterBluePlus.systemDevices([
         Guid(MeshCoreUuids.service),
@@ -1736,9 +1745,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         ..addAll(
           systemDevices
               .where(
-                (device) => MeshCoreUuids.deviceNamePrefixes.any(
-                  device.platformName.startsWith,
-                ),
+                (device) =>
+                    showAll ||
+                    MeshCoreUuids.deviceNamePrefixes.any(
+                      device.platformName.startsWith,
+                    ),
               )
               .map(
                 (device) => ScanResult(
@@ -3846,9 +3857,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
       // Apply to the target row; watched queries update the UI.
+      final sw = Stopwatch()..start();
       final history = await _messageStore.loadMessages(contact.publicKeyHex);
       _processOutgoingContactReaction(history, reactionInfo, contact);
       await _messageStore.upsertMessages(contact.publicKeyHex, history);
+      appLogger.perf('outgoing DM reaction over ${history.length} rows', sw);
       await _setReactionStatus(
         contact.publicKeyHex,
         reactionInfo,
@@ -4374,11 +4387,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       // Apply to the target row; watched queries update the UI.
+      final sw = Stopwatch()..start();
       final history = await _channelMessageStore.loadChannelMessages(
         channel.idKey,
       );
       _processReaction(history, reactionInfo, reactorName);
       await _channelMessageStore.upsertMessages(channel.idKey, history);
+      appLogger.perf(
+        'outgoing channel reaction over ${history.length} rows',
+        sw,
+      );
 
       // Mark this reaction as processed
       _processedChannelReactions[channel.idKey]!.add(reactionIdentifier);
@@ -7866,6 +7884,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       )) {
         return false;
       }
+      final sw = Stopwatch()..start();
       final history = await _messageStore.loadMessages(pubKeyHex);
       final applied = _processContactReaction(
         history,
@@ -7876,6 +7895,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (applied) {
         await _messageStore.upsertMessages(pubKeyHex, history);
       }
+      appLogger.perf('DM reaction over ${history.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
         // MeshCore One-shaped message whose hash matches nothing we hold
@@ -7944,7 +7964,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: (msg) =>
           contactWireSecsCandidates(msg, roomSkewSecs: skew),
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) => mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -8040,14 +8060,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Every text form a MeshCore One reaction to this row could have been
-  /// hashed over. The stored display [text] and its stripped forms cover
-  /// plain messages; [wireText] covers rows whose display text was rewritten
-  /// (replies) — the 2026-08-12 #mtdebug capture showed MC1 hashing the raw
-  /// reply markup, which no display-text variant can reproduce.
-  static List<String> _mc1TextVariants(String text, [String? wireText]) =>
+  /// hashed over. MC1 itself hashes the edge-trimmed body, mention kept
+  /// ([ChannelMessage.mc1HashText]); the stripped forms tolerate clients
+  /// that hash the addressed body. [wireText] covers rows whose display text
+  /// was rewritten (replies) — the 2026-08-12 #mtdebug capture showed MC1
+  /// hashing the raw reply markup, which no display-text variant can
+  /// reproduce.
+  static List<String> mc1TextVariants(String text, [String? wireText]) =>
       _mc1TextVariantsNamed(text, wireText).values.toList();
 
-  /// [_mc1TextVariants] keyed by the name each form goes by in the parked-
+  /// [mc1TextVariants] keyed by the name each form goes by in the parked-
   /// reaction log. A form equal to an earlier one is dropped, so every text
   /// is hashed once.
   static Map<String, String> _mc1TextVariantsNamed(
@@ -8060,27 +8082,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     add('raw', text);
+    add('trimmed', ChannelMessage.mc1HashText(text));
     add('display', ChannelMessage.mc1DisplayText(text));
     add('stripped', ChannelMessage.stripLeadingMentions(text));
     if (wireText != null) {
       add('wire', wireText);
+      add('wire-trimmed', ChannelMessage.mc1HashText(wireText));
       add('wire-display', ChannelMessage.mc1DisplayText(wireText));
     }
     return out;
   }
 
   /// Reaction wire text for a channel message — MeshCore One dialect,
-  /// readable on every client. The hash commits to ONE text form (the raw
-  /// wire markup for replies, MC1's display rule otherwise — measured on
-  /// the air, #mtdebug capture 2026-08-12) and ONE wire timestamp: the
-  /// received stamp for incoming rows, the last transmitted stamp for our
-  /// own (the retry that actually got through is what everyone else holds).
+  /// readable on every client. The hash commits to ONE text form — what an
+  /// MC1 phone stores: the raw wire text (reply markup and leading mentions
+  /// included) trimmed at the edges, see [ChannelMessage.mc1HashText] — and
+  /// ONE wire timestamp: the received stamp for incoming rows, the last
+  /// transmitted stamp for our own (the retry that actually got through is
+  /// what everyone else holds).
   static String channelReactionText(ChannelMessage target, String emoji) {
     final secs = target.isOutgoing && target.sentWireSecs.isNotEmpty
         ? target.sentWireSecs.last
         : wireTimestampMs(target) ~/ 1000;
     final hash = ReactionHelper.computeMeshCoreOneHash(
-      target.wireText ?? ChannelMessage.mc1DisplayText(target.text),
+      ChannelMessage.mc1HashText(target.wireText ?? target.text),
       secs,
     );
     return ReactionHelper.encodeMeshCoreOne(
@@ -8094,14 +8119,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// 1:1 DM names no sender: the hash alone identifies the target. A room
   /// has many voices, so the caller passes the target post's author as
   /// [targetSender] and the reaction reads `@[author]👍` on any client,
-  /// decoded or not. Receivers match on the hash either way.
+  /// decoded or not. Receivers match on the hash either way. MC1 stores DM
+  /// and room text untouched, so the hash covers the stored text as-is.
   static String contactReactionText(
     Message target,
     String emoji, {
     String? targetSender,
   }) {
     final hash = ReactionHelper.computeMeshCoreOneHash(
-      ChannelMessage.mc1DisplayText(target.text),
+      target.text,
       _messageWireSecs(target),
     );
     return ReactionHelper.encodeMeshCoreOne(
@@ -8336,7 +8362,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
         getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
         getWireTimestampSecs: _channelWireSecsCandidates,
-        getMessageTextVariants: (m) => _mc1TextVariants(m.text, m.wireText),
+        getMessageTextVariants: (m) => mc1TextVariants(m.text, m.wireText),
         getSenderName: (m) => m.senderName,
         getMessageText: (m) => m.text,
       );
@@ -8417,7 +8443,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
         getWireTimestampSecs: (m) =>
             contactWireSecsCandidates(m, roomSkewSecs: skew),
-        getMessageTextVariants: (m) => _mc1TextVariants(m.text),
+        getMessageTextVariants: (m) => mc1TextVariants(m.text),
         getSenderName: (m) => contact == null
             ? null
             : _resolveContactSenderName(m, contact, isRoomServer),
@@ -8484,7 +8510,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final orphans = await _channelOrphans(idKey);
     if (orphans.isEmpty) return;
     final hashes = _mc1HashesFor(
-      _mc1TextVariants(target.text, target.wireText),
+      mc1TextVariants(target.text, target.wireText),
       _channelWireSecsCandidates(target),
     );
     var landed = false;
@@ -8523,7 +8549,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final hashes = _mc1HashesFor(
-      _mc1TextVariants(target.text),
+      mc1TextVariants(target.text),
       contactWireSecsCandidates(target, roomSkewSecs: roomSkewSecs(contact)),
     );
     var landed = false;
@@ -8571,7 +8597,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: (msg) =>
           contactWireSecsCandidates(msg, roomSkewSecs: skew),
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) => mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer),
       getMessageText: (msg) => msg.text,
@@ -8608,7 +8634,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: (msg) =>
           contactWireSecsCandidates(msg, roomSkewSecs: skew),
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) => mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -8866,10 +8892,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return _ParsedText(senderName: 'Unknown', text: text);
   }
 
+  Future<bool> _ingestChannelMessage(
+    int channelIndex,
+    ChannelMessage message, {
+    ChannelMessage? replyTarget,
+    Channel? identity,
+    bool fromBacklog = false,
+    DateTime? receivedAt,
+  }) async {
+    final sw = Stopwatch()..start();
+    final isNew = await _ingestChannelMessageInner(
+      channelIndex,
+      message,
+      replyTarget: replyTarget,
+      identity: identity,
+      fromBacklog: fromBacklog,
+      receivedAt: receivedAt,
+    );
+    appLogger.perf(
+      'channel ingest',
+      sw,
+      detail: fromBacklog ? 'backlog' : 'live',
+    );
+    return isNew;
+  }
+
   /// Phase 3d ingest — the database is the only message state. Inserts or
   /// merges a row; watched queries notify every consumer. Returns true when
   /// the message was NEW (drives notifications; unread is a watched COUNT).
-  Future<bool> _ingestChannelMessage(
+  Future<bool> _ingestChannelMessageInner(
     int channelIndex,
     ChannelMessage message, {
     ChannelMessage? replyTarget,
@@ -8924,11 +8975,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
         return false;
       }
+      final sw = Stopwatch()..start();
       final history = await _channelMessageStore.loadChannelMessages(idKey);
       final applied = _processReaction(history, reactionInfo, reactorName);
       if (applied) {
         await _channelMessageStore.upsertMessages(idKey, history);
       }
+      appLogger.perf('channel reaction over ${history.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
         // MeshCore One-shaped message whose hash matches nothing we hold
@@ -9189,7 +9242,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: _channelWireSecsCandidates,
       getMessageTextVariants: (msg) =>
-          _mc1TextVariants(msg.text, msg.wireText),
+          mc1TextVariants(msg.text, msg.wireText),
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,
@@ -9548,7 +9601,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     _notifyListenersDirty = false;
+    // Synchronous listeners only (Pathfinder, keeper, watchers); widget
+    // rebuilds come later in the frame and show in the UI stall lines.
+    final sw = Stopwatch()..start();
     super.notifyListeners();
+    appLogger.perf('connector listeners', sw);
 
     if (_notifyListenersDirty && _notifyListenersTimer == null) {
       _notifyListenersTimer = Timer(

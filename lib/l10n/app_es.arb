@@ -65,8 +65,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "Buscando dispositivos MeshCore...",
-  "scanner_tapToScan": "Toca Escanear para encontrar dispositivos MeshCore",
   "scanner_connectionFailed": "Error de conexión: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {
