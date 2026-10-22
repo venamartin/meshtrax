@@ -153,7 +153,6 @@
   "settings_locationInvalid": "유효하지 않은 위도 또는 경도.",
   "settings_locationGPSEnable": "GPS 활성화",
   "settings_locationGPSEnableSubtitle": "GPS를 사용하여 위치 정보를 자동으로 업데이트할 수 있도록 합니다.",
-  "settings_locationIntervalSec": "GPS 간격 (초)",
   "settings_latitude": "위도",
   "settings_longitude": "경도",
   "settings_contactSettings": "연락처 설정",

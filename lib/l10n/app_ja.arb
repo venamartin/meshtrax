@@ -153,7 +153,6 @@
   "settings_locationInvalid": "無効な緯度または経度。",
   "settings_locationGPSEnable": "GPS機能有効",
   "settings_locationGPSEnableSubtitle": "GPSが自動的に位置情報を更新できるようにする。",
-  "settings_locationIntervalSec": "GPS データの取得間隔（秒）",
   "settings_latitude": "緯度",
   "settings_longitude": "経度",
   "settings_contactSettings": "連絡設定",

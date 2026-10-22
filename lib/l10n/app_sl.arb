@@ -1225,7 +1225,6 @@
   "neighbors_heardAgo": "Udeleženec je prejel sporočilo {time} nazaj.",
   "settings_locationGPSEnable": "Omogoči GPS",
   "settings_locationGPSEnableSubtitle": "Omogoči samodejno posodabljanje lokacije z GPS-jem.",
-  "settings_locationIntervalSec": "Interval za GPS (Sekunde)",
   "contacts_manageRoom": "Upravljajte strežnik sobe",
   "room_management": "Upravljanje stremlišča",
   "@community_joinConfirmation": {

@@ -1225,7 +1225,6 @@
   "neighbors_unknownContact": "Neznáma {pubkey}",
   "settings_locationGPSEnable": "Aktivovať GPS",
   "settings_locationGPSEnableSubtitle": "Povolí automatické aktualizovanie polohy pomocou GPS.",
-  "settings_locationIntervalSec": "Interval pre GPS (Sekundy)",
   "contacts_manageRoom": "Spravovať server miestnosti",
   "room_management": "Správa servera miestnosti",
   "@community_joinConfirmation": {

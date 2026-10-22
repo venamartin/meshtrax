@@ -1225,7 +1225,6 @@
   "neighbors_heardAgo": "Écouté : {time} auparavant",
   "settings_locationGPSEnable": "Activer le GPS",
   "settings_locationGPSEnableSubtitle": "Activer la mise à jour automatique de la position via GPS",
-  "settings_locationIntervalSec": "Intervalle de mise-à-jour du GPS (Secondes)",
   "contacts_manageRoom": "Gérer le Room Server",
   "room_management": "Administrattion Room Server",
   "@community_joinConfirmation": {

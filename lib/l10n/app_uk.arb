@@ -1226,7 +1226,6 @@
   "neighbors_heardAgo": "Почуто: {time} тому",
   "settings_locationGPSEnable": "Увімкнути GPS",
   "settings_locationGPSEnableSubtitle": "Вмикає автоматичне оновлення місцезнаходження через GPS.",
-  "settings_locationIntervalSec": "Інтервал для GPS (Секунди)",
   "contacts_manageRoom": "Керувати сервером кімнати",
   "room_management": "Адміністрування сервера кімнати",
   "@community_joinConfirmation": {

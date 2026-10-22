@@ -747,12 +747,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool hasGPS = customVars.containsKey("gps");
     bool isGPSEnabled = customVars["gps"] == "1";
 
-    // The radio never reports its interval: it shows only when the app set
-    // it during this connection. Blank saves the radio's default.
-    final intervalController = TextEditingController(
-      text: customVars["gps_interval"] ?? '',
-    );
-
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -786,20 +780,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               if (hasGPS) ...[
                 const SizedBox(height: 16),
-                TextField(
-                  controller: intervalController,
-                  decoration: InputDecoration(
-                    labelText: l10n.settings_locationIntervalSec,
-                    helperText: l10n.settings_locationIntervalHelp,
-                    helperMaxLines: 3,
-                    border: const OutlineInputBorder(),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: false,
-                    signed: false,
-                  ),
-                ),
-                const SizedBox(height: 16),
                 FeatureToggleRow(
                   title: l10n.settings_locationGPSEnable,
                   subtitle: l10n.settings_locationGPSEnableSubtitle,
@@ -825,28 +805,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () async {
                 Navigator.pop(context);
 
+                // Earlier versions of this dialog set a 15-minute interval:
+                // the position the radio reported was up to 15 minutes old,
+                // for no power saving. 0 is the radio's default, every
+                // second.
                 if (hasGPS) {
-                  final intervalText = intervalController.text.trim();
-                  // Blank, like 0, is the radio's default: every second.
-                  final interval = intervalText.isEmpty
-                      ? 0
-                      : int.tryParse(intervalText);
-                  if (interval == null || interval < 0 || interval > 86400) {
-                    if (!context.mounted) return;
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text(l10n.settings_locationIntervalRange),
-                    );
-                    return;
-                  }
-
-                  await connector.setCustomVar("gps_interval:$interval");
-                  await connector.refreshDeviceInfo();
-                  if (!context.mounted) return;
-                  showDismissibleSnackBar(
-                    context,
-                    content: Text(l10n.settings_locationUpdated),
-                  );
+                  await connector.setCustomVar("gps_interval:0");
                 }
 
                 final latText = latController.text.trim();

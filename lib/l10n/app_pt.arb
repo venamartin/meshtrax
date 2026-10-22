@@ -1225,7 +1225,6 @@
   "neighbors_unknownContact": "{pubkey} Desconhecido",
   "settings_locationGPSEnable": "Ativar GPS",
   "settings_locationGPSEnableSubtitle": "Habilita a atualização automática da localização via GPS.",
-  "settings_locationIntervalSec": "Intervalo para GPS (Segundos)",
   "contacts_manageRoom": "Gerenciar Servidor de Sala",
   "room_management": "Gerenciamento de Servidor de Sala",
   "@community_joinConfirmation": {

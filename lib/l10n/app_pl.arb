@@ -1235,7 +1235,6 @@
   "neighbors_unknownContact": "Nieznana {pubkey}",
   "settings_locationGPSEnable": "Włącz GPS",
   "settings_locationGPSEnableSubtitle": "Włącza automatyczne aktualizowanie pozycji za pomocą GPS.",
-  "settings_locationIntervalSec": "Interwał dla GPS (Sekundy)",
   "contacts_manageRoom": "Zarządzaj Serwerem Pokoju",
   "room_management": "Zarządzanie Serwerem Pokoju",
   "@community_joinConfirmation": {

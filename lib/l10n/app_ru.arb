@@ -69,7 +69,6 @@
   "settings_locationInvalid": "Неверная широта или долгота.",
   "settings_locationGPSEnable": "Включить GPS",
   "settings_locationGPSEnableSubtitle": "Включение GPS для автоматического обновления позиции.",
-  "settings_locationIntervalSec": "Интервал для позиционирования GPS (секунды)",
   "settings_latitude": "Широта",
   "settings_longitude": "Долгота",
   "settings_privacyMode": "Режим конфиденциальности",

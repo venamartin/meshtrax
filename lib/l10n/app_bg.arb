@@ -1223,7 +1223,6 @@
   },
   "neighbors_heardAgo": "Слушано преди {time}.",
   "neighbors_unknownContact": "Неизвестна {pubkey}",
-  "settings_locationIntervalSec": "Интервал за GPS (Секунди)",
   "settings_locationGPSEnable": "Активиране на GPS",
   "settings_locationGPSEnableSubtitle": "Активирайте автоматичното актуализиране на местоположението чрез GPS.",
   "room_management": "Управление на сървъра за стая",

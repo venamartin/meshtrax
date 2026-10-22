@@ -1228,7 +1228,6 @@
   "neighbors_unknownContact": "Unbekannt {pubkey}",
   "settings_locationGPSEnable": "GPS aktivieren",
   "settings_locationGPSEnableSubtitle": "Aktiviert GPS zur automatischen Aktualisierung des Standorts.",
-  "settings_locationIntervalSec": "Intervall für GPS (Sekunden)",
   "contacts_manageRoom": "Raum-Server verwalten",
   "room_management": "Raum-Server-Verwaltung",
   "@community_joinConfirmation": {

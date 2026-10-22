@@ -412,17 +412,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_locationGPSEnableSubtitle => '启用 GPS 以自动更新位置。';
 
   @override
-  String get settings_locationIntervalSec => 'GPS 间隔（秒）';
-
-  @override
-  String get settings_locationIntervalHelp =>
-      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
-
-  @override
-  String get settings_locationIntervalRange =>
-      'Enter 0 to 86400 seconds, or leave it blank.';
-
-  @override
   String get settings_latitude => '纬度';
 
   @override

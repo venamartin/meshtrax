@@ -431,17 +431,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Habilita a atualização automática da localização via GPS.';
 
   @override
-  String get settings_locationIntervalSec => 'Intervalo para GPS (Segundos)';
-
-  @override
-  String get settings_locationIntervalHelp =>
-      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
-
-  @override
-  String get settings_locationIntervalRange =>
-      'Enter 0 to 86400 seconds, or leave it blank.';
-
-  @override
   String get settings_latitude => 'Latitude';
 
   @override

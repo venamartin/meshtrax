@@ -1225,7 +1225,6 @@
   "neighbors_unknownContact": "Chiave pubblica sconosciuta {pubkey}",
   "settings_locationGPSEnable": "Abilita GPS",
   "settings_locationGPSEnableSubtitle": "Abilita l'aggiornamento automatico della posizione tramite GPS.",
-  "settings_locationIntervalSec": "Intervallo GPS (Secondi)",
   "contacts_manageRoom": "Gestisci Server Camera",
   "room_management": "Gestione del Server di Camera",
   "@community_joinConfirmation": {

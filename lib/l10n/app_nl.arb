@@ -1225,7 +1225,6 @@
   "neighbors_heardAgo": "Horen: {time} geleden",
   "settings_locationGPSEnable": "GPS inschakelen",
   "settings_locationGPSEnableSubtitle": "Activeer automatisch locatieupdates via GPS.",
-  "settings_locationIntervalSec": "Interval voor GPS (Seconden)",
   "contacts_manageRoom": "Beheer Ruimte Server",
   "room_management": "Beheer Server Kamer",
   "@community_joinConfirmation": {

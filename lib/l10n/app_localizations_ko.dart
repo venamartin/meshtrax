@@ -415,17 +415,6 @@ class AppLocalizationsKo extends AppLocalizations {
       'GPS를 사용하여 위치 정보를 자동으로 업데이트할 수 있도록 합니다.';
 
   @override
-  String get settings_locationIntervalSec => 'GPS 간격 (초)';
-
-  @override
-  String get settings_locationIntervalHelp =>
-      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
-
-  @override
-  String get settings_locationIntervalRange =>
-      'Enter 0 to 86400 seconds, or leave it blank.';
-
-  @override
   String get settings_latitude => '위도';
 
   @override

@@ -1225,7 +1225,6 @@
   "neighbors_heardAgo": "Escuchado: {time} hace atrás",
   "settings_locationGPSEnable": "Habilitar GPS",
   "settings_locationGPSEnableSubtitle": "Habilita la actualización automática de la ubicación mediante GPS.",
-  "settings_locationIntervalSec": "Intervalo para GPS (Segundos)",
   "contacts_manageRoom": "Gestionar Servidor de Habitación",
   "room_management": "Administración del Servidor de Habitación",
   "@community_joinConfirmation": {

@@ -415,17 +415,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_locationGPSEnableSubtitle => 'GPSが自動的に位置情報を更新できるようにする。';
 
   @override
-  String get settings_locationIntervalSec => 'GPS データの取得間隔（秒）';
-
-  @override
-  String get settings_locationIntervalHelp =>
-      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
-
-  @override
-  String get settings_locationIntervalRange =>
-      'Enter 0 to 86400 seconds, or leave it blank.';
-
-  @override
   String get settings_latitude => '緯度';
 
   @override

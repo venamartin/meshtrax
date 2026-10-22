@@ -430,18 +430,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Lehetővé teszi, hogy a GPS automatikusan frissítse a helyzetet.';
 
   @override
-  String get settings_locationIntervalSec =>
-      'GPS-számolási intervallum (másodpercek)';
-
-  @override
-  String get settings_locationIntervalHelp =>
-      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
-
-  @override
-  String get settings_locationIntervalRange =>
-      'Enter 0 to 86400 seconds, or leave it blank.';
-
-  @override
   String get settings_latitude => 'Nyugat-–––––––––––––––––––––––––––––––';
 
   @override

@@ -1225,7 +1225,6 @@
   "neighbors_unknownContact": "Okänd {pubkey}",
   "settings_locationGPSEnable": "Aktivera GPS",
   "settings_locationGPSEnableSubtitle": "Aktivera automatiska uppdateringar av platsen med hjälp av GPS.",
-  "settings_locationIntervalSec": "Interval för GPS (Sekunder)",
   "contacts_manageRoom": "Hantera Rumserver",
   "room_management": "Rumserverhantering",
   "@community_joinConfirmation": {
