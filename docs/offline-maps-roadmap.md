@@ -8,9 +8,14 @@ This file says how traxmap's offline vector maps replace MeshTrax's online raste
 
 ## Status
 
-Last updated 2026-10-20, evening. **Resume here.**
+Last updated 2026-10-22. **Resume here.**
 
-**Branch:** `feature/offline-maps`, PR #169. Push only when Martin asks.
+**PR #169 is merged** (squash `25f17ee`, 2026-10-22): Phases 1–4 and 6 below are on master.
+- **New work goes in small PRs off master,** one topic each:
+  - `feature/chart-symbols` (renderer icons, then the chart symbols);
+  - `feature/terrain` (the terrain kind and the USGS base), when traxmapmaker's pilot packs arrive.
+- **Before the next store release from master:** the release gate in Phase 5.
+- **Pushing:** only when Martin asks. He also pushes to feature branches from his other machine, so fetch first.
 
 **Done:**
 - **Phase 1:**
@@ -536,6 +541,19 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 - Switch the default index to the root once it's live.
 
 **G2:** a pass on Android, iOS, Windows and macOS. Includes updating a pack on Windows while the map is open.
+
+**Release gate (2026-10-22): before the next store release from master.** GitHub issues are off for this repo, so the checklist lives here.
+- [ ] **Privacy policy:** review and publish the `docs/privacy.md` draft: the map server, and My location read only after a tap, never stored, sent or read in the background. Set its "Last updated" date; it still says September 29, 2026.
+- [ ] **Google Play Data safety:** location (fine and coarse), used on the device only, not collected or shared. Master now asks for location on every Android version.
+- [ ] **App Store privacy label:** location used on the device only. Check the `NSLocationWhenInUseUsageDescription` (iOS) and `NSLocationUsageDescription` (macOS) texts.
+- [ ] **Microsoft Store:** the listing for the new `location` capability.
+- [ ] **G2 on Android, iOS, Windows and macOS:**
+  - download, pause and resume a region;
+  - Offline mode;
+  - the charts "Not for navigation" dialog;
+  - the My location prompt, denied and allowed;
+  - on Windows, updating a pack while the map is open.
+- [ ] **Translations:** about 80 new strings are English only. Translate them, or ship with the English fallback.
 
 ### Phase 6: Charts
 
