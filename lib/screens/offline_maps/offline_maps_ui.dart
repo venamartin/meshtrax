@@ -70,16 +70,30 @@ const sizeStyle = TextStyle(fontFeatures: [FontFeature.tabularFigures()]);
 /// Orange-bordered notice box, as MeshTrax shows warnings.
 class Callout extends StatelessWidget {
   final String text;
-  const Callout(this.text, {super.key});
+
+  /// Makes the callout a link, with a chevron.
+  final VoidCallback? onTap;
+
+  const Callout(this.text, {super.key, this.onTap});
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.orange.withValues(alpha: 0.12),
-      border: const Border(left: BorderSide(color: Colors.orange, width: 3)),
+  Widget build(BuildContext context) => Material(
+    color: Colors.orange.withValues(alpha: 0.12),
+    child: InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(
+          border: Border(left: BorderSide(color: Colors.orange, width: 3)),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(text)),
+            if (onTap != null) const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
     ),
-    child: Text(text),
   );
 }
 

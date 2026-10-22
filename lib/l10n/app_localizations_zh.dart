@@ -4062,8 +4062,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineMaps_tabCharts => 'Charts';
 
   @override
-  String get offlineMaps_chartsNotice =>
-      'Not for navigation. Use official, up-to-date NOAA charts to navigate.';
+  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
@@ -4325,6 +4324,33 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get map_notForNavigation => 'Not for navigation';
+
+  @override
+  String get map_chartsNoticeIntro =>
+      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+
+  @override
+  String get map_chartsNoticeWhy => 'Why:';
+
+  @override
+  String get map_chartsNoticeOutOfDate =>
+      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+
+  @override
+  String get map_chartsNoticeLeftOut =>
+      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+
+  @override
+  String get map_chartsNoticePositions =>
+      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+
+  @override
+  String get map_chartsNoticeNotPlotter =>
+      'MeshTrax isn\'t a certified chart plotter.';
+
+  @override
+  String get map_chartsNoticeUse =>
+      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
 
   @override
   String get map_sourceOnline => 'Online';

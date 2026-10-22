@@ -20,6 +20,7 @@ import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 import 'package:meshtrax/widgets/app_map.dart';
+import 'package:meshtrax/widgets/charts_notice_dialog.dart';
 
 import '../../packages/traxmap/test/support/fake_pmtiles.dart';
 import '../helpers/map_fakes.dart';
@@ -59,6 +60,7 @@ void main() {
     PrefsManager.reset();
     await PrefsManager.initialize();
     settings = AppSettingsService();
+    resetChartsNoticeShown();
     tmp = await Directory.systemTemp.createTemp('appmap');
     maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/packs')),
@@ -170,7 +172,54 @@ void main() {
     });
     await settings.setMapSource('offline');
     await settings.setMapType('charts');
+    // The "Not for navigation" dialog has its own test.
+    await settings.setChartsNoticeDismissed(true);
   }
+
+  testWidgets('charts say why they are not for navigation, once a run', (
+    tester,
+  ) async {
+    await withCharts(tester, _Downloads());
+    await settings.setChartsNoticeDismissed(false);
+    Future<void> reopen() async {
+      await tester.pumpWidget(const SizedBox());
+      await pumpMap(tester);
+    }
+
+    Future<void> ok() async {
+      await tester.tap(find.text('OK'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    await settings.setMapSource('online');
+    await pumpMap(tester);
+    expect(find.byType(AlertDialog), findsNothing, reason: 'no charts online');
+
+    await settings.setMapSource('offline');
+    await reopen();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.textContaining('Notices to Mariners'), findsOneWidget);
+    await ok();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Not for navigation'), findsNothing, reason: 'no label');
+
+    await reopen();
+    expect(find.byType(AlertDialog), findsNothing, reason: 'once a run');
+
+    resetChartsNoticeShown();
+    await reopen();
+    await tester.ensureVisible(find.text("Don't show this again"));
+    await tester.tap(find.text("Don't show this again"));
+    await tester.pump();
+    await ok();
+    expect(settings.settings.chartsNoticeDismissed, isTrue);
+
+    resetChartsNoticeShown();
+    await reopen();
+    expect(find.byType(AlertDialog), findsNothing, reason: 'not again');
+  });
 
   testWidgets('offline on the Charts map: the card offers the area here', (
     tester,

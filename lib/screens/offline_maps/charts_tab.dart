@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
 import '../../utils/format_bytes.dart';
+import '../../widgets/charts_notice_dialog.dart';
 import 'offline_maps_ui.dart';
 
 /// NOAA chart areas by coast (roadmap screen S3d): tick areas in any coast
@@ -73,7 +74,10 @@ class ChartsTab extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Callout(l10n.offlineMaps_needsNewerApp),
                     ),
-                  Callout(l10n.offlineMaps_chartsNotice),
+                  Callout(
+                    l10n.offlineMaps_chartsNotice,
+                    onTap: () => showChartsNotice(context),
+                  ),
                   if (suggested case (final area, final entry)) ...[
                     const SizedBox(height: 12),
                     Card.outlined(

@@ -86,6 +86,10 @@ class AppSettings {
   /// user checks "don't show again".
   final bool batterySleepWarningDismissed;
 
+  /// The "Not for navigation" dialog, shown once per run when the map
+  /// first draws charts; set when the user checks "don't show again".
+  final bool chartsNoticeDismissed;
+
   /// Public-key hexes of blocked direct-message contacts.
   final Set<String> blockedContactKeys;
 
@@ -135,6 +139,7 @@ class AppSettings {
     this.senderNameColors = true,
     this.dmIdentityWarningDismissed = false,
     this.batterySleepWarningDismissed = false,
+    this.chartsNoticeDismissed = false,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
@@ -187,6 +192,7 @@ class AppSettings {
       'sender_name_colors': senderNameColors,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
+      'charts_notice_dismissed': chartsNoticeDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
     };
@@ -266,6 +272,7 @@ class AppSettings {
           json['dm_identity_warning_dismissed'] as bool? ?? false,
       batterySleepWarningDismissed:
           json['battery_sleep_warning_dismissed'] as bool? ?? false,
+      chartsNoticeDismissed: json['charts_notice_dismissed'] as bool? ?? false,
       blockedContactKeys:
           ((json['blocked_contact_keys'] as List?)
               ?.map((e) => e.toString())
@@ -321,6 +328,7 @@ class AppSettings {
     bool? senderNameColors,
     bool? dmIdentityWarningDismissed,
     bool? batterySleepWarningDismissed,
+    bool? chartsNoticeDismissed,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
   }) {
@@ -378,6 +386,8 @@ class AppSettings {
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
       batterySleepWarningDismissed:
           batterySleepWarningDismissed ?? this.batterySleepWarningDismissed,
+      chartsNoticeDismissed:
+          chartsNoticeDismissed ?? this.chartsNoticeDismissed,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
     );

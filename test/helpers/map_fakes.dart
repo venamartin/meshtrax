@@ -33,6 +33,7 @@ class MemoryStyles implements StyleSource {
         'ovm:map': map,
         'ovm:theme': id.endsWith('dark') ? 'dark' : 'light',
         'ovm:requires': [map],
+        if (map == 'charts') 'ovm:disclaimer': 'Not for navigation',
       },
       'sources': {
         map: {'type': 'vector', 'url': 'pmtiles://{pack:$map}'},

@@ -60,7 +60,9 @@ Last updated 2026-10-20, evening. **Resume here.**
 6. **Phase 6, the Charts tab: done (2026-10-20)** except the chart styles for the rebuilt data. See S3d.
    - `ChartAreaIndex` (traxmap) reads `chart_areas.geojson`. `MapPacksService` fetches and caches it with the catalogue; a 404 keeps the cached copy.
    - The Offline maps screen has three tabs: Maps · Charts · Downloaded.
-   - The Charts tab's notice (Martin, 2026-10-20): "Not for navigation. Use official, up-to-date NOAA charts to navigate."
+   - **"Not for navigation" is a dialog (Martin, 2026-10-22),** not a label pinned on the map. It says why: charts go out of date, leave things out, positions can be wrong or old, and MeshTrax isn't a certified chart plotter; navigate with official NOAA charts and the Notices to Mariners.
+     - It opens the first time the map draws charts in each app run, until "Don't show this again" (`chartsNoticeDismissed`).
+     - The Charts tab's callout is one line, "Not for navigation · Why? ›", that opens it. That's also how to read it again, and its checkbox shows the saved choice, so it can be undone.
    - Downloaded lists chart areas in their own "NOAA charts" section. App Settings counts them apart: "1 region · 2 chart areas · 1.2 GB".
    - Links:
      - a coastal region's detail says "NOAA charts are picked by coast, in the Charts tab";
@@ -205,7 +207,7 @@ Test: auto-connect firing while either of these is open.
 │                                         [◎]  │  centre on me
 │                                         [+]  │  desktop only
 │                                         [−]  │  desktop only
-│ ▍Not for navigation  (charts only)       [⚲] │  filter FAB (hidden in no-radio mode)
+│                                          [⚲] │  filter FAB (hidden in no-radio mode)
 │ © OpenStreetMap contributors · USGS…    (chip)│  credits chip, tap to expand
 ├──────────────────────────────────────────────┤
 │           [ Chats ]        [ Map ]           │  QuickSwitchBar (hidden: POI link, no-radio)
@@ -239,7 +241,7 @@ Test: auto-connect firing while either of these is open.
 4. the first installed region;
 5. the whole world at zoom 2.
 
-**Disclaimer:** the chart styles show the localized "Not for navigation".
+**Disclaimer:** the chart styles (`ovm:disclaimer`) open the "Not for navigation" dialog the first time the map draws charts in each app run, until "Don't show this again" (Martin, 2026-10-22). Nothing stays pinned on the map.
 
 ### S2. Layers sheet
 
@@ -351,7 +353,7 @@ When nothing is installed: "No offline maps yet", with [Find maps].
 
 **S3d. Charts tab (Phase 6; built 2026-10-20, text only):** Martin chose a coast list with ticks, areas alphabetical until `coast_areas` gives coastline order.
 ```
-│ ▍Not for navigation. …                       │  always-on orange callout
+│ ▍Not for navigation · Why?                 › │  opens the "Not for navigation" dialog
 │ ┌──────────────────────────────────────────┐ │
 │ │ ☐ Rhode Island                  12.3 MB  │ │  Suggested: the area at the radio's position
 │ │   Suggested · Atlantic Coast             │ │
