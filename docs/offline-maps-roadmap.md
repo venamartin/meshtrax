@@ -15,6 +15,9 @@ Last updated 2026-10-22. **Resume here.**
   - `feature/chart-symbols` (renderer icons, then the chart symbols);
   - `feature/terrain` (the terrain kind and the USGS base), when traxmapmaker's pilot packs arrive.
 - **Before the next store release from master:** the release gate in Phase 5.
+- **Phone GPS is parked (Martin, 2026-10-22).** My location uses the radio's position only, so the next release asks for no new location permission and needs no store-form changes or review videos.
+  - The removal is its own PR off master, `feature/radio-position-only`, kept local until Martin tests it.
+  - Phone GPS comes back later as its own project: see "Phone GPS (parked)" under Later.
 - **Pushing:** only when Martin asks. He also pushes to feature branches from his other machine, so fetch first.
 
 **Done:**
@@ -100,10 +103,7 @@ Last updated 2026-10-22. **Resume here.**
      - macOS `NSLocationUsageDescription` and the location entitlement;
      - MSIX `location` capability;
      - iOS builds set `BYPASS_PERMISSION_LOCATION_ALWAYS=1` (TESTFLIGHT_GUIDE.md, Podfiles).
-   - **Needs Martin:**
-     - a phone test of the permission prompt (Android, iOS);
-     - review of the privacy-policy changes (My location: read only on tap, never stored or sent), with its "Last updated" date;
-     - the store forms: Play Data safety (location permission, used on the device only), App Store privacy labels, and the Microsoft Store listing.
+   - **Phone GPS parked (2026-10-22):** the phone parts above come out in `feature/radio-position-only`, and My location follows the radio. The permission-prompt test and the store forms move to "Phone GPS (parked)" under Later. The privacy review stays in the release gate.
 8. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
@@ -531,7 +531,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | Task | Change |
 | --- | --- |
 | M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types; desktop +/−. **Done.** |
-| M7 | Phone GPS (geolocator): My location and the phone's own marker, plus the privacy and platform updates. On the Pi it uses the radio fallback. **Done** (2026-10-20); the permission prompt and the store forms need Martin's phone and accounts. |
+| M7 | Phone GPS (geolocator): My location and the phone's own marker, plus the privacy and platform updates. On the Pi it uses the radio fallback. **Done** (2026-10-20). **Parked 2026-10-22:** the phone parts come out in `feature/radio-position-only`, and My location follows the radio. See "Phone GPS (parked)" under Later. |
 
 ### Phase 5: cleanup and release gate
 
@@ -543,15 +543,23 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 **G2:** a pass on Android, iOS, Windows and macOS. Includes updating a pack on Windows while the map is open.
 
 **Release gate (2026-10-22): before the next store release from master.** GitHub issues are off for this repo, so the checklist lives here.
-- [ ] **Privacy policy:** review and publish the `docs/privacy.md` draft: the map server, and My location read only after a tap, never stored, sent or read in the background. Set its "Last updated" date; it still says September 29, 2026.
-- [ ] **Google Play Data safety:** location (fine and coarse), used on the device only, not collected or shared. Master now asks for location on every Android version.
-- [ ] **App Store privacy label:** location used on the device only. Check the `NSLocationWhenInUseUsageDescription` (iOS) and `NSLocationUsageDescription` (macOS) texts.
-- [ ] **Microsoft Store:** the listing for the new `location` capability.
+- [ ] **Phone GPS out:** `feature/radio-position-only` merged (decided 2026-10-22, see Status). It removes:
+  - geolocator, `PhoneLocationService` and the blue dot;
+  - Android location on every version: the permissions go back to `maxSdkVersion="30"`, which BLE scanning on Android 11 and below still needs;
+  - the iOS and macOS location texts, the macOS location entitlement, `BYPASS_PERMISSION_LOCATION_ALWAYS` (Podfiles, TESTFLIGHT_GUIDE.md) and the MSIX `location` capability.
+
+  My location then follows the radio. The app asks the radio for its position about every 30 s while a map is open, instead of only at the radio's `gps_interval` (15 min by default).
+- [ ] **Privacy policy:** review `docs/privacy.md`. The store listings link to it on master, so the draft is already live.
+  - The map server section stays.
+  - The device-location row and the My location wording come out with phone GPS.
+  - Contact: drop "open an issue", since GitHub issues are off.
+  - Set "Last updated"; it still says September 29, 2026.
+- [ ] **Store forms:** none change once phone GPS is out. Play Data safety, the App Store privacy label and the Microsoft Store listing stay as they are today.
 - [ ] **G2 on Android, iOS, Windows and macOS:**
   - download, pause and resume a region;
   - Offline mode;
   - the charts "Not for navigation" dialog;
-  - the My location prompt, denied and allowed;
+  - My location with a GPS radio (follows it), with a radio whose position is typed in, and with none (hidden);
   - on Windows, updating a pack while the map is open.
 - [ ] **Translations:** about 80 new strings are English only. Translate them, or ship with the English fallback.
 
@@ -590,6 +598,34 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 - Label priority overrides
 - Brochure extraction
 - Showing the last radio's nodes in no-radio mode
+- Phone GPS: see below
+
+#### Phone GPS (parked)
+
+**Parked 2026-10-22 (Martin):** he wants it back, but after offline maps and other features. The store side (forms, review videos, approval) needs time he doesn't have now.
+
+**Bringing it back:**
+- Revert `feature/radio-position-only`'s removal. The working code is in #169 (`25f17ee`), and its pitfalls are in [`offline-maps.md`](offline-maps.md) ("Phone location").
+- **Store work it brings back:**
+  - the privacy policy wording;
+  - Play Data safety;
+  - the App Store privacy label;
+  - the Microsoft Store `location` capability;
+  - a phone test of the permission prompt, denied and allowed.
+
+**If it grows into background tracking that sends the position to the mesh** (an idea from 2026-10-22, checked against store rules that day):
+- **Android:**
+  - No `ACCESS_BACKGROUND_LOCATION`. Location read from a foreground service that started while the app was on screen counts as while-in-use.
+  - The service needs `foregroundServiceType="connectedDevice|location"` and the `FOREGROUND_SERVICE_LOCATION` permission.
+  - Play Console's foreground-service declaration needs the location type added, with a video.
+  - **Android 14 won't start a location-type service from the background.** MeshTrax restarts its service on background reconnects, so those restarts must use `connectedDevice` only, or Android throws.
+- **iOS:**
+  - The `location` background mode. Reviewers ask why an app uses a background mode (Guideline 2.5.4), so [`app-review-notes.md`](app-review-notes.md) needs a section and a video.
+  - With while-in-use permission, iOS always shows the blue location indicator.
+- **The prompt:** a screen before the OS prompt that says the position goes out over the radio and who can read it. Adverts are signed, not encrypted, so anyone on the mesh can.
+- **Store forms:** answer Data safety and the App Store label the same way as for messages, which also leave the device over the mesh.
+- **Texts that become untrue:** every "stays on this device" text: the iOS and macOS purpose strings, the Android manifest comment and `privacy.md`.
+- **A radio with its own GPS already does this** without the phone. It updates its position from its GPS, and its adverts carry that position unless its advert location setting is "none". That may cover most of the need.
 
 ## Known issues
 
