@@ -1688,9 +1688,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_invalidLink => 'Neveljavna oblika povezave';
 
   @override
-  String get map_title => 'Mapa omrežja';
-
-  @override
   String get map_lineOfSight => 'Linija vida';
 
   @override

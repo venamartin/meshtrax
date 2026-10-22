@@ -712,7 +712,6 @@
     }
   },
   "chat_invalidLink": "無効なリンク形式",
-  "map_title": "ノードマップ",
   "map_lineOfSight": "視界",
   "map_losScreenTitle": "視界",
   "map_noNodesWithLocation": "位置情報データを持つノードは存在しません",

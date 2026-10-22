@@ -1646,9 +1646,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_invalidLink => '유효하지 않은 링크 형식';
 
   @override
-  String get map_title => '노드 매핑';
-
-  @override
   String get map_lineOfSight => '시야';
 
   @override

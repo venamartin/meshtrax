@@ -571,7 +571,6 @@
     }
   },
   "chat_invalidLink": "Nieprawidłowy format linku",
-  "map_title": "Mapa węzłów",
   "map_noNodesWithLocation": "Brak węzłów z danymi lokalizacyjnymi",
   "map_nodesNeedGps": "Węzły muszą udostępniać swoje współrzędne GPS,\naby pojawić się na mapie.",
   "map_nodesCount": "Węzły: {count}",

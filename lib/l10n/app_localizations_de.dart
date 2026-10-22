@@ -1703,9 +1703,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chat_invalidLink => 'Ungültiges Link-Format';
 
   @override
-  String get map_title => 'Karte';
-
-  @override
   String get map_lineOfSight => 'Sichtlinie';
 
   @override

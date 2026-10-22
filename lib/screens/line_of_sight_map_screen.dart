@@ -405,12 +405,9 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
             : context.l10n.losShowPanelTooltip,
         child: Icon(_showHud ? Icons.visibility_off : Icons.tune),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: QuickSwitchBar(
-          selectedIndex: 1,
-          onDestinationSelected: (index) => _handleQuickSwitch(index, context),
-        ),
+      bottomNavigationBar: QuickSwitchBar(
+        selectedIndex: 1,
+        onDestinationSelected: (index) => _handleQuickSwitch(index, context),
       ),
     );
   }

@@ -885,7 +885,6 @@
     }
   },
   "chat_invalidLink": "Invalid link format",
-  "map_title": "Node Map",
   "map_lineOfSight": "Line of Sight",
   "map_losScreenTitle": "Line of Sight",
   "map_noNodesWithLocation": "No nodes with location data",

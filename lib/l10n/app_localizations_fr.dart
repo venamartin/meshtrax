@@ -1706,9 +1706,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chat_invalidLink => 'Format de lien invalide';
 
   @override
-  String get map_title => 'Carte des nœuds';
-
-  @override
   String get map_lineOfSight => 'Ligne de vue';
 
   @override

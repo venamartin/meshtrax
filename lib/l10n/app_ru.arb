@@ -325,7 +325,6 @@
   "chat_direct": "Прямой",
   "chat_poiShared": "Точка интереса отправлена",
   "chat_unread": "Непрочитанных: {count}",
-  "map_title": "Карта нод",
   "map_noNodesWithLocation": "Нет нод с данными о местоположении",
   "map_nodesNeedGps": "Ноды должны передавать свои GPS-координаты, чтобы отображаться на карте",
   "map_nodesCount": "Нод: {count}",

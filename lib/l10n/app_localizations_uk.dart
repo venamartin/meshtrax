@@ -1698,9 +1698,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_invalidLink => 'Невірний формат посилання';
 
   @override
-  String get map_title => 'Карта вузлів';
-
-  @override
   String get map_lineOfSight => 'Пряма видимість';
 
   @override

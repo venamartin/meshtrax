@@ -403,10 +403,11 @@ class _MapScreenState extends State<MapScreen> {
           canPop: allowBack,
           child: Scaffold(
             appBar: AppBar(
+              // The map needs no name, and the room goes to the map; picking
+              // a position still says what to do.
               title: AppBarTitle(
-                widget.pickPosition
-                    ? context.l10n.map_pickPositionHint
-                    : context.l10n.map_title,
+                widget.pickPosition ? context.l10n.map_pickPositionHint : '',
+                subtitle: false,
               ),
               centerTitle: true,
               automaticallyImplyLeading: isPoiLink,
@@ -596,13 +597,10 @@ class _MapScreenState extends State<MapScreen> {
             ),
             bottomNavigationBar: isPoiLink
                 ? null
-                : SafeArea(
-                    top: false,
-                    child: QuickSwitchBar(
-                      selectedIndex: 1,
-                      onDestinationSelected: (index) =>
-                          _handleQuickSwitch(index, context),
-                    ),
+                : QuickSwitchBar(
+                    selectedIndex: 1,
+                    onDestinationSelected: (index) =>
+                        _handleQuickSwitch(index, context),
                   ),
             floatingActionButton: MapControls(
               controller: _mapController,

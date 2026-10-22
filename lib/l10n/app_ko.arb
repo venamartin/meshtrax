@@ -712,7 +712,6 @@
     }
   },
   "chat_invalidLink": "유효하지 않은 링크 형식",
-  "map_title": "노드 매핑",
   "map_lineOfSight": "시야",
   "map_losScreenTitle": "시야",
   "map_noNodesWithLocation": "위치 정보가 있는 노드가 없습니다.",

@@ -1701,9 +1701,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chat_invalidLink => 'Неправильный формат ссылки';
 
   @override
-  String get map_title => 'Карта нод';
-
-  @override
   String get map_lineOfSight => 'Линия видимости';
 
   @override
