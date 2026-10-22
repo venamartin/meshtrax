@@ -1229,7 +1229,6 @@
   "settings_locationGPSEnable": "GPS aktivieren",
   "settings_locationGPSEnableSubtitle": "Aktiviert GPS zur automatischen Aktualisierung des Standorts.",
   "settings_locationIntervalSec": "Intervall für GPS (Sekunden)",
-  "settings_locationIntervalInvalid": "Das Intervall muss mindestens 60 Sekunden und weniger als 86400 Sekunden betragen.",
   "contacts_manageRoom": "Raum-Server verwalten",
   "room_management": "Raum-Server-Verwaltung",
   "@community_joinConfirmation": {

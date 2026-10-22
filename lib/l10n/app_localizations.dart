@@ -898,11 +898,17 @@ abstract class AppLocalizations {
   /// **'Interval for GPS (Seconds)'**
   String get settings_locationIntervalSec;
 
-  /// No description provided for @settings_locationIntervalInvalid.
+  /// No description provided for @settings_locationIntervalHelp.
   ///
   /// In en, this message translates to:
-  /// **'Interval must be at least 60 seconds, and less than 86400 seconds.'**
-  String get settings_locationIntervalInvalid;
+  /// **'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.'**
+  String get settings_locationIntervalHelp;
+
+  /// No description provided for @settings_locationIntervalRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 0 to 86400 seconds, or leave it blank.'**
+  String get settings_locationIntervalRange;
 
   /// No description provided for @settings_latitude.
   ///

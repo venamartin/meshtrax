@@ -739,7 +739,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = context.l10n;
     final latController = TextEditingController();
     final lonController = TextEditingController();
-    final intervalController = TextEditingController();
     latController.text = connector.selfLatitude?.toStringAsFixed(6) ?? '';
     lonController.text = connector.selfLongitude?.toStringAsFixed(6) ?? '';
 
@@ -748,10 +747,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool hasGPS = customVars.containsKey("gps");
     bool isGPSEnabled = customVars["gps"] == "1";
 
-    // Read current interval or default to 900 (15 minutes)
-    final currentInterval =
-        int.tryParse(customVars["gps_interval"] ?? "") ?? 900;
-    intervalController.text = currentInterval.toString();
+    // The radio never reports its interval: it shows only when the app set
+    // it during this connection. Blank saves the radio's default.
+    final intervalController = TextEditingController(
+      text: customVars["gps_interval"] ?? '',
+    );
 
     showDialog(
       context: context,
@@ -790,6 +790,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   controller: intervalController,
                   decoration: InputDecoration(
                     labelText: l10n.settings_locationIntervalSec,
+                    helperText: l10n.settings_locationIntervalHelp,
+                    helperMaxLines: 3,
                     border: const OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
@@ -825,16 +827,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 if (hasGPS) {
                   final intervalText = intervalController.text.trim();
-                  if (intervalText.isEmpty) {
-                    return;
-                  }
-
-                  final interval = int.tryParse(intervalText);
-                  if (interval == null || interval < 60 || interval >= 86400) {
+                  // Blank, like 0, is the radio's default: every second.
+                  final interval = intervalText.isEmpty
+                      ? 0
+                      : int.tryParse(intervalText);
+                  if (interval == null || interval < 0 || interval > 86400) {
                     if (!context.mounted) return;
                     showDismissibleSnackBar(
                       context,
-                      content: Text(l10n.settings_locationIntervalInvalid),
+                      content: Text(l10n.settings_locationIntervalRange),
                     );
                     return;
                   }

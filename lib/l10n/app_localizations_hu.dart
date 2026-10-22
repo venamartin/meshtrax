@@ -434,8 +434,12 @@ class AppLocalizationsHu extends AppLocalizations {
       'GPS-számolási intervallum (másodpercek)';
 
   @override
-  String get settings_locationIntervalInvalid =>
-      'Az intervallum legalább 60 másodpercnek, de legfeljebb 86400 másodpercnak kell lennie.';
+  String get settings_locationIntervalHelp =>
+      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
+
+  @override
+  String get settings_locationIntervalRange =>
+      'Enter 0 to 86400 seconds, or leave it blank.';
 
   @override
   String get settings_latitude => 'Nyugat-–––––––––––––––––––––––––––––––';

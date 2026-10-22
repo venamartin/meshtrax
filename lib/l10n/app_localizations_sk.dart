@@ -432,8 +432,12 @@ class AppLocalizationsSk extends AppLocalizations {
   String get settings_locationIntervalSec => 'Interval pre GPS (Sekundy)';
 
   @override
-  String get settings_locationIntervalInvalid =>
-      'Interval musí byť aspoň 60 sekúnd a menej ako 86400 sekúnd.';
+  String get settings_locationIntervalHelp =>
+      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
+
+  @override
+  String get settings_locationIntervalRange =>
+      'Enter 0 to 86400 seconds, or leave it blank.';
 
   @override
   String get settings_latitude => 'Súradnica';

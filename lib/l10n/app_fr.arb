@@ -1226,7 +1226,6 @@
   "settings_locationGPSEnable": "Activer le GPS",
   "settings_locationGPSEnableSubtitle": "Activer la mise à jour automatique de la position via GPS",
   "settings_locationIntervalSec": "Intervalle de mise-à-jour du GPS (Secondes)",
-  "settings_locationIntervalInvalid": "L'intervalle doit être compris entre 60 et 86400 secondes.",
   "contacts_manageRoom": "Gérer le Room Server",
   "room_management": "Administrattion Room Server",
   "@community_joinConfirmation": {

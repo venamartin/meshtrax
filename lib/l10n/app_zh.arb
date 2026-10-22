@@ -98,7 +98,6 @@
   "settings_locationGPSEnable": "启用 GPS",
   "settings_locationGPSEnableSubtitle": "启用 GPS 以自动更新位置。",
   "settings_locationIntervalSec": "GPS 间隔（秒）",
-  "settings_locationIntervalInvalid": "间隔时间必须至少为 60 秒，但不超过 86400 秒。",
   "settings_latitude": "纬度",
   "settings_longitude": "经度",
   "settings_privacyMode": "隐私模式",

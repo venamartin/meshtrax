@@ -3603,28 +3603,20 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _batteryPollTimer = null;
   }
 
+  /// A radio with its GPS on can move: ask for its position every 30 s.
+  /// The radio itself refreshes that position from the GPS only every
+  /// `gps_interval` seconds (1 s unless set).
   void _updateGpsPolling() {
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
-
-    if (!isConnected) return;
-    
-    final customVars = _currentCustomVars ?? {};
-    final bool hasGPS = customVars.containsKey("gps");
-    final bool isGPSEnabled = customVars["gps"] == "1";
-    
-    if (hasGPS && isGPSEnabled) {
-      final interval = int.tryParse(customVars["gps_interval"] ?? "") ?? 900;
-      if (interval > 0) {
-        _gpsPollTimer = Timer.periodic(Duration(seconds: interval), (timer) {
-          if (!isConnected) {
-            timer.cancel();
-            return;
-          }
-          unawaited(sendFrame(buildAppStartFrame()));
-        });
+    if (!isConnected || _currentCustomVars?['gps'] != '1') return;
+    _gpsPollTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!isConnected) {
+        timer.cancel();
+        return;
       }
-    }
+      unawaited(requestSelfPosition());
+    });
   }
 
   void setPollingInterval(int i) {
@@ -5100,6 +5092,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> setCustomVar(String value) async {
     if (!isConnected) return;
     await sendFrame(buildSetCustomVarFrame(value));
+    // The radio reports no change, and never reports gps_interval at all:
+    // keep what the app knows, so GPS on starts the position refresh.
+    final sep = value.indexOf(':');
+    if (sep > 0) {
+      _currentCustomVars = {
+        ...?_currentCustomVars,
+        value.substring(0, sep): value.substring(sep + 1),
+      };
+      _updateGpsPolling();
+    }
   }
 
   Future<void> sendSelfAdvert({bool flood = true}) async {

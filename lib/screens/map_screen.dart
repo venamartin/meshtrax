@@ -92,7 +92,6 @@ class _MapScreenState extends State<MapScreen> {
   List<_GuessedLocation> _cachedGuessedLocations = [];
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
-  Timer? _selfPosition;
   StreamSubscription<Object?>? _channelLatest;
 
   @override
@@ -104,13 +103,9 @@ class _MapScreenState extends State<MapScreen> {
     _channelLatest = connector.watchChannelLatest().listen((_) {
       if (mounted) unawaited(_refreshChannelMarkers(connector));
     });
-    // A radio with GPS moves with its owner: keep "You" and My location
-    // current while the map is open.
+    // A radio with GPS moves with its owner: start "You" from where it is
+    // now; the connector refreshes it every 30 s after that.
     unawaited(connector.requestSelfPosition());
-    _selfPosition = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => unawaited(connector.requestSelfPosition()),
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) connector.getChannels();
     });
@@ -119,7 +114,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _saveCamera?.cancel();
-    _selfPosition?.cancel();
     unawaited(_channelLatest?.cancel());
     _mapController.dispose();
     super.dispose();

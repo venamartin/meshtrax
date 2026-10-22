@@ -154,7 +154,6 @@
   "settings_locationGPSEnable": "GPS engedélyezve",
   "settings_locationGPSEnableSubtitle": "Lehetővé teszi, hogy a GPS automatikusan frissítse a helyzetet.",
   "settings_locationIntervalSec": "GPS-számolási intervallum (másodpercek)",
-  "settings_locationIntervalInvalid": "Az intervallum legalább 60 másodpercnek, de legfeljebb 86400 másodpercnak kell lennie.",
   "settings_latitude": "Nyugat-–––––––––––––––––––––––––––––––",
   "settings_longitude": "hosszúság",
   "settings_contactSettings": "Kapcsolat beállítások",

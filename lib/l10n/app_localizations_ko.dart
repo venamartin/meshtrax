@@ -418,8 +418,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_locationIntervalSec => 'GPS 간격 (초)';
 
   @override
-  String get settings_locationIntervalInvalid =>
-      '간격은 최소 60초 이상, 86400초 미만이어야 합니다.';
+  String get settings_locationIntervalHelp =>
+      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
+
+  @override
+  String get settings_locationIntervalRange =>
+      'Enter 0 to 86400 seconds, or leave it blank.';
 
   @override
   String get settings_latitude => '위도';

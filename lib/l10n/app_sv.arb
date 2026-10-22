@@ -1226,7 +1226,6 @@
   "settings_locationGPSEnable": "Aktivera GPS",
   "settings_locationGPSEnableSubtitle": "Aktivera automatiska uppdateringar av platsen med hjälp av GPS.",
   "settings_locationIntervalSec": "Interval för GPS (Sekunder)",
-  "settings_locationIntervalInvalid": "Intervalet måste vara minst 60 sekunder och mindre än 86400 sekunder.",
   "contacts_manageRoom": "Hantera Rumserver",
   "room_management": "Rumserverhantering",
   "@community_joinConfirmation": {

@@ -432,8 +432,12 @@ class AppLocalizationsBg extends AppLocalizations {
   String get settings_locationIntervalSec => 'Интервал за GPS (Секунди)';
 
   @override
-  String get settings_locationIntervalInvalid =>
-      'Интервалът трябва да бъде поне 60 секунди и по-малко от 86400 секунди.';
+  String get settings_locationIntervalHelp =>
+      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
+
+  @override
+  String get settings_locationIntervalRange =>
+      'Enter 0 to 86400 seconds, or leave it blank.';
 
   @override
   String get settings_latitude => 'Широчина';

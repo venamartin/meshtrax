@@ -1226,7 +1226,6 @@
   "settings_locationGPSEnable": "Abilita GPS",
   "settings_locationGPSEnableSubtitle": "Abilita l'aggiornamento automatico della posizione tramite GPS.",
   "settings_locationIntervalSec": "Intervallo GPS (Secondi)",
-  "settings_locationIntervalInvalid": "L'intervallo deve essere di almeno 60 secondi e inferiore a 86400 secondi.",
   "contacts_manageRoom": "Gestisci Server Camera",
   "room_management": "Gestione del Server di Camera",
   "@community_joinConfirmation": {

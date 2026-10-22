@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -9,9 +11,9 @@ import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// The map keeps "You" current by asking a radio with GPS for its own
-// telemetry. SELF_INFO would also carry the position, but it reloads the
-// contacts and starts a sync each time.
+// The app keeps the radio's position current by asking a radio with its GPS
+// on for its own telemetry every 30 s. SELF_INFO would also carry the
+// position, but it reloads the contacts and starts a sync each time.
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
 
@@ -86,6 +88,33 @@ void main() {
     c = _Connector();
     c.handleFrameForTest(_selfInfo(selfKey, 41.812345, -71.412345));
     await settle();
+  });
+  // GPS off stops the refresh timer.
+  tearDown(() => radio(verCode: 9, gps: '0'));
+
+  test('GPS on: asks every 30 s, never with APP_START', () {
+    fakeAsync((async) {
+      final appStarts = c.sentOf(cmdAppStart);
+      radio(verCode: 9, gps: '1');
+      async.elapse(const Duration(seconds: 61));
+      expect(c.sentOf(cmdSendTelemetryReq), 2);
+
+      radio(verCode: 9, gps: '0');
+      async.elapse(const Duration(seconds: 61));
+      expect(c.sentOf(cmdSendTelemetryReq), 2, reason: 'GPS off: no asking');
+      expect(c.sentOf(cmdAppStart), appStarts);
+    });
+  });
+
+  test('GPS turned on from the app starts the refresh', () {
+    fakeAsync((async) {
+      radio(verCode: 9, gps: '0');
+      unawaited(c.setCustomVar('gps:1'));
+      unawaited(c.setCustomVar('gps_interval:0'));
+      async.elapse(const Duration(seconds: 31));
+      expect(c.sentOf(cmdSendTelemetryReq), 1);
+      expect(c.currentCustomVars, {'gps': '1', 'gps_interval': '0'});
+    });
   });
 
   test('asks only a radio with its GPS on and self telemetry', () async {

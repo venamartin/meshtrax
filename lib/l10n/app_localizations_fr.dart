@@ -435,8 +435,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Intervalle de mise-à-jour du GPS (Secondes)';
 
   @override
-  String get settings_locationIntervalInvalid =>
-      'L\'intervalle doit être compris entre 60 et 86400 secondes.';
+  String get settings_locationIntervalHelp =>
+      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
+
+  @override
+  String get settings_locationIntervalRange =>
+      'Enter 0 to 86400 seconds, or leave it blank.';
 
   @override
   String get settings_latitude => 'Latitude';

@@ -432,8 +432,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_locationIntervalSec => 'Interval voor GPS (Seconden)';
 
   @override
-  String get settings_locationIntervalInvalid =>
-      'De intervallen moeten minstens 60 seconden zijn en minder dan 86400 seconden.';
+  String get settings_locationIntervalHelp =>
+      'How often the radio updates its position from the GPS. Leave blank for every second. A longer interval saves no power.';
+
+  @override
+  String get settings_locationIntervalRange =>
+      'Enter 0 to 86400 seconds, or leave it blank.';
 
   @override
   String get settings_latitude => 'Breedtegraad';
