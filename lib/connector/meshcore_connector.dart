@@ -7955,7 +7955,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: (msg) =>
           contactWireSecsCandidates(msg, roomSkewSecs: skew),
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) => mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -8051,14 +8051,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Every text form a MeshCore One reaction to this row could have been
-  /// hashed over. The stored display [text] and its stripped forms cover
-  /// plain messages; [wireText] covers rows whose display text was rewritten
-  /// (replies) — the 2026-08-12 #mtdebug capture showed MC1 hashing the raw
-  /// reply markup, which no display-text variant can reproduce.
-  static List<String> _mc1TextVariants(String text, [String? wireText]) =>
+  /// hashed over. MC1 itself hashes the edge-trimmed body, mention kept
+  /// ([ChannelMessage.mc1HashText]); the stripped forms tolerate clients
+  /// that hash the addressed body. [wireText] covers rows whose display text
+  /// was rewritten (replies) — the 2026-08-12 #mtdebug capture showed MC1
+  /// hashing the raw reply markup, which no display-text variant can
+  /// reproduce.
+  static List<String> mc1TextVariants(String text, [String? wireText]) =>
       _mc1TextVariantsNamed(text, wireText).values.toList();
 
-  /// [_mc1TextVariants] keyed by the name each form goes by in the parked-
+  /// [mc1TextVariants] keyed by the name each form goes by in the parked-
   /// reaction log. A form equal to an earlier one is dropped, so every text
   /// is hashed once.
   static Map<String, String> _mc1TextVariantsNamed(
@@ -8071,27 +8073,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     add('raw', text);
+    add('trimmed', ChannelMessage.mc1HashText(text));
     add('display', ChannelMessage.mc1DisplayText(text));
     add('stripped', ChannelMessage.stripLeadingMentions(text));
     if (wireText != null) {
       add('wire', wireText);
+      add('wire-trimmed', ChannelMessage.mc1HashText(wireText));
       add('wire-display', ChannelMessage.mc1DisplayText(wireText));
     }
     return out;
   }
 
   /// Reaction wire text for a channel message — MeshCore One dialect,
-  /// readable on every client. The hash commits to ONE text form (the raw
-  /// wire markup for replies, MC1's display rule otherwise — measured on
-  /// the air, #mtdebug capture 2026-08-12) and ONE wire timestamp: the
-  /// received stamp for incoming rows, the last transmitted stamp for our
-  /// own (the retry that actually got through is what everyone else holds).
+  /// readable on every client. The hash commits to ONE text form — what an
+  /// MC1 phone stores: the raw wire text (reply markup and leading mentions
+  /// included) trimmed at the edges, see [ChannelMessage.mc1HashText] — and
+  /// ONE wire timestamp: the received stamp for incoming rows, the last
+  /// transmitted stamp for our own (the retry that actually got through is
+  /// what everyone else holds).
   static String channelReactionText(ChannelMessage target, String emoji) {
     final secs = target.isOutgoing && target.sentWireSecs.isNotEmpty
         ? target.sentWireSecs.last
         : wireTimestampMs(target) ~/ 1000;
     final hash = ReactionHelper.computeMeshCoreOneHash(
-      target.wireText ?? ChannelMessage.mc1DisplayText(target.text),
+      ChannelMessage.mc1HashText(target.wireText ?? target.text),
       secs,
     );
     return ReactionHelper.encodeMeshCoreOne(
@@ -8105,14 +8110,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// 1:1 DM names no sender: the hash alone identifies the target. A room
   /// has many voices, so the caller passes the target post's author as
   /// [targetSender] and the reaction reads `@[author]👍` on any client,
-  /// decoded or not. Receivers match on the hash either way.
+  /// decoded or not. Receivers match on the hash either way. MC1 stores DM
+  /// and room text untouched, so the hash covers the stored text as-is.
   static String contactReactionText(
     Message target,
     String emoji, {
     String? targetSender,
   }) {
     final hash = ReactionHelper.computeMeshCoreOneHash(
-      ChannelMessage.mc1DisplayText(target.text),
+      target.text,
       _messageWireSecs(target),
     );
     return ReactionHelper.encodeMeshCoreOne(
@@ -8347,7 +8353,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             ReactionHelper.parseMeshCoreOneReaction(m.text) != null,
         getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
         getWireTimestampSecs: _channelWireSecsCandidates,
-        getMessageTextVariants: (m) => _mc1TextVariants(m.text, m.wireText),
+        getMessageTextVariants: (m) => mc1TextVariants(m.text, m.wireText),
         getSenderName: (m) => m.senderName,
         getMessageText: (m) => m.text,
       );
@@ -8428,7 +8434,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
         getWireTimestampSecs: (m) =>
             contactWireSecsCandidates(m, roomSkewSecs: skew),
-        getMessageTextVariants: (m) => _mc1TextVariants(m.text),
+        getMessageTextVariants: (m) => mc1TextVariants(m.text),
         getSenderName: (m) => contact == null
             ? null
             : _resolveContactSenderName(m, contact, isRoomServer),
@@ -8495,7 +8501,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final orphans = await _channelOrphans(idKey);
     if (orphans.isEmpty) return;
     final hashes = _mc1HashesFor(
-      _mc1TextVariants(target.text, target.wireText),
+      mc1TextVariants(target.text, target.wireText),
       _channelWireSecsCandidates(target),
     );
     var landed = false;
@@ -8534,7 +8540,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       orElse: () => null,
     );
     final hashes = _mc1HashesFor(
-      _mc1TextVariants(target.text),
+      mc1TextVariants(target.text),
       contactWireSecsCandidates(target, roomSkewSecs: roomSkewSecs(contact)),
     );
     var landed = false;
@@ -8582,7 +8588,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: (msg) =>
           contactWireSecsCandidates(msg, roomSkewSecs: skew),
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) => mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer),
       getMessageText: (msg) => msg.text,
@@ -8619,7 +8625,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: (msg) =>
           contactWireSecsCandidates(msg, roomSkewSecs: skew),
-      getMessageTextVariants: (msg) => _mc1TextVariants(msg.text),
+      getMessageTextVariants: (msg) => mc1TextVariants(msg.text),
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
@@ -9200,7 +9206,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
       getWireTimestampSecs: _channelWireSecsCandidates,
       getMessageTextVariants: (msg) =>
-          _mc1TextVariants(msg.text, msg.wireText),
+          mc1TextVariants(msg.text, msg.wireText),
       getSenderName: (msg) => msg.senderName,
       getMessageText: (msg) => msg.text,
       getReactions: (msg) => msg.reactions,

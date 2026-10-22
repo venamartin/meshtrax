@@ -27,8 +27,7 @@ void main() {
       expect(wire, '@[GWQ∆🍓]😂\n$expectedHash');
     });
 
-    test('hashes the mention-stripped display text — what MC1 clients hold',
-        () {
+    test('keeps a leading mention in the hash — MC1 never strips it', () {
       final target = ChannelMessage(
         senderName: 'GWQ∆🍓',
         text: '@[Vacasity] Hello',
@@ -37,8 +36,8 @@ void main() {
         messageId: '1234567890000_x_y',
       );
       final wire = MeshCoreConnector.channelReactionText(target, '😂');
-      final expectedHash =
-          ReactionHelper.computeMeshCoreOneHash('Hello', 1234567890);
+      final expectedHash = ReactionHelper.computeMeshCoreOneHash(
+          '@[Vacasity] Hello', 1234567890);
       expect(wire.endsWith('\n$expectedHash'), isTrue,
           reason: 'got "$wire"');
     });
@@ -203,13 +202,62 @@ void main() {
           reason: 'without the harvested retry stamp this reaction orphans');
     });
 
-    test('mc1DisplayText strips inline addressing, keeps reply markup', () {
-      // Measured MC1 rule: '@[name] ' (space) is addressing and is not
-      // hashed; '@[name]\n' is reply markup and IS hashed.
+    test('mc1DisplayText (receive tolerance) strips addressing, keeps reply '
+        'markup', () {
       expect(ChannelMessage.mc1DisplayText('@[Bob] hello'), 'hello');
       expect(ChannelMessage.mc1DisplayText('@[Bob]\n>quote..\nhello'),
           '@[Bob]\n>quote..\nhello');
       expect(ChannelMessage.mc1DisplayText('plain'), 'plain');
+    });
+  });
+
+  group('edge whitespace — pinned to the 2026-10-21 #Public field log', () {
+    // Vacasity X1 and Lil_Meshy both reacted 😂 with hash nksybmwk to SG
+    // Meshpocket's message heard at stamp 1792645827. It reproduces from the
+    // FULL text, mention kept, at offset 0 — yet our stored row missed:
+    // MC1 trims the channel body's edges (ChannelMessageFormat.parse) and
+    // the sender's text carried trailing whitespace we keep.
+    const mc1Text =
+        '@[PIBER 📟] important news about their car’s extended warranty.';
+    const stored = '$mc1Text ';
+    const secs = 1792645827;
+    final row = ChannelMessage(
+      senderName: 'SG Meshpocket',
+      text: stored,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(secs * 1000),
+      isOutgoing: false,
+      messageId: '${secs}000_x_y',
+    );
+
+    test('pinned vector reproduces', () {
+      expect(ReactionHelper.computeMeshCoreOneHash(mc1Text, secs), 'nksybmwk');
+    });
+
+    test('mc1HashText trims tab and Zs at the edges only', () {
+      expect(ChannelMessage.mc1HashText(stored), mc1Text);
+      expect(ChannelMessage.mc1HashText('\t a  b 　'), 'a  b');
+      expect(ChannelMessage.mc1HashText('hi\n'), 'hi\n',
+          reason: 'Swift .whitespaces excludes newlines');
+    });
+
+    test('an MC1 reaction to a trailing-space row resolves', () {
+      final index = ReactionHelper.findTargetIndex<ChannelMessage>(
+        messages: [row],
+        reactionInfo: ReactionHelper.parseIncomingReaction(
+            '@[SG Meshpocket]😂\nnksybmwk')!,
+        shouldSkip: (_) => false,
+        getTimestampSecs: (m) => secs,
+        getSenderName: (m) => m.senderName,
+        getMessageText: (m) => m.text,
+        getMessageTextVariants: (m) =>
+            MeshCoreConnector.mc1TextVariants(m.text, m.wireText),
+      );
+      expect(index, 0);
+    });
+
+    test('our reaction to that row carries the hash MC1 holds', () {
+      expect(MeshCoreConnector.channelReactionText(row, '😂'),
+          '@[SG Meshpocket]😂\nnksybmwk');
     });
   });
 
