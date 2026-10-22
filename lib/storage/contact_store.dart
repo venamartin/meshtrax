@@ -74,6 +74,7 @@ class ContactStore {
       appLogger.warn('Public key hex is not set. Cannot save contacts.');
       return;
     }
+    final sw = Stopwatch()..start();
     await _db.transaction(() async {
       await (_db.delete(_db.contactRows)
             ..where((r) => r.nodeScope.equals(publicKeyHex)))
@@ -93,6 +94,7 @@ class ContactStore {
         );
       });
     });
+    appLogger.perf('contact table rewrite of ${contacts.length} contacts', sw);
   }
 
   Map<String, dynamic> _toJson(Contact contact) {

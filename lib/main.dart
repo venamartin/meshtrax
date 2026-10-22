@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'helpers/snack_bar_builder.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/l10n.dart';
@@ -60,6 +61,28 @@ void main() async {
     appDebugLogService,
     enabled: appSettingsService.settings.appDebugLogEnabled,
   );
+
+  // UI stall reporter: a debug-log line for every frame that took 50 ms or
+  // longer (three dropped frames), at most two a second so one long stall
+  // cannot flood the ring buffer. Flutter collects these timings anyway;
+  // this only reads them.
+  var lastStallLog = DateTime.fromMillisecondsSinceEpoch(0);
+  SchedulerBinding.instance.addTimingsCallback((timings) {
+    if (!appLogger.isEnabled) return;
+    for (final t in timings) {
+      final total = t.totalSpan.inMilliseconds;
+      if (total < 50) continue;
+      final now = DateTime.now();
+      if (now.difference(lastStallLog).inMilliseconds < 500) continue;
+      lastStallLog = now;
+      appLogger.info(
+        'UI stall $total ms (build ${t.buildDuration.inMilliseconds}, '
+        'raster ${t.rasterDuration.inMilliseconds})',
+        tag: 'Perf',
+        noNotify: true,
+      );
+    }
+  });
 
   // Initialize notification service
   final notificationService = NotificationService();
