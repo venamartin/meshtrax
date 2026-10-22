@@ -128,20 +128,24 @@ Last updated 2026-10-20, evening. **Resume here.**
      - **Approved:** the USGS pilot, once its code is written, and the national charts rebuild (Option B, decluttered), local until Martin publishes.
      - **US contours:** all 1,447 blocks done in 21.6 h (20 ft master 10.5 GB). Region cut sizes go to Martin before any publish; the app already handles both contour variants.
 
-**Data on R2** (from traxmapmaker-d3, 2026-10-20):
+**Data on R2** (2026-10-22, 09:34 PDT, from traxmapmaker-f4):
 - **Production only** (Martin): `https://maps.meshtrax.io/index.json` is the one catalogue, and it gets only products from full master builds. `dev/` is retired.
-- **On it:** the 73 North America OSM packs, border-complete. Puerto Rico and the US Virgin Islands were rehearsal builds; they return with a full Central America build.
-- **Coming, in order:**
-  - Mexico split into its 32 states (container `north-america/mexico`, ids like `mexico-nuevo-leon`), replacing `mexico-osm`;
-  - the NOAA charts master with `chart_areas.geojson` (§1.4), including Puerto Rico;
-  - US contours;
-  - the USGS base.
-- **Until then:** no charts, contours or USGS packs anywhere. Use the preview folder's local copies for screenshots.
-- **Tested 2026-10-20** (on `dev/`, same packs):
-  - Every pack's region is in the picker.
-  - The Rhode Island update was detected by checksum.
-  - RI+CT and VT+QC draw seamlessly across the border.
-  - Quebec (1.67 GB): 68 s download, 38 s SHA-256 check, memory flat.
+- **On it: 250 packs, 38.8 GB.**
+  - **Street maps:** 104 `osm` packs: 52 US, 20 Canada and Mexico's 32 states (`mexico-osm` is gone).
+  - **Charts:** the 42 NOAA `charts` packs at `charts_revision` 2 (the navigational set, decluttered), 1.34 GB.
+  - **Contours:** 104 US `contours` packs, 16 GB: every US region in 20 ft and 10 m. Alaska's 20 ft is the largest, at 2.9 GB.
+- **Coming:**
+  - the USGS base and the `terrain` kind;
+  - the world base map, last.
+- **Checked from the app (2026-10-22),** with the live files through `MapPacksService` and a headless render in flutter-tester:
+  - The catalogue is ready, with nothing skipped and nothing needing a newer app.
+  - Every one of the 42 chart areas has its pack, and every contours region has a street map.
+  - Seven real packs (Rhode Island charts, map and both contour variants; Vermont's map and contours) install with their sha256, and none shows "Update available".
+  - Charts (light and dark) and contours (feet and metres) draw as designed.
+- **Server files:**
+  - `index.json` and `chart_areas.geojson` are ASCII and served as UTF-8.
+  - `picker.geojson` still has 12 non-ASCII bytes until Martin republishes it. The app decodes it as UTF-8 either way.
+- **Large packs:** any pack over 64 MB has a multipart ETag (`"<md5>-<parts>"`). It's strong, so resuming with `If-Range` works (Alaska contours answered 206), but it isn't the file's MD5. The app checks the index's sha256 only.
 - **Sharing the Pi:** traxmapmaker shares its 4 cores. During its big builds, keep heavy Flutter work (analysis server, full test runs, builds) light. It messages before starting one.
 
 **Known issues:** below.
@@ -570,6 +574,10 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
   - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
   - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.
 - **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
+- **Metric-charted depths can read up to 0.5 ft deep in feet** (found 2026-10-22 on the live Rhode Island pack; waiting for Martin). Soundings and depth contours print traxmapmaker's `depth_ft`, which is `round(metres × 3.28084)`.
+  - **Feet-charted values are exact.** NOAA stores them in metres truncated to 0.1 m: 18 ft becomes 5.4 m, which is 17.72 ft. Rounding gives back the chart's figure on every one of them (18,830 soundings, 4,656 contour pieces).
+  - **Metric-charted values sometimes read deeper than charted.** Newer large-scale cells use metric contours (2, 5, 8, 10, 15, 20, 30, 50 m). Rounding shows a third of their soundings (7,380 of 22,407) and 2,411 contour pieces deeper than charted: a 2 m contour reads "7 ft" (6.56 ft), and 20 m reads "66 ft".
+  - **Rounding down everything would break the feet-charted values** (18, 60 and 120 ft contours would read 17, 59 and 119). The fix is to round down only on cells charted in metres. traxmapmaker knows each value's cell; the style can only guess from the value (3 m and 10 m look like 10 and 33 ft).
 
 ## Bugs to fix along the way
 
