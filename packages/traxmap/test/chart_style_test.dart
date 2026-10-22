@@ -209,11 +209,101 @@ void main() {
       expect(label('landmark-label', radioTower, zoom: 14), 'R TR');
       expect(label('landmark-label', radioTower, zoom: 13), '', reason: 'z14+');
       expect(
-        matches('landmark', {'class': 'LNDMRK', 'function': 'light_support'}),
+        matches('landmark-symbol', {
+          'class': 'LNDMRK',
+          'function': 'light_support',
+        }),
         isFalse,
+      );
+      expect(
+        matches('landmark-symbol', {
+          'class': 'LNDMRK',
+          'category': 'windmotor',
+          'function': 'light_support',
+        }),
+        isTrue,
+        reason: 'its light does not say it is a turbine',
       );
     },
   );
+
+  String icon(String id, Map<String, Object?> p) =>
+      (byId(id) as vt.SymbolThemeLayer).iconImage!.eval(feature(p));
+
+  test('marks: shapes and colours as charted', () {
+    const port = {'kind': 'beacon', 'shape': 'stake', 'side': 'port'};
+    expect(icon('beacon', {...port, 'colour': 'green'}), 'day-square-green');
+    expect(
+      icon('beacon', {'kind': 'beacon', 'side': 'starboard', 'colour': 'red'}),
+      'day-triangle-red',
+    );
+    // Preferred channel: the top band decides.
+    expect(
+      icon('beacon', {
+        'kind': 'beacon',
+        'category': 'lateral',
+        'colour': 'red',
+        'colours': 'red,green,red',
+        'colour_pattern': 'horizontal_stripes',
+      }),
+      'day-triangle-rgr',
+    );
+    expect(
+      icon('buoy', {
+        'kind': 'buoy',
+        'shape': 'pillar',
+        'colour': 'red',
+        'colours': 'red,white',
+        'colour_pattern': 'vertical_stripes',
+      }),
+      'buoy-pillar-rwv',
+    );
+    // A combination the sheet lacks falls back to the first colour.
+    expect(
+      icon('buoy', {
+        'kind': 'buoy',
+        'shape': 'super-buoy',
+        'colour': 'white',
+        'colours': 'white,red,white,red,red',
+        'colour_pattern': 'border_stripe',
+      }),
+      'buoy-pillar-white',
+    );
+  });
+
+  test('hazards and areas: the INT-1 symbol for what it is', () {
+    expect(icon('hazard-symbol', {'kind': 'rock'}), 'hazard-rock');
+    expect(
+      icon('hazard-symbol', {'kind': 'rock', 'water_level': 'awash'}),
+      'hazard-rock-awash',
+    );
+    expect(
+      icon('hazard-symbol', {'kind': 'wreck', 'dangerous': 1}),
+      'hazard-wreck-dangerous',
+    );
+    expect(
+      icon('hazard-symbol', {'kind': 'wreck', 'category': 'hull_showing'}),
+      'hazard-wreck-hull',
+    );
+    const area = {'anchor': 1};
+    expect(icon('regulated-symbol', {...area, 'class': 'ACHARE'}), 'anchor');
+    expect(
+      icon('regulated-symbol', {
+        ...area,
+        'class': 'CBLARE',
+        'restriction': 'anchoring',
+      }),
+      'no-anchoring',
+    );
+    expect(
+      matches('regulated-symbol', {...area, 'class': 'DMPGRD'}),
+      isFalse,
+      reason: 'no symbol, so the label stays centred',
+    );
+    const entry = {'class': 'RESARE', 'restriction': 'entry'};
+    expect(matches('restricted-limit', entry, type: 'Polygon'), isTrue);
+    expect(matches('regulated-limit', entry, type: 'Polygon'), isFalse);
+  });
 
   test('area anchors label areas; point symbols skip them', () {
     expect(

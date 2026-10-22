@@ -547,7 +547,8 @@ Needs traxmapmaker 1.4.
   - Martin approved it from side-by-side renders of the Puerto Rico pilot.
   - Before that, a three-lens review (chart conventions, phone legibility, data) fixed misleading labels: entry *restricted* areas shown as "prohibited", AM broadcast towers shown as "R Bn", clearances rounded up, and mooring buoys in nav-aid yellow.
   - Buoy names show the chart number below z15 (Martin).
-  - Waiting for sprites: lane and current arrows, anchors, restricted-area T-ticks, topmarks, the cable wave.
+- Chart symbols (T9). **Done** (2026-10-22): sprite sheets from `tool/make_sprites.py`. Buoys, beacons, daymarks, topmarks, light flares, rocks, wrecks, obstructions, anchorages, caution areas, lane and stream arrows, landmarks; the T-tick limit and the cable wave. Martin chose magenta flares and leaning buoys.
+  - Open: restricted-area limits that run along the shore. traxmapmaker is asked for limit lines without the shoreline parts in the next charts rebuild; the styles switch to them when packs carry them.
 
 ### Phase 7: trail routing (Android only)
 
@@ -575,7 +576,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 
 ## Known issues
 
-- **Peak labels had a box before the name on the Pi** ("▯ Bare Rock"). The styles put "▲" before the name, and the renderer draws labels in the platform's default font, which lacks it on Linux. Fixed 2026-10-20 by dropping the "▲" (`tool/make_styles.py`). A proper peak icon comes with sprites (T9); a font for labels needs the font hook (T12).
+- **Peak labels had a box before the name on the Pi** ("▯ Bare Rock"). The styles put "▲" before the name, and the renderer draws labels in the platform's default font, which lacks it on Linux. Fixed 2026-10-20 by dropping the "▲" (`tool/make_styles.py`). The peak icon came with the sprite sheets (T9, 2026-10-22); a font for labels needs the font hook (T12).
 - **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the downloaded-area outlines and the "Zoom in" card show.
   - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
   - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.

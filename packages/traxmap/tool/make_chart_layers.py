@@ -11,13 +11,16 @@ and the buoy-name text, so it can be rerun after editing either:
 
 make_dark_variants.py takes the dark paint of these layers from dark_paint().
 
-No sprites yet, so symbols are circles, lines, fills and text with INT-1
-abbreviations. Lane and current arrows, anchors, restricted-area T-ticks,
-topmarks and the cable wave wait for sprites. Checked on traxmapmaker's Puerto
+Buoys, beacons, lights, hazards, anchorages, arrows, topmarks and landmarks
+are icons from the sprite sheets (tool/make_sprites.py), as are the
+restricted-area T-ticks and the cable wave; the rest are circles, lines,
+fills and text with INT-1 abbreviations. Checked on traxmapmaker's Puerto
 Rico pilot (2026-10-21) by a conventions, phone-legibility and data review.
 """
 import json
 import sys
+
+from make_sprites import BUOY_SHAPES, SCHEMES, SOLID, TOPMARKS, layout
 
 LIGHT = {
     "magenta": "#b5186e", "magenta_text": "#a0106a", "ink": "#333333", "grey": "#7d7d7d",
@@ -126,6 +129,72 @@ def clearance_text(units):
     return ["concat", vc, hc]
 
 
+def pick(attr, pairs, fallback):
+    """["match", ["get", attr], …]: pairs maps a value, or a list of them,
+    to an output."""
+    out = ["match", ["get", attr]]
+    for value, result in pairs:
+        out += [value, result]
+    return out + [fallback]
+
+
+def zoom_size(*stops):
+    return ["interpolate", ["linear"], ["zoom"], *stops]
+
+
+# A mark's colours and pattern as a sheet scheme (make_sprites.SCHEMES), and
+# anything else as its first colour, so every mark has an icon.
+SCHEME = ["match", ["concat", ["coalesce", ["get", "colours"], ""], "/",
+                   ["coalesce", ["get", "colour_pattern"], ""]],
+          *[x for name, (colours, pattern) in SCHEMES.items() if pattern
+            for x in (f"{','.join(colours)}/{pattern}", name)],
+          pick("colour", [(c, c) for c in SOLID if c != "other"], "other")]
+BUOY_ICON = ["concat", "buoy-", pick("shape", [(s, s) for s in BUOY_SHAPES] + [("super-buoy", "pillar")],
+                                     "pillar"), "-", SCHEME]
+# Beacons on stakes and piles are charted as daybeacons: square on the
+# port hand, triangle on the starboard hand (preferred channels by their
+# top band), a diamond otherwise.
+DAY_SHAPE = ["case", ["==", ["get", "side"], "port"], "square",
+             ["==", ["get", "side"], "starboard"], "triangle",
+             ["==", ["get", "category"], "lateral"], pick("colour", [("green", "square"), ("red", "triangle")],
+                                                          "rhombus"),
+             "rhombus"]
+BEACON_ICON = ["concat", "day-", DAY_SHAPE, "-", SCHEME]
+TOWER = ["match", ["get", "shape"], ["tower", "lattice"], True, False]
+DAYMARK_ICON = ["concat", "day-",
+                pick("shape", [(["square", "rectangle_vertical", "rectangle_horizontal", "board", "cylinder"],
+                                "square"),
+                               (["triangle_point_up", "triangle_point_down", "cone_point_up",
+                                 "cone_point_down"], "triangle")], "rhombus"),
+                "-", SCHEME]
+HAZARD_ICON = pick("kind", [
+    ("wreck", ["case", ["match", ["get", "category"], ["hull_showing", "mast_showing"], True, False],
+               "hazard-wreck-hull", ["==", ["get", "dangerous"], 1], "hazard-wreck-dangerous", "hazard-wreck"]),
+    ("rock", pick("water_level", [("awash", "hazard-rock-awash"),
+                                  (["covers_uncovers", "dry"], "hazard-rock-covers")], "hazard-rock")),
+], pick("category", [(["foul_area", "foul_ground"], "hazard-foul")], "hazard-obstruction"))
+REGULATED_ICON = ["case", cls("ACHBRT"), "anchor-berth",
+                  ["==", ["get", "restriction"], "anchoring"], "no-anchoring",
+                  cls("ACHARE"), "anchor", cls("CTNARE"), "caution", ""]
+HAS_REGULATED_ICON = ["!=", REGULATED_ICON, ""]
+LANDMARK_ICON = ["concat", "landmark-", pick("category", [
+    ("windmotor", "windmotor"),
+    ("tower", pick("function", [(["radio", "television", "microwave", "communication"], "mast")], "tower")),
+    (["mast", "dish_aerial"], "mast"), (["chimney", "flare_stack"], "chimney"),
+    (["spire_minaret", "cross"], "church"), ("flagstaff", "flagstaff"), ("dome", "dome"),
+], pick("function", [(["church", "chapel"], "church")], "generic"))]
+# Restricted areas get the T-tick limit (INT-1 N2.1); the other regulated
+# areas keep a dashed one.
+T_TICKS = ["any", ["all", cls("RESARE"), ["==", ["get", "restriction"], "entry"]], cls("MIPARE")]
+
+
+def icon(id_, source_layer, filter_, image, family, minzoom, size, rotate=False):
+    lay = {"icon-image": image, "icon-size": size, "icon-allow-overlap": True, **layout(family)}
+    if rotate:
+        lay.update({"icon-rotate": ["get", "orient"], "icon-rotation-alignment": "map"})
+    return layer(id_, "symbol", source_layer, filter_, minzoom, {}, layout=lay)
+
+
 HAS_CLEARANCE = ["any", ["has", "clearance_m"], ["has", "clearance_closed_m"], ["has", "clearance_open_m"],
                  ["has", "clearance_safe_m"], ["has", "horizontal_clearance_m"]]
 
@@ -231,7 +300,7 @@ def groups(P):
         layer("dock-area", "fill", "structure", cls("DRYDOC", "FLODOC", "DOCARE", "LOKBSN", "HULKES"), 13,
               {"fill-color": P["dock"], "fill-opacity": 0.9}),
         # Traffic separation (S-52): dashed scheme limit, wide translucent
-        # separation line; lane arrows wait for sprites.
+        # separation line; the lane arrows are icons.
         layer("tss-boundary", "line", "route", cls("TSSBND"), 9,
               {"line-color": P["magenta"], "line-width": 1.2, "line-dasharray": [6, 3], "line-opacity": 0.8}),
         layer("tss-separation-line", "line", "route", cls("TSELNE"), 9,
@@ -252,8 +321,9 @@ def groups(P):
         # Magenta dashed limits, entry restrictions heavier; explosives
         # dumping grounds magenta, spoil grounds, farms and fishing grey.
         layer("regulated-limit", "line", "regulated_area",
-              all_(cls("RESARE", "CTNARE", "ACHARE", "MIPARE", "DMPGRD", "CBLARE", "PIPARE", "MARCUL",
-                       "SPLARE", "CTSARE", "OSPARE", "FSHGRD", "ICNARE", "FRPARE", "CUSZNE"), POLY), 10,
+              all_(cls("RESARE", "CTNARE", "ACHARE", "DMPGRD", "CBLARE", "PIPARE", "MARCUL",
+                       "SPLARE", "CTSARE", "OSPARE", "FSHGRD", "ICNARE", "FRPARE", "CUSZNE"), POLY,
+                   ["!", T_TICKS]), 10,
               {"line-color": ["case", ["all", cls("DMPGRD"), CAT("explosives")], P["magenta"],
                               cls("DMPGRD", "MARCUL", "FSHGRD"), P["grey"], P["magenta"]],
                "line-width": ["interpolate", ["linear"], ["zoom"],
@@ -261,15 +331,18 @@ def groups(P):
                               14, ["match", ["get", "restriction"], "entry", 1.8, 1.1]],
                "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 13, 0.85],
                "line-dasharray": [5, 3]}),
+        # The pattern is as tall as the line is wide, its ticks inside the area.
+        layer("restricted-limit", "line", "regulated_area", all_(POLY, T_TICKS), 10,
+              {"line-pattern": "pattern-restricted", "line-width": zoom_size(10, 6, 14, 8),
+               "line-opacity": zoom_size(10, 0.6, 13, 0.9)}),
         layer("swept-limit", "line", "regulated_area", all_(cls("SWPARE"), POLY), 14,
               {"line-color": P["swept"], "line-width": 0.8, "line-dasharray": [2, 2]}),
-        # Cables solid (the wave waits for sprites), disused broken; pipelines
-        # dash-dot, outfalls, intakes and sewers grey (INT-1 L40/L41).
-        layer("cable", "line", "cable_pipe", cls("CBLSUB"), 11,
-              {"line-color": P["magenta"], "line-width": 0.9,
-               "line-opacity": ["case", ["==", ["get", "disused"], 1], 0.35, 0.8],
-               "line-dasharray": ["case", ["==", ["get", "disused"], 1], ["literal", [2, 3]],
-                                  ["literal", [1, 0]]]}),
+        # Cables wavy, disused broken; pipelines dash-dot, outfalls, intakes
+        # and sewers grey (INT-1 L30, L40/L41).
+        layer("cable", "line", "cable_pipe", all_(cls("CBLSUB"), ["!=", ["get", "disused"], 1]), 11,
+              {"line-pattern": "pattern-cable", "line-width": zoom_size(11, 5, 14, 6), "line-opacity": 0.8}),
+        layer("cable-disused", "line", "cable_pipe", all_(cls("CBLSUB"), ["==", ["get", "disused"], 1]), 11,
+              {"line-color": P["magenta"], "line-width": 0.9, "line-opacity": 0.35, "line-dasharray": [2, 3]}),
         layer("pipeline", "line", "cable_pipe", cls("PIPSOL"), 11,
               {"line-color": ["match", ["get", "category"], ["outfall", "intake", "sewer", "bubbler"],
                               P["grey"], P["magenta"]],
@@ -292,10 +365,7 @@ def groups(P):
         layer("overhead-line", "line", "overhead", cls("CBLOHD", "PIPOHD", "CONVYR"), 11,
               {"line-color": P["overhead"], "line-width": 1, "line-dasharray": [4, 2]}),
     ]
-    points = [  # under the nav-aid dots
-        layer("anchor-berth", "circle", "regulated_area", all_(cls("ACHBRT"), NOT_ANCHOR), 12,
-              {"circle-radius": ["case", ["has", "radius_m"], 6, 4], "circle-color": CLEAR,
-               "circle-stroke-color": P["magenta"], "circle-stroke-width": 1.2}),
+    points = [  # small structures and services, under the icons
         layer("pile", "circle", "structure", all_(cls("PILPNT", "PYLONS"), NOT_ANCHOR), 14,
               {"circle-radius": 1.4, "circle-color": P["ink"]}),
         # Dolphins and platforms small and plain; mooring buoys white (or
@@ -307,14 +377,6 @@ def groups(P):
                                 P["ink"]],
                "circle-stroke-color": P["edge"],
                "circle-stroke-width": ["case", ["==", ["get", "category"], "mooring_buoy"], 1, 0]}),
-        # Landmarks: the INT-1 position circle with its dot.
-        layer("landmark", "circle", "landmark", all_(cls("LNDMRK", "SILTNK", "BUISGL"), NOT_ANCHOR,
-                                                     NOT_LIGHT_SUPPORT), 13,
-              {"circle-radius": 3, "circle-color": CLEAR, "circle-stroke-color": P["ink"],
-               "circle-stroke-width": 1.2}),
-        layer("landmark-dot", "circle", "landmark", all_(cls("LNDMRK", "SILTNK", "BUISGL"), NOT_ANCHOR,
-                                                         NOT_LIGHT_SUPPORT), 13,
-              {"circle-radius": 0.9, "circle-color": P["ink"]}),
         # The magenta ring is a navigational radio service: coded stations only.
         layer("radio", "circle", "harbour",
               all_(cls("RDOSTA", "RADSTA"), NOT_ANCHOR, ["any", ["has", "category"], cls("RADSTA")]), 13,
@@ -325,14 +387,36 @@ def groups(P):
               {"circle-radius": 5, "circle-color": CLEAR, "circle-stroke-color": P["magenta"],
                "circle-stroke-width": 1, "circle-stroke-opacity": 0.8}),
     ]
-    day = P["day"]
-    daymarks = [  # over the beacon: the colour many beacons only have here
-        layer("daymark", "circle", "aid_extra", all_(cls("DAYMAR"), NOT_ANCHOR), 11,
-              {"circle-radius": 2.5,
-               "circle-color": ["match", ["get", "colour"], "red", day["red"], "green", day["green"],
-                                "yellow", day["yellow"], "white", day["white"], "black", day["black"],
-                                "orange", day["orange"], day["other"]],
-               "circle-stroke-color": P["edge"], "circle-stroke-width": 0.6}),
+    # Icons, drawn in this order (each sheet has its palette's colours).
+    # Marks: the light's flare under its buoy or beacon, a daymark over its
+    # beacon, a topmark above it.
+    mark_size = zoom_size(9, 0.55, 13, 0.9, 16, 1.2)
+    symbols = [
+        icon("regulated-symbol", "regulated_area", all_(POINT, ["any", ANCHOR, cls("ACHBRT")], HAS_REGULATED_ICON),
+             REGULATED_ICON, "anchor", 11, zoom_size(11, 0.8, 14, 1)),
+        icon("lane-arrow", "route", all_(cls("TSSLPT", "DWRTPT", "RCTLPT"), ANCHOR, ["has", "orient"]),
+             "arrow-lane", "arrow", 9, zoom_size(9, 0.9, 13, 1.5), rotate=True),
+        icon("stream-arrow", "tide_current", all_(cls("TS_FEB", "CURENT"), POINT, ["has", "orient"]),
+             ["match", ["get", "class"], "CURENT", "arrow-current",
+              pick("category", [("flood", "arrow-flood")], "arrow-ebb")],
+             "arrow", 12, zoom_size(12, 0.8, 15, 1), rotate=True),
+        icon("turbulence", "tide_current", all_(cls("WATTUR"), POINT), "arrow-turbulence", "arrow", 13, 0.8),
+        # A lit wind turbine is still a turbine: its light doesn't say so.
+        icon("landmark-symbol", "landmark",
+             all_(cls("LNDMRK", "SILTNK", "BUISGL"), NOT_ANCHOR,
+                  ["any", NOT_LIGHT_SUPPORT, ["==", ["get", "category"], "windmotor"]]),
+             LANDMARK_ICON, "landmark", 13, zoom_size(13, 0.9, 16, 1.1)),
+        icon("hazard-symbol", "hazard", POINT, HAZARD_ICON, "hazard", 10, zoom_size(10, 0.55, 14, 0.9, 16, 1.1)),
+        icon("light-flare", "light", POINT, "light", "light", 9, zoom_size(9, 0.6, 13, 0.9, 16, 1.1)),
+        icon("buoy", "nav_aid", all_(POINT, ["==", ["get", "kind"], "buoy"]), BUOY_ICON, "buoy", 9, mark_size),
+        icon("beacon", "nav_aid", all_(POINT, ["!=", ["get", "kind"], "buoy"], ["!", TOWER]), BEACON_ICON,
+             "day", 9, mark_size),
+        icon("beacon-tower", "nav_aid", all_(POINT, ["!=", ["get", "kind"], "buoy"], TOWER),
+             ["concat", "beacon-", ["get", "shape"]], "beacon", 9, mark_size),
+        icon("daymark", "aid_extra", all_(cls("DAYMAR"), NOT_ANCHOR), DAYMARK_ICON, "day", 11, mark_size),
+        icon("topmark", "aid_extra", all_(cls("TOPMAR"), NOT_ANCHOR,
+                                          ["match", ["get", "shape"], TOPMARKS, True, False]),
+             ["concat", "top-", ["get", "shape"]], "top", 13, mark_size),
     ]
     low = [  # labels below the soundings: lowest priority first
         text(P, "seabed-label", "seabed", all_(cls("SBDARE"), POINT, ["has", "label"], ["has", "nature"]),
@@ -342,9 +426,12 @@ def groups(P):
               "sargasso", "Sargasso", "Wd"], 14, color=P["weed_text"], size=9, italic=True),
         text(P, "breakers-label", "tide_current", all_(cls("WATTUR"), POINT),
              ["match", ["get", "category"], "breakers", "Br", "eddies", "Eddies", "overfalls", "Overfalls",
-              "tide_rips", "Rips", ""], 14, color=P["water_text"], size=9, italic=True),
+              "tide_rips", "Rips", ""], 14, color=P["water_text"], size=9, italic=True,
+             offset=[0, 1], anchor="top"),
+        # Beside the arrow.
         text(P, "current-label", "tide_current", all_(cls("CURENT", "TS_FEB"), POINT, ["has", "speed_kn"]),
-             ["concat", ["to-string", ["get", "speed_kn"]], " kn"], 12, color=P["water_text"], size=9),
+             ["concat", ["to-string", ["get", "speed_kn"]], " kn"], 12, color=P["water_text"], size=9,
+             offset=[0.9, 0], anchor="left"),
         text(P, "land-region", "label", cls("LNDRGN"), NAME, 12, color=P["region_text"], size=10,
              italic=True, halo=P["land_halo"]),
         text(P, "magvar", "label", all_(cls("MAGVAR"), ["has", "label"]), ["concat", "Var ", ["get", "label"]],
@@ -359,8 +446,11 @@ def groups(P):
              color=P["fairway"], size=9, italic=True),
         text(P, "track-bearing", "route", all_(cls("NAVLNE", "RECTRC"), LINE, ["has", "orient"]),
              ["concat", ["to-string", ["get", "orient"]], "°"], 13, size=9, line=True),
+        # Under the area's symbol, where it has one.
         text(P, "regulated-label", "regulated_area", all_(POINT, ["!", cls("SWPARE")]), REGULATED_TEXT, 12,
-             color=["match", ["get", "class"], "UNSARE", P["ink"], P["magenta_text"]], size=9, italic=True),
+             color=["match", ["get", "class"], "UNSARE", P["ink"], P["magenta_text"]], size=9, italic=True,
+             offset=["case", HAS_REGULATED_ICON, ["literal", [0, 1.1]], ["literal", [0, 0]]],
+             anchor=["case", HAS_REGULATED_ICON, "top", "center"]),
     ]
     mid = [  # between the soundings and the hazard, light and buoy labels
         text(P, "landmark-label", "landmark", all_(POINT, NOT_LIGHT_SUPPORT, ["any", NOT_ANCHOR, ["has", "name"]]),
@@ -392,7 +482,7 @@ def groups(P):
         text(P, "virtual-aid-label", "aid_extra", all_(["==", ["get", "virtual"], 1], POINT),
              ["concat", "V-AIS ", NAME], 13, color=P["magenta_text"], size=9, offset=[0, 1.1], anchor="top"),
     ]
-    return under, over, points, daymarks, low, mid, high
+    return under, over, points, symbols, low, mid, high
 
 
 def generated_ids():
@@ -415,30 +505,37 @@ def buoy_name_text():
     return ["step", ["zoom"], short, 15, NAME]
 
 
+# Circles the icons replaced, so a style from before them updates in place.
+RETIRED = {"nav-aid", "hazard", "anchor-berth", "landmark", "landmark-dot"}
+
+
 def main(out):
     path = f"{out}/charts-light.json"
     style = json.load(open(path))
     gen = generated_ids()
-    layers = [l for l in style["layers"] if l["id"] not in gen]
+    layers = [l for l in style["layers"] if l["id"] not in gen | RETIRED]
     ids = [l["id"] for l in layers]
 
     def insert(at, new):
         layers[at:at] = new
         ids[at:at] = [l["id"] for l in new]
 
-    under, over, points, daymarks, low, mid, high = groups(LIGHT)
+    under, over, points, symbols, low, mid, high = groups(LIGHT)
     insert(ids.index("coastline"), under)
     insert(ids.index("coastline") + 1, over)
-    insert(ids.index("light-flare"), points)
-    insert(ids.index("nav-aid") + 1, daymarks)
+    insert(ids.index("hazard-area") + 1, points + symbols)
     insert(ids.index("depth-contour-label"), low)
     insert(ids.index("hazard-label"), mid)
     insert(ids.index("sea-name"), high)
     layers[ids.index("nav-aid-label")]["layout"]["text-field"] = buoy_name_text()
+    # Right of the flare, which points north-east from the light.
+    layers[ids.index("light-label")]["layout"].update({"text-offset": [1.4, -0.4], "text-anchor": "left"})
     style["layers"] = layers
+    style["sprite"] = "{sprite}/light"
     style["metadata"]["ovm:status"] = (
-        "Hand-written; the layers grouped by role (charts_revision 2) come from "
-        "tool/make_chart_layers.py. No sprites yet.")
+        "Hand-written; the layers grouped by role (charts_revision 2) and the "
+        "icons come from tool/make_chart_layers.py, the sheets from "
+        "tool/make_sprites.py.")
     json.dump(style, open(path, "w"), indent=2, ensure_ascii=False)
     open(path, "a").write("\n")
     print("charts-light", len(layers), "layers")

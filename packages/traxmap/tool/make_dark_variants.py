@@ -40,8 +40,6 @@ USGS_DARK = {
     "place-label": {"text-color": "#e6eaef", **HALO},
 }
 
-NAV = ["match", ["get", "colour"], "red", "#ff4d5e", "green", "#3ccf6e", "yellow", "#ffd23f",
-       "white", "#f2f2f2", "black", "#9aa0a6", "orange", "#ff9f43", "#9aa0a6"]
 CHARTS_DARK = {
     # Night chart: deep water darkest, shallows lighter, so danger stays the eye-catcher.
     "background": {"background-color": "#22201b"},
@@ -55,10 +53,6 @@ CHARTS_DARK = {
     "coastline": {"line-color": "#b8a07a"},
     "islet": {"circle-color": "#22201b", "circle-stroke-color": "#b8a07a"},
     "hazard-area": {"line-color": "#d8d8d8"},
-    "hazard": {"circle-color": ["match", ["get", "kind"], "wreck", "#e05aa8", "#e0e0e0"],
-               "circle-stroke-color": "#0c1e30"},
-    "light-flare": {"circle-color": "#ff4fb8", "circle-opacity": 0.45},
-    "nav-aid": {"circle-color": NAV, "circle-stroke-color": "#0c1e30"},
     "depth-contour-label": {"text-color": "#8fbde6", **HALO},
     "depth-contour-label-m": {"text-color": "#8fbde6", **HALO},
     "contour-label": {"text-color": "#a08c72", "text-halo-color": "#22201b"},
@@ -83,6 +77,8 @@ def derive(light: str, dark: str, name: str, overrides: dict) -> None:
     style = json.load(open(f"{OUT}/{light}.json"))
     out = copy.deepcopy(style)
     out["name"] = name
+    if "sprite" in out:  # the dark sheet: same names, the dark palette
+        out["sprite"] = out["sprite"].replace("/light", "/dark")
     out["metadata"] = {**style.get("metadata", {}), "ovm:theme": "dark", "ovm:dark": True,
                        "ovm:status": f"Generated from {light}.json by tool/make_dark_variants.py."}
     missing = set(overrides) - {l["id"] for l in out["layers"]}

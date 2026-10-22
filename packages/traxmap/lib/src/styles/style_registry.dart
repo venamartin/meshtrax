@@ -49,7 +49,9 @@ class StyleContext {
   /// Glyph URL template, e.g. `file:///.../glyphs/{fontstack}/{range}.pbf`.
   final String? glyphs;
 
-  /// Sprite base URL without extension, e.g. `file:///.../sprites/sprite`.
+  /// Where the sprite sheets are, e.g. `file:///.../sprites`; styles name
+  /// a sheet in it as `{sprite}/light`. The Flutter renderer reads the
+  /// bundled sheets from [bundledSprites].
   final String? sprite;
 
   /// Builds the source URL for a pack. Defaults to `pmtiles://file://<path>`.
@@ -101,7 +103,7 @@ class StyleContext {
 /// - source `url`: `pmtiles://{pack:<kind>}`, where kind is `base`,
 ///   `contours` or `charts`
 /// - `glyphs`: `{glyphs}`
-/// - `sprite`: `{sprite}`
+/// - `sprite`: `{sprite}/<sheet>`, e.g. `{sprite}/light`
 ///
 /// A source whose pack kind is not installed is removed together with every
 /// layer that uses it, so a missing optional pack never breaks the style.
@@ -209,17 +211,20 @@ class StyleRegistry {
     return out;
   }
 
+  /// Replaces [placeholder] at the start of [key]'s value with [value], or
+  /// removes the key when there is no [value].
   static void _replaceOrRemove(
     Map<String, Object?> style,
     String key,
     String placeholder,
     String? value,
   ) {
-    if (style[key] != placeholder) return;
+    final current = style[key];
+    if (current is! String || !current.startsWith(placeholder)) return;
     if (value == null) {
       style.remove(key);
     } else {
-      style[key] = value;
+      style[key] = value + current.substring(placeholder.length);
     }
   }
 }

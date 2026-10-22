@@ -26,4 +26,5 @@ dev_dependencies:
 
 flutter:
   assets:
+    - assets/sprites/
     - assets/styles/
