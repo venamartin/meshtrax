@@ -712,7 +712,6 @@
     }
   },
   "chat_invalidLink": "Érvénytelen hivatkozás formátum",
-  "map_title": "Grafikus ábrázás",
   "map_lineOfSight": "Látási vonal",
   "map_losScreenTitle": "Látási vonal",
   "map_noNodesWithLocation": "Nincs olyan adatpont, amelyhez helyszín-információk tartoznak.",

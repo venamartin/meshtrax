@@ -3106,12 +3106,6 @@ abstract class AppLocalizations {
   /// **'Invalid link format'**
   String get chat_invalidLink;
 
-  /// No description provided for @map_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Node Map'**
-  String get map_title;
-
   /// No description provided for @map_lineOfSight.
   ///
   /// In en, this message translates to:

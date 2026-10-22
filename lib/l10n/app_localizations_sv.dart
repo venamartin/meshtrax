@@ -1685,9 +1685,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_invalidLink => 'Ogiltigt länkformat';
 
   @override
-  String get map_title => 'Nodkarta';
-
-  @override
   String get map_lineOfSight => 'Synlinje';
 
   @override

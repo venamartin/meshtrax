@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Formato de link inválido",
-  "map_title": "Mapa de Nós",
   "map_noNodesWithLocation": "Não existem nós com dados de localização.",
   "map_nodesNeedGps": "Os nós precisam partilhar as suas coordenadas GPS\npara aparecerem no mapa",
   "map_nodesCount": "Nós: {count}",

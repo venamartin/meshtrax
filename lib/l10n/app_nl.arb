@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Ongeldig linkformaat",
-  "map_title": "Node Map",
   "map_noNodesWithLocation": "Geen nodes met locatiegegevens",
   "map_nodesNeedGps": "Nodes moeten hun GPS-coördinaten delen\nom op de kaart te verschijnen",
   "map_nodesCount": "Nodes: {count}",

@@ -1702,9 +1702,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chat_invalidLink => 'Formato de enlace no válido';
 
   @override
-  String get map_title => 'Mapa de Nodos';
-
-  @override
   String get map_lineOfSight => 'Línea de visión';
 
   @override

@@ -586,7 +586,6 @@
     }
   },
   "chat_invalidLink": "无效的链接格式",
-  "map_title": "节点地图",
   "map_noNodesWithLocation": "没有包含位置信息的节点",
   "map_nodesNeedGps": "节点需要共享 GPS 坐标才能在地图上显示",
   "map_nodesCount": "节点：{count}",

@@ -1693,9 +1693,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_invalidLink => 'Neplatný formát odkazu';
 
   @override
-  String get map_title => 'Mapa uzlov';
-
-  @override
   String get map_lineOfSight => 'Line of Sight';
 
   @override

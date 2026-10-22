@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Neplatný formát odkazu",
-  "map_title": "Mapa uzlov",
   "map_noNodesWithLocation": "Žiadne uzly s údajmi o polohe",
   "map_nodesNeedGps": "Uholníky musia zdieľať svoje GPS súradnice, aby sa zobrazili na mape.",
   "map_nodesCount": "Uzly: {count}",

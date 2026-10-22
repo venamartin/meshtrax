@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Ungültiges Link-Format",
-  "map_title": "Karte",
   "map_noNodesWithLocation": "Keine Knoten mit Standortdaten",
   "map_nodesNeedGps": "Knoten müssen ihre GPS-Koordinaten teilen,\num auf der Karte zu erscheinen.",
   "map_nodesCount": "Knoten: {count}",

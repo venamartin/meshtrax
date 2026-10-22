@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Formato di link non valido",
-  "map_title": "Mappa Nodi",
   "map_noNodesWithLocation": "Nessun nodo con dati di posizione",
   "map_nodesNeedGps": "I nodi devono condividere le loro coordinate GPS\nper apparire sulla mappa",
   "map_nodesCount": "Nodi: {count}",

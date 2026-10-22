@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Neveljavna oblika povezave",
-  "map_title": "Mapa omrežja",
   "map_noNodesWithLocation": "Nihče od notranjih elementov nima podatkov o lokaciji.",
   "map_nodesNeedGps": "Omrežje morajo deliti svoje GPS koordinate,\nda se prikazao na zemljeobrazniku.",
   "map_nodesCount": "Omize: {count}",

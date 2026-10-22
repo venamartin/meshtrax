@@ -1651,9 +1651,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_invalidLink => '無効なリンク形式';
 
   @override
-  String get map_title => 'ノードマップ';
-
-  @override
   String get map_lineOfSight => '視界';
 
   @override
