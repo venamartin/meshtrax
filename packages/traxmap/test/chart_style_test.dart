@@ -305,6 +305,48 @@ void main() {
     expect(matches('regulated-limit', entry, type: 'Polygon'), isFalse);
   });
 
+  test('area limits: lines where the pack has them, outlines otherwise', () {
+    const entry = {'class': 'RESARE', 'restriction': 'entry'};
+    expect(matches('restricted-limit', entry, type: 'Polygon'), isTrue);
+    expect(
+      matches('restricted-limit', {
+        ...entry,
+        'limit_lines': 1,
+      }, type: 'Polygon'),
+      isFalse,
+      reason: 'its limit comes from area_limit, without the shore',
+    );
+    bool line(String id, Map<String, Object?> p) =>
+        matches(id, p, type: 'LineString');
+    const regulated = {'layer': 'regulated_area'};
+    expect(line('restricted-limit-line', {...regulated, ...entry}), isTrue);
+    expect(line('regulated-limit-line', {...regulated, ...entry}), isFalse);
+    expect(
+      line('regulated-limit-line', {...regulated, 'class': 'CTNARE'}),
+      isTrue,
+    );
+    expect(
+      line('precautionary-line', {'layer': 'route', 'class': 'PRCARE'}),
+      isTrue,
+    );
+    expect(
+      matches('precautionary', {
+        'class': 'PRCARE',
+        'limit_lines': 1,
+      }, type: 'Polygon'),
+      isFalse,
+    );
+    // Hazard areas have no class: the line says which layer it bounds.
+    expect(
+      line('hazard-area-line', {'layer': 'hazard', 'category': 'foul_area'}),
+      isTrue,
+    );
+    expect(
+      line('hazard-area-line', {...regulated, 'class': 'CTNARE'}),
+      isFalse,
+    );
+  });
+
   test('area anchors label areas; point symbols skip them', () {
     expect(
       matches('dolphin', {
