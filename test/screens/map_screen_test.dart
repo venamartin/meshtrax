@@ -246,6 +246,9 @@ void main() {
     await tester.tap(find.text('Contours'));
     await tester.pump();
     expect(settings.settings.mapContours, isFalse);
+    await tester.tap(find.text('Downloaded areas'));
+    await tester.pump();
+    expect(settings.settings.mapDownloadedAreas, isFalse);
     await tester.tap(find.text('Repeaters'));
     await tester.pump();
     expect(settings.settings.mapShowRepeaters, isFalse);

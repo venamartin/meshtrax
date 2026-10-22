@@ -431,6 +431,22 @@ class MapPacksService extends ChangeNotifier {
       if (pack.region != null) pack.region!,
   };
 
+  /// The outlines of what [type] draws from downloaded packs, by region
+  /// path: the region's shape for street and topo maps, the NOAA chart area
+  /// for charts. Each polygon is its outer ring followed by any holes.
+  Map<String, List<List<List<LatLng>>>> downloadedAreas(MapType type) {
+    final kinds = _requiredKinds[type] ?? const <PackKind>{};
+    final charts = {
+      for (final area in _chartAreas?.areas ?? const <ChartArea>[])
+        area.packRegion: area.polygons,
+    };
+    return {
+      for (final pack in _installed)
+        if (pack.region case final region? when kinds.contains(pack.kind))
+          region: ?(_regions?[region]?.polygons ?? charts[region]),
+    };
+  }
+
   /// The download in progress (or last finished) for [id], if any.
   PackDownload? downloadOf(String id) => _downloads[id];
 

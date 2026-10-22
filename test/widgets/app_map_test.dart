@@ -30,6 +30,8 @@ final _chartsIndex = File('packages/traxmap/test/support/charts_index.json')
     .readAsStringSync();
 final _chartAreas = File('packages/traxmap/test/support/chart_areas.geojson')
     .readAsStringSync();
+final _picker = File('packages/traxmap/test/support/picker.geojson')
+    .readAsStringSync();
 
 const _ri = 'north-america/us/rhode-island';
 
@@ -69,7 +71,14 @@ void main() {
       styles: StyleRegistry(MemoryStyles()),
     );
   });
-  tearDown(() => tmp.delete(recursive: true));
+  tearDown(() async {
+    try {
+      await tmp.delete(recursive: true);
+    } on FileSystemException {
+      // A drawn pack stays open in the renderer, and Windows can't delete an
+      // open file.
+    }
+  });
 
   Future<void> pumpMap(
     WidgetTester tester, {
@@ -144,8 +153,13 @@ void main() {
     expect(find.text('Offline maps'), findsOneWidget, reason: 'no catalogue');
   });
 
-  /// [maps] with the live charts catalogue, following [downloads].
-  Future<void> withCharts(WidgetTester tester, _Downloads downloads) async {
+  /// [maps] with the live charts catalogue, following [downloads], and with
+  /// [regions] the street map regions too.
+  Future<void> withCharts(
+    WidgetTester tester,
+    _Downloads downloads, {
+    bool regions = false,
+  }) async {
     maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/packs')),
       downloader: downloads,
@@ -160,6 +174,10 @@ void main() {
           ),
           '/maps/chart_areas.geojson' => http.Response.bytes(
             utf8.encode(_chartAreas),
+            200,
+          ),
+          '/maps/picker.geojson' when regions => http.Response.bytes(
+            utf8.encode(_picker),
             200,
           ),
           _ => http.Response('', 404),
@@ -278,6 +296,54 @@ void main() {
     expect(find.text('No charts here'), findsOneWidget);
     expect(find.textContaining('Download '), findsNothing);
     expect(find.text('Offline maps'), findsOneWidget);
+  });
+
+  testWidgets('downloaded areas: the map showing, filled online, optional', (
+    tester,
+  ) async {
+    await withCharts(tester, _Downloads(), regions: true);
+    await tester.runAsync(() async {
+      await maps.manager.root.create(recursive: true);
+      for (final (id, kind, region) in [
+        ('us-rhode-island-osm', 'osm', _ri),
+        ('charts-us-ri-charts', 'charts', 'charts/us/rhode-island'),
+      ]) {
+        File('${maps.manager.root.path}/$id.pmtiles').writeAsBytesSync(
+          fakePmTiles(metadata: {'kind': kind, 'region': region}),
+        );
+      }
+      await maps.reloadInstalled();
+    });
+    List<MapPolygon> areas() => tester
+        .widget<OfflineMapView>(find.byType(OfflineMapView))
+        .overlays
+        .whereType<MapPolygon>()
+        .toList();
+
+    await pumpMap(tester);
+    expect(areas(), isNotEmpty, reason: 'offline charts');
+    for (final area in areas()) {
+      expect(area.id, startsWith('downloaded-area:charts/us/rhode-island:'));
+      expect(area.strokeColor, AppMap.areaColor);
+      expect(area.fillColor, Colors.transparent);
+    }
+
+    await settings.setMapSource('online');
+    await tester.pump();
+    expect(areas(), isNotEmpty, reason: 'online is the street map');
+    for (final area in areas()) {
+      expect(area.id, startsWith('downloaded-area:$_ri:'));
+      expect(area.fillColor, AppMap.areaFill);
+    }
+
+    await settings.setMapDownloadedAreas(false);
+    await tester.pump();
+    expect(areas(), isEmpty, reason: 'turned off');
+
+    await settings.setMapDownloadedAreas(true);
+    await tester.pumpWidget(const SizedBox());
+    await pumpMap(tester, compact: true);
+    expect(areas(), isEmpty, reason: 'none on small maps');
   });
 
   testWidgets('auto goes offline with a street map, not charts or contours', (

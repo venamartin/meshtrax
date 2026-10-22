@@ -8004,6 +8004,12 @@ abstract class AppLocalizations {
   /// **'Dark map'**
   String get mapLayers_dark;
 
+  /// No description provided for @mapLayers_downloadedAreas.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded areas'**
+  String get mapLayers_downloadedAreas;
+
   /// No description provided for @mapLayers_nodes.
   ///
   /// In en, this message translates to:

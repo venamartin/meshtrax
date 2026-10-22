@@ -4656,6 +4656,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get mapLayers_dark => 'Dark map';
 
   @override
+  String get mapLayers_downloadedAreas => 'Downloaded areas';
+
+  @override
   String get mapLayers_nodes => 'Nodes';
 
   @override

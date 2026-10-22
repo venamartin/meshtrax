@@ -35,8 +35,9 @@ bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
 /// An Online | Offline switch picks where the map comes from. Offline shows
 /// exactly what works without signal: downloaded maps only, and a "No
 /// offline map here" card elsewhere. Online fills everything not downloaded
-/// with online OpenStreetMap tiles. Either way a dashed line marks where the
-/// downloaded regions end.
+/// with online OpenStreetMap tiles. Either way, unless the user turns it off,
+/// a teal outline marks the downloaded areas of the map that's showing;
+/// Online it's filled too, to set them apart from the online tiles.
 ///
 /// The map, contours and light/dark come from the user's settings (in
 /// Offline mode; Online it's the standard light map) unless a screen
@@ -69,6 +70,10 @@ class AppMap extends StatefulWidget {
   /// Width of the screen's map buttons at the right edge: the offline card
   /// sits beside them rather than above.
   final double controlsWidth;
+
+  /// The downloaded areas' outline, and its fill in Online mode.
+  static const areaColor = Color(0xFF00897B);
+  static const areaFill = Color(0x3300897B);
 
   const AppMap({
     super.key,
@@ -105,13 +110,10 @@ class _AppMapState extends State<AppMap> {
   List<ChartArea> _chartsHere = const [];
   Timer? _settle;
 
-  /// The edges of the downloaded regions plus the screen's overlays, kept
-  /// while their inputs don't change so the map doesn't rebuild its layers.
+  /// The downloaded areas' outlines plus the screen's overlays, kept while
+  /// their inputs don't change so the map doesn't rebuild its layers.
   var _overlays = const <MapOverlay>[];
-  List<MapOverlay>? _overlaysFor;
-  RegionIndex? _regionsFor;
-  Set<String>? _installedFor;
-  LatLng? _phoneFor;
+  Object? _overlaysKey;
   PhoneLocationService? _phone;
 
   @override
@@ -147,28 +149,40 @@ class _AppMapState extends State<AppMap> {
     });
   }
 
-  List<MapOverlay> _withEdges(MapPacksService maps, LatLng? phone) {
-    final regions = maps.regions;
-    final installed = maps.installedRegions;
-    if (!identical(widget.overlays, _overlaysFor) ||
-        !identical(regions, _regionsFor) ||
-        !setEquals(installed, _installedFor) ||
-        phone != _phoneFor) {
-      _overlaysFor = widget.overlays;
-      _regionsFor = regions;
-      _installedFor = installed;
-      _phoneFor = phone;
+  List<MapOverlay> _withAreas(
+    MapPacksService maps, {
+    required MapType type,
+    required bool online,
+    required bool outline,
+    required LatLng? phone,
+  }) {
+    final key = (
+      widget.overlays,
+      type,
+      online,
+      outline,
+      maps.installed,
+      maps.regions,
+      maps.chartAreas,
+      phone,
+    );
+    if (key != _overlaysKey) {
+      _overlaysKey = key;
       _overlays = [
-        for (final path in installed)
-          if (regions?[path] case final region?)
-            for (final (i, polygon) in region.polygons.indexed)
-              for (final (j, ring) in polygon.indexed)
-                MapLine(
-                  id: 'offline-edge:$path:$i:$j',
-                  points: [...ring, ring.first],
-                  color: _edgeColor,
-                  width: 2,
-                  pattern: MapLinePattern.dashed,
+        if (outline)
+          for (final MapEntry(key: path, value: polygons)
+              in maps.downloadedAreas(type).entries)
+            for (final (i, polygon) in polygons.indexed)
+              if (polygon.isNotEmpty)
+                MapPolygon(
+                  id: 'downloaded-area:$path:$i',
+                  points: polygon.first,
+                  holes: polygon.sublist(1),
+                  // Offline, everything drawn is downloaded, so a fill
+                  // would only tint the map.
+                  fillColor: online ? AppMap.areaFill : Colors.transparent,
+                  strokeColor: AppMap.areaColor,
+                  strokeWidth: 3,
                 ),
         ...widget.overlays,
         if (phone != null)
@@ -183,8 +197,6 @@ class _AppMapState extends State<AppMap> {
     }
     return _overlays;
   }
-
-  static const _edgeColor = Color(0xFFD81B60);
 
   @override
   Widget build(BuildContext context) {
@@ -226,9 +238,12 @@ class _AppMapState extends State<AppMap> {
           initialFit: widget.initialFit,
           minZoom: widget.minZoom,
           maxZoom: widget.maxZoom,
-          overlays: _withEdges(
+          overlays: _withAreas(
             maps,
-            widget.showPhone
+            type: type,
+            online: online,
+            outline: !widget.compact && settings.mapDownloadedAreas,
+            phone: widget.showPhone
                 ? context.select<PhoneLocationService, LatLng?>(
                     (s) => s.position,
                   )

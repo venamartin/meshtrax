@@ -35,6 +35,9 @@ class AppSettings {
   /// Draw contour lines when a contours pack is installed.
   final bool mapContours;
 
+  /// Outline the downloaded areas of the map that's showing.
+  final bool mapDownloadedAreas;
+
   /// Map colours, `light` or `dark`, whatever the app's theme (Martin,
   /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
@@ -115,6 +118,7 @@ class AppSettings {
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
     this.mapContours = true,
+    this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
     this.mapSource = 'auto',
     this.notificationsEnabled = true,
@@ -169,6 +173,7 @@ class AppSettings {
       'map_downloads_wifi_only': mapDownloadsWifiOnly,
       'map_type': mapType,
       'map_contours': mapContours,
+      'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
       'map_source': mapSource,
       'notifications_enabled': notificationsEnabled,
@@ -228,6 +233,7 @@ class AppSettings {
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
       mapType: json['map_type'] as String? ?? 'osm',
       mapContours: json['map_contours'] as bool? ?? true,
+      mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
       mapSource: json['map_source'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
@@ -307,6 +313,7 @@ class AppSettings {
     bool? mapDownloadsWifiOnly,
     String? mapType,
     bool? mapContours,
+    bool? mapDownloadedAreas,
     String? mapTheme,
     String? mapSource,
     bool? notificationsEnabled,
@@ -355,6 +362,7 @@ class AppSettings {
       mapDownloadsWifiOnly: mapDownloadsWifiOnly ?? this.mapDownloadsWifiOnly,
       mapType: mapType ?? this.mapType,
       mapContours: mapContours ?? this.mapContours,
+      mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
       mapSource: mapSource ?? this.mapSource,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,

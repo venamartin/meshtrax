@@ -2501,6 +2501,7 @@
   "mapLayers_details": "Map details",
   "mapLayers_contours": "Contours",
   "mapLayers_dark": "Dark map",
+  "mapLayers_downloadedAreas": "Downloaded areas",
   "mapLayers_nodes": "Nodes",
   "mapLayers_pins": "Pins",
   "mapLayers_guessed": "Guessed",

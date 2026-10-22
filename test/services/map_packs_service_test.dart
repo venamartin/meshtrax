@@ -51,7 +51,7 @@ void main() {
   late List<http.Request> requests;
   late Map<String, http.Response Function(http.Request)> routes;
 
-  MapPacksService service() => MapPacksService(
+  MapPacksService service({StyleRegistry? styles}) => MapPacksService(
     manager: PackManager(Directory('${tmp.path}/maps/packs')),
     downloader: downloader,
     cacheDir: Directory('${tmp.path}/maps'),
@@ -61,6 +61,7 @@ void main() {
       final route = routes[request.url.path];
       return route == null ? http.Response('', 404) : route(request);
     }),
+    styles: styles,
   );
 
   setUp(() async {
@@ -274,6 +275,54 @@ void main() {
       }
     });
   });
+
+  test(
+    'downloaded areas: what each map draws, by region or chart area',
+    () async {
+      final maps = service(
+        styles: StyleRegistry(
+          DirectoryStyleSource(Directory('packages/traxmap/assets/styles')),
+        ),
+      );
+      await maps.start();
+      await maps.refresh();
+      // Which pack kinds each map needs comes from the bundled styles.
+      final styled = Completer<void>();
+      maps.addListener(() {
+        if (!styled.isCompleted &&
+            maps.styleId(MapType.charts, dark: false) != null) {
+          styled.complete();
+        }
+      });
+      maps.styleId(MapType.osm, dark: false);
+      await styled.future;
+
+      Future<void> add(String id, String kind, String region) async {
+        await maps.manager.root.create(recursive: true);
+        File('${maps.manager.root.path}/$id.pmtiles').writeAsBytesSync(
+          fakePmTiles(metadata: {'kind': kind, 'region': region}),
+        );
+        await maps.reloadInstalled();
+      }
+
+      await add('us-rhode-island-osm', 'osm', _ri);
+      await add('us-ri-contours-20ft', 'contours', _ri);
+      await add('charts-us-ri-charts', 'charts', 'charts/us/rhode-island');
+      final chartArea = maps.chartAreas!.areas.firstWhere(
+        (a) => a.packRegion == 'charts/us/rhode-island',
+      );
+      expect(maps.downloadedAreas(MapType.osm), {
+        _ri: maps.regions![_ri]!.polygons,
+      });
+      expect(maps.downloadedAreas(MapType.charts), {
+        'charts/us/rhode-island': chartArea.polygons,
+      });
+      expect(maps.downloadedAreas(MapType.usgs), isEmpty, reason: 'no topo');
+
+      await add('us-rhode-island', 'base', _ri);
+      expect(maps.downloadedAreas(MapType.usgs).keys, [_ri]);
+    },
+  );
 
   test('a 404 index means no catalogue yet, not an error', () async {
     routes = {};

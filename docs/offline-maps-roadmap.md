@@ -221,7 +221,7 @@ Test: auto-connect firing while either of these is open.
 **Source switch, Online | Offline** (Martin, 2026-10-20; replaces the coverage banner):
 - **Offline:** downloaded maps only, exactly what works without signal. Where nothing is drawn at the view centre, a card says "No offline map here · Download {region} · {size} ›" (opens S3b) or, inside a downloaded region below the packs' lowest zoom, "Zoom in to see your offline map".
 - **Online:** online OSM raster tiles wherever the packs draw nothing. Tiles the packs cover are never fetched (`TileCoverage`). Raster tiles load on demand only, with a disk cache.
-- **Both:** a dashed line (pink, `#D81B60`) where each downloaded region ends.
+- **Both:** a teal outline (`#00897B`) of the downloaded areas of the map showing, filled Online only; Map details › Downloaded areas turns it off (2026-10-22, replaced the dashed pink region edges).
 - **Setting `map_source`:** `auto` (online until a street or topo map is downloaded, then offline; charts or contours alone don't count), `online` or `offline`. The switch writes it.
 
 **Centre-on-me:**
@@ -570,10 +570,10 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ## Known issues
 
 - **Peak labels had a box before the name on the Pi** ("▯ Bare Rock"). The styles put "▲" before the name, and the renderer draws labels in the platform's default font, which lacks it on Linux. Fixed 2026-10-20 by dropping the "▲" (`tool/make_styles.py`). A proper peak icon comes with sprites (T9); a font for labels needs the font hook (T12).
-- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the dashed outlines and the "Zoom in" card show.
+- **Offline mode is empty when zoomed far out.** Packs start at MapLibre zoom 6 (zoom 5 drawn stretched), so below that only the downloaded-area outlines and the "Zoom in" card show.
   - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
   - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.
-- **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
+- **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the outline in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
 - **Metric-charted depths can read up to 0.5 ft deep in feet** (found 2026-10-22 on the live Rhode Island pack). **Decided (Martin, 2026-10-22): traxmapmaker fixes `depth_ft` in the next charts rebuild,** not a rebuild just for this; the app needs no change. Soundings and depth contours print traxmapmaker's `depth_ft`, which is `round(metres × 3.28084)`.
   - **Feet-charted values are exact.** NOAA stores them in metres truncated to 0.1 m: 18 ft becomes 5.4 m, which is 17.72 ft. Rounding gives back the chart's figure on every one of them (18,830 soundings, 4,656 contour pieces).
   - **Metric-charted values sometimes read deeper than charted.** Newer large-scale cells use metric contours (2, 5, 8, 10, 15, 20, 30, 50 m). Rounding shows a third of their soundings (7,380 of 22,407) and 2,411 contour pieces deeper than charted: a 2 m contour reads "7 ft" (6.56 ft), and 20 m reads "66 ft".

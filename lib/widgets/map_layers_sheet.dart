@@ -9,8 +9,8 @@ import '../services/map_packs_service.dart';
 import 'app_map.dart';
 
 /// Opens the map layers sheet, laid out like Google Maps': which map, its
-/// details (contours, dark), any [extra] section a screen adds (the Node
-/// Map's node types), [onMoreFilters], and Offline maps.
+/// details (contours, dark, downloaded areas), any [extra] section a screen
+/// adds (the Node Map's node types), [onMoreFilters], and Offline maps.
 ///
 /// Online, the map is the standard online look, so the other map types,
 /// contours and dark show "Offline only"; tapping one switches to Offline
@@ -46,6 +46,7 @@ class MapLayersSheet extends StatelessWidget {
         : MapType.parse(settings.mapType) ?? MapType.osm;
     final dark = settings.mapTheme == 'dark';
     final contours = settings.mapContours;
+    final downloadedAreas = settings.mapDownloadedAreas;
 
     // An Offline-only choice made while Online: go Offline, then apply it.
     void offline(Future<void> Function() apply) {
@@ -130,6 +131,13 @@ class MapLayersSheet extends StatelessWidget {
                     ),
                   ),
                 ),
+                MapLayerTile(
+                  picture: const _DownloadedAreasPicture(),
+                  label: l10n.mapLayers_downloadedAreas,
+                  selected: downloadedAreas,
+                  onTap: () =>
+                      settingsService.setMapDownloadedAreas(!downloadedAreas),
+                ),
               ],
             ),
             if (extra case final extra?) ...[
@@ -170,6 +178,57 @@ class MapLayersSheet extends StatelessWidget {
 
   static Widget _picture(String name) =>
       Image.asset('assets/map_layers/$name.webp', fit: BoxFit.cover);
+}
+
+/// The standard map's thumbnail with a downloaded area outlined on it, the
+/// way [AppMap] draws one Online.
+class _DownloadedAreasPicture extends StatelessWidget {
+  const _DownloadedAreasPicture();
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      MapLayersSheet._picture('standard'),
+      const CustomPaint(painter: _AreaPainter()),
+    ],
+  );
+}
+
+class _AreaPainter extends CustomPainter {
+  const _AreaPainter();
+
+  static const _shape = [
+    (0.22, 0.14),
+    (0.58, 0.14),
+    (0.58, 0.46),
+    (0.86, 0.74),
+    (0.80, 0.88),
+    (0.56, 0.88),
+    (0.30, 0.62),
+    (0.16, 0.34),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..addPolygon([
+        for (final (x, y) in _shape) Offset(x * size.width, y * size.height),
+      ], true);
+    canvas
+      ..drawPath(path, Paint()..color = AppMap.areaFill)
+      ..drawPath(
+        path,
+        Paint()
+          ..color = AppMap.areaColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..strokeJoin = StrokeJoin.round,
+      );
+  }
+
+  @override
+  bool shouldRepaint(_AreaPainter oldDelegate) => false;
 }
 
 /// A titled row of [MapLayerTile]s.
