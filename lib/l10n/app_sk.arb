@@ -1225,8 +1225,6 @@
   "neighbors_unknownContact": "Neznáma {pubkey}",
   "settings_locationGPSEnable": "Aktivovať GPS",
   "settings_locationGPSEnableSubtitle": "Povolí automatické aktualizovanie polohy pomocou GPS.",
-  "settings_locationIntervalSec": "Interval pre GPS (Sekundy)",
-  "settings_locationIntervalInvalid": "Interval musí byť aspoň 60 sekúnd a menej ako 86400 sekúnd.",
   "contacts_manageRoom": "Spravovať server miestnosti",
   "room_management": "Správa servera miestnosti",
   "@community_joinConfirmation": {
@@ -1791,7 +1789,6 @@
   "appSettings_languageHu": "Maďarský",
   "appSettings_languageJa": "Japonský",
   "appSettings_languageKo": "Kórejský",
-  "radioStats_tooltip": "Statistiky rádiových a sieťových kanálov",
   "radioStats_screenTitle": "Štatistiky rádiových vysielaní",
   "radioStats_notConnected": "Pripojte sa k zariadeniu, aby ste mohli sledovať štatistiky rádiového vysielania.",
   "radioStats_firmwareTooOld": "Statistické údaje z rádia vyžadujú sprievodný softvér verzie v8 alebo novšej.",

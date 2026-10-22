@@ -1223,10 +1223,8 @@
   },
   "neighbors_heardAgo": "Слушано преди {time}.",
   "neighbors_unknownContact": "Неизвестна {pubkey}",
-  "settings_locationIntervalSec": "Интервал за GPS (Секунди)",
   "settings_locationGPSEnable": "Активиране на GPS",
   "settings_locationGPSEnableSubtitle": "Активирайте автоматичното актуализиране на местоположението чрез GPS.",
-  "settings_locationIntervalInvalid": "Интервалът трябва да бъде поне 60 секунди и по-малко от 86400 секунди.",
   "room_management": "Управление на сървъра за стая",
   "contacts_manageRoom": "Управление на сървър за стая",
   "@community_joinConfirmation": {
@@ -1790,7 +1788,6 @@
   "appSettings_jumpToOldestUnreadSubtitle": "Когато отворите чат с непрочетени съобщения, плъзнете надолу, за да видите първото непрочетено съобщение, вместо най-новото.",
   "appSettings_languageJa": "Японски",
   "appSettings_languageKo": "Корейски",
-  "radioStats_tooltip": "Статистика за радио и мрежа",
   "radioStats_screenTitle": "Статистически данни за радиопредаванията",
   "radioStats_notConnected": "Свържете се с устройство, за да видите статистически данни за радиопредаване.",
   "radioStats_firmwareTooOld": "Статистиката на радиостанцията изисква съвместимо софтуерно решение версия 8 или по-нова.",

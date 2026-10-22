@@ -15,7 +15,6 @@ The App is developed by an independent, open-source developer. You can review th
 - There is **no MeshTrax account system or cloud backend for your data**. The only server the developer runs is a download server for offline maps (`maps.meshtrax.io`, hosted on Cloudflare R2), which serves map files and receives none of your data. We receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
 - The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind.
 - Your messages, contacts, channels, and settings are stored **only on your device** and are exchanged only with your own MeshCore companion device and, through it, the LoRa mesh network.
-- Your device's location is read only after you tap **My location** on a map and allow it, and only while a map is open with the App in front. It is used to show you on the map and is never sent anywhere. The App works without it.
 - The only data ever sent over the internet is to the MeshTrax map server and three third-party services that power optional map, terrain, and GIF features: **OpenStreetMap**, **Open-Meteo**, and **Giphy**. What each receives is described below.
 
 ## Data the App collects and stores on your device
@@ -30,7 +29,6 @@ All of the following is stored locally on your device using the operating system
 | Node identity | Your device's **public** key and display name | Identify your own messages |
 | App settings | Theme, language, notification preferences, map preferences, unit system, auto-connect preference, last connected device identifier, blocked-users list, etc. | Remember your preferences |
 | Message routing data | Path history and routing weights | Improve mesh message delivery |
-| Device location | Your phone's or computer's position, only after you tap **My location** on a map and allow it, and only while a map is open with the App in front. The position is held in memory only. Like any view, the map remembers where it was last left, which can be where My location centered it; that is kept with your other settings | Center the map on you and show where you are |
 | Offline maps | Map packs you choose to download, and the list of available maps | Show maps without a connection |
 | Cached map tiles | Online map imagery you have viewed | Faster map display |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
@@ -75,7 +73,7 @@ You can also **block** a sender from any message; blocked senders and their mess
 - No personal accounts, names, emails, or phone numbers are collected by the App.
 - No analytics, advertising identifiers, crash reporting, or behavioral tracking.
 - No Google Sign-In, Google Drive, or other cloud-sync services (unused Google API libraries may appear as transitive build dependencies but are not invoked by the App).
-- The App reads your device's location **only** for **My location** on the map, after you tap it and allow it, and only while a map is open with the App in front. It is not sent to the developer or any server and never read in the background. With online maps on, the map tiles around you come from OpenStreetMap as for any area you view; see "OpenStreetMap" above.
+- The App does **not** read your phone's GPS/location sensor. It contains no location-provider code. **My location** on the map shows your companion device's own position, as the device reports it.
 - No data is sold or shared for advertising.
 
 ## Permissions
@@ -90,10 +88,9 @@ The App requests only the permissions needed for its stated functions.
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | Photo Library | Pick an existing image to scan a QR code from it. Images are analyzed on your device and never uploaded |
 | Notifications | Show notifications for incoming mesh messages |
-| Location (while using the App) | Show your position on the map when you tap **My location**. Asked on that first tap; never used in the background |
 | Background mode: `bluetooth-central` | Keep the connection to your companion device alive while the App runs in the background |
 
-BLE scanning does not use location.
+iOS does not require location permission for BLE scanning; the App never requests it.
 
 ### Android
 
@@ -101,7 +98,7 @@ BLE scanning does not use location.
 |---|---|
 | `BLUETOOTH`, `BLUETOOTH_ADMIN` (Android 11 and below) | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | `BLUETOOTH_SCAN` (with `neverForLocation`), `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE` (Android 12+) | Scan for and communicate with your companion device. The scan is flagged so it is **not** used to derive location |
-| `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Show your position on the map when you tap **My location** (while the App is in use; asked on that first tap). On Android 11 and below, Android also requires it for BLE scanning. Your location is not stored or transmitted |
+| `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Required by the Android operating system to permit BLE scanning on Android 11 and below. The App does not read, store, or transmit your device location through these permissions |
 | `INTERNET` | Download offline maps (MeshTrax map server), map tiles (OpenStreetMap), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
 | `CAMERA` | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | `POST_NOTIFICATIONS` (Android 13+) | Show notifications for incoming mesh messages |
@@ -114,10 +111,9 @@ BLE scanning does not use location.
 |---|---|
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | Internet | Download offline maps (MeshTrax map server), map tiles (OpenStreetMap), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
-| Location | Show your position on the map when you click **My location**, if you allow it in Windows' location settings |
 | Full trust (desktop app) | Standard for Windows desktop apps; lets the App open USB serial (COM) ports to reach a companion device over a cable |
 
-The Windows app does not use the camera or notifications.
+The Windows app does not use the camera, location, or notifications.
 
 The App can also connect to a companion device over your **local network (TCP)** using an IP address that you enter manually. This traffic stays on your local network.
 

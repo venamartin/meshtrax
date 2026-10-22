@@ -37,6 +37,12 @@ class GeoFormat {
     return km < 10 ? '${km.toStringAsFixed(1)} km' : '${km.round()} km';
   }
 
+  /// "34 m"; "112 ft" in imperial.
+  static String heightText(double meters, UnitSystem units) =>
+      units == UnitSystem.imperial
+      ? '${(meters * 3.28084).round()} ft'
+      : '${meters.round()} m';
+
   /// How far [to] is from [from], and which way.
   static GeoOffset offset(LatLng from, LatLng to, UnitSystem units) {
     final meters = _distance.as(LengthUnit.Meter, from, to);

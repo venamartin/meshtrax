@@ -739,7 +739,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = context.l10n;
     final latController = TextEditingController();
     final lonController = TextEditingController();
-    final intervalController = TextEditingController();
     latController.text = connector.selfLatitude?.toStringAsFixed(6) ?? '';
     lonController.text = connector.selfLongitude?.toStringAsFixed(6) ?? '';
 
@@ -747,11 +746,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final customVars = connector.currentCustomVars ?? {};
     final bool hasGPS = customVars.containsKey("gps");
     bool isGPSEnabled = customVars["gps"] == "1";
-
-    // Read current interval or default to 900 (15 minutes)
-    final currentInterval =
-        int.tryParse(customVars["gps_interval"] ?? "") ?? 900;
-    intervalController.text = currentInterval.toString();
 
     showDialog(
       context: context,
@@ -786,29 +780,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               if (hasGPS) ...[
                 const SizedBox(height: 16),
-                TextField(
-                  controller: intervalController,
-                  decoration: InputDecoration(
-                    labelText: l10n.settings_locationIntervalSec,
-                    border: const OutlineInputBorder(),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: false,
-                    signed: false,
-                  ),
-                ),
-                const SizedBox(height: 16),
                 FeatureToggleRow(
                   title: l10n.settings_locationGPSEnable,
                   subtitle: l10n.settings_locationGPSEnableSubtitle,
                   value: isGPSEnabled,
                   onChanged: (value) async {
                     setDialogState(() => isGPSEnabled = value);
-                    if (value) {
-                      await connector.setCustomVar("gps:1");
-                    } else {
-                      await connector.setCustomVar("gps:0");
-                    }
+                    await connector.setGps(value);
                   },
                 ),
               ],
@@ -823,29 +801,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () async {
                 Navigator.pop(context);
 
+                // Earlier versions of this dialog set a 15-minute interval:
+                // the position the radio reported was up to 15 minutes old,
+                // for no power saving. 0 is the radio's default, every
+                // second.
                 if (hasGPS) {
-                  final intervalText = intervalController.text.trim();
-                  if (intervalText.isEmpty) {
-                    return;
-                  }
-
-                  final interval = int.tryParse(intervalText);
-                  if (interval == null || interval < 60 || interval >= 86400) {
-                    if (!context.mounted) return;
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text(l10n.settings_locationIntervalInvalid),
-                    );
-                    return;
-                  }
-
-                  await connector.setCustomVar("gps_interval:$interval");
-                  await connector.refreshDeviceInfo();
-                  if (!context.mounted) return;
-                  showDismissibleSnackBar(
-                    context,
-                    content: Text(l10n.settings_locationUpdated),
-                  );
+                  await connector.setCustomVar("gps_interval:0");
                 }
 
                 final latText = latController.text.trim();

@@ -428,13 +428,6 @@ class AppLocalizationsUk extends AppLocalizations {
       'Вмикає автоматичне оновлення місцезнаходження через GPS.';
 
   @override
-  String get settings_locationIntervalSec => 'Інтервал для GPS (Секунди)';
-
-  @override
-  String get settings_locationIntervalInvalid =>
-      'Інтервал має бути не менше 60 секунд і менше 86400 секунд.';
-
-  @override
   String get settings_latitude => 'Широта';
 
   @override
@@ -3584,9 +3577,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appSettings_languageKo => 'Кореєська';
 
   @override
-  String get radioStats_tooltip => 'Статистика радіо та мережі';
-
-  @override
   String get radioStats_screenTitle => 'Дані про радіостанції';
 
   @override
@@ -4643,13 +4633,51 @@ class AppLocalizationsUk extends AppLocalizations {
   String get map_zoomOut => 'Zoom out';
 
   @override
-  String get map_positionUnknown => 'Your position isn\'t known yet';
+  String get gps_title => 'GPS';
 
   @override
-  String get map_locationServiceOff => 'Turn on location to show where you are';
+  String get gps_on => 'GPS on';
 
   @override
-  String get map_locationDenied => 'Location access is off for MeshTrax';
+  String get gps_off => 'GPS off';
+
+  @override
+  String get gps_onHint => 'The radio updates its position from the GPS.';
+
+  @override
+  String get gps_offHint =>
+      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+
+  @override
+  String get gps_asking => 'Asking the radio...';
+
+  @override
+  String get gps_noPosition =>
+      'No position yet. Outdoors, the first one can take a few minutes.';
+
+  @override
+  String get gps_position => 'Position';
+
+  @override
+  String get gps_altitude => 'Altitude';
+
+  @override
+  String gps_readAgo(String ago) {
+    return 'Read from the radio $ago ago';
+  }
+
+  @override
+  String get gps_turnOnTitle => 'Turn on GPS?';
+
+  @override
+  String get gps_turnOnBody =>
+      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+
+  @override
+  String get gps_turnOn => 'Turn on';
+
+  @override
+  String get gps_notNow => 'Not now';
 
   @override
   String get map_zoomInForCharts => 'Zoom in to see your charts';

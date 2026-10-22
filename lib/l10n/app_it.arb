@@ -1225,8 +1225,6 @@
   "neighbors_unknownContact": "Chiave pubblica sconosciuta {pubkey}",
   "settings_locationGPSEnable": "Abilita GPS",
   "settings_locationGPSEnableSubtitle": "Abilita l'aggiornamento automatico della posizione tramite GPS.",
-  "settings_locationIntervalSec": "Intervallo GPS (Secondi)",
-  "settings_locationIntervalInvalid": "L'intervallo deve essere di almeno 60 secondi e inferiore a 86400 secondi.",
   "contacts_manageRoom": "Gestisci Server Camera",
   "room_management": "Gestione del Server di Camera",
   "@community_joinConfirmation": {
@@ -1790,7 +1788,6 @@
   "appSettings_languageHu": "Ungherese",
   "appSettings_languageJa": "Giapponese",
   "appSettings_languageKo": "Coreano",
-  "radioStats_tooltip": "Statistiche per radio e reti",
   "radioStats_screenTitle": "Statistiche radio",
   "radioStats_notConnected": "Connettiti a un dispositivo per visualizzare le statistiche radio.",
   "radioStats_firmwareTooOld": "Le statistiche radio richiedono il firmware versione 8 o successiva.",

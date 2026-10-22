@@ -1225,8 +1225,6 @@
   "neighbors_heardAgo": "Écouté : {time} auparavant",
   "settings_locationGPSEnable": "Activer le GPS",
   "settings_locationGPSEnableSubtitle": "Activer la mise à jour automatique de la position via GPS",
-  "settings_locationIntervalSec": "Intervalle de mise-à-jour du GPS (Secondes)",
-  "settings_locationIntervalInvalid": "L'intervalle doit être compris entre 60 et 86400 secondes.",
   "contacts_manageRoom": "Gérer le Room Server",
   "room_management": "Administrattion Room Server",
   "@community_joinConfirmation": {
@@ -1790,7 +1788,6 @@
   "appSettings_jumpToOldestUnreadSubtitle": "Lorsque vous ouvrez une conversation contenant des messages non lus, faites défiler la page jusqu'au premier message non lu, plutôt que jusqu'au dernier.",
   "appSettings_languageJa": "Japonais",
   "appSettings_languageKo": "Coréen",
-  "radioStats_tooltip": "Statistiques des radios et des réseaux sans fil",
   "radioStats_screenTitle": "Statistiques de radio",
   "radioStats_notConnected": "Connectez-vous à un appareil pour visualiser les statistiques de la radio.",
   "radioStats_firmwareTooOld": "Les statistiques radio nécessitent un firmware compatible v8 ou une version ultérieure.",

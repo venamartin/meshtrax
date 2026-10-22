@@ -1235,8 +1235,6 @@
   "neighbors_unknownContact": "Nieznana {pubkey}",
   "settings_locationGPSEnable": "Włącz GPS",
   "settings_locationGPSEnableSubtitle": "Włącza automatyczne aktualizowanie pozycji za pomocą GPS.",
-  "settings_locationIntervalSec": "Interwał dla GPS (Sekundy)",
-  "settings_locationIntervalInvalid": "Interwał musi wynosić co najmniej 60 sekund i mniej niż 86400 sekund.",
   "contacts_manageRoom": "Zarządzaj Serwerem Pokoju",
   "room_management": "Zarządzanie Serwerem Pokoju",
   "@community_joinConfirmation": {
@@ -1828,7 +1826,6 @@
   "chat_sendCooldown": "Prosimy o chwilowe oczekiwanie przed ponownym wysłaniem.",
   "appSettings_languageJa": "Japoński",
   "appSettings_languageKo": "Koreański",
-  "radioStats_tooltip": "Statystyki dotyczące radia i siatki",
   "radioStats_screenTitle": "Statystyki radiowe",
   "radioStats_notConnected": "Połącz się z urządzeniem, aby wyświetlić statystyki radiowe.",
   "radioStats_firmwareTooOld": "Statystyki radiowe wymagają towarzyszącej oprogramowania w wersji 8 lub nowszej.",

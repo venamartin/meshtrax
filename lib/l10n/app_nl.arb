@@ -1225,8 +1225,6 @@
   "neighbors_heardAgo": "Horen: {time} geleden",
   "settings_locationGPSEnable": "GPS inschakelen",
   "settings_locationGPSEnableSubtitle": "Activeer automatisch locatieupdates via GPS.",
-  "settings_locationIntervalSec": "Interval voor GPS (Seconden)",
-  "settings_locationIntervalInvalid": "De intervallen moeten minstens 60 seconden zijn en minder dan 86400 seconden.",
   "contacts_manageRoom": "Beheer Ruimte Server",
   "room_management": "Beheer Server Kamer",
   "@community_joinConfirmation": {
@@ -1790,7 +1788,6 @@
   "appSettings_languageHu": "Hongaars",
   "appSettings_languageJa": "Japanisch",
   "appSettings_languageKo": "Koreaans",
-  "radioStats_tooltip": "Statistieken voor radio en mesh-netwerken",
   "radioStats_screenTitle": "Statistieken over radio",
   "radioStats_notConnected": "Verbind met een apparaat om radio-statistieken te bekijken.",
   "radioStats_firmwareTooOld": "Om de statistieken via radio te kunnen gebruiken, is firmware versie 8 of een nieuwere vereist.",

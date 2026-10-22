@@ -1225,8 +1225,6 @@
   "neighbors_heardAgo": "Udeleženec je prejel sporočilo {time} nazaj.",
   "settings_locationGPSEnable": "Omogoči GPS",
   "settings_locationGPSEnableSubtitle": "Omogoči samodejno posodabljanje lokacije z GPS-jem.",
-  "settings_locationIntervalSec": "Interval za GPS (Sekunde)",
-  "settings_locationIntervalInvalid": "Intervallo mora biti vsaj 60 sekund in manj kot 86400 sekund.",
   "contacts_manageRoom": "Upravljajte strežnik sobe",
   "room_management": "Upravljanje stremlišča",
   "@community_joinConfirmation": {
@@ -1790,7 +1788,6 @@
   "appSettings_jumpToOldestUnread": "Pritisnite za najstarejše nepročitano sporočilo",
   "appSettings_languageJa": "Japonski",
   "appSettings_languageKo": "Korejski",
-  "radioStats_tooltip": "Statistike za radio in mrežo",
   "radioStats_notConnected": "Povežite se z napravo, da si ogledate statistiko o radiju.",
   "radioStats_screenTitle": "Radijske statistike",
   "radioStats_firmwareTooOld": "Statistika za radio zahteva združljivo programsko opremo v8 ali kasnejše.",

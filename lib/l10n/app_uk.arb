@@ -1226,8 +1226,6 @@
   "neighbors_heardAgo": "Почуто: {time} тому",
   "settings_locationGPSEnable": "Увімкнути GPS",
   "settings_locationGPSEnableSubtitle": "Вмикає автоматичне оновлення місцезнаходження через GPS.",
-  "settings_locationIntervalSec": "Інтервал для GPS (Секунди)",
-  "settings_locationIntervalInvalid": "Інтервал має бути не менше 60 секунд і менше 86400 секунд.",
   "contacts_manageRoom": "Керувати сервером кімнати",
   "room_management": "Адміністрування сервера кімнати",
   "@community_joinConfirmation": {
@@ -1790,7 +1788,6 @@
   "appSettings_jumpToOldestUnread": "Перейти до найстарішого непрочитаного повідомлення",
   "appSettings_languageJa": "Японська",
   "appSettings_languageKo": "Кореєська",
-  "radioStats_tooltip": "Статистика радіо та мережі",
   "radioStats_screenTitle": "Дані про радіостанції",
   "radioStats_notConnected": "Підключіться до пристрою, щоб переглядати статистику радіопередач.",
   "radioStats_firmwareTooOld": "Статистика радіо приймача вимагає супутнього програмного забезпечення версії 8 або новішої.",

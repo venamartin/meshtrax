@@ -1228,8 +1228,6 @@
   "neighbors_unknownContact": "Unbekannt {pubkey}",
   "settings_locationGPSEnable": "GPS aktivieren",
   "settings_locationGPSEnableSubtitle": "Aktiviert GPS zur automatischen Aktualisierung des Standorts.",
-  "settings_locationIntervalSec": "Intervall für GPS (Sekunden)",
-  "settings_locationIntervalInvalid": "Das Intervall muss mindestens 60 Sekunden und weniger als 86400 Sekunden betragen.",
   "contacts_manageRoom": "Raum-Server verwalten",
   "room_management": "Raum-Server-Verwaltung",
   "@community_joinConfirmation": {
@@ -1818,7 +1816,6 @@
   "appSettings_jumpToOldestUnreadSubtitle": "Wenn Sie ein Chatfenster öffnen, in dem Nachrichten vorhanden sind, die noch nicht gelesen wurden, scrollen Sie zu der ersten unlesenen Nachricht, anstatt zur neuesten.",
   "appSettings_languageJa": "Japanisch",
   "appSettings_languageKo": "Koreanisch",
-  "radioStats_tooltip": "Daten zu Radio- und Mesh-Netzwerken",
   "radioStats_screenTitle": "Senderinformationen",
   "radioStats_notConnected": "Verbinden Sie ein Gerät, um Radiostatisiken anzuzeigen.",
   "radioStats_firmwareTooOld": "Für die Verwendung der Funkstatistiken ist die Firmware-Version 8 oder höher erforderlich.",

@@ -1,25 +1,23 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
-import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
-import '../services/phone_location_service.dart';
 
 /// The map's buttons, bottom right: zoom (desktop only; phones pinch), My
-/// location, and the layers button. My location uses the phone's GPS where
-/// the user allows it, else the radio's own position; it's hidden where
-/// there's neither.
+/// location, and the layers button. My location shows only when the screen
+/// handles it ([onMyLocation]).
 class MapControls extends StatelessWidget {
   final OfflineMapController controller;
-
-  /// The radio's own position, when it reports one.
-  final LatLng? radioPosition;
   final VoidCallback onLayers;
+
+  /// My location: the screen decides what a tap does (the radio's GPS).
+  final VoidCallback? onMyLocation;
+
+  /// The radio's GPS is off: My location shows it crossed out.
+  final bool gpsOff;
 
   /// The room the buttons take at the map's right edge
   /// ([AppMap.controlsWidth]).
@@ -32,8 +30,16 @@ class MapControls extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onLayers,
-    this.radioPosition,
+    this.onMyLocation,
+    this.gpsOff = false,
   });
+
+  /// Centres [controller] on [here], zoomed in to at least [locateZoom].
+  static void centerOn(OfflineMapController controller, LatLng here) =>
+      controller.move(
+        here,
+        zoom: math.max(controller.camera?.zoom ?? 0, locateZoom),
+      );
 
   static bool get _desktop =>
       !kIsWeb &&
@@ -49,49 +55,9 @@ class MapControls extends StatelessWidget {
     if (camera != null) controller.move(camera.center, zoom: camera.zoom + by);
   }
 
-  Future<void> _locate(BuildContext context) async {
-    final l10n = context.l10n;
-    final phone = context.read<PhoneLocationService>();
-    final here = await phone.locate() ?? radioPosition;
-    if (!context.mounted) return;
-    if (here != null) {
-      controller.move(
-        here,
-        zoom: math.max(controller.camera?.zoom ?? 0, locateZoom),
-      );
-      return;
-    }
-    final denied = switch (phone.state) {
-      PhoneLocationState.denied || PhoneLocationState.deniedForever => true,
-      _ => false,
-    };
-    showDismissibleSnackBar(
-      context,
-      content: Text(
-        denied
-            ? l10n.map_locationDenied
-            : phone.state == PhoneLocationState.serviceOff
-            ? l10n.map_locationServiceOff
-            : l10n.map_positionUnknown,
-      ),
-      action: denied
-          ? SnackBarAction(
-              label: l10n.common_settings,
-              onPressed: () => unawaited(phone.openSettings()),
-            )
-          : null,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    // Linux has no GPS: there My location needs the radio's position.
-    final canLocate =
-        radioPosition != null ||
-        context.select<PhoneLocationService, bool>(
-          (s) => s.state != PhoneLocationState.unsupported,
-        );
     return Column(
       mainAxisSize: MainAxisSize.min,
       spacing: 12,
@@ -117,12 +83,12 @@ class MapControls extends StatelessWidget {
               ],
             ),
           ),
-        if (canLocate)
+        if (onMyLocation != null)
           FloatingActionButton.small(
             heroTag: null,
             tooltip: l10n.map_myLocation,
-            onPressed: () => unawaited(_locate(context)),
-            child: const Icon(Icons.my_location),
+            onPressed: onMyLocation,
+            child: Icon(gpsOff ? Icons.location_disabled : Icons.my_location),
           ),
         FloatingActionButton(
           onPressed: onLayers,

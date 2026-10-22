@@ -45,7 +45,6 @@ class _NoRadioMapScreenState extends State<NoRadioMapScreen> {
       appBar: AppBar(title: Text(context.l10n.scanner_map), centerTitle: true),
       body: AppMap(
         controller: _controller,
-        showPhone: true,
         controlsWidth: MapControls.width,
         initialCamera: last ?? const MapCamera(center: LatLng(20, 0), zoom: 1),
         initialFit: last == null

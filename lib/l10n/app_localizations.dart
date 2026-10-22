@@ -892,18 +892,6 @@ abstract class AppLocalizations {
   /// **'Enables GPS to automatically update location.'**
   String get settings_locationGPSEnableSubtitle;
 
-  /// No description provided for @settings_locationIntervalSec.
-  ///
-  /// In en, this message translates to:
-  /// **'Interval for GPS (Seconds)'**
-  String get settings_locationIntervalSec;
-
-  /// No description provided for @settings_locationIntervalInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Interval must be at least 60 seconds, and less than 86400 seconds.'**
-  String get settings_locationIntervalInvalid;
-
   /// No description provided for @settings_latitude.
   ///
   /// In en, this message translates to:
@@ -6234,12 +6222,6 @@ abstract class AppLocalizations {
   /// **'Korean'**
   String get appSettings_languageKo;
 
-  /// No description provided for @radioStats_tooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio & mesh stats'**
-  String get radioStats_tooltip;
-
   /// No description provided for @radioStats_screenTitle.
   ///
   /// In en, this message translates to:
@@ -7914,23 +7896,89 @@ abstract class AppLocalizations {
   /// **'Zoom out'**
   String get map_zoomOut;
 
-  /// No description provided for @map_positionUnknown.
+  /// No description provided for @gps_title.
   ///
   /// In en, this message translates to:
-  /// **'Your position isn\'t known yet'**
-  String get map_positionUnknown;
+  /// **'GPS'**
+  String get gps_title;
 
-  /// No description provided for @map_locationServiceOff.
+  /// No description provided for @gps_on.
   ///
   /// In en, this message translates to:
-  /// **'Turn on location to show where you are'**
-  String get map_locationServiceOff;
+  /// **'GPS on'**
+  String get gps_on;
 
-  /// No description provided for @map_locationDenied.
+  /// No description provided for @gps_off.
   ///
   /// In en, this message translates to:
-  /// **'Location access is off for MeshTrax'**
-  String get map_locationDenied;
+  /// **'GPS off'**
+  String get gps_off;
+
+  /// No description provided for @gps_onHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio updates its position from the GPS.'**
+  String get gps_onHint;
+
+  /// No description provided for @gps_offHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.'**
+  String get gps_offHint;
+
+  /// No description provided for @gps_asking.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking the radio...'**
+  String get gps_asking;
+
+  /// No description provided for @gps_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'No position yet. Outdoors, the first one can take a few minutes.'**
+  String get gps_noPosition;
+
+  /// No description provided for @gps_position.
+  ///
+  /// In en, this message translates to:
+  /// **'Position'**
+  String get gps_position;
+
+  /// No description provided for @gps_altitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Altitude'**
+  String get gps_altitude;
+
+  /// No description provided for @gps_readAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Read from the radio {ago} ago'**
+  String gps_readAgo(String ago);
+
+  /// No description provided for @gps_turnOnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on GPS?'**
+  String get gps_turnOnTitle;
+
+  /// No description provided for @gps_turnOnBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.'**
+  String get gps_turnOnBody;
+
+  /// No description provided for @gps_turnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get gps_turnOn;
+
+  /// No description provided for @gps_notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get gps_notNow;
 
   /// No description provided for @map_zoomInForCharts.
   ///

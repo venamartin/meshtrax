@@ -1225,8 +1225,6 @@
   "neighbors_unknownContact": "{pubkey} Desconhecido",
   "settings_locationGPSEnable": "Ativar GPS",
   "settings_locationGPSEnableSubtitle": "Habilita a atualização automática da localização via GPS.",
-  "settings_locationIntervalInvalid": "O intervalo deve ser de pelo menos 60 segundos e inferior a 86400 segundos.",
-  "settings_locationIntervalSec": "Intervalo para GPS (Segundos)",
   "contacts_manageRoom": "Gerenciar Servidor de Sala",
   "room_management": "Gerenciamento de Servidor de Sala",
   "@community_joinConfirmation": {
@@ -1791,7 +1789,6 @@
   "appSettings_jumpToOldestUnreadSubtitle": "Ao abrir uma conversa com mensagens não lidas, role para a primeira mensagem não lida, em vez da mais recente.",
   "appSettings_languageJa": "Japonês",
   "appSettings_languageKo": "Coreano",
-  "radioStats_tooltip": "Estatísticas de rádio e malha",
   "radioStats_screenTitle": "Estatísticas de rádio",
   "radioStats_notConnected": "Conecte-se a um dispositivo para visualizar estatísticas de rádio.",
   "radioStats_firmwareTooOld": "As estatísticas de rádio exigem o firmware v8 ou uma versão mais recente.",
