@@ -583,6 +583,11 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
     - Contours and depth areas take theirs from the value. The ambiguous values (0, 3, 6, 10 m) take the units of the neighbouring depth areas.
     - Feet and fathom sources keep `round`, which is exact today. Metric sources round down.
     - About half a day of code in traxmapmaker, then the normal charts rebuild (about 2.2 h). `charts_revision` stays 2, and installed charts show "Update available".
+  - **Built and checked (2026-10-22):** traxmapmaker main `4901702` (extractor enc3), `9581c31` and a local Rhode Island test pack. Against the live pack, over every z14 tile:
+    - nothing reads deeper than before, and every change is exactly 1 ft down;
+    - the feet-charted contours are unchanged;
+    - contours, depth areas and hazards read at most 0.33 ft over their metres (the truncated-foot recovery).
+    - Five soundings (2 m and 9 m inside records that are mostly feet) still rounded up. `9581c31` rounds down any sounding that can't be a feet or fathom figure, even in a feet record; it was already built, so Martin kept it.
 
 ## Bugs to fix along the way
 
