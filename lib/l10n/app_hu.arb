@@ -117,8 +117,6 @@
       }
     }
   },
-  "scanner_searchingDevices": "MeshCore eszközök keresése...",
-  "scanner_tapToScan": "A Tap Scan funkció segítségével kereshet MeshCore eszközöket.",
   "scanner_connectionFailed": "Kapcsolódás sikertelen: {error}",
   "@scanner_connectionFailed": {
     "placeholders": {
