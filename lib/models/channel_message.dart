@@ -353,12 +353,10 @@ class ChannelMessage {
     }
   }
 
-  /// MeshCore One's actual display rule, measured on the air (2026-08-12
-  /// #mtdebug capture): a leading `@[name] ` followed by a SPACE is
-  /// addressing and gets stripped before hashing; `@[name]\n` followed by a
-  /// newline is reply markup and stays. Use this — never
-  /// [stripLeadingMentions] — when producing the ONE text form a reaction
-  /// send commits to.
+  /// Strips leading `@[name] ` addressing (SPACE form) but keeps `@[name]\n`
+  /// reply markup. Receive-side tolerance only, for clients that hash the
+  /// addressed body: MeshCore One never strips mentions (see [mc1HashText]),
+  /// so no send may commit to this form.
   static String mc1DisplayText(String text) {
     final re = RegExp(r'^@\[[^\]]+\] ');
     var out = text;
@@ -368,6 +366,20 @@ class ChannelMessage {
       out = out.substring(m.end);
     }
   }
+
+  /// The channel text MeshCore One stores and hashes reactions over: the
+  /// body after "Name:", trimmed of Swift `.whitespaces` (tab and Unicode
+  /// Zs — never newlines), mentions kept (MC1 ChannelMessageFormat.parse).
+  /// We store the body untrimmed, so a trailing space orphaned every MC1
+  /// reaction to it (field log 2026-10-21: hash nksybmwk). The ONE text form
+  /// a channel reaction send commits to.
+  static String mc1HashText(String text) =>
+      text.replaceAll(_mc1EdgeWhitespace, '');
+
+  static final RegExp _mc1EdgeWhitespace = RegExp(
+    r'^[\t\p{Zs}]+|[\t\p{Zs}]+$',
+    unicode: true,
+  );
 
   /// Removes a single leading `@[name]` mention (with an optional trailing
   /// space or newline) from [text]. Used to avoid echoing our own handle back
