@@ -71,6 +71,13 @@ traxmap moved into this repository.
   - landmarks;
   - magnetic variation.
   About 1.2–1.3 GB for the 42 areas. |
+| 2026-10-22 | **Chart styles follow paper-chart conventions within the renderer's limits** (Martin approved from renders):
+  - magenta dashed limits;
+  - INT-1 abbreviations;
+  - clearances never overstated;
+  - restrictions worded exactly;
+  - buoy names as the chart's number ("2") below z15.
+  Symbols that need icons (arrows, anchors, T-ticks, topmarks) wait for sprites rather than being faked. |
 | 2026-10-21 | **Charts follow NOAA's decluttering (SCAMIN) on every layer, at NOAA's standard-screen scale** (variant C, Martin, chosen from side-by-side renders of Puerto Rico test packs). Each feature appears from round(log2(279,541,132 × cos(lat) / SCAMIN)), at the earliest from its band's minzoom. In harbours, soundings come in one step after buoys and lights. |
 | 2026-10-20 | **Charts carry the real NOAA content,** not a simplified view (Martin). traxmapmaker rebuilds the charts with traffic separation schemes, anchorages, restricted areas, bridges and overhead clearances, and caution areas. The current 9 layers stay. |
 | 2026-10-20 | **My location: the phone's GPS where allowed, else the radio's position.** It asks while-in-use on the first tap. The phone is **its own marker** (Martin), a blue dot apart from the radio's "You". Nothing is read until the user has used My location once (remembered), and then only while a map is open with the app in front. Linux has no GPS and uses the radio. Desktop gets +/− buttons; phones pinch. |

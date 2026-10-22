@@ -531,7 +531,11 @@ Needs traxmapmaker 1.4.
 - `ChartAreaIndex`. **Done** (CH1).
 - The Charts tab (S3d), and charts in Downloaded. **Done** (CH2).
 - Links from the layers sheet, region detail and the Charts map's "No charts here" card. **Done.**
-- Chart styles for the rebuilt charts data (TSS, anchorages, restricted areas, bridges and clearances, caution areas). **Waiting** for traxmapmaker's schema.
+- Chart styles for the full-data charts (Option B). **Done** (2026-10-22): `tool/make_chart_layers.py` writes 48 layers into charts-light, and the dark palette into charts-dark.
+  - Martin approved it from side-by-side renders of the Puerto Rico pilot.
+  - Before that, a three-lens review (chart conventions, phone legibility, data) fixed misleading labels: entry *restricted* areas shown as "prohibited", AM broadcast towers shown as "R Bn", clearances rounded up, and mooring buoys in nav-aid yellow.
+  - Buoy names show the chart number below z15 (Martin).
+  - Waiting for sprites: lane and current arrows, anchors, restricted-area T-ticks, topmarks, the cable wave.
 
 ### Phase 7: trail routing (Android only)
 
