@@ -15,6 +15,7 @@ import '../services/map_packs_service.dart';
 import '../services/map_tile_cache_service.dart';
 import '../services/phone_location_service.dart';
 import '../utils/format_bytes.dart';
+import 'charts_notice_dialog.dart';
 
 /// Whether maps are in Online mode (the Online | Offline switch): `map_source`,
 /// where `auto` is online until a street or topo map is downloaded (charts
@@ -28,8 +29,8 @@ bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
       ),
     };
 
-/// The map every MeshTrax map screen draws, with the credits (and chart
-/// disclaimer) the data's licences require.
+/// The map every MeshTrax map screen draws, with the credits the data's
+/// licences require. Charts open the "Not for navigation" dialog once a run.
 ///
 /// An Online | Offline switch picks where the map comes from. Offline shows
 /// exactly what works without signal: downloaded maps only, and a "No
@@ -207,7 +208,6 @@ class _AppMapState extends State<AppMap> {
       ...?style?.credits,
       ...?style?.notices,
     ];
-    final disclaimer = style?.disclaimer;
     final coverage = _coverage;
 
     return Stack(
@@ -243,22 +243,15 @@ class _AppMapState extends State<AppMap> {
           ],
           onCoverageChanged: (covered) => setState(() => _covered = covered),
           onTileCoverage: (coverage) => setState(() => _coverage = coverage),
-          onStyleLoaded: (s) => setState(() => _style = s),
+          onStyleLoaded: (s) {
+            setState(() => _style = s);
+            if (s.disclaimer != null) {
+              unawaited(showChartsNoticeIfNeeded(context));
+            }
+          },
         ),
-        Positioned(
-          top: 8,
-          left: 8,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 4,
-            children: [
-              if (!widget.compact) _SourceSwitch(online: online),
-              if (disclaimer != null)
-                _Disclaimer(context.l10n.map_notForNavigation),
-            ],
-          ),
-        ),
+        if (!widget.compact)
+          Positioned(top: 8, left: 8, child: _SourceSwitch(online: online)),
         if (!widget.compact && !online && _covered == false)
           Positioned(
             left: 8,
@@ -521,22 +514,4 @@ class _GapImage extends ImageProvider<_GapImage> {
   @override
   int get hashCode =>
       Object.hash(identityHashCode(provider.coverage), coordinates);
-}
-
-/// The chart styles' "Not for navigation", in MeshTrax's warning colours.
-class _Disclaimer extends StatelessWidget {
-  final String text;
-  const _Disclaimer(this.text);
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-      border: const Border(left: BorderSide(color: Colors.orange, width: 3)),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Text(text, style: Theme.of(context).textTheme.labelMedium),
-    ),
-  );
 }

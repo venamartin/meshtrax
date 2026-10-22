@@ -60,7 +60,9 @@ Last updated 2026-10-20, evening. **Resume here.**
 6. **Phase 6, the Charts tab: done (2026-10-20)** except the chart styles for the rebuilt data. See S3d.
    - `ChartAreaIndex` (traxmap) reads `chart_areas.geojson`. `MapPacksService` fetches and caches it with the catalogue; a 404 keeps the cached copy.
    - The Offline maps screen has three tabs: Maps · Charts · Downloaded.
-   - The Charts tab's notice (Martin, 2026-10-20): "Not for navigation. Use official, up-to-date NOAA charts to navigate."
+   - **"Not for navigation" is a dialog (Martin, 2026-10-22),** not a label pinned on the map. It says why: charts go out of date, leave things out, positions can be wrong or old, and MeshTrax isn't a certified chart plotter; navigate with official NOAA charts and the Notices to Mariners.
+     - It opens the first time the map draws charts in each app run, until "Don't show this again" (`chartsNoticeDismissed`).
+     - The Charts tab's callout is one line, "Not for navigation · Why? ›", that opens it. That's also how to read it again, and its checkbox shows the saved choice, so it can be undone.
    - Downloaded lists chart areas in their own "NOAA charts" section. App Settings counts them apart: "1 region · 2 chart areas · 1.2 GB".
    - Links:
      - a coastal region's detail says "NOAA charts are picked by coast, in the Charts tab";
@@ -112,31 +114,38 @@ Last updated 2026-10-20, evening. **Resume here.**
        - magnetic variation;
        - the other regulated areas.
        The app's chart styles for these come after the schema lands.
-     - **On hold (Martin, 2026-10-21):** whether NOAA's SCAMIN decluttering applies to today's layers.
-     - **Plan (Martin approved):** traxmapmaker builds Puerto Rico test packs, not published, after the contours build:
-       - SCAMIN off;
-       - SCAMIN on at offset 0 (NOAA's scale on a desktop);
-       - SCAMIN on at +1 (on a phone), if it's cheap.
-       MeshTrax renders the same views from each (San Juan harbour at z12–14, open water) for Martin to compare;
+     - **Decluttering: variant C (Martin, 2026-10-21),** chosen from side-by-side renders of four Puerto Rico test packs. NOAA's SCAMIN applies on every layer at offset 0, NOAA's scale for a standard screen. At z13 a harbour keeps its buoys and lights, and soundings come in at z14.
+       The other variants: A, no decluttering; B, the new layers only; D, NOAA's scale on a phone, which left harbours almost bare at z13.
+       The renders were made headless in flutter-tester;
    - **traxmapmaker's USGS base design** (2026-10-21, `traxmapmaker/experiments/designs/2026-10-20-usgs-base-master.md`), decisions D1–D14:
-     - **D1:** hillshade and elevation bands as their own `terrain` kind (`terrain.pmtiles`, z6–13, overzoomed). MeshTrax agreed: OSM maps get relief without the 2–5 GB USGS pack, and it costs the app about half a day. UX to decide with it: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
-     - **D2:** base z14 or z13, compared on the Rhode Island pilot in the app;
-     - **D3:** the hillshade highlights appear for the first time, reviewed on the pilot.
+     - **D1: chosen (Martin, 2026-10-21, in traxmapmaker's session).** Hillshade and elevation bands become their own `terrain` kind: `terrain.pmtiles`, z6–13, overzoomed, one per land region. OSM maps get relief without the 2–5 GB USGS pack.
+       - App work, about half a day: `PackKind.terrain`, the four styles re-pointed to `{pack:terrain}`, a label, the Downloaded order and a region-detail row.
+       - It ships in the release that lists the kind, before traxmapmaker publishes any terrain pack.
+       - Still to preview with Martin: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
+     - **D2: base stays z6–14** (Martin: "we have them broken into small regions anyway"). The Rhode Island pilot also builds a z13 copy to compare in the app;
+     - **D3: the hill-shading highlight bug gets fixed.** Sun-facing slopes (level −1) appear for the first time; retune their 0.25–0.28 opacity on the pilot;
+     - **D6: sea is filled where there's no USGS quad,** as `ocean` (`lake` in the Great Lakes cells), never over foreign land;
+     - **Approved:** the USGS pilot, once its code is written, and the national charts rebuild (Option B, decluttered), local until Martin publishes.
+     - **US contours:** all 1,447 blocks done in 21.6 h (20 ft master 10.5 GB). Region cut sizes go to Martin before any publish; the app already handles both contour variants.
 
-**Data on R2** (from traxmapmaker-d3, 2026-10-20):
+**Data on R2** (2026-10-22, 09:34 PDT, from traxmapmaker-f4):
 - **Production only** (Martin): `https://maps.meshtrax.io/index.json` is the one catalogue, and it gets only products from full master builds. `dev/` is retired.
-- **On it:** the 73 North America OSM packs, border-complete. Puerto Rico and the US Virgin Islands were rehearsal builds; they return with a full Central America build.
-- **Coming, in order:**
-  - Mexico split into its 32 states (container `north-america/mexico`, ids like `mexico-nuevo-leon`), replacing `mexico-osm`;
-  - the NOAA charts master with `chart_areas.geojson` (§1.4), including Puerto Rico;
-  - US contours;
-  - the USGS base.
-- **Until then:** no charts, contours or USGS packs anywhere. Use the preview folder's local copies for screenshots.
-- **Tested 2026-10-20** (on `dev/`, same packs):
-  - Every pack's region is in the picker.
-  - The Rhode Island update was detected by checksum.
-  - RI+CT and VT+QC draw seamlessly across the border.
-  - Quebec (1.67 GB): 68 s download, 38 s SHA-256 check, memory flat.
+- **On it: 250 packs, 38.8 GB.**
+  - **Street maps:** 104 `osm` packs: 52 US, 20 Canada and Mexico's 32 states (`mexico-osm` is gone).
+  - **Charts:** the 42 NOAA `charts` packs at `charts_revision` 2 (the navigational set, decluttered), 1.34 GB.
+  - **Contours:** 104 US `contours` packs, 16 GB: every US region in 20 ft and 10 m. Alaska's 20 ft is the largest, at 2.9 GB.
+- **Coming:**
+  - the USGS base and the `terrain` kind;
+  - the world base map, last.
+- **Checked from the app (2026-10-22),** with the live files through `MapPacksService` and a headless render in flutter-tester:
+  - The catalogue is ready, with nothing skipped and nothing needing a newer app.
+  - Every one of the 42 chart areas has its pack, and every contours region has a street map.
+  - Seven real packs (Rhode Island charts, map and both contour variants; Vermont's map and contours) install with their sha256, and none shows "Update available".
+  - Charts (light and dark) and contours (feet and metres) draw as designed.
+- **Server files:**
+  - `index.json` and `chart_areas.geojson` are ASCII and served as UTF-8.
+  - `picker.geojson` still has 12 non-ASCII bytes until Martin republishes it. The app decodes it as UTF-8 either way.
+- **Large packs:** any pack over 64 MB has a multipart ETag (`"<md5>-<parts>"`). It's strong, so resuming with `If-Range` works (Alaska contours answered 206), but it isn't the file's MD5. The app checks the index's sha256 only.
 - **Sharing the Pi:** traxmapmaker shares its 4 cores. During its big builds, keep heavy Flutter work (analysis server, full test runs, builds) light. It messages before starting one.
 
 **Known issues:** below.
@@ -202,7 +211,7 @@ Test: auto-connect firing while either of these is open.
 │                                         [◎]  │  centre on me
 │                                         [+]  │  desktop only
 │                                         [−]  │  desktop only
-│ ▍Not for navigation  (charts only)       [⚲] │  filter FAB (hidden in no-radio mode)
+│                                          [⚲] │  filter FAB (hidden in no-radio mode)
 │ © OpenStreetMap contributors · USGS…    (chip)│  credits chip, tap to expand
 ├──────────────────────────────────────────────┤
 │           [ Chats ]        [ Map ]           │  QuickSwitchBar (hidden: POI link, no-radio)
@@ -236,7 +245,7 @@ Test: auto-connect firing while either of these is open.
 4. the first installed region;
 5. the whole world at zoom 2.
 
-**Disclaimer:** the chart styles show the localized "Not for navigation".
+**Disclaimer:** the chart styles (`ovm:disclaimer`) open the "Not for navigation" dialog the first time the map draws charts in each app run, until "Don't show this again" (Martin, 2026-10-22). Nothing stays pinned on the map.
 
 ### S2. Layers sheet
 
@@ -348,7 +357,7 @@ When nothing is installed: "No offline maps yet", with [Find maps].
 
 **S3d. Charts tab (Phase 6; built 2026-10-20, text only):** Martin chose a coast list with ticks, areas alphabetical until `coast_areas` gives coastline order.
 ```
-│ ▍Not for navigation. …                       │  always-on orange callout
+│ ▍Not for navigation · Why?                 › │  opens the "Not for navigation" dialog
 │ ┌──────────────────────────────────────────┐ │
 │ │ ☐ Rhode Island                  12.3 MB  │ │  Suggested: the area at the radio's position
 │ │   Suggested · Atlantic Coast             │ │
@@ -528,7 +537,11 @@ Needs traxmapmaker 1.4.
 - `ChartAreaIndex`. **Done** (CH1).
 - The Charts tab (S3d), and charts in Downloaded. **Done** (CH2).
 - Links from the layers sheet, region detail and the Charts map's "No charts here" card. **Done.**
-- Chart styles for the rebuilt charts data (TSS, anchorages, restricted areas, bridges and clearances, caution areas). **Waiting** for traxmapmaker's schema.
+- Chart styles for the full-data charts (Option B). **Done** (2026-10-22): `tool/make_chart_layers.py` writes 48 layers into charts-light, and the dark palette into charts-dark.
+  - Martin approved it from side-by-side renders of the Puerto Rico pilot.
+  - Before that, a three-lens review (chart conventions, phone legibility, data) fixed misleading labels: entry *restricted* areas shown as "prohibited", AM broadcast towers shown as "R Bn", clearances rounded up, and mooring buoys in nav-aid yellow.
+  - Buoy names show the chart number below z15 (Martin).
+  - Waiting for sprites: lane and current arrows, anchors, restricted-area T-ticks, topmarks, the cable wave.
 
 ### Phase 7: trail routing (Android only)
 
@@ -561,6 +574,15 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
   - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
   - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.
 - **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
+- **Metric-charted depths can read up to 0.5 ft deep in feet** (found 2026-10-22 on the live Rhode Island pack). **Decided (Martin, 2026-10-22): traxmapmaker fixes `depth_ft` in the next charts rebuild,** not a rebuild just for this; the app needs no change. Soundings and depth contours print traxmapmaker's `depth_ft`, which is `round(metres × 3.28084)`.
+  - **Feet-charted values are exact.** NOAA stores them in metres truncated to 0.1 m: 18 ft becomes 5.4 m, which is 17.72 ft. Rounding gives back the chart's figure on every one of them (18,830 soundings, 4,656 contour pieces).
+  - **Metric-charted values sometimes read deeper than charted.** Newer large-scale cells use metric contours (2, 5, 8, 10, 15, 20, 30, 50 m). Rounding shows a third of their soundings (7,380 of 22,407) and 2,411 contour pieces deeper than charted: a 2 m contour reads "7 ft" (6.56 ft), and 20 m reads "66 ft".
+  - **Rounding down everything would break the feet-charted values** (18, 60 and 120 ft contours would read 17, 59 and 119).
+  - **The fix is per feature, not per cell** (traxmapmaker, FINDINGS §4 "Depth units aren't flagged"). NOAA cells carry no units, and metric contours sit beside old feet soundings in the same cell.
+    - Soundings take their units from their source group's share of values on the truncated-foot grid.
+    - Contours and depth areas take theirs from the value. The ambiguous values (0, 3, 6, 10 m) take the units of the neighbouring depth areas.
+    - Feet and fathom sources keep `round`, which is exact today. Metric sources round down.
+    - About half a day of code in traxmapmaker, then the normal charts rebuild (about 2.2 h). `charts_revision` stays 2, and installed charts show "Update available".
 
 ## Bugs to fix along the way
 

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxmap/traxmap.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
@@ -19,6 +20,7 @@ import 'package:meshtrax/services/chat_text_scale_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
+import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 
 import '../../packages/traxmap/test/support/fake_pmtiles.dart';
@@ -76,6 +78,9 @@ void main() {
   late Map<String, http.Response Function()> routes;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    PrefsManager.reset();
+    await PrefsManager.initialize();
     tmp = await Directory.systemTemp.createTemp('charts');
     downloader = _FakeDownloader();
     routes = {
@@ -212,6 +217,40 @@ void main() {
       lessThan(tester.getTopLeft(find.text('Florida')).dy),
       reason: 'along the coast (coast_areas), not by name',
     );
+  });
+
+  testWidgets('"Why?" gives the reasons, and can undo "don\'t show again"', (
+    tester,
+  ) async {
+    final maps = (await tester.runAsync(service))!;
+    await open(tester, maps);
+    final settings = tester
+        .element(find.byType(OfflineMapsScreen))
+        .read<AppSettingsService>();
+    Future<void> why() async {
+      await tester.tap(find.text('Not for navigation · Why?'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Notices to Mariners'), findsOneWidget);
+    }
+
+    bool ticked() =>
+        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value!;
+
+    await why();
+    expect(ticked(), isFalse);
+    await tester.tap(find.text("Don't show this again"));
+    await tester.pump();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(settings.settings.chartsNoticeDismissed, isTrue);
+
+    await why();
+    expect(ticked(), isTrue, reason: 'shows the saved choice');
+    await tester.tap(find.text("Don't show this again"));
+    await tester.pump();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(settings.settings.chartsNoticeDismissed, isFalse);
   });
 
   testWidgets('an area in two coasts is one tick, counted once', (

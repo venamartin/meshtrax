@@ -1,0 +1,253 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
+import 'package:flutter_test/flutter_test.dart';
+
+/// The chart styles' layers grouped by role (tool/make_chart_layers.py),
+/// evaluated by the renderer against features as traxmapmaker writes them.
+void main() {
+  Map<String, Object?> json(String id) =>
+      jsonDecode(File('assets/styles/$id.json').readAsStringSync())
+          as Map<String, Object?>;
+
+  final warnings = <String>[];
+  final light = vt.ThemeReader(logger: vt.Logger.custom(onWarn: warnings.add))
+      .read(json('charts-light'));
+
+  vt.ThemeLayer byId(String id) => light.layers.firstWhere((l) => l.id == id);
+
+  vt.EvalContext feature(
+    Map<String, Object?> properties, {
+    String type = 'Point',
+    double zoom = 14,
+  }) => vt.EvalContext(zoom: zoom, properties: properties, geometryType: type);
+
+  bool matches(String id, Map<String, Object?> p, {String type = 'Point'}) {
+    final v = byId(id).filter(feature(p, type: type));
+    return v == true;
+  }
+
+  String label(String id, Map<String, Object?> p, {double zoom = 14}) =>
+      (byId(id) as vt.SymbolThemeLayer).textField.eval(feature(p, zoom: zoom));
+
+  test('both chart styles read without a skipped layer', () {
+    expect(warnings, isEmpty);
+    final dark = vt.ThemeReader(logger: vt.Logger.custom(onWarn: warnings.add))
+        .read(json('charts-dark'));
+    expect(warnings, isEmpty);
+    expect(
+      [for (final l in dark.layers) l.id],
+      [for (final l in light.layers) l.id],
+    );
+    // No light-style halo left on a dark label.
+    final darkJson = json('charts-dark');
+    for (final l in darkJson['layers']! as List) {
+      final paint = (l as Map)['paint'] as Map? ?? const {};
+      expect(paint['text-halo-color'], isNot('#ffffff'), reason: '${l['id']}');
+    }
+  });
+
+  test('clearances never overstate, in feet or metres', () {
+    const bridge = {'class': 'BRIDGE', 'anchor': 1};
+    expect(label('clearance', {...bridge, 'clearance_m': 19.8}), 'VC 65 ft');
+    // 6.4 m is NOAA's 21 ft; plain rounding would say 21, flooring 20.
+    expect(label('clearance', {...bridge, 'clearance_m': 6.4}), 'VC 21 ft');
+    // 1.5 m is 4.92 ft: charted 5, never rounded up past it.
+    expect(label('clearance', {...bridge, 'clearance_m': 1.5}), 'VC 5 ft');
+    expect(
+      label('clearance', {
+        ...bridge,
+        'clearance_closed_m': 4.3,
+        'clearance_open_m': 41.1,
+        'horizontal_clearance_m': 27.4,
+      }),
+      'VC 14 ft closed, 135 ft open HC 90 ft',
+    );
+    expect(
+      label('clearance', {
+        ...bridge,
+        'clearance_m': 30,
+        'clearance_safe_m': 27.7,
+      }),
+      'Safe VC 91 ft',
+      reason: 'the charted safe clearance wins',
+    );
+    expect(label('clearance-m', {...bridge, 'clearance_m': 19.8}), 'VC 19.8 m');
+    expect(matches('clearance', bridge), isFalse, reason: 'no clearance');
+    expect(
+      matches('clearance', {
+        'class': 'BRIDGE',
+        'clearance_m': 19.8,
+      }, type: 'Polygon'),
+      isFalse,
+      reason: 'areas are labelled from their anchor',
+    );
+  });
+
+  test('regulated areas say exactly what they are', () {
+    String area(Map<String, Object?> p) =>
+        label('regulated-label', {'anchor': 1, ...p}, zoom: 12);
+    expect(
+      area({
+        'class': 'RESARE',
+        'restriction': 'entry',
+        'restrictions': 'entry_restricted',
+      }),
+      'Entry restricted',
+    );
+    expect(
+      area({
+        'class': 'RESARE',
+        'restriction': 'entry',
+        'restrictions': 'fishing_prohibited,entry_prohibited',
+      }),
+      'Entry prohibited',
+    );
+    expect(
+      area({
+        'class': 'ACHARE',
+        'categories': 'unrestricted',
+        'name': 'San Juan Harbor, P.R., Temporary Anchorage Area E',
+      }),
+      'Anch E',
+    );
+    expect(
+      area({
+        'class': 'ACHARE',
+        'categories': 'unrestricted,explosives',
+        'name': 'C',
+      }),
+      'Explos Anch C',
+    );
+    expect(
+      area({'class': 'DMPGRD', 'category': 'explosives', 'disused': 1}),
+      'Disused explos dumping ground',
+    );
+    expect(
+      area({'class': 'DMPGRD', 'category': 'spoil_ground'}),
+      'Spoil ground',
+    );
+    expect(
+      area({'class': 'MIPARE', 'category': 'submarine_exercise_area'}),
+      'Submarine exercise area',
+    );
+    expect(
+      area({'class': 'RESARE', 'category': 'nature_reserve', 'name': 'Area A'}),
+      'Nature reserve\nArea A',
+    );
+    expect(
+      area({
+        'class': 'RESARE',
+        'category': 'nature_reserve',
+        'name': 'Sea Turtles Critical Habitat',
+      }),
+      'Nature reserve',
+      reason: 'a long name would be a block of text; a tap gives it',
+    );
+    // A caution point says what it is warned of, or (!).
+    expect(
+      label('regulated-label', {'class': 'CTNARE', 'info': 'Shoal'}, zoom: 12),
+      'Shoal',
+    );
+    expect(
+      matches('regulated-label', {'class': 'SWPARE', 'anchor': 1}),
+      isFalse,
+    );
+  });
+
+  test('radio: R Bn only for radiobeacons; broadcast towers by call sign', () {
+    expect(
+      label('harbour-label', {
+        'class': 'RDOSTA',
+        'call_sign': 'WAEL',
+        'frequency_khz': 600.0,
+      }),
+      'WAEL 600 kHz',
+    );
+    expect(
+      label('harbour-label', {
+        'class': 'RDOSTA',
+        'category': 'aeronautical_radiobeacon',
+        'call_sign': 'PNG',
+      }),
+      'Aero R Bn PNG',
+    );
+    expect(matches('radio', {'class': 'RDOSTA', 'call_sign': 'WAEL'}), isFalse);
+    expect(
+      label('harbour-label', {'class': 'CGUSTA', 'name': 'San Juan'}),
+      'CG San Juan',
+    );
+  });
+
+  test('buoy names: the number below z15, the full name from z15', () {
+    const buoy = {'name': 'Army Terminal Channel Lighted Buoy 2'};
+    expect(label('nav-aid-label', buoy, zoom: 13), '"2"');
+    expect(label('nav-aid-label', buoy, zoom: 15), buoy['name']);
+    expect(
+      label('nav-aid-label', {
+        'name': 'San Juan Harbor Anchorage E Buoy A',
+      }, zoom: 13),
+      '"A"',
+    );
+    expect(
+      label('nav-aid-label', {'name': 'Isla Grande 16 South Light'}, zoom: 13),
+      '',
+      reason: 'no number to show; its light label still shows',
+    );
+  });
+
+  test(
+    'landmarks: lighthouses left to their light, conspicuous in capitals',
+    () {
+      const radioTower = {
+        'class': 'LNDMRK',
+        'category': 'tower',
+        'function': 'radio',
+        'conspicuous': 1,
+      };
+      expect(label('landmark-label', radioTower, zoom: 14), 'R TR');
+      expect(label('landmark-label', radioTower, zoom: 13), '', reason: 'z14+');
+      expect(
+        matches('landmark', {'class': 'LNDMRK', 'function': 'light_support'}),
+        isFalse,
+      );
+    },
+  );
+
+  test('area anchors label areas; point symbols skip them', () {
+    expect(
+      matches('dolphin', {
+        'class': 'MORFAC',
+        'category': 'dolphin',
+        'anchor': 1,
+      }),
+      isFalse,
+    );
+    expect(
+      matches('dolphin', {'class': 'MORFAC', 'category': 'dolphin'}),
+      isTrue,
+    );
+    expect(
+      matches('seabed-label', {
+        'class': 'SBDARE',
+        'label': 'R',
+        'nature': 'rock',
+      }, type: 'Polygon'),
+      isFalse,
+    );
+    expect(
+      matches('seabed-label', {
+        'class': 'SBDARE',
+        'label': 'h',
+        'nature_quality': 'hard',
+      }),
+      isFalse,
+      reason: 'a quality alone reads like a typo',
+    );
+    expect(
+      matches('virtual-aid', {'class': 'NEWOBJ', 'virtual': 1, 'anchor': 1}),
+      isFalse,
+    );
+  });
+}

@@ -7419,7 +7419,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineMaps_chartsNotice.
   ///
   /// In en, this message translates to:
-  /// **'Not for navigation. Use official, up-to-date NOAA charts to navigate.'**
+  /// **'Not for navigation · Why?'**
   String get offlineMaps_chartsNotice;
 
   /// No description provided for @offlineMaps_chartsSuggested.
@@ -7823,6 +7823,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not for navigation'**
   String get map_notForNavigation;
+
+  /// No description provided for @map_chartsNoticeIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.'**
+  String get map_chartsNoticeIntro;
+
+  /// No description provided for @map_chartsNoticeWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why:'**
+  String get map_chartsNoticeWhy;
+
+  /// No description provided for @map_chartsNoticeOutOfDate.
+  ///
+  /// In en, this message translates to:
+  /// **'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.'**
+  String get map_chartsNoticeOutOfDate;
+
+  /// No description provided for @map_chartsNoticeLeftOut.
+  ///
+  /// In en, this message translates to:
+  /// **'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.'**
+  String get map_chartsNoticeLeftOut;
+
+  /// No description provided for @map_chartsNoticePositions.
+  ///
+  /// In en, this message translates to:
+  /// **'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.'**
+  String get map_chartsNoticePositions;
+
+  /// No description provided for @map_chartsNoticeNotPlotter.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax isn\'t a certified chart plotter.'**
+  String get map_chartsNoticeNotPlotter;
+
+  /// No description provided for @map_chartsNoticeUse.
+  ///
+  /// In en, this message translates to:
+  /// **'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.'**
+  String get map_chartsNoticeUse;
 
   /// No description provided for @map_sourceOnline.
   ///

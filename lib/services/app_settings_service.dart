@@ -255,6 +255,10 @@ class AppSettingsService extends ChangeNotifier {
     );
   }
 
+  Future<void> setChartsNoticeDismissed(bool value) async {
+    await updateSettings(_settings.copyWith(chartsNoticeDismissed: value));
+  }
+
   Future<void> setSenderNameColors(bool value) async {
     await updateSettings(_settings.copyWith(senderNameColors: value));
   }

@@ -73,6 +73,12 @@ CHARTS_DARK = {
 }
 
 
+# The layers grouped by role carry their own dark palette.
+from make_chart_layers import dark_paint  # noqa: E402
+
+CHARTS_DARK.update(dark_paint())
+
+
 def derive(light: str, dark: str, name: str, overrides: dict) -> None:
     style = json.load(open(f"{OUT}/{light}.json"))
     out = copy.deepcopy(style)

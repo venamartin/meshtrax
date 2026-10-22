@@ -70,7 +70,17 @@ traxmap moved into this repository.
   - extra aids (fog signals, daymarks, racons, virtual AIS);
   - landmarks;
   - magnetic variation.
-  About 1.2–1.3 GB for the 42 areas. Whether NOAA's SCAMIN decluttering applies is on hold until the Puerto Rico test packs are compared. |
+  About 1.2–1.3 GB for the 42 areas. |
+| 2026-10-22 | **Chart styles follow paper-chart conventions within the renderer's limits** (Martin approved from renders):
+  - magenta dashed limits;
+  - INT-1 abbreviations;
+  - clearances never overstated;
+  - restrictions worded exactly;
+  - buoy names as the chart's number ("2") below z15.
+  Symbols that need icons (arrows, anchors, T-ticks, topmarks) wait for sprites rather than being faked. |
+| 2026-10-22 | **Depths in feet never read deeper than charted** (Martin). traxmapmaker's `depth_ft` keeps `round` for feet- and fathom-charted depths, which recovers the chart's figure exactly, and rounds down for metre-charted ones. It decides the units per feature, because NOAA cells don't flag units and mix them. It lands in the next charts rebuild; the app's styles keep reading `depth_ft`. |
+| 2026-10-22 | **"Not for navigation" is a dialog that says why,** not a label always on the map (Martin). It opens the first time the map draws charts in each app run, with "Don't show this again". The Charts tab's line "Not for navigation · Why?" opens it any time, and can undo that choice. The reasons: charts go out of date (a download changes only when updated), leave things out (symbols, light sectors, notes; labels hidden until zoomed in), positions can be wrong or old, and MeshTrax isn't a certified chart plotter. |
+| 2026-10-21 | **Charts follow NOAA's decluttering (SCAMIN) on every layer, at NOAA's standard-screen scale** (variant C, Martin, chosen from side-by-side renders of Puerto Rico test packs). Each feature appears from round(log2(279,541,132 × cos(lat) / SCAMIN)), at the earliest from its band's minzoom. In harbours, soundings come in one step after buoys and lights. |
 | 2026-10-20 | **Charts carry the real NOAA content,** not a simplified view (Martin). traxmapmaker rebuilds the charts with traffic separation schemes, anchorages, restricted areas, bridges and overhead clearances, and caution areas. The current 9 layers stay. |
 | 2026-10-20 | **My location: the phone's GPS where allowed, else the radio's position.** It asks while-in-use on the first tap. The phone is **its own marker** (Martin), a blue dot apart from the radio's "You". Nothing is read until the user has used My location once (remembered), and then only while a map is open with the app in front. Linux has no GPS and uses the radio. Desktop gets +/− buttons; phones pinch. |
 | 2026-10-19 | **Copernicus GLO-30 is approved** for contours outside the US (Canada, Mexico, UK). A contours pack's `attribution` is then "USGS 3DEP", the Copernicus credit, or both, joined with "; ". The licence also requires redistributors to show: "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30." The app shows that alongside the credits wherever such a pack is in use, as it does the charts' "Not for navigation". **Agreed with traxmapmaker (SCHEMA.md "Pack metadata", FINDINGS §1.1):**<br>• Packs carry an optional plain-text `notice` metadata key, present only when a licence requires one.<br>• Several notices in one pack are joined by newlines.<br>• The key is in pack metadata only, not in `index.json`.<br>• The app shows every distinct notice of the packs in use (T5, `MapStyleState.notices`), and never matches on "Copernicus".<br>• First data: the Puerto Rico and US Virgin Islands contours. Two of their blocks have no 3DEP tile and use GLO-30. |
@@ -126,6 +136,7 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
   - **Stream errors don't close the stream.** Cancel the subscription on error, or a later tap can't start following again.
   - **Never asked reads as `denied`** on Android and iOS, not "unknown", so asking again on `denied` is what shows the prompt.
   - **iOS builds** need `BYPASS_PERMISSION_LOCATION_ALWAYS=1` in the environment (Swift Package Manager; the Podfile sets it for CocoaPods), or the binary references Always location (ITMS-90683).
+- **Headless previews with real fonts, no native build** (2026-10-21): `flutter --show-test-device run -d flutter-tester -t <app.dart>` runs an app in the test engine without `flutter test`'s box-glyph test fonts and without the Linux desktop build. That build couldn't finish in 25 minutes on the busy Pi. Capture with `RepaintBoundary.toImage` and `exit(0)` when done. Inside `flutter test`, map labels always draw as boxes: the label painter names no font family, and `--use-test-fonts` is hard-wired.
 - `RandomAccessFile` allows one pending operation at a time, so local tile reads need serializing.
 - **Test hang:** `rootBundle` caches asset futures. A future created inside one `testWidgets` fake-async zone never completes when awaited from another. Load assets in plain `test()` with `TestWidgetsFlutterBinding.ensureInitialized()`.
 - A bundled pack copied into app storage goes stale after a pipeline rebuild. Compare size plus the first 16 KiB, and reinstall when they differ.
