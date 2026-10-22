@@ -145,6 +145,63 @@ void main() {
     expect(await manager.listInstalled(), isEmpty);
   });
 
+  /// Deletes like Windows: a file in [open] (a map has it) can't go.
+  void actLikeWindows(Set<String> open) => manager.deleteFile = (file) async {
+    if (open.contains(file.path)) {
+      throw FileSystemException('in use', file.path);
+    }
+    await file.delete();
+  };
+
+  test('a pack open in a map (Windows) is unlisted, then removed', () async {
+    manager = PackManager(
+      manager.root,
+      retryDelay: const Duration(milliseconds: 20),
+    );
+    addTearDown(manager.close);
+    final pack = await manager.install(source('r.pmtiles'), id: 'r');
+    final open = {pack.file.path};
+    actLikeWindows(open);
+
+    final changed = manager.changes.first;
+    await manager.delete(pack);
+    await changed;
+    expect(pack.file.existsSync(), isTrue, reason: 'the map still has it');
+    expect(await manager.listInstalled(), isEmpty);
+
+    open.clear(); // The map reloads without it.
+    for (var i = 0; i < 100 && manager.root.listSync().isNotEmpty; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(manager.root.listSync(), isEmpty, reason: 'the pack and its mark');
+  });
+
+  test('a pack marked deleted stays deleted after a restart', () async {
+    final pack = await manager.install(source('r.pmtiles'), id: 'r');
+    actLikeWindows({pack.file.path});
+    await manager.delete(pack);
+    await manager.close();
+
+    final next = PackManager(manager.root);
+    addTearDown(next.close);
+    expect(await next.listInstalled(), isEmpty);
+    expect(next.root.listSync(), isEmpty);
+  });
+
+  test('downloading a pack marked deleted again brings it back', () async {
+    final file = source('r.pmtiles');
+    final sum = sha256.convert(file.readAsBytesSync()).toString();
+    final pack = await manager.install(file, id: 'r', sha256: sum);
+    final open = {pack.file.path};
+    actLikeWindows(open);
+    await manager.delete(pack);
+
+    open.clear();
+    await manager.install(file, id: 'r', sha256: sum);
+    expect((await manager.listInstalled()).map((p) => p.id), ['r']);
+    expect(pack.file.existsSync(), isTrue);
+  });
+
   test('contours variant and units come from metadata', () async {
     final pack = await manager.install(
       source(

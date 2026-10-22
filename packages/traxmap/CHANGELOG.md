@@ -1,5 +1,12 @@
 ## Unreleased
 
+- **Deleting a pack works on Windows while a map has it open.** Windows
+  won't delete an open file, so `PackManager.delete` threw and Delete
+  region stopped part-way. Now such a pack is marked deleted
+  (`<file>.deleted`) and drops out of `listInstalled` at once. The map
+  reloads without it and closes the file, and the delete is retried
+  (`retryDelay`, doubling, five tries, plus every `listInstalled`). The mark
+  survives a restart. Installing that build again clears it.
 - **Full-data chart styles** (`charts_revision` 2): charts-light and
   charts-dark draw traxmapmaker's layers grouped by role. They cover
   routes and traffic separation, regulated areas, bridges and overhead
