@@ -574,10 +574,15 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
   - The world base map will fill it: traxmapmaker builds it last and MeshTrax downloads it with the catalogue (decision 2026-10-20).
   - App side, when it lands: `PackKind.world`; a `world` source and layers in all six styles up to zoom 6; downloaded with `index.json` and kept outside `installed`; the offline card hidden below zoom 6.
 - **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the dashed line in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
-- **Metric-charted depths can read up to 0.5 ft deep in feet** (found 2026-10-22 on the live Rhode Island pack; waiting for Martin). Soundings and depth contours print traxmapmaker's `depth_ft`, which is `round(metres × 3.28084)`.
+- **Metric-charted depths can read up to 0.5 ft deep in feet** (found 2026-10-22 on the live Rhode Island pack). **Decided (Martin, 2026-10-22): traxmapmaker fixes `depth_ft` in the next charts rebuild,** not a rebuild just for this; the app needs no change. Soundings and depth contours print traxmapmaker's `depth_ft`, which is `round(metres × 3.28084)`.
   - **Feet-charted values are exact.** NOAA stores them in metres truncated to 0.1 m: 18 ft becomes 5.4 m, which is 17.72 ft. Rounding gives back the chart's figure on every one of them (18,830 soundings, 4,656 contour pieces).
   - **Metric-charted values sometimes read deeper than charted.** Newer large-scale cells use metric contours (2, 5, 8, 10, 15, 20, 30, 50 m). Rounding shows a third of their soundings (7,380 of 22,407) and 2,411 contour pieces deeper than charted: a 2 m contour reads "7 ft" (6.56 ft), and 20 m reads "66 ft".
-  - **Rounding down everything would break the feet-charted values** (18, 60 and 120 ft contours would read 17, 59 and 119). The fix is to round down only on cells charted in metres. traxmapmaker knows each value's cell; the style can only guess from the value (3 m and 10 m look like 10 and 33 ft).
+  - **Rounding down everything would break the feet-charted values** (18, 60 and 120 ft contours would read 17, 59 and 119).
+  - **The fix is per feature, not per cell** (traxmapmaker, FINDINGS §4 "Depth units aren't flagged"). NOAA cells carry no units, and metric contours sit beside old feet soundings in the same cell.
+    - Soundings take their units from their source group's share of values on the truncated-foot grid.
+    - Contours and depth areas take theirs from the value. The ambiguous values (0, 3, 6, 10 m) take the units of the neighbouring depth areas.
+    - Feet and fathom sources keep `round`, which is exact today. Metric sources round down.
+    - About half a day of code in traxmapmaker, then the normal charts rebuild (about 2.2 h). `charts_revision` stays 2, and installed charts show "Update available".
 
 ## Bugs to fix along the way
 
