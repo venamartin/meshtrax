@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -323,6 +325,33 @@ void main() {
       expect(maps.downloadedAreas(MapType.usgs).keys, [_ri]);
     },
   );
+
+  test('the maps folder stays out of iOS and macOS backups', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('meshtrax/storage');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <String>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add('${call.method} ${call.arguments}');
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final dir = Directory('${tmp.path}/maps');
+    try {
+      for (final platform in TargetPlatform.values) {
+        debugDefaultTargetPlatformOverride = platform;
+        await MapPacksService.keepOutOfBackups(dir);
+      }
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+    expect(calls, [
+      'excludeFromBackup ${dir.path}',
+      'excludeFromBackup ${dir.path}',
+    ], reason: 'iOS and macOS only');
+    expect(dir.existsSync(), isTrue);
+  });
 
   test('a 404 index means no catalogue yet, not an error', () async {
     routes = {};
