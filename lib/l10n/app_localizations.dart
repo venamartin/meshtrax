@@ -7683,8 +7683,20 @@ abstract class AppLocalizations {
   /// No description provided for @offlineMaps_kindUsgsDetail.
   ///
   /// In en, this message translates to:
-  /// **'Trails, streams, reserves, terrain'**
+  /// **'Trails, streams, reserves'**
   String get offlineMaps_kindUsgsDetail;
+
+  /// No description provided for @offlineMaps_kindTerrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Hill shading'**
+  String get offlineMaps_kindTerrain;
+
+  /// No description provided for @offlineMaps_kindTerrainDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Hills and mountains, shaded under the map'**
+  String get offlineMaps_kindTerrainDetail;
 
   /// No description provided for @offlineMaps_kindCharts.
   ///
@@ -8045,6 +8057,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contours'**
   String get mapLayers_contours;
+
+  /// No description provided for @mapLayers_hillShading.
+  ///
+  /// In en, this message translates to:
+  /// **'Hill shading'**
+  String get mapLayers_hillShading;
 
   /// No description provided for @mapLayers_dark.
   ///

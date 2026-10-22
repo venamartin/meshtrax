@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -53,10 +54,8 @@ void main() {
   late _FakeDownloader downloader;
   late MapPacksService maps;
 
-  setUp(() async {
-    tmp = await Directory.systemTemp.createTemp('offlinemaps');
-    downloader = _FakeDownloader();
-    maps = MapPacksService(
+  Future<MapPacksService> catalogue(String index) async {
+    final maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/maps/packs')),
       downloader: downloader,
       cacheDir: Directory('${tmp.path}/maps'),
@@ -64,7 +63,7 @@ void main() {
       styles: StyleRegistry(MemoryStyles()),
       client: MockClient(
         (request) async => switch (request.url.path) {
-          '/dev/index.json' => http.Response(_index, 200),
+          '/dev/index.json' => http.Response.bytes(utf8.encode(index), 200),
           '/dev/picker.geojson' => http.Response(_picker, 200),
           _ => http.Response('', 404),
         },
@@ -72,6 +71,13 @@ void main() {
     );
     await maps.start();
     await maps.refresh();
+    return maps;
+  }
+
+  setUp(() async {
+    tmp = await Directory.systemTemp.createTemp('offlinemaps');
+    downloader = _FakeDownloader();
+    maps = await catalogue(_index);
   });
   tearDown(() => tmp.delete(recursive: true));
 
@@ -178,6 +184,36 @@ void main() {
     );
     expect(find.text('Rhode Island'), findsOneWidget);
     expect(find.text('Download 35 MB'), findsOneWidget);
+  });
+
+  testWidgets('hill shading is offered and ticked where a region has it', (
+    tester,
+  ) async {
+    final index = jsonDecode(_index) as Map<String, Object?>;
+    final packs = (index['packs']! as List).cast<Map<String, Object?>>();
+    final usgs = packs.firstWhere((p) => p['id'] == 'us-rhode-island');
+    packs.add({
+      ...usgs,
+      'id': 'us-rhode-island-terrain',
+      'kind': 'terrain',
+      'bytes': 2000000,
+      'sha256': '0' * 64,
+    });
+    await tester.runAsync(
+      () async => maps = await catalogue(jsonEncode(index)),
+    );
+    await open(
+      tester,
+      size: const Size(400, 900),
+      region: 'north-america/us/rhode-island',
+    );
+    expect(find.text('Hill shading'), findsOneWidget);
+    expect(
+      find.text('Hills and mountains, shaded under the map'),
+      findsOneWidget,
+    );
+    // Map 34.1 MB + metric contours 1.0 MB + hill shading 2.0 MB.
+    expect(find.text('Download 37 MB'), findsOneWidget);
   });
 
   testWidgets('Downloaded is empty until something is installed', (

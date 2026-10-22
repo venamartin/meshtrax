@@ -9,12 +9,13 @@ import '../services/map_packs_service.dart';
 import 'app_map.dart';
 
 /// Opens the map layers sheet, laid out like Google Maps': which map, its
-/// details (contours, dark, downloaded areas), any [extra] section a screen
-/// adds (the Node Map's node types), [onMoreFilters], and Offline maps.
+/// details (contours, hill shading, dark, downloaded areas), any [extra]
+/// section a screen adds (the Node Map's node types), [onMoreFilters], and
+/// Offline maps.
 ///
 /// Online, the map is the standard online look, so the other map types,
-/// contours and dark show "Offline only"; tapping one switches to Offline
-/// and applies it.
+/// contours, hill shading and dark show "Offline only"; tapping one switches
+/// to Offline and applies it.
 ///
 /// [extra] builds inside the sheet, so it rebuilds as settings change.
 Future<void> showMapLayersSheet(
@@ -46,6 +47,7 @@ class MapLayersSheet extends StatelessWidget {
         : MapType.parse(settings.mapType) ?? MapType.osm;
     final dark = settings.mapTheme == 'dark';
     final contours = settings.mapContours;
+    final hillShading = settings.mapHillShading;
     final downloadedAreas = settings.mapDownloadedAreas;
 
     // An Offline-only choice made while Online: go Offline, then apply it.
@@ -117,6 +119,18 @@ class MapLayersSheet extends StatelessWidget {
                   enabled: !online,
                   onTap: () => offline(
                     () => settingsService.setMapContours(online || !contours),
+                  ),
+                ),
+                MapLayerTile(
+                  picture: _picture('hill_shading'),
+                  label: l10n.mapLayers_hillShading,
+                  note: online ? l10n.mapLayers_offlineOnly : null,
+                  selected: !online && hillShading,
+                  enabled: !online,
+                  onTap: () => offline(
+                    () => settingsService.setMapHillShading(
+                      online || !hillShading,
+                    ),
                   ),
                 ),
                 MapLayerTile(

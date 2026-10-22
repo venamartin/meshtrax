@@ -9,8 +9,8 @@ import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
 import '../../utils/format_bytes.dart';
 
-/// What a pack is, in the user's words: "Map", "Contours 20 ft", "USGS topo
-/// map". Used by every list on the Offline maps screen.
+/// What a pack is, in the user's words: "Map", "Contours 20 ft", "Hill
+/// shading", "USGS topo map". Used by every list on the Offline maps screen.
 String packLabel(
   AppLocalizations l10n,
   PackKind kind, {
@@ -22,6 +22,7 @@ String packLabel(
     l10n.offlineMaps_kindContours,
     ?intervalLabel(interval, intervalUnit),
   ].join(' '),
+  PackKind.terrain => l10n.offlineMaps_kindTerrain,
   PackKind.base => l10n.offlineMaps_kindUsgs,
   PackKind.charts => l10n.offlineMaps_kindCharts,
   PackKind.unknown => kind.name,
@@ -37,6 +38,7 @@ String? intervalLabel(num? interval, String? unit) => interval == null
 String packDetail(AppLocalizations l10n, PackKind kind) => switch (kind) {
   PackKind.osm => l10n.offlineMaps_kindMapDetail,
   PackKind.contours => l10n.offlineMaps_kindContoursDetail,
+  PackKind.terrain => l10n.offlineMaps_kindTerrainDetail,
   PackKind.base => l10n.offlineMaps_kindUsgsDetail,
   PackKind.charts || PackKind.unknown => '',
 };

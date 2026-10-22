@@ -202,6 +202,7 @@ class _AppMapState extends State<AppMap> {
           styleRegistry: maps.styles,
           packs: maps.mapPacks(
             contours: !online && (widget.contours ?? settings.mapContours),
+            hillShading: !online && settings.mapHillShading,
           ),
           units: settings.unitSystem == UnitSystem.imperial
               ? Units.imperial

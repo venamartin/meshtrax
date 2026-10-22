@@ -103,6 +103,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mapContours: value));
   }
 
+  Future<void> setMapHillShading(bool value) async {
+    await updateSettings(_settings.copyWith(mapHillShading: value));
+  }
+
   Future<void> setMapDownloadedAreas(bool value) async {
     await updateSettings(_settings.copyWith(mapDownloadedAreas: value));
   }

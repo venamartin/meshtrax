@@ -217,6 +217,7 @@ class DownloadedTab extends StatelessWidget {
 const _kindOrder = [
   PackKind.osm,
   PackKind.contours,
+  PackKind.terrain,
   PackKind.base,
   PackKind.charts,
   PackKind.unknown,

@@ -407,9 +407,12 @@ class MapPacksService extends ChangeNotifier {
 
   /// The installed packs a map draws from; the style uses those it needs.
   /// Contours come last so the map's own credit leads the credits.
-  List<Pack> mapPacks({required bool contours}) => [
+  List<Pack> mapPacks({required bool contours, required bool hillShading}) => [
     for (final pack in _installed)
-      if (pack.kind != PackKind.unknown && pack.kind != PackKind.contours) pack,
+      if (pack.kind != PackKind.unknown &&
+          pack.kind != PackKind.contours &&
+          (hillShading || pack.kind != PackKind.terrain))
+        pack,
     if (contours)
       for (final pack in _installed)
         if (pack.kind == PackKind.contours) pack,
@@ -421,8 +424,9 @@ class MapPacksService extends ChangeNotifier {
   List<PackIndexEntry> packsForRegion(String path) =>
       _index?.forRegion(path) ?? const [];
 
-  /// The packs a region's Download button starts with: the map, plus the
-  /// contours variant for [units] (or the first one). USGS is opt-in.
+  /// The packs a region's Download button starts with: the map, the
+  /// contours variant for [units] (or the first one) and hill shading.
+  /// USGS is opt-in.
   List<PackIndexEntry> defaultSelection(String path, UnitSystem units) {
     final packs = packsForRegion(path);
     final contours = packs.where((e) => e.kind == PackKind.contours).toList();
@@ -434,6 +438,7 @@ class MapPacksService extends ChangeNotifier {
           (e) => e.units == wanted,
           orElse: () => contours.first,
         ),
+      ...packs.where((e) => e.kind == PackKind.terrain),
     ];
   }
 
