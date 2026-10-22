@@ -43,6 +43,11 @@ class AssetStyleSource implements StyleSource {
   }();
 }
 
+/// [StyleContext.sprite] for the sprite sheets bundled with this package
+/// (`assets/sprites/`), which the Flutter renderer reads from the asset
+/// bundle.
+const bundledSprites = 'asset:sprites';
+
 /// The style registry for the bundled styles.
 StyleRegistry bundledStyles({AssetBundle? bundle}) =>
     StyleRegistry(AssetStyleSource(bundle: bundle));

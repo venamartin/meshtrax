@@ -974,7 +974,13 @@
           "Noto Sans Medium"
         ],
         "text-size": 11,
-        "text-anchor": "top"
+        "text-anchor": "top",
+        "text-offset": [
+          0,
+          0.6
+        ],
+        "text-optional": true,
+        "icon-image": "peak"
       },
       "paint": {
         "text-color": "#d8b98a",
@@ -1027,7 +1033,13 @@
           "Noto Sans Medium"
         ],
         "text-size": 11,
-        "text-anchor": "top"
+        "text-anchor": "top",
+        "text-offset": [
+          0,
+          0.6
+        ],
+        "text-optional": true,
+        "icon-image": "peak"
       },
       "paint": {
         "text-color": "#d8b98a",
@@ -1090,5 +1102,6 @@
         "text-halo-width": 2
       }
     }
-  ]
+  ],
+  "sprite": "{sprite}/dark"
 }

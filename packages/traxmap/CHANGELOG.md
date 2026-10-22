@@ -1,5 +1,23 @@
 ## Unreleased
 
+- **Chart symbols.** Buoys, beacons, daymarks, topmarks, light flares,
+  rocks, wrecks and obstructions, anchorages, caution areas, traffic-lane
+  and tidal-stream arrows and landmarks are icons, following US Chart
+  No. 1. Restricted areas have the T-tick limit and submarine cables the
+  wave. OSM peaks get a peak icon.
+  - **Sprite sheets:** `assets/sprites/light@2x` and `dark@2x`, drawn by
+    `tool/make_sprites.py`. Styles name one as `{sprite}/light`;
+    `StyleContext.sprite` is now the base the sheets are under, and
+    `bundledSprites` points the Flutter renderer at the bundled ones.
+  - **Every mark gets an icon:** a colour scheme or shape the sheet lacks
+    falls back to the mark's first colour and a plain shape.
+- **Deleting a pack works on Windows while a map has it open.** Windows
+  won't delete an open file, so `PackManager.delete` threw and Delete
+  region stopped part-way. Now such a pack is marked deleted
+  (`<file>.deleted`) and drops out of `listInstalled` at once. The map
+  reloads without it and closes the file, and the delete is retried
+  (`retryDelay`, doubling, five tries, plus every `listInstalled`). The mark
+  survives a restart. Installing that build again clears it.
 - **Full-data chart styles** (`charts_revision` 2): charts-light and
   charts-dark draw traxmapmaker's layers grouped by role. They cover
   routes and traffic separation, regulated areas, bridges and overhead
@@ -12,8 +30,7 @@
   - **Buoy and beacon names** show the chart's number ("2") below z15 and
     the full name from z15.
   - **Generated:** the layers come from `tool/make_chart_layers.py`, which
-    also gives `make_dark_variants.py` their dark palette. Symbols wait for
-    sprites.
+    also gives `make_dark_variants.py` their dark palette.
 - **`ChartAreaIndex`** (core) parses the pack server's `chart_areas.geojson`
   (FINDINGS §1.4): NOAA chart areas, each one charts pack (`packRegion`),
   grouped by coast in the server's order (`coasts`, and `coast_areas` for a

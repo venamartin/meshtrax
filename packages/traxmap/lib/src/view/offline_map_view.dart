@@ -179,7 +179,11 @@ class _OfflineMapViewState extends State<OfflineMapView> {
     );
     final id = widget.styleId;
     try {
-      final context = StyleContext(packs: packsByKind, units: widget.units);
+      final context = StyleContext(
+        packs: packsByKind,
+        units: widget.units,
+        sprite: bundledSprites,
+      );
       final style = await _registry.load(id, context);
       if (!mounted || id != widget.styleId) return;
       final used = packsUsedBy(
