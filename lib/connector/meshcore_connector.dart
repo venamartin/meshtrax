@@ -824,7 +824,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<Uint8List> get receivedFrames => _receivedFramesController.stream;
   Stream<int> get errorStream => _errorStreamController.stream;
   Uint8List? get selfPublicKey => _selfPublicKey;
-  String get selfPublicKeyHex => pubKeyToHex(_selfPublicKey ?? Uint8List(0));
+  // Hex of the key bytes currently held, computed once per key object.
+  Uint8List? _selfHexSource;
+  String _selfHex = '';
+  String get selfPublicKeyHex {
+    final key = _selfPublicKey;
+    if (key == null) return '';
+    if (!identical(key, _selfHexSource)) {
+      _selfHexSource = key;
+      _selfHex = pubKeyToHex(key);
+    }
+    return _selfHex;
+  }
   String? get selfName => _selfName;
   double? get selfLatitude => _selfLatitude;
   double? get selfLongitude => _selfLongitude;
@@ -5582,6 +5593,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void handleFrameForTest(List<int> data) => _handleFrame(data);
 
   void _handleFrame(List<int> data) {
+    // Synchronous, so this is pure UI-thread time per radio frame.
+    final sw = Stopwatch()..start();
+    _handleFrameInner(data);
+    if (data.isNotEmpty) {
+      appLogger.perf('radio frame 0x${data[0].toRadixString(16)}', sw);
+    }
+  }
+
+  void _handleFrameInner(List<int> data) {
     if (data.isEmpty) return;
 
     final frame = Uint8List.fromList(data);

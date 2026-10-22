@@ -8,6 +8,7 @@ import '../helpers/repeater_identity.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../screens/repeater_hub_screen.dart';
+import '../utils/app_logger.dart';
 import 'repeater_login_dialog.dart';
 import 'snr_indicator.dart';
 
@@ -36,7 +37,12 @@ class NearbyRepeatersDialog extends StatelessWidget {
             stream: Stream.periodic(const Duration(seconds: 1)),
             builder: (context, _) => ListenableBuilder(
               listenable: connector,
-              builder: (context, _) => _body(context),
+              builder: (context, _) {
+                final sw = Stopwatch()..start();
+                final body = _body(context);
+                appLogger.perf('nearby repeaters dialog build', sw);
+                return body;
+              },
             ),
           ),
         ),

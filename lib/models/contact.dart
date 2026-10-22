@@ -58,7 +58,8 @@ class Contact {
   }) : inboundPath = inboundPath ?? Uint8List(0),
        lastMessageAt = lastMessageAt ?? lastSeen;
 
-  String get publicKeyHex => pubKeyToHex(publicKey);
+  // Computed once: the key bytes are a private copy and never change.
+  late final String publicKeyHex = pubKeyToHex(publicKey);
 
   /// Width of the override bytes, falling back to [radioWidth] for an
   /// override saved before its width was recorded.
