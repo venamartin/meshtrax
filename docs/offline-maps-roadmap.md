@@ -121,6 +121,12 @@ Last updated 2026-10-20, evening. **Resume here.**
      - **D1: chosen (Martin, 2026-10-21, in traxmapmaker's session).** Hillshade and elevation bands become their own `terrain` kind: `terrain.pmtiles`, z6–13, overzoomed, one per land region. OSM maps get relief without the 2–5 GB USGS pack.
        - App work, about half a day: `PackKind.terrain`, the four styles re-pointed to `{pack:terrain}`, a label, the Downloaded order and a region-detail row.
        - It ships in the release that lists the kind, before traxmapmaker publishes any terrain pack.
+       - **Contract drafted (2026-10-22, §1.3 and SCHEMA), reviewed by MeshTrax:**
+         - `terrain.pmtiles` for US regions (3DEP, or GLO-30 where 3DEP has none, with the Copernicus notice as in contours), z6–13, plus the usual index fields.
+         - The layers keep today's names: `hillshade` (`level` −1 highlight, 1–4 shadow; z8–13) and `elev_band` (`band_ft`; z6–13).
+         - The USGS base loses both layers.
+         - **No hill shading at z6–7 (Martin):** bands only, unless the pilot renders show a jump at z8.
+         - Today's app ignores an unknown kind. traxmapmaker still holds base and terrain until the release that supports terrain, because base alone would draw USGS without relief.
        - Still to preview with Martin: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
      - **D2: base stays z6–14** (Martin: "we have them broken into small regions anyway"). The Rhode Island pilot also builds a z13 copy to compare in the app;
      - **D3: the hill-shading highlight bug gets fixed.** Sun-facing slopes (level −1) appear for the first time; retune their 0.25–0.28 opacity on the pilot;
@@ -583,6 +589,11 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
     - Contours and depth areas take theirs from the value. The ambiguous values (0, 3, 6, 10 m) take the units of the neighbouring depth areas.
     - Feet and fathom sources keep `round`, which is exact today. Metric sources round down.
     - About half a day of code in traxmapmaker, then the normal charts rebuild (about 2.2 h). `charts_revision` stays 2, and installed charts show "Update available".
+  - **Built and checked (2026-10-22):** traxmapmaker main `4901702` (extractor enc3), `9581c31` and a local Rhode Island test pack. Against the live pack, over every z14 tile:
+    - nothing reads deeper than before, and every change is exactly 1 ft down;
+    - the feet-charted contours are unchanged;
+    - contours, depth areas and hazards read at most 0.33 ft over their metres (the truncated-foot recovery).
+    - Five soundings (2 m and 9 m inside records that are mostly feet) still rounded up. `9581c31` rounds down any sounding that can't be a feet or fathom figure, even in a feet record; it was already built, so Martin kept it.
 
 ## Bugs to fix along the way
 
