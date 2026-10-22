@@ -2,7 +2,7 @@
   "version": 8,
   "name": "NOAA Charts",
   "metadata": {
-    "ovm:status": "Starter style; Phase 3 replaces it. Simplified symbology, not S-52.",
+    "ovm:status": "Hand-written; the layers grouped by role (charts_revision 2) come from tool/make_chart_layers.py. No sprites yet.",
     "ovm:disclaimer": "Not for navigation",
     "ovm:map": "charts",
     "ovm:requires": [
@@ -180,6 +180,643 @@
       }
     },
     {
+      "id": "tss-zone",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "TSEZNE",
+          "ISTZNE"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 9,
+      "paint": {
+        "fill-color": "#b5186e",
+        "fill-opacity": 0.22
+      }
+    },
+    {
+      "id": "unsurveyed",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "UNSARE"
+      ],
+      "minzoom": 9,
+      "paint": {
+        "fill-color": "#cfd3d6",
+        "fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "seabed-weed",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "seabed",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "WEDKLP"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ]
+      ],
+      "minzoom": 12,
+      "paint": {
+        "fill-color": "#8fb27a",
+        "fill-opacity": 0.18
+      }
+    },
+    {
+      "id": "dock-area",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "structure",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "DRYDOC",
+          "FLODOC",
+          "DOCARE",
+          "LOKBSN",
+          "HULKES"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 13,
+      "paint": {
+        "fill-color": "#c9c3b4",
+        "fill-opacity": 0.9
+      }
+    },
+    {
+      "id": "tss-boundary",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "TSSBND"
+      ],
+      "minzoom": 9,
+      "paint": {
+        "line-color": "#b5186e",
+        "line-width": 1.2,
+        "line-dasharray": [
+          6,
+          3
+        ],
+        "line-opacity": 0.8
+      }
+    },
+    {
+      "id": "tss-separation-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "TSELNE"
+      ],
+      "minzoom": 9,
+      "paint": {
+        "line-color": "#b5186e",
+        "line-width": 5,
+        "line-opacity": 0.25
+      }
+    },
+    {
+      "id": "precautionary",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "PRCARE",
+            "TWRTPT",
+            "DWRTPT"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ]
+      ],
+      "minzoom": 9,
+      "paint": {
+        "line-color": "#b5186e",
+        "line-width": 1.2,
+        "line-dasharray": [
+          5,
+          3
+        ]
+      }
+    },
+    {
+      "id": "fairway",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "FAIRWY"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "line-color": "#5d7d99",
+        "line-width": 1,
+        "line-dasharray": [
+          6,
+          4
+        ],
+        "line-opacity": 0.6
+      }
+    },
+    {
+      "id": "track",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "RECTRC",
+            "DWRTCL",
+            "RCRTCL",
+            "RCTLPT",
+            "FERYRT",
+            "RDOCAL"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ]
+      ],
+      "minzoom": 10,
+      "paint": {
+        "line-color": "#333333",
+        "line-width": 1,
+        "line-dasharray": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "FERYRT",
+          [
+            "literal",
+            [
+              4,
+              4
+            ]
+          ],
+          "RECTRC",
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            "not_based_on_fixed_marks",
+            [
+              "literal",
+              [
+                6,
+                3
+              ]
+            ],
+            [
+              "literal",
+              [
+                1,
+                0
+              ]
+            ]
+          ],
+          [
+            "literal",
+            [
+              1,
+              0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "id": "leading-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "NAVLNE"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ]
+      ],
+      "minzoom": 11,
+      "paint": {
+        "line-color": "#333333",
+        "line-width": 0.8,
+        "line-dasharray": [
+          8,
+          3
+        ]
+      }
+    },
+    {
+      "id": "regulated-limit",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "RESARE",
+            "CTNARE",
+            "ACHARE",
+            "MIPARE",
+            "DMPGRD",
+            "CBLARE",
+            "PIPARE",
+            "MARCUL",
+            "SPLARE",
+            "CTSARE",
+            "OSPARE",
+            "FSHGRD",
+            "ICNARE",
+            "FRPARE",
+            "CUSZNE"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ]
+      ],
+      "minzoom": 10,
+      "paint": {
+        "line-color": [
+          "case",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "DMPGRD"
+            ],
+            [
+              "in",
+              ",explosives,",
+              [
+                "concat",
+                ",",
+                [
+                  "get",
+                  "categories"
+                ],
+                ","
+              ]
+            ]
+          ],
+          "#b5186e",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "DMPGRD",
+              "MARCUL",
+              "FSHGRD"
+            ],
+            true,
+            false
+          ],
+          "#7d7d7d",
+          "#b5186e"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "restriction"
+            ],
+            "entry",
+            1.2,
+            0.8
+          ],
+          14,
+          [
+            "match",
+            [
+              "get",
+              "restriction"
+            ],
+            "entry",
+            1.8,
+            1.1
+          ]
+        ],
+        "line-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.6,
+          13,
+          0.85
+        ],
+        "line-dasharray": [
+          5,
+          3
+        ]
+      }
+    },
+    {
+      "id": "swept-limit",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "SWPARE"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ]
+      ],
+      "minzoom": 14,
+      "paint": {
+        "line-color": "#4f8a5b",
+        "line-width": 0.8,
+        "line-dasharray": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "cable",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "cable_pipe",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "CBLSUB"
+      ],
+      "minzoom": 11,
+      "paint": {
+        "line-color": "#b5186e",
+        "line-width": 0.9,
+        "line-opacity": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "disused"
+            ],
+            1
+          ],
+          0.35,
+          0.8
+        ],
+        "line-dasharray": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "disused"
+            ],
+            1
+          ],
+          [
+            "literal",
+            [
+              2,
+              3
+            ]
+          ],
+          [
+            "literal",
+            [
+              1,
+              0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "id": "pipeline",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "cable_pipe",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "PIPSOL"
+      ],
+      "minzoom": 11,
+      "paint": {
+        "line-color": [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          [
+            "outfall",
+            "intake",
+            "sewer",
+            "bubbler"
+          ],
+          "#7d7d7d",
+          "#b5186e"
+        ],
+        "line-width": 0.9,
+        "line-opacity": 0.8,
+        "line-dasharray": [
+          6,
+          2,
+          1.5,
+          2
+        ]
+      }
+    },
+    {
+      "id": "breakers",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "tide_current",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "WATTUR"
+        ],
+        [
+          "match",
+          [
+            "geometry-type"
+          ],
+          [
+            "Polygon",
+            "LineString"
+          ],
+          true,
+          false
+        ]
+      ],
+      "minzoom": 12,
+      "paint": {
+        "line-color": "#5b88b0",
+        "line-width": 0.8,
+        "line-dasharray": [
+          1,
+          2
+        ]
+      }
+    },
+    {
       "id": "coastline",
       "type": "line",
       "source": "charts",
@@ -195,6 +832,184 @@
           "construction",
           1.5,
           1
+        ]
+      }
+    },
+    {
+      "id": "tank-fill",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "landmark",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "SILTNK",
+          "BUISGL"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 13,
+      "paint": {
+        "fill-color": "#b8ad97",
+        "fill-outline-color": "#333333"
+      }
+    },
+    {
+      "id": "structure-fill",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "structure",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "DAMCON",
+          "OFSPLF",
+          "MORFAC",
+          "PONTON",
+          "CAUSWY"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 13,
+      "paint": {
+        "fill-color": "#a59f92",
+        "fill-outline-color": "#333333"
+      }
+    },
+    {
+      "id": "pontoon",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "structure",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "PONTON",
+            "OILBAR",
+            "DAMCON",
+            "CAUSWY"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "line-color": "#333333",
+        "line-width": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "OILBAR",
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "id": "bridge-fill",
+      "type": "fill",
+      "source": "charts",
+      "source-layer": "overhead",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "BRIDGE"
+      ],
+      "minzoom": 11,
+      "paint": {
+        "fill-color": "#8f8a80",
+        "fill-outline-color": "#3d3a35"
+      }
+    },
+    {
+      "id": "bridge-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "overhead",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "BRIDGE",
+            "GATCON"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ]
+      ],
+      "minzoom": 11,
+      "paint": {
+        "line-color": "#5c5852",
+        "line-width": 3
+      }
+    },
+    {
+      "id": "overhead-line",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "overhead",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "CBLOHD",
+          "PIPOHD",
+          "CONVYR"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 11,
+      "paint": {
+        "line-color": "#3d3a35",
+        "line-width": 1,
+        "line-dasharray": [
+          4,
+          2
         ]
       }
     },
@@ -279,6 +1094,340 @@
       }
     },
     {
+      "id": "anchor-berth",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "ACHBRT"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ]
+      ],
+      "minzoom": 12,
+      "paint": {
+        "circle-radius": [
+          "case",
+          [
+            "has",
+            "radius_m"
+          ],
+          6,
+          4
+        ],
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-color": "#b5186e",
+        "circle-stroke-width": 1.2
+      }
+    },
+    {
+      "id": "pile",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "structure",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "PILPNT",
+            "PYLONS"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ]
+      ],
+      "minzoom": 14,
+      "paint": {
+        "circle-radius": 1.4,
+        "circle-color": "#333333"
+      }
+    },
+    {
+      "id": "dolphin",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "structure",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "MORFAC",
+            "OFSPLF"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "circle-radius": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "OFSPLF"
+          ],
+          3.5,
+          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
+            "mooring_buoy"
+          ],
+          3,
+          2
+        ],
+        "circle-color": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
+            "mooring_buoy"
+          ],
+          [
+            "match",
+            [
+              "get",
+              "colour"
+            ],
+            "yellow",
+            "#f2c200",
+            "#ffffff"
+          ],
+          "#333333"
+        ],
+        "circle-stroke-color": "#222222",
+        "circle-stroke-width": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
+            "mooring_buoy"
+          ],
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "id": "landmark",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "landmark",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "LNDMRK",
+            "SILTNK",
+            "BUISGL"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "function"
+          ],
+          "light_support"
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "circle-radius": 3,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-color": "#333333",
+        "circle-stroke-width": 1.2
+      }
+    },
+    {
+      "id": "landmark-dot",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "landmark",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "LNDMRK",
+            "SILTNK",
+            "BUISGL"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "function"
+          ],
+          "light_support"
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "circle-radius": 0.9,
+        "circle-color": "#333333"
+      }
+    },
+    {
+      "id": "radio",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "harbour",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "RDOSTA",
+            "RADSTA"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ],
+        [
+          "any",
+          [
+            "has",
+            "category"
+          ],
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "RADSTA"
+          ]
+        ]
+      ],
+      "minzoom": 13,
+      "paint": {
+        "circle-radius": 4,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-color": "#b5186e",
+        "circle-stroke-width": 1
+      }
+    },
+    {
+      "id": "virtual-aid",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "aid_extra",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "virtual"
+          ],
+          1
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ]
+      ],
+      "minzoom": 12,
+      "paint": {
+        "circle-radius": 5,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-color": "#b5186e",
+        "circle-stroke-width": 1,
+        "circle-stroke-opacity": 0.8
+      }
+    },
+    {
       "id": "light-flare",
       "type": "circle",
       "source": "charts",
@@ -320,6 +1469,2250 @@
         ],
         "circle-stroke-color": "#222222",
         "circle-stroke-width": 1
+      }
+    },
+    {
+      "id": "daymark",
+      "type": "circle",
+      "source": "charts",
+      "source-layer": "aid_extra",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "DAYMAR"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ]
+      ],
+      "minzoom": 11,
+      "paint": {
+        "circle-radius": 2.5,
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "colour"
+          ],
+          "red",
+          "#d7263d",
+          "green",
+          "#2a9d4b",
+          "yellow",
+          "#f2c200",
+          "white",
+          "#ffffff",
+          "black",
+          "#222222",
+          "orange",
+          "#f28c28",
+          "#888888"
+        ],
+        "circle-stroke-color": "#222222",
+        "circle-stroke-width": 0.6
+      }
+    },
+    {
+      "id": "seabed-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "seabed",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "SBDARE"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "has",
+          "label"
+        ],
+        [
+          "has",
+          "nature"
+        ]
+      ],
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "get",
+          "label"
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Italic"
+        ]
+      },
+      "paint": {
+        "text-color": "#5d6b78",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "weed-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "seabed",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "WEDKLP"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ]
+      ],
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          "kelp",
+          "Kelp",
+          "sea_weed",
+          "Wd",
+          "sea_grass",
+          "Grass",
+          "sargasso",
+          "Sargasso",
+          "Wd"
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Italic"
+        ]
+      },
+      "paint": {
+        "text-color": "#4f7a3f",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "breakers-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "tide_current",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "WATTUR"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ]
+      ],
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          "breakers",
+          "Br",
+          "eddies",
+          "Eddies",
+          "overfalls",
+          "Overfalls",
+          "tide_rips",
+          "Rips",
+          ""
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Italic"
+        ]
+      },
+      "paint": {
+        "text-color": "#3f6f96",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "current-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "tide_current",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "CURENT",
+            "TS_FEB"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "has",
+          "speed_kn"
+        ]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "speed_kn"
+            ]
+          ],
+          " kn"
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ]
+      },
+      "paint": {
+        "text-color": "#3f6f96",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "land-region",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "label",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "LNDRGN"
+      ],
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Italic"
+        ]
+      },
+      "paint": {
+        "text-color": "#6b5a3a",
+        "text-halo-color": "#f3ead0",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "magvar",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "label",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "MAGVAR"
+        ],
+        [
+          "has",
+          "label"
+        ]
+      ],
+      "minzoom": 10,
+      "layout": {
+        "text-field": [
+          "concat",
+          "Var ",
+          [
+            "get",
+            "label"
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ]
+      },
+      "paint": {
+        "text-color": "#a0106a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "swept-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "SWPARE"
+        ],
+        [
+          "has",
+          "anchor"
+        ],
+        [
+          "has",
+          "depth_m"
+        ]
+      ],
+      "minzoom": 15,
+      "layout": {
+        "text-field": [
+          "concat",
+          "Swept ",
+          [
+            "concat",
+            [
+              "to-string",
+              [
+                "floor",
+                [
+                  "+",
+                  [
+                    "*",
+                    [
+                      "get",
+                      "depth_m"
+                    ],
+                    3.28084
+                  ],
+                  0.2
+                ]
+              ]
+            ],
+            " ft"
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ]
+      },
+      "paint": {
+        "text-color": "#3f6f4b",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "swept-label-m",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "SWPARE"
+        ],
+        [
+          "has",
+          "anchor"
+        ],
+        [
+          "has",
+          "depth_m"
+        ]
+      ],
+      "minzoom": 15,
+      "layout": {
+        "text-field": [
+          "concat",
+          "Swept ",
+          [
+            "concat",
+            [
+              "to-string",
+              [
+                "get",
+                "depth_m"
+              ]
+            ],
+            " m"
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ]
+      },
+      "paint": {
+        "text-color": "#3f6f4b",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "route-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
+          "has",
+          "name"
+        ],
+        [
+          "any",
+          [
+            "has",
+            "anchor"
+          ],
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "LineString"
+          ]
+        ]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Italic"
+        ]
+      },
+      "paint": {
+        "text-color": "#5d7d99",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "track-bearing",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "NAVLNE",
+            "RECTRC"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ],
+        [
+          "has",
+          "orient"
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "to-string",
+            [
+              "get",
+              "orient"
+            ]
+          ],
+          "°"
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "symbol-placement": "line",
+        "symbol-spacing": 300
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "regulated-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "!",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "SWPARE"
+          ]
+        ]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "ACHBRT"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            ""
+          ],
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "ACHARE"
+          ],
+          [
+            "concat",
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "RESARE",
+              [
+                "case",
+                [
+                  "in",
+                  ",entry_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "Entry prohibited",
+                [
+                  "in",
+                  ",area_to_be_avoided,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "Area to be avoided",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "entry"
+                ],
+                "Entry restricted",
+                [
+                  "in",
+                  ",anchoring_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "No anchoring",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "anchoring"
+                ],
+                "Anchoring restricted",
+                [
+                  "in",
+                  ",fishing_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "No fishing",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "fishing"
+                ],
+                "Fishing restricted",
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "military_area",
+                  "Military area",
+                  "offshore_safety_zone",
+                  "Safety zone",
+                  "nature_reserve",
+                  "Nature reserve",
+                  "ecological_reserve",
+                  "Ecological reserve",
+                  "Restricted area"
+                ]
+              ],
+              "ACHARE",
+              [
+                "case",
+                [
+                  "in",
+                  ",explosives,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Explos Anch",
+                [
+                  "in",
+                  ",quarantine,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Quar Anch",
+                [
+                  "in",
+                  ",deep_water,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "DW Anch",
+                [
+                  "in",
+                  ",tanker,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Tanker Anch",
+                [
+                  "in",
+                  ",small_craft,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Small craft Anch",
+                "Anch"
+              ],
+              "CTNARE",
+              [
+                "case",
+                [
+                  "has",
+                  "anchor"
+                ],
+                "Caution area",
+                [
+                  "<=",
+                  [
+                    "length",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "info"
+                      ],
+                      ""
+                    ]
+                  ],
+                  16
+                ],
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "info"
+                  ],
+                  "(!)"
+                ],
+                "(!)"
+              ],
+              "MIPARE",
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "firing_danger_area",
+                "Firing area",
+                "submarine_exercise_area",
+                "Submarine exercise area",
+                "torpedo_exercise_area",
+                "Torpedo exercise area",
+                "mine_laying_practice_area",
+                "Mine laying practice area",
+                "small_arms_firing_range",
+                "Firing range",
+                "Military practice area"
+              ],
+              "DMPGRD",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "disused"
+                  ],
+                  1
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "spoil_ground",
+                  "Disused spoil ground",
+                  "explosives",
+                  "Disused explos dumping ground",
+                  "Disused dumping ground"
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "spoil_ground",
+                  "Spoil ground",
+                  "explosives",
+                  "Explos dumping ground",
+                  "Dumping ground"
+                ]
+              ],
+              "CBLARE",
+              "Cable area",
+              "PIPARE",
+              "Pipeline area",
+              "MARCUL",
+              "Marine farm",
+              "FSHGRD",
+              "Fishing ground",
+              "SPLARE",
+              "Seaplane area",
+              "OSPARE",
+              "Offshore production",
+              "CTSARE",
+              "Cargo transhipment",
+              "UNSARE",
+              "Unsurveyed",
+              ""
+            ],
+            [
+              "case",
+              [
+                ">=",
+                [
+                  "index-of",
+                  "Area ",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "name"
+                    ],
+                    ""
+                  ]
+                ],
+                0
+              ],
+              [
+                "concat",
+                " ",
+                [
+                  "slice",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "name"
+                    ],
+                    ""
+                  ],
+                  [
+                    "+",
+                    [
+                      "index-of",
+                      "Area ",
+                      [
+                        "coalesce",
+                        [
+                          "get",
+                          "name"
+                        ],
+                        ""
+                      ]
+                    ],
+                    5
+                  ]
+                ]
+              ],
+              [
+                "all",
+                [
+                  "has",
+                  "name"
+                ],
+                [
+                  "<=",
+                  [
+                    "length",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ]
+                  ],
+                  3
+                ]
+              ],
+              [
+                "concat",
+                " ",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ]
+              ],
+              ""
+            ]
+          ],
+          [
+            "!",
+            [
+              "has",
+              "name"
+            ]
+          ],
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "RESARE",
+            [
+              "case",
+              [
+                "in",
+                ",entry_prohibited,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "Entry prohibited",
+              [
+                "in",
+                ",area_to_be_avoided,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "Area to be avoided",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "entry"
+              ],
+              "Entry restricted",
+              [
+                "in",
+                ",anchoring_prohibited,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "No anchoring",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "anchoring"
+              ],
+              "Anchoring restricted",
+              [
+                "in",
+                ",fishing_prohibited,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "No fishing",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "fishing"
+              ],
+              "Fishing restricted",
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "military_area",
+                "Military area",
+                "offshore_safety_zone",
+                "Safety zone",
+                "nature_reserve",
+                "Nature reserve",
+                "ecological_reserve",
+                "Ecological reserve",
+                "Restricted area"
+              ]
+            ],
+            "ACHARE",
+            [
+              "case",
+              [
+                "in",
+                ",explosives,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Explos Anch",
+              [
+                "in",
+                ",quarantine,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Quar Anch",
+              [
+                "in",
+                ",deep_water,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "DW Anch",
+              [
+                "in",
+                ",tanker,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Tanker Anch",
+              [
+                "in",
+                ",small_craft,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Small craft Anch",
+              "Anch"
+            ],
+            "CTNARE",
+            [
+              "case",
+              [
+                "has",
+                "anchor"
+              ],
+              "Caution area",
+              [
+                "<=",
+                [
+                  "length",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "info"
+                    ],
+                    ""
+                  ]
+                ],
+                16
+              ],
+              [
+                "coalesce",
+                [
+                  "get",
+                  "info"
+                ],
+                "(!)"
+              ],
+              "(!)"
+            ],
+            "MIPARE",
+            [
+              "match",
+              [
+                "get",
+                "category"
+              ],
+              "firing_danger_area",
+              "Firing area",
+              "submarine_exercise_area",
+              "Submarine exercise area",
+              "torpedo_exercise_area",
+              "Torpedo exercise area",
+              "mine_laying_practice_area",
+              "Mine laying practice area",
+              "small_arms_firing_range",
+              "Firing range",
+              "Military practice area"
+            ],
+            "DMPGRD",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "disused"
+                ],
+                1
+              ],
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "spoil_ground",
+                "Disused spoil ground",
+                "explosives",
+                "Disused explos dumping ground",
+                "Disused dumping ground"
+              ],
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "spoil_ground",
+                "Spoil ground",
+                "explosives",
+                "Explos dumping ground",
+                "Dumping ground"
+              ]
+            ],
+            "CBLARE",
+            "Cable area",
+            "PIPARE",
+            "Pipeline area",
+            "MARCUL",
+            "Marine farm",
+            "FSHGRD",
+            "Fishing ground",
+            "SPLARE",
+            "Seaplane area",
+            "OSPARE",
+            "Offshore production",
+            "CTSARE",
+            "Cargo transhipment",
+            "UNSARE",
+            "Unsurveyed",
+            ""
+          ],
+          [
+            "<=",
+            [
+              "length",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "name"
+                ],
+                ""
+              ]
+            ],
+            4
+          ],
+          [
+            "concat",
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "RESARE",
+              [
+                "case",
+                [
+                  "in",
+                  ",entry_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "Entry prohibited",
+                [
+                  "in",
+                  ",area_to_be_avoided,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "Area to be avoided",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "entry"
+                ],
+                "Entry restricted",
+                [
+                  "in",
+                  ",anchoring_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "No anchoring",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "anchoring"
+                ],
+                "Anchoring restricted",
+                [
+                  "in",
+                  ",fishing_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "No fishing",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "fishing"
+                ],
+                "Fishing restricted",
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "military_area",
+                  "Military area",
+                  "offshore_safety_zone",
+                  "Safety zone",
+                  "nature_reserve",
+                  "Nature reserve",
+                  "ecological_reserve",
+                  "Ecological reserve",
+                  "Restricted area"
+                ]
+              ],
+              "ACHARE",
+              [
+                "case",
+                [
+                  "in",
+                  ",explosives,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Explos Anch",
+                [
+                  "in",
+                  ",quarantine,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Quar Anch",
+                [
+                  "in",
+                  ",deep_water,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "DW Anch",
+                [
+                  "in",
+                  ",tanker,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Tanker Anch",
+                [
+                  "in",
+                  ",small_craft,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Small craft Anch",
+                "Anch"
+              ],
+              "CTNARE",
+              [
+                "case",
+                [
+                  "has",
+                  "anchor"
+                ],
+                "Caution area",
+                [
+                  "<=",
+                  [
+                    "length",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "info"
+                      ],
+                      ""
+                    ]
+                  ],
+                  16
+                ],
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "info"
+                  ],
+                  "(!)"
+                ],
+                "(!)"
+              ],
+              "MIPARE",
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "firing_danger_area",
+                "Firing area",
+                "submarine_exercise_area",
+                "Submarine exercise area",
+                "torpedo_exercise_area",
+                "Torpedo exercise area",
+                "mine_laying_practice_area",
+                "Mine laying practice area",
+                "small_arms_firing_range",
+                "Firing range",
+                "Military practice area"
+              ],
+              "DMPGRD",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "disused"
+                  ],
+                  1
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "spoil_ground",
+                  "Disused spoil ground",
+                  "explosives",
+                  "Disused explos dumping ground",
+                  "Disused dumping ground"
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "spoil_ground",
+                  "Spoil ground",
+                  "explosives",
+                  "Explos dumping ground",
+                  "Dumping ground"
+                ]
+              ],
+              "CBLARE",
+              "Cable area",
+              "PIPARE",
+              "Pipeline area",
+              "MARCUL",
+              "Marine farm",
+              "FSHGRD",
+              "Fishing ground",
+              "SPLARE",
+              "Seaplane area",
+              "OSPARE",
+              "Offshore production",
+              "CTSARE",
+              "Cargo transhipment",
+              "UNSARE",
+              "Unsurveyed",
+              ""
+            ],
+            " ",
+            [
+              "coalesce",
+              [
+                "get",
+                "name"
+              ],
+              ""
+            ]
+          ],
+          [
+            "<=",
+            [
+              "length",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "name"
+                ],
+                ""
+              ]
+            ],
+            24
+          ],
+          [
+            "concat",
+            [
+              "match",
+              [
+                "get",
+                "class"
+              ],
+              "RESARE",
+              [
+                "case",
+                [
+                  "in",
+                  ",entry_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "Entry prohibited",
+                [
+                  "in",
+                  ",area_to_be_avoided,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "Area to be avoided",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "entry"
+                ],
+                "Entry restricted",
+                [
+                  "in",
+                  ",anchoring_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "No anchoring",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "anchoring"
+                ],
+                "Anchoring restricted",
+                [
+                  "in",
+                  ",fishing_prohibited,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "restrictions"
+                    ],
+                    ","
+                  ]
+                ],
+                "No fishing",
+                [
+                  "==",
+                  [
+                    "get",
+                    "restriction"
+                  ],
+                  "fishing"
+                ],
+                "Fishing restricted",
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "military_area",
+                  "Military area",
+                  "offshore_safety_zone",
+                  "Safety zone",
+                  "nature_reserve",
+                  "Nature reserve",
+                  "ecological_reserve",
+                  "Ecological reserve",
+                  "Restricted area"
+                ]
+              ],
+              "ACHARE",
+              [
+                "case",
+                [
+                  "in",
+                  ",explosives,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Explos Anch",
+                [
+                  "in",
+                  ",quarantine,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Quar Anch",
+                [
+                  "in",
+                  ",deep_water,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "DW Anch",
+                [
+                  "in",
+                  ",tanker,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Tanker Anch",
+                [
+                  "in",
+                  ",small_craft,",
+                  [
+                    "concat",
+                    ",",
+                    [
+                      "get",
+                      "categories"
+                    ],
+                    ","
+                  ]
+                ],
+                "Small craft Anch",
+                "Anch"
+              ],
+              "CTNARE",
+              [
+                "case",
+                [
+                  "has",
+                  "anchor"
+                ],
+                "Caution area",
+                [
+                  "<=",
+                  [
+                    "length",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "info"
+                      ],
+                      ""
+                    ]
+                  ],
+                  16
+                ],
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "info"
+                  ],
+                  "(!)"
+                ],
+                "(!)"
+              ],
+              "MIPARE",
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "firing_danger_area",
+                "Firing area",
+                "submarine_exercise_area",
+                "Submarine exercise area",
+                "torpedo_exercise_area",
+                "Torpedo exercise area",
+                "mine_laying_practice_area",
+                "Mine laying practice area",
+                "small_arms_firing_range",
+                "Firing range",
+                "Military practice area"
+              ],
+              "DMPGRD",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "disused"
+                  ],
+                  1
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "spoil_ground",
+                  "Disused spoil ground",
+                  "explosives",
+                  "Disused explos dumping ground",
+                  "Disused dumping ground"
+                ],
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "spoil_ground",
+                  "Spoil ground",
+                  "explosives",
+                  "Explos dumping ground",
+                  "Dumping ground"
+                ]
+              ],
+              "CBLARE",
+              "Cable area",
+              "PIPARE",
+              "Pipeline area",
+              "MARCUL",
+              "Marine farm",
+              "FSHGRD",
+              "Fishing ground",
+              "SPLARE",
+              "Seaplane area",
+              "OSPARE",
+              "Offshore production",
+              "CTSARE",
+              "Cargo transhipment",
+              "UNSARE",
+              "Unsurveyed",
+              ""
+            ],
+            "\n",
+            [
+              "coalesce",
+              [
+                "get",
+                "name"
+              ],
+              ""
+            ]
+          ],
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "RESARE",
+            [
+              "case",
+              [
+                "in",
+                ",entry_prohibited,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "Entry prohibited",
+              [
+                "in",
+                ",area_to_be_avoided,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "Area to be avoided",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "entry"
+              ],
+              "Entry restricted",
+              [
+                "in",
+                ",anchoring_prohibited,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "No anchoring",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "anchoring"
+              ],
+              "Anchoring restricted",
+              [
+                "in",
+                ",fishing_prohibited,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "restrictions"
+                  ],
+                  ","
+                ]
+              ],
+              "No fishing",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "fishing"
+              ],
+              "Fishing restricted",
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "military_area",
+                "Military area",
+                "offshore_safety_zone",
+                "Safety zone",
+                "nature_reserve",
+                "Nature reserve",
+                "ecological_reserve",
+                "Ecological reserve",
+                "Restricted area"
+              ]
+            ],
+            "ACHARE",
+            [
+              "case",
+              [
+                "in",
+                ",explosives,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Explos Anch",
+              [
+                "in",
+                ",quarantine,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Quar Anch",
+              [
+                "in",
+                ",deep_water,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "DW Anch",
+              [
+                "in",
+                ",tanker,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Tanker Anch",
+              [
+                "in",
+                ",small_craft,",
+                [
+                  "concat",
+                  ",",
+                  [
+                    "get",
+                    "categories"
+                  ],
+                  ","
+                ]
+              ],
+              "Small craft Anch",
+              "Anch"
+            ],
+            "CTNARE",
+            [
+              "case",
+              [
+                "has",
+                "anchor"
+              ],
+              "Caution area",
+              [
+                "<=",
+                [
+                  "length",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "info"
+                    ],
+                    ""
+                  ]
+                ],
+                16
+              ],
+              [
+                "coalesce",
+                [
+                  "get",
+                  "info"
+                ],
+                "(!)"
+              ],
+              "(!)"
+            ],
+            "MIPARE",
+            [
+              "match",
+              [
+                "get",
+                "category"
+              ],
+              "firing_danger_area",
+              "Firing area",
+              "submarine_exercise_area",
+              "Submarine exercise area",
+              "torpedo_exercise_area",
+              "Torpedo exercise area",
+              "mine_laying_practice_area",
+              "Mine laying practice area",
+              "small_arms_firing_range",
+              "Firing range",
+              "Military practice area"
+            ],
+            "DMPGRD",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "disused"
+                ],
+                1
+              ],
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "spoil_ground",
+                "Disused spoil ground",
+                "explosives",
+                "Disused explos dumping ground",
+                "Disused dumping ground"
+              ],
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "spoil_ground",
+                "Spoil ground",
+                "explosives",
+                "Explos dumping ground",
+                "Dumping ground"
+              ]
+            ],
+            "CBLARE",
+            "Cable area",
+            "PIPARE",
+            "Pipeline area",
+            "MARCUL",
+            "Marine farm",
+            "FSHGRD",
+            "Fishing ground",
+            "SPLARE",
+            "Seaplane area",
+            "OSPARE",
+            "Offshore production",
+            "CTSARE",
+            "Cargo transhipment",
+            "UNSARE",
+            "Unsurveyed",
+            ""
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Italic"
+        ]
+      },
+      "paint": {
+        "text-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "UNSARE",
+          "#333333",
+          "#a0106a"
+        ],
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
       }
     },
     {
@@ -443,6 +3836,659 @@
       }
     },
     {
+      "id": "landmark-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "landmark",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "function"
+          ],
+          "light_support"
+        ],
+        [
+          "any",
+          [
+            "!",
+            [
+              "has",
+              "anchor"
+            ]
+          ],
+          [
+            "has",
+            "name"
+          ]
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            ""
+          ],
+          14,
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "conspicuous"
+                ],
+                1
+              ],
+              [
+                "upcase",
+                [
+                  "match",
+                  [
+                    "get",
+                    "category"
+                  ],
+                  "tower",
+                  [
+                    "match",
+                    [
+                      "get",
+                      "function"
+                    ],
+                    "radio",
+                    "R Tr",
+                    "television",
+                    "TV Tr",
+                    "microwave",
+                    "Micro Tr",
+                    "Tr"
+                  ],
+                  "mast",
+                  [
+                    "match",
+                    [
+                      "get",
+                      "function"
+                    ],
+                    "radio",
+                    "R Mast",
+                    "television",
+                    "TV Mast",
+                    "Mast"
+                  ],
+                  "chimney",
+                  "Chy",
+                  "flare_stack",
+                  "Flare",
+                  "tank",
+                  "Tk",
+                  "silo",
+                  "Silo",
+                  "grain_elevator",
+                  "Elev",
+                  "water_tower",
+                  "Water Tr",
+                  "dome",
+                  "Dome",
+                  "spire_minaret",
+                  "Spire",
+                  "windmill",
+                  "Windmill",
+                  "windmotor",
+                  "Wind motor",
+                  "monument",
+                  "Mon",
+                  "dish_aerial",
+                  "Dish aerial",
+                  "flagstaff",
+                  "FS",
+                  "cross",
+                  "Cross",
+                  "statue",
+                  "Statue",
+                  "radar_scanner",
+                  "Radar Sc",
+                  [
+                    "match",
+                    [
+                      "get",
+                      "function"
+                    ],
+                    "church",
+                    "Ch",
+                    "hospital",
+                    "Hosp",
+                    "power_station",
+                    "Power sta",
+                    "factory",
+                    "Factory",
+                    [
+                      "match",
+                      [
+                        "get",
+                        "class"
+                      ],
+                      "BUISGL",
+                      "Bldg",
+                      ""
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "tower",
+                [
+                  "match",
+                  [
+                    "get",
+                    "function"
+                  ],
+                  "radio",
+                  "R Tr",
+                  "television",
+                  "TV Tr",
+                  "microwave",
+                  "Micro Tr",
+                  "Tr"
+                ],
+                "mast",
+                [
+                  "match",
+                  [
+                    "get",
+                    "function"
+                  ],
+                  "radio",
+                  "R Mast",
+                  "television",
+                  "TV Mast",
+                  "Mast"
+                ],
+                "chimney",
+                "Chy",
+                "flare_stack",
+                "Flare",
+                "tank",
+                "Tk",
+                "silo",
+                "Silo",
+                "grain_elevator",
+                "Elev",
+                "water_tower",
+                "Water Tr",
+                "dome",
+                "Dome",
+                "spire_minaret",
+                "Spire",
+                "windmill",
+                "Windmill",
+                "windmotor",
+                "Wind motor",
+                "monument",
+                "Mon",
+                "dish_aerial",
+                "Dish aerial",
+                "flagstaff",
+                "FS",
+                "cross",
+                "Cross",
+                "statue",
+                "Statue",
+                "radar_scanner",
+                "Radar Sc",
+                [
+                  "match",
+                  [
+                    "get",
+                    "function"
+                  ],
+                  "church",
+                  "Ch",
+                  "hospital",
+                  "Hosp",
+                  "power_station",
+                  "Power sta",
+                  "factory",
+                  "Factory",
+                  [
+                    "match",
+                    [
+                      "get",
+                      "class"
+                    ],
+                    "BUISGL",
+                    "Bldg",
+                    ""
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-offset": [
+          0,
+          0.9
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "structure-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "structure",
+      "filter": [
+        "all",
+        [
+          "has",
+          "name"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ]
+      ],
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-offset": [
+          0,
+          0.9
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "harbour-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "harbour",
+      "filter": [
+        "==",
+        [
+          "geometry-type"
+        ],
+        "Point"
+      ],
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "PILBOP",
+          [
+            "concat",
+            "Pilots",
+            [
+              "case",
+              [
+                "has",
+                "name"
+              ],
+              [
+                "concat",
+                " ",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ]
+              ],
+              ""
+            ]
+          ],
+          "CGUSTA",
+          [
+            "concat",
+            "CG",
+            [
+              "case",
+              [
+                "has",
+                "name"
+              ],
+              [
+                "concat",
+                " ",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ]
+              ],
+              ""
+            ]
+          ],
+          "RSCSTA",
+          "Lifeboat",
+          "CRANES",
+          "Crane",
+          "RADSTA",
+          "Ra",
+          "RDOSTA",
+          [
+            "case",
+            [
+              "has",
+              "category"
+            ],
+            [
+              "concat",
+              [
+                "match",
+                [
+                  "get",
+                  "category"
+                ],
+                "aeronautical_radiobeacon",
+                "Aero R Bn",
+                [
+                  "circular_radiobeacon",
+                  "directional_radiobeacon",
+                  "rotating_pattern_radiobeacon"
+                ],
+                "R Bn",
+                "differential_gps",
+                "DGPS",
+                "R Sta"
+              ],
+              [
+                "case",
+                [
+                  "has",
+                  "call_sign"
+                ],
+                [
+                  "concat",
+                  " ",
+                  [
+                    "get",
+                    "call_sign"
+                  ]
+                ],
+                ""
+              ]
+            ],
+            [
+              "has",
+              "call_sign"
+            ],
+            [
+              "concat",
+              [
+                "get",
+                "call_sign"
+              ],
+              [
+                "case",
+                [
+                  "has",
+                  "frequency_khz"
+                ],
+                [
+                  "concat",
+                  " ",
+                  [
+                    "to-string",
+                    [
+                      "get",
+                      "frequency_khz"
+                    ]
+                  ],
+                  " kHz"
+                ],
+                ""
+              ]
+            ],
+            "R Sta"
+          ],
+          "HRBFAC",
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "category"
+              ],
+              "marina",
+              "Marina",
+              "ferry_terminal",
+              "Ferry",
+              "fishing_harbour",
+              "Fishing hbr",
+              "naval_base",
+              "Naval base",
+              ""
+            ]
+          ],
+          "SMCFAC",
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            "launching_place",
+            "Ramp",
+            "pump_out",
+            "Pump-out",
+            "fuel_station",
+            "Fuel",
+            "water_tap",
+            "Water",
+            [
+              "coalesce",
+              [
+                "get",
+                "name"
+              ],
+              ""
+            ]
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            ""
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-offset": [
+          0,
+          1
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#1f5f99",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "aid-extra-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "aid_extra",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "FOGSIG",
+            "RTPBCN"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "RTPBCN",
+          [
+            "concat",
+            "Racon",
+            [
+              "case",
+              [
+                "has",
+                "group"
+              ],
+              [
+                "concat",
+                " ",
+                [
+                  "get",
+                  "group"
+                ]
+              ],
+              ""
+            ]
+          ],
+          "FOGSIG",
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "horn",
+              "nautophone",
+              "reed",
+              "tyfon"
+            ],
+            "Horn",
+            "bell",
+            "Bell",
+            "whistle",
+            "Whis",
+            "gong",
+            "Gong",
+            "siren",
+            "Siren",
+            "diaphone",
+            "Dia",
+            "explosive",
+            "Explos",
+            "Fog sig"
+          ],
+          ""
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-offset": [
+          -0.9,
+          -0.9
+        ],
+        "text-anchor": "bottom-right"
+      },
+      "paint": {
+        "text-color": "#a0106a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
       "id": "hazard-label",
       "type": "symbol",
       "source": "charts",
@@ -513,12 +4559,363 @@
       "minzoom": 13,
       "layout": {
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name"
+            "zoom"
           ],
-          ""
+          [
+            "case",
+            [
+              "all",
+              [
+                ">=",
+                [
+                  "index-of",
+                  "Buoy ",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "name"
+                    ],
+                    ""
+                  ]
+                ],
+                0
+              ],
+              [
+                "<=",
+                [
+                  "length",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ],
+                    [
+                      "+",
+                      [
+                        "index-of",
+                        "Buoy ",
+                        [
+                          "coalesce",
+                          [
+                            "get",
+                            "name"
+                          ],
+                          ""
+                        ]
+                      ],
+                      5
+                    ]
+                  ]
+                ],
+                3
+              ]
+            ],
+            [
+              "concat",
+              "\"",
+              [
+                "slice",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ],
+                [
+                  "+",
+                  [
+                    "index-of",
+                    "Buoy ",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ]
+                  ],
+                  5
+                ]
+              ],
+              "\""
+            ],
+            [
+              "all",
+              [
+                ">=",
+                [
+                  "index-of",
+                  "Light ",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "name"
+                    ],
+                    ""
+                  ]
+                ],
+                0
+              ],
+              [
+                "<=",
+                [
+                  "length",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ],
+                    [
+                      "+",
+                      [
+                        "index-of",
+                        "Light ",
+                        [
+                          "coalesce",
+                          [
+                            "get",
+                            "name"
+                          ],
+                          ""
+                        ]
+                      ],
+                      6
+                    ]
+                  ]
+                ],
+                3
+              ]
+            ],
+            [
+              "concat",
+              "\"",
+              [
+                "slice",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ],
+                [
+                  "+",
+                  [
+                    "index-of",
+                    "Light ",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ]
+                  ],
+                  6
+                ]
+              ],
+              "\""
+            ],
+            [
+              "all",
+              [
+                ">=",
+                [
+                  "index-of",
+                  "Daybeacon ",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "name"
+                    ],
+                    ""
+                  ]
+                ],
+                0
+              ],
+              [
+                "<=",
+                [
+                  "length",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ],
+                    [
+                      "+",
+                      [
+                        "index-of",
+                        "Daybeacon ",
+                        [
+                          "coalesce",
+                          [
+                            "get",
+                            "name"
+                          ],
+                          ""
+                        ]
+                      ],
+                      10
+                    ]
+                  ]
+                ],
+                3
+              ]
+            ],
+            [
+              "concat",
+              "\"",
+              [
+                "slice",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ],
+                [
+                  "+",
+                  [
+                    "index-of",
+                    "Daybeacon ",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ]
+                  ],
+                  10
+                ]
+              ],
+              "\""
+            ],
+            [
+              "all",
+              [
+                ">=",
+                [
+                  "index-of",
+                  "Beacon ",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "name"
+                    ],
+                    ""
+                  ]
+                ],
+                0
+              ],
+              [
+                "<=",
+                [
+                  "length",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ],
+                    [
+                      "+",
+                      [
+                        "index-of",
+                        "Beacon ",
+                        [
+                          "coalesce",
+                          [
+                            "get",
+                            "name"
+                          ],
+                          ""
+                        ]
+                      ],
+                      7
+                    ]
+                  ]
+                ],
+                3
+              ]
+            ],
+            [
+              "concat",
+              "\"",
+              [
+                "slice",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "name"
+                  ],
+                  ""
+                ],
+                [
+                  "+",
+                  [
+                    "index-of",
+                    "Beacon ",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "name"
+                      ],
+                      ""
+                    ]
+                  ],
+                  7
+                ]
+              ],
+              "\""
+            ],
+            ""
+          ],
+          15,
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            ""
+          ]
         ],
         "text-font": [
           "Noto Sans Regular"
@@ -535,6 +4932,621 @@
         "text-color": "#333333",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "overhead-name",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "overhead",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ],
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "CBLOHD",
+            "PIPOHD",
+            "CONVYR"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "any",
+            [
+              "has",
+              "clearance_m"
+            ],
+            [
+              "has",
+              "clearance_closed_m"
+            ],
+            [
+              "has",
+              "clearance_open_m"
+            ],
+            [
+              "has",
+              "clearance_safe_m"
+            ],
+            [
+              "has",
+              "horizontal_clearance_m"
+            ]
+          ]
+        ]
+      ],
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "CBLOHD",
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            "power_line",
+            "Ovhd power cable",
+            "Ovhd cable"
+          ],
+          "PIPOHD",
+          "Ovhd pipe",
+          "Conveyor"
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "symbol-placement": "line",
+        "symbol-spacing": 300
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "clearance",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "overhead",
+      "filter": [
+        "all",
+        [
+          "any",
+          [
+            "has",
+            "clearance_m"
+          ],
+          [
+            "has",
+            "clearance_closed_m"
+          ],
+          [
+            "has",
+            "clearance_open_m"
+          ],
+          [
+            "has",
+            "clearance_safe_m"
+          ],
+          [
+            "has",
+            "horizontal_clearance_m"
+          ]
+        ],
+        [
+          "any",
+          [
+            "has",
+            "anchor"
+          ],
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "LineString"
+          ]
+        ]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "case",
+            [
+              "has",
+              "clearance_safe_m"
+            ],
+            [
+              "concat",
+              "Safe VC ",
+              [
+                "concat",
+                [
+                  "to-string",
+                  [
+                    "floor",
+                    [
+                      "+",
+                      [
+                        "*",
+                        [
+                          "get",
+                          "clearance_safe_m"
+                        ],
+                        3.28084
+                      ],
+                      0.2
+                    ]
+                  ]
+                ],
+                " ft"
+              ]
+            ],
+            [
+              "has",
+              "clearance_m"
+            ],
+            [
+              "concat",
+              "VC ",
+              [
+                "concat",
+                [
+                  "to-string",
+                  [
+                    "floor",
+                    [
+                      "+",
+                      [
+                        "*",
+                        [
+                          "get",
+                          "clearance_m"
+                        ],
+                        3.28084
+                      ],
+                      0.2
+                    ]
+                  ]
+                ],
+                " ft"
+              ]
+            ],
+            [
+              "any",
+              [
+                "has",
+                "clearance_closed_m"
+              ],
+              [
+                "has",
+                "clearance_open_m"
+              ]
+            ],
+            [
+              "concat",
+              "VC ",
+              [
+                "case",
+                [
+                  "has",
+                  "clearance_closed_m"
+                ],
+                [
+                  "concat",
+                  [
+                    "concat",
+                    [
+                      "to-string",
+                      [
+                        "floor",
+                        [
+                          "+",
+                          [
+                            "*",
+                            [
+                              "get",
+                              "clearance_closed_m"
+                            ],
+                            3.28084
+                          ],
+                          0.2
+                        ]
+                      ]
+                    ],
+                    " ft"
+                  ],
+                  " closed"
+                ],
+                ""
+              ],
+              [
+                "case",
+                [
+                  "all",
+                  [
+                    "has",
+                    "clearance_closed_m"
+                  ],
+                  [
+                    "has",
+                    "clearance_open_m"
+                  ]
+                ],
+                ", ",
+                ""
+              ],
+              [
+                "case",
+                [
+                  "has",
+                  "clearance_open_m"
+                ],
+                [
+                  "concat",
+                  [
+                    "concat",
+                    [
+                      "to-string",
+                      [
+                        "floor",
+                        [
+                          "+",
+                          [
+                            "*",
+                            [
+                              "get",
+                              "clearance_open_m"
+                            ],
+                            3.28084
+                          ],
+                          0.2
+                        ]
+                      ]
+                    ],
+                    " ft"
+                  ],
+                  " open"
+                ],
+                ""
+              ]
+            ],
+            ""
+          ],
+          [
+            "case",
+            [
+              "has",
+              "horizontal_clearance_m"
+            ],
+            [
+              "concat",
+              " HC ",
+              [
+                "concat",
+                [
+                  "to-string",
+                  [
+                    "floor",
+                    [
+                      "+",
+                      [
+                        "*",
+                        [
+                          "get",
+                          "horizontal_clearance_m"
+                        ],
+                        3.28084
+                      ],
+                      0.2
+                    ]
+                  ]
+                ],
+                " ft"
+              ]
+            ],
+            ""
+          ]
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ]
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "metadata": {
+        "ovm:units": "imperial"
+      }
+    },
+    {
+      "id": "clearance-m",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "overhead",
+      "filter": [
+        "all",
+        [
+          "any",
+          [
+            "has",
+            "clearance_m"
+          ],
+          [
+            "has",
+            "clearance_closed_m"
+          ],
+          [
+            "has",
+            "clearance_open_m"
+          ],
+          [
+            "has",
+            "clearance_safe_m"
+          ],
+          [
+            "has",
+            "horizontal_clearance_m"
+          ]
+        ],
+        [
+          "any",
+          [
+            "has",
+            "anchor"
+          ],
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "LineString"
+          ]
+        ]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "case",
+            [
+              "has",
+              "clearance_safe_m"
+            ],
+            [
+              "concat",
+              "Safe VC ",
+              [
+                "concat",
+                [
+                  "to-string",
+                  [
+                    "get",
+                    "clearance_safe_m"
+                  ]
+                ],
+                " m"
+              ]
+            ],
+            [
+              "has",
+              "clearance_m"
+            ],
+            [
+              "concat",
+              "VC ",
+              [
+                "concat",
+                [
+                  "to-string",
+                  [
+                    "get",
+                    "clearance_m"
+                  ]
+                ],
+                " m"
+              ]
+            ],
+            [
+              "any",
+              [
+                "has",
+                "clearance_closed_m"
+              ],
+              [
+                "has",
+                "clearance_open_m"
+              ]
+            ],
+            [
+              "concat",
+              "VC ",
+              [
+                "case",
+                [
+                  "has",
+                  "clearance_closed_m"
+                ],
+                [
+                  "concat",
+                  [
+                    "concat",
+                    [
+                      "to-string",
+                      [
+                        "get",
+                        "clearance_closed_m"
+                      ]
+                    ],
+                    " m"
+                  ],
+                  " closed"
+                ],
+                ""
+              ],
+              [
+                "case",
+                [
+                  "all",
+                  [
+                    "has",
+                    "clearance_closed_m"
+                  ],
+                  [
+                    "has",
+                    "clearance_open_m"
+                  ]
+                ],
+                ", ",
+                ""
+              ],
+              [
+                "case",
+                [
+                  "has",
+                  "clearance_open_m"
+                ],
+                [
+                  "concat",
+                  [
+                    "concat",
+                    [
+                      "to-string",
+                      [
+                        "get",
+                        "clearance_open_m"
+                      ]
+                    ],
+                    " m"
+                  ],
+                  " open"
+                ],
+                ""
+              ]
+            ],
+            ""
+          ],
+          [
+            "case",
+            [
+              "has",
+              "horizontal_clearance_m"
+            ],
+            [
+              "concat",
+              " HC ",
+              [
+                "concat",
+                [
+                  "to-string",
+                  [
+                    "get",
+                    "horizontal_clearance_m"
+                  ]
+                ],
+                " m"
+              ]
+            ],
+            ""
+          ]
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ]
+      },
+      "paint": {
+        "text-color": "#333333",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "metadata": {
+        "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "virtual-aid-label",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "aid_extra",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "virtual"
+          ],
+          1
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "text-field": [
+          "concat",
+          "V-AIS ",
+          [
+            "coalesce",
+            [
+              "get",
+              "name"
+            ],
+            ""
+          ]
+        ],
+        "text-size": 9,
+        "text-max-width": 8,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-offset": [
+          0,
+          1.1
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#a0106a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
       }
     },
     {

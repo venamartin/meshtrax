@@ -1,5 +1,19 @@
 ## Unreleased
 
+- **Full-data chart styles** (`charts_revision` 2): charts-light and
+  charts-dark draw traxmapmaker's layers grouped by role. They cover
+  routes and traffic separation, regulated areas, bridges and overhead
+  clearances, cables and pipelines, structures, harbour facilities,
+  seabed, breakers, daymarks, landmarks and magnetic variation.
+  - **Chart conventions:** magenta dashed limits; INT-1 abbreviations
+    (Tk, R TR, Br, Anch); restriction wording from the exact list.
+  - **Clearances never overstate:** feet are floored after recovering
+    NOAA's charted figure. Imperial and metric twins.
+  - **Buoy and beacon names** show the chart's number ("2") below z15 and
+    the full name from z15.
+  - **Generated:** the layers come from `tool/make_chart_layers.py`, which
+    also gives `make_dark_variants.py` their dark palette. Symbols wait for
+    sprites.
 - **`ChartAreaIndex`** (core) parses the pack server's `chart_areas.geojson`
   (FINDINGS §1.4): NOAA chart areas, each one charts pack (`packRegion`),
   grouped by coast in the server's order (`coasts`, and `coast_areas` for a
