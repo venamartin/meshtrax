@@ -78,6 +78,7 @@ traxmap moved into this repository.
   - restrictions worded exactly;
   - buoy names as the chart's number ("2") below z15.
   Symbols that need icons (arrows, anchors, T-ticks, topmarks) wait for sprites rather than being faked. |
+| 2026-10-22 | **Chart symbols follow US Chart No. 1** (Martin, from renders of the Rhode Island pack). Buoys lean, with a small circle at the position; light flares are magenta whatever the light's colour, because a coloured flare merges into a buoy of its colour and the label gives the colour ("Fl G 4s"). Beacons on stakes and piles are daybeacons: square on the port hand, triangle on the starboard hand, a diamond otherwise. T-ticks mark entry-restricted areas and military practice areas; the other regulated areas keep dashed limits. Lit wind turbines keep their turbine symbol. Where limits run along the shore, traxmapmaker is asked for limit lines without the shoreline parts (next charts rebuild). |
 | 2026-10-22 | **Depths in feet never read deeper than charted** (Martin). traxmapmaker's `depth_ft` keeps `round` for feet- and fathom-charted depths, which recovers the chart's figure exactly, and rounds down for metre-charted ones. It decides the units per feature, because NOAA cells don't flag units and mix them. It lands in the next charts rebuild; the app's styles keep reading `depth_ft`. |
 | 2026-10-22 | **"Not for navigation" is a dialog that says why,** not a label always on the map (Martin). It opens the first time the map draws charts in each app run, with "Don't show this again". The Charts tab's line "Not for navigation · Why?" opens it any time, and can undo that choice. The reasons: charts go out of date (a download changes only when updated), leave things out (symbols, light sectors, notes; labels hidden until zoomed in), positions can be wrong or old, and MeshTrax isn't a certified chart plotter. |
 | 2026-10-22 | **Downloaded areas: a teal outline of what the map showing draws** (Martin). Standard outlines the regions with a street map, USGS topo those with a USGS pack, and Charts the downloaded NOAA chart areas; Online it's the street map's. It's filled only Online, where it sets downloads apart from the online tiles: Offline everything drawn is downloaded, so a fill would tint the whole map. None on small maps (chat cards, mini maps). A **Downloaded areas** tile under Map details turns it off (setting `map_downloaded_areas`, on by default). Replaces the dashed pink region edges. |
@@ -118,7 +119,7 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
 - **What the renderer can't do** (2026-10-18). This shapes the styles and the park overlays; the full list is in traxmapmaker FINDINGS §4, "App renderer limits for style authors".
   - **No `within`:** the parser rejects it.
   - **Fonts:** `text-font` only picks weight and italic. There's no font family, and no glyph PBFs are used.
-  - **Sprites:** one `SpriteAtlas` per layer, so icon sheets must be merged. Sprites, `line-pattern` and every `*-opacity` do work, but traxmap doesn't load sprites yet.
+  - **Sprites:** one `SpriteAtlas` per layer, so icon sheets must be merged. traxmap bundles one sheet per palette (`assets/sprites/light@2x`, `dark@2x`, drawn by `tool/make_sprites.py`); a style names its sheet as `{sprite}/light` and the renderer loads it from the asset bundle. Sprites, `line-pattern` and every `*-opacity` work. Each icon family shares one box and one position point, so `icon-anchor: top-left` with a negative `icon-offset` puts it on the feature at any size and rotation.
   - **Tapping features:** there's no query API for vector features.
 - **Style arithmetic and style cost, measured on real chart tiles** (2026-10-20, for traxmapmaker's full-data charts proposal; traxmapmaker's local Puerto Rico test packs, the real 2.9.1 pipeline in `flutter test`):
   - **Arithmetic works:**
@@ -226,4 +227,4 @@ Each item now has a task in the [roadmap](offline-maps-roadmap.md).
     tiles (decided 2026-10-17).
 - **Charts get their own picker,** by coastal state (Phase 6): built as the Charts tab (S3d).
 - **Night style** (red on black, for night vision) and **SDF icons** (buoys,
-  peaks, trailheads). Sprites come with task T9.
+  peaks, trailheads). T9 brought colour sprite sheets (2026-10-22); icons that styles recolour (SDF) are still open.

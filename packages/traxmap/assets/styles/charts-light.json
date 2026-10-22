@@ -2,7 +2,7 @@
   "version": 8,
   "name": "NOAA Charts",
   "metadata": {
-    "ovm:status": "Hand-written; the layers grouped by role (charts_revision 2) come from tool/make_chart_layers.py. No sprites yet.",
+    "ovm:status": "Hand-written; the layers grouped by role (charts_revision 2) and the icons come from tool/make_chart_layers.py, the sheets from tool/make_sprites.py.",
     "ovm:disclaimer": "Not for navigation",
     "ovm:map": "charts",
     "ovm:requires": [
@@ -528,7 +528,6 @@
             "RESARE",
             "CTNARE",
             "ACHARE",
-            "MIPARE",
             "DMPGRD",
             "CBLARE",
             "PIPARE",
@@ -550,6 +549,39 @@
             "geometry-type"
           ],
           "Polygon"
+        ],
+        [
+          "!",
+          [
+            "any",
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "RESARE"
+              ],
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "entry"
+              ]
+            ],
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "MIPARE"
+            ]
+          ]
         ]
       ],
       "minzoom": 10,
@@ -649,6 +681,82 @@
       }
     },
     {
+      "id": "restricted-limit",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "any",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "RESARE"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "restriction"
+              ],
+              "entry"
+            ]
+          ],
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "MIPARE"
+          ]
+        ]
+      ],
+      "minzoom": 10,
+      "paint": {
+        "line-pattern": "pattern-restricted",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          6,
+          14,
+          8
+        ],
+        "line-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.6,
+          13,
+          0.9
+        ]
+      }
+    },
+    {
       "id": "swept-limit",
       "type": "line",
       "source": "charts",
@@ -687,54 +795,75 @@
       "source": "charts",
       "source-layer": "cable_pipe",
       "filter": [
-        "==",
+        "all",
         [
-          "get",
-          "class"
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "CBLSUB"
         ],
-        "CBLSUB"
+        [
+          "!=",
+          [
+            "get",
+            "disused"
+          ],
+          1
+        ]
+      ],
+      "minzoom": 11,
+      "paint": {
+        "line-pattern": "pattern-cable",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          5,
+          14,
+          6
+        ],
+        "line-opacity": 0.8
+      }
+    },
+    {
+      "id": "cable-disused",
+      "type": "line",
+      "source": "charts",
+      "source-layer": "cable_pipe",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "CBLSUB"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "disused"
+          ],
+          1
+        ]
       ],
       "minzoom": 11,
       "paint": {
         "line-color": "#b5186e",
         "line-width": 0.9,
-        "line-opacity": [
-          "case",
-          [
-            "==",
-            [
-              "get",
-              "disused"
-            ],
-            1
-          ],
-          0.35,
-          0.8
-        ],
+        "line-opacity": 0.35,
         "line-dasharray": [
-          "case",
-          [
-            "==",
-            [
-              "get",
-              "disused"
-            ],
-            1
-          ],
-          [
-            "literal",
-            [
-              2,
-              3
-            ]
-          ],
-          [
-            "literal",
-            [
-              1,
-              0
-            ]
-          ]
+          2,
+          3
         ]
       }
     },
@@ -1050,89 +1179,6 @@
       }
     },
     {
-      "id": "hazard",
-      "type": "circle",
-      "source": "charts",
-      "source-layer": "hazard",
-      "filter": [
-        "==",
-        "$type",
-        "Point"
-      ],
-      "minzoom": 10,
-      "paint": {
-        "circle-radius": [
-          "match",
-          [
-            "get",
-            "kind"
-          ],
-          "wreck",
-          4,
-          2.5
-        ],
-        "circle-color": [
-          "match",
-          [
-            "get",
-            "kind"
-          ],
-          "wreck",
-          "#7a1f5c",
-          "#222222"
-        ],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": [
-          "case",
-          [
-            "has",
-            "dangerous"
-          ],
-          2,
-          0.8
-        ]
-      }
-    },
-    {
-      "id": "anchor-berth",
-      "type": "circle",
-      "source": "charts",
-      "source-layer": "regulated_area",
-      "filter": [
-        "all",
-        [
-          "==",
-          [
-            "get",
-            "class"
-          ],
-          "ACHBRT"
-        ],
-        [
-          "!",
-          [
-            "has",
-            "anchor"
-          ]
-        ]
-      ],
-      "minzoom": 12,
-      "paint": {
-        "circle-radius": [
-          "case",
-          [
-            "has",
-            "radius_m"
-          ],
-          6,
-          4
-        ],
-        "circle-color": "rgba(0,0,0,0)",
-        "circle-stroke-color": "#b5186e",
-        "circle-stroke-width": 1.2
-      }
-    },
-    {
       "id": "pile",
       "type": "circle",
       "source": "charts",
@@ -1257,94 +1303,6 @@
       }
     },
     {
-      "id": "landmark",
-      "type": "circle",
-      "source": "charts",
-      "source-layer": "landmark",
-      "filter": [
-        "all",
-        [
-          "match",
-          [
-            "get",
-            "class"
-          ],
-          [
-            "LNDMRK",
-            "SILTNK",
-            "BUISGL"
-          ],
-          true,
-          false
-        ],
-        [
-          "!",
-          [
-            "has",
-            "anchor"
-          ]
-        ],
-        [
-          "!=",
-          [
-            "get",
-            "function"
-          ],
-          "light_support"
-        ]
-      ],
-      "minzoom": 13,
-      "paint": {
-        "circle-radius": 3,
-        "circle-color": "rgba(0,0,0,0)",
-        "circle-stroke-color": "#333333",
-        "circle-stroke-width": 1.2
-      }
-    },
-    {
-      "id": "landmark-dot",
-      "type": "circle",
-      "source": "charts",
-      "source-layer": "landmark",
-      "filter": [
-        "all",
-        [
-          "match",
-          [
-            "get",
-            "class"
-          ],
-          [
-            "LNDMRK",
-            "SILTNK",
-            "BUISGL"
-          ],
-          true,
-          false
-        ],
-        [
-          "!",
-          [
-            "has",
-            "anchor"
-          ]
-        ],
-        [
-          "!=",
-          [
-            "get",
-            "function"
-          ],
-          "light_support"
-        ]
-      ],
-      "minzoom": 13,
-      "paint": {
-        "circle-radius": 0.9,
-        "circle-color": "#333333"
-      }
-    },
-    {
       "id": "radio",
       "type": "circle",
       "source": "charts",
@@ -1428,52 +1386,988 @@
       }
     },
     {
-      "id": "light-flare",
-      "type": "circle",
+      "id": "regulated-symbol",
+      "type": "symbol",
       "source": "charts",
-      "source-layer": "light",
-      "minzoom": 9,
-      "paint": {
-        "circle-radius": 8,
-        "circle-color": "#c71585",
-        "circle-opacity": 0.35
-      }
+      "source-layer": "regulated_area",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "any",
+          [
+            "has",
+            "anchor"
+          ],
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "ACHBRT"
+          ]
+        ],
+        [
+          "!=",
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "ACHBRT"
+            ],
+            "anchor-berth",
+            [
+              "==",
+              [
+                "get",
+                "restriction"
+              ],
+              "anchoring"
+            ],
+            "no-anchoring",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "ACHARE"
+            ],
+            "anchor",
+            [
+              "==",
+              [
+                "get",
+                "class"
+              ],
+              "CTNARE"
+            ],
+            "caution",
+            ""
+          ],
+          ""
+        ]
+      ],
+      "minzoom": 11,
+      "layout": {
+        "icon-image": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "ACHBRT"
+          ],
+          "anchor-berth",
+          [
+            "==",
+            [
+              "get",
+              "restriction"
+            ],
+            "anchoring"
+          ],
+          "no-anchoring",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "ACHARE"
+          ],
+          "anchor",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "CTNARE"
+          ],
+          "caution",
+          ""
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11,
+          0.8,
+          14,
+          1
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -9,
+          -9
+        ]
+      },
+      "paint": {}
     },
     {
-      "id": "nav-aid",
-      "type": "circle",
+      "id": "lane-arrow",
+      "type": "symbol",
       "source": "charts",
-      "source-layer": "nav_aid",
-      "minzoom": 9,
-      "paint": {
-        "circle-radius": 5,
-        "circle-color": [
+      "source-layer": "route",
+      "filter": [
+        "all",
+        [
           "match",
           [
             "get",
-            "colour"
+            "class"
           ],
-          "red",
-          "#d7263d",
-          "green",
-          "#2a9d4b",
-          "yellow",
-          "#f2c200",
-          "white",
-          "#ffffff",
-          "black",
-          "#222222",
-          "orange",
-          "#f28c28",
-          "#888888"
+          [
+            "TSSLPT",
+            "DWRTPT",
+            "RCTLPT"
+          ],
+          true,
+          false
         ],
-        "circle-stroke-color": "#222222",
-        "circle-stroke-width": 1
-      }
+        [
+          "has",
+          "anchor"
+        ],
+        [
+          "has",
+          "orient"
+        ]
+      ],
+      "minzoom": 9,
+      "layout": {
+        "icon-image": "arrow-lane",
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.9,
+          13,
+          1.5
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -6,
+          -13
+        ],
+        "icon-rotate": [
+          "get",
+          "orient"
+        ],
+        "icon-rotation-alignment": "map"
+      },
+      "paint": {}
+    },
+    {
+      "id": "stream-arrow",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "tide_current",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "TS_FEB",
+            "CURENT"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "has",
+          "orient"
+        ]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "CURENT",
+          "arrow-current",
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            "flood",
+            "arrow-flood",
+            "arrow-ebb"
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.8,
+          15,
+          1
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -6,
+          -13
+        ],
+        "icon-rotate": [
+          "get",
+          "orient"
+        ],
+        "icon-rotation-alignment": "map"
+      },
+      "paint": {}
+    },
+    {
+      "id": "turbulence",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "tide_current",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "WATTUR"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "icon-image": "arrow-turbulence",
+        "icon-size": 0.8,
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -6,
+          -13
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "landmark-symbol",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "landmark",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "LNDMRK",
+            "SILTNK",
+            "BUISGL"
+          ],
+          true,
+          false
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ],
+        [
+          "any",
+          [
+            "!=",
+            [
+              "get",
+              "function"
+            ],
+            "light_support"
+          ],
+          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
+            "windmotor"
+          ]
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "icon-image": [
+          "concat",
+          "landmark-",
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            "windmotor",
+            "windmotor",
+            "tower",
+            [
+              "match",
+              [
+                "get",
+                "function"
+              ],
+              [
+                "radio",
+                "television",
+                "microwave",
+                "communication"
+              ],
+              "mast",
+              "tower"
+            ],
+            [
+              "mast",
+              "dish_aerial"
+            ],
+            "mast",
+            [
+              "chimney",
+              "flare_stack"
+            ],
+            "chimney",
+            [
+              "spire_minaret",
+              "cross"
+            ],
+            "church",
+            "flagstaff",
+            "flagstaff",
+            "dome",
+            "dome",
+            [
+              "match",
+              [
+                "get",
+                "function"
+              ],
+              [
+                "church",
+                "chapel"
+              ],
+              "church",
+              "generic"
+            ]
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          13,
+          0.9,
+          16,
+          1.1
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -7,
+          -15
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "hazard-symbol",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "hazard",
+      "filter": [
+        "==",
+        [
+          "geometry-type"
+        ],
+        "Point"
+      ],
+      "minzoom": 10,
+      "layout": {
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          "wreck",
+          [
+            "case",
+            [
+              "match",
+              [
+                "get",
+                "category"
+              ],
+              [
+                "hull_showing",
+                "mast_showing"
+              ],
+              true,
+              false
+            ],
+            "hazard-wreck-hull",
+            [
+              "==",
+              [
+                "get",
+                "dangerous"
+              ],
+              1
+            ],
+            "hazard-wreck-dangerous",
+            "hazard-wreck"
+          ],
+          "rock",
+          [
+            "match",
+            [
+              "get",
+              "water_level"
+            ],
+            "awash",
+            "hazard-rock-awash",
+            [
+              "covers_uncovers",
+              "dry"
+            ],
+            "hazard-rock-covers",
+            "hazard-rock"
+          ],
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "foul_area",
+              "foul_ground"
+            ],
+            "hazard-foul",
+            "hazard-obstruction"
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.55,
+          14,
+          0.9,
+          16,
+          1.1
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -9,
+          -9
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "light-flare",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "light",
+      "filter": [
+        "==",
+        [
+          "geometry-type"
+        ],
+        "Point"
+      ],
+      "minzoom": 9,
+      "layout": {
+        "icon-image": "light",
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.6,
+          13,
+          0.9,
+          16,
+          1.1
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -1.5,
+          -13.5
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "buoy",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "==",
+          [
+            "get",
+            "kind"
+          ],
+          "buoy"
+        ]
+      ],
+      "minzoom": 9,
+      "layout": {
+        "icon-image": [
+          "concat",
+          "buoy-",
+          [
+            "match",
+            [
+              "get",
+              "shape"
+            ],
+            "conical",
+            "conical",
+            "can",
+            "can",
+            "spherical",
+            "spherical",
+            "pillar",
+            "pillar",
+            "spar",
+            "spar",
+            "barrel",
+            "barrel",
+            "super-buoy",
+            "pillar",
+            "pillar"
+          ],
+          "-",
+          [
+            "match",
+            [
+              "concat",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "colours"
+                ],
+                ""
+              ],
+              "/",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "colour_pattern"
+                ],
+                ""
+              ]
+            ],
+            "green,red,green/horizontal_stripes",
+            "grg",
+            "red,green,red/horizontal_stripes",
+            "rgr",
+            "black,red,black/horizontal_stripes",
+            "brb",
+            "black,yellow/horizontal_stripes",
+            "by",
+            "yellow,black/horizontal_stripes",
+            "yb",
+            "black,yellow,black/horizontal_stripes",
+            "byb",
+            "yellow,black,yellow/horizontal_stripes",
+            "yby",
+            "white,orange/horizontal_stripes",
+            "wo",
+            "white,orange,white/horizontal_stripes",
+            "wow",
+            "red,white/horizontal_stripes",
+            "rw",
+            "white,red/horizontal_stripes",
+            "wr",
+            "red,white/vertical_stripes",
+            "rwv",
+            [
+              "match",
+              [
+                "get",
+                "colour"
+              ],
+              "red",
+              "red",
+              "green",
+              "green",
+              "yellow",
+              "yellow",
+              "white",
+              "white",
+              "black",
+              "black",
+              "orange",
+              "orange",
+              "other"
+            ]
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.55,
+          13,
+          0.9,
+          16,
+          1.2
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -7,
+          -15
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "beacon",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "kind"
+          ],
+          "buoy"
+        ],
+        [
+          "!",
+          [
+            "match",
+            [
+              "get",
+              "shape"
+            ],
+            [
+              "tower",
+              "lattice"
+            ],
+            true,
+            false
+          ]
+        ]
+      ],
+      "minzoom": 9,
+      "layout": {
+        "icon-image": [
+          "concat",
+          "day-",
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "side"
+              ],
+              "port"
+            ],
+            "square",
+            [
+              "==",
+              [
+                "get",
+                "side"
+              ],
+              "starboard"
+            ],
+            "triangle",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "lateral"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "colour"
+              ],
+              "green",
+              "square",
+              "red",
+              "triangle",
+              "rhombus"
+            ],
+            "rhombus"
+          ],
+          "-",
+          [
+            "match",
+            [
+              "concat",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "colours"
+                ],
+                ""
+              ],
+              "/",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "colour_pattern"
+                ],
+                ""
+              ]
+            ],
+            "green,red,green/horizontal_stripes",
+            "grg",
+            "red,green,red/horizontal_stripes",
+            "rgr",
+            "black,red,black/horizontal_stripes",
+            "brb",
+            "black,yellow/horizontal_stripes",
+            "by",
+            "yellow,black/horizontal_stripes",
+            "yb",
+            "black,yellow,black/horizontal_stripes",
+            "byb",
+            "yellow,black,yellow/horizontal_stripes",
+            "yby",
+            "white,orange/horizontal_stripes",
+            "wo",
+            "white,orange,white/horizontal_stripes",
+            "wow",
+            "red,white/horizontal_stripes",
+            "rw",
+            "white,red/horizontal_stripes",
+            "wr",
+            "red,white/vertical_stripes",
+            "rwv",
+            [
+              "match",
+              [
+                "get",
+                "colour"
+              ],
+              "red",
+              "red",
+              "green",
+              "green",
+              "yellow",
+              "yellow",
+              "white",
+              "white",
+              "black",
+              "black",
+              "orange",
+              "orange",
+              "other"
+            ]
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.55,
+          13,
+          0.9,
+          16,
+          1.2
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -6,
+          -6
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "beacon-tower",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "nav_aid",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "kind"
+          ],
+          "buoy"
+        ],
+        [
+          "match",
+          [
+            "get",
+            "shape"
+          ],
+          [
+            "tower",
+            "lattice"
+          ],
+          true,
+          false
+        ]
+      ],
+      "minzoom": 9,
+      "layout": {
+        "icon-image": [
+          "concat",
+          "beacon-",
+          [
+            "get",
+            "shape"
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.55,
+          13,
+          0.9,
+          16,
+          1.2
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -6,
+          -14
+        ]
+      },
+      "paint": {}
     },
     {
       "id": "daymark",
-      "type": "circle",
+      "type": "symbol",
       "source": "charts",
       "source-layer": "aid_extra",
       "filter": [
@@ -1495,31 +2389,209 @@
         ]
       ],
       "minzoom": 11,
-      "paint": {
-        "circle-radius": 2.5,
-        "circle-color": [
+      "layout": {
+        "icon-image": [
+          "concat",
+          "day-",
+          [
+            "match",
+            [
+              "get",
+              "shape"
+            ],
+            [
+              "square",
+              "rectangle_vertical",
+              "rectangle_horizontal",
+              "board",
+              "cylinder"
+            ],
+            "square",
+            [
+              "triangle_point_up",
+              "triangle_point_down",
+              "cone_point_up",
+              "cone_point_down"
+            ],
+            "triangle",
+            "rhombus"
+          ],
+          "-",
+          [
+            "match",
+            [
+              "concat",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "colours"
+                ],
+                ""
+              ],
+              "/",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "colour_pattern"
+                ],
+                ""
+              ]
+            ],
+            "green,red,green/horizontal_stripes",
+            "grg",
+            "red,green,red/horizontal_stripes",
+            "rgr",
+            "black,red,black/horizontal_stripes",
+            "brb",
+            "black,yellow/horizontal_stripes",
+            "by",
+            "yellow,black/horizontal_stripes",
+            "yb",
+            "black,yellow,black/horizontal_stripes",
+            "byb",
+            "yellow,black,yellow/horizontal_stripes",
+            "yby",
+            "white,orange/horizontal_stripes",
+            "wo",
+            "white,orange,white/horizontal_stripes",
+            "wow",
+            "red,white/horizontal_stripes",
+            "rw",
+            "white,red/horizontal_stripes",
+            "wr",
+            "red,white/vertical_stripes",
+            "rwv",
+            [
+              "match",
+              [
+                "get",
+                "colour"
+              ],
+              "red",
+              "red",
+              "green",
+              "green",
+              "yellow",
+              "yellow",
+              "white",
+              "white",
+              "black",
+              "black",
+              "orange",
+              "orange",
+              "other"
+            ]
+          ]
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.55,
+          13,
+          0.9,
+          16,
+          1.2
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -6,
+          -6
+        ]
+      },
+      "paint": {}
+    },
+    {
+      "id": "topmark",
+      "type": "symbol",
+      "source": "charts",
+      "source-layer": "aid_extra",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "TOPMAR"
+        ],
+        [
+          "!",
+          [
+            "has",
+            "anchor"
+          ]
+        ],
+        [
           "match",
           [
             "get",
-            "colour"
+            "shape"
           ],
-          "red",
-          "#d7263d",
-          "green",
-          "#2a9d4b",
-          "yellow",
-          "#f2c200",
-          "white",
-          "#ffffff",
-          "black",
-          "#222222",
-          "orange",
-          "#f28c28",
-          "#888888"
+          [
+            "cone_point_up",
+            "cone_point_down",
+            "two_cones_up",
+            "two_cones_down",
+            "two_cones_point_to_point",
+            "two_cones_base_to_base",
+            "sphere",
+            "two_spheres",
+            "x_shape",
+            "upright_cross",
+            "cylinder",
+            "square",
+            "rhombus",
+            "triangle_point_up",
+            "triangle_point_down",
+            "flag"
+          ],
+          true,
+          false
+        ]
+      ],
+      "minzoom": 13,
+      "layout": {
+        "icon-image": [
+          "concat",
+          "top-",
+          [
+            "get",
+            "shape"
+          ]
         ],
-        "circle-stroke-color": "#222222",
-        "circle-stroke-width": 0.6
-      }
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0.55,
+          13,
+          0.9,
+          16,
+          1.2
+        ],
+        "icon-allow-overlap": true,
+        "icon-anchor": "top-left",
+        "icon-offset": [
+          -2,
+          -26
+        ]
+      },
+      "paint": {}
     },
     {
       "id": "seabed-label",
@@ -1668,7 +2740,12 @@
         "text-max-width": 8,
         "text-font": [
           "Noto Sans Italic"
-        ]
+        ],
+        "text-offset": [
+          0,
+          1
+        ],
+        "text-anchor": "top"
       },
       "paint": {
         "text-color": "#3f6f96",
@@ -1725,7 +2802,12 @@
         "text-max-width": 8,
         "text-font": [
           "Noto Sans Regular"
-        ]
+        ],
+        "text-offset": [
+          0.9,
+          0
+        ],
+        "text-anchor": "left"
       },
       "paint": {
         "text-color": "#3f6f96",
@@ -3698,6 +4780,116 @@
         "text-max-width": 8,
         "text-font": [
           "Noto Sans Italic"
+        ],
+        "text-offset": [
+          "case",
+          [
+            "!=",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "ACHBRT"
+              ],
+              "anchor-berth",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "anchoring"
+              ],
+              "no-anchoring",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "ACHARE"
+              ],
+              "anchor",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "CTNARE"
+              ],
+              "caution",
+              ""
+            ],
+            ""
+          ],
+          [
+            "literal",
+            [
+              0,
+              1.1
+            ]
+          ],
+          [
+            "literal",
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "text-anchor": [
+          "case",
+          [
+            "!=",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "ACHBRT"
+              ],
+              "anchor-berth",
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "anchoring"
+              ],
+              "no-anchoring",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "ACHARE"
+              ],
+              "anchor",
+              [
+                "==",
+                [
+                  "get",
+                  "class"
+                ],
+                "CTNARE"
+              ],
+              "caution",
+              ""
+            ],
+            ""
+          ],
+          "top",
+          "center"
         ]
       },
       "paint": {
@@ -4540,10 +5732,10 @@
         ],
         "text-size": 10,
         "text-offset": [
-          0.9,
-          -0.9
+          1.4,
+          -0.4
         ],
-        "text-anchor": "bottom-left"
+        "text-anchor": "left"
       },
       "paint": {
         "text-color": "#a0106a",
@@ -5682,5 +6874,6 @@
         "text-halo-width": 1.5
       }
     }
-  ]
+  ],
+  "sprite": "{sprite}/light"
 }

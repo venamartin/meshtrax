@@ -117,6 +117,14 @@ void main() {
     expect(out['sprite'], 'file:///s/sprite');
   });
 
+  test('names a sheet under the sprite base', () {
+    final out = StyleRegistry.resolve({
+      ...style,
+      'sprite': '{sprite}/dark',
+    }, const StyleContext(sprite: bundledSprites));
+    expect(out['sprite'], 'asset:sprites/dark');
+  });
+
   test('drops sources for missing packs and their layers', () {
     final out = StyleRegistry.resolve(
       style,
