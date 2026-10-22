@@ -3857,9 +3857,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
       // Apply to the target row; watched queries update the UI.
+      final sw = Stopwatch()..start();
       final history = await _messageStore.loadMessages(contact.publicKeyHex);
       _processOutgoingContactReaction(history, reactionInfo, contact);
       await _messageStore.upsertMessages(contact.publicKeyHex, history);
+      appLogger.perf('outgoing DM reaction over ${history.length} rows', sw);
       await _setReactionStatus(
         contact.publicKeyHex,
         reactionInfo,
@@ -4385,11 +4387,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       // Apply to the target row; watched queries update the UI.
+      final sw = Stopwatch()..start();
       final history = await _channelMessageStore.loadChannelMessages(
         channel.idKey,
       );
       _processReaction(history, reactionInfo, reactorName);
       await _channelMessageStore.upsertMessages(channel.idKey, history);
+      appLogger.perf(
+        'outgoing channel reaction over ${history.length} rows',
+        sw,
+      );
 
       // Mark this reaction as processed
       _processedChannelReactions[channel.idKey]!.add(reactionIdentifier);
@@ -7877,6 +7884,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       )) {
         return false;
       }
+      final sw = Stopwatch()..start();
       final history = await _messageStore.loadMessages(pubKeyHex);
       final applied = _processContactReaction(
         history,
@@ -7887,6 +7895,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (applied) {
         await _messageStore.upsertMessages(pubKeyHex, history);
       }
+      appLogger.perf('DM reaction over ${history.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
         // MeshCore One-shaped message whose hash matches nothing we hold
@@ -8883,10 +8892,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return _ParsedText(senderName: 'Unknown', text: text);
   }
 
+  Future<bool> _ingestChannelMessage(
+    int channelIndex,
+    ChannelMessage message, {
+    ChannelMessage? replyTarget,
+    Channel? identity,
+    bool fromBacklog = false,
+    DateTime? receivedAt,
+  }) async {
+    final sw = Stopwatch()..start();
+    final isNew = await _ingestChannelMessageInner(
+      channelIndex,
+      message,
+      replyTarget: replyTarget,
+      identity: identity,
+      fromBacklog: fromBacklog,
+      receivedAt: receivedAt,
+    );
+    appLogger.perf(
+      'channel ingest',
+      sw,
+      detail: fromBacklog ? 'backlog' : 'live',
+    );
+    return isNew;
+  }
+
   /// Phase 3d ingest — the database is the only message state. Inserts or
   /// merges a row; watched queries notify every consumer. Returns true when
   /// the message was NEW (drives notifications; unread is a watched COUNT).
-  Future<bool> _ingestChannelMessage(
+  Future<bool> _ingestChannelMessageInner(
     int channelIndex,
     ChannelMessage message, {
     ChannelMessage? replyTarget,
@@ -8941,11 +8975,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
         return false;
       }
+      final sw = Stopwatch()..start();
       final history = await _channelMessageStore.loadChannelMessages(idKey);
       final applied = _processReaction(history, reactionInfo, reactorName);
       if (applied) {
         await _channelMessageStore.upsertMessages(idKey, history);
       }
+      appLogger.perf('channel reaction over ${history.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
         // MeshCore One-shaped message whose hash matches nothing we hold
@@ -9565,7 +9601,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     _notifyListenersDirty = false;
+    // Synchronous listeners only (Pathfinder, keeper, watchers); widget
+    // rebuilds come later in the frame and show in the UI stall lines.
+    final sw = Stopwatch()..start();
     super.notifyListeners();
+    appLogger.perf('connector listeners', sw);
 
     if (_notifyListenersDirty && _notifyListenersTimer == null) {
       _notifyListenersTimer = Timer(
