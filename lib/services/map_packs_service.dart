@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:traxmap/traxmap.dart';
@@ -101,6 +102,7 @@ class MapPacksService extends ChangeNotifier {
     final root = Directory(
       '${(await getApplicationSupportDirectory()).path}/maps',
     );
+    await keepOutOfBackups(root);
     final manager = PackManager(Directory('${root.path}/packs'));
     final service = MapPacksService(
       manager: manager,
@@ -110,6 +112,24 @@ class MapPacksService extends ChangeNotifier {
     await service.start();
     await service._followWifiSetting(settings);
     return service;
+  }
+
+  /// Keeps [dir] out of iCloud and Time Machine backups (iOS, macOS). Maps
+  /// can be downloaded again, and Apple's storage rules say such files
+  /// must not be backed up. Android's backup rules exclude it in XML.
+  @visibleForTesting
+  static Future<void> keepOutOfBackups(Directory dir) async {
+    if (defaultTargetPlatform != TargetPlatform.iOS &&
+        defaultTargetPlatform != TargetPlatform.macOS) {
+      return;
+    }
+    try {
+      await dir.create(recursive: true);
+      await const MethodChannel('meshtrax/storage')
+          .invokeMethod<void>('excludeFromBackup', dir.path);
+    } on Object catch (e) {
+      appLogger.warn('Could not keep maps out of backups: $e', tag: 'Maps');
+    }
   }
 
   /// Loads the cached catalogue and installed packs, restores downloads,
