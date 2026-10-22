@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'geo.dart';
@@ -28,22 +29,46 @@ class PackException implements Exception {
 /// build, which is then deleted. This gives the map a new path to reload
 /// from, and works on Windows, where an open file can't be replaced. If the
 /// old build is still in use, [listInstalled] removes it later.
+///
+/// Deleting works the same way: on Windows a pack open in a map can't be
+/// deleted, so it's marked deleted (`<file>.deleted`) and no longer listed.
+/// The map then reloads without it and lets go of the file, which is
+/// deleted on a retry.
 class PackManager {
   static const String extension = '.pmtiles';
   static const String _partial = '.part';
+  static const String _deleted = '.deleted';
   static const String _buildSeparator = '@';
   static const int _shaPrefixLength = 12;
+  static const int _retries = 5;
 
   final Directory root;
-  final _changes = StreamController<void>.broadcast();
 
-  PackManager(this.root);
+  /// How long after a file couldn't be deleted (still open on Windows) to
+  /// try again. Each further try waits twice as long, up to [_retries]
+  /// tries; [listInstalled] always tries too.
+  final Duration retryDelay;
+
+  final _changes = StreamController<void>.broadcast();
+  Timer? _retry;
+  var _tries = 0;
+  var _failures = 0;
+
+  /// Deletes a file; tests replace it to act like Windows, where a file
+  /// that's open can't be deleted.
+  @visibleForTesting
+  Future<void> Function(File file) deleteFile = (file) => file.delete();
+
+  PackManager(this.root, {this.retryDelay = const Duration(seconds: 2)});
 
   /// Fires after a pack is installed or deleted, so apps can refresh lists.
   Stream<void> get changes => _changes.stream;
 
   /// Closes [changes]; call when the manager is no longer used.
-  Future<void> close() => _changes.close();
+  Future<void> close() {
+    _retry?.cancel();
+    return _changes.close();
+  }
 
   /// Every readable pack in [root], one per id. Files that fail to parse are
   /// skipped and reported through [onError] if given. Where an update left
@@ -53,9 +78,26 @@ class PackManager {
     void Function(File file, Object error)? onError,
   }) async {
     if (!await root.exists()) return const [];
+    final files = [
+      await for (final entity in root.list())
+        if (entity is File) entity,
+    ];
+    final failuresBefore = _failures;
+    final marked = <String>{};
+    for (final marker in files.where((f) => f.path.endsWith(_deleted))) {
+      final path = marker.path.substring(
+        0,
+        marker.path.length - _deleted.length,
+      );
+      marked.add(path);
+      if (await _deleteQuietly(File(path))) await _deleteQuietly(marker);
+    }
     final byId = <String, Pack>{};
-    await for (final entity in root.list()) {
-      if (entity is! File || p.extension(entity.path) != extension) continue;
+    for (final entity in files) {
+      if (p.extension(entity.path) != extension ||
+          marked.contains(entity.path)) {
+        continue;
+      }
       final Pack pack;
       try {
         pack = await open(entity);
@@ -77,6 +119,7 @@ class PackManager {
       byId[pack.id] = newer;
       await _deleteQuietly(identical(newer, pack) ? other.file : pack.file);
     }
+    if (_failures == failuresBefore) _tries = 0;
     return byId.values.toList()..sort((a, b) => a.id.compareTo(b.id));
   }
 
@@ -139,6 +182,7 @@ class PackManager {
         throw PackException('Checksum mismatch for "$id"');
       }
       await temp.rename(target.path);
+      await _deleteQuietly(File('${target.path}$_deleted'));
     } catch (e) {
       if (await temp.exists()) await temp.delete();
       if (e is PackException) rethrow;
@@ -164,8 +208,12 @@ class PackManager {
   Future<bool> verify(Pack pack, String expectedSha256) =>
       _matches(pack.file, expectedSha256);
 
+  /// Deletes [pack]. If a map still has it open (Windows), it's marked
+  /// deleted instead and removed once the map lets go (see the class docs).
   Future<void> delete(Pack pack) async {
-    if (await pack.file.exists()) await pack.file.delete();
+    if (!await _deleteQuietly(pack.file)) {
+      await File('${pack.file.path}$_deleted').create();
+    }
     if (!_changes.isClosed) _changes.add(null);
   }
 
@@ -209,13 +257,25 @@ class PackManager {
     return digest == expected.toLowerCase();
   }
 
-  /// Deletes [file] if it can. A build still open elsewhere (Windows) stays
-  /// until a later [listInstalled].
-  static Future<void> _deleteQuietly(File file) async {
+  /// Deletes [file] if it can, and says whether it's gone. A file still
+  /// open elsewhere (Windows) is tried again later by [listInstalled].
+  Future<bool> _deleteQuietly(File file) async {
     try {
-      await file.delete();
+      await deleteFile(file);
+      return true;
+    } on PathNotFoundException {
+      return true;
     } on FileSystemException {
-      // Still in use; retried on the next listInstalled.
+      _failures++;
+      _retryLater();
+      return false;
     }
+  }
+
+  void _retryLater() {
+    if ((_retry?.isActive ?? false) || _tries >= _retries) return;
+    _retry = Timer(retryDelay * (1 << _tries++), () {
+      if (!_changes.isClosed) listInstalled();
+    });
   }
 }
