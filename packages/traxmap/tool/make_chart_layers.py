@@ -184,9 +184,10 @@ LANDMARK_ICON = ["concat", "landmark-", pick("category", [
     (["mast", "dish_aerial"], "mast"), (["chimney", "flare_stack"], "chimney"),
     (["spire_minaret", "cross"], "church"), ("flagstaff", "flagstaff"), ("dome", "dome"),
 ], pick("function", [(["church", "chapel"], "church")], "generic"))]
-# Restricted areas get the T-tick limit (INT-1 N2.1); the other regulated
-# areas keep a dashed one.
-T_TICKS = ["any", ["all", cls("RESARE"), ["==", ["get", "restriction"], "entry"]], cls("MIPARE")]
+# Areas whose entry is restricted get the T-tick limit (INT-1 N2.1); the
+# other regulated areas, military practice and firing areas included, keep
+# a dashed one (Martin: the firing areas offshore ticked whole seas).
+T_TICKS = ["all", cls("RESARE"), ["==", ["get", "restriction"], "entry"]]
 
 
 def icon(id_, source_layer, filter_, image, family, minzoom, size, rotate=False):
@@ -306,7 +307,7 @@ def regulated_limits(P):
         # dumping grounds magenta, spoil grounds, farms and fishing grey.
         *limit_layers(
             "regulated-limit", "regulated_area",
-            all_(cls("RESARE", "CTNARE", "ACHARE", "DMPGRD", "CBLARE", "PIPARE", "MARCUL",
+            all_(cls("RESARE", "CTNARE", "ACHARE", "MIPARE", "DMPGRD", "CBLARE", "PIPARE", "MARCUL",
                      "SPLARE", "CTSARE", "OSPARE", "FSHGRD", "ICNARE", "FRPARE", "CUSZNE"), ["!", T_TICKS]), 10,
             {"line-color": ["case", ["all", cls("DMPGRD"), CAT("explosives")], P["magenta"],
                             cls("DMPGRD", "MARCUL", "FSHGRD"), P["grey"], P["magenta"]],
@@ -413,7 +414,9 @@ def groups(P):
     # beacon, a topmark above it.
     mark_size = zoom_size(9, 0.55, 13, 0.9, 16, 1.2)
     symbols = [
-        icon("regulated-symbol", "regulated_area", all_(POINT, ["any", ANCHOR, cls("ACHBRT")], HAS_REGULATED_ICON),
+        # Areas' label points, and areas charted as points (a recommended
+        # anchorage is a lone anchor).
+        icon("regulated-symbol", "regulated_area", all_(POINT, HAS_REGULATED_ICON),
              REGULATED_ICON, "anchor", 11, zoom_size(11, 0.8, 14, 1)),
         icon("lane-arrow", "route", all_(cls("TSSLPT", "DWRTPT", "RCTLPT"), ANCHOR, ["has", "orient"]),
              "arrow-lane", "arrow", 9, zoom_size(9, 0.9, 13, 1.5), rotate=True),

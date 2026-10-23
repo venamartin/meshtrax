@@ -1,5 +1,10 @@
 ## Unreleased
 
+- **Chart fixes from the live California charts:** military practice and
+  firing areas get the dashed limit, not T-ticks, which are kept for areas
+  whose entry is restricted (the firing areas offshore ticked whole seas).
+  Anchorages charted as a point (a recommended anchorage) get their anchor
+  symbol; only area label points had one.
 - **World base map** (`PackKind.world`, traxmapmaker FINDINGS 1.7): Natural
   Earth at z0–5 bundled in `assets/world/world.pmtiles` (4.2 MB, credit
   "Made with Natural Earth"). `openBundledWorld(dir)` copies it next to the

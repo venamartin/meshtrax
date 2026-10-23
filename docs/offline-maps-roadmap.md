@@ -566,7 +566,10 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ### Later
 
 - Night style
-- World base map: from traxmapmaker, downloaded with the catalogue, built last (see Known issues)
+- **Map legend behind the "i" button** (Martin, 2026-10-23). Today the map screen's info button opens a card of node counts. It grows into a legend of several screens, added as the map gains content:
+  - MeshCore: companions, repeaters, rooms, sensors, guessed positions;
+  - charts: what each chart symbol, line and abbreviation means (buoys, beacons, lights, hazards, areas and their limits, Wk, Obstn, …);
+  - parks, when the overlays come.
 - Offline line-of-sight elevation
 - Cutting areas on the device
 - Online vector tiles streamed from R2
