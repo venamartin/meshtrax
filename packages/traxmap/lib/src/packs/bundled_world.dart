@@ -22,16 +22,18 @@ Future<Pack> openBundledWorld(Directory dir, {AssetBundle? bundle}) async {
       .convert([...head, ...'${bytes.length}'.codeUnits])
       .toString()
       .substring(0, 12);
-  final file = File('${dir.path}/world@$id.pmtiles');
+  final name = 'world@$id.pmtiles';
+  final file = File('${dir.path}/$name');
   if (!await file.exists()) {
     await dir.create(recursive: true);
     final tmp = File('${file.path}.tmp');
     await tmp.writeAsBytes(bytes, flush: true);
     await tmp.rename(file.path);
   }
+  // By name: Windows lists `C:\app/maps` with `\`, so paths don't compare.
   await for (final old in dir.list()) {
-    final name = old.uri.pathSegments.last;
-    if (old is File && name.startsWith('world@') && old.path != file.path) {
+    final oldName = old.uri.pathSegments.last;
+    if (old is File && oldName.startsWith('world@') && oldName != name) {
       try {
         await old.delete();
       } on FileSystemException {
