@@ -1,6 +1,6 @@
 """Generates the OSM styles: assets/styles/osm-light.json and osm-dark.json.
 
-One layer design (OSM streets + USGS hillshade + DEM contours pack), several
+One layer design (OSM streets + terrain pack hill shading + DEM contours pack), several
 palettes. Edit a palette below and rerun:
 
     python3 tool/make_styles.py assets/styles
@@ -16,7 +16,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else "assets/styles"
 REG, MED, ITA = ["Noto Sans Regular"], ["Noto Sans Medium"], ["Noto Sans Italic"]
 SOURCES = {
     "osm": {"type": "vector", "url": "pmtiles://{pack:osm}", "attribution": "© OpenMapTiles © OpenStreetMap contributors"},
-    "base": {"type": "vector", "url": "pmtiles://{pack:base}", "attribution": "USGS The National Map"},
+    "terrain": {"type": "vector", "url": "pmtiles://{pack:terrain}", "attribution": "USGS 3DEP"},
     "contours": {"type": "vector", "url": "pmtiles://{pack:contours}", "attribution": "USGS 3DEP"},
 }
 ROADS = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service"]
@@ -64,7 +64,7 @@ def style(name, P, note):
             "fill-opacity": P["landuse_op"]}),
         O("park", "fill", "park", filter=NOT_MARINE,
           paint={"fill-color": P["park"], "fill-opacity": P["park_op"]}),
-        {"id": "hillshade", "type": "fill", "source": "base", "source-layer": "hillshade",
+        {"id": "hillshade", "type": "fill", "source": "terrain", "source-layer": "hillshade",
          "paint": {"fill-color": ["case", ["<", ["get", "level"], 0], P["highlight"], shadow],
                    "fill-opacity": ["match", ["get", "level"], -1, P["hl_op"],
                                     1, P["shade_op"][0], 2, P["shade_op"][1], 3, P["shade_op"][2], 4, P["shade_op"][3], 0],

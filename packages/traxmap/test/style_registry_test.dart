@@ -197,6 +197,47 @@ void main() {
     expect(StyleInfo.fromStyle('usgs-light', usgs).disclaimer, isNull);
   });
 
+  test('topo and street maps draw relief from the terrain pack', () async {
+    final terrain = packOf('ca-terrain', const {'kind': 'terrain'});
+    final registry = bundledStyles();
+    for (final id in ['usgs-light', 'usgs-dark', 'osm-light', 'osm-dark']) {
+      final on = await registry.load(
+        id,
+        StyleContext(
+          packs: {
+            PackKind.base: [base],
+            PackKind.terrain: [terrain],
+          },
+        ),
+      );
+      final url = ((on['sources'] as Map)['terrain'] as Map)['url'];
+      expect(url, 'pmtiles://${Uri.file(terrain.file.path)}', reason: id);
+      final relief = [
+        for (final l in on['layers'] as List)
+          if ((l as Map)['source'] == 'terrain') l['id'],
+      ];
+      expect(relief, contains('hillshade'), reason: id);
+      // A region without a terrain pack draws no relief, and nothing else
+      // reads relief from the base pack.
+      final off = await registry.load(
+        id,
+        StyleContext(
+          packs: {
+            PackKind.base: [base],
+          },
+        ),
+      );
+      expect((off['sources'] as Map).containsKey('terrain'), isFalse);
+      for (final l in off['layers'] as List) {
+        expect(
+          (l as Map)['source-layer'],
+          isNot(anyOf('hillshade', 'elev_band')),
+          reason: id,
+        );
+      }
+    }
+  });
+
   test('every map draws land contours from the one contours pack', () async {
     final contours = Pack(
       id: 'ca-contours-20ft',

@@ -239,10 +239,12 @@ void main() {
   });
 
   group('AppSettings — map choice', () {
-    test('defaults: OSM, contours and areas on, a light map, source auto', () {
+    test('defaults: OSM, contours, hill shading and areas on, a light map, '
+        'source auto', () {
       for (final s in [AppSettings(), AppSettings.fromJson({})]) {
         expect(s.mapType, 'osm');
         expect(s.mapContours, isTrue);
+        expect(s.mapHillShading, isTrue);
         expect(s.mapDownloadedAreas, isTrue);
         expect(s.mapTheme, 'light');
         expect(s.mapSource, 'auto');
@@ -254,6 +256,7 @@ void main() {
           .copyWith(
             mapType: 'charts',
             mapContours: false,
+            mapHillShading: false,
             mapDownloadedAreas: false,
             mapTheme: 'dark',
             mapSource: 'offline',
@@ -262,6 +265,7 @@ void main() {
       final s = AppSettings.fromJson(json);
       expect(s.mapType, 'charts');
       expect(s.mapContours, isFalse);
+      expect(s.mapHillShading, isFalse);
       expect(s.mapDownloadedAreas, isFalse);
       expect(s.mapTheme, 'dark');
       expect(s.mapSource, 'offline');

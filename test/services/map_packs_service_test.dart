@@ -388,6 +388,49 @@ void main() {
     expect(maps.packsForRegion(_ri), hasLength(4));
   });
 
+  test('default selection adds hill shading where a region has it', () async {
+    final index = jsonDecode(_index) as Map<String, Object?>;
+    final packs = (index['packs']! as List).cast<Map<String, Object?>>();
+    final usgs = packs.firstWhere((p) => p['id'] == 'us-rhode-island');
+    packs.add({
+      ...usgs,
+      'id': 'us-rhode-island-terrain',
+      'name': 'Rhode Island (terrain)',
+      'kind': 'terrain',
+      'sha256': '0' * 64,
+      'url': 'https://maps.example/dev/v1/north-america/us/rhode-island/terrain.pmtiles',
+    });
+    routes['/dev/index.json'] = (_) =>
+        http.Response.bytes(utf8.encode(jsonEncode(index)), 200);
+    final maps = service();
+    await maps.start();
+    await maps.refresh();
+    expect(maps.defaultSelection(_ri, UnitSystem.imperial).map((e) => e.id), [
+      'us-rhode-island-osm',
+      'us-rhode-island-contours-20ft',
+      'us-rhode-island-terrain',
+    ]);
+  });
+
+  test('the map leaves hill shading out when it is switched off', () async {
+    final maps = service();
+    await maps.start();
+    await maps.refresh();
+    await install(maps, 'us-rhode-island-osm');
+    final terrain = File('${tmp.path}/terrain.src')
+      ..writeAsBytesSync(
+        fakePmTiles(metadata: {'kind': 'terrain', 'region': _ri}),
+      );
+    await maps.manager.install(terrain, id: 'us-rhode-island-terrain');
+    await maps.reloadInstalled();
+    List<String> kinds({required bool hillShading}) => [
+      for (final p in maps.mapPacks(contours: true, hillShading: hillShading))
+        p.kind.name,
+    ];
+    expect(kinds(hillShading: true), containsAll(['osm', 'terrain']));
+    expect(kinds(hillShading: false), ['osm']);
+  });
+
   test('pack status follows downloads, installs and builds', () async {
     final maps = service();
     await maps.start();

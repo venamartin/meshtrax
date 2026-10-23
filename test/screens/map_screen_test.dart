@@ -242,8 +242,8 @@ void main() {
     );
     expect(
       find.text('Offline only'),
-      findsNWidgets(2),
-      reason: 'nothing downloaded, so Online: contours and dark',
+      findsNWidgets(3),
+      reason: 'nothing downloaded, so Online: contours, hill shading, dark',
     );
     expect(find.text('Nodes'), findsOneWidget);
 
@@ -257,6 +257,9 @@ void main() {
     await tester.tap(find.text('Contours'));
     await tester.pump();
     expect(settings.settings.mapContours, isFalse);
+    await tester.tap(find.text('Hill shading'));
+    await tester.pump();
+    expect(settings.settings.mapHillShading, isFalse);
     await tester.tap(find.text('Downloaded areas'));
     await tester.pump();
     expect(settings.settings.mapDownloadedAreas, isFalse);
@@ -291,9 +294,7 @@ void main() {
   MapCamera camera(WidgetTester tester) =>
       tester.widget<AppMap>(find.byType(AppMap)).controller!.camera!;
 
-  testWidgets("GPS on: My location goes to the GPS's blue dot", (
-    tester,
-  ) async {
+  testWidgets("GPS on: My location goes to the GPS's blue dot", (tester) async {
     await pumpMap(
       tester,
       _FakeConnector(

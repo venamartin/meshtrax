@@ -7,6 +7,9 @@ import 'pmtiles_header.dart';
 enum PackKind {
   base,
   contours,
+
+  /// Hill shading and elevation bands, drawn under every base map.
+  terrain,
   charts,
 
   /// OpenStreetMap, OpenMapTiles schema (experiment; see FINDINGS.md).

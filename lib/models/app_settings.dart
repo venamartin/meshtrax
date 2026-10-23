@@ -35,6 +35,9 @@ class AppSettings {
   /// Draw contour lines when a contours pack is installed.
   final bool mapContours;
 
+  /// Draw hill shading when a terrain pack is installed.
+  final bool mapHillShading;
+
   /// Outline the downloaded areas of the map that's showing.
   final bool mapDownloadedAreas;
 
@@ -118,6 +121,7 @@ class AppSettings {
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
     this.mapContours = true,
+    this.mapHillShading = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
     this.mapSource = 'auto',
@@ -173,6 +177,7 @@ class AppSettings {
       'map_downloads_wifi_only': mapDownloadsWifiOnly,
       'map_type': mapType,
       'map_contours': mapContours,
+      'map_hill_shading': mapHillShading,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
       'map_source': mapSource,
@@ -233,6 +238,7 @@ class AppSettings {
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
       mapType: json['map_type'] as String? ?? 'osm',
       mapContours: json['map_contours'] as bool? ?? true,
+      mapHillShading: json['map_hill_shading'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
       mapSource: json['map_source'] as String? ?? 'auto',
@@ -313,6 +319,7 @@ class AppSettings {
     bool? mapDownloadsWifiOnly,
     String? mapType,
     bool? mapContours,
+    bool? mapHillShading,
     bool? mapDownloadedAreas,
     String? mapTheme,
     String? mapSource,
@@ -362,6 +369,7 @@ class AppSettings {
       mapDownloadsWifiOnly: mapDownloadsWifiOnly ?? this.mapDownloadsWifiOnly,
       mapType: mapType ?? this.mapType,
       mapContours: mapContours ?? this.mapContours,
+      mapHillShading: mapHillShading ?? this.mapHillShading,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
       mapSource: mapSource ?? this.mapSource,

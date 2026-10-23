@@ -4500,7 +4500,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offlineMaps_kindUsgs => 'USGS topo map';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves, terrain';
+  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+
+  @override
+  String get offlineMaps_kindTerrain => 'Hill shading';
+
+  @override
+  String get offlineMaps_kindTerrainDetail =>
+      'Hills and mountains, shaded under the map';
 
   @override
   String get offlineMaps_kindCharts => 'NOAA charts';
@@ -4701,6 +4708,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mapLayers_contours => 'Contours';
+
+  @override
+  String get mapLayers_hillShading => 'Hill shading';
 
   @override
   String get mapLayers_dark => 'Dark map';

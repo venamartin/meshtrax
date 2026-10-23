@@ -17,6 +17,11 @@
       "url": "pmtiles://{pack:base}",
       "attribution": "USGS The National Map"
     },
+    "terrain": {
+      "type": "vector",
+      "url": "pmtiles://{pack:terrain}",
+      "attribution": "USGS 3DEP"
+    },
     "contours": {
       "type": "vector",
       "url": "pmtiles://{pack:contours}",
@@ -34,7 +39,7 @@
     {
       "id": "elev_band",
       "type": "fill",
-      "source": "base",
+      "source": "terrain",
       "source-layer": "elev_band",
       "paint": {
         "fill-color": [
@@ -59,7 +64,7 @@
           5000,
           "#bba07a",
           8000,
-          "#ffffff"
+          "#d3c9b9"
         ],
         "fill-antialias": false
       }
@@ -77,7 +82,7 @@
     {
       "id": "hillshade",
       "type": "fill",
-      "source": "base",
+      "source": "terrain",
       "source-layer": "hillshade",
       "paint": {
         "fill-color": [

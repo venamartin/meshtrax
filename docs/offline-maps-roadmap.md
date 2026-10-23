@@ -127,7 +127,8 @@ Last updated 2026-10-20, evening. **Resume here.**
          - The USGS base loses both layers.
          - **No hill shading at z6–7 (Martin):** bands only, unless the pilot renders show a jump at z8.
          - Today's app ignores an unknown kind. traxmapmaker still holds base and terrain until the release that supports terrain, because base alone would draw USGS without relief.
-       - Still to preview with Martin: a "Hill shading" row in region detail (ticked by default?) and a layers-sheet toggle beside Contours;
+       - **App side built (2026-10-22, `feature/terrain`):** `PackKind.terrain`, the styles drawing relief from `{pack:terrain}`, a "Hill shading" row in region detail (ticked by default, Martin) and a Hill shading switch in the layers sheet (Martin).
+       - **Pilot renders (2026-10-22):** the tier switches keep their coverage in rugged land. Two build fixes are with traxmapmaker before the national terrain build: stair-stepped level edges near each tier's top and from z12.5 up, and gentle hills (Rhode Island) losing their shading at z11. traxmapmaker estimates smoothing vs a 1/3″ z13 tier first. The national USGS build waits for Martin's go.
      - **D2: base stays z6–14** (Martin: "we have them broken into small regions anyway"). The Rhode Island pilot also builds a z13 copy to compare in the app;
      - **D3: the hill-shading highlight bug gets fixed.** Sun-facing slopes (level −1) appear for the first time; retune their 0.25–0.28 opacity on the pilot;
      - **D6: sea is filled where there's no USGS quad,** as `ocean` (`lake` in the Great Lakes cells), never over foreign land;

@@ -18,10 +18,10 @@
       "url": "pmtiles://{pack:osm}",
       "attribution": "© OpenMapTiles © OpenStreetMap contributors"
     },
-    "base": {
+    "terrain": {
       "type": "vector",
-      "url": "pmtiles://{pack:base}",
-      "attribution": "USGS The National Map"
+      "url": "pmtiles://{pack:terrain}",
+      "attribution": "USGS 3DEP"
     },
     "contours": {
       "type": "vector",
@@ -134,7 +134,7 @@
     {
       "id": "hillshade",
       "type": "fill",
-      "source": "base",
+      "source": "terrain",
       "source-layer": "hillshade",
       "paint": {
         "fill-color": [

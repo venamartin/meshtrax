@@ -69,6 +69,7 @@ class _RegionDetailState extends State<RegionDetail> {
     final shown = [
       ...packs.where((e) => e.kind == PackKind.osm),
       ...contours.where((e) => e.id == _contoursId),
+      ...packs.where((e) => e.kind == PackKind.terrain),
       ...packs.where((e) => e.kind == PackKind.base),
     ];
     final inUs = region.path.startsWith('north-america/us/');

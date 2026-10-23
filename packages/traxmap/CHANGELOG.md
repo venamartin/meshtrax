@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **Terrain packs** (`PackKind.terrain`, traxmapmaker FINDINGS 1.3): hill
+  shading and elevation bands come from their own pack, drawn under the
+  USGS and OSM maps from `pmtiles://{pack:terrain}` (attribution "USGS
+  3DEP"). The USGS base pack no longer carries relief; a region without a
+  terrain pack draws none. The USGS style's top elevation band (8,000 ft
+  and up) is pale rock instead of white, so the highlights show.
 - **Area limits leave out the shore** (charts_revision 3). Restricted,
   caution, anchorage and other regulated areas, route areas
   (precautionary areas, fairways) and hazard areas draw their limits from
