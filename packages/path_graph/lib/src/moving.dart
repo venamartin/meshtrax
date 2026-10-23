@@ -35,9 +35,11 @@ class MovingStatus {
       reason == MovingReason.manualWithMe || reason == MovingReason.ridesWithMe;
 }
 
-/// Adverts from a repeater without a position fix carry 0,0.
+/// Adverts from a repeater without a position fix carry 0,0, and one whose
+/// owner has set only one of lat and lon carries a 0 in the other (the
+/// firmware sends whole millionths, so an exact 0 means "not set").
 bool isRealPosition(double? lat, double? lon) =>
-    lat != null && lon != null && (lat.abs() > 1e-6 || lon.abs() > 1e-6);
+    lat != null && lon != null && lat.abs() > 1e-6 && lon.abs() > 1e-6;
 
 /// The user's word first, then an advert move, then the detectors.
 MovingStatus? movingStatusOf(

@@ -70,6 +70,19 @@ void main() {
     expect(graph.movingStatus('C882'), isNull);
   });
 
+  // Caribou Palace, 2026-10-19: its owner set lat before lon, so one
+  // advert said 37.70, 0 — then the full position read as 10,000 km away.
+  test('a half-set position is no position: not stored, no move', () {
+    advert(whaleKey, 37.703855, 0);
+    final node = graph.snapshot().nodes['C882']!;
+    expect((node.lat, node.lon), (null, null));
+    advert(whaleKey, 37.703768, -122.427759);
+    expect(graph.movingStatus('C882'), isNull);
+    advert(whaleKey, 0, -122.427759);
+    expect(graph.movingStatus('C882'), isNull);
+    expect(graph.snapshot().nodes['C882']!.lat, 37.703768);
+  });
+
   test("a contact's doorstep stored at 0,0 does not wipe their list", () async {
     await graph.loadSession({
       'format': 'meshtrax-path-graph-session-v1',
