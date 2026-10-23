@@ -1703,9 +1703,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_invalidLink => 'Невалиден формат на връзката';
 
   @override
-  String get map_title => 'Карта на възлите';
-
-  @override
   String get map_lineOfSight => 'Линия на видимост';
 
   @override

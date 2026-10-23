@@ -1714,9 +1714,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_invalidLink => 'Nieprawidłowy format linku';
 
   @override
-  String get map_title => 'Mapa węzłów';
-
-  @override
   String get map_lineOfSight => 'Linia wzroku';
 
   @override

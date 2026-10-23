@@ -1679,9 +1679,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chat_invalidLink => 'Invalid link format';
 
   @override
-  String get map_title => 'Node Map';
-
-  @override
   String get map_lineOfSight => 'Line of Sight';
 
   @override

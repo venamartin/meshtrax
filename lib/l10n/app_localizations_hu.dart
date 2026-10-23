@@ -1711,9 +1711,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_invalidLink => 'Érvénytelen hivatkozás formátum';
 
   @override
-  String get map_title => 'Grafikus ábrázás';
-
-  @override
   String get map_lineOfSight => 'Látási vonal';
 
   @override

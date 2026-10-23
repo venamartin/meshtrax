@@ -1149,13 +1149,10 @@ class _ChatsScreenState extends State<ChatsScreen>
               },
               child: const Icon(Icons.add),
             ),
-            bottomNavigationBar: SafeArea(
-              top: false,
-              child: QuickSwitchBar(
-                selectedIndex: 0,
-                onDestinationSelected: (index) =>
-                    _handleQuickSwitch(index, context),
-              ),
+            bottomNavigationBar: QuickSwitchBar(
+              selectedIndex: 0,
+              onDestinationSelected: (index) =>
+                  _handleQuickSwitch(index, context),
             ),
           ),
         );

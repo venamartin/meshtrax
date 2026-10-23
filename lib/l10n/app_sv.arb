@@ -561,7 +561,6 @@
     }
   },
   "chat_invalidLink": "Ogiltigt länkformat",
-  "map_title": "Nodkarta",
   "map_noNodesWithLocation": "Inga noder med platsinformation",
   "map_nodesNeedGps": "Noder måste dela sina GPS-koordinater\nför att visas på kartan",
   "map_nodesCount": "Noder: {count}",

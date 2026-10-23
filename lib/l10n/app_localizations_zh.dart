@@ -1629,9 +1629,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_invalidLink => '无效的链接格式';
 
   @override
-  String get map_title => '节点地图';
-
-  @override
   String get map_lineOfSight => '视线';
 
   @override
