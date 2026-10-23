@@ -287,6 +287,10 @@ void main() {
     );
     const area = {'anchor': 1};
     expect(icon('regulated-symbol', {...area, 'class': 'ACHARE'}), 'anchor');
+    // An anchorage charted as a point (Prisoners Harbor, Santa Cruz Island).
+    const point = {'class': 'ACHARE', 'status': 'recommended'};
+    expect(matches('regulated-symbol', point), isTrue);
+    expect(icon('regulated-symbol', point), 'anchor');
     expect(
       icon('regulated-symbol', {
         ...area,
@@ -303,6 +307,10 @@ void main() {
     const entry = {'class': 'RESARE', 'restriction': 'entry'};
     expect(matches('restricted-limit', entry, type: 'Polygon'), isTrue);
     expect(matches('regulated-limit', entry, type: 'Polygon'), isFalse);
+    // Firing and practice areas: a dashed limit, as S-52 draws them.
+    const firing = {'class': 'MIPARE', 'category': 'firing_danger_area'};
+    expect(matches('regulated-limit', firing, type: 'Polygon'), isTrue);
+    expect(matches('restricted-limit', firing, type: 'Polygon'), isFalse);
   });
 
   test('area limits: lines where the pack has them, outlines otherwise', () {

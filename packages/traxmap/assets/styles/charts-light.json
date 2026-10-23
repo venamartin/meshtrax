@@ -882,6 +882,7 @@
               "RESARE",
               "CTNARE",
               "ACHARE",
+              "MIPARE",
               "DMPGRD",
               "CBLARE",
               "PIPARE",
@@ -900,33 +901,22 @@
           [
             "!",
             [
-              "any",
-              [
-                "all",
-                [
-                  "==",
-                  [
-                    "get",
-                    "class"
-                  ],
-                  "RESARE"
-                ],
-                [
-                  "==",
-                  [
-                    "get",
-                    "restriction"
-                  ],
-                  "entry"
-                ]
-              ],
+              "all",
               [
                 "==",
                 [
                   "get",
                   "class"
                 ],
-                "MIPARE"
+                "RESARE"
+              ],
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "entry"
               ]
             ]
           ]
@@ -1062,6 +1052,7 @@
               "RESARE",
               "CTNARE",
               "ACHARE",
+              "MIPARE",
               "DMPGRD",
               "CBLARE",
               "PIPARE",
@@ -1080,33 +1071,22 @@
           [
             "!",
             [
-              "any",
-              [
-                "all",
-                [
-                  "==",
-                  [
-                    "get",
-                    "class"
-                  ],
-                  "RESARE"
-                ],
-                [
-                  "==",
-                  [
-                    "get",
-                    "restriction"
-                  ],
-                  "entry"
-                ]
-              ],
+              "all",
               [
                 "==",
                 [
                   "get",
                   "class"
                 ],
-                "MIPARE"
+                "RESARE"
+              ],
+              [
+                "==",
+                [
+                  "get",
+                  "restriction"
+                ],
+                "entry"
               ]
             ]
           ]
@@ -1230,33 +1210,22 @@
           ]
         ],
         [
-          "any",
-          [
-            "all",
-            [
-              "==",
-              [
-                "get",
-                "class"
-              ],
-              "RESARE"
-            ],
-            [
-              "==",
-              [
-                "get",
-                "restriction"
-              ],
-              "entry"
-            ]
-          ],
+          "all",
           [
             "==",
             [
               "get",
               "class"
             ],
-            "MIPARE"
+            "RESARE"
+          ],
+          [
+            "==",
+            [
+              "get",
+              "restriction"
+            ],
+            "entry"
           ]
         ]
       ],
@@ -1314,33 +1283,22 @@
           "regulated_area"
         ],
         [
-          "any",
-          [
-            "all",
-            [
-              "==",
-              [
-                "get",
-                "class"
-              ],
-              "RESARE"
-            ],
-            [
-              "==",
-              [
-                "get",
-                "restriction"
-              ],
-              "entry"
-            ]
-          ],
+          "all",
           [
             "==",
             [
               "get",
               "class"
             ],
-            "MIPARE"
+            "RESARE"
+          ],
+          [
+            "==",
+            [
+              "get",
+              "restriction"
+            ],
+            "entry"
           ]
         ]
       ],
@@ -2289,21 +2247,6 @@
             "geometry-type"
           ],
           "Point"
-        ],
-        [
-          "any",
-          [
-            "has",
-            "anchor"
-          ],
-          [
-            "==",
-            [
-              "get",
-              "class"
-            ],
-            "ACHBRT"
-          ]
         ],
         [
           "!=",
