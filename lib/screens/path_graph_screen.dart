@@ -92,6 +92,8 @@ String movingReasonText(MovingStatus status) => switch (status.reason) {
         'it keeps hearing me while meeting repeaters it never had, so it '
             'seems to ride with me',
       MovingReason.newLinks => 'it keeps meeting repeaters it never had',
+      MovingReason.sharedCode => '${status.sharedKeys} radios use this code, '
+          'so it seems to be in several places',
     };
 
 /// Pathfinder: the repeaters around this radio, and how it would reach

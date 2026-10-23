@@ -32,8 +32,10 @@ class PathGraphConfig {
     this.selfSilenceMinEvents = 3,
     this.relayedCopyGraceSeconds = 60,
     this.liveRouteMinutes = 10,
+    this.newCodeConfirmMinutes = 10,
     this.mobileFreshMinutes = 15,
     this.mobileNewLinks = 5,
+    this.mobileNewShare = 0.5,
     this.mobileMoveKm = 2,
     this.mobileTagDays = 14,
     this.mobileAutoTagsRoute = false,
@@ -188,6 +190,16 @@ class PathGraphConfig {
   /// within milliseconds, and the ACKs that followed were lost).
   final double liveRouteMinutes;
 
+  /// A link heard on the air that touches a repeater code the graph never
+  /// had is filed only when the same link is heard again at least this
+  /// long after the first time. Field, 2026-10-23: some transmitter puts
+  /// random bytes in flood paths and real repeaters relay them, so three
+  /// codes in four were one-off junk, heard in a single burst and never
+  /// again (copies of one packet land within seconds); a real link comes
+  /// back. My own packets and decoded messages vouch for their paths.
+  /// 0 files every link at once.
+  final double newCodeConfirmMinutes;
+
   /// A moving repeater (owner, 2026-10-19) collects links to every
   /// repeater it passes, and old ones make it a wormhole: "A hears it"
   /// in Oakland at 10:00 plus "it reaches B" in Sacramento at 14:00 reads
@@ -201,8 +213,14 @@ class PathGraphConfig {
 
   /// Watching-only detector ("keeps meeting new repeaters"): this many
   /// links first seen in the last three hours, spread over at least three
-  /// of its half-hours, from a repeater known for a day.
+  /// of its half-hours, from a repeater known for a day, each to a
+  /// repeater also known for a day (one-off codes are mostly garbage).
   final int mobileNewLinks;
+
+  /// ...and more than this share of its links heard in those hours are
+  /// new: a busy fixed repeater meets new ones too, but keeps being heard
+  /// with the ones it had; a moving one leaves them behind.
+  final double mobileNewShare;
 
   /// An advert from the same key this far from its last real position
   /// marks the repeater as moving.
@@ -228,6 +246,7 @@ class PathGraphConfig {
           double? pThreshold,
           int? maxHops,
           double? doorstepWeight,
+          double? newCodeConfirmMinutes,
           double? mobileFreshMinutes,
           bool? mobileAutoTagsRoute,
           bool? allowInferredEndpoints}) =>
@@ -258,8 +277,11 @@ class PathGraphConfig {
         selfSilenceMinEvents: selfSilenceMinEvents,
         relayedCopyGraceSeconds: relayedCopyGraceSeconds,
         liveRouteMinutes: liveRouteMinutes,
+        newCodeConfirmMinutes:
+            newCodeConfirmMinutes ?? this.newCodeConfirmMinutes,
         mobileFreshMinutes: mobileFreshMinutes ?? this.mobileFreshMinutes,
         mobileNewLinks: mobileNewLinks,
+        mobileNewShare: mobileNewShare,
         mobileMoveKm: mobileMoveKm,
         mobileTagDays: mobileTagDays,
         mobileAutoTagsRoute: mobileAutoTagsRoute ?? this.mobileAutoTagsRoute,

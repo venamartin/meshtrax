@@ -19,7 +19,8 @@ void main() {
     // covered in evidence_test, so inferred doorsteps are allowed here.
     graph = PathGraph(NativeDatabase.memory(),
         now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
-        config: const PathGraphConfig(allowInferredEndpoints: true));
+        config: const PathGraphConfig(
+            newCodeConfirmMinutes: 0, allowInferredEndpoints: true));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });
@@ -107,7 +108,8 @@ void main() {
     Future<PathGraph> build(double doorstepWeight,
         {bool measureWeak = false}) async {
       final g = PathGraph(NativeDatabase.memory(),
-          config: PathGraphConfig(doorstepWeight: doorstepWeight));
+          config: PathGraphConfig(
+              newCodeConfirmMinutes: 0, doorstepWeight: doorstepWeight));
       await g.init();
       g.setRadioIdentity(selfPk, 2);
       for (var i = 0; i < 5; i++) {
@@ -182,7 +184,7 @@ void main() {
     // respects maxHops budget: a corridor longer than maxHops floods.
     final tiny = PathGraph(NativeDatabase.memory(),
         now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
-        config: const PathGraphConfig(maxHops: 2));
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0, maxHops: 2));
     await tiny.init();
     tiny.setRadioIdentity(selfPk, 2);
     tiny.reportSendResult(path([0xA2, 0x77]), true);

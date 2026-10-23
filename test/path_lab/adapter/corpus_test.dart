@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path_graph/path_graph.dart';
 
 import 'corpus.dart';
+
+// These replays test the adapter: every link files at once.
+const _fileAtOnce = PathGraphConfig(newCodeConfirmMinutes: 0);
 
 // A raw-RX push (0x88) carrying a 2-hop stride-2 path A277→1312:
 // [push][snr][rssi][header route=1 type=0][path_len 0x42][path×4][payload]
@@ -31,7 +35,7 @@ void main() {
       frameLine(1786550002000, 'BEEF'), // different payload → counts again
       frameLine(1786550004000, 'BEEF'), // identical → variant-dedup drop
     ]);
-    final r = await replayCorpus(f);
+    final r = await replayCorpus(f, config: _fileAtOnce);
     expect(r.frames, 3);
     expect(r.adapter.framesSeen, 3);
 
@@ -52,8 +56,8 @@ void main() {
       frameLine(1786550000000, 'DEAD'),
       frameLine(1786550002000, 'BEEF'),
     ]);
-    final a = await replayCorpus(f);
-    final b = await replayCorpus(f);
+    final a = await replayCorpus(f, config: _fileAtOnce);
+    final b = await replayCorpus(f, config: _fileAtOnce);
     // The module clock is the recorded clock, so even generated_at and
     // every decayed weight reproduce exactly.
     expect(jsonEncode(a.graph.exportGraph()),
@@ -66,6 +70,6 @@ void main() {
 
   test('non-corpus files are rejected', () async {
     final f = await corpusFile(['{"meta":{"format":"something-else"}}']);
-    expect(replayCorpus(f), throwsFormatException);
+    expect(replayCorpus(f, config: _fileAtOnce), throwsFormatException);
   });
 }

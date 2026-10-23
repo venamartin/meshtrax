@@ -16,7 +16,8 @@ void main() {
   setUp(() async {
     nowMs = DateTime.utc(2026, 1, 1).millisecondsSinceEpoch;
     graph = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMs));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMs),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });
@@ -175,7 +176,8 @@ void main() {
       final file = File('${dir.path}/ret.db');
 
       final g1 = PathGraph(NativeDatabase(file),
-          now: () => DateTime.fromMillisecondsSinceEpoch(nowMs));
+          now: () => DateTime.fromMillisecondsSinceEpoch(nowMs),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await g1.init();
       g1.setRadioIdentity(selfPk, 2);
       g1.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
@@ -187,7 +189,8 @@ void main() {
       await g1.dispose(); // flushes the deletes
 
       final g2 = PathGraph(NativeDatabase(file),
-          now: () => DateTime.fromMillisecondsSinceEpoch(nowMs));
+          now: () => DateTime.fromMillisecondsSinceEpoch(nowMs),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await g2.init();
       expect(g2.snapshot().edges, isEmpty);
       expect(g2.snapshot().nodes, isEmpty);

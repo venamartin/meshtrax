@@ -95,17 +95,27 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     }
     _lastError = null;
     final live = _graph = graph;
-    live.onMovingSign = (hash, reason) {
+    live.onMovingSign = (hash, reason, check) {
       final name = live.snapshot().nodes[hash]?.name;
       final who = name == null ? hash : '$hash ($name)';
       final watching =
           live.config.mobileAutoTagsRoute ? '' : ' (watching only)';
+      final rides = reason == MovingReason.ridesWithMe;
+      final counts = 'met ${check.newLinks} repeaters it never had and was '
+          'heard with ${check.oldLinks} it had, in ${rides ? 2 : 3} h';
+      final shared = check.tagged && !rides
+          ? live.movingStatus(hash)?.sharedKeys
+          : null;
       appLogger.info(
-          reason == MovingReason.ridesWithMe
-              ? 'Pathfinder thinks $who rides with me: it keeps proving it '
-                  'hears me while meeting repeaters it never had$watching'
-              : 'Pathfinder thinks $who moves: it keeps meeting repeaters it '
-                  'never had$watching',
+          !check.tagged
+              ? 'Pathfinder: $who $counts, so it stays put'
+              : rides
+                  ? 'Pathfinder thinks $who rides with me: it keeps proving '
+                      'it hears me and $counts$watching'
+                  : shared != null
+                      ? 'Pathfinder: $who $counts — $shared radios use this '
+                          'code, so it seems to be in several places$watching'
+                      : 'Pathfinder thinks $who moves: it $counts$watching',
           tag: 'PathGraph');
     };
     _adapter = PathLabAdapter(graph)..onPathDiscovery = notifyListeners;

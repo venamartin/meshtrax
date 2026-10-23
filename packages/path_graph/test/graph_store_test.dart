@@ -10,7 +10,8 @@ void main() {
   late PathGraph graph;
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
   });
 
@@ -63,7 +64,8 @@ void main() {
 
   test('state survives flush and reload', () async {
     final executor = NativeDatabase.memory();
-    final first = PathGraph(executor);
+    final first = PathGraph(executor,
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await first.init();
     first.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.anonymous());
@@ -71,7 +73,8 @@ void main() {
     await first.flush();
 
     // Same executor, fresh instance = fresh in-memory state from DB.
-    final second = PathGraph(executor);
+    final second = PathGraph(executor,
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await second.init();
     final snap = second.snapshot();
     expect(snap.edges[('A277', '1312')]!.obsCount, 1);

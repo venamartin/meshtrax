@@ -60,7 +60,8 @@ void main() {
   final pubkey = List<int>.generate(32, (i) => i == 0 ? 0xA2 : (i == 1 ? 0x77 : 0x11));
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity('ab' * 32, 2);
     adapter = PathLabAdapter(graph);
@@ -191,6 +192,31 @@ void main() {
     expect(adapter.packetLog.first.kind, 'trace');
     expect(adapter.packetLog.first.verdict, startsWith('skipped'));
     expect(adapter.packetLog, hasLength(5));
+  });
+
+  // Field, 2026-10-23: junk codes in flood paths, relayed by real
+  // repeaters. At the shipped setting a code the graph never had waits.
+  test('the packet log says when links wait for a code to be heard again',
+      () async {
+    graph.updateConfig(graph.config.copyWith(newCodeConfirmMinutes: 10));
+    graph.ingestNode('AD77', name: 'TOOYOHTAK');
+    graph.ingestNode('A277', name: 'INTERLAKEN');
+    adapter.handleFrame(rxFrame(
+        payloadType: 0x05,
+        path: [0x00, 0x41, 0xB1, 0x07, 0xA2, 0x77, 0xAD, 0x77],
+        payload: [9, 8, 7, 6, 5, 4, 3, 2]));
+    expect(adapter.packetLog.first.verdict,
+        'recorded — 1 new link; 2 links to repeater codes never heard '
+        'before wait until heard again');
+    expect(graph.snapshot().nodes.keys, unorderedEquals(['A277', 'AD77']));
+
+    adapter.handleFrame(rxFrame(
+        payloadType: 0x05,
+        path: [0x5D, 0x3F, 0xA2, 0x77],
+        payload: [1, 1, 1, 1, 1, 1, 1, 1]));
+    expect(adapter.packetLog.first.verdict,
+        'held — 1 link to a repeater code never heard before waits until '
+        'heard again');
   });
 
   test('TRACE frames are skipped entirely', () {

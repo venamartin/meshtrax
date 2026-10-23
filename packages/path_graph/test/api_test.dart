@@ -9,7 +9,8 @@ void main() {
   late PathGraph graph;
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
   });
 
@@ -49,7 +50,8 @@ void main() {
 
   group('hashWidthBytes: 3', () {
     test('the whole pipeline speaks 6-hex identities', () async {
-      final g = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3);
+      final g = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3,
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await g.init();
       g.setRadioIdentity('ab' * 32, 3);
 
@@ -80,13 +82,15 @@ void main() {
     });
 
     test('width-2 documents and databases are refused at width 3', () async {
-      final g2 = PathGraph(NativeDatabase.memory());
+      final g2 = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await g2.init();
       g2.ingestNode('A277', name: 'Alpha');
       final export = g2.exportGraph();
       final session = g2.saveSession();
 
-      final g3 = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3);
+      final g3 = PathGraph(NativeDatabase.memory(), hashWidthBytes: 3,
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await g3.init();
       expect((export['graph'] as Map)['hash_width'], 2);
       expect(g3.loadSession(session), throwsFormatException);
@@ -97,11 +101,13 @@ void main() {
       await g2.flush();
       final file = File(
           '${Directory.systemTemp.createTempSync('pg_width').path}/w.db');
-      final w2 = PathGraph(NativeDatabase(file));
+      final w2 = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await w2.init();
       w2.ingestNode('A277', name: 'Alpha');
       await w2.dispose();
-      final w3 = PathGraph(NativeDatabase(file), hashWidthBytes: 3);
+      final w3 = PathGraph(NativeDatabase(file), hashWidthBytes: 3,
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
       await expectLater(w3.init(), throwsStateError);
       await g2.dispose();
     });
@@ -116,7 +122,8 @@ void main() {
     // endpoints are off by default; the harness comparison turns them
     // on, and that is what this test exercises.)
     final g = PathGraph(NativeDatabase.memory(),
-        config: const PathGraphConfig(allowInferredEndpoints: true));
+        config: const PathGraphConfig(
+            newCodeConfirmMinutes: 0, allowInferredEndpoints: true));
     await g.init();
     g.setRadioIdentity('ab' * 32, 2);
     g.observePath(Uint8List.fromList([0xAA, 0x77]), 2,

@@ -16,7 +16,8 @@ void main() {
   setUp(() async {
     nowMillis = 1000000000;
     graph = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });
@@ -235,7 +236,8 @@ void main() {
 
   test('allowInferredEndpoints restores the guess, flagged', () async {
     final g = PathGraph(NativeDatabase.memory(),
-        config: const PathGraphConfig(allowInferredEndpoints: true));
+        config: const PathGraphConfig(
+            newCodeConfirmMinutes: 0, allowInferredEndpoints: true));
     await g.init();
     g.setRadioIdentity(selfPk, 2);
     g.observePath(path([0xA2, 0x77]), 2,
@@ -538,7 +540,8 @@ void main() {
   test('evidence survives flush and reload', () async {
     final executor = NativeDatabase.memory();
     final first = PathGraph(executor,
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await first.init();
     first.setRadioIdentity(selfPk, 2);
     first.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
@@ -547,7 +550,8 @@ void main() {
     await first.flush();
 
     final second = PathGraph(executor,
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await second.init();
     second.setRadioIdentity(selfPk, 2);
     expect(second.ingressCandidates(bobPk).single.repeaterHash, 'A277');

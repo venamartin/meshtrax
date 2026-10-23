@@ -12,7 +12,8 @@ void main() {
   late PathGraph graph;
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
     // My proven doorstep is A277; the trunk A277 <-> 1312 <-> 5CBB is
@@ -61,7 +62,8 @@ void main() {
   });
 
   test('no proven doorstep floods before any leg is tried', () async {
-    final g = PathGraph(NativeDatabase.memory());
+    final g = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await g.init();
     g.setRadioIdentity(selfPk, 2);
     g.observePath(path([0xA2, 0x77]), 2, const ObservationOrigin.anonymous());

@@ -11,7 +11,8 @@ const bobPk = 'b0' 'b0' 'b0';
 
 /// Builds a graph with something in every layer the module has.
 Future<PathGraph> populated() async {
-  final g = PathGraph(NativeDatabase.memory());
+  final g = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
   await g.init();
   g.setRadioIdentity(selfPk, 2);
   g.ingestContact(bobPk, 'Bob');
@@ -39,7 +40,8 @@ void main() {
     final beforeIngress = source.ingressCandidates(bobPk);
     await source.dispose();
 
-    final restored = PathGraph(NativeDatabase.memory());
+    final restored = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await restored.init();
     await restored.loadSession(doc);
 
@@ -93,7 +95,8 @@ void main() {
     final doc = source.saveSession();
     await source.dispose();
 
-    final restored = PathGraph(NativeDatabase.memory());
+    final restored = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await restored.init();
     await restored.loadSession(doc);
     final actual = restored.findPath(bobPk);
@@ -110,7 +113,8 @@ void main() {
     final doc = source.saveSession();
     await source.dispose();
 
-    final target = PathGraph(NativeDatabase.memory());
+    final target = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await target.init();
     target.setRadioIdentity(selfPk, 2);
     target.observePath(Uint8List.fromList([0xDE, 0xAD, 0xBE, 0xEF]), 2,
@@ -133,12 +137,14 @@ void main() {
 
     // Same file across two opens.
     final file = '${Directory.systemTemp.createTempSync('pg_sess').path}/s.db';
-    final first = PathGraph(NativeDatabase(File(file)));
+    final first = PathGraph(NativeDatabase(File(file)),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await first.init();
     await first.loadSession(doc);
     await first.dispose();
 
-    final second = PathGraph(NativeDatabase(File(file)));
+    final second = PathGraph(NativeDatabase(File(file)),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await second.init();
     second.setRadioIdentity(selfPk, 2);
     expect(second.snapshot().edges[('A277', '1312')]!.measuredSnr, 6.5);
@@ -175,7 +181,8 @@ void main() {
       'tier': 'inferred',
     });
 
-    final g = PathGraph(NativeDatabase.memory());
+    final g = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await g.init();
     await g.loadSession(doc);
 
@@ -198,7 +205,8 @@ void main() {
   });
 
   test('non-session documents are rejected', () async {
-    final g = PathGraph(NativeDatabase.memory());
+    final g = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await g.init();
     expect(g.loadSession({'format': 'meshtrax-graph-v2'}),
         throwsFormatException);
@@ -213,7 +221,8 @@ void main() {
     final doc = source.saveSession();
     await source.dispose();
 
-    final restored = PathGraph(NativeDatabase.memory());
+    final restored = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await restored.init();
     await restored.loadSession(doc);
     expect(restored.egressCandidates().first.provenCount, before.provenCount);
@@ -223,7 +232,8 @@ void main() {
     for (final row in doc['ingress'] as List) {
       (row as Map).remove('proven_count');
     }
-    final old = PathGraph(NativeDatabase.memory());
+    final old = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await old.init();
     await old.loadSession(doc);
     expect(old.egressCandidates().first.provenCount, 1,
@@ -240,7 +250,8 @@ void main() {
     final doc = source.saveSession();
     await source.dispose();
 
-    final restored = PathGraph(NativeDatabase.memory());
+    final restored = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await restored.init();
     await restored.loadSession(doc);
     expect(restored.egressCandidates().first.failedSinceProof, 1);
@@ -249,7 +260,8 @@ void main() {
     for (final row in doc['ingress'] as List) {
       (row as Map).remove('failed_since_proof');
     }
-    final old = PathGraph(NativeDatabase.memory());
+    final old = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await old.init();
     await old.loadSession(doc);
     expect(old.egressCandidates().first.failedSinceProof, 0);
@@ -280,7 +292,8 @@ void main() {
     await source.dispose();
 
     const livePk = 'cd' 'cd' 'cd';
-    final target = PathGraph(NativeDatabase.memory());
+    final target = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await target.init();
     target.setRadioIdentity(livePk, 2);
     await target.loadSession(doc);
@@ -293,7 +306,8 @@ void main() {
       () async {
     var now = 1000000;
     final g = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(now));
+        now: () => DateTime.fromMillisecondsSinceEpoch(now),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await g.init();
     Map contact() => (g.saveSession()['contacts'] as List)
         .cast<Map>()
