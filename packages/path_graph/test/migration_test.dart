@@ -363,4 +363,37 @@ void main() {
     await reopened.dispose();
     file.parent.deleteSync(recursive: true);
   });
+
+  // 2026-10-23: the first detector tagged hilltops, and a half-set position
+  // (Caribou Palace, 37.70, 0) read as a 10,000 km move.
+  test('v9 to v10: tags from the old rules and half positions are cleared',
+      () async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final file = await atVersion(9, (db) async {
+      await db.customStatement(
+          'INSERT INTO graph_nodes (hash_bytes, source, lat, lon, moved_at, '
+          'auto_moving_at, auto_rides_with_me_at) VALUES '
+          "('A98E', 'advert', 37.703768, -122.427759, $now, $now, $now), "
+          "('219D', 'advert', 0, -121.908836, NULL, NULL, NULL), "
+          "('1000', 'advert', 37.10981, -121.8439, NULL, $now, NULL)");
+      await db.customStatement(
+          'INSERT INTO graph_nodes (hash_bytes, source, moving_override) '
+          "VALUES ('BEEF', 'observed', 'staysPut'), "
+          "('C882', 'observed', 'moves')");
+    });
+
+    final graph = PathGraph(NativeDatabase(file));
+    await graph.init();
+    expect(graph.movingRepeaters().keys, ['C882'],
+        reason: "only the user's word survives");
+    final nodes = graph.snapshot().nodes;
+    expect(nodes['A98E']!.movedAt, isNull);
+    expect(nodes['A98E']!.autoRidesWithMeAt, isNull);
+    expect((nodes['A98E']!.lat, nodes['A98E']!.lon), (37.703768, -122.427759));
+    expect((nodes['219D']!.lat, nodes['219D']!.lon), (null, null));
+    expect(nodes['1000']!.autoMovingAt, isNull);
+    expect(nodes['BEEF']!.movingOverride, MovingOverride.staysPut);
+    await graph.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
 }

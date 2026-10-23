@@ -35,8 +35,12 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// v9 (2026-10-19): graph_edges gains firstObserved (when a link was
   /// first seen — a moving repeater keeps gaining new ones) and
   /// graph_nodes gains the moving-repeater tags.
+  /// v10 (2026-10-23): no new columns. The tags the first detector rules
+  /// set are cleared (they caught hilltops), as are advert moves and
+  /// stored positions with a 0 in them (a half-set position read as a
+  /// 10,000 km move). The user's own moving switch is kept.
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -110,6 +114,14 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             await addIfMissing(graphNodes, graphNodes.movingOverride);
             await addIfMissing(graphNodes, graphNodes.autoMovingAt);
             await addIfMissing(graphNodes, graphNodes.autoRidesWithMeAt);
+          }
+          if (from < 10) {
+            await customStatement(
+                'UPDATE graph_nodes SET moved_at = NULL, auto_moving_at = NULL, '
+                'auto_rides_with_me_at = NULL');
+            await customStatement(
+                'UPDATE graph_nodes SET lat = NULL, lon = NULL '
+                'WHERE lat = 0 OR lon = 0');
           }
         },
       );
