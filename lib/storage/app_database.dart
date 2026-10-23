@@ -32,6 +32,10 @@ const possiblePinRowSql =
   name: 'idx_channel_packet_hash',
   columns: {#nodeScope, #channelIdKey, #packetHash},
 )
+@TableIndex(
+  name: 'idx_channel_arrival',
+  columns: {#nodeScope, #channelIdKey, #receivedAtUs},
+)
 class ChannelMessageRows extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -146,6 +150,10 @@ class CachedChannelRows extends Table {
 
 /// One row per contact (DM) message — same contract as channel rows: a
 /// message exists exactly once per (node, contact), writes are transactional.
+@TableIndex(
+  name: 'idx_contact_arrival',
+  columns: {#nodeScope, #contactKey, #receivedAtUs},
+)
 class ContactMessageRows extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -223,7 +231,7 @@ class AppDatabase extends _$AppDatabase {
       customStatement('VACUUM INTO ?', [path]);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   /// v7: cached routes predate the persisted hash width, and a guessed width
   /// is how 2-byte routes read as four 1-byte hops. Clear every cached route
@@ -308,6 +316,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 7) {
         await clearCachedRoutesV7(this);
+      }
+      // v8: reactions and replies search only recent arrivals.
+      if (from < 8) {
+        await m.createIndex(idxChannelArrival);
+        await m.createIndex(idxContactArrival);
       }
     },
     beforeOpen: (details) async {

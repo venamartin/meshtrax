@@ -350,6 +350,36 @@ class ChannelMessageStore {
     return true;
   }
 
+  /// Rewrites one row's payload in place, so its id, arrival stamp and
+  /// unread eligibility stay as ingest set them (unlike [updateMessage]).
+  /// For payload-only fields such as reactions. [transform] sees the row as
+  /// stored, inside one transaction, so a write that landed meanwhile is
+  /// kept; returning null writes nothing. False when nothing was written.
+  Future<bool> updatePayload(
+    String idKey,
+    String messageId,
+    ChannelMessage? Function(ChannelMessage) transform,
+  ) async {
+    if (publicKeyHex.isEmpty) return false;
+    return _db.transaction(() async {
+      final existing = await findByMessageId(idKey, messageId);
+      final updated = existing == null ? null : transform(existing);
+      if (updated == null) return false;
+      await (_db.update(_db.channelMessageRows)..where(
+            (r) =>
+                r.nodeScope.equals(publicKeyHex) &
+                r.channelIdKey.equals(idKey) &
+                r.messageId.equals(messageId),
+          ))
+          .write(
+            ChannelMessageRowsCompanion(
+              payload: Value(jsonEncode(_messageToJson(updated))),
+            ),
+          );
+      return true;
+    });
+  }
+
   /// Watched newest message per channel identity — one query feeds the
   /// chats screen's subtitles and ordering (SQL decides "latest").
   /// Newest message per channel plus WHEN IT ARRIVED. The arrival stamp must
@@ -657,6 +687,32 @@ class ChannelMessageStore {
                 (r) =>
                     r.nodeScope.equals(publicKeyHex) &
                     r.channelIdKey.equals(idKey),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    return _decodeRows(rows);
+  }
+
+  /// [loadChannelMessages] cut to the rows that arrived at or after
+  /// [since]: the tail of it, in the same order (idx_channel_arrival).
+  Future<List<ChannelMessage>> loadChannelMessagesArrivedSince(
+    String idKey,
+    DateTime since,
+  ) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyIdentityBlob(idKey);
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.equals(idKey) &
+                    r.receivedAtUs.isBiggerOrEqualValue(
+                      since.microsecondsSinceEpoch,
+                    ),
               )
               ..orderBy([
                 (r) => OrderingTerm.asc(r.receivedAtUs),

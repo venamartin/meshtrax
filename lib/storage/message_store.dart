@@ -189,6 +189,36 @@ class MessageStore {
     return true;
   }
 
+  /// Rewrites one row's payload in place, so its id, arrival stamp and
+  /// unread eligibility stay as ingest set them (unlike [updateMessage]).
+  /// For payload-only fields such as reactions. [transform] sees the row as
+  /// stored, inside one transaction, so a write that landed meanwhile is
+  /// kept; returning null writes nothing. False when nothing was written.
+  Future<bool> updatePayload(
+    String contactKeyHex,
+    String messageId,
+    Message? Function(Message) transform,
+  ) async {
+    if (publicKeyHex.isEmpty) return false;
+    return _db.transaction(() async {
+      final existing = await findByMessageId(contactKeyHex, messageId);
+      final updated = existing == null ? null : transform(existing);
+      if (updated == null) return false;
+      await (_db.update(_db.contactMessageRows)..where(
+            (r) =>
+                r.nodeScope.equals(publicKeyHex) &
+                r.contactKey.equals(contactKeyHex) &
+                r.messageId.equals(messageId),
+          ))
+          .write(
+            ContactMessageRowsCompanion(
+              payload: Value(jsonEncode(_messageToJson(updated))),
+            ),
+          );
+      return true;
+    });
+  }
+
   /// Scope-wide variant for ACK bookkeeping that only holds a messageId;
   /// returns (updated, contactKey).
   Future<(bool, String?)> updateAnyByMessageId(
@@ -477,6 +507,32 @@ class MessageStore {
         .map((r) => r.read(t.contactKey)!)
         .get();
     return keys.toSet();
+  }
+
+  /// [loadMessages] cut to the rows that arrived at or after [since]: the
+  /// tail of it, in the same order (idx_contact_arrival).
+  Future<List<Message>> loadMessagesArrivedSince(
+    String contactKeyHex,
+    DateTime since,
+  ) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyBlobs(contactKeyHex);
+    final rows =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.contactKey.equals(contactKeyHex) &
+                    r.receivedAtUs.isBiggerOrEqualValue(
+                      since.microsecondsSinceEpoch,
+                    ),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    return [for (final row in rows) ?_decodeRow(row)];
   }
 
   Future<List<Message>> loadMessages(String contactKeyHex) async {

@@ -3906,16 +3906,22 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // Check if this is a reaction - apply locally with pending status and route through retry service
     final reactionInfo = ReactionHelper.parseIncomingReaction(text);
     if (reactionInfo != null) {
-      // Apply to the target row; watched queries update the UI.
+      // Apply to the target row; watched queries update the UI. A room
+      // searches recent arrivals first; the user tapped a message on
+      // screen, so a miss means an older one — search it all once.
       final sw = Stopwatch()..start();
-      final history = await _messageStore.loadMessages(contact.publicKeyHex);
-      _processOutgoingContactReaction(history, reactionInfo, contact);
-      await _messageStore.upsertMessages(contact.publicKeyHex, history);
-      appLogger.perf('outgoing DM reaction over ${history.length} rows', sw);
+      var rows = await _contactReactionRows(contact.publicKeyHex);
+      if (!await _processOutgoingContactReaction(rows, reactionInfo, contact) &&
+          contact.type == advTypeRoom) {
+        rows = await _messageStore.loadMessages(contact.publicKeyHex);
+        await _processOutgoingContactReaction(rows, reactionInfo, contact);
+      }
+      appLogger.perf('outgoing DM reaction over ${rows.length} rows', sw);
       await _setReactionStatus(
         contact.publicKeyHex,
         reactionInfo,
         MessageStatus.pending,
+        rows,
       );
       notifyListeners();
 
@@ -4436,15 +4442,25 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         return;
       }
 
-      // Apply to the target row; watched queries update the UI.
+      // Apply to the target row; watched queries update the UI. The user
+      // tapped a message on screen, so a miss in the window means an older
+      // one: search the whole history once rather than lose the chip.
       final sw = Stopwatch()..start();
-      final history = await _channelMessageStore.loadChannelMessages(
+      var rows = await _channelMessageStore.loadChannelMessagesArrivedSince(
         channel.idKey,
+        _reactionWindowStart(),
       );
-      _processReaction(history, reactionInfo, reactorName);
-      await _channelMessageStore.upsertMessages(channel.idKey, history);
+      if (!await _processReaction(
+        channel.idKey,
+        rows,
+        reactionInfo,
+        reactorName,
+      )) {
+        rows = await _channelMessageStore.loadChannelMessages(channel.idKey);
+        await _processReaction(channel.idKey, rows, reactionInfo, reactorName);
+      }
       appLogger.perf(
-        'outgoing channel reaction over ${history.length} rows',
+        'outgoing channel reaction over ${rows.length} rows',
         sw,
       );
 
@@ -8015,17 +8031,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return false;
       }
       final sw = Stopwatch()..start();
-      final history = await _messageStore.loadMessages(pubKeyHex);
-      final applied = _processContactReaction(
-        history,
+      final rows = await _contactReactionRows(pubKeyHex);
+      final applied = await _processContactReaction(
+        rows,
         reactionInfo,
         pubKeyHex,
         reactorName,
       );
-      if (applied) {
-        await _messageStore.upsertMessages(pubKeyHex, history);
-      }
-      appLogger.perf('DM reaction over ${history.length} rows', sw);
+      appLogger.perf('DM reaction over ${rows.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
         // MeshCore One-shaped message whose hash matches nothing we hold
@@ -8039,7 +8052,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         processedMessage,
         reactionInfo,
         reactorName,
-        history,
+        rows,
       ));
     }
 
@@ -8069,12 +8082,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return true;
   }
 
-  bool _processContactReaction(
+  /// Adds [reactorName]'s reaction to its target among [messages], writing
+  /// only that row. False when no row matches.
+  Future<bool> _processContactReaction(
     List<Message> messages,
     ReactionInfo reactionInfo,
     String contactPubKeyHex,
     String reactorName,
-  ) {
+  ) async {
     final contact = _contacts.cast<Contact?>().firstWhere(
       (c) => c?.publicKeyHex == contactPubKeyHex,
       orElse: () => null,
@@ -8083,10 +8098,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final isOne = reactionInfo.format == ReactionFormat.one;
     final skew = roomSkewSecs(contact);
 
-    return ReactionHelper.applyReaction<Message>(
+    final index = ReactionHelper.findTargetIndex<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
-      reactorName: reactorName,
       // Incoming reactions in 1:1: match against outgoing messages only.
       // MeshCore One hashes are strong (40-bit over full text) and its
       // clients may react to any message, so don't restrict those.
@@ -8098,16 +8112,50 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
-      getReactions: (msg) => msg.reactions,
-      getReactionSenders: (msg) => msg.reactionSenders,
-      updateMessage: (i, reactions, senders) {
-        messages[i] = messages[i].copyWith(
-          reactions: reactions,
-          reactionSenders: senders,
-        );
-      },
     );
+    if (index < 0) return false;
+    await _addContactReaction(
+      contactPubKeyHex,
+      messages[index].messageId,
+      reactionInfo.emoji,
+      reactorName,
+    );
+    return true;
   }
+
+  /// Merges [reactorName]'s [emoji] into one stored DM or room row.
+  Future<void> _addContactReaction(
+    String pubKeyHex,
+    String messageId,
+    String emoji,
+    String reactorName,
+  ) => _messageStore.updatePayload(pubKeyHex, messageId, (m) {
+    final merged = ReactionHelper.mergeReaction(
+      m.reactions,
+      m.reactionSenders,
+      emoji,
+      reactorName,
+    );
+    return merged == null
+        ? null
+        : m.copyWith(
+            reactions: merged.reactions,
+            reactionSenders: merged.senders,
+          );
+  });
+
+  /// The rows a reaction in [pubKeyHex]'s chat searches: a room's recent
+  /// arrivals (rooms grow like channels), or a 1:1 chat's whole history
+  /// (small, and people react to older DMs).
+  Future<List<Message>> _contactReactionRows(String pubKeyHex) =>
+      _contacts.any(
+        (c) => c.publicKeyHex == pubKeyHex && c.type == advTypeRoom,
+      )
+      ? _messageStore.loadMessagesArrivedSince(
+          pubKeyHex,
+          _reactionWindowStart(),
+        )
+      : _messageStore.loadMessages(pubKeyHex);
 
   /// The ORIGINAL wire timestamp of a DM in seconds — messageId is built at
   /// construction as `<wire-ms>_<senderKeyHex>_<text.hashCode>`, before the
@@ -8708,19 +8756,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (landed) notifyListeners();
   }
 
-  void _processOutgoingContactReaction(
+  /// Adds our own reaction to its target among [messages], writing only
+  /// that row. False when no row matches.
+  Future<bool> _processOutgoingContactReaction(
     List<Message> messages,
     ReactionInfo reactionInfo,
     Contact contact,
-  ) {
+  ) async {
     final isRoomServer = contact.type == advTypeRoom;
     final isOne = reactionInfo.format == ReactionFormat.one;
     final skew = roomSkewSecs(contact);
 
-    ReactionHelper.applyReaction<Message>(
+    final index = ReactionHelper.findTargetIndex<Message>(
       messages: messages,
       reactionInfo: reactionInfo,
-      reactorName: _selfName ?? 'Me',
       // Outgoing reactions in 1:1: match against incoming messages. The
       // MeshCore One hash is strong enough to trust against any row.
       shouldSkip: (msg) => !isOne && !isRoomServer && msg.isOutgoing,
@@ -8731,23 +8780,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       getSenderName: (msg) =>
           _resolveContactSenderName(msg, contact, isRoomServer),
       getMessageText: (msg) => msg.text,
-      getReactions: (msg) => msg.reactions,
-      getReactionSenders: (msg) => msg.reactionSenders,
-      updateMessage: (i, reactions, senders) {
-        messages[i] = messages[i].copyWith(
-          reactions: reactions,
-          reactionSenders: senders,
-        );
-      },
     );
+    if (index < 0) return false;
+    await _addContactReaction(
+      contact.publicKeyHex,
+      messages[index].messageId,
+      reactionInfo.emoji,
+      _selfName ?? 'Me',
+    );
+    return true;
   }
 
+  /// [rows]: what the send already searched, so it isn't loaded again.
   Future<void> _setReactionStatus(
     String pubKeyHex,
     ReactionInfo reactionInfo,
-    MessageStatus status,
-  ) async {
-    final messages = await _messageStore.loadMessages(pubKeyHex);
+    MessageStatus status, [
+    List<Message>? rows,
+  ]) async {
+    var messages = rows ?? await _contactReactionRows(pubKeyHex);
     final contact = _contacts.cast<Contact?>().firstWhere(
       (c) => c?.publicKeyHex == pubKeyHex,
       orElse: () => null,
@@ -8757,8 +8808,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // The same matcher that applied the reaction finds its status row — the
     // formats hash differently, and re-deriving only one of them here is
     // exactly how MC1 chips would get stuck at "pending" forever.
-    final index = ReactionHelper.findTargetIndex<Message>(
-      messages: messages,
+    int find(List<Message> list) => ReactionHelper.findTargetIndex<Message>(
+      messages: list,
       reactionInfo: reactionInfo,
       shouldSkip: (_) => false,
       getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
@@ -8769,13 +8820,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _resolveContactSenderName(msg, contact, isRoomServer == true),
       getMessageText: (msg) => msg.text,
     );
+    var index = find(messages);
+    if (index < 0 && rows == null && isRoomServer) {
+      // Our reaction to an older room post: the send searched it all.
+      messages = await _messageStore.loadMessages(pubKeyHex);
+      index = find(messages);
+    }
     if (index < 0) return;
-    final msg = messages[index];
-    final statuses = Map<String, MessageStatus>.from(msg.reactionStatuses);
-    statuses[reactionInfo.emoji] = status;
-    await _messageStore.upsertMessage(
+    await _messageStore.updatePayload(
       pubKeyHex,
-      msg.copyWith(reactionStatuses: statuses),
+      messages[index].messageId,
+      (m) => m.copyWith(
+        reactionStatuses: {...m.reactionStatuses, reactionInfo.emoji: status},
+      ),
     );
   }
 
@@ -9106,12 +9163,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return false;
       }
       final sw = Stopwatch()..start();
-      final history = await _channelMessageStore.loadChannelMessages(idKey);
-      final applied = _processReaction(history, reactionInfo, reactorName);
-      if (applied) {
-        await _channelMessageStore.upsertMessages(idKey, history);
-      }
-      appLogger.perf('channel reaction over ${history.length} rows', sw);
+      final rows = await _channelMessageStore.loadChannelMessagesArrivedSince(
+        idKey,
+        _reactionWindowStart(),
+      );
+      final applied = await _processReaction(
+        idKey,
+        rows,
+        reactionInfo,
+        reactorName,
+      );
+      appLogger.perf('channel reaction over ${rows.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
         // MeshCore One-shaped message whose hash matches nothing we hold
@@ -9125,7 +9187,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           channel,
           sanitizedMessage,
           reactionInfo,
-          history,
+          rows,
         ));
       }
     }
@@ -9163,10 +9225,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         replyToText: replyTarget.text,
       );
     } else if (replyInfo != null) {
-      // Incoming reply — locate the quoted message by sender + snippet prefix.
-      // If we don't have it, still show a quote bubble using the snippet text.
+      // Incoming reply — locate the quoted message by sender + snippet prefix,
+      // among recent arrivals. If we don't have it, still show a quote bubble
+      // using the snippet text.
       final originalMessage = _findMessageBySenderAndSnippet(
-        await _channelMessageStore.loadChannelMessages(idKey),
+        await _channelMessageStore.loadChannelMessagesArrivedSince(
+          idKey,
+          _reactionWindowStart(),
+        ),
         replyInfo.mentionedNode,
         replyInfo.snippet,
       );
@@ -9359,32 +9425,57 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  bool _processReaction(
-    List<ChannelMessage> messages,
+  /// How far back a reaction or reply looks for its target in a channel or
+  /// room, by when rows arrived HERE, so a sender's wrong clock cannot hide
+  /// them. An older target is treated as unknown: the reaction parks.
+  static const _reactionWindow = Duration(hours: 48);
+
+  static DateTime _reactionWindowStart() =>
+      DateTime.now().subtract(_reactionWindow);
+
+  /// Index of the channel row [info] reacts to, or -1.
+  @visibleForTesting
+  static int channelReactionTargetIndex(
+    List<ChannelMessage> rows,
+    ReactionInfo info,
+  ) => ReactionHelper.findTargetIndex<ChannelMessage>(
+    messages: rows,
+    reactionInfo: info,
+    shouldSkip: (_) => false,
+    getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
+    getWireTimestampSecs: _channelWireSecsCandidates,
+    getMessageTextVariants: (msg) => mc1TextVariants(msg.text, msg.wireText),
+    getSenderName: (msg) => msg.senderName,
+    getMessageText: (msg) => msg.text,
+  );
+
+  /// Adds [reactorName]'s reaction to its target among [rows], writing only
+  /// that row. False when no row matches.
+  Future<bool> _processReaction(
+    String idKey,
+    List<ChannelMessage> rows,
     ReactionInfo reactionInfo,
     String reactorName,
-  ) {
-    return ReactionHelper.applyReaction<ChannelMessage>(
-      messages: messages,
-      reactionInfo: reactionInfo,
-      reactorName: reactorName,
-      shouldSkip: (_) => false,
-      getTimestampSecs: (msg) => msg.timestamp.millisecondsSinceEpoch ~/ 1000,
-      getWireTimestampSecs: _channelWireSecsCandidates,
-      getMessageTextVariants: (msg) =>
-          mc1TextVariants(msg.text, msg.wireText),
-      getSenderName: (msg) => msg.senderName,
-      getMessageText: (msg) => msg.text,
-      getReactions: (msg) => msg.reactions,
-      getReactionSenders: (msg) => msg.reactionSenders,
-      updateMessage: (i, reactions, senders) {
-        messages[i] = messages[i].copyWith(
-          reactions: reactions,
-          reactionSenders: senders,
-        );
-        notifyListeners();
-      },
-    );
+  ) async {
+    final index = channelReactionTargetIndex(rows, reactionInfo);
+    if (index < 0) return false;
+    await _channelMessageStore.updatePayload(idKey, rows[index].messageId, (
+      m,
+    ) {
+      final merged = ReactionHelper.mergeReaction(
+        m.reactions,
+        m.reactionSenders,
+        reactionInfo.emoji,
+        reactorName,
+      );
+      return merged == null
+          ? null
+          : m.copyWith(
+              reactions: merged.reactions,
+              reactionSenders: merged.senders,
+            );
+    });
+    return true;
   }
 
   /// Display timestamps come from the sender's clock; ORDER comes from
