@@ -1,5 +1,10 @@
 ## Unreleased
 
+- **Hill shading shows on gentle land.** The light styles' shading is
+  darker (OSM light 0.06/0.10/0.13/0.16, was 0.03/0.06/0.10/0.14;
+  USGS light 0.09/0.15/0.21, was 0.06/0.12/0.19), tuned on traxmapmaker's
+  terrain v2 pilots: Rhode Island's hills now read at z11–13, and
+  mountains stay light enough for the map on top.
 - **Chart legend** (`ChartLegendItem`, `LegendSymbol`, `LegendStyle`): what
   the chart styles draw, by section (buoys and beacons, lights, hazards,
   tides, depths, areas, landmarks, abbreviations). Each item names sample
