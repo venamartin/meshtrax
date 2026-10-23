@@ -24,6 +24,13 @@ void main() {
     expect(again.file.lastModifiedSync(), copied);
   });
 
+  test('the copy stays when the folder lists it under another path', () async {
+    // Windows lists `C:\app/maps` as `C:\app/maps\world@….pmtiles`, not the
+    // `C:\app/maps/world@….pmtiles` written; a trailing slash does it here.
+    final world = await openBundledWorld(Directory('${dir.path}/'));
+    expect(world.file.existsSync(), isTrue);
+  });
+
   test('an older copy goes once the new one is in place', () async {
     final old = File('${dir.path}/world@000000000000.pmtiles')
       ..writeAsBytesSync([1, 2, 3]);

@@ -584,6 +584,15 @@ Needs traxmapmaker 1.5.
 - A `packages/traxroute` plugin (BRouter).
 - **Gate:** route time, memory and APK size on a phone.
 - The routing store, the "Trail routing" row, and the planner (S6).
+- **To evaluate: [Valhalla](https://github.com/valhalla/valhalla) instead of BRouter** (Martin, 2026-10-23), because it also runs on iOS. From a first look:
+  - It is an MIT-licensed C++ routing engine for OSM. It routes on its own tiled graph, which its tools build from OSM, with pedestrian, bicycle and car costing, and elevation from separate tiles.
+  - On phones, [Rallista/valhalla-mobile](https://github.com/Rallista/valhalla-mobile) (MIT, Valhalla 3.9) builds it for Android (Maven) and iOS (Swift package). It offers routing, map matching, heights and matrices.
+  - There is no Flutter plugin. `packages/traxroute` would wrap valhalla-mobile on both phones, and the Pi (Linux desktop) needs its own build. The pub.dev `routing_engine` package only calls servers over HTTP.
+  - Open questions:
+    - whether its pedestrian and mountain-bike costing can route trails and dirt roads as well as BRouter's profiles, which weigh `sac_scale`, `tracktype` and `surface`;
+    - its tile size per region;
+    - its app size on both phones.
+  - Switching changes traxmapmaker's routing module (FINDINGS 1.5, Valhalla tiles instead of `.rd5`) and its 2026-10-16 BRouter decision. A NorCal BRouter test build already exists.
 
 ### Phase 8: Parks and overlays
 

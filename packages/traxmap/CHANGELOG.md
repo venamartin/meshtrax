@@ -1,5 +1,9 @@
 ## Unreleased
 
+- **The world map shows on Windows.** `openBundledWorld` deleted the copy it
+  had just written, because Windows lists the folder's files with `\` and
+  their paths never matched the one written with `/`, so it found no file to
+  open. Older copies are now matched by name.
 - **Chart fixes from the live California charts:** military practice and
   firing areas get the dashed limit, not T-ticks, which are kept for areas
   whose entry is restricted (the firing areas offshore ticked whole seas).
