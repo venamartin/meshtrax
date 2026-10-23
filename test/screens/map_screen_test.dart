@@ -62,7 +62,13 @@ class _FakeConnector extends MeshCoreConnector {
   @override
   Future<void> getChannels({int? maxChannels, bool force = false}) async {}
   @override
-  Future<List<Message>> loadMessagesFor(Contact contact) async => const [];
+  Future<Map<String, List<Message>>> loadPossiblePinMessages(
+    Iterable<Contact> contacts,
+  ) async => const {};
+  @override
+  Future<Map<String, List<ChannelMessage>>> loadPossiblePinChannelMessages(
+    Iterable<Channel> channels,
+  ) async => const {};
   @override
   Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
   watchChannelLatest() => const Stream.empty();

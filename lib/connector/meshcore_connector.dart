@@ -1135,9 +1135,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) =>
       _channelMessageStore.watchChannelMessages(channel.idKey, limit: limit);
 
-  /// One-shot read for non-reactive consumers (map pins, export, bench).
+  /// One-shot read for non-reactive consumers (export, bench).
   Future<List<ChannelMessage>> loadChannelMessagesFor(Channel channel) =>
       _channelMessageStore.loadChannelMessages(channel.idKey);
+
+  /// The map's pin candidates, by channel identity key: messages that could
+  /// carry a Location or SOS pin, in [loadChannelMessagesFor] order.
+  Future<Map<String, List<ChannelMessage>>> loadPossiblePinChannelMessages(
+    Iterable<Channel> channels,
+  ) => _channelMessageStore.loadPossiblePinMessages(
+    channels.map((c) => c.idKey),
+  );
 
   /// SQL-backed full-history search (the channel search UI): matches text
   /// and sender names case-insensitively without loading the history.
@@ -7746,6 +7754,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// One-shot conversation read (export, bench, sorting).
   Future<List<Message>> loadMessagesFor(Contact contact) =>
       _messageStore.loadMessages(contact.publicKeyHex);
+
+  /// The map's pin candidates, by contact key: messages that could carry a
+  /// Location or SOS pin, in [loadMessagesFor] order.
+  Future<Map<String, List<Message>>> loadPossiblePinMessages(
+    Iterable<Contact> contacts,
+  ) => _messageStore.loadPossiblePinMessages(
+    contacts.map((c) => c.publicKeyHex),
+  );
 
   void _flushPendingForSlot(Channel channel) {
     final pending = _pendingUntrackedChannelMessages.remove(channel.index);
