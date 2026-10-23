@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "Comandos, respuestas y datos brutos de BLE",
   "settings_appDebugLog": "Registro de Depuración de la App",
   "settings_appDebugLogSubtitle": "Mensajes de depuración de la aplicación",
+  "settings_exportDatabase": "Exportar base de datos de mensajes",
+  "settings_exportDatabaseSubtitle": "Una copia de todos los chats y contactos, para depuración. Manténgala privada.",
+  "settings_exportDatabaseSaved": "Base de datos guardada en: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Error al exportar: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "Acerca de",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

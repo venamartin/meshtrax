@@ -560,6 +560,23 @@ class AppLocalizationsHu extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Programozási hibajelzések';
 
   @override
+  String get settings_exportDatabase => 'Üzenetadatbázis exportálása';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Az összes csevegés és kapcsolat másolata hibakereséshez. Tartsa privátként.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Adatbázis mentve ide: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Az exportálás sikertelen: $error';
+  }
+
+  @override
   String get settings_about => 'Ról';
 
   @override

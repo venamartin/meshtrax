@@ -558,6 +558,23 @@ class AppLocalizationsUk extends AppLocalizations {
       'Повідомлення налагодження програми';
 
   @override
+  String get settings_exportDatabase => 'Експорт бази повідомлень';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Копія всіх чатів і контактів для налагодження. Зберігайте її приватно.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Базу збережено в: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Помилка експорту: $error';
+  }
+
+  @override
   String get settings_about => 'Про програму';
 
   @override

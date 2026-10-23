@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "Príkazy BLE, odpovede a surové dáta",
   "settings_appDebugLog": "Záznam ladenia aplikácie",
   "settings_appDebugLogSubtitle": "Správy z ladenia aplikácie",
+  "settings_exportDatabase": "Exportovať databázu správ",
+  "settings_exportDatabaseSubtitle": "Kópia všetkých chatov a kontaktov na ladenie. Uchovajte ju v súkromí.",
+  "settings_exportDatabaseSaved": "Databáza uložená do: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Export zlyhal: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "O nás",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

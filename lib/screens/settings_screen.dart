@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:meshtrax/utils/gpx_export.dart';
 import 'package:meshtrax/utils/backup_service.dart';
 import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
@@ -16,6 +18,8 @@ import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/app_settings_service.dart';
+import '../storage/app_database.dart';
+import '../utils/app_logger.dart';
 import '../widgets/app_bar.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'app_settings_screen.dart';
@@ -634,8 +638,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.storage_outlined),
+            title: Text(l10n.settings_exportDatabase),
+            subtitle: Text(l10n.settings_exportDatabaseSubtitle),
+            onTap: _exportDatabase,
+          ),
         ],
       ),
+    );
+  }
+
+  /// Saves a copy of the app database (every chat, contact and setting the
+  /// database holds) for offline debugging.
+  Future<void> _exportDatabase() async {
+    final l10n = context.l10n;
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .split('.')
+        .first
+        .replaceAll(':', '-');
+    final name = 'meshtrax-db-$stamp';
+    final temp = File(
+      '${(await getTemporaryDirectory()).path}'
+      '${Platform.pathSeparator}$name.sqlite',
+    );
+    String? savedPath;
+    try {
+      if (temp.existsSync()) temp.deleteSync();
+      await AppDatabase.instance.snapshotTo(temp.path);
+      if (Platform.isAndroid) {
+        savedPath = await FileSaver.instance.saveAs(
+          name: name,
+          file: temp,
+          fileExtension: 'sqlite',
+          mimeType: MimeType.other,
+        );
+      } else {
+        final location = await getSaveLocation(
+          suggestedName: '$name.sqlite',
+          acceptedTypeGroups: [
+            const XTypeGroup(label: 'SQLite', extensions: ['sqlite']),
+          ],
+        );
+        if (location != null) {
+          await temp.copy(location.path);
+          savedPath = location.path;
+        }
+      }
+    } catch (e) {
+      appLogger.error('Database export failed: $e', tag: 'Settings');
+      if (mounted) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(l10n.settings_exportDatabaseFailed(e.toString())),
+        );
+      }
+      return;
+    } finally {
+      if (temp.existsSync()) temp.deleteSync();
+    }
+    if (!mounted || savedPath == null || savedPath.isEmpty) return;
+    showDismissibleSnackBar(
+      context,
+      content: Text(l10n.settings_exportDatabaseSaved(savedPath)),
     );
   }
 

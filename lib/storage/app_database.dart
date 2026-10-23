@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -206,6 +208,19 @@ class AppDatabase extends _$AppDatabase {
     _instance?.close();
     _instance = AppDatabase._(NativeDatabase.memory());
   }
+
+  /// Opens a database file, e.g. a [snapshotTo] copy for a replay test.
+  @visibleForTesting
+  static void useFileForTesting(String path) {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    _instance?.close();
+    _instance = AppDatabase._(NativeDatabase(File(path)));
+  }
+
+  /// A consistent copy of the whole database at [path], which must not
+  /// exist yet (SQLite's VACUUM INTO).
+  Future<void> snapshotTo(String path) =>
+      customStatement('VACUUM INTO ?', [path]);
 
   @override
   int get schemaVersion => 7;

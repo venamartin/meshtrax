@@ -529,6 +529,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_appDebugLogSubtitle => '应用调试消息';
 
   @override
+  String get settings_exportDatabase => '导出消息数据库';
+
+  @override
+  String get settings_exportDatabaseSubtitle => '所有聊天和联系人的副本，用于调试。请勿外传。';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return '数据库已保存到：$path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return '导出失败：$error';
+  }
+
+  @override
   String get settings_about => '关于';
 
   @override

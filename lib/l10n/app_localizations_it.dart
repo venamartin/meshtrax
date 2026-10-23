@@ -562,6 +562,23 @@ class AppLocalizationsIt extends AppLocalizations {
       'Messaggi di debug dell\'applicazione';
 
   @override
+  String get settings_exportDatabase => 'Esporta database dei messaggi';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Una copia di tutte le chat e i contatti, per il debug. Tienila privata.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Database salvato in: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Esportazione non riuscita: $error';
+  }
+
+  @override
   String get settings_about => 'Informazioni';
 
   @override

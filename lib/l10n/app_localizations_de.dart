@@ -558,6 +558,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Anwendung Debug-Nachrichten';
 
   @override
+  String get settings_exportDatabase => 'Nachrichtendatenbank exportieren';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Eine Kopie aller Chats und Kontakte zur Fehlersuche. Privat aufbewahren.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Datenbank gespeichert unter: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Export fehlgeschlagen: $error';
+  }
+
+  @override
   String get settings_about => 'Über';
 
   @override

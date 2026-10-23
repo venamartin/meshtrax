@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "Команди, отговори и сурови данни BLE",
   "settings_appDebugLog": "Лог на отстраняване на грешки на приложението",
   "settings_appDebugLogSubtitle": "Съобщения за отстраняване на грешки на приложението",
+  "settings_exportDatabase": "Експортиране на базата със съобщения",
+  "settings_exportDatabaseSubtitle": "Копие на всички чатове и контакти за отстраняване на грешки. Пазете го лично.",
+  "settings_exportDatabaseSaved": "Базата е запазена в: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Експортирането не бе успешно: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "За нас",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

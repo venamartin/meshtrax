@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "BLE-kommandon, svar och rådata",
   "settings_appDebugLog": "Appfelsökning",
   "settings_appDebugLogSubtitle": "Applikations felsökningsmeddelanden",
+  "settings_exportDatabase": "Exportera meddelandedatabas",
+  "settings_exportDatabaseSubtitle": "En kopia av alla chattar och kontakter, för felsökning. Håll den privat.",
+  "settings_exportDatabaseSaved": "Databasen sparad i: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Exporten misslyckades: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "Om",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

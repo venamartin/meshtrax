@@ -535,6 +535,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_appDebugLogSubtitle => '애플리케이션 디버깅 메시지';
 
   @override
+  String get settings_exportDatabase => '메시지 데이터베이스 내보내기';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      '디버깅용 모든 채팅과 연락처의 사본입니다. 비공개로 보관하세요.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return '데이터베이스 저장 위치: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return '내보내기 실패: $error';
+  }
+
+  @override
   String get settings_about => '소개';
 
   @override

@@ -563,6 +563,23 @@ class AppLocalizationsFr extends AppLocalizations {
       'Messages de débogage de l\'application';
 
   @override
+  String get settings_exportDatabase => 'Exporter la base de messages';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Une copie de toutes les discussions et de tous les contacts, pour le débogage. Gardez-la privée.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Base enregistrée dans : $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Échec de l\'export : $error';
+  }
+
+  @override
   String get settings_about => 'À propos';
 
   @override

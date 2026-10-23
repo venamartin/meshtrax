@@ -1126,6 +1126,30 @@ abstract class AppLocalizations {
   /// **'Application debug messages'**
   String get settings_appDebugLogSubtitle;
 
+  /// No description provided for @settings_exportDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Export message database'**
+  String get settings_exportDatabase;
+
+  /// No description provided for @settings_exportDatabaseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A copy of all chats and contacts, for debugging. Keep it private.'**
+  String get settings_exportDatabaseSubtitle;
+
+  /// No description provided for @settings_exportDatabaseSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Database saved to: {path}'**
+  String settings_exportDatabaseSaved(String path);
+
+  /// No description provided for @settings_exportDatabaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String settings_exportDatabaseFailed(String error);
+
   /// No description provided for @settings_about.
   ///
   /// In en, this message translates to:
