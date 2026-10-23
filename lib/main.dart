@@ -67,24 +67,26 @@ void main() async {
   // UI stall reporter: a debug-log line for every frame that took 50 ms or
   // longer (three dropped frames), at most two a second so one long stall
   // cannot flood the ring buffer. Flutter collects these timings anyway;
-  // this only reads them.
-  var lastStallLog = DateTime.fromMillisecondsSinceEpoch(0);
-  SchedulerBinding.instance.addTimingsCallback((timings) {
-    if (!appLogger.isEnabled) return;
-    for (final t in timings) {
-      final total = t.totalSpan.inMilliseconds;
-      if (total < 50) continue;
-      final now = DateTime.now();
-      if (now.difference(lastStallLog).inMilliseconds < 500) continue;
-      lastStallLog = now;
-      appLogger.info(
-        'UI stall $total ms (build ${t.buildDuration.inMilliseconds}, '
-        'raster ${t.rasterDuration.inMilliseconds})',
-        tag: 'Perf',
-        noNotify: true,
-      );
-    }
-  });
+  // this only reads them. Perf builds only (AppLogger.perfEnabled).
+  if (AppLogger.perfEnabled) {
+    var lastStallLog = DateTime.fromMillisecondsSinceEpoch(0);
+    SchedulerBinding.instance.addTimingsCallback((timings) {
+      if (!appLogger.isEnabled) return;
+      for (final t in timings) {
+        final total = t.totalSpan.inMilliseconds;
+        if (total < 50) continue;
+        final now = DateTime.now();
+        if (now.difference(lastStallLog).inMilliseconds < 500) continue;
+        lastStallLog = now;
+        appLogger.info(
+          'UI stall $total ms (build ${t.buildDuration.inMilliseconds}, '
+          'raster ${t.rasterDuration.inMilliseconds})',
+          tag: 'Perf',
+          noNotify: true,
+        );
+      }
+    });
+  }
   KeyboardInsetLogger().start();
 
   // Initialize notification service
