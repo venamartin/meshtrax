@@ -76,8 +76,10 @@ class GraphStore {
   final Map<String, NodeState> nodes = {};
   final Map<(String, String), EdgeState> edges = {};
 
-  /// Called when a sighting creates a link the graph never had.
-  void Function(String from, String to, int arrivalMillis)? onNewLink;
+  /// Called on every counted sighting of a link; [created] when the graph
+  /// never had it.
+  void Function(String from, String to, int arrivalMillis,
+      {required bool created, int? firstObserved})? onLinkSeen;
 
   final Set<String> _dirtyNodes = {};
   final Set<(String, String)> _dirtyEdges = {};
@@ -119,7 +121,8 @@ class GraphStore {
       created = true;
       return EdgeState(source: 'observed', firstObserved: arrivalMillis);
     });
-    if (created) onNewLink?.call(from, to, arrivalMillis);
+    onLinkSeen?.call(from, to, arrivalMillis,
+        created: created, firstObserved: edge.firstObserved);
     edge.trafficWeight += 1;
     edge.obsCount += 1;
     edge.lastObserved = arrivalMillis;

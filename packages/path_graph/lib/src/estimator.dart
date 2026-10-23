@@ -34,6 +34,7 @@ class PathGraphConfig {
     this.liveRouteMinutes = 10,
     this.mobileFreshMinutes = 15,
     this.mobileNewLinks = 5,
+    this.mobileNewShare = 0.5,
     this.mobileMoveKm = 2,
     this.mobileTagDays = 14,
     this.mobileAutoTagsRoute = false,
@@ -201,8 +202,14 @@ class PathGraphConfig {
 
   /// Watching-only detector ("keeps meeting new repeaters"): this many
   /// links first seen in the last three hours, spread over at least three
-  /// of its half-hours, from a repeater known for a day.
+  /// of its half-hours, from a repeater known for a day, each to a
+  /// repeater also known for a day (one-off codes are mostly garbage).
   final int mobileNewLinks;
+
+  /// ...and more than this share of its links heard in those hours are
+  /// new: a busy fixed repeater meets new ones too, but keeps being heard
+  /// with the ones it had; a moving one leaves them behind.
+  final double mobileNewShare;
 
   /// An advert from the same key this far from its last real position
   /// marks the repeater as moving.
@@ -260,6 +267,7 @@ class PathGraphConfig {
         liveRouteMinutes: liveRouteMinutes,
         mobileFreshMinutes: mobileFreshMinutes ?? this.mobileFreshMinutes,
         mobileNewLinks: mobileNewLinks,
+        mobileNewShare: mobileNewShare,
         mobileMoveKm: mobileMoveKm,
         mobileTagDays: mobileTagDays,
         mobileAutoTagsRoute: mobileAutoTagsRoute ?? this.mobileAutoTagsRoute,

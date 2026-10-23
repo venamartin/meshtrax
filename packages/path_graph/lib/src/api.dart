@@ -13,7 +13,7 @@ import 'search.dart';
 export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
 export 'graph_store.dart' show EdgeState, MovingOverride, NodeState, NodeSource;
-export 'moving.dart' show MovingReason, MovingStatus;
+export 'moving.dart' show MovingCheck, MovingReason, MovingStatus;
 export 'retention.dart' show RetentionPolicy, RetentionReport;
 
 /// Attribution quality of an observed path's originator.
@@ -186,7 +186,7 @@ class PathGraph {
         _now = now ?? DateTime.now,
         _estimator = Estimator(config) {
     _store = GraphStore(_db, hashWidthBytes: hashWidthBytes)
-      ..onNewLink = _onNewLink;
+      ..onLinkSeen = _onLinkSeen;
     _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
   }
 
@@ -228,10 +228,14 @@ class PathGraph {
   final _strangerNovelty = NoveltyCounter(sliceMs: 30 * 60 * 1000);
   final _riderNovelty = NoveltyCounter(sliceMs: 20 * 60 * 1000);
   Map<String, int>? _knownSince;
+  // reason|hash → when a vetoed check was last told. Memory only.
+  final Map<String, int> _vetoToldAt = {};
 
-  /// Told when a watching-only detector starts seeing [hash] move (at
-  /// most once a day per repeater and reason).
-  void Function(String hash, MovingReason reason)? onMovingSign;
+  /// Told when a watching-only detector starts seeing [hash] move, or
+  /// would have but still hears it with its old links ([MovingCheck.tagged]
+  /// false) — each at most once a day per repeater and reason.
+  void Function(String hash, MovingReason reason, MovingCheck check)?
+      onMovingSign;
 
   /// Loads persisted state into the in-memory working set.
   Future<void> init() async {
@@ -747,34 +751,78 @@ class PathGraph {
     };
   }
 
-  /// A sighting created a link the graph never had: news for both ends.
-  /// One that proved it hears me in each of the last three 20-minute
-  /// slices and keeps meeting new repeaters rides with me (no stationary
-  /// gate: I move with it). Anyone else known for a day that keeps meeting
-  /// new ones while I stay put moves — "stay put" being no repeater new to
-  /// me for an hour, so my own drive does not make fixed ones look new.
-  void _onNewLink(String from, String to, int at) {
+  /// Every sighting of a link feeds the detectors. One the graph already
+  /// had, from before their window, says both ends still have that
+  /// neighbour. A new one is news for both ends: one that proved it hears
+  /// me in each of the last three 20-minute slices and keeps meeting new
+  /// repeaters rides with me (no stationary gate: I move with it). Anyone
+  /// else known for a day that keeps meeting repeaters also known for a
+  /// day (a one-off code is mostly garbage) while I stay put moves — "stay
+  /// put" being no repeater new to me for an hour, so my own drive does
+  /// not make fixed ones look new. Either way it must also have left its
+  /// old neighbours behind ([PathGraphConfig.mobileNewShare]).
+  void _onLinkSeen(String from, String to, int at,
+      {required bool created, int? firstObserved}) {
+    if (!created) {
+      for (final hash in [from, to]) {
+        _strangerNovelty.seen(hash, (from, to), at, firstObserved);
+        _riderNovelty.seen(hash, (from, to), at, firstObserved);
+      }
+      return;
+    }
     final known = _knownSince ??= _buildKnownSince();
     final lastNew = _evidence.lastNewSelfRowAt;
     final stationary =
         lastNew == null || at - lastNew > Duration.millisecondsPerHour;
     final minLinks = config.mobileNewLinks;
+    final since = {
+      from: known.putIfAbsent(from, () => at),
+      to: known.putIfAbsent(to, () => at),
+    };
+    bool knownADay(String hash) =>
+        at - since[hash]! >= Duration.millisecondsPerDay;
     for (final hash in [from, to]) {
-      final since = known.putIfAbsent(hash, () => at);
+      final other = hash == from ? to : from;
       final meetsSteadily = _riderNovelty.add(hash, at, minLinks: minLinks);
       if (_selfPubkey != null &&
           _evidence.provenInEachSlice(hash, at,
               sliceMs: _riderNovelty.sliceMs, slices: 3)) {
-        if (meetsSteadily) _markMoving(hash, MovingReason.ridesWithMe, at);
+        if (meetsSteadily) {
+          _judgeMoving(_riderNovelty, hash, MovingReason.ridesWithMe, at);
+        }
       } else if (stationary &&
-          at - since >= Duration.millisecondsPerDay &&
+          knownADay(hash) &&
+          knownADay(other) &&
           _strangerNovelty.add(hash, at, minLinks: minLinks)) {
-        _markMoving(hash, MovingReason.newLinks, at);
+        _judgeMoving(_strangerNovelty, hash, MovingReason.newLinks, at);
       }
     }
   }
 
-  void _markMoving(String hash, MovingReason reason, int at) {
+  /// [hash] keeps meeting new repeaters; it moves only if they outnumber
+  /// the old ones it is still heard with.
+  void _judgeMoving(
+      NoveltyCounter counter, String hash, MovingReason reason, int at) {
+    final fresh = counter.newLinks(hash);
+    final old = counter.oldLinks(hash, at);
+    final check = (
+      newLinks: fresh,
+      oldLinks: old,
+      tagged: fresh > config.mobileNewShare * (fresh + old),
+    );
+    if (check.tagged) {
+      _markMoving(hash, reason, at, check);
+      return;
+    }
+    final key = '${reason.name}|$hash';
+    final last = _vetoToldAt[key];
+    if (last == null || at - last > Duration.millisecondsPerDay) {
+      _vetoToldAt[key] = at;
+      onMovingSign?.call(hash, reason, check);
+    }
+  }
+
+  void _markMoving(String hash, MovingReason reason, int at, MovingCheck check) {
     final node = _store.nodeFor(hash, NodeSource.observed);
     final rides = reason == MovingReason.ridesWithMe;
     final last = rides ? node.autoRidesWithMeAt : node.autoMovingAt;
@@ -785,7 +833,7 @@ class PathGraph {
     }
     _store.markNodeDirty(hash);
     if (last == null || at - last > Duration.millisecondsPerDay) {
-      onMovingSign?.call(hash, reason);
+      onMovingSign?.call(hash, reason, check);
     }
   }
 
@@ -1515,6 +1563,7 @@ class PathGraph {
     _knownSince = null;
     _strangerNovelty.clear();
     _riderNovelty.clear();
+    _vetoToldAt.clear();
     _store.nodes.addAll(nodes);
     _store.edges.addAll(edges);
     _evidence.entries.addAll(ingress);
