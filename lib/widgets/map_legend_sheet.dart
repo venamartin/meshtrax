@@ -19,32 +19,62 @@ typedef MeshLegendCounts = ({
   int guessed,
 });
 
-/// Opens the map legend: the Mesh symbols and counts, then, while the map
-/// draws charts, the chart symbols by section. It opens at half height and
-/// drags up to full.
-Future<void> showMapLegend(
-  BuildContext context, {
-  required MeshLegendCounts counts,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  useSafeArea: true,
-  builder: (_) => DraggableScrollableSheet(
-    expand: false,
-    initialChildSize: 0.5,
-    minChildSize: 0.25,
-    maxChildSize: 1,
-    builder: (_, controller) =>
-        MapLegendSheet(counts: counts, controller: controller),
-  ),
-);
+/// Whether the map draws charts: they're offline only.
+bool mapShowsCharts(AppSettings settings, MapPacksService maps) =>
+    !mapIsOnline(settings, maps) &&
+    MapType.parse(settings.mapType) == MapType.charts;
+
+/// Opens the map legend: the Mesh symbols and [counts] (none without a
+/// radio), then, while the map draws charts, the chart symbols by section.
+/// It opens at half height and drags up to full.
+Future<void> showMapLegend(BuildContext context, {MeshLegendCounts? counts}) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        minChildSize: 0.25,
+        maxChildSize: 1,
+        builder: (_, controller) =>
+            MapLegendSheet(counts: counts, controller: controller),
+      ),
+    );
+
+/// The map's "i" button, opening [showMapLegend]. Without [counts] (no
+/// radio) there's only the chart part, so it shows only on the chart map.
+class MapLegendButton extends StatelessWidget {
+  final MeshLegendCounts Function()? counts;
+
+  const MapLegendButton({super.key, this.counts});
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = this.counts;
+    final charts = mapShowsCharts(
+      context.watch<AppSettingsService>().settings,
+      context.watch<MapPacksService>(),
+    );
+    if (counts == null && !charts) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    return FloatingActionButton.small(
+      heroTag: null,
+      tooltip: context.l10n.map_legend,
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurfaceVariant,
+      onPressed: () => showMapLegend(context, counts: counts?.call()),
+      child: const Icon(Icons.info_outline),
+    );
+  }
+}
 
 class MapLegendSheet extends StatelessWidget {
-  final MeshLegendCounts counts;
+  final MeshLegendCounts? counts;
   final ScrollController? controller;
 
-  const MapLegendSheet({super.key, required this.counts, this.controller});
+  const MapLegendSheet({super.key, this.counts, this.controller});
 
   static final _chartNo1 = Uri.parse(
     'https://nauticalcharts.noaa.gov/publications/us-chart-1.html',
@@ -55,10 +85,8 @@ class MapLegendSheet extends StatelessWidget {
     final l10n = context.l10n;
     final maps = context.watch<MapPacksService>();
     final settings = context.watch<AppSettingsService>().settings;
-    final charts =
-        !mapIsOnline(settings, maps) &&
-        MapType.parse(settings.mapType) == MapType.charts;
-    final chartsStyle = charts
+    final counts = this.counts;
+    final chartsStyle = mapShowsCharts(settings, maps)
         ? maps.styleId(MapType.charts, dark: settings.mapTheme == 'dark')
         : null;
     final heading = Theme.of(context).textTheme.titleSmall;
@@ -67,16 +95,18 @@ class MapLegendSheet extends StatelessWidget {
       controller: controller,
       padding: const EdgeInsets.only(bottom: 16),
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: Text(l10n.map_legendMesh, style: heading),
-        ),
-        _MeshLegend(
-          counts: counts,
-          showGuessed: settings.mapShowGuessedLocations,
-        ),
+        if (counts != null) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text(l10n.map_legendMesh, style: heading),
+          ),
+          _MeshLegend(
+            counts: counts,
+            showGuessed: settings.mapShowGuessedLocations,
+          ),
+        ],
         if (chartsStyle != null) ...[
-          const Divider(height: 24),
+          if (counts != null) const Divider(height: 24),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Text(l10n.chartLegend_title, style: heading),

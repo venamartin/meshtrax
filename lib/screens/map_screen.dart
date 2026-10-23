@@ -1025,33 +1025,25 @@ class _MapScreenState extends State<MapScreen> {
     int markerCount,
     int guessedCount,
   ) {
+    int count({required bool noLocations}) => _filterContactsBySettings(
+      contacts,
+      settings,
+      stride,
+      noLocations: noLocations,
+    ).length;
     return Positioned(
       top: 16,
       right: 16,
-      child: FloatingActionButton.small(
-        heroTag: null,
-        tooltip: context.l10n.map_legend,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        onPressed: () {
-          int count({required bool noLocations}) => _filterContactsBySettings(
-            contacts,
-            settings,
-            stride,
-            noLocations: noLocations,
-          ).length;
+      child: MapLegendButton(
+        counts: () {
           final located = count(noLocations: false);
-          showMapLegend(
-            context,
-            counts: (
-              located: located,
-              unlocated: count(noLocations: true) - located,
-              pins: markerCount,
-              guessed: guessedCount,
-            ),
+          return (
+            located: located,
+            unlocated: count(noLocations: true) - located,
+            pins: markerCount,
+            guessed: guessedCount,
           );
         },
-        child: const Icon(Icons.info_outline),
       ),
     );
   }

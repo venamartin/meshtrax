@@ -10,9 +10,11 @@ import '../services/ui_view_state_service.dart';
 import '../widgets/app_map.dart';
 import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
+import '../widgets/map_legend_sheet.dart';
 
 /// The map without a radio, opened from the scanner: downloaded and online
-/// maps and the layers sheet, but no nodes or radio actions. It opens where
+/// maps, the layers sheet and, on charts, their legend, but no nodes or
+/// radio actions. It opens where
 /// the map was last left, else on the latest downloaded map.
 class NoRadioMapScreen extends StatefulWidget {
   const NoRadioMapScreen({super.key});
@@ -43,14 +45,20 @@ class _NoRadioMapScreenState extends State<NoRadioMapScreen> {
     final last = context.read<UiViewStateService>().mapCamera;
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.scanner_map), centerTitle: true),
-      body: AppMap(
-        controller: _controller,
-        controlsWidth: MapControls.width,
-        initialCamera: last ?? const MapCamera(center: LatLng(20, 0), zoom: 1),
-        initialFit: last == null
-            ? context.read<MapPacksService>().latestMapFit
-            : null,
-        onCameraChanged: _onCameraChanged,
+      body: Stack(
+        children: [
+          AppMap(
+            controller: _controller,
+            controlsWidth: MapControls.width,
+            initialCamera:
+                last ?? const MapCamera(center: LatLng(20, 0), zoom: 1),
+            initialFit: last == null
+                ? context.read<MapPacksService>().latestMapFit
+                : null,
+            onCameraChanged: _onCameraChanged,
+          ),
+          const Positioned(top: 16, right: 16, child: MapLegendButton()),
+        ],
       ),
       floatingActionButton: MapControls(
         controller: _controller,
