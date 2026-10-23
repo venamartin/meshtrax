@@ -12,7 +12,8 @@ void main() {
   late PathGraph graph;
 
   setUp(() async {
-    graph = PathGraph(NativeDatabase.memory());
+    graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });

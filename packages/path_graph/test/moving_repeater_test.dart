@@ -24,7 +24,8 @@ void main() {
   setUp(() async {
     nowMillis = 1000000000;
     graph = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });
@@ -172,7 +173,8 @@ void main() {
     final saved = graph.saveSession();
 
     final other = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await other.init();
     await other.loadSession(saved);
     expect(other.movingStatus('C882')!.reason, MovingReason.advertMoved);

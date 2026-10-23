@@ -32,6 +32,7 @@ class PathGraphConfig {
     this.selfSilenceMinEvents = 3,
     this.relayedCopyGraceSeconds = 60,
     this.liveRouteMinutes = 10,
+    this.newCodeConfirmMinutes = 10,
     this.mobileFreshMinutes = 15,
     this.mobileNewLinks = 5,
     this.mobileNewShare = 0.5,
@@ -189,6 +190,16 @@ class PathGraphConfig {
   /// within milliseconds, and the ACKs that followed were lost).
   final double liveRouteMinutes;
 
+  /// A link heard on the air that touches a repeater code the graph never
+  /// had is filed only when the same link is heard again at least this
+  /// long after the first time. Field, 2026-10-23: some transmitter puts
+  /// random bytes in flood paths and real repeaters relay them, so three
+  /// codes in four were one-off junk, heard in a single burst and never
+  /// again (copies of one packet land within seconds); a real link comes
+  /// back. My own packets and decoded messages vouch for their paths.
+  /// 0 files every link at once.
+  final double newCodeConfirmMinutes;
+
   /// A moving repeater (owner, 2026-10-19) collects links to every
   /// repeater it passes, and old ones make it a wormhole: "A hears it"
   /// in Oakland at 10:00 plus "it reaches B" in Sacramento at 14:00 reads
@@ -235,6 +246,7 @@ class PathGraphConfig {
           double? pThreshold,
           int? maxHops,
           double? doorstepWeight,
+          double? newCodeConfirmMinutes,
           double? mobileFreshMinutes,
           bool? mobileAutoTagsRoute,
           bool? allowInferredEndpoints}) =>
@@ -265,6 +277,8 @@ class PathGraphConfig {
         selfSilenceMinEvents: selfSilenceMinEvents,
         relayedCopyGraceSeconds: relayedCopyGraceSeconds,
         liveRouteMinutes: liveRouteMinutes,
+        newCodeConfirmMinutes:
+            newCodeConfirmMinutes ?? this.newCodeConfirmMinutes,
         mobileFreshMinutes: mobileFreshMinutes ?? this.mobileFreshMinutes,
         mobileNewLinks: mobileNewLinks,
         mobileNewShare: mobileNewShare,

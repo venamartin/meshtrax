@@ -726,11 +726,12 @@ class PathLabAdapter {
 
     final edgesBefore = graph.edgeCount;
     final narrowBefore = graph.counters.droppedNarrow;
+    final heldBefore = graph.counters.linksHeld;
     _observe(packet, rxSnr);
     _observeOwnEcho(packet);
     _rememberFloodMessage(packet, frame[1].toSigned(8));
     _log(kind, _fmtHops(packet.pathBytes, packet.stride),
-        _verdict(packet, edgesBefore, narrowBefore), rxSnr);
+        _verdict(packet, edgesBefore, narrowBefore, heldBefore), rxSnr);
   }
 
   /// Keeps a flooded DM or room post addressed to me (the payload's first
@@ -978,7 +979,8 @@ class PathLabAdapter {
         first.snrByte / 4.0);
   }
 
-  String _verdict(RawPacket packet, int edgesBefore, int narrowBefore) {
+  String _verdict(
+      RawPacket packet, int edgesBefore, int narrowBefore, int heldBefore) {
     if (graph.counters.droppedNarrow > narrowBefore) {
       return 'dropped — ${packet.stride}-byte hashes, the graph needs '
           '${graph.hashWidthBytes}';
@@ -991,9 +993,17 @@ class PathLabAdapter {
       return 'recorded — one repeater, no link to learn';
     }
     final added = graph.edgeCount - edgesBefore;
-    return added > 0
-        ? 'recorded — $added new link${added == 1 ? "" : "s"}'
-        : 'recorded — links already known';
+    final held = graph.counters.linksHeld - heldBefore;
+    final waiting = held == 1
+        ? '1 link to a repeater code never heard before waits until heard '
+            'again'
+        : '$held links to repeater codes never heard before wait until '
+            'heard again';
+    if (added > 0) {
+      final recorded = 'recorded — $added new link${added == 1 ? "" : "s"}';
+      return held > 0 ? '$recorded; $waiting' : recorded;
+    }
+    return held > 0 ? 'held — $waiting' : 'recorded — links already known';
   }
 
   void _observe(RawPacket packet, double rxSnr) {

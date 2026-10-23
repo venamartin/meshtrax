@@ -101,8 +101,10 @@ class GraphStore {
 
   /// Applies one directed observation from→to. Returns false when the
   /// (messageId, edge) pair was already counted for this message.
+  /// [heardBefore]: a link held back until heard again was first heard
+  /// then; a new link counts both sightings.
   bool observeEdge(String from, String to, int arrivalMillis,
-      {String? messageId}) {
+      {String? messageId, int? heardBefore}) {
     if (messageId != null) {
       final key = '$messageId|$from>$to';
       if (_seenMessageEdges.contains(key)) return false;
@@ -119,12 +121,14 @@ class GraphStore {
     var created = false;
     final edge = edges.putIfAbsent((from, to), () {
       created = true;
-      return EdgeState(source: 'observed', firstObserved: arrivalMillis);
+      return EdgeState(
+          source: 'observed', firstObserved: heardBefore ?? arrivalMillis);
     });
     onLinkSeen?.call(from, to, arrivalMillis,
         created: created, firstObserved: edge.firstObserved);
-    edge.trafficWeight += 1;
-    edge.obsCount += 1;
+    final sightings = created && heardBefore != null ? 2 : 1;
+    edge.trafficWeight += sightings;
+    edge.obsCount += sightings;
     edge.lastObserved = arrivalMillis;
     _dirtyEdges.add((from, to));
     return true;

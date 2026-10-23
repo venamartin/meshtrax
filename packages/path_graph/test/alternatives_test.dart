@@ -15,7 +15,8 @@ void main() {
   setUp(() async {
     // Corridor search only; endpoint proof is covered in evidence_test.
     graph = PathGraph(NativeDatabase.memory(),
-        config: const PathGraphConfig(allowInferredEndpoints: true));
+        config: const PathGraphConfig(
+            newCodeConfirmMinutes: 0, allowInferredEndpoints: true));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
   });

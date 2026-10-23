@@ -103,6 +103,7 @@ class PathGraphDiagnosticsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             _infoRow('Frames seen', '${adapter?.framesSeen ?? 0}'),
             _infoRow('Observations', '${c.observationsApplied}'),
+            _infoRow('Links held until heard again', '${c.linksHeld}'),
             _infoRow('DMs matched', '${adapter?.messagesAttributed ?? 0}'),
             _infoRow('Radio', graph.selfPubkey == null ? 'unknown' : 'known'),
             // A path's hash width is set by the node that built the packet,

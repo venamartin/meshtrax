@@ -13,7 +13,8 @@ import 'map_view.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  lab.graph = PathGraph(NativeDatabase.memory());
+  lab.graph = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
 
   setUpAll(() async {
     await lab.graph.init();

@@ -31,7 +31,8 @@ void main() {
   setUp(() async {
     nowMillis = 1000000000;
     graph = PathGraph(NativeDatabase.memory(),
-        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis));
+        now: () => DateTime.fromMillisecondsSinceEpoch(nowMillis),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(selfPk, 2);
     signs = [];

@@ -37,7 +37,8 @@ void main() {
     await v1.close();
 
     // Reopening the SAME FILE runs the migration.
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity('me', 2);
 
@@ -60,7 +61,8 @@ void main() {
     final file = File('${dir.path}/hub.db');
     const self = 'ab' 'ab' 'ab';
 
-    final first = PathGraph(NativeDatabase(file));
+    final first = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await first.init();
     first.setRadioIdentity(self, 2);
     // A277 is a hub: heard through it three times, at my doorstep once.
@@ -76,7 +78,8 @@ void main() {
         .firstWhere((c) => c.repeaterHash == 'A277').weight;
     await first.dispose();
 
-    final second = PathGraph(NativeDatabase(file));
+    final second = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await second.init();
     second.setRadioIdentity(self, 2);
     final after = second.egressCandidates()
@@ -138,7 +141,8 @@ void main() {
     await v2.customStatement('PRAGMA user_version = 2');
     await v2.close();
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity('me', 2);
 
@@ -196,7 +200,8 @@ void main() {
     await v5.customStatement('PRAGMA user_version = 5');
     await v5.close();
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity(self, 2);
     var a277 = graph.egressCandidates().single;
@@ -208,7 +213,8 @@ void main() {
     await graph.flush();
     await graph.dispose();
 
-    final reopened = PathGraph(NativeDatabase(file));
+    final reopened = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await reopened.init();
     reopened.setRadioIdentity(self, 2);
     a277 = reopened.egressCandidates().single;
@@ -239,7 +245,8 @@ void main() {
         "last_seen, evidence, proven_at, proven_count) VALUES ('me', 'A277', "
         "3.0, $now, 'proven', $now, 0)"));
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity('me', 2);
 
@@ -253,7 +260,8 @@ void main() {
   test('a v1 file that already has the SNR columns migrates', () async {
     final file = await atVersion(1);
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity('me', 2);
     graph.observeDiscoverResults(
@@ -278,7 +286,8 @@ void main() {
           "'BEEF', 3.0, $seen, 'proven', $seen, 1)");
     });
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     final rows = {
       for (final r in graph.saveSession()['ingress'] as List)
@@ -301,7 +310,8 @@ void main() {
           "'A277', 3.0, $seen, 'proven', $seen, 1)");
     });
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     graph.setRadioIdentity('me', 2);
     expect(graph.egressCandidates().single.failedSinceProof, 0);
@@ -310,7 +320,8 @@ void main() {
     await graph.flush();
     await graph.dispose();
 
-    final reopened = PathGraph(NativeDatabase(file));
+    final reopened = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await reopened.init();
     reopened.setRadioIdentity('me', 2);
     expect(reopened.egressCandidates().single.failedSinceProof, 1,
@@ -345,7 +356,8 @@ void main() {
           "$seen, 1, 'observed')");
     });
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     expect(graph.snapshot().edges[('C882', '9105')]!.firstObserved, isNull,
         reason: 'a link from before v9 reads as old');
@@ -355,7 +367,8 @@ void main() {
     await graph.flush();
     await graph.dispose();
 
-    final reopened = PathGraph(NativeDatabase(file));
+    final reopened = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await reopened.init();
     expect(reopened.snapshot().edges[('C882', '41B1')]!.firstObserved,
         isNotNull);
@@ -382,7 +395,8 @@ void main() {
           "('C882', 'observed', 'moves')");
     });
 
-    final graph = PathGraph(NativeDatabase(file));
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
     await graph.init();
     expect(graph.movingRepeaters().keys, ['C882'],
         reason: "only the user's word survives");
