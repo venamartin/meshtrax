@@ -156,5 +156,9 @@ void main() {
     for (final reason in MovingReason.values) {
       expect(movingReasonText(MovingStatus(reason, acts: true)), isNotEmpty);
     }
+    expect(
+        movingReasonText(const MovingStatus(MovingReason.sharedCode,
+            acts: false, sharedKeys: 3)),
+        '3 radios use this code, so it seems to be in several places');
   });
 }

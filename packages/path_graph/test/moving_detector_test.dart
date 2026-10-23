@@ -215,6 +215,34 @@ void main() {
     expect(signs, isEmpty);
   });
 
+  // DEAD and D237, 2026-10-23: two or three keys on one code look like one
+  // repeater in several places.
+  test('a code several keys use says so instead of "moves"', () {
+    graph.ingestNode('C882', name: 'WHITE_WHALE', pubkey: 'c882aaaa');
+    graph.ingestContact('C882BBBB', 'Twin');
+    graph.ingestContact('c882aaaa', 'WHITE_WHALE');
+    knownForADay(whale);
+    steadyNovelty(whale);
+    final status = graph.movingStatus('c882')!;
+    expect(status.reason, MovingReason.sharedCode);
+    expect(status.sharedKeys, 2, reason: 'one key counted once, any case');
+    expect(status.acts, isFalse);
+    expect(graph.movingRepeaters()['C882']!.reason, MovingReason.sharedCode);
+
+    graph.setMovingOverride('C882', MovingOverride.moves);
+    expect(graph.movingStatus('C882')!.reason, MovingReason.manual,
+        reason: "the user's word is never relabelled");
+  });
+
+  test('one key on its code is plain "moves"', () {
+    graph.ingestNode('C882', name: 'WHITE_WHALE', pubkey: 'c882aaaa');
+    graph.ingestContact('c882aaaa', 'WHITE_WHALE');
+    knownForADay(whale);
+    steadyNovelty(whale);
+    expect(graph.movingStatus('C882')!.reason, MovingReason.newLinks);
+    expect(graph.movingStatus('C882')!.sharedKeys, isNull);
+  });
+
   test('switched on, a detector tag acts on routing', () {
     knownForADay(whale);
     steadyNovelty(whale);

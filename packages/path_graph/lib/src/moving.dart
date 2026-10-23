@@ -19,16 +19,25 @@ enum MovingReason {
   /// It keeps meeting repeaters it never had links to (watching-only
   /// detector).
   newLinks,
+
+  /// [newLinks], on a code [MovingStatus.sharedKeys] known keys use: traffic
+  /// cannot tell repeaters sharing a code from one that moves, and to
+  /// routes they are the same shortcut. Shown in place of [newLinks]; the
+  /// detectors never record it.
+  sharedCode,
 }
 
 class MovingStatus {
-  const MovingStatus(this.reason, {required this.acts});
+  const MovingStatus(this.reason, {required this.acts, this.sharedKeys});
 
   final MovingReason reason;
 
   /// False for a watching-only detector's tag: shown and logged, but
   /// routing ignores it ([PathGraphConfig.mobileAutoTagsRoute]).
   final bool acts;
+
+  /// How many known keys use its code, for [MovingReason.sharedCode].
+  final int? sharedKeys;
 
   /// It travels with this radio: my doorstep row for it stays usable.
   bool get withMe =>

@@ -735,20 +735,57 @@ class PathGraph {
     _scheduleFlush();
   }
 
-  /// Whether [hash] moves, and why; null for a fixed repeater.
+  /// Whether [hash] moves, and why; null for a fixed repeater. A traffic
+  /// tag on a code several known keys use says so
+  /// ([MovingReason.sharedCode]).
   MovingStatus? movingStatus(String hash) {
-    final node = _store.nodes[hash.toUpperCase()];
-    return node == null ? null : movingStatusOf(node, config, _arrivalMillis);
+    final key = hash.toUpperCase();
+    final node = _store.nodes[key];
+    final status =
+        node == null ? null : movingStatusOf(node, config, _arrivalMillis);
+    return status?.reason == MovingReason.newLinks
+        ? _sharedCode(key, status!, _contactKeysByCode())
+        : status;
   }
 
   /// Every repeater tagged as moving, acting or watching-only.
   Map<String, MovingStatus> movingRepeaters() {
     final now = _arrivalMillis;
-    return {
+    final tagged = {
       for (final e in _store.nodes.entries)
         if (movingStatusOf(e.value, config, now) case final status?)
           e.key: status,
     };
+    if (tagged.values.every((s) => s.reason != MovingReason.newLinks)) {
+      return tagged;
+    }
+    final keys = _contactKeysByCode();
+    return tagged.map((hash, s) => MapEntry(hash, _sharedCode(hash, s, keys)));
+  }
+
+  /// [status] as [MovingReason.sharedCode] when it is a [MovingReason.newLinks]
+  /// tag and contacts plus the node's own advert show 2+ keys on [hash].
+  MovingStatus _sharedCode(String hash, MovingStatus status,
+      Map<String, Set<String>> contactKeys) {
+    if (status.reason != MovingReason.newLinks) return status;
+    final advertKey = _store.nodes[hash]?.pubkey?.toLowerCase();
+    final keys = {...?contactKeys[hash], if (advertKey != null) advertKey};
+    return keys.length < 2
+        ? status
+        : MovingStatus(MovingReason.sharedCode,
+            acts: status.acts, sharedKeys: keys.length);
+  }
+
+  /// Code → the distinct contact keys that use it.
+  Map<String, Set<String>> _contactKeysByCode() {
+    final width = hashWidthBytes * 2;
+    final byCode = <String, Set<String>>{};
+    for (final pubkey in _evidence.knownContacts.keys) {
+      if (pubkey.length < width) continue;
+      final key = pubkey.toLowerCase();
+      (byCode[key.substring(0, width).toUpperCase()] ??= {}).add(key);
+    }
+    return byCode;
   }
 
   /// Every sighting of a link feeds the detectors. One the graph already
