@@ -1,3 +1,6 @@
+// The printed readout is the point of this opt-in replay.
+// ignore_for_file: avoid_print
+
 @Tags(['replay'])
 library;
 
