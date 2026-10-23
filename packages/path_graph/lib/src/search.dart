@@ -60,27 +60,24 @@ class PathFinder {
   double _doorstepCost(Candidate c, int nowMillis) =>
       config.doorstepWeight * -math.log(candidateConfidence(c, nowMillis));
 
-  RouteFound? search({
-    required List<Candidate> egress,
-    required List<Candidate> ingress,
+  /// The usable links, each with its cost, by the repeater it leaves. A
+  /// link is usable in the direction packets were seen to travel it, and
+  /// only that direction. The graph never infers the reverse, and it
+  /// demands nothing about the reverse either (owner, 2026-10-13): a
+  /// route is a chain of links each observed the way the packet will go.
+  /// Quality is priced per link and per doorstep. A link touching a
+  /// [moving] repeater counts only while fresh
+  /// ([PathGraphConfig.mobileFreshMinutes]).
+  ///
+  /// Built once for a run of searches at one instant (the alternatives);
+  /// each search adds its own penalties.
+  Map<String, List<(String, (String, String), double)>> links({
     required Map<(String, String), EdgeState> edges,
     required int nowMillis,
-    Map<(String, String), double> penalties = const {},
     Set<String> moving = const {},
   }) {
-    final sources = egress.where((c) => c.repeaterHash != directHash).toList();
-    final targets = ingress.where((c) => c.repeaterHash != directHash).toList();
-    if (sources.isEmpty || targets.isEmpty) return null;
-
-    // Adjacency: a link is usable in the direction packets were seen to
-    // travel it, and only that direction. The graph never infers the
-    // reverse, and it demands nothing about the reverse either (owner,
-    // 2026-10-13): a route is a chain of links each observed the way the
-    // packet will go. Quality is priced per link and per doorstep. A
-    // link touching a [moving] repeater counts only while fresh
-    // ([PathGraphConfig.mobileFreshMinutes]).
     final freshMs = (config.mobileFreshMinutes * 60 * 1000).round();
-    final adjacency = <String, List<(String, double)>>{};
+    final adjacency = <String, List<(String, (String, String), double)>>{};
     for (final entry in edges.entries) {
       final (from, to) = entry.key;
       if (!estimator.usable(entry.value, nowMillis)) continue;
@@ -88,28 +85,54 @@ class PathFinder {
           nowMillis - (entry.value.lastObserved ?? 0) > freshMs) {
         continue;
       }
-      (adjacency[from] ??= []).add((
-        to,
-        estimator.edgeCost(entry.value, nowMillis) +
-            (penalties[entry.key] ?? 0),
-      ));
+      (adjacency[from] ??= [])
+          .add((to, entry.key, estimator.edgeCost(entry.value, nowMillis)));
     }
+    return adjacency;
+  }
+
+  /// [adjacency] from [links] at the same [nowMillis] and [moving], or
+  /// null to build it here.
+  RouteFound? search({
+    required List<Candidate> egress,
+    required List<Candidate> ingress,
+    required Map<(String, String), EdgeState> edges,
+    required int nowMillis,
+    Map<(String, String), double> penalties = const {},
+    Set<String> moving = const {},
+    Map<String, List<(String, (String, String), double)>>? adjacency,
+  }) {
+    final sources = egress.where((c) => c.repeaterHash != directHash).toList();
+    final targets = ingress.where((c) => c.repeaterHash != directHash).toList();
+    if (sources.isEmpty || targets.isEmpty) return null;
+
+    adjacency ??= links(edges: edges, nowMillis: nowMillis, moving: moving);
 
     const virtualSource = '<SRC>';
     final targetCost = {
       for (final t in targets) t.repeaterHash: _doorstepCost(t, nowMillis),
     };
 
-    final dist = <String, double>{virtualSource: 0};
+    final dist = <String, double>{};
     final hopsTo = <String, int>{virtualSource: 0};
     final prev = <String, String>{};
     final visited = <String>{};
+    // Next to settle: the cheapest, and of equal costs the one reached
+    // first — so a tie always goes the same way.
+    final reachedAt = <String, int>{};
+    final queue = _Queue();
+    void reach(String node, double cost) {
+      dist[node] = cost;
+      queue.add(
+          cost, reachedAt.putIfAbsent(node, () => reachedAt.length), node);
+    }
 
+    reach(virtualSource, 0);
     // Seed: virtual source → each egress candidate.
     for (final s in sources) {
       final cost = _doorstepCost(s, nowMillis);
       if (cost < (dist[s.repeaterHash] ?? double.infinity)) {
-        dist[s.repeaterHash] = cost;
+        reach(s.repeaterHash, cost);
         hopsTo[s.repeaterHash] = 1;
         prev[s.repeaterHash] = virtualSource;
       }
@@ -118,16 +141,11 @@ class PathFinder {
     String? bestTarget;
     var bestTotal = double.infinity;
 
-    while (true) {
-      String? u;
-      var best = double.infinity;
-      for (final e in dist.entries) {
-        if (!visited.contains(e.key) && e.value < best) {
-          best = e.value;
-          u = e.key;
-        }
-      }
-      if (u == null) break;
+    while (queue.isNotEmpty) {
+      final (cost, u) = queue.removeFirst();
+      // A node is queued again each time it gets cheaper; only its
+      // cheapest entry counts.
+      if (visited.contains(u) || cost != dist[u]) continue;
       visited.add(u);
 
       // Reaching any target closes a route via its virtual edge.
@@ -140,13 +158,14 @@ class PathFinder {
         }
       }
 
-      for (final (v, cost) in adjacency[u] ?? const <(String, double)>[]) {
+      for (final (v, key, base)
+          in adjacency[u] ?? const <(String, (String, String), double)>[]) {
         if (visited.contains(v)) continue;
         final hops = hopsTo[u]! + 1;
         if (hops > config.maxHops) continue;
-        final nd = dist[u]! + cost;
+        final nd = dist[u]! + (base + (penalties[key] ?? 0));
         if (nd < (dist[v] ?? double.infinity)) {
-          dist[v] = nd;
+          reach(v, nd);
           hopsTo[v] = hops;
           prev[v] = u;
         }
@@ -196,5 +215,54 @@ class PathFinder {
     return RouteFound(hops, delivery, hopProbabilities,
         egressProven: source?.proven ?? false,
         ingressProven: target?.proven ?? false);
+  }
+}
+
+/// A binary min-heap of (cost, reached-at order, node).
+class _Queue {
+  final _items = <(double, int, String)>[];
+
+  bool get isNotEmpty => _items.isNotEmpty;
+
+  void _swap(int a, int b) {
+    final t = _items[a];
+    _items[a] = _items[b];
+    _items[b] = t;
+  }
+
+  static bool _before((double, int, String) a, (double, int, String) b) =>
+      a.$1 < b.$1 || (a.$1 == b.$1 && a.$2 < b.$2);
+
+  void add(double cost, int order, String node) {
+    _items.add((cost, order, node));
+    var i = _items.length - 1;
+    while (i > 0) {
+      final parent = (i - 1) >> 1;
+      if (!_before(_items[i], _items[parent])) break;
+      _swap(i, parent);
+      i = parent;
+    }
+  }
+
+  (double, String) removeFirst() {
+    final first = _items.first;
+    final last = _items.removeLast();
+    if (_items.isNotEmpty) {
+      _items[0] = last;
+      var i = 0;
+      while (true) {
+        final left = 2 * i + 1;
+        if (left >= _items.length) break;
+        final right = left + 1;
+        final child =
+            right < _items.length && _before(_items[right], _items[left])
+                ? right
+                : left;
+        if (!_before(_items[child], _items[i])) break;
+        _swap(i, child);
+        i = child;
+      }
+    }
+    return (first.$1, first.$3);
   }
 }

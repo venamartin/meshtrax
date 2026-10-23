@@ -1148,6 +1148,8 @@ class PathGraph {
 
     final finder = PathFinder(estimator.config, estimator);
     final moving = _movingNow(now);
+    final links =
+        finder.links(edges: _store.edges, nowMillis: now, moving: moving);
     final penalties = <(String, String), double>{};
     final results = <RouteResult>[];
     final seen = <String>{};
@@ -1159,6 +1161,7 @@ class PathGraph {
         nowMillis: now,
         penalties: penalties,
         moving: moving,
+        adjacency: links,
       );
       if (route == null) break;
       final key = route.hops.join('>');
