@@ -2752,6 +2752,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_channel_packet_hash',
     'CREATE INDEX idx_channel_packet_hash ON channel_message_rows (node_scope, channel_id_key, packet_hash)',
   );
+  late final Index idxChannelArrival = Index(
+    'idx_channel_arrival',
+    'CREATE INDEX idx_channel_arrival ON channel_message_rows (node_scope, channel_id_key, received_at_us)',
+  );
+  late final Index idxContactArrival = Index(
+    'idx_contact_arrival',
+    'CREATE INDEX idx_contact_arrival ON contact_message_rows (node_scope, contact_key, received_at_us)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2765,6 +2773,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     discoveredContactRows,
     cachedChannelRows,
     idxChannelPacketHash,
+    idxChannelArrival,
+    idxContactArrival,
   ];
 }
 

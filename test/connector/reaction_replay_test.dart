@@ -24,13 +24,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 // message database. The file is private: never commit it. A temp copy is
 // opened, so the export itself is never written.
 //
-// With today's matcher, a reaction is looked up two ways: over every row
-// that had arrived by then (today), and over only the rows that arrived in
-// the 48 h before it (the proposed window). Every reaction a phone would
-// send to every message, placed 1 min, 1 h and 47 h after the message
-// arrived, must find the same target both ways. Parked reactions are
-// re-run the same way. Timings compare today's load + rewrite with a
-// window load + one-row write.
+// With the app's matcher, a reaction is looked up two ways: over every row
+// that had arrived by then (the old full search), and over only the rows
+// that arrived in the 48 h before it (the window). Every reaction a phone
+// would send to every message, placed 1 min, 1 h and 47 h after the
+// message arrived, must find the same target both ways. Parked reactions
+// are re-run the same way. The window loader must return exactly the tail
+// of the history; a reaction written with updatePayload must change only
+// its target's payload. Opening an older export also runs the schema
+// migration on real data.
 //
 //   MESHTRAX_DB=<export.sqlite> flutter test test/connector/reaction_replay_test.dart
 
@@ -57,6 +59,13 @@ void main() {
       final db = AppDatabase.instance;
       var differences = 0;
       try {
+        final indexes = await _strings(
+          db,
+          "SELECT name FROM sqlite_master WHERE type = 'index' "
+          "AND name IN ('idx_channel_arrival', 'idx_contact_arrival')",
+        );
+        print('== arrival indexes after opening: $indexes');
+        expect(indexes.toSet(), {'idx_channel_arrival', 'idx_contact_arrival'});
         final scopes = await _strings(
           db,
           'SELECT node_scope FROM channel_message_rows '
@@ -100,19 +109,25 @@ void main() {
                 ),
               ],
               stubText: (m) => m.text,
-              find: (list, info) => ReactionHelper.findTargetIndex<ChannelMessage>(
-                messages: list,
-                reactionInfo: info,
-                shouldSkip: (_) => false,
-                getTimestampSecs: (m) => m.timestamp.millisecondsSinceEpoch ~/ 1000,
-                getWireTimestampSecs: _channelStamps,
-                getMessageTextVariants: (m) =>
-                    MeshCoreConnector.mc1TextVariants(m.text, m.wireText),
-                getSenderName: (m) => m.senderName,
-                getMessageText: (m) => m.text,
-              ),
+              find: MeshCoreConnector.channelReactionTargetIndex,
             );
-            await _timeChannel(db, channelStore, idKey, rows, loadMs);
+            differences += await _tailCheck(
+              rows.map((m) => m.messageId).toList(),
+              await _arrivals(
+                db,
+                'channel_message_rows',
+                'channel_id_key',
+                scope,
+                idKey,
+              ),
+              (since) async => [
+                for (final m in await channelStore
+                    .loadChannelMessagesArrivedSince(idKey, since))
+                  m.messageId,
+              ],
+            );
+            differences +=
+                await _timeChannel(db, channelStore, idKey, rows, loadMs);
           }
 
           // Rooms only: 1:1 DMs keep their whole history either way.
@@ -169,6 +184,21 @@ void main() {
                 getMessageText: (m) => m.text,
               ),
             );
+            differences += await _tailCheck(
+              rows.map((m) => m.messageId).toList(),
+              await _arrivals(
+                db,
+                'contact_message_rows',
+                'contact_key',
+                scope,
+                key,
+              ),
+              (since) async => [
+                for (final m
+                    in await messageStore.loadMessagesArrivedSince(key, since))
+                  m.messageId,
+              ],
+            );
           }
         }
       } finally {
@@ -187,11 +217,30 @@ void main() {
 bool _isStub(bool isOutgoing, String text) =>
     !isOutgoing && ReactionHelper.parseMeshCoreOneReaction(text) != null;
 
-/// The connector's _channelWireSecsCandidates, rebuilt from public parts.
-List<int> _channelStamps(ChannelMessage m) {
-  final secs = MeshCoreConnector.wireTimestampMs(m) ~/ 1000;
-  if (!m.isOutgoing) return {secs, ...m.sentWireSecs}.toList();
-  return {secs, secs + 1, secs + 2, secs + 3, ...m.sentWireSecs}.toList();
+/// The window loader must return exactly the tail of the full history, for
+/// cutoffs across the whole span. Returns how many cutoffs did not.
+Future<int> _tailCheck(
+  List<String> fullIds,
+  Map<String, int> arrivalUs,
+  Future<List<String>> Function(DateTime since) arrivedSince,
+) async {
+  if (fullIds.isEmpty) return 0;
+  var bad = 0;
+  for (var q = 0; q <= 10; q++) {
+    final cutoff = arrivalUs[fullIds[(fullIds.length - 1) * q ~/ 10]]!;
+    final want = [
+      for (final id in fullIds)
+        if (arrivalUs[id]! >= cutoff) id,
+    ];
+    final got = await arrivedSince(DateTime.fromMicrosecondsSinceEpoch(cutoff));
+    final tail = fullIds.sublist(fullIds.length - got.length);
+    if (got.join('|') != want.join('|') || got.join('|') != tail.join('|')) {
+      bad++;
+      print('   DIFF window loader at cutoff $q/10: ${got.length} rows, '
+          'expected ${want.length}');
+    }
+  }
+  return bad;
 }
 
 /// Returns how many lookups the window answered differently.
@@ -289,20 +338,34 @@ int _replay<T>({
   return diffs.length;
 }
 
-/// Today's cost (full load + rewrite of every row) against the window's
-/// (rows arrived in the last 48 h + one row written), on the temp copy.
-Future<void> _timeChannel(
+/// The new path on real rows: load the last 48 h, react to its newest
+/// message with updatePayload, and check that only that row's payload
+/// changed. Then today's cost: a rewrite of every row. Timed on the temp
+/// copy; returns how many rows the write disturbed.
+Future<int> _timeChannel(
   AppDatabase db,
   ChannelMessageStore store,
   String idKey,
   List<ChannelMessage> rows,
   int loadMs,
 ) async {
-  if (rows.length < 200) return;
-  final sw = Stopwatch()..start();
-  await store.upsertMessages(idKey, rows);
-  final rewriteMs = sw.elapsedMilliseconds;
+  if (rows.length < 200) return 0;
+  Future<Map<String, String>> snapshot() async => {
+        for (final r in await db
+            .customSelect(
+              'SELECT id, message_id, received_at_us, unread_eligible, payload '
+              'FROM channel_message_rows WHERE node_scope = ? '
+              'AND channel_id_key = ?',
+              variables: [
+                Variable.withString(store.publicKeyHex),
+                Variable.withString(idKey),
+              ],
+            )
+            .get())
+          r.read<String>('message_id'): jsonEncode(r.data),
+      };
 
+  final before = await snapshot();
   final newestUs = (await db
           .customSelect(
             'SELECT MAX(received_at_us) AS m FROM channel_message_rows '
@@ -314,31 +377,49 @@ Future<void> _timeChannel(
           )
           .getSingle())
       .read<int>('m');
-  sw.reset();
-  final window = await db
-      .customSelect(
-        'SELECT payload FROM channel_message_rows '
-        'WHERE node_scope = ? AND channel_id_key = ? AND received_at_us >= ? '
-        'ORDER BY received_at_us, id',
-        variables: [
-          Variable.withString(store.publicKeyHex),
-          Variable.withString(idKey),
-          Variable.withInt(newestUs - _window.inMicroseconds),
-        ],
-      )
-      .get();
-  for (final row in window) {
-    jsonDecode(row.read<String>('payload'));
-  }
+  final sw = Stopwatch()..start();
+  final window = await store.loadChannelMessagesArrivedSince(
+    idKey,
+    DateTime.fromMicrosecondsSinceEpoch(newestUs - _window.inMicroseconds),
+  );
   final windowMs = sw.elapsedMilliseconds;
+  final target = window.lastWhere((m) => !_isStub(m.isOutgoing, m.text));
   sw.reset();
-  await store.upsertMessage(idKey, rows.last);
+  await store.updatePayload(
+    idKey,
+    target.messageId,
+    (m) => m.copyWith(reactions: {...m.reactions, '🧪': 1}),
+  );
   final oneRowMs = sw.elapsedMilliseconds;
+
+  final after = await snapshot();
+  var disturbed = 0;
+  for (final id in before.keys) {
+    final changed = before[id] != after[id];
+    if (changed != (id == target.messageId)) {
+      disturbed++;
+      print('   DIFF write: row $id ${changed ? "changed" : "unchanged"}');
+    }
+  }
+  final was = jsonDecode(before[target.messageId]!) as Map;
+  final now = jsonDecode(after[target.messageId]!) as Map;
+  for (final column in ['id', 'received_at_us', 'unread_eligible']) {
+    if (was[column] != now[column]) {
+      disturbed++;
+      print('   DIFF write: target $column ${was[column]} -> ${now[column]}');
+    }
+  }
+
+  sw.reset();
+  await store.upsertMessages(idKey, rows);
+  final rewriteMs = sw.elapsedMilliseconds;
   print(
     '   timing: today load $loadMs ms + rewrite ${rows.length} rows '
     '$rewriteMs ms; window load ${window.length} rows $windowMs ms + one row '
-    '$oneRowMs ms (desktop; a phone is ~3x slower)',
+    '$oneRowMs ms (desktop; a phone is ~3x slower); '
+    'other rows disturbed by the write: $disturbed',
   );
+  return disturbed;
 }
 
 Future<List<String>> _strings(
