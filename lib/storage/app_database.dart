@@ -7,6 +7,21 @@ import 'arrival_clock.dart';
 
 part 'app_database.g.dart';
 
+/// True for every message row whose text could parse as a Location or SOS
+/// pin (StructuredMessage.parse): a pin's position always comes from bare
+/// coordinates (a digit, a dot, three more digits), a maps link (all of
+/// them say "maps"), a geo: URI or a legacy m: marker. SMAZ-compressed text
+/// (s:) is only readable once decoded, so it always passes. A row this
+/// rejects can never be a pin; a row it passes still goes through the
+/// parser. Over-matching only costs a decode.
+const possiblePinRowSql =
+    "json_valid(payload) AND ("
+    "json_extract(payload, '\$.text') GLOB '*[0-9].[0-9][0-9][0-9]*' "
+    "OR json_extract(payload, '\$.text') LIKE '%maps%' "
+    "OR json_extract(payload, '\$.text') LIKE '%geo:%' "
+    "OR json_extract(payload, '\$.text') LIKE '%m:%' "
+    "OR json_extract(payload, '\$.text') LIKE '%s:%')";
+
 /// One row per channel message. The keys are real columns so the database
 /// enforces what the JSON-blob store never could: a message exists exactly
 /// once per (node, channel identity), writes are transactional, and order

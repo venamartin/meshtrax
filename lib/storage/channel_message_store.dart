@@ -692,6 +692,41 @@ class ChannelMessageStore {
     return _decodeRows(rows);
   }
 
+  /// The map's pin candidates for [idKeys]: each channel's messages that
+  /// could carry a Location or SOS pin ([possiblePinRowSql]), in
+  /// [loadChannelMessages] order. One query for every channel; the rest of
+  /// the history is never decoded.
+  Future<Map<String, List<ChannelMessage>>> loadPossiblePinMessages(
+    Iterable<String> idKeys,
+  ) async {
+    final keys = idKeys.toSet();
+    if (publicKeyHex.isEmpty || keys.isEmpty) return {};
+    for (final key in keys) {
+      await _importLegacyIdentityBlob(key);
+    }
+    final rows =
+        await (_db.select(_db.channelMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    r.channelIdKey.isIn(keys) &
+                    const CustomExpression<bool>(possiblePinRowSql),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    final byChannel = <String, List<ChannelMessageRow>>{};
+    for (final row in rows) {
+      (byChannel[row.channelIdKey] ??= []).add(row);
+    }
+    return {
+      for (final MapEntry(:key, :value) in byChannel.entries)
+        key: _decodeRows(value),
+    };
+  }
+
   /// Rows whose ORIGINAL wire timestamp (the messageId's leading field,
   /// the same rule as the connector's wireTimestampMs) falls inside
   /// [fromMs, toMs]. The candidate fetch for the retroactive orphan pass —
@@ -742,7 +777,10 @@ class ChannelMessageStore {
     final prefs = PrefsManager.instance;
     final key = '${keyFor}id_$idKey';
     final jsonString = prefs.getString(key);
-    if (jsonString == null || jsonString.isEmpty) {
+    // Long imported: nothing to remove. A remove is a platform call (on
+    // Windows a rewrite of the whole prefs file), once per load.
+    if (jsonString == null) return;
+    if (jsonString.isEmpty) {
       await prefs.remove(key);
       return;
     }

@@ -1233,7 +1233,7 @@ class _MapScreenState extends State<MapScreen> {
 
   int? _directMessagesKey;
 
-  /// Returns how many messages were scanned.
+  /// Returns how many candidate messages were scanned.
   Future<int> _collectContactMarkers(
     MeshCoreConnector connector,
     List<_SharedMarker> markers,
@@ -1241,8 +1241,10 @@ class _MapScreenState extends State<MapScreen> {
     final selfName = connector.selfName ?? 'Me';
     var scanned = 0;
 
-    for (final contact in connector.contacts) {
-      final messages = await connector.loadMessagesFor(contact);
+    final contacts = connector.contacts;
+    final candidates = await connector.loadPossiblePinMessages(contacts);
+    for (final contact in contacts) {
+      final messages = candidates[contact.publicKeyHex] ?? const [];
       scanned += messages.length;
       for (final message in messages) {
         final payload = _parseMarkerText(message.text);
@@ -1284,9 +1286,13 @@ class _MapScreenState extends State<MapScreen> {
       final sw = Stopwatch()..start();
       final markers = <_SharedMarker>[];
       var scanned = await _collectContactMarkers(connector, markers);
-      for (final channel in connector.channels.where((c) => !c.isEmpty)) {
+      final channels = connector.channels.where((c) => !c.isEmpty).toList();
+      final candidates = await connector.loadPossiblePinChannelMessages(
+        channels,
+      );
+      for (final channel in channels) {
         final isPublic = _isPublicChannel(channel);
-        final messages = await connector.loadChannelMessagesFor(channel);
+        final messages = candidates[channel.idKey] ?? const [];
         scanned += messages.length;
         for (final message in messages) {
           final payload = _parseMarkerText(message.text);
@@ -1312,7 +1318,7 @@ class _MapScreenState extends State<MapScreen> {
           );
         }
       }
-      appLogger.perf('map marker scan over $scanned messages', sw);
+      appLogger.perf('map marker scan over $scanned candidate messages', sw);
       if (!mounted) return;
       final newIds = markers.map((m) => m.id).toSet();
       final oldIds = _channelMarkers.map((m) => m.id).toSet();

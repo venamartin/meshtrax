@@ -497,17 +497,49 @@ class MessageStore {
                 (r) => OrderingTerm.asc(r.id),
               ]))
             .get();
-    final messages = <Message>[];
-    for (final row in rows) {
-      try {
-        messages.add(
-          _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>),
-        );
-      } catch (e) {
-        appLogger.warn('Skipping unreadable contact message row: $e');
-      }
+    return [for (final row in rows) ?_decodeRow(row)];
+  }
+
+  /// The map's pin candidates for [contactKeys]: each one's messages that
+  /// could carry a Location or SOS pin ([possiblePinRowSql]), in
+  /// [loadMessages] order. One query for everyone; the rest of the history
+  /// is never decoded.
+  Future<Map<String, List<Message>>> loadPossiblePinMessages(
+    Iterable<String> contactKeys,
+  ) async {
+    final keys = contactKeys.toSet();
+    if (publicKeyHex.isEmpty || keys.isEmpty) return {};
+    for (final key in keys) {
+      await _importLegacyBlobs(key);
     }
-    return messages;
+    final rows =
+        await (_db.select(_db.contactMessageRows)
+              ..where(
+                (r) =>
+                    r.nodeScope.equals(publicKeyHex) &
+                    const CustomExpression<bool>(possiblePinRowSql),
+              )
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.receivedAtUs),
+                (r) => OrderingTerm.asc(r.id),
+              ]))
+            .get();
+    final byContact = <String, List<Message>>{};
+    for (final row in rows) {
+      if (!keys.contains(row.contactKey)) continue;
+      final message = _decodeRow(row);
+      if (message != null) (byContact[row.contactKey] ??= []).add(message);
+    }
+    return byContact;
+  }
+
+  Message? _decodeRow(ContactMessageRow row) {
+    try {
+      return _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>);
+    } catch (e) {
+      appLogger.warn('Skipping unreadable contact message row: $e');
+      return null;
+    }
   }
 
   /// One-time import of the JSON blobs written by the previous store
@@ -520,7 +552,10 @@ class MessageStore {
       '$_keyPrefix$contactKeyHex',
     ]) {
       final legacy = prefs.getString(oldKey);
-      if (legacy != null && legacy.isNotEmpty) {
+      // Long imported: nothing to remove. A remove is a platform call (on
+      // Windows a rewrite of the whole prefs file), per key per load.
+      if (legacy == null) continue;
+      if (legacy.isNotEmpty) {
         appLogger.info(
           'Migrating contact messages from legacy key $oldKey into database',
         );
