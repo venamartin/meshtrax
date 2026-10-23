@@ -28,3 +28,4 @@ flutter:
   assets:
     - assets/sprites/
     - assets/styles/
+    - assets/world/

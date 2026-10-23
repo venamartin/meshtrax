@@ -25,7 +25,8 @@ String packLabel(
   PackKind.terrain => l10n.offlineMaps_kindTerrain,
   PackKind.base => l10n.offlineMaps_kindUsgs,
   PackKind.charts => l10n.offlineMaps_kindCharts,
-  PackKind.unknown => kind.name,
+  // Never listed: the world map is bundled, not downloaded.
+  PackKind.world || PackKind.unknown => kind.name,
 };
 
 /// A contour interval as shown to users: "20 ft", "10 m".
@@ -40,7 +41,7 @@ String packDetail(AppLocalizations l10n, PackKind kind) => switch (kind) {
   PackKind.contours => l10n.offlineMaps_kindContoursDetail,
   PackKind.terrain => l10n.offlineMaps_kindTerrainDetail,
   PackKind.base => l10n.offlineMaps_kindUsgsDetail,
-  PackKind.charts || PackKind.unknown => '',
+  PackKind.charts || PackKind.world || PackKind.unknown => '',
 };
 
 String installedLabel(AppLocalizations l10n, Pack pack) => packLabel(

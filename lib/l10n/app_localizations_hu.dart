@@ -4625,7 +4625,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get map_sourceOffline => 'Offline';
 
   @override
-  String get map_noOfflineMap => 'No offline map here';
+  String get map_downloadForDetail => 'Download a region for detail';
 
   @override
   String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';

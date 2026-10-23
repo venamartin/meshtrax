@@ -12,6 +12,10 @@ enum PackKind {
   terrain,
   charts,
 
+  /// The world base map bundled with the package (`assets/world/`):
+  /// Natural Earth, z0–5, drawn where no region pack reaches.
+  world,
+
   /// OpenStreetMap, OpenMapTiles schema (experiment; see FINDINGS.md).
   osm,
   unknown;

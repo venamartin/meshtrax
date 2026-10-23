@@ -26,6 +26,11 @@
       "type": "vector",
       "url": "pmtiles://{pack:contours}",
       "attribution": "USGS 3DEP"
+    },
+    "world": {
+      "type": "vector",
+      "url": "pmtiles://{pack:world}",
+      "attribution": "Made with Natural Earth"
     }
   },
   "layers": [
@@ -34,6 +39,236 @@
       "type": "background",
       "paint": {
         "background-color": "#f6f4f0"
+      }
+    },
+    {
+      "id": "world-urban",
+      "type": "fill",
+      "source": "world",
+      "source-layer": "landuse",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "residential"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 4,
+      "maxzoom": 6,
+      "paint": {
+        "fill-color": "#e8e2da"
+      }
+    },
+    {
+      "id": "world-ice",
+      "type": "fill",
+      "source": "world",
+      "source-layer": "landcover",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "ice"
+        ],
+        true,
+        false
+      ],
+      "maxzoom": 6,
+      "paint": {
+        "fill-color": "#f7fafc"
+      }
+    },
+    {
+      "id": "world-water",
+      "type": "fill",
+      "source": "world",
+      "source-layer": "water",
+      "maxzoom": 6,
+      "paint": {
+        "fill-color": "#a9d4f5"
+      }
+    },
+    {
+      "id": "world-river",
+      "type": "line",
+      "source": "world",
+      "source-layer": "waterway",
+      "maxzoom": 6,
+      "paint": {
+        "line-color": "#8cc3ee",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          3,
+          0.4,
+          6,
+          1
+        ]
+      }
+    },
+    {
+      "id": "world-state",
+      "type": "line",
+      "source": "world",
+      "source-layer": "boundary",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "admin_level"
+          ],
+          4
+        ],
+        [
+          "==",
+          [
+            "get",
+            "maritime"
+          ],
+          0
+        ]
+      ],
+      "minzoom": 3,
+      "maxzoom": 6,
+      "paint": {
+        "line-color": "#c3b3d6",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          3,
+          0.5,
+          6,
+          0.9
+        ],
+        "line-dasharray": [
+          3,
+          2
+        ]
+      }
+    },
+    {
+      "id": "world-country",
+      "type": "line",
+      "source": "world",
+      "source-layer": "boundary",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "admin_level"
+          ],
+          2
+        ],
+        [
+          "==",
+          [
+            "get",
+            "maritime"
+          ],
+          0
+        ]
+      ],
+      "maxzoom": 6,
+      "paint": {
+        "line-color": "#9b88b8",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          0.6,
+          6,
+          1.4
+        ],
+        "line-dasharray": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "disputed"
+            ],
+            1
+          ],
+          [
+            "literal",
+            [
+              3,
+              2
+            ]
+          ],
+          [
+            "literal",
+            [
+              1,
+              0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "id": "world-road",
+      "type": "line",
+      "source": "world",
+      "source-layer": "transportation",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "motorway",
+          "trunk",
+          "primary"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 4,
+      "maxzoom": 6,
+      "paint": {
+        "line-color": "#f0c27a",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          4,
+          0.5,
+          6,
+          1.2
+        ]
       }
     },
     {
@@ -692,6 +927,234 @@
           4,
           2
         ]
+      }
+    },
+    {
+      "id": "world-sea-name",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "water_name",
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Italic"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          10,
+          6,
+          12
+        ],
+        "text-max-width": 10,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ],
+        "text-letter-spacing": 0.1
+      },
+      "paint": {
+        "text-color": "#4a86b8",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "world-state-label",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "state"
+        ],
+        true,
+        false
+      ],
+      "minzoom": 4,
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-max-width": 14,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ],
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.08
+      },
+      "paint": {
+        "text-color": "#55595e",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "world-city-dot",
+      "type": "circle",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "city",
+          "town"
+        ],
+        true,
+        false
+      ],
+      "maxzoom": 6,
+      "paint": {
+        "circle-radius": 2,
+        "circle-color": "#2f3337",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 0.8
+      }
+    },
+    {
+      "id": "world-city",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "city",
+          "town"
+        ],
+        true,
+        false
+      ],
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "capital"
+            ],
+            2
+          ],
+          12,
+          [
+            "<=",
+            [
+              "get",
+              "rank"
+            ],
+            3
+          ],
+          11.5,
+          10.5
+        ],
+        "text-max-width": 8,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ],
+        "text-variable-anchor": [
+          "left",
+          "right",
+          "top",
+          "bottom"
+        ],
+        "text-radial-offset": 0.45
+      },
+      "paint": {
+        "text-color": "#2f3337",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "world-country-label",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "match",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "country"
+        ],
+        true,
+        false
+      ],
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Medium"
+        ],
+        "text-size": [
+          "step",
+          [
+            "get",
+            "rank"
+          ],
+          15,
+          3,
+          13,
+          5,
+          11
+        ],
+        "text-max-width": 12,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ],
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "#9b88b8",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
       }
     },
     {

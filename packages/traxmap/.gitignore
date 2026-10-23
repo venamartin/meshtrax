@@ -32,3 +32,5 @@ migrate_working_dir/
 
 # Map packs, including the test packs in test/packs (built by traxmapmaker).
 *.pmtiles
+# ...except the world base map, which ships with the package.
+!assets/world/world.pmtiles
