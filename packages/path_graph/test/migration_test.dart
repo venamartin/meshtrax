@@ -348,8 +348,10 @@ void main() {
           traffic_weight REAL NOT NULL DEFAULT 0, last_observed INTEGER,
           obs_count INTEGER NOT NULL DEFAULT 0, source TEXT NOT NULL,
           measured_snr REAL, PRIMARY KEY (from_hash, to_hash))''');
-      await db.customStatement("INSERT INTO graph_nodes (hash_bytes, source) "
-          "VALUES ('C882', 'observed')");
+      // Named: v10 wipes unnamed codes heard only once.
+      await db.customStatement(
+          'INSERT INTO graph_nodes (hash_bytes, source, name) '
+          "VALUES ('C882', 'advert', 'WHITE_WHALE')");
       await db.customStatement(
           'INSERT INTO graph_edges (from_hash, to_hash, traffic_weight, '
           "last_observed, obs_count, source) VALUES ('C882', '9105', 1, "
@@ -407,6 +409,73 @@ void main() {
     expect((nodes['219D']!.lat, nodes['219D']!.lon), (null, null));
     expect(nodes['1000']!.autoMovingAt, isNull);
     expect(nodes['BEEF']!.movingOverride, MovingOverride.staysPut);
+    await graph.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
+
+  // 2026-10-23: 3,674 of the owner's 5,014 codes were junk from flood paths
+  // — heard in one burst, never again, never adverted.
+  test('v9 to v10: codes heard in one burst and never again are wiped',
+      () async {
+    const t0 = 1792600000000, s = 1000, h = 3600 * 1000;
+    Future<void> link(PathGraphDatabase db, String from, String to,
+        {int? first, required int last, int count = 1, String extra = ''}) =>
+        db.customStatement(
+            'INSERT INTO graph_edges (from_hash, to_hash, traffic_weight, '
+            'last_observed, obs_count, source, first_observed$extra) VALUES '
+            "('$from', '$to', $count, $last, $count, 'observed', "
+            "${first ?? 'NULL'}${extra.isEmpty ? '' : ', 1'})");
+    final file = await atVersion(9, (db) async {
+      await db.customStatement(
+          'INSERT INTO graph_nodes (hash_bytes, source, name) VALUES '
+          "('A277', 'advert', 'INTERLAKEN')");
+      await db.customStatement(
+          'INSERT INTO graph_nodes (hash_bytes, source) VALUES '
+          "('0041', 'observed'), ('B107', 'observed'), ('1312', 'observed'), "
+          "('0F3B', 'observed'), ('D6ED', 'observed'), ('9C50', 'observed'), "
+          "('BEEF', 'observed'), ('E4CB', 'observed')");
+      // A junk run ending at a real repeater, and a doorstep it left.
+      await link(db, '0041', 'B107', first: t0, last: t0);
+      await link(db, 'B107', 'A277', first: t0 + 5 * s, last: t0 + 5 * s);
+      await db.customStatement(
+          'INSERT INTO contact_ingress (owner_pubkey, repeater_hash, weight, '
+          "last_seen, evidence, final_count) VALUES ('me', 'B107', 1.0, "
+          "$t0, 'inferred', 1)");
+      // Junk from before first sightings were kept: one sighting each.
+      await link(db, '0F3B', 'D6ED', last: t0 - 9 * h);
+      // A real repeater nobody named, heard two hours apart.
+      await link(db, 'A277', '1312', first: t0, last: t0);
+      await link(db, '1312', 'A277', first: t0 + 2 * h, last: t0 + 2 * h);
+      // Heard twice before first sightings were kept: span unknown.
+      await link(db, '9C50', 'A277', last: t0, count: 2);
+      // Proven to hear me, or measured by a trace: never junk.
+      await link(db, 'BEEF', 'A277', first: t0, last: t0);
+      await db.customStatement(
+          'INSERT INTO contact_ingress (owner_pubkey, repeater_hash, weight, '
+          "last_seen, evidence, proven_at, proven_count) VALUES ('me', "
+          "'BEEF', 3.0, $t0, 'proven', $t0, 1)");
+      await link(db, 'E4CB', 'A277',
+          first: t0, last: t0, extra: ', measured_snr');
+    });
+
+    final graph = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+    await graph.init();
+    final snap = graph.snapshot();
+    expect(snap.nodes.keys,
+        unorderedEquals(['A277', '1312', '9C50', 'BEEF', 'E4CB']));
+    expect(snap.edges.keys, unorderedEquals([
+      ('A277', '1312'),
+      ('1312', 'A277'),
+      ('9C50', 'A277'),
+      ('BEEF', 'A277'),
+      ('E4CB', 'A277'),
+    ]));
+    final rows = [
+      for (final r in graph.saveSession()['ingress'] as List)
+        (r as Map)['repeater'],
+    ];
+    expect(rows, ['BEEF'], reason: 'the junk doorstep went with its code');
     await graph.dispose();
     file.parent.deleteSync(recursive: true);
   });

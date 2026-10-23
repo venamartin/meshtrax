@@ -38,7 +38,10 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// v10 (2026-10-23): no new columns. The tags the first detector rules
   /// set are cleared (they caught hilltops), as are advert moves and
   /// stored positions with a 0 in them (a half-set position read as a
-  /// 10,000 km move). The user's own moving switch is kept.
+  /// 10,000 km move). The user's own moving switch is kept. Junk codes
+  /// from flood paths are wiped with their links and doorstep rows: never
+  /// adverted, nothing proven or measured, every sighting in one burst
+  /// (field: 3,674 of 5,014 codes).
   @override
   int get schemaVersion => 10;
 
@@ -122,6 +125,39 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             await customStatement(
                 'UPDATE graph_nodes SET lat = NULL, lon = NULL '
                 'WHERE lat = 0 OR lon = 0');
+            // Junk codes: every sighting of every link within the 10
+            // minutes of PathGraphConfig.newCodeConfirmMinutes. A link
+            // seen twice before first sightings were kept has an unknown
+            // span and keeps its codes.
+            await customStatement('''
+                CREATE TEMP TABLE one_off_codes AS
+                SELECT l.hash AS hash FROM (
+                  SELECT from_hash AS hash, s, n, measured_snr, obs_count,
+                         first_observed, last_observed FROM graph_edges
+                  UNION ALL
+                  SELECT to_hash, s, n, measured_snr, obs_count,
+                         first_observed, last_observed FROM graph_edges
+                ) l JOIN graph_nodes g ON g.hash_bytes = l.hash
+                WHERE g.name IS NULL AND g.pubkey IS NULL
+                  AND g.source = 'observed' AND g.moving_override IS NULL
+                  AND l.hash NOT IN (SELECT repeater_hash FROM contact_ingress
+                                     WHERE proven_at IS NOT NULL)
+                GROUP BY l.hash
+                HAVING SUM(l.s > 0 OR l.n > 0 OR l.measured_snr IS NOT NULL
+                           OR (l.obs_count > 1 AND l.first_observed IS NULL))
+                         = 0
+                   AND MAX(l.last_observed)
+                       - MIN(COALESCE(l.first_observed, l.last_observed))
+                       < 600000''');
+            await customStatement(
+                'DELETE FROM graph_edges WHERE from_hash IN '
+                '(SELECT hash FROM one_off_codes) OR to_hash IN '
+                '(SELECT hash FROM one_off_codes)');
+            await customStatement('DELETE FROM contact_ingress WHERE '
+                'repeater_hash IN (SELECT hash FROM one_off_codes)');
+            await customStatement('DELETE FROM graph_nodes WHERE hash_bytes '
+                'IN (SELECT hash FROM one_off_codes)');
+            await customStatement('DROP TABLE one_off_codes');
           }
         },
       );
