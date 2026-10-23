@@ -1,5 +1,12 @@
 ## Unreleased
 
+- **Chart legend** (`ChartLegendItem`, `LegendSymbol`, `LegendStyle`): what
+  the chart styles draw, by section (buoys and beacons, lights, hazards,
+  tides, depths, areas, landmarks, abbreviations). Each item names sample
+  features, and `LegendSymbol` draws them as the style's own layers do,
+  from its paint and sprite sheet, so a legend can't drift from the map.
+  The app supplies the words. The sprite sheet loader is shared with the
+  renderer (`loadSpriteSheet`).
 - **The world map shows on Windows.** `openBundledWorld` deleted the copy it
   had just written, because Windows lists the folder's files with `\` and
   their paths never matched the one written with `/`, so it found no file to

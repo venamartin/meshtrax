@@ -398,7 +398,9 @@ void main() {
     },
   );
 
-  testWidgets('the legend hides behind an info button', (tester) async {
+  testWidgets('the legend opens as a sheet from the info button', (
+    tester,
+  ) async {
     await pumpMap(
       tester,
       _FakeConnector(
@@ -408,14 +410,13 @@ void main() {
     expect(find.textContaining('Nodes:'), findsNothing);
 
     await tester.tap(find.byTooltip('Legend'));
-    await tester.pump();
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Mesh'), findsOneWidget);
     expect(find.textContaining('Nodes:'), findsOneWidget);
     expect(find.text('Repeater'), findsOneWidget, reason: 'the key shows too');
-
-    await tester.tap(find.textContaining('Nodes:'));
-    await tester.pump();
-    expect(find.textContaining('Nodes:'), findsNothing);
-    expect(find.byTooltip('Legend'), findsOneWidget);
+    expect(find.text('Chart symbols'), findsNothing, reason: 'not charts');
   });
 
   testWidgets('a path trace starts without a radio position', (tester) async {

@@ -9,6 +9,8 @@ library;
 
 export 'core.dart';
 export 'src/packs/background_pack_downloader.dart';
+export 'src/legend/chart_legend.dart';
+export 'src/legend/legend_symbol.dart';
 export 'src/packs/bundled_world.dart';
 export 'src/renderer/flutter_map_renderer.dart' show TileCoverage;
 export 'src/styles/asset_style_source.dart';
