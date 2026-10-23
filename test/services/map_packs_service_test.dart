@@ -424,11 +424,33 @@ void main() {
     await maps.manager.install(terrain, id: 'us-rhode-island-terrain');
     await maps.reloadInstalled();
     List<String> kinds({required bool hillShading}) => [
-      for (final p in maps.mapPacks(contours: true, hillShading: hillShading))
+      for (final p in maps.mapPacks(
+        contours: true,
+        hillShading: hillShading,
+        world: true,
+      ))
         p.kind.name,
     ];
     expect(kinds(hillShading: true), containsAll(['osm', 'terrain']));
     expect(kinds(hillShading: false), ['osm']);
+  });
+
+  test('offline maps draw the bundled world map', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final maps = service();
+    await maps.start();
+    await maps.openWorld();
+    expect(maps.world?.kind, PackKind.world);
+    List<PackKind> kinds({required bool world}) => [
+      for (final p in maps.mapPacks(
+        contours: true,
+        hillShading: true,
+        world: world,
+      ))
+        p.kind,
+    ];
+    expect(kinds(world: true), [PackKind.world]);
+    expect(kinds(world: false), isEmpty, reason: 'online tiles show it');
   });
 
   test('pack status follows downloads, installs and builds', () async {

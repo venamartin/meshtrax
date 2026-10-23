@@ -2477,7 +2477,7 @@
   "map_chartsNoticeUse": "To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.",
   "map_sourceOnline": "Online",
   "map_sourceOffline": "Offline",
-  "map_noOfflineMap": "No offline map here",
+  "map_downloadForDetail": "Download a region for detail",
   "map_zoomInForOfflineMap": "Zoom in to see your offline map",
   "map_noCharts": "No charts here",
   "map_myLocation": "My location",

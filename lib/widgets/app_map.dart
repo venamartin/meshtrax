@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -32,8 +33,9 @@ bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
 /// licences require. Charts open the "Not for navigation" dialog once a run.
 ///
 /// An Online | Offline switch picks where the map comes from. Offline shows
-/// exactly what works without signal: downloaded maps only, and a "No
-/// offline map here" card elsewhere. Online fills everything not downloaded
+/// exactly what works without signal: downloaded maps, the bundled world
+/// map, and a "Download a region for detail" card where no region is
+/// downloaded, where the map also stops zooming in. Online fills everything not downloaded
 /// with online OpenStreetMap tiles. Either way, unless the user turns it off,
 /// a teal outline marks the downloaded areas of the map that's showing;
 /// Online it's filled too, to set them apart from the online tiles.
@@ -59,7 +61,7 @@ class AppMap extends StatefulWidget {
   final bool? contours;
 
   /// A small map (e.g. in a dialog): it follows the Online | Offline setting
-  /// without showing the switch or the "No offline map here" card.
+  /// without showing the switch or the "Download a region" card.
   final bool compact;
 
   /// Width of the screen's map buttons at the right edge: the offline card
@@ -76,7 +78,9 @@ class AppMap extends StatefulWidget {
     this.controller,
     this.initialCamera,
     this.initialFit,
-    this.minZoom = 1,
+    // About a continent on a phone, as far out as the world map is drawn
+    // (Martin).
+    this.minZoom = 2,
     this.maxZoom = 17,
     this.onTap,
     this.onLongPress,
@@ -92,8 +96,18 @@ class AppMap extends StatefulWidget {
 }
 
 class _AppMapState extends State<AppMap> {
+  /// Offline, where no region is downloaded, the map stops zooming in here:
+  /// the world map's detail ends, and region packs start, at zoom 6.
+  static const _worldDetailZoom = 6.0;
+
   /// Whether installed packs cover the view centre; null until known.
   bool? _covered;
+
+  /// The zoom cap while [_covered] is false: the world map's detail, or the
+  /// zoom the view had when it left the downloaded regions, so panning off
+  /// one never zooms the map out.
+  double _uncoveredMaxZoom = _worldDetailZoom;
+  double _zoom = 0;
   MapStyleState? _style;
   TileCoverage? _coverage;
 
@@ -116,6 +130,7 @@ class _AppMapState extends State<AppMap> {
   }
 
   void _onCameraChanged(MapCamera camera) {
+    _zoom = camera.zoom;
     widget.onCameraChanged?.call(camera);
     _settle?.cancel();
     _settle = Timer(const Duration(milliseconds: 300), () {
@@ -203,6 +218,8 @@ class _AppMapState extends State<AppMap> {
           packs: maps.mapPacks(
             contours: !online && (widget.contours ?? settings.mapContours),
             hillShading: !online && settings.mapHillShading,
+            // Online, the online tiles show the world.
+            world: !online,
           ),
           units: settings.unitSystem == UnitSystem.imperial
               ? Units.imperial
@@ -211,7 +228,9 @@ class _AppMapState extends State<AppMap> {
           initialCamera: widget.initialCamera,
           initialFit: widget.initialFit,
           minZoom: widget.minZoom,
-          maxZoom: widget.maxZoom,
+          maxZoom: !online && _covered == false
+              ? math.min(widget.maxZoom, _uncoveredMaxZoom)
+              : widget.maxZoom,
           overlays: _withAreas(
             maps,
             type: type,
@@ -225,7 +244,12 @@ class _AppMapState extends State<AppMap> {
             if (online && coverage != null)
               _OnlineTiles(key: ObjectKey(coverage), coverage: coverage),
           ],
-          onCoverageChanged: (covered) => setState(() => _covered = covered),
+          onCoverageChanged: (covered) => setState(() {
+            _covered = covered;
+            if (!covered) {
+              _uncoveredMaxZoom = math.max(_worldDetailZoom, _zoom);
+            }
+          }),
           onTileCoverage: (coverage) => setState(() => _coverage = coverage),
           onStyleLoaded: (s) {
             setState(() => _style = s);
@@ -320,7 +344,7 @@ class _NoOfflineMap extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: ListTile(
-          title: Text(l10n.map_noOfflineMap),
+          title: Text(l10n.map_downloadForDetail),
           subtitle: Text(
             packs.isEmpty
                 ? l10n.offlineMaps_title

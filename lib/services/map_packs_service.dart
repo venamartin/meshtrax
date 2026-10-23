@@ -80,6 +80,11 @@ class MapPacksService extends ChangeNotifier {
   CatalogueStatus _status = CatalogueStatus.unknown;
   String? _error;
   List<Pack> _installed = const [];
+
+  /// The world base map bundled with traxmap, once [openWorld] has copied
+  /// it into [cacheDir].
+  Pack? get world => _world;
+  Pack? _world;
   final _files = <String, FileStat>{};
   final _downloads = <String, PackDownload>{};
   Future<void>? _refreshing;
@@ -110,8 +115,20 @@ class MapPacksService extends ChangeNotifier {
       cacheDir: root,
     );
     await service.start();
+    await service.openWorld();
     await service._followWifiSetting(settings);
     return service;
+  }
+
+  /// Opens the bundled world base map, which offline maps draw where no
+  /// region pack reaches. A failure leaves those parts empty, as before.
+  Future<void> openWorld({AssetBundle? bundle}) async {
+    try {
+      _world = await openBundledWorld(cacheDir, bundle: bundle);
+      notifyListeners();
+    } on Object catch (e) {
+      appLogger.warn('Opening the world map failed: $e', tag: 'Maps');
+    }
   }
 
   /// Keeps [dir] out of iCloud and Time Machine backups (iOS, macOS). Maps
@@ -406,8 +423,13 @@ class MapPacksService extends ChangeNotifier {
       _installed.any((p) => _requiredKinds[type]?.contains(p.kind) ?? false);
 
   /// The installed packs a map draws from; the style uses those it needs.
-  /// Contours come last so the map's own credit leads the credits.
-  List<Pack> mapPacks({required bool contours, required bool hillShading}) => [
+  /// Contours come last so the map's own credit leads the credits, and the
+  /// world map (offline maps) after them.
+  List<Pack> mapPacks({
+    required bool contours,
+    required bool hillShading,
+    required bool world,
+  }) => [
     for (final pack in _installed)
       if (pack.kind != PackKind.unknown &&
           pack.kind != PackKind.contours &&
@@ -416,6 +438,7 @@ class MapPacksService extends ChangeNotifier {
     if (contours)
       for (final pack in _installed)
         if (pack.kind == PackKind.contours) pack,
+    if (world) ?_world,
   ];
 
   // --- Catalogue queries ---------------------------------------------------

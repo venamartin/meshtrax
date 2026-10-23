@@ -66,10 +66,14 @@ CHARTS_DARK = {
 }
 
 
-# The layers grouped by role carry their own dark palette.
+# The chart layers grouped by role and the world layers carry their own
+# dark palettes.
 from make_chart_layers import dark_paint  # noqa: E402
+from make_world_layers import dark_paint as world_dark_paint  # noqa: E402
 
 CHARTS_DARK.update(dark_paint())
+CHARTS_DARK.update(world_dark_paint("charts-dark"))
+USGS_DARK.update(world_dark_paint("usgs-dark"))
 
 
 def derive(light: str, dark: str, name: str, overrides: dict) -> None:

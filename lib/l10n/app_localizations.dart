@@ -7866,11 +7866,11 @@ abstract class AppLocalizations {
   /// **'Offline'**
   String get map_sourceOffline;
 
-  /// No description provided for @map_noOfflineMap.
+  /// No description provided for @map_downloadForDetail.
   ///
   /// In en, this message translates to:
-  /// **'No offline map here'**
-  String get map_noOfflineMap;
+  /// **'Download a region for detail'**
+  String get map_downloadForDetail;
 
   /// No description provided for @map_zoomInForOfflineMap.
   ///

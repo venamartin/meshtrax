@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **World base map** (`PackKind.world`, traxmapmaker FINDINGS 1.7): Natural
+  Earth at z0–5 bundled in `assets/world/world.pmtiles` (4.2 MB, credit
+  "Made with Natural Earth"). `openBundledWorld(dir)` copies it next to the
+  packs, named after its contents so an update never replaces an open file,
+  and returns it as a pack. Every style draws it up to zoom 6 from
+  `pmtiles://{pack:world}`, in its own colours (`tool/make_world_layers.py`).
 - **Terrain packs** (`PackKind.terrain`, traxmapmaker FINDINGS 1.3): hill
   shading and elevation bands come from their own pack, drawn under the
   USGS and OSM maps from `pmtiles://{pack:terrain}` (attribution "USGS

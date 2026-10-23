@@ -85,6 +85,7 @@ void main() {
     Brightness? brightness,
     bool compact = false,
     LatLng center = const LatLng(41.8, -71.4),
+    double zoom = 10,
     double controlsWidth = 0,
   }) async {
     tester.view.physicalSize = const Size(600, 600);
@@ -106,7 +107,7 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: AppMap(
-              initialCamera: MapCamera(center: center, zoom: 10),
+              initialCamera: MapCamera(center: center, zoom: zoom),
               controlsWidth: controlsWidth,
               compact: compact,
             ),
@@ -137,7 +138,7 @@ void main() {
     expect(switchState(tester), {true}, reason: 'auto: online');
     expect(find.byType(fm.TileLayer), findsOneWidget);
     expect(find.textContaining('OpenStreetMap contributors'), findsOneWidget);
-    expect(find.text('No offline map here'), findsNothing);
+    expect(find.text('Download a region for detail'), findsNothing);
     expect(find.text('Not for navigation'), findsNothing);
   });
 
@@ -149,8 +150,31 @@ void main() {
     expect(switchState(tester), {false});
     expect(find.byType(fm.TileLayer), findsNothing);
     expect(find.textContaining('OpenStreetMap contributors'), findsNothing);
-    expect(find.text('No offline map here'), findsOneWidget);
+    expect(find.text('Download a region for detail'), findsOneWidget);
     expect(find.text('Offline maps'), findsOneWidget, reason: 'no catalogue');
+  });
+
+  double maxZoom(WidgetTester tester) =>
+      tester.widget<OfflineMapView>(find.byType(OfflineMapView)).maxZoom;
+
+  testWidgets('online, zooming in goes on', (tester) async {
+    await pumpMap(tester);
+    expect(maxZoom(tester), 17);
+  });
+
+  testWidgets('offline, where nothing is downloaded, zooming in stops', (
+    tester,
+  ) async {
+    await settings.setMapSource('offline');
+    await pumpMap(tester, zoom: 4);
+    expect(maxZoom(tester), 6, reason: "the world map's detail");
+  });
+
+  testWidgets('offline, a view already zoomed in where nothing is downloaded '
+      'stays there', (tester) async {
+    await settings.setMapSource('offline');
+    await pumpMap(tester, zoom: 10);
+    expect(maxZoom(tester), 10);
   });
 
   /// [maps] with the live charts catalogue, following [downloads], and with
@@ -247,7 +271,7 @@ void main() {
     await pumpMap(tester);
     final ri = maps.chartPackOf('charts/us/rhode-island')!;
     expect(find.text('No charts here'), findsOneWidget);
-    expect(find.text('No offline map here'), findsNothing);
+    expect(find.text('Download a region for detail'), findsNothing);
     expect(
       find.text('Download Rhode Island NOAA charts · ${formatBytes(ri.bytes)}'),
       findsOneWidget,
@@ -362,7 +386,7 @@ void main() {
     expect(maps.installed, hasLength(2));
     await pumpMap(tester);
     expect(switchState(tester), {true});
-    expect(find.text('No offline map here'), findsNothing);
+    expect(find.text('Download a region for detail'), findsNothing);
 
     await install('us-rhode-island-osm', 'osm', _ri);
     await tester.pump();
@@ -375,7 +399,7 @@ void main() {
     final slot = tester.widget<Positioned>(
       find
           .ancestor(
-            of: find.text('No offline map here'),
+            of: find.text('Download a region for detail'),
             matching: find.byType(Positioned),
           )
           .first,
@@ -390,7 +414,7 @@ void main() {
     await settings.setMapSource('offline');
     await pumpMap(tester, compact: true);
     expect(find.byType(SegmentedButton<bool>), findsNothing);
-    expect(find.text('No offline map here'), findsNothing);
+    expect(find.text('Download a region for detail'), findsNothing);
     expect(find.byType(fm.TileLayer), findsNothing, reason: 'offline');
     expect(find.textContaining('OpenStreetMap'), findsNothing);
   });
