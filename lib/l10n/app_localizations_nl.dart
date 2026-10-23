@@ -556,6 +556,23 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Toepassingsdebugberichten';
 
   @override
+  String get settings_exportDatabase => 'Berichtendatabase exporteren';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Een kopie van alle chats en contacten, voor foutopsporing. Houd deze privé.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Database opgeslagen in: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Exporteren mislukt: $error';
+  }
+
+  @override
   String get settings_about => 'Over';
 
   @override

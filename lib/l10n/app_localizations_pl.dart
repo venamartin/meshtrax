@@ -563,6 +563,23 @@ class AppLocalizationsPl extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Komunikaty debugowania aplikacji';
 
   @override
+  String get settings_exportDatabase => 'Eksportuj bazę wiadomości';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Kopia wszystkich czatów i kontaktów do debugowania. Zachowaj ją prywatnie.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Baza zapisana w: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Eksport nie powiódł się: $error';
+  }
+
+  @override
   String get settings_about => 'O aplikacji';
 
   @override

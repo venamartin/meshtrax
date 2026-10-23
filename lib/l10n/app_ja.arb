@@ -179,6 +179,24 @@
   "settings_bleDebugLogSubtitle": "BLEコマンド、応答、および生のデータ",
   "settings_appDebugLog": "アプリケーションのデバッグログ",
   "settings_appDebugLogSubtitle": "アプリケーションのデバッグメッセージ",
+  "settings_exportDatabase": "メッセージデータベースをエクスポート",
+  "settings_exportDatabaseSubtitle": "デバッグ用の全チャットと連絡先のコピー。他人と共有しないでください。",
+  "settings_exportDatabaseSaved": "データベースの保存先: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "エクスポートに失敗しました: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "概要",
   "settings_aboutVersion": "MeshTrax {version}版",
   "@settings_aboutVersion": {

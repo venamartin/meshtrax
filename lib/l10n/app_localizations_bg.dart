@@ -563,6 +563,23 @@ class AppLocalizationsBg extends AppLocalizations {
       'Съобщения за отстраняване на грешки на приложението';
 
   @override
+  String get settings_exportDatabase => 'Експортиране на базата със съобщения';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Копие на всички чатове и контакти за отстраняване на грешки. Пазете го лично.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Базата е запазена в: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Експортирането не бе успешно: $error';
+  }
+
+  @override
   String get settings_about => 'За нас';
 
   @override

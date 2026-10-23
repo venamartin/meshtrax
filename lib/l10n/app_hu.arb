@@ -179,6 +179,24 @@
   "settings_bleDebugLogSubtitle": "BLE parancsok, válaszok és alapvető adatok",
   "settings_appDebugLog": "App-debug log",
   "settings_appDebugLogSubtitle": "Programozási hibajelzések",
+  "settings_exportDatabase": "Üzenetadatbázis exportálása",
+  "settings_exportDatabaseSubtitle": "Az összes csevegés és kapcsolat másolata hibakereséshez. Tartsa privátként.",
+  "settings_exportDatabaseSaved": "Adatbázis mentve ide: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Az exportálás sikertelen: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "Ról",
   "settings_aboutVersion": "MeshTrax {version} verzió",
   "@settings_aboutVersion": {

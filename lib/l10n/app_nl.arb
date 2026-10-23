@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "BLE commando's, antwoorden en ruwe data",
   "settings_appDebugLog": "App Debug Log",
   "settings_appDebugLogSubtitle": "Toepassingsdebugberichten",
+  "settings_exportDatabase": "Berichtendatabase exporteren",
+  "settings_exportDatabaseSubtitle": "Een kopie van alle chats en contacten, voor foutopsporing. Houd deze privé.",
+  "settings_exportDatabaseSaved": "Database opgeslagen in: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Exporteren mislukt: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "Over",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

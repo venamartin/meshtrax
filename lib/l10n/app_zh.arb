@@ -121,6 +121,24 @@
   "settings_bleDebugLogSubtitle": "BLE 命令、响应和原始数据",
   "settings_appDebugLog": "应用调试日志",
   "settings_appDebugLogSubtitle": "应用调试消息",
+  "settings_exportDatabase": "导出消息数据库",
+  "settings_exportDatabaseSubtitle": "所有聊天和联系人的副本，用于调试。请勿外传。",
+  "settings_exportDatabaseSaved": "数据库已保存到：{path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "导出失败：{error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "关于",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

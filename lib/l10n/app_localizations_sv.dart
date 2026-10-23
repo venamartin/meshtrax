@@ -551,6 +551,23 @@ class AppLocalizationsSv extends AppLocalizations {
       'Applikations felsökningsmeddelanden';
 
   @override
+  String get settings_exportDatabase => 'Exportera meddelandedatabas';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'En kopia av alla chattar och kontakter, för felsökning. Håll den privat.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Databasen sparad i: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Exporten misslyckades: $error';
+  }
+
+  @override
   String get settings_about => 'Om';
 
   @override

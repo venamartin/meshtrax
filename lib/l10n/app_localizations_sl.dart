@@ -553,6 +553,23 @@ class AppLocalizationsSl extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Debug sporočila aplikacije';
 
   @override
+  String get settings_exportDatabase => 'Izvozi bazo sporočil';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Kopija vseh klepetov in stikov za odpravljanje napak. Hranite jo zasebno.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Baza shranjena v: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Izvoz ni uspel: $error';
+  }
+
+  @override
   String get settings_about => 'Oglejte si';
 
   @override

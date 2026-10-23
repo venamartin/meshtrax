@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "BLE ukazi, odgovori in surovi podatki",
   "settings_appDebugLog": "Logi aplikacije",
   "settings_appDebugLogSubtitle": "Debug sporočila aplikacije",
+  "settings_exportDatabase": "Izvozi bazo sporočil",
+  "settings_exportDatabaseSubtitle": "Kopija vseh klepetov in stikov za odpravljanje napak. Hranite jo zasebno.",
+  "settings_exportDatabaseSaved": "Baza shranjena v: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Izvoz ni uspel: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "Oglejte si",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

@@ -555,6 +555,23 @@ class AppLocalizationsSk extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Správy z ladenia aplikácie';
 
   @override
+  String get settings_exportDatabase => 'Exportovať databázu správ';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Kópia všetkých chatov a kontaktov na ladenie. Uchovajte ju v súkromí.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Databáza uložená do: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Export zlyhal: $error';
+  }
+
+  @override
   String get settings_about => 'O nás';
 
   @override

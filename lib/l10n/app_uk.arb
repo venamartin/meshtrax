@@ -118,6 +118,24 @@
   "settings_bleDebugLogSubtitle": "Команди BLE, відповіді та необроблені дані",
   "settings_appDebugLog": "Журнал налагодження програми",
   "settings_appDebugLogSubtitle": "Повідомлення налагодження програми",
+  "settings_exportDatabase": "Експорт бази повідомлень",
+  "settings_exportDatabaseSubtitle": "Копія всіх чатів і контактів для налагодження. Зберігайте її приватно.",
+  "settings_exportDatabaseSaved": "Базу збережено в: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Помилка експорту: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "Про програму",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {

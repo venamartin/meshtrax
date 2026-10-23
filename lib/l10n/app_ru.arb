@@ -93,6 +93,24 @@
   "settings_bleDebugLogSubtitle": "Команды BLE, ответы и сырые данные",
   "settings_appDebugLog": "Журнал отладки приложения",
   "settings_appDebugLogSubtitle": "Сообщения отладки приложения",
+  "settings_exportDatabase": "Экспорт базы сообщений",
+  "settings_exportDatabaseSubtitle": "Копия всех чатов и контактов для отладки. Храните её в тайне.",
+  "settings_exportDatabaseSaved": "База сохранена в: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Ошибка экспорта: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "О программе",
   "settings_aboutVersion": "MeshTrax v{version}",
   "settings_aboutLegalese": "2026 MeshTrax Source Project",

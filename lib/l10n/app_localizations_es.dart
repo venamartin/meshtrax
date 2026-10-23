@@ -560,6 +560,23 @@ class AppLocalizationsEs extends AppLocalizations {
       'Mensajes de depuración de la aplicación';
 
   @override
+  String get settings_exportDatabase => 'Exportar base de datos de mensajes';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Una copia de todos los chats y contactos, para depuración. Manténgala privada.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'Base de datos guardada en: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Error al exportar: $error';
+  }
+
+  @override
   String get settings_about => 'Acerca de';
 
   @override

@@ -560,6 +560,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'Сообщения отладки приложения';
 
   @override
+  String get settings_exportDatabase => 'Экспорт базы сообщений';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'Копия всех чатов и контактов для отладки. Храните её в тайне.';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'База сохранена в: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'Ошибка экспорта: $error';
+  }
+
+  @override
   String get settings_about => 'О программе';
 
   @override

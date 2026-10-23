@@ -535,6 +535,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_appDebugLogSubtitle => 'アプリケーションのデバッグメッセージ';
 
   @override
+  String get settings_exportDatabase => 'メッセージデータベースをエクスポート';
+
+  @override
+  String get settings_exportDatabaseSubtitle =>
+      'デバッグ用の全チャットと連絡先のコピー。他人と共有しないでください。';
+
+  @override
+  String settings_exportDatabaseSaved(String path) {
+    return 'データベースの保存先: $path';
+  }
+
+  @override
+  String settings_exportDatabaseFailed(String error) {
+    return 'エクスポートに失敗しました: $error';
+  }
+
+  @override
   String get settings_about => '概要';
 
   @override

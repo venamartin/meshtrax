@@ -222,6 +222,24 @@
   "settings_bleDebugLogSubtitle": "BLE commands, responses, and raw data",
   "settings_appDebugLog": "App Debug Log",
   "settings_appDebugLogSubtitle": "Application debug messages",
+  "settings_exportDatabase": "Export message database",
+  "settings_exportDatabaseSubtitle": "A copy of all chats and contacts, for debugging. Keep it private.",
+  "settings_exportDatabaseSaved": "Database saved to: {path}",
+  "@settings_exportDatabaseSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_exportDatabaseFailed": "Export failed: {error}",
+  "@settings_exportDatabaseFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settings_about": "About",
   "settings_aboutVersion": "MeshTrax v{version}",
   "@settings_aboutVersion": {
