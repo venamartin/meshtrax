@@ -17,6 +17,7 @@ import '../services/path_graph/frame_adapter.dart';
 import '../services/path_graph/path_graph_service.dart';
 import '../utils/contact_search.dart';
 import '../widgets/mention_composer.dart';
+import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/routing_dialog.dart';
 import 'path_graph_diagnostics_screen.dart';
 import 'path_trace_map.dart';
@@ -254,6 +255,14 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           ],
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: context.l10n.pathfinderHelp_title,
+            onPressed: () =>
+                PathfinderHelpDialog.show(context, offerDontShowAgain: false),
+          ),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -264,7 +273,14 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
               title: Text(context.l10n.settings_pathGraph),
               subtitle: Text(context.l10n.settings_pathGraphSubtitle),
               value: settings.settings.pathGraphEnabled,
-              onChanged: (v) => settings.setPathGraphEnabled(v),
+              onChanged: (v) async {
+                await settings.setPathGraphEnabled(v);
+                // Switched on: say what it does and that it needs time to
+                // learn, once, unless the user asked not to see it again.
+                if (v && context.mounted) {
+                  await PathfinderHelpDialog.showIfNotSeen(context);
+                }
+              },
             ),
             const SizedBox(height: 16),
             if (graph == null)

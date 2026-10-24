@@ -41,6 +41,29 @@ void main() {
         reason: 'the ladder must not keep asking a graph that was turned off');
   });
 
+  // Pathfinder off = the radio routes as it always did: no graph ladder, no
+  // ACK route keeper, no attempt reports, nothing listening to packets.
+  test('switched off: every hook into the connector is gone', () async {
+    final c = _Connector();
+    final service = PathGraphService();
+    await service.start(c, database: NativeDatabase.memory());
+    expect(c.graphRouteCandidates, isNotNull);
+    expect(c.onContactMessageCopy, isNotNull, reason: 'the keeper listens');
+
+    await service.stop();
+
+    expect(service.isRunning, isFalse);
+    expect(c.graphRouteCandidates, isNull);
+    expect(c.graphDistanceTo, isNull);
+    expect(c.onContactMessageCopy, isNull, reason: 'the keeper is gone');
+    expect(c.onSendAttemptResult, isNull);
+    expect(c.onSendAttemptStarted, isNull);
+    expect(c.onFirmwarePathLearned, isNull);
+    expect(c.onContactMessageHeard, isNull);
+    expect(c.onChannelPacketHeard, isNull);
+    expect(c.onOwnEchoHeard, isNull);
+  });
+
   test('two starts at once open one graph', () async {
     final c = _Connector();
     final service = PathGraphService();

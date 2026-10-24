@@ -3869,6 +3869,35 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_resendingByFlood => 'Resending by flood';
 
   @override
+  String get pathfinderHelp_title => 'What Pathfinder does';
+
+  @override
+  String get pathfinderHelp_what =>
+      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+
+  @override
+  String get pathfinderHelp_how =>
+      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+
+  @override
+  String get pathfinderHelp_learning =>
+      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+
+  @override
+  String get pathfinderHelp_guessed =>
+      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+
+  @override
+  String get pathfinderHelp_off =>
+      'Turn Pathfinder off and the radio routes exactly as it did before.';
+
+  @override
+  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String get pathfinderHelp_ok => 'OK';
+
+  @override
   String get settings_pathGraph => 'Pathfinder (experimental)';
 
   @override
