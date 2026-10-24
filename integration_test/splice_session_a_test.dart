@@ -55,13 +55,19 @@ void main() {
   const roomBName = String.fromEnvironment('ROOM_B', defaultValue: 'Meshtrax Room');
   const sessionFile = String.fromEnvironment('SESSION_FILE');
   const outDir = String.fromEnvironment('OUT_DIR', defaultValue: '.');
-  // ONLY=A3 runs the bring-up and the keeper window alone (no room A RF).
+  // ONLY=A3 runs the bring-up and the keeper window alone (no room A RF);
+  // ONLY=A12 runs the room A steps and skips the keeper window.
   const only = String.fromEnvironment('ONLY');
   const skipRoomA = only == 'A3';
+  const skipRoomB = only == 'A12';
 
   // Hour-minute-second with dashes: a Windows file name cannot hold colons.
   final stamp =
       DateTime.now().toIso8601String().substring(11, 19).replaceAll(':', '-');
+  // Texts carry the run's hour and minute: the status poll reads the
+  // message store, and a text reused from an earlier run would answer with
+  // that run's outcome. Still under 20 characters.
+  final hm = stamp.substring(0, 5).replaceAll('-', '');
   final radio = BenchRadio('TCP($host)');
   final service = PathGraphService();
   final settings = AppSettingsService();
@@ -289,8 +295,8 @@ void main() {
     dump('after the flooded login', roomA!);
     expect(ok, isTrue, reason: 'login failed — nothing to measure against');
 
-    await post(roomA!, 'Test: before 1');
-    await post(roomA!, 'Test: before 2');
+    await post(roomA!, 'Test $hm: before 1');
+    await post(roomA!, 'Test $hm: before 2');
     dump('after the baseline posts', roomA!);
   });
 
@@ -333,8 +339,8 @@ void main() {
       blog('no splice available here: ${result is FloodResult ? result.reason.name : "route has no guess"} '
           '(their inbound path too short, too young for the ducting guard, or no hint)');
     }
-    await post(roomA!, 'Test: route guess 1');
-    await post(roomA!, 'Test: route guess 2');
+    await post(roomA!, 'Test $hm: guess 1');
+    await post(roomA!, 'Test $hm: guess 2');
     dump('after the splice posts', roomA!);
     final snap = graph.snapshot();
     if (result is RouteResult && result.guessedHops > 0) {
@@ -352,7 +358,7 @@ void main() {
   });
 
   testWidgets('A3 keeper: login to room B, then a window for pushes from it',
-      (tester) async {
+      skip: skipRoomB, (tester) async {
     if (!ready) fail('Bench not ready — see the first failure above.');
     await beginScenario(tester, 'A3 keeper window');
     blog('>>> login to ${roomB!.name}…');
