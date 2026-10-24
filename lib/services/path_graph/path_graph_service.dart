@@ -388,6 +388,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     if (selection.source == RouteSource.graph) {
       if (delivered) {
         _graphDelivered++;
+        _keeper?.onDelivered(contact.publicKeyHex, selection);
       } else {
         _graphFailed++;
       }

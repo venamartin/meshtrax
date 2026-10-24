@@ -293,4 +293,64 @@ void main() {
       expect(radio.writes, ['CAROL:flood']);
     });
   });
+
+  // Splices (owner, 2026-10-24): one guessed hop may hold the stored route
+  // at rung 0; the step-down rungs are proven routes only; a splice whose
+  // ACK was lost is retired until a send of mine proves it.
+  group('splices', () {
+    PathSelection splice(List<int> bytes, List<bool> guessed) =>
+        PathSelection(
+          pathBytes: bytes,
+          hopCount: bytes.length ~/ 2,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: 0.4,
+          guessedLinks: guessed,
+        );
+    final oneGuess = splice([0xA2, 0x77, 0xAD, 0x77, 0x10, 0x00], [false, true]);
+    final twoGuess =
+        splice([0xA2, 0x77, 0xAD, 0x77, 0x10, 0x00, 0xBE, 0xEF], [false, true, true]);
+
+    test('rung 0 holds a one-guess splice, never a two-guess one', () {
+      fakeAsync((async) {
+        final radio = _Radio([_contact(stored: _pf1)])
+          ..routes = [twoGuess, oneGuess, _pf2];
+        radio.copy(async, radio.contacts.first);
+        expect(radio.writes, ['CAROL:other']);
+        expect(radio.contacts.first.path, oneGuess.pathBytes);
+      });
+    });
+
+    test('after a step down the rungs are proven routes only, and the '
+        'splice that lost the ACK is retired', () {
+      fakeAsync((async) {
+        final radio = _Radio([_contact(stored: oneGuess)])
+          ..routes = [oneGuess, _pf2, _pf3];
+        final carol = radio.contacts.first;
+        radio.copy(async, carol); // ACKed on the splice it already holds
+        expect(radio.writes, isEmpty);
+        radio.copy(async, carol); // same message again: that ACK was lost
+        expect(radio.writes, ['CAROL:PF2']);
+        // A new message starts from rung 0 again, but the splice is
+        // retired, so the best proven route stays: nothing to write.
+        radio.copy(async, radio.contacts.first, stamp: 2000, text: 'next');
+        expect(radio.writes, ['CAROL:PF2']);
+        expect(radio.contacts.first.path, _pf2.pathBytes);
+      });
+    });
+
+    test('a send of mine delivering on the splice brings it back', () {
+      fakeAsync((async) {
+        final radio = _Radio([_contact(stored: oneGuess)])
+          ..routes = [oneGuess, _pf2];
+        final carol = radio.contacts.first;
+        radio.copy(async, carol);
+        radio.copy(async, carol); // retired
+        radio.keeper.onDelivered(carol.publicKeyHex, oneGuess);
+        radio.copy(async, radio.contacts.first, stamp: 2000, text: 'next');
+        expect(radio.contacts.first.path, oneGuess.pathBytes);
+      });
+    });
+  });
 }
