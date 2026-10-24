@@ -381,9 +381,36 @@ class MapPacksService extends ChangeNotifier {
     // Until the installed list has the new build, the row would flash
     // "Download" or "Update" between "Checking" and "Downloaded".
     if (download.state == PackDownloadState.installed) await reloadInstalled();
+    final verifying =
+        _downloads[download.id]?.state == PackDownloadState.verifying;
     _downloads[download.id] = download;
     notifyListeners();
+    // Rejected once downloaded (its SHA-256): the pack may have been
+    // republished during the download, so the entry it began with is old.
+    if (verifying && download.state == PackDownloadState.failed) {
+      unawaited(_retryIfRepublished(download));
+    }
   }
+
+  final _recovering = <String>{};
+
+  /// Fetches the catalogue again and, if [failed]'s pack has a new build,
+  /// downloads that one.
+  Future<void> _retryIfRepublished(PackDownload failed) async {
+    if (!_recovering.add(failed.id)) return;
+    try {
+      await refresh();
+      final entry = _entryOf(failed.id);
+      if (entry != null && entry.sha256 != failed.entry.sha256) {
+        await resume(failed.id);
+      }
+    } finally {
+      _recovering.remove(failed.id);
+    }
+  }
+
+  PackIndexEntry? _entryOf(String id) =>
+      _index?.usable.where((e) => e.id == id).firstOrNull;
 
   // --- Drawing -------------------------------------------------------------
 
@@ -579,7 +606,18 @@ class MapPacksService extends ChangeNotifier {
   (String, String, String)? _notificationTitles;
 
   Future<void> pause(String id) => downloader.pause(id);
-  Future<void> resume(String id) => downloader.resume(id);
+
+  /// Resumes a paused download. A failed one starts again from the
+  /// catalogue's current entry, as the pack may have been republished.
+  Future<void> resume(String id) async {
+    final failed = _downloads[id];
+    if (failed?.state != PackDownloadState.failed) {
+      return downloader.resume(id);
+    }
+    await downloader.cancel(id);
+    await downloader.start(_entryOf(id) ?? failed!.entry);
+  }
+
   Future<void> cancel(String id) => downloader.cancel(id);
 
   /// Downloads every available update.
