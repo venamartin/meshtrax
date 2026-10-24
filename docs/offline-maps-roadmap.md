@@ -16,7 +16,7 @@ Last updated 2026-10-22. **Resume here.**
   - `feature/terrain` (the terrain kind and the USGS base), when traxmapmaker's pilot packs arrive.
 - **Before the next store release from master:** the release gate in Phase 5.
 - **Phone GPS is parked (Martin, 2026-10-22).** My location uses the radio's position only, so the next release asks for no new location permission and needs no store-form changes or review videos.
-  - The removal is its own PR off master, `feature/radio-position-only`, kept local until Martin tests it.
+  - **Shipped in #184** (squash `64ce6fdc`, 1.7.109+119), with the radio GPS work: the top-bar GPS icon and dialog, the blue dot, and a fresh radio position (see M7 below and [`offline-maps.md`](offline-maps.md), 2026-10-22).
   - Phone GPS comes back later as its own project: see "Phone GPS (parked)" under Later.
 - **Pushing:** only when Martin asks. He also pushes to feature branches from his other machine, so fetch first.
 
@@ -103,10 +103,16 @@ Last updated 2026-10-22. **Resume here.**
      - macOS `NSLocationUsageDescription` and the location entitlement;
      - MSIX `location` capability;
      - iOS builds set `BYPASS_PERMISSION_LOCATION_ALWAYS=1` (TESTFLIGHT_GUIDE.md, Podfiles).
-   - **Phone GPS parked (2026-10-22):** the phone parts above come out in `feature/radio-position-only`, and My location follows the radio. The permission-prompt test and the store forms move to "Phone GPS (parked)" under Later. The privacy review stays in the release gate.
+   - **Phone GPS parked (2026-10-22):** the phone parts above came out in #184, and My location follows the radio. The permission-prompt test and the store forms move to "Phone GPS (parked)" under Later. The privacy review stays in the release gate.
+   - **Now (#184, #186):**
+     - My location shows only on a radio with a GPS module. With the GPS on it centres on the radio's blue dot. With the GPS off it offers to turn it on (a first fix can take minutes).
+     - Without a GPS module, or with the GPS off, the radio is the teal "You" pin at its typed-in position.
+     - The app reads the radio's position every 10 s while the Node Map or the GPS dialog is open, and every 60 s otherwise.
+     - A top-bar GPS icon (only with a GPS module) opens a dialog with the switch, position and altitude.
+     - The Map tab's top bar has no title.
 8. **Waiting for Martin:**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
-   - translations: 80+ new strings are English only, and `tools/translate.py` needs Ollama;
+   - translations: about 400 strings are English only (offline maps, structured messages, markdown, Pathfinder, GPS), and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time";
    - **traxmapmaker's full-data charts** (2026-10-20). MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps.md, renderer notes).
      - **Chosen (Martin, 2026-10-21): Option B, the navigational set**, about 1.2–1.3 GB for all 42 areas. Option A's routes, regulated areas and overhead clearances, plus:
@@ -212,13 +218,13 @@ Test: auto-connect firing while either of these is open.
 
 ```
 ┌──────────────────────────────────────────────┐
-│ ‹(POI/no-radio)  Node Map      ⦿radar  LOS  ⋮ │  radar and ⋮ hidden in no-radio mode
+│ ‹(POI/no-radio)                ⦿radar  LOS  ⋮ │  radar and ⋮ hidden in no-radio mode; no title (#186)
 ├──────────────────────────────────────────────┤
 │ [Online│▐Offline▌]              ┌───────────┐ │  source switch (AppMap)
 │                                ┌───────────┐ │
 │   vector map  /  online raster │ 12 nodes ▾│ │  legend card (hidden in no-radio mode)
 │      ● teal "You" (radio)      └───────────┘ │
-│            ◉ blue dot + accuracy (phone GPS) │
+│            ◉ blue dot (radio GPS on)         │  GPS off or no GPS module: the teal "You" pin
 │                                         [≋]  │  layers → S2
 │                                         [◎]  │  centre on me
 │                                         [+]  │  desktop only
@@ -532,7 +538,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 | Task | Change |
 | --- | --- |
 | M6 | Layers button and sheet (S2, Google Maps style, 2026-10-20): map type, contours, light/dark, node types; desktop +/−. **Done.** |
-| M7 | Phone GPS (geolocator): My location and the phone's own marker, plus the privacy and platform updates. On the Pi it uses the radio fallback. **Done** (2026-10-20). **Parked 2026-10-22:** the phone parts come out in `feature/radio-position-only`, and My location follows the radio. See "Phone GPS (parked)" under Later. |
+| M7 | Phone GPS (geolocator): My location and the phone's own marker, plus the privacy and platform updates. On the Pi it uses the radio fallback. **Done** (2026-10-20). **Parked 2026-10-22:** the phone parts came out in #184, and My location follows the radio's GPS. See "Phone GPS (parked)" under Later. |
 
 ### Phase 5: cleanup and release gate
 
@@ -544,15 +550,15 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
 **G2:** a pass on Android, iOS, Windows and macOS. Includes updating a pack on Windows while the map is open.
 
 **Release gate (2026-10-22): before the next store release from master.** GitHub issues are off for this repo, so the checklist lives here.
-- [ ] **Phone GPS out:** `feature/radio-position-only` merged (decided 2026-10-22, see Status). It removes:
-  - geolocator, `PhoneLocationService` and the blue dot;
-  - Android location on every version: the permissions go back to `maxSdkVersion="30"`, which BLE scanning on Android 11 and below still needs;
+- [x] **Phone GPS out:** done in #184 (2026-10-22). It removed:
+  - geolocator, `PhoneLocationService` and the phone's blue dot;
+  - Android location on every version: the permissions are back to `maxSdkVersion="30"`, which BLE scanning on Android 11 and below still needs;
   - the iOS and macOS location texts, the macOS location entitlement, `BYPASS_PERMISSION_LOCATION_ALWAYS` (Podfiles, TESTFLIGHT_GUIDE.md) and the MSIX `location` capability.
 
-  My location then follows the radio. The app asks the radio for its position about every 30 s while a map is open, instead of only at the radio's `gps_interval` (15 min by default).
+  My location follows the radio's GPS. The app reads the radio's position with self telemetry every 10 s while the Node Map or the GPS dialog is open, and every 60 s otherwise. The Location dialog's GPS interval setting is gone: it only made the radio's reported position stale (old versions set 15 minutes) and saved no power.
 - [ ] **Privacy policy:** review `docs/privacy.md`. The store listings link to it on master, so the draft is already live.
   - The map server section stays.
-  - The device-location row and the My location wording come out with phone GPS.
+  - Done in #184: the device-location row is gone, and it says again that the App doesn't read the phone's GPS (My location shows the radio's position).
   - Contact: drop "open an issue", since GitHub issues are off.
   - Set "Last updated"; it still says September 29, 2026.
 - [ ] **Store forms:** none change once phone GPS is out. Play Data safety, the App Store privacy label and the Microsoft Store listing stay as they are today.
@@ -560,9 +566,12 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
   - download, pause and resume a region;
   - Offline mode;
   - the charts "Not for navigation" dialog;
-  - My location with a GPS radio (follows it), with a radio whose position is typed in, and with none (hidden);
+  - My location and the GPS icon:
+    - with a GPS radio, GPS on: the blue dot follows within about 10 s;
+    - GPS off: My location offers to turn it on;
+    - a radio without a GPS module: no My location and no GPS icon; the "You" pin is at the typed-in position;
   - on Windows, updating a pack while the map is open.
-- [ ] **Translations:** about 80 new strings are English only. Translate them, or ship with the English fallback.
+- [ ] **Translations:** about 400 strings are English only (offline maps, structured messages, markdown, Pathfinder, GPS). Translate them, or ship with the English fallback.
 
 ### Phase 6: Charts
 
@@ -616,7 +625,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 **Parked 2026-10-22 (Martin):** he wants it back, but after offline maps and other features. The store side (forms, review videos, approval) needs time he doesn't have now.
 
 **Bringing it back:**
-- Revert `feature/radio-position-only`'s removal. The working code is in #169 (`25f17ee`), and its pitfalls are in [`offline-maps.md`](offline-maps.md) ("Phone location").
+- Bring back the phone parts that #184 (`64ce6fdc`) removed. The working code is in #169 (`25f17ee`), and its pitfalls are in [`offline-maps.md`](offline-maps.md) ("Phone location"). Not a plain revert: #184 also added the radio's GPS (blue dot, GPS icon, self-telemetry reads), so the phone becomes a second source beside it.
 - **Store work it brings back:**
   - the privacy policy wording;
   - Play Data safety;
