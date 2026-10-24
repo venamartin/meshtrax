@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
 import 'package:latlong2/latlong.dart' as ll;
@@ -17,6 +14,7 @@ import '../view/map_controller.dart';
 import '../view/overlays.dart';
 import '../packs/attribution.dart';
 import 'composite_pmtiles_provider.dart';
+import 'sprite_sheets.dart';
 
 /// Renders a resolved style with flutter_map + flutter_map_vector_tiles.
 ///
@@ -165,7 +163,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       final theme = vt.ThemeReader(
         logger: kDebugMode ? const vt.Logger.console() : const vt.Logger.noop(),
       ).read(style);
-      final sprites = await _sprites(style['sprite']);
+      final sprites = await loadSpriteSheet(style['sprite']);
       if (!mounted || !identical(style, widget.style)) {
         vt.TileProviders(providers).dispose();
         return;
@@ -187,42 +185,6 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       vt.TileProviders(providers).dispose();
       if (mounted) setState(() => _error = e);
     }
-  }
-
-  // Sheets are shared by every map and kept for the app's lifetime, so a
-  // style switch reuses them and no layer is left holding a disposed image.
-  static final _atlases = <String, Future<vt.SpriteAtlas?>>{};
-
-  static Future<vt.SpriteAtlas?> _sprites(Object? base) {
-    if (base is! String || !base.startsWith('asset:')) return Future.value();
-    return _atlases[base] ??= _loadAtlas(base.substring('asset:'.length));
-  }
-
-  /// Apps see package assets under `packages/traxmap/`; the package's own
-  /// tests see them at the bare path. Without a sheet, maps draw no icons.
-  static Future<vt.SpriteAtlas?> _loadAtlas(String path) async {
-    for (final dir in ['packages/traxmap/assets/', 'assets/']) {
-      try {
-        final index = await rootBundle.loadString('$dir$path@2x.json');
-        final bytes = await rootBundle.load('$dir$path@2x.png');
-        final codec = await ui.instantiateImageCodec(
-          bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
-        );
-        final frame = await codec.getNextFrame();
-        codec.dispose();
-        return vt.SpriteAtlas(
-          image: frame.image,
-          sprites: vt.SpriteAtlas.parseIndex(
-            jsonDecode(index) as Map<String, Object?>,
-          ),
-          pixelRatio: 2,
-          cacheKey: 'asset:$path',
-        );
-      } catch (_) {
-        continue;
-      }
-    }
-    return null;
   }
 
   void _updateCoverage() {

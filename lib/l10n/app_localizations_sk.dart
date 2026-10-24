@@ -4943,4 +4943,500 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get map_pickPositionHint => 'Tap the map to pick a position';
+
+  @override
+  String get map_legendMesh => 'Mesh';
+
+  @override
+  String get chartLegend_title => 'Chart symbols';
+
+  @override
+  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+
+  @override
+  String get chartLegend_sectionLights => 'Lights';
+
+  @override
+  String get chartLegend_sectionHazards => 'Hazards';
+
+  @override
+  String get chartLegend_sectionTides => 'Tides and currents';
+
+  @override
+  String get chartLegend_sectionDepths => 'Depths and seabed';
+
+  @override
+  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+
+  @override
+  String get chartLegend_sectionLandmarks => 'Landmarks';
+
+  @override
+  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+
+  @override
+  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+
+  @override
+  String get chartLegend_portBuoy => 'Green can buoy';
+
+  @override
+  String get chartLegend_portBuoyHint =>
+      'Keep it on your left coming in from sea';
+
+  @override
+  String get chartLegend_starboardBuoy => 'Red nun buoy';
+
+  @override
+  String get chartLegend_starboardBuoyHint =>
+      'Keep it on your right coming in: red, right, returning';
+
+  @override
+  String get chartLegend_junctionBuoy => 'Banded buoy';
+
+  @override
+  String get chartLegend_junctionBuoyHint =>
+      'A channel junction: treat it as the colour of its top band';
+
+  @override
+  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+
+  @override
+  String get chartLegend_safeWaterBuoyHint =>
+      'Safe water all around, often at a channel entrance';
+
+  @override
+  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+
+  @override
+  String get chartLegend_isolatedDangerBuoyHint =>
+      'A small danger with safe water around it: keep clear';
+
+  @override
+  String get chartLegend_specialBuoy => 'Yellow buoy';
+
+  @override
+  String get chartLegend_specialBuoyHint =>
+      'Special purpose, not for steering by: anchorage, cable, research';
+
+  @override
+  String get chartLegend_cardinalBuoy => 'Black and yellow';
+
+  @override
+  String get chartLegend_cardinalBuoyHint =>
+      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+
+  @override
+  String get chartLegend_mooringBuoy => 'Mooring buoy';
+
+  @override
+  String get chartLegend_portBeacon => 'Green square daybeacon';
+
+  @override
+  String get chartLegend_portBeaconHint =>
+      'Like a green buoy: keep it on your left coming in';
+
+  @override
+  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+
+  @override
+  String get chartLegend_starboardBeaconHint =>
+      'Like a red buoy: keep it on your right coming in';
+
+  @override
+  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+
+  @override
+  String get chartLegend_otherBeaconHint =>
+      'Information or a warning, not a side of the channel';
+
+  @override
+  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+
+  @override
+  String get chartLegend_topmark => 'Topmark';
+
+  @override
+  String get chartLegend_topmarkHint =>
+      'The shape on top of a mark adds to its meaning';
+
+  @override
+  String get chartLegend_light => 'Light';
+
+  @override
+  String get chartLegend_lightHint =>
+      'The magenta flare marks a light; its label tells how it flashes';
+
+  @override
+  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+
+  @override
+  String get chartLegend_lightExampleHint =>
+      'A light\'s label: rhythm, colour, then period';
+
+  @override
+  String get chartLegend_lightFixed => 'Fixed';
+
+  @override
+  String get chartLegend_lightFixedHint => 'A steady light';
+
+  @override
+  String get chartLegend_lightFlashing => 'Flashing';
+
+  @override
+  String get chartLegend_lightFlashingHint =>
+      'Short flashes, longer dark between';
+
+  @override
+  String get chartLegend_lightGroup => 'Group flashing';
+
+  @override
+  String get chartLegend_lightGroupHint =>
+      'Flashes in groups, here 2, then dark';
+
+  @override
+  String get chartLegend_lightComposite => 'Composite group';
+
+  @override
+  String get chartLegend_lightCompositeHint =>
+      '2 flashes, then 1: marks a channel junction';
+
+  @override
+  String get chartLegend_lightQuick => 'Quick';
+
+  @override
+  String get chartLegend_lightQuickHint => 'About one flash a second';
+
+  @override
+  String get chartLegend_lightIsophase => 'Isophase';
+
+  @override
+  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+
+  @override
+  String get chartLegend_lightOcculting => 'Occulting';
+
+  @override
+  String get chartLegend_lightOccultingHint => 'On longer than off';
+
+  @override
+  String get chartLegend_lightMorse => 'Morse code A';
+
+  @override
+  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+
+  @override
+  String get chartLegend_lightAlternating => 'Alternating';
+
+  @override
+  String get chartLegend_lightAlternatingHint => 'Changes colour';
+
+  @override
+  String get chartLegend_lightColours => 'White, red, green, yellow';
+
+  @override
+  String get chartLegend_lightPeriod => 'Period';
+
+  @override
+  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+
+  @override
+  String get chartLegend_rock => 'Underwater rock';
+
+  @override
+  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+
+  @override
+  String get chartLegend_rockAwash => 'Rock awash';
+
+  @override
+  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+
+  @override
+  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+
+  @override
+  String get chartLegend_rockCoversHint =>
+      'Shows at low tide, covered at high tide';
+
+  @override
+  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+
+  @override
+  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+
+  @override
+  String get chartLegend_wreck => 'Wreck';
+
+  @override
+  String get chartLegend_wreckHint =>
+      'Deep enough for boats on the surface; don\'t anchor';
+
+  @override
+  String get chartLegend_wreckShowing => 'Wreck showing';
+
+  @override
+  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+
+  @override
+  String get chartLegend_obstruction => 'Obstruction';
+
+  @override
+  String get chartLegend_obstructionHint =>
+      'Something on the bottom; its depth when known';
+
+  @override
+  String get chartLegend_foulGround => 'Foul ground';
+
+  @override
+  String get chartLegend_foulGroundHint =>
+      'Safe to pass over, but don\'t anchor or trawl';
+
+  @override
+  String get chartLegend_hazardArea => 'Edge of a danger area';
+
+  @override
+  String get chartLegend_hazardAreaHint =>
+      'Rocks, wrecks or obstructions inside';
+
+  @override
+  String get chartLegend_pile => 'Pile or post';
+
+  @override
+  String get chartLegend_floodStream => 'Flood stream';
+
+  @override
+  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+
+  @override
+  String get chartLegend_ebbStream => 'Ebb stream';
+
+  @override
+  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+
+  @override
+  String get chartLegend_current => 'Current';
+
+  @override
+  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+
+  @override
+  String get chartLegend_rips => 'Tide rips or eddies';
+
+  @override
+  String get chartLegend_ripsHint => 'Rough, swirling water';
+
+  @override
+  String get chartLegend_breakers => 'Breakers';
+
+  @override
+  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+
+  @override
+  String get chartLegend_sounding => 'Sounding';
+
+  @override
+  String get chartLegend_soundingHint => 'Depth at an average low tide';
+
+  @override
+  String get chartLegend_depthContour => 'Depth contour';
+
+  @override
+  String get chartLegend_depthContourHint => 'Its label gives the depth';
+
+  @override
+  String get chartLegend_drying => 'Dries at low tide';
+
+  @override
+  String get chartLegend_dredged => 'Dredged channel';
+
+  @override
+  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+
+  @override
+  String get chartLegend_swept => 'Swept area';
+
+  @override
+  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+
+  @override
+  String get chartLegend_unsurveyed => 'Unsurveyed';
+
+  @override
+  String get chartLegend_unsurveyedHint => 'No depths measured';
+
+  @override
+  String get chartLegend_weed => 'Kelp or weed';
+
+  @override
+  String get chartLegend_restricted => 'Restricted area';
+
+  @override
+  String get chartLegend_restrictedHint =>
+      'Entry limited; the ticks point inside';
+
+  @override
+  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+
+  @override
+  String get chartLegend_regulatedLimitHint =>
+      'Anchorage, cable area, firing area and more: see its label';
+
+  @override
+  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+
+  @override
+  String get chartLegend_anchorage => 'Anchorage';
+
+  @override
+  String get chartLegend_anchorBerth => 'Anchor berth';
+
+  @override
+  String get chartLegend_noAnchoring => 'No anchoring';
+
+  @override
+  String get chartLegend_caution => 'Caution area';
+
+  @override
+  String get chartLegend_cautionHint => 'Take extra care here';
+
+  @override
+  String get chartLegend_trafficLane => 'Traffic lane';
+
+  @override
+  String get chartLegend_trafficLaneHint =>
+      'Big ships, one way: cross at right angles';
+
+  @override
+  String get chartLegend_separationZone => 'Separation zone';
+
+  @override
+  String get chartLegend_separationZoneHint =>
+      'Between traffic lanes: keep out';
+
+  @override
+  String get chartLegend_precautionary => 'Precautionary area';
+
+  @override
+  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+
+  @override
+  String get chartLegend_fairway => 'Fairway';
+
+  @override
+  String get chartLegend_fairwayHint => 'A main channel';
+
+  @override
+  String get chartLegend_track => 'Recommended track';
+
+  @override
+  String get chartLegend_ferry => 'Ferry route';
+
+  @override
+  String get chartLegend_leadingLine => 'Leading line';
+
+  @override
+  String get chartLegend_leadingLineHint =>
+      'Line up its two marks to stay in the channel';
+
+  @override
+  String get chartLegend_cable => 'Submarine cable';
+
+  @override
+  String get chartLegend_cableHint => 'Don\'t anchor';
+
+  @override
+  String get chartLegend_pipeline => 'Submarine pipeline';
+
+  @override
+  String get chartLegend_pipelineHint => 'Don\'t anchor';
+
+  @override
+  String get chartLegend_overhead => 'Overhead cable';
+
+  @override
+  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+
+  @override
+  String get chartLegend_tower => 'Tower';
+
+  @override
+  String get chartLegend_windTurbine => 'Wind turbine';
+
+  @override
+  String get chartLegend_chimney => 'Chimney';
+
+  @override
+  String get chartLegend_mast => 'Mast or antenna';
+
+  @override
+  String get chartLegend_church => 'Church or spire';
+
+  @override
+  String get chartLegend_flagstaff => 'Flagstaff';
+
+  @override
+  String get chartLegend_dome => 'Dome';
+
+  @override
+  String get chartLegend_landmark => 'Other landmark';
+
+  @override
+  String get chartLegend_abbrAnch => 'Anchorage';
+
+  @override
+  String get chartLegend_abbrWk => 'Wreck';
+
+  @override
+  String get chartLegend_abbrBr => 'Breakers';
+
+  @override
+  String get chartLegend_abbrWd => 'Weed';
+
+  @override
+  String get chartLegend_abbrVar => 'Magnetic variation';
+
+  @override
+  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+
+  @override
+  String get chartLegend_abbrTr => 'Tower';
+
+  @override
+  String get chartLegend_abbrCh => 'Church';
+
+  @override
+  String get chartLegend_abbrChy => 'Chimney';
+
+  @override
+  String get chartLegend_abbrFs => 'Flagstaff';
+
+  @override
+  String get chartLegend_abbrTk => 'Tank';
+
+  @override
+  String get chartLegend_abbrRBn => 'Radio beacon';
+
+  @override
+  String get chartLegend_abbrCg => 'Coast Guard station';
+
+  @override
+  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+
+  @override
+  String get chartLegend_abbrFog =>
+      'Fog signal: horn, bell, gong, whistle or siren';
+
+  @override
+  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+
+  @override
+  String chartLegend_depthRange(String from, String to) {
+    return '$from to $to';
+  }
+
+  @override
+  String chartLegend_depthOver(String depth) {
+    return 'Deeper than $depth';
+  }
 }

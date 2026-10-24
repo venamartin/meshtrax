@@ -601,10 +601,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 ### Later
 
 - Night style
-- **Map legend behind the "i" button** (Martin, 2026-10-23). Today the map screen's info button opens a card of node counts. It grows into a legend of several screens, added as the map gains content:
-  - MeshCore: companions, repeaters, rooms, sensors, guessed positions;
-  - charts: what each chart symbol, line and abbreviation means (buoys, beacons, lights, hazards, areas and their limits, Wk, Obstn, …);
-  - parks, when the overlays come.
+- **Map legend, more screens:** parks when the overlays come; a switch for only the chart symbols in view. (Built 2026-10-23: the "i" button opens a sheet with the MeshCore symbols and, on the chart map, the chart symbols by section, drawn from the chart style itself.)
 - Offline line-of-sight elevation
 - Cutting areas on the device
 - Online vector tiles streamed from R2

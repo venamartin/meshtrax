@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -37,30 +38,35 @@ void main() {
   late Directory tmp;
   late MapPacksService maps;
   late UiViewStateService viewState;
+  late AppSettingsService settings;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
     viewState = UiViewStateService();
+    settings = AppSettingsService();
     tmp = await Directory.systemTemp.createTemp('noradiomap');
     maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/packs')),
       downloader: _NoDownloads(),
       cacheDir: tmp,
-      styles: StyleRegistry(MemoryStyles()),
+      styles: StyleRegistry(MemoryStyles(maps: ['osm', 'charts'])),
     );
   });
   tearDown(() => tmp.delete(recursive: true));
 
-  Future<void> pumpScreen(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 900);
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    Size size = const Size(800, 900),
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: viewState),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           Provider<MapTileCacheService>.value(value: BlankTileCache()),
@@ -107,5 +113,37 @@ void main() {
     await pumpScreen(tester);
     expect(find.byTooltip('My location'), findsNothing);
     expect(find.byTooltip('Map layers'), findsOneWidget);
+  });
+
+  testWidgets('the layers sheet scrolls with the mouse wheel when short', (
+    tester,
+  ) async {
+    await pumpScreen(tester, size: const Size(800, 300));
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final before = tester.getTopLeft(find.text('Map details')).dy;
+    final mouse = TestPointer(1, PointerDeviceKind.mouse);
+    mouse.hover(tester.getCenter(find.text('Map type')));
+    await tester.sendEventToBinding(mouse.scroll(const Offset(0, 200)));
+    await tester.pump();
+    expect(tester.getTopLeft(find.text('Map details')).dy, lessThan(before));
+  });
+
+  testWidgets('the legend button shows only on the chart map', (tester) async {
+    await pumpScreen(tester);
+    expect(find.byTooltip('Legend'), findsNothing);
+
+    await settings.setChartsNoticeDismissed(true);
+    await settings.setMapSource('offline');
+    await settings.setMapType('charts');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Legend'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Chart symbols'), findsOneWidget);
+    expect(find.text('Mesh'), findsNothing, reason: 'no radio, no nodes');
   });
 }

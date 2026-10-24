@@ -8507,6 +8507,936 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the map to pick a position'**
   String get map_pickPositionHint;
+
+  /// No description provided for @map_legendMesh.
+  ///
+  /// In en, this message translates to:
+  /// **'Mesh'**
+  String get map_legendMesh;
+
+  /// No description provided for @chartLegend_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Chart symbols'**
+  String get chartLegend_title;
+
+  /// No description provided for @chartLegend_sectionBuoys.
+  ///
+  /// In en, this message translates to:
+  /// **'Buoys and beacons'**
+  String get chartLegend_sectionBuoys;
+
+  /// No description provided for @chartLegend_sectionLights.
+  ///
+  /// In en, this message translates to:
+  /// **'Lights'**
+  String get chartLegend_sectionLights;
+
+  /// No description provided for @chartLegend_sectionHazards.
+  ///
+  /// In en, this message translates to:
+  /// **'Hazards'**
+  String get chartLegend_sectionHazards;
+
+  /// No description provided for @chartLegend_sectionTides.
+  ///
+  /// In en, this message translates to:
+  /// **'Tides and currents'**
+  String get chartLegend_sectionTides;
+
+  /// No description provided for @chartLegend_sectionDepths.
+  ///
+  /// In en, this message translates to:
+  /// **'Depths and seabed'**
+  String get chartLegend_sectionDepths;
+
+  /// No description provided for @chartLegend_sectionAreas.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas, lanes and lines'**
+  String get chartLegend_sectionAreas;
+
+  /// No description provided for @chartLegend_sectionLandmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Landmarks'**
+  String get chartLegend_sectionLandmarks;
+
+  /// No description provided for @chartLegend_sectionAbbreviations.
+  ///
+  /// In en, this message translates to:
+  /// **'Abbreviations'**
+  String get chartLegend_sectionAbbreviations;
+
+  /// No description provided for @chartLegend_chartNo1.
+  ///
+  /// In en, this message translates to:
+  /// **'Every chart symbol: U.S. Chart No. 1'**
+  String get chartLegend_chartNo1;
+
+  /// No description provided for @chartLegend_portBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Green can buoy'**
+  String get chartLegend_portBuoy;
+
+  /// No description provided for @chartLegend_portBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it on your left coming in from sea'**
+  String get chartLegend_portBuoyHint;
+
+  /// No description provided for @chartLegend_starboardBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Red nun buoy'**
+  String get chartLegend_starboardBuoy;
+
+  /// No description provided for @chartLegend_starboardBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it on your right coming in: red, right, returning'**
+  String get chartLegend_starboardBuoyHint;
+
+  /// No description provided for @chartLegend_junctionBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Banded buoy'**
+  String get chartLegend_junctionBuoy;
+
+  /// No description provided for @chartLegend_junctionBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A channel junction: treat it as the colour of its top band'**
+  String get chartLegend_junctionBuoyHint;
+
+  /// No description provided for @chartLegend_safeWaterBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Red and white stripes'**
+  String get chartLegend_safeWaterBuoy;
+
+  /// No description provided for @chartLegend_safeWaterBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe water all around, often at a channel entrance'**
+  String get chartLegend_safeWaterBuoyHint;
+
+  /// No description provided for @chartLegend_isolatedDangerBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Black and red bands'**
+  String get chartLegend_isolatedDangerBuoy;
+
+  /// No description provided for @chartLegend_isolatedDangerBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A small danger with safe water around it: keep clear'**
+  String get chartLegend_isolatedDangerBuoyHint;
+
+  /// No description provided for @chartLegend_specialBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow buoy'**
+  String get chartLegend_specialBuoy;
+
+  /// No description provided for @chartLegend_specialBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Special purpose, not for steering by: anchorage, cable, research'**
+  String get chartLegend_specialBuoyHint;
+
+  /// No description provided for @chartLegend_cardinalBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Black and yellow'**
+  String get chartLegend_cardinalBuoy;
+
+  /// No description provided for @chartLegend_cardinalBuoyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardinal mark: pass on the side it\'s named for (rare in the US)'**
+  String get chartLegend_cardinalBuoyHint;
+
+  /// No description provided for @chartLegend_mooringBuoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Mooring buoy'**
+  String get chartLegend_mooringBuoy;
+
+  /// No description provided for @chartLegend_portBeacon.
+  ///
+  /// In en, this message translates to:
+  /// **'Green square daybeacon'**
+  String get chartLegend_portBeacon;
+
+  /// No description provided for @chartLegend_portBeaconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Like a green buoy: keep it on your left coming in'**
+  String get chartLegend_portBeaconHint;
+
+  /// No description provided for @chartLegend_starboardBeacon.
+  ///
+  /// In en, this message translates to:
+  /// **'Red triangle daybeacon'**
+  String get chartLegend_starboardBeacon;
+
+  /// No description provided for @chartLegend_starboardBeaconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Like a red buoy: keep it on your right coming in'**
+  String get chartLegend_starboardBeaconHint;
+
+  /// No description provided for @chartLegend_otherBeacon.
+  ///
+  /// In en, this message translates to:
+  /// **'Diamond daybeacon'**
+  String get chartLegend_otherBeacon;
+
+  /// No description provided for @chartLegend_otherBeaconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Information or a warning, not a side of the channel'**
+  String get chartLegend_otherBeaconHint;
+
+  /// No description provided for @chartLegend_beaconTower.
+  ///
+  /// In en, this message translates to:
+  /// **'Light tower or beacon structure'**
+  String get chartLegend_beaconTower;
+
+  /// No description provided for @chartLegend_topmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Topmark'**
+  String get chartLegend_topmark;
+
+  /// No description provided for @chartLegend_topmarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The shape on top of a mark adds to its meaning'**
+  String get chartLegend_topmarkHint;
+
+  /// No description provided for @chartLegend_light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get chartLegend_light;
+
+  /// No description provided for @chartLegend_lightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The magenta flare marks a light; its label tells how it flashes'**
+  String get chartLegend_lightHint;
+
+  /// No description provided for @chartLegend_lightExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashing green, every 4 seconds'**
+  String get chartLegend_lightExample;
+
+  /// No description provided for @chartLegend_lightExampleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A light\'s label: rhythm, colour, then period'**
+  String get chartLegend_lightExampleHint;
+
+  /// No description provided for @chartLegend_lightFixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed'**
+  String get chartLegend_lightFixed;
+
+  /// No description provided for @chartLegend_lightFixedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A steady light'**
+  String get chartLegend_lightFixedHint;
+
+  /// No description provided for @chartLegend_lightFlashing.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashing'**
+  String get chartLegend_lightFlashing;
+
+  /// No description provided for @chartLegend_lightFlashingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short flashes, longer dark between'**
+  String get chartLegend_lightFlashingHint;
+
+  /// No description provided for @chartLegend_lightGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group flashing'**
+  String get chartLegend_lightGroup;
+
+  /// No description provided for @chartLegend_lightGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashes in groups, here 2, then dark'**
+  String get chartLegend_lightGroupHint;
+
+  /// No description provided for @chartLegend_lightComposite.
+  ///
+  /// In en, this message translates to:
+  /// **'Composite group'**
+  String get chartLegend_lightComposite;
+
+  /// No description provided for @chartLegend_lightCompositeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'2 flashes, then 1: marks a channel junction'**
+  String get chartLegend_lightCompositeHint;
+
+  /// No description provided for @chartLegend_lightQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick'**
+  String get chartLegend_lightQuick;
+
+  /// No description provided for @chartLegend_lightQuickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'About one flash a second'**
+  String get chartLegend_lightQuickHint;
+
+  /// No description provided for @chartLegend_lightIsophase.
+  ///
+  /// In en, this message translates to:
+  /// **'Isophase'**
+  String get chartLegend_lightIsophase;
+
+  /// No description provided for @chartLegend_lightIsophaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Equal light and dark'**
+  String get chartLegend_lightIsophaseHint;
+
+  /// No description provided for @chartLegend_lightOcculting.
+  ///
+  /// In en, this message translates to:
+  /// **'Occulting'**
+  String get chartLegend_lightOcculting;
+
+  /// No description provided for @chartLegend_lightOccultingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On longer than off'**
+  String get chartLegend_lightOccultingHint;
+
+  /// No description provided for @chartLegend_lightMorse.
+  ///
+  /// In en, this message translates to:
+  /// **'Morse code A'**
+  String get chartLegend_lightMorse;
+
+  /// No description provided for @chartLegend_lightMorseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short, long: safe water'**
+  String get chartLegend_lightMorseHint;
+
+  /// No description provided for @chartLegend_lightAlternating.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternating'**
+  String get chartLegend_lightAlternating;
+
+  /// No description provided for @chartLegend_lightAlternatingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes colour'**
+  String get chartLegend_lightAlternatingHint;
+
+  /// No description provided for @chartLegend_lightColours.
+  ///
+  /// In en, this message translates to:
+  /// **'White, red, green, yellow'**
+  String get chartLegend_lightColours;
+
+  /// No description provided for @chartLegend_lightPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get chartLegend_lightPeriod;
+
+  /// No description provided for @chartLegend_lightPeriodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Seconds for one full cycle'**
+  String get chartLegend_lightPeriodHint;
+
+  /// No description provided for @chartLegend_rock.
+  ///
+  /// In en, this message translates to:
+  /// **'Underwater rock'**
+  String get chartLegend_rock;
+
+  /// No description provided for @chartLegend_rockHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Always covered, but may be shallow'**
+  String get chartLegend_rockHint;
+
+  /// No description provided for @chartLegend_rockAwash.
+  ///
+  /// In en, this message translates to:
+  /// **'Rock awash'**
+  String get chartLegend_rockAwash;
+
+  /// No description provided for @chartLegend_rockAwashHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Near the surface at low tide'**
+  String get chartLegend_rockAwashHint;
+
+  /// No description provided for @chartLegend_rockCovers.
+  ///
+  /// In en, this message translates to:
+  /// **'Rock that covers and uncovers'**
+  String get chartLegend_rockCovers;
+
+  /// No description provided for @chartLegend_rockCoversHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows at low tide, covered at high tide'**
+  String get chartLegend_rockCoversHint;
+
+  /// No description provided for @chartLegend_wreckDangerous.
+  ///
+  /// In en, this message translates to:
+  /// **'Dangerous wreck'**
+  String get chartLegend_wreckDangerous;
+
+  /// No description provided for @chartLegend_wreckDangerousHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shallow enough to hit'**
+  String get chartLegend_wreckDangerousHint;
+
+  /// No description provided for @chartLegend_wreck.
+  ///
+  /// In en, this message translates to:
+  /// **'Wreck'**
+  String get chartLegend_wreck;
+
+  /// No description provided for @chartLegend_wreckHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep enough for boats on the surface; don\'t anchor'**
+  String get chartLegend_wreckHint;
+
+  /// No description provided for @chartLegend_wreckShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Wreck showing'**
+  String get chartLegend_wreckShowing;
+
+  /// No description provided for @chartLegend_wreckShowingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of it shows above the water'**
+  String get chartLegend_wreckShowingHint;
+
+  /// No description provided for @chartLegend_obstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Obstruction'**
+  String get chartLegend_obstruction;
+
+  /// No description provided for @chartLegend_obstructionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Something on the bottom; its depth when known'**
+  String get chartLegend_obstructionHint;
+
+  /// No description provided for @chartLegend_foulGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Foul ground'**
+  String get chartLegend_foulGround;
+
+  /// No description provided for @chartLegend_foulGroundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe to pass over, but don\'t anchor or trawl'**
+  String get chartLegend_foulGroundHint;
+
+  /// No description provided for @chartLegend_hazardArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Edge of a danger area'**
+  String get chartLegend_hazardArea;
+
+  /// No description provided for @chartLegend_hazardAreaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Rocks, wrecks or obstructions inside'**
+  String get chartLegend_hazardAreaHint;
+
+  /// No description provided for @chartLegend_pile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pile or post'**
+  String get chartLegend_pile;
+
+  /// No description provided for @chartLegend_floodStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Flood stream'**
+  String get chartLegend_floodStream;
+
+  /// No description provided for @chartLegend_floodStreamHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tidal stream while the tide rises'**
+  String get chartLegend_floodStreamHint;
+
+  /// No description provided for @chartLegend_ebbStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Ebb stream'**
+  String get chartLegend_ebbStream;
+
+  /// No description provided for @chartLegend_ebbStreamHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tidal stream while the tide falls'**
+  String get chartLegend_ebbStreamHint;
+
+  /// No description provided for @chartLegend_current.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get chartLegend_current;
+
+  /// No description provided for @chartLegend_currentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Flows the same way whatever the tide'**
+  String get chartLegend_currentHint;
+
+  /// No description provided for @chartLegend_rips.
+  ///
+  /// In en, this message translates to:
+  /// **'Tide rips or eddies'**
+  String get chartLegend_rips;
+
+  /// No description provided for @chartLegend_ripsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Rough, swirling water'**
+  String get chartLegend_ripsHint;
+
+  /// No description provided for @chartLegend_breakers.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakers'**
+  String get chartLegend_breakers;
+
+  /// No description provided for @chartLegend_breakersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Waves breaking over shallows'**
+  String get chartLegend_breakersHint;
+
+  /// No description provided for @chartLegend_sounding.
+  ///
+  /// In en, this message translates to:
+  /// **'Sounding'**
+  String get chartLegend_sounding;
+
+  /// No description provided for @chartLegend_soundingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth at an average low tide'**
+  String get chartLegend_soundingHint;
+
+  /// No description provided for @chartLegend_depthContour.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth contour'**
+  String get chartLegend_depthContour;
+
+  /// No description provided for @chartLegend_depthContourHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its label gives the depth'**
+  String get chartLegend_depthContourHint;
+
+  /// No description provided for @chartLegend_drying.
+  ///
+  /// In en, this message translates to:
+  /// **'Dries at low tide'**
+  String get chartLegend_drying;
+
+  /// No description provided for @chartLegend_dredged.
+  ///
+  /// In en, this message translates to:
+  /// **'Dredged channel'**
+  String get chartLegend_dredged;
+
+  /// No description provided for @chartLegend_dredgedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept to the depth shown'**
+  String get chartLegend_dredgedHint;
+
+  /// No description provided for @chartLegend_swept.
+  ///
+  /// In en, this message translates to:
+  /// **'Swept area'**
+  String get chartLegend_swept;
+
+  /// No description provided for @chartLegend_sweptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked clear to the depth shown'**
+  String get chartLegend_sweptHint;
+
+  /// No description provided for @chartLegend_unsurveyed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsurveyed'**
+  String get chartLegend_unsurveyed;
+
+  /// No description provided for @chartLegend_unsurveyedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No depths measured'**
+  String get chartLegend_unsurveyedHint;
+
+  /// No description provided for @chartLegend_weed.
+  ///
+  /// In en, this message translates to:
+  /// **'Kelp or weed'**
+  String get chartLegend_weed;
+
+  /// No description provided for @chartLegend_restricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Restricted area'**
+  String get chartLegend_restricted;
+
+  /// No description provided for @chartLegend_restrictedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry limited; the ticks point inside'**
+  String get chartLegend_restrictedHint;
+
+  /// No description provided for @chartLegend_regulatedLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit of a regulated area'**
+  String get chartLegend_regulatedLimit;
+
+  /// No description provided for @chartLegend_regulatedLimitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anchorage, cable area, firing area and more: see its label'**
+  String get chartLegend_regulatedLimitHint;
+
+  /// No description provided for @chartLegend_greyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoil ground, fishing ground or farm'**
+  String get chartLegend_greyLimit;
+
+  /// No description provided for @chartLegend_anchorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Anchorage'**
+  String get chartLegend_anchorage;
+
+  /// No description provided for @chartLegend_anchorBerth.
+  ///
+  /// In en, this message translates to:
+  /// **'Anchor berth'**
+  String get chartLegend_anchorBerth;
+
+  /// No description provided for @chartLegend_noAnchoring.
+  ///
+  /// In en, this message translates to:
+  /// **'No anchoring'**
+  String get chartLegend_noAnchoring;
+
+  /// No description provided for @chartLegend_caution.
+  ///
+  /// In en, this message translates to:
+  /// **'Caution area'**
+  String get chartLegend_caution;
+
+  /// No description provided for @chartLegend_cautionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Take extra care here'**
+  String get chartLegend_cautionHint;
+
+  /// No description provided for @chartLegend_trafficLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic lane'**
+  String get chartLegend_trafficLane;
+
+  /// No description provided for @chartLegend_trafficLaneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Big ships, one way: cross at right angles'**
+  String get chartLegend_trafficLaneHint;
+
+  /// No description provided for @chartLegend_separationZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Separation zone'**
+  String get chartLegend_separationZone;
+
+  /// No description provided for @chartLegend_separationZoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Between traffic lanes: keep out'**
+  String get chartLegend_separationZoneHint;
+
+  /// No description provided for @chartLegend_precautionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Precautionary area'**
+  String get chartLegend_precautionary;
+
+  /// No description provided for @chartLegend_precautionaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ships converge: take care'**
+  String get chartLegend_precautionaryHint;
+
+  /// No description provided for @chartLegend_fairway.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairway'**
+  String get chartLegend_fairway;
+
+  /// No description provided for @chartLegend_fairwayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A main channel'**
+  String get chartLegend_fairwayHint;
+
+  /// No description provided for @chartLegend_track.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended track'**
+  String get chartLegend_track;
+
+  /// No description provided for @chartLegend_ferry.
+  ///
+  /// In en, this message translates to:
+  /// **'Ferry route'**
+  String get chartLegend_ferry;
+
+  /// No description provided for @chartLegend_leadingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Leading line'**
+  String get chartLegend_leadingLine;
+
+  /// No description provided for @chartLegend_leadingLineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Line up its two marks to stay in the channel'**
+  String get chartLegend_leadingLineHint;
+
+  /// No description provided for @chartLegend_cable.
+  ///
+  /// In en, this message translates to:
+  /// **'Submarine cable'**
+  String get chartLegend_cable;
+
+  /// No description provided for @chartLegend_cableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t anchor'**
+  String get chartLegend_cableHint;
+
+  /// No description provided for @chartLegend_pipeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Submarine pipeline'**
+  String get chartLegend_pipeline;
+
+  /// No description provided for @chartLegend_pipelineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t anchor'**
+  String get chartLegend_pipelineHint;
+
+  /// No description provided for @chartLegend_overhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Overhead cable'**
+  String get chartLegend_overhead;
+
+  /// No description provided for @chartLegend_overheadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its clearance is labelled VC'**
+  String get chartLegend_overheadHint;
+
+  /// No description provided for @chartLegend_tower.
+  ///
+  /// In en, this message translates to:
+  /// **'Tower'**
+  String get chartLegend_tower;
+
+  /// No description provided for @chartLegend_windTurbine.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind turbine'**
+  String get chartLegend_windTurbine;
+
+  /// No description provided for @chartLegend_chimney.
+  ///
+  /// In en, this message translates to:
+  /// **'Chimney'**
+  String get chartLegend_chimney;
+
+  /// No description provided for @chartLegend_mast.
+  ///
+  /// In en, this message translates to:
+  /// **'Mast or antenna'**
+  String get chartLegend_mast;
+
+  /// No description provided for @chartLegend_church.
+  ///
+  /// In en, this message translates to:
+  /// **'Church or spire'**
+  String get chartLegend_church;
+
+  /// No description provided for @chartLegend_flagstaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagstaff'**
+  String get chartLegend_flagstaff;
+
+  /// No description provided for @chartLegend_dome.
+  ///
+  /// In en, this message translates to:
+  /// **'Dome'**
+  String get chartLegend_dome;
+
+  /// No description provided for @chartLegend_landmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Other landmark'**
+  String get chartLegend_landmark;
+
+  /// No description provided for @chartLegend_abbrAnch.
+  ///
+  /// In en, this message translates to:
+  /// **'Anchorage'**
+  String get chartLegend_abbrAnch;
+
+  /// No description provided for @chartLegend_abbrWk.
+  ///
+  /// In en, this message translates to:
+  /// **'Wreck'**
+  String get chartLegend_abbrWk;
+
+  /// No description provided for @chartLegend_abbrBr.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakers'**
+  String get chartLegend_abbrBr;
+
+  /// No description provided for @chartLegend_abbrWd.
+  ///
+  /// In en, this message translates to:
+  /// **'Weed'**
+  String get chartLegend_abbrWd;
+
+  /// No description provided for @chartLegend_abbrVar.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnetic variation'**
+  String get chartLegend_abbrVar;
+
+  /// No description provided for @chartLegend_abbrVc.
+  ///
+  /// In en, this message translates to:
+  /// **'Vertical clearance under a bridge or cable'**
+  String get chartLegend_abbrVc;
+
+  /// No description provided for @chartLegend_abbrTr.
+  ///
+  /// In en, this message translates to:
+  /// **'Tower'**
+  String get chartLegend_abbrTr;
+
+  /// No description provided for @chartLegend_abbrCh.
+  ///
+  /// In en, this message translates to:
+  /// **'Church'**
+  String get chartLegend_abbrCh;
+
+  /// No description provided for @chartLegend_abbrChy.
+  ///
+  /// In en, this message translates to:
+  /// **'Chimney'**
+  String get chartLegend_abbrChy;
+
+  /// No description provided for @chartLegend_abbrFs.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagstaff'**
+  String get chartLegend_abbrFs;
+
+  /// No description provided for @chartLegend_abbrTk.
+  ///
+  /// In en, this message translates to:
+  /// **'Tank'**
+  String get chartLegend_abbrTk;
+
+  /// No description provided for @chartLegend_abbrRBn.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio beacon'**
+  String get chartLegend_abbrRBn;
+
+  /// No description provided for @chartLegend_abbrCg.
+  ///
+  /// In en, this message translates to:
+  /// **'Coast Guard station'**
+  String get chartLegend_abbrCg;
+
+  /// No description provided for @chartLegend_abbrRacon.
+  ///
+  /// In en, this message translates to:
+  /// **'Radar beacon: shows on radar'**
+  String get chartLegend_abbrRacon;
+
+  /// No description provided for @chartLegend_abbrFog.
+  ///
+  /// In en, this message translates to:
+  /// **'Fog signal: horn, bell, gong, whistle or siren'**
+  String get chartLegend_abbrFog;
+
+  /// No description provided for @chartLegend_abbrVAis.
+  ///
+  /// In en, this message translates to:
+  /// **'Virtual aid: shown only on AIS'**
+  String get chartLegend_abbrVAis;
+
+  /// No description provided for @chartLegend_depthRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} to {to}'**
+  String chartLegend_depthRange(String from, String to);
+
+  /// No description provided for @chartLegend_depthOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Deeper than {depth}'**
+  String chartLegend_depthOver(String depth);
 }
 
 class _AppLocalizationsDelegate
