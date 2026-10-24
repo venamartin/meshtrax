@@ -537,6 +537,29 @@ class PathGraph {
     return true;
   }
 
+  /// Another copy of a keyed packet from [contactPubkey] that
+  /// [observeContactSender] already filed, heard on [pathBytes]: a hint
+  /// for the splice and nothing else. The doorstep was credited by the
+  /// first copy and the raw feed already filed the corridor; what this
+  /// copy adds is a path with repeater-to-repeater links the first,
+  /// shortest copy did not have (field 2026-10-24: a room's reply arrived
+  /// as BEEF alone and as 5B98,F5EE,AA77,A277 — only the second can be
+  /// reversed). Returns whether a hint was kept.
+  bool observeInboundCopy(
+      String contactPubkey, Uint8List pathBytes, int stride) {
+    contactPubkey = contactPubkey.toLowerCase();
+    if (contactPubkey == _selfPubkey || pathBytes.isEmpty) return false;
+    if (stride < hashWidthBytes || pathBytes.length % stride != 0) {
+      return false;
+    }
+    final hops = pathBytes.length ~/ stride;
+    if (hops < 2) return false;
+    _recordHint(contactPubkey,
+        [for (var i = 0; i < hops; i++) _hopHex(pathBytes, stride, i)],
+        _arrivalMillis);
+    return true;
+  }
+
   /// Keeps [hops] (travel order: their doorstep first, the repeater I
   /// heard last) as one of [contactPubkey]'s recent inbound paths. Only
   /// keyed packets get here: a channel line matched by name is not one.

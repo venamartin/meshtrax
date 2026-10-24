@@ -822,6 +822,9 @@ class PathLabAdapter {
       return;
     }
     messagesAttributed++;
+    for (final m in matches.skip(1)) {
+      graph.observeInboundCopy(contactPubkeyHex, m.pathBytes, m.stride);
+    }
     final others = matches.skip(1).map((m) => _fmtHops(m.pathBytes, m.stride));
     _log(
         'ack',
@@ -900,6 +903,9 @@ class PathLabAdapter {
       return;
     }
     messagesAttributed++;
+    for (final m in matches.skip(1)) {
+      graph.observeInboundCopy(contactPubkeyHex, m.pathBytes, m.stride);
+    }
     final others = matches.skip(1).map((m) => _fmtHops(m.pathBytes, m.stride));
     _log(
         'path reply',
@@ -970,6 +976,9 @@ class PathLabAdapter {
       return;
     }
     messagesAttributed++;
+    for (final m in matches.skip(1)) {
+      graph.observeInboundCopy(contactPubkeyHex, m.pathBytes, m.stride);
+    }
     _log(
         'dm',
         _fmtHops(first.pathBytes, first.stride),

@@ -200,6 +200,29 @@ void main() {
     expect(graph.findPath(bobPk), isA<FloodResult>());
   });
 
+  test('a longer copy of the same packet is kept as a hint, crediting nobody',
+      () {
+    myEnd();
+    // Bob's packet reached me twice: once via BEEF alone (credited), once
+    // the long way round. Only the long copy has links to reverse.
+    for (var i = 0; i < 2; i++) {
+      if (i > 0) advance(11);
+      graph.observePath(path(beef), 2,
+          const ObservationOrigin.pubkeyConfirmed(bobPk),
+          messageId: 'short-$i');
+      graph.observePath(path([...beef, ...r1000, ...ad77]), 2,
+          const ObservationOrigin.anonymous(),
+          messageId: 'long-$i', lastHopHeard: false);
+      graph.observeInboundCopy(bobPk, path([...beef, ...r1000, ...ad77]), 2);
+    }
+
+    final bobs = graph.ingressCandidates(bobPk).map((c) => c.repeaterHash);
+    expect(bobs, ['BEEF'], reason: 'the copy credits no second doorstep');
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.pathBytes, [...a277, ...ad77, ...r1000, ...beef]);
+    expect(route.guessedHops, 2);
+  });
+
   test('a channel line matched by name supplies no hint', () {
     myEnd();
     graph.ingestContact(bobPk, 'Bob');
