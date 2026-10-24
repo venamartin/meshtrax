@@ -329,7 +329,7 @@ void main() {
     await post(roomA!, 'Test $hm: guess 2');
     dump('after the splice posts', roomA!);
     final snap = graph.snapshot();
-    if (result is RouteResult && result.guessedHops > 0) {
+    if (result.guessedHops > 0) {
       final hops = [
         for (var i = 0; i < result.pathBytes.length; i += 2)
           hex(result.pathBytes.sublist(i, i + 2)).replaceAll(' ', '')
