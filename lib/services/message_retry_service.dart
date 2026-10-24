@@ -484,7 +484,12 @@ class MessageRetryService extends ChangeNotifier {
     );
   }
 
-  bool updateMessageFromSent(int ackHash, int timeoutMs) {
+  /// [isFlood]: how the radio sent it (RESP_CODE_SENT byte 1). The radio
+  /// floods whenever it holds no route to the contact, whatever the app
+  /// asked for, and a route the app did not ask for means a stale stored
+  /// one went out — either way the attempt's evidence is not what the
+  /// ladder thinks.
+  bool updateMessageFromSent(int ackHash, int timeoutMs, {bool? isFlood}) {
     final config = _config;
     if (config == null) return false;
 
@@ -543,6 +548,23 @@ class MessageRetryService extends ChangeNotifier {
 
     final message = _pendingMessages[messageId]!;
     (_onAir[messageId] ??= {}).add(message.retryCount);
+    if (isFlood != null) {
+      final askedFlood = (message.pathLength ?? -1) < 0;
+      if (askedFlood == isFlood) {
+        config.debugLogService?.info(
+          'RESP_CODE_SENT: attempt ${message.retryCount + 1} to ${contact.name} '
+          'went out ${isFlood ? "as a flood" : "on the route"}, as asked',
+          tag: 'AckHash',
+        );
+      } else {
+        config.debugLogService?.warn(
+          'RESP_CODE_SENT: attempt ${message.retryCount + 1} to ${contact.name} '
+          'was asked to go ${askedFlood ? "as a flood" : "on a route"} but the '
+          'radio sent it ${isFlood ? "as a flood" : "on its stored route"}',
+          tag: 'AckHash',
+        );
+      }
+    }
     _ackHashToMessageId[ackHashHex] = (
       messageId: messageId,
       timestamp: DateTime.now(),

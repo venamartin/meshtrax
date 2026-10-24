@@ -174,6 +174,69 @@ void main() {
     expect(await store.loadMessages(contactA), hasLength(6));
   });
 
+  // A DM whose app was killed mid-ladder is saved as pending or sent and
+  // nothing would ever settle it: the clock icon forever (dm-stuck, 2026-10-23).
+  group('failPendingSendsBefore', () {
+    const cutoffMs = 1753000500000;
+    final cutoff = DateTime.fromMillisecondsSinceEpoch(cutoffMs);
+
+    Message inFlight(String id, MessageStatus status,
+            {int ts = 1753000000000, bool cli = false}) =>
+        Message(
+          senderKey: Uint8List.fromList(List.filled(32, 7)),
+          text: 'hi',
+          timestamp: DateTime.fromMillisecondsSinceEpoch(ts),
+          isOutgoing: true,
+          isCli: cli,
+          status: status,
+          messageId: id,
+          waitingForRepeater: status == MessageStatus.sent,
+        );
+
+    Future<Message?> rowOf(String contact, String id) =>
+        store.findByMessageId(contact, id);
+
+    test('fails own pending and sent DMs from before the cutoff', () async {
+      await store.upsertMessage(contactA, inFlight('p', MessageStatus.pending));
+      await store.upsertMessage(contactB, inFlight('s', MessageStatus.sent));
+
+      expect(await store.failPendingSendsBefore(cutoff), 2);
+      expect((await rowOf(contactA, 'p'))!.status, MessageStatus.failed);
+      final s = (await rowOf(contactB, 's'))!;
+      expect(s.status, MessageStatus.failed);
+      expect(s.waitingForRepeater, isFalse);
+    });
+
+    test('leaves this run, settled rows, incoming rows and CLI alone',
+        () async {
+      await store.upsertMessage(
+          contactA, inFlight('live', MessageStatus.pending, ts: cutoffMs + 1));
+      await store.upsertMessage(contactA,
+          msg('done', id: 'done', outgoing: true)
+              .copyWith(status: MessageStatus.delivered));
+      await store.upsertMessage(contactA,
+          msg('theirs', id: 'in').copyWith(status: MessageStatus.pending));
+      await store.upsertMessage(
+          contactA, inFlight('cli', MessageStatus.sent, cli: true));
+
+      expect(await store.failPendingSendsBefore(cutoff), 0);
+      expect((await rowOf(contactA, 'live'))!.status, MessageStatus.pending);
+      expect((await rowOf(contactA, 'done'))!.status, MessageStatus.delivered);
+      expect((await rowOf(contactA, 'in'))!.status, MessageStatus.pending);
+      expect((await rowOf(contactA, 'cli'))!.status, MessageStatus.sent);
+    });
+
+    test('only touches the scoped node', () async {
+      store.setPublicKeyHex = '0123456789ab';
+      await store.upsertMessage(contactA, inFlight('other', MessageStatus.sent));
+      store.setPublicKeyHex = 'deadbeef00cafe';
+
+      expect(await store.failPendingSendsBefore(cutoff), 0);
+      store.setPublicKeyHex = '0123456789ab';
+      expect((await rowOf(contactA, 'other'))!.status, MessageStatus.sent);
+    });
+  });
+
   test('deleteMessage removes exactly one row', () async {
     await store.upsertMessage(contactA, msg('keep', id: 'k1'));
     await store.upsertMessage(contactA, msg('gone', id: 'g1'));

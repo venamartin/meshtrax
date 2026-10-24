@@ -492,6 +492,54 @@ class MessageStore {
         .go();
   }
 
+  /// Fails own sends still in flight (`pending` or `sent`) from before
+  /// [cutoff]: their retry ladder died with the process that ran it, so
+  /// nothing else will ever settle them (the channel store has the same
+  /// rule). CLI rows are not retried sends. Returns how many rows changed.
+  Future<int> failPendingSendsBefore(DateTime cutoff) async {
+    if (publicKeyHex.isEmpty) return 0;
+    // The payload, not the isOutgoing column: pre-v3 rows default that
+    // column to false.
+    final rows = await (_db.select(_db.contactMessageRows)
+          ..where(
+            (r) =>
+                r.nodeScope.equals(publicKeyHex) &
+                r.timestampMs.isSmallerThanValue(
+                  cutoff.millisecondsSinceEpoch,
+                ) &
+                r.payload.like('%"isOutgoing":true,%'),
+          ))
+        .get();
+    var failed = 0;
+    for (final row in rows) {
+      try {
+        final msg = _messageFromJson(
+          jsonDecode(row.payload) as Map<String, dynamic>,
+        );
+        if (!msg.isOutgoing ||
+            msg.isCli ||
+            (msg.status != MessageStatus.pending &&
+                msg.status != MessageStatus.sent)) {
+          continue;
+        }
+        await upsertMessage(
+          row.contactKey,
+          msg.copyWith(
+            status: MessageStatus.failed,
+            waitingForRepeater: false,
+          ),
+        );
+        failed++;
+      } catch (e) {
+        appLogger.warn(
+          'Could not fail orphaned send ${row.messageId}: $e',
+          tag: 'MessageStore',
+        );
+      }
+    }
+    return failed;
+  }
+
   /// Contacts with a message, either way, that this app saw since [since].
   Future<Set<String>> contactsWithMessagesSince(DateTime since) async {
     if (publicKeyHex.isEmpty) return const {};

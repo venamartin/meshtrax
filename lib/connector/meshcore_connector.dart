@@ -5525,9 +5525,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   Future<void> _failPendingSendsFromEarlierRuns() async {
     final failed = await _channelMessageStore.failPendingSendsBefore(_startedAt);
-    if (failed == 0) return;
+    final failedDms = await _messageStore.failPendingSendsBefore(_startedAt);
+    if (failed == 0 && failedDms == 0) return;
     appLogger.info(
-      'Failed $failed channel send(s) left pending by an earlier run',
+      'Failed $failed channel send(s) and $failedDms direct message(s) '
+      'left in flight by an earlier run',
       tag: 'Connector',
     );
     notifyListeners();
@@ -7469,7 +7471,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     try {
       final reader = BufferReader(frame);
-      reader.skipBytes(2); //Skip code and is_flood
+      reader.skipBytes(1);
+      // How the radio actually sent it: it floods when it holds no route
+      // to the contact, whatever the app asked for.
+      final isFlood = reader.readUInt8() != 0;
       final ackHash = reader.readUInt32LE();
       final timeoutMs = reader.readUInt32LE();
 
@@ -7487,7 +7492,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       final retryService = _retryService;
       if (retryService != null &&
-          retryService.updateMessageFromSent(ackHash, timeoutMs)) {
+          retryService.updateMessageFromSent(ackHash, timeoutMs,
+              isFlood: isFlood)) {
         return;
       }
 
