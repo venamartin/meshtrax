@@ -6630,6 +6630,12 @@ abstract class AppLocalizations {
   /// **'route ({count} {count, plural, =1{hop} other{hops}})'**
   String chat_kindRoute(int count);
 
+  /// A Pathfinder route of which some hops were guessed from the contact's inbound path (the splice).
+  ///
+  /// In en, this message translates to:
+  /// **'route ({count} {count, plural, =1{hop} other{hops}}, {guessed} guessed)'**
+  String chat_kindRouteGuessed(int count, int guessed);
+
   /// No description provided for @chat_statusQueued.
   ///
   /// In en, this message translates to:

@@ -107,6 +107,7 @@ sealed class PathResult {
     Uint8List pathBytes,
     double estDelivery, {
     List<double> hopProbabilities,
+    List<bool> guessedLinks,
     bool egressProven,
     bool ingressProven,
   }) = RouteResult;
@@ -128,6 +129,7 @@ class RouteResult extends PathResult {
     this.pathBytes,
     this.estDelivery, {
     this.hopProbabilities = const [],
+    this.guessedLinks = const [],
     this.egressProven = true,
     this.ingressProven = true,
   });
@@ -136,6 +138,15 @@ class RouteResult extends PathResult {
 
   /// Calibrated p of each between-hop link, in path order.
   final List<double> hopProbabilities;
+
+  /// Per between-hop link, in path order: a splice guess — the reverse of
+  /// a link heard on the contact's inbound path, never observed in this
+  /// direction — rather than an observed link. Empty when nothing was
+  /// guessed. See [PathGraphConfig.guessQ].
+  final List<bool> guessedLinks;
+
+  /// How many of the route's links are splice guesses.
+  int get guessedHops => guessedLinks.where((g) => g).length;
 
   /// Whether the first hop was proven to hear this radio (always, unless
   /// the graph was configured to allow inferred endpoints), and whether
@@ -232,6 +243,11 @@ class PathGraph {
   // Per contact: the route their latest PATH reply named, and when
   // (see PathGraphConfig.liveRouteMinutes). Memory only.
   final Map<String, ({List<String> hops, int at})> _liveRoutes = {};
+  // Per contact: the distinct paths their recent keyed packets (decoded
+  // DM or post, signed advert, matched ACK or PATH reply) travelled to
+  // reach me, newest first — the splice's hints (PathGraphConfig.guessQ).
+  // Memory only, never exported, cleared with the radio identity.
+  final Map<String, List<({List<String> hops, int at})>> _hints = {};
 
   // Watching-only moving-repeater detectors (PathGraphConfig.mobileNewLinks)
   // and, per node, the first sighting of its oldest link (0 = from before
@@ -322,9 +338,14 @@ class PathGraph {
   /// Identity of the connected radio; scopes egress rows and default
   /// observation stride.
   void setRadioIdentity(String selfPubkey, int stride) {
+    if (_selfPubkey != selfPubkey.toLowerCase()) clearHints();
     _selfPubkey = selfPubkey.toLowerCase();
     _selfStride = stride;
   }
+
+  /// Forgets every contact's inbound paths (the splice's hints): another
+  /// radio, another mesh, or the graph was cleared.
+  void clearHints() => _hints.clear();
 
   String? get selfPubkey => _selfPubkey;
   int get selfStride => _selfStride;
@@ -412,6 +433,7 @@ class PathGraph {
     if (contact != null) {
       _creditContactDoorstep(contact, hops.first,
           confirmed: origin is PubkeyConfirmedOrigin, arrival: arrival);
+      if (origin is PubkeyConfirmedOrigin) _recordHint(contact, hops, arrival);
     }
 
     // Self egress: final hop is the last-hop prior; penultimate feeds
@@ -504,9 +526,77 @@ class PathGraph {
     if (pathBytes.length % stride != 0) return false;
     _creditContactDoorstep(contactPubkey, _hopHex(pathBytes, stride, 0),
         confirmed: confirmed, arrival: arrival);
+    if (confirmed) {
+      _recordHint(contactPubkey, [
+        for (var i = 0; i < pathBytes.length ~/ stride; i++)
+          _hopHex(pathBytes, stride, i)
+      ], arrival);
+    }
     _observationsApplied++;
     _scheduleFlush();
     return true;
+  }
+
+  /// Keeps [hops] (travel order: their doorstep first, the repeater I
+  /// heard last) as one of [contactPubkey]'s recent inbound paths. Only
+  /// keyed packets get here: a channel line matched by name is not one.
+  void _recordHint(String contactPubkey, List<String> hops, int arrival) {
+    if (hops.length < 2) return; // nothing between doorsteps to reverse
+    final list = _hints.putIfAbsent(contactPubkey, () => []);
+    final key = hops.join('>');
+    list.removeWhere((h) => h.hops.join('>') == key);
+    list.insert(0, (hops: List.unmodifiable(hops), at: arrival));
+    while (list.length > config.hintsPerContact) {
+      list.removeLast();
+    }
+  }
+
+  /// The splice's guesses for one query: the reverse of each
+  /// repeater-to-repeater link on [contactPubkey]'s fresh inbound paths
+  /// (not their doorstep's link to them, which a route ends on anyway),
+  /// vetted link by link. A guess is offered only when the store knows
+  /// nothing about that direction, the observed direction has history
+  /// ([PathGraphConfig.hintLinkMinAgeMinutes], two packets), the hop is
+  /// not impossibly long ([PathGraphConfig.hintMaxHopKm]) and no end is a
+  /// moving repeater gone stale.
+  Set<(String, String)> _hintGuesses(String contactPubkey, int now) {
+    final hints = _hints[contactPubkey];
+    if (hints == null || hints.isEmpty) return const {};
+    final freshMs = (config.hintFreshMinutes * 60 * 1000).round();
+    final minAgeMs = (config.hintLinkMinAgeMinutes * 60 * 1000).round();
+    hints.removeWhere((h) => now - h.at > freshMs);
+    if (hints.isEmpty) return const {};
+    final moving = _movingNow(now);
+    final out = <(String, String)>{};
+    for (final hint in hints) {
+      final hops = hint.hops;
+      for (var i = 1; i < hops.length; i++) {
+        final observed = (hops[i - 1], hops[i]);
+        final guess = (hops[i], hops[i - 1]);
+        if (hops[i] == hops[i - 1] || _store.edges.containsKey(guess)) continue;
+        final seen = _store.edges[observed];
+        if (seen == null ||
+            seen.obsCount < 2 ||
+            seen.firstObserved == null ||
+            hint.at - seen.firstObserved! < minAgeMs) {
+          continue;
+        }
+        if (moving.contains(hops[i]) || moving.contains(hops[i - 1])) {
+          if (now - hint.at > _mobileFreshMs) continue;
+        }
+        final a = _store.nodes[hops[i]];
+        final b = _store.nodes[hops[i - 1]];
+        if (a?.lat != null &&
+            a?.lon != null &&
+            b?.lat != null &&
+            b?.lon != null &&
+            haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) > config.hintMaxHopKm) {
+          continue;
+        }
+        out.add(guess);
+      }
+    }
+    return out;
   }
 
   /// An echo of my own flood, heard back with the path it travelled.
@@ -619,6 +709,13 @@ class PathGraph {
   /// ([setRadioIdentity]). A path narrower than the graph's bucket is
   /// dropped and counted, like any other observation: reading 1-byte
   /// hashes two at a time would mint repeaters that do not exist.
+  ///
+  /// [guessedLinks], per between-hop link, marks the splice's guesses the
+  /// route was sent on ([RouteResult.guessedLinks]). A delivery proves
+  /// them like any other hop. A failure on a route with a guess in it
+  /// says nothing the graph may keep: the break was most likely the guess,
+  /// so no row is minted for a guessed pair and my doorstep is not charged
+  /// (owner, 2026-10-24).
   void reportSendResult(
     Uint8List pathBytes,
     bool success, {
@@ -627,6 +724,7 @@ class PathGraph {
     int? stride,
     bool tally = true,
     bool proveEgress = true,
+    List<bool> guessedLinks = const [],
   }) {
     contactPubkey = contactPubkey?.toLowerCase();
     final arrival = _arrivalMillis;
@@ -644,7 +742,8 @@ class PathGraph {
     }
     if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
-    if (!success && _selfPubkey != null) {
+    final anyGuessed = guessedLinks.any((g) => g);
+    if (!success && _selfPubkey != null && !anyGuessed) {
       // The break cannot be localised, but a doorstep that keeps failing
       // my sends since it last proved itself stops starting routes
       // (PathGraphConfig.selfFailGate); any proof resets it.
@@ -668,6 +767,7 @@ class PathGraph {
         _store.observeEdge(from, to, arrival);
         continue;
       }
+      if (!success && anyGuessed) continue;
       _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
       _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
       final edge = _store.edges.putIfAbsent((from, to),
@@ -1218,6 +1318,7 @@ class PathGraph {
         _hopsToBytes(route.hops),
         route.estDelivery,
         hopProbabilities: route.hopProbabilities,
+        guessedLinks: route.guessedLinks,
         egressProven: route.egressProven,
         ingressProven: route.ingressProven,
       );
@@ -1242,7 +1343,8 @@ class PathGraph {
   /// (the retry ladder's alternative-path step, and the harness UI).
   List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) =>
       _alternatives(
-          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count);
+          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count,
+          guessedFor: (now) => _hintGuesses(contactPubkey.toLowerCase(), now));
 
   /// Alternatives with a repeater itself as the destination.
   List<RouteResult> findAlternativesToRepeater(String repeaterHash,
@@ -1250,7 +1352,8 @@ class PathGraph {
       _alternatives((_) => [_selfTarget(repeaterHash)], count);
 
   List<RouteResult> _alternatives(
-      List<Candidate> Function(int now) ingressFor, int count) {
+      List<Candidate> Function(int now) ingressFor, int count,
+      {Set<(String, String)> Function(int now)? guessedFor}) {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const [];
@@ -1259,6 +1362,7 @@ class PathGraph {
       ingress: ingressFor(now),
       count: count,
       now: now,
+      guessed: guessedFor?.call(now) ?? const {},
     );
   }
 
@@ -1267,6 +1371,7 @@ class PathGraph {
     required List<Candidate> ingress,
     required int count,
     required int now,
+    Set<(String, String)> guessed = const {},
   }) {
     if (egress.isEmpty || ingress.isEmpty) return const [];
     egress = List.of(egress);
@@ -1274,8 +1379,8 @@ class PathGraph {
 
     final finder = PathFinder(estimator.config, estimator);
     final moving = _movingNow(now);
-    final links =
-        finder.links(edges: _store.edges, nowMillis: now, moving: moving);
+    final links = finder.links(
+        edges: _store.edges, nowMillis: now, moving: moving, guessed: guessed);
     final penalties = <(String, String), double>{};
     final results = <RouteResult>[];
     final seen = <String>{};
@@ -1716,6 +1821,7 @@ class PathGraph {
       edges: _store.edges,
       nowMillis: now,
       moving: _movingNow(now),
+      guessed: _hintGuesses(contactPubkey, now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);

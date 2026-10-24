@@ -3824,6 +3824,17 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String chat_kindRouteGuessed(int count, int guessed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hops',
+      one: 'hop',
+    );
+    return 'route ($count $_temp0, $guessed guessed)';
+  }
+
+  @override
   String get chat_statusQueued => 'Queued';
 
   @override

@@ -384,6 +384,7 @@ class MessageRetryService extends ChangeNotifier {
       pathBytes: Uint8List.fromList(selection.pathBytes),
       pathHashSize: selection.hashSize,
       routeSource: selection.source ?? RouteSource.firmware,
+      guessedHops: selection.guessedHops,
     );
 
     final attempt = message.retryCount;

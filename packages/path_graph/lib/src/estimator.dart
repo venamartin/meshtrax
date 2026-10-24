@@ -43,7 +43,46 @@ class PathGraphConfig {
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
     this.allowInferredEndpoints = false,
+    this.guessQ = 0.3,
+    this.maxGuessedHops = 2,
+    this.hintFreshMinutes = 10,
+    this.hintLinkMinAgeMinutes = 10,
+    this.hintMaxHopKm = 60,
+    this.hintsPerContact = 4,
   });
+
+  /// The splice (owner, 2026-10-23/24): a contact's recent inbound flood
+  /// path, read backwards, offers the reverse of each repeater-to-repeater
+  /// link on it as a GUESS for one search, never stored. My end still has
+  /// to be a proven doorstep; the search joins my proven corridor to the
+  /// reversed tail wherever that is cheapest. A guessed hop is priced at
+  /// this delivery estimate, below [passiveDefaultQ] on purpose: an
+  /// overheard-only link in the sending direction (0.5) must always beat
+  /// a guess, and a one-guess splice still beats a weak proven route
+  /// (p in 0.40..0.5). Checked by replay before the field.
+  final double guessQ;
+
+  /// A route may carry at most this many guessed hops.
+  final int maxGuessedHops;
+
+  /// An inbound path older than this is no hint: their doorstep and the
+  /// corridor may both have moved on.
+  final double hintFreshMinutes;
+
+  /// Ducting guard (owner: "crazy paths" from atmospheric conditions must
+  /// not drive routes). A link is reversible as a guess only when its
+  /// observed direction was heard in two different packets and first seen
+  /// at least this long before the hint. Ducting makes new links; stable
+  /// corridors have history. Copies of one flood always carry distinct
+  /// paths, so two sightings means two packets.
+  final double hintLinkMinAgeMinutes;
+
+  /// Where both repeaters have advert positions, a hop longer than this
+  /// cannot be a normal LoRa hop and is not reversed.
+  final double hintMaxHopKm;
+
+  /// Distinct inbound paths kept per contact, newest first.
+  final int hintsPerContact;
 
   /// Let a route START at a doorstep I only ever heard (a reciprocity
   /// guess about MY end). Off by default: a repeater that hears me is
@@ -348,6 +387,11 @@ class Estimator {
     final p = calibratedP(e, nowMillis).clamp(0.01, 1.0);
     return -math.log(p) + config.tau;
   }
+
+  /// Cost of a guessed reverse hop ([PathGraphConfig.guessQ]). The hair
+  /// above the formula breaks any tie with an observed link in the
+  /// observed link's favour.
+  double get guessedCost => -math.log(config.guessQ) + config.tau + 1e-9;
 }
 
 /// Great-circle distance between two advert positions.

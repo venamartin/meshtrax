@@ -2124,6 +2124,18 @@
       }
     }
   },
+  "chat_kindRouteGuessed": "route ({count} {count, plural, =1{hop} other{hops}}, {guessed} guessed)",
+  "@chat_kindRouteGuessed": {
+    "description": "A Pathfinder route of which some hops were guessed from the contact's inbound path (the splice).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "guessed": {
+        "type": "int"
+      }
+    }
+  },
   "chat_statusQueued": "Queued",
   "chat_statusNoRepeaterHeard": "No repeater heard you. Will try again when one is in range.",
   "chat_narrowHashNotice": "{name}'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.",

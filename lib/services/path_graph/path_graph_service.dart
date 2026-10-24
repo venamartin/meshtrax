@@ -371,15 +371,20 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       Contact contact, PathSelection selection, bool delivered, int? tripMs) {
     final graph = _graph;
     if (graph == null || selection.useFlood) return;
+    final guessed = selection.guessedHops;
     appLogger.info(
         '${delivered ? "delivered" : "failed"} to ${contact.name} via '
-        '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name})'
-        '${delivered ? " — first hop credited as hearing me" : ""}',
+        '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name}'
+        '${guessed > 0 ? ", $guessed hop${guessed == 1 ? "" : "s"} guessed" : ""})'
+        '${delivered ? " — first hop credited as hearing me" : ""}'
+        '${delivered && guessed > 0 ? ", guessed hops now proven" : ""}'
+        '${!delivered && guessed > 0 ? " — a guess failed, nothing recorded" : ""}',
         tag: 'PathGraph');
     graph.reportSendResult(Uint8List.fromList(selection.pathBytes), delivered,
         contactPubkey: contact.publicKeyHex,
         tripTimeMs: tripMs,
-        stride: selection.hashSize);
+        stride: selection.hashSize,
+        guessedLinks: selection.guessedLinks);
     if (selection.source == RouteSource.graph) {
       if (delivered) {
         _graphDelivered++;
@@ -410,6 +415,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           useFlood: false,
           source: RouteSource.graph,
           estDelivery: r.estDelivery,
+          guessedLinks: r.guessedLinks,
         );
     final key = contact.publicKeyHex;
     return [
