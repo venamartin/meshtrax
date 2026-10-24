@@ -126,6 +126,12 @@ void main() {
       blog('   alternative ${i + 1}:           ${fmtRoute(graph, alt)}');
     }
     blog('route back:                ${fmtRoute(graph, graph.findReturnPath(pk))}');
+    final hints = graph.hintsFor(pk);
+    blog('inbound paths kept as hints (${hints.length}): '
+        '${hints.isEmpty ? "(none)" : hints.map((h) => '${h.hops.join(",")} @${DateTime.fromMillisecondsSinceEpoch(h.at).toIso8601String().substring(11, 19)}').join(' | ')}');
+    final guesses = graph.hintGuessesFor(pk);
+    blog('reverse guesses the guard allows (${guesses.length}): '
+        '${guesses.isEmpty ? "(none)" : guesses.map((g) => '${g.$1}→${g.$2}').join(' ')}');
   }
 
   Contact live(Contact c) => radio.connector.contacts
@@ -300,44 +306,24 @@ void main() {
     dump('after the baseline posts', roomA!);
   });
 
-  testWidgets('A2 splice: forward links removed until the best route is a '
-      'splice, then two posts', skip: skipRoomA, (tester) async {
+  testWidgets('A2 splice: what the search offers after the baseline, then two '
+      'posts', skip: skipRoomA, (tester) async {
     if (!ready) fail('Bench not ready — see the first failure above.');
-    await beginScenario(tester, 'A2 controlled splice');
+    await beginScenario(tester, 'A2 splice');
     final graph = service.graph!;
     final pk = roomA!.publicKeyHex;
-    var removed = 0;
-    PathResult result = graph.findPath(pk);
-    for (var round = 0; round < 6; round++) {
-      if (result is RouteResult && result.guessedHops > 0) break;
-      if (result is! RouteResult) break;
-      // Remove this route's forward links from the seeded graph and look
-      // again: a shorter fully-observed corridor may still exist.
-      final hops = [
-        for (var i = 0; i < result.pathBytes.length; i += 2)
-          hex(result.pathBytes.sublist(i, i + 2)).replaceAll(' ', '')
-      ];
-      final pairs = {
-        for (var i = 0; i < hops.length - 1; i++) '${hops[i]}>${hops[i + 1]}'
-      };
-      final doc = graph.saveSession();
-      final edges = (doc['edges'] as List).cast<Map<String, dynamic>>();
-      final before = edges.length;
-      edges.removeWhere((e) => pairs.contains('${e['from']}>${e['to']}'));
-      removed += before - edges.length;
-      blog('removed ${before - edges.length} forward link(s) of '
-          '${fmtRoute(graph, result)} from the seeded graph');
-      await graph.loadSession(doc);
-      result = graph.findPath(pk);
-    }
-    blog('controlled case after removing $removed link(s): '
-        'route to ${roomA!.name} = ${fmtRoute(graph, result)}');
+    // Removing links to force a splice was wrong: it deleted the very
+    // corridors a splice joins onto. The splice fires or not on its own.
+    final result = graph.findPath(pk);
     dump('before the splice posts', roomA!);
     if (result is RouteResult && result.guessedHops > 0) {
-      blog('Pathfinder offers a SPLICE with ${result.guessedHops} guessed hop(s)');
+      blog('Pathfinder offers a SPLICE with ${result.guessedHops} guessed hop(s): '
+          '${fmtRoute(graph, result)}');
     } else {
-      blog('no splice available here: ${result is FloodResult ? result.reason.name : "route has no guess"} '
-          '(their inbound path too short, too young for the ducting guard, or no hint)');
+      blog('no splice offered: best is ${fmtRoute(graph, result)} '
+          '(a fully observed route, a live PATH route, or no usable hint) '
+          '— no posts, nothing new to learn on the air');
+      return;
     }
     await post(roomA!, 'Test $hm: guess 1');
     await post(roomA!, 'Test $hm: guess 2');

@@ -551,6 +551,16 @@ class PathGraph {
     }
   }
 
+  /// A contact's recent inbound paths (the splice's hints) as kept, newest
+  /// first, with the arrival millis of each (UI/debug).
+  List<({List<String> hops, int at})> hintsFor(String contactPubkey) =>
+      List.unmodifiable(_hints[contactPubkey.toLowerCase()] ?? const []);
+
+  /// The reverse guesses the next search for [contactPubkey] would be
+  /// offered right now, after every guard (UI/debug).
+  Set<(String, String)> hintGuessesFor(String contactPubkey) =>
+      _hintGuesses(contactPubkey.toLowerCase(), _arrivalMillis);
+
   /// The splice's guesses for one query: the reverse of each
   /// repeater-to-repeater link on [contactPubkey]'s fresh inbound paths
   /// (not their doorstep's link to them, which a route ends on anyway),
