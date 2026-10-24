@@ -29,6 +29,7 @@ const _ri = 'north-america/us/rhode-island';
 class _FakeDownloader implements PackDownloader {
   final _updates = StreamController<PackDownload>.broadcast();
   final started = <String>[];
+  final startedWith = <PackIndexEntry>[];
   final cancelled = <String>[];
 
   void emit(PackDownload d) => _updates.add(d);
@@ -38,7 +39,11 @@ class _FakeDownloader implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async => started.add(entry.id);
+  Future<void> start(PackIndexEntry entry) async {
+    started.add(entry.id);
+    startedWith.add(entry);
+  }
+
   @override
   Future<void> pause(String packId) async {}
   @override
@@ -510,6 +515,62 @@ void main() {
       expect(seen.toSet(), {PackStatus.verifying, PackStatus.installed});
     },
   );
+
+  group('a pack republished during its download', () {
+    late MapPacksService maps;
+    late PackIndexEntry current, old;
+
+    setUp(() async {
+      maps = service();
+      await maps.start();
+      await maps.refresh();
+      current = maps.index!.packs.firstWhere(
+        (e) => e.id == 'us-rhode-island-osm',
+      );
+      // The entry the download began with, before the publish.
+      old = PackIndexEntry.fromJson({...current.toJson(), 'sha256': 'ab' * 32});
+    });
+
+    Future<void> rejected(PackIndexEntry entry) async {
+      downloader.emit(PackDownload(entry, PackDownloadState.verifying));
+      await pumpEventQueue();
+      downloader.emit(
+        PackDownload(entry, PackDownloadState.failed, error: 'Checksum'),
+      );
+      await pumpEventQueue();
+      // The catalogue fetch reads and writes its cache on disk.
+      while (maps.status == CatalogueStatus.loading) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      await pumpEventQueue();
+    }
+
+    test('Retry downloads the current build', () async {
+      downloader.emit(PackDownload(old, PackDownloadState.failed));
+      await pumpEventQueue();
+      await maps.resume(old.id);
+      expect(downloader.cancelled, [old.id], reason: 'the failed record');
+      expect(downloader.startedWith.single.sha256, current.sha256);
+    });
+
+    test(
+      'a rejected download fetches the catalogue and starts the new build',
+      () async {
+        requests.clear();
+        await rejected(old);
+        expect(requests.map((r) => r.url.path), contains('/dev/index.json'));
+        expect(downloader.startedWith.single.sha256, current.sha256);
+      },
+    );
+
+    test('a rejected download of the current build waits for Retry', () async {
+      requests.clear();
+      await rejected(current);
+      expect(requests.map((r) => r.url.path), contains('/dev/index.json'));
+      expect(downloader.started, isEmpty);
+      expect(maps.statusOf(current), PackStatus.failed);
+    });
+  });
 
   test('with nothing else to show, maps open on the latest map pack', () async {
     final maps = service();
