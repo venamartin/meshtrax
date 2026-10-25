@@ -132,8 +132,10 @@ void main() {
           const ObservationOrigin.anonymous(), lastHopHeard: false);
       expect((graph.findPath(bobPk) as FloodResult).reason,
           FloodReason.movedSinceTheyReachedMe);
-      // Carol never showed a way back: nothing says it is wrong.
-      expect(graph.findPath(carolPk), isA<RouteResult>());
+      // Carol never showed a way back: her radio holds one learned where
+      // I was, so she floods first too.
+      expect((graph.findPath(carolPk) as FloodResult).reason,
+          FloodReason.movedSinceTheyReachedMe);
 
       // A flood got through: their radio knows the way back now.
       graph.reportFloodDelivered(bobPk);

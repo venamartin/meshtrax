@@ -118,6 +118,11 @@ void main() {
     graph.setPlace('c1_2', {'c1_1'}); // next door: the row still matches
     expect(firstHop(), 'A277');
     graph.setPlace('c9_9', const {}); // a drive away
+    // Bob's way back is unknown, so the move rule speaks first; either
+    // way the send floods and A277's row at home is untouched.
+    expect((graph.findPath(bobPk) as FloodResult).reason,
+        FloodReason.movedSinceTheyReachedMe);
+    graph.reportFloodDelivered(bobPk);
     expect((graph.findPath(bobPk) as FloodResult).reason,
         FloodReason.doorstepsNotHere);
     graph.setPlace('c1_1', const {}); // back home: the row is still there

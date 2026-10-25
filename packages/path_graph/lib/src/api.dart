@@ -127,10 +127,12 @@ enum FloodReason {
   doorstepsNotHere,
 
   /// The radio has moved to another area since this contact last got a
-  /// packet of mine, and their way back ends at a repeater not heard
-  /// hearing me here: a route out would reach them, but their ACK would
-  /// ride their stored route back and die (simulator, 2026-10-25). A
-  /// flood teaches their radio the way back.
+  /// packet of mine, and their way back is not known to end at a repeater
+  /// heard hearing me here: a route out would reach them, but their ACK
+  /// would ride their stored route back and die (simulator, 2026-10-25).
+  /// A flood teaches their radio the way back. Unknown counts as
+  /// elsewhere: a contact whose ACKs always came direct never showed a
+  /// way back, and theirs ends where I was all the same.
   movedSinceTheyReachedMe,
 
   /// Every repeater heard carrying the contact's packets has failed my last
@@ -458,14 +460,16 @@ class PathGraph {
     _reachedSinceMove.add(contactPubkey.toLowerCase());
   }
 
-  /// Whether their known way back ends at a repeater heard hearing me
-  /// around here. True when nothing is known about their way back: that
-  /// is no reason to flood.
+  /// Whether their way back is known to end at a repeater heard hearing
+  /// me around here. An unknown way back is not: their radio holds one
+  /// all the same, learned where I was (simulator 2026-10-25: a room
+  /// whose ACKs always came direct never showed its way back, and every
+  /// post after the move died on it).
   bool _theirWayBackEndsHere(String contactPubkey) {
     final self = _selfPubkey;
     if (self == null || _cell == null) return true;
     final back = findReturnPath(contactPubkey);
-    if (back is! RouteResult) return true;
+    if (back is! RouteResult) return false;
     final bytes = back.pathBytes;
     final last = bytes.sublist(bytes.length - hashWidthBytes);
     final hash = last.map((b) => b.toRadixString(16).padLeft(2, '0')).join().toUpperCase();
