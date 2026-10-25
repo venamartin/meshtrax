@@ -13,33 +13,33 @@ class AppLocalizationsSk extends AppLocalizations {
   String get appTitle => 'MeshTrax';
 
   @override
-  String get nav_chats => 'Chats';
+  String get nav_chats => 'Chaty';
 
   @override
-  String get chats_title => 'Chats';
+  String get chats_title => 'Chaty';
 
   @override
-  String get newChat_title => 'Select contact';
+  String get newChat_title => 'Vyberte kontakt';
 
   @override
   String newChat_contactCount(int count) {
-    return '$count contacts';
+    return 'Kontakty: $count';
   }
 
   @override
-  String get newChat_newContact => 'New Contact';
+  String get newChat_newContact => 'Nový kontakt';
 
   @override
-  String get newChat_newChannel => 'New Channel';
+  String get newChat_newChannel => 'Nový kanál';
 
   @override
-  String get newChat_myContacts => 'My Contacts';
+  String get newChat_myContacts => 'Moje kontakty';
 
   @override
-  String get newChat_discovered => 'Discovered';
+  String get newChat_discovered => 'Objavené';
 
   @override
-  String get repeaters_title => 'Manage Repeaters';
+  String get repeaters_title => 'Spravovať opakovače';
 
   @override
   String get nav_contacts => 'Kontakty';
@@ -54,16 +54,17 @@ class AppLocalizationsSk extends AppLocalizations {
   String get common_cancel => 'Zrušiť';
 
   @override
-  String get common_syncing_device_info => 'Reading device info...';
+  String get common_syncing_device_info =>
+      'Načítavajú sa informácie o zariadení...';
 
   @override
-  String get common_syncing_contacts => 'Reading contacts...';
+  String get common_syncing_contacts => 'Načítavajú sa kontakty...';
 
   @override
-  String get common_syncing_channels => 'Reading channels...';
+  String get common_syncing_channels => 'Načítavajú sa kanály...';
 
   @override
-  String get common_syncing_messages => 'Reading messages...';
+  String get common_syncing_messages => 'Načítavajú sa správy...';
 
   @override
   String get common_ok => 'OK\nDobre';
@@ -105,10 +106,11 @@ class AppLocalizationsSk extends AppLocalizations {
   String get common_disconnected => 'Odpojené';
 
   @override
-  String get common_connectionLost => 'Connection lost. Reconnecting...';
+  String get common_connectionLost =>
+      'Spojenie sa stratilo. Opätovné pripájanie...';
 
   @override
-  String get common_reconnecting => 'Reconnecting...';
+  String get common_reconnecting => 'Opätovné pripájanie...';
 
   @override
   String get common_create => 'Vytvoriť';
@@ -259,11 +261,11 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get usbErrorNativeLibraryMissing =>
-      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+      'Tejto zostave chýba knižnica pre sériový port USB, takže zariadenia USB nemožno otvoriť. Preinštalujte MeshTrax alebo nahláste túto zostavu ako chybnú.';
 
   @override
   String get usbErrorBrowserUnsupported =>
-      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+      'Tento prehliadač nepodporuje Web Serial. Použite Chrome alebo Edge cez HTTPS (alebo localhost).';
 
   @override
   String get usbErrorAlreadyActive => 'Pripojenie cez USB je už aktivované.';
@@ -314,18 +316,18 @@ class AppLocalizationsSk extends AppLocalizations {
   }
 
   @override
-  String get scanner_showAllDevices => 'Show all Bluetooth devices';
+  String get scanner_showAllDevices => 'Zobraziť všetky zariadenia Bluetooth';
 
   @override
-  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
+  String get scanner_showMeshCoreOnly => 'Zobraziť len rádiá MeshCore';
 
   @override
   String get scanner_radioNotResponding =>
-      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+      'Rádio neodpovedá. Možno ho treba spárovať: otvorte nastavenia Bluetooth, pridajte rádio a zadajte jeho PIN, potom to skúste znova.';
 
   @override
   String get scanner_pairingFailed =>
-      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+      'Párovanie Bluetooth bolo zrušené alebo zlyhalo. Uistite sa, že k rádiu nie je pripojené nič iné (napríklad váš telefón), potom to skúste znova a zadajte jeho PIN.';
 
   @override
   String scanner_connectionFailed(String error) {
@@ -339,10 +341,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get scanner_scan => 'Skončiť';
 
   @override
-  String get scanner_scanFromImage => 'Scan from image';
+  String get scanner_scanFromImage => 'Skenovať z obrázka';
 
   @override
-  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+  String get scanner_noQrFoundInImage => 'Na obrázku sa nenašiel platný QR kód';
 
   @override
   String get scanner_bluetoothOff => 'Bluetooth je vypnutý';
@@ -731,18 +733,18 @@ class AppLocalizationsSk extends AppLocalizations {
       'Zobraziť podrobné metadáta o smerovaní a časovaní správ';
 
   @override
-  String get appSettings_senderNameColors => 'Colorful sender names';
+  String get appSettings_senderNameColors => 'Farebné mená odosielateľov';
 
   @override
   String get appSettings_senderNameColorsSubtitle =>
-      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+      'Každý odosielateľ v kanáli dostane vlastnú farbu mena. Vypnuté znamená farbu témy pre všetkých.';
 
   @override
-  String get appSettings_showTextFormatting => 'Show text formatting';
+  String get appSettings_showTextFormatting => 'Zobraziť formátovanie textu';
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      'Markdown v správach: **tučné**, *kurzíva*, ||spoilery||, nadpisy a odkazy. Iné aplikácie MeshCore zobrazujú nespracované znaky.';
 
   @override
   String get appSettings_notifications => 'Upozornenia';
@@ -798,11 +800,11 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get appSettings_maxChannelMessageRetries =>
-      'Max Channel Message Retries';
+      'Max. počet opakovaní správ v kanáli';
 
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
-      'It will retry this many times until it hears at least one repeat';
+      'Opakuje toľkokrát, kým nezachytí aspoň jedno zopakovanie';
 
   @override
   String get appSettings_battery => 'Batéria';
@@ -913,11 +915,12 @@ class AppLocalizationsSk extends AppLocalizations {
       'Zabudované ladenie aplikácie je vypnuté.';
 
   @override
-  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+  String get appSettings_incrementalContactSync =>
+      'Prírastková synchronizácia kontaktov';
 
   @override
   String get appSettings_incrementalContactSyncSubtitle =>
-      'On reconnect, ask the radio only for contacts that changed since last time';
+      'Po opätovnom pripojení žiadať od rádia len kontakty zmenené od minula';
 
   @override
   String get contacts_title => 'Kontakty';
@@ -926,11 +929,11 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contacts_noContacts => 'Zatiaľ žiadne kontakty.';
 
   @override
-  String get contacts_shareMyQrCode => 'Share My QR Code';
+  String get contacts_shareMyQrCode => 'Zdieľať môj QR kód';
 
   @override
   String get contacts_shareQrCodeDesc =>
-      'Let others scan to add you as a contact';
+      'Nechajte ostatných naskenovať kód a pridať si vás ako kontakt';
 
   @override
   String get contacts_contactsWillAppear =>
@@ -979,21 +982,22 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String contacts_deleteContactConfirm(String contactName) {
-    return 'Are you sure you want to delete $contactName?';
+    return 'Naozaj chcete odstrániť $contactName?';
   }
 
   @override
   String contacts_contactDeleted(String contactName) {
-    return 'Contact $contactName deleted.';
+    return 'Kontakt $contactName bol odstránený.';
   }
 
   @override
   String contacts_contactDeleteFailed(String contactName) {
-    return 'Failed to delete $contactName.';
+    return 'Nepodarilo sa odstrániť $contactName.';
   }
 
   @override
-  String get contacts_noMatchingContacts => 'No contacts match the filter.';
+  String get contacts_noMatchingContacts =>
+      'Filtru nezodpovedajú žiadne kontakty.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -1112,7 +1116,7 @@ class AppLocalizationsSk extends AppLocalizations {
       'Povoliť zdieľanie údajov senzorov prostredia';
 
   @override
-  String get contacts_publicKey => 'Public Key';
+  String get contacts_publicKey => 'Verejný kľúč';
 
   @override
   String get channels_title => 'Kanály';
@@ -1153,24 +1157,24 @@ class AppLocalizationsSk extends AppLocalizations {
   String get channels_editChannel => 'Upraviť kanál';
 
   @override
-  String get channels_shareChannel => 'Share Channel';
+  String get channels_shareChannel => 'Zdieľať kanál';
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      'Naskenujte QR kód a pridajte kanál.\nMenu → Pridať kanál → Skenujte QR kód';
 
   @override
-  String get channels_secretKey => 'Secret Key';
+  String get channels_secretKey => 'Tajný kľúč';
 
   @override
-  String get channels_meshcoreUri => 'MeshCore URI';
+  String get channels_meshcoreUri => 'URI MeshCore';
 
   @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
+  String get channels_shareChannelQr => 'Naskenujte QR kód kanála';
 
   @override
   String get channels_shareChannelWarning =>
-      'Warning: Anyone who scans this QR code will have access to this channel.';
+      'Upozornenie: Každý, kto naskenuje tento QR kód, získa prístup k tomuto kanálu.';
 
   @override
   String get channels_muteChannel => 'Stlmiť kanál';
@@ -1225,25 +1229,25 @@ class AppLocalizationsSk extends AppLocalizations {
       'PSK musí mať 32 hexadecimálových znakov.';
 
   @override
-  String get channels_addChannelConfirmation =>
-      'Do you want to add the following channel?';
+  String get channels_addChannelConfirmation => 'Chcete pridať tento kanál?';
 
   @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
+  String get channels_channelAddedSuccess => 'Kanál bol úspešne pridaný.';
 
   @override
-  String get channels_noAvailableChannelSlots => 'No available channel slots.';
+  String get channels_noAvailableChannelSlots =>
+      'Nie sú voľné miesta pre kanály.';
 
   @override
-  String get appSettings_mentionNotifications => 'Mention notifications';
+  String get appSettings_mentionNotifications => 'Upozornenia na zmienky';
 
   @override
   String get appSettings_mentionNotificationsSubtitle =>
-      'When someone mentions or replies to you — even in muted channels';
+      'Keď vás niekto spomenie alebo vám odpovie — aj v stlmených kanáloch';
 
   @override
   String notification_mentionIn(String channelName) {
-    return 'Mention in $channelName';
+    return 'Zmienka v $channelName';
   }
 
   @override
@@ -1352,13 +1356,14 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_location => 'Lokalita';
 
   @override
-  String get common_copiedToClipboard => 'Copied to clipboard';
+  String get common_copiedToClipboard => 'Skopírované do schránky';
 
   @override
-  String get common_copyToClipboard => 'Copy to clipboard';
+  String get common_copyToClipboard => 'Kopírovať do schránky';
 
   @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
+  String get contacts_copyContactToClipboard =>
+      'Kopírovať môj kontakt do schránky';
 
   @override
   String get chat_typeMessage => 'Napište správu...';
@@ -1387,7 +1392,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_reply => 'Odpovedať';
 
   @override
-  String get chat_newMessages => 'NEW MESSAGES';
+  String get chat_newMessages => 'NOVÉ SPRÁVY';
 
   @override
   String get chat_addReaction => 'Pridať Reakciu';
@@ -1396,76 +1401,77 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_mention => 'Spomenúť';
 
   @override
-  String get dmChannel_menuLabel => 'Direct Message';
+  String get dmChannel_menuLabel => 'Priama správa';
 
   @override
   String dmChannel_pickerTitle(String name) {
-    return 'Send DM to $name';
+    return 'Poslať DM pre $name';
   }
 
   @override
   String get dmChannel_pickerHint =>
-      'Check the key and last-seen time — names are not unique.';
+      'Skontrolujte kľúč a čas, kedy bol naposledy videný — mená nie sú jedinečné.';
 
   @override
-  String get dmChannel_warningTitle => 'Is this really them?';
+  String get dmChannel_warningTitle => 'Je to naozaj tá osoba?';
 
   @override
   String get dmChannel_warningBody =>
-      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+      'Mená v kanáloch si každý volí sám a ktokoľvek ich môže napodobniť. Pri čomkoľvek citlivom najprv overte verejný kľúč tohto kontaktu iným spôsobom.';
 
   @override
-  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+  String get dmChannel_dontShowAgain => 'Už nezobrazovať';
 
   @override
-  String get batterySleep_title => 'Keep MeshTrax running';
+  String get batterySleep_title => 'Udržať MeshTrax v chode';
 
   @override
   String get batterySleep_bodySamsung =>
-      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+      'Telefóny Samsung uspávajú aplikácie, aby šetrili batériu, čo odpojí vaše rádio. Otvorte Nastavenia → Aplikácie → MeshTrax → Batéria a zvoľte Neobmedzené. Skontrolujte aj Batéria → Obmedzenia používania na pozadí a uistite sa, že MeshTrax nie je v zozname Uspané aplikácie ani Aplikácie v hlbokom spánku.';
 
   @override
   String get batterySleep_bodyGeneric =>
-      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+      'Telefón môže MeshTrax na pozadí zastaviť, aby šetril batériu, čo odpojí vaše rádio. Otvorte nastavenia batérie a nastavte MeshTrax na Neobmedzené (alebo Bez obmedzení). Na niektorých telefónoch treba pre MeshTrax zapnúť aj Automatické spúšťanie.';
 
   @override
-  String get batterySleep_openSettings => 'Open settings';
+  String get batterySleep_openSettings => 'Otvoriť nastavenia';
 
   @override
-  String get batterySleep_notNow => 'Not now';
+  String get batterySleep_notNow => 'Teraz nie';
 
   @override
-  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+  String get batterySleep_settingsTile => 'Udržať MeshTrax v chode na pozadí';
 
   @override
   String get batterySleep_settingsTileSubtitle =>
-      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+      'Zabráňte šetriču batérie telefónu uspať MeshTrax';
 
   @override
   String dmChannel_noMatchTitle(String name) {
-    return 'Can\'t DM $name yet';
+    return 'DM pre $name zatiaľ nie je možná';
   }
 
   @override
   String get dmChannel_noMatchBody =>
-      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+      'Zatiaľ nemáte kľúč tejto osoby a ona potrebuje váš, aby mohla odpovedať — kľúče sa šíria len v inzerátoch. \"Poslať môj inzerát\" odošle váš priamo odtiaľto. \"Opýtať sa v kanáli\" napíše žiadosť do poľa správy, aby ste ju mohli odoslať.';
 
   @override
-  String get dmChannel_askInChannel => 'Ask in channel';
+  String get dmChannel_askInChannel => 'Opýtať sa v kanáli';
 
   @override
-  String get dmChannel_sendMyAdvert => 'Send my advert';
+  String get dmChannel_sendMyAdvert => 'Poslať môj inzerát';
 
   @override
-  String get dmChannel_askText => 'please send an advert so I can DM you';
+  String get dmChannel_askText =>
+      'pošli prosím inzerát, nech ti môžem napísať DM';
 
   @override
   String get dmChannel_watching =>
-      'Watching for their advert — you\'ll be asked here when it arrives.';
+      'Čakám na inzerát tejto osoby — keď príde, opýtam sa vás tu.';
 
   @override
   String dmChannel_advertHeard(String name) {
-    return '$name is now reachable';
+    return 'Kontakt $name je teraz dostupný';
   }
 
   @override
@@ -1478,14 +1484,14 @@ class AppLocalizationsSk extends AppLocalizations {
   String get common_reset => 'Obnoviť';
 
   @override
-  String get chat_reactionsTitle => 'Reactions';
+  String get chat_reactionsTitle => 'Reakcie';
 
   @override
-  String get chat_reactionUnknownSender => 'Unknown';
+  String get chat_reactionUnknownSender => 'Neznámy';
 
   @override
   String chat_reactionTargetMissing(String sender) {
-    return '$sender reacted to a message that isn\'t in this chat';
+    return '$sender: reakcia na správu, ktorá nie je v tomto chate';
   }
 
   @override
@@ -1534,22 +1540,22 @@ class AppLocalizationsSk extends AppLocalizations {
   String get debugLog_copyLog => 'Kopírovať záznam';
 
   @override
-  String get debugLog_saveLog => 'Save log to file';
+  String get debugLog_saveLog => 'Uložiť záznam do súboru';
 
   @override
-  String get debugLog_saved => 'Log saved';
+  String get debugLog_saved => 'Záznam uložený';
 
   @override
-  String get debugLog_saveCancelled => 'Save cancelled';
+  String get debugLog_saveCancelled => 'Ukladanie zrušené';
 
   @override
-  String get debugLog_filterAll => 'All';
+  String get debugLog_filterAll => 'Všetko';
 
   @override
-  String get debugLog_filterWarnings => 'Warnings';
+  String get debugLog_filterWarnings => 'Varovania';
 
   @override
-  String get debugLog_filterErrors => 'Errors';
+  String get debugLog_filterErrors => 'Chyby';
 
   @override
   String get debugLog_clearLog => 'Vymažať záznam';
@@ -1614,7 +1620,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get debugFrame_textTypeCli => 'CLI';
 
   @override
-  String get debugFrame_textTypeCliCommand => 'CLI command';
+  String get debugFrame_textTypeCliCommand => 'Príkaz CLI';
 
   @override
   String get debugFrame_textTypePlain => 'Jednoduché';
@@ -3052,13 +3058,13 @@ class AppLocalizationsSk extends AppLocalizations {
   String get listFilter_filters => 'Filtre';
 
   @override
-  String get listFilter_source => 'Source';
+  String get listFilter_source => 'Zdroj';
 
   @override
-  String get listFilter_saved => 'Saved';
+  String get listFilter_saved => 'Uložené';
 
   @override
-  String get listFilter_discovered => 'Discovered';
+  String get listFilter_discovered => 'Objavené';
 
   @override
   String get listFilter_all => 'Všetko';
@@ -3322,31 +3328,31 @@ class AppLocalizationsSk extends AppLocalizations {
       'Kopírovanie inzerátu do schránky zlyhalo.';
 
   @override
-  String get contacts_addContact => 'Add Contact';
+  String get contacts_addContact => 'Pridať kontakt';
 
   @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
+  String get contacts_scanQrCode => 'Skenovať QR kontaktu';
 
   @override
   String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
+      'Naskenujte QR kód kontaktu z aplikácie MeshCore';
 
   @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
+  String get contacts_enterIdHash => 'Zadať kontakt ručne';
 
   @override
   String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
+      'Vložte inzerát kontaktu alebo odkaz meshcore://';
 
   @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
+  String get contacts_advertHint => 'meshcore://... alebo verejný kľúč v hex';
 
   @override
-  String get contacts_import => 'Import';
+  String get contacts_import => 'Importovať';
 
   @override
   String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
+      'Naskenujte QR kód kontaktu MeshCore';
 
   @override
   String get notification_activityTitle => 'Aktivita MeshCore';
@@ -3510,7 +3516,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get discoveredContacts_noMatching => 'Žiadne zhodné kontakty';
 
   @override
-  String get listFilter_searchHint => 'Search...';
+  String get listFilter_searchHint => 'Hľadať...';
 
   @override
   String get discoveredContacts_searchHint => 'Vyhľadať objavené kontakty';
@@ -3539,7 +3545,8 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_sendCooldown => 'Prosím, počkajte chvíľu, než zašlete znova.';
 
   @override
-  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+  String get chat_notConnected =>
+      'Nie ste pripojení k rádiu. Správa nebola odoslaná.';
 
   @override
   String get appSettings_jumpToOldestUnread => 'Presk oceň';
@@ -3726,118 +3733,119 @@ class AppLocalizationsSk extends AppLocalizations {
   String get translation_systemLanguage => 'Jazyk systému';
 
   @override
-  String get routing_title => 'Routing';
+  String get routing_title => 'Smerovanie';
 
   @override
   String routing_route(String route) {
-    return 'Stored path: $route';
+    return 'Uložená cesta: $route';
   }
 
   @override
   String get routing_noRoute =>
-      'none yet — the next message floods and learns one';
+      'zatiaľ žiadna — ďalšia správa pôjde záplavou a nejakú sa naučí';
 
   @override
-  String get routing_auto => 'Automatic';
+  String get routing_auto => 'Automaticky';
 
   @override
   String get routing_autoSubtitle =>
-      'Use the radio\'s stored path. Recommended.';
+      'Použiť cestu uloženú v rádiu. Odporúčané.';
 
   @override
   String get routing_pathfinderOn =>
-      'Pathfinder on: tries learned routes first';
+      'Pathfinder zapnutý: najprv skúša naučené trasy';
 
   @override
-  String get routing_flood => 'Always flood';
+  String get routing_flood => 'Vždy záplavou';
 
   @override
-  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+  String get routing_floodSubtitle => 'Každá správa ide do celej siete';
 
   @override
-  String get routing_custom => 'Custom path';
+  String get routing_custom => 'Vlastná cesta';
 
   @override
-  String get routing_customSubtitle => 'Choose the repeaters yourself';
+  String get routing_customSubtitle => 'Vyberte opakovače sami';
 
   @override
-  String get routing_forget => 'Reset path';
+  String get routing_forget => 'Resetovať cestu';
 
   @override
   String get routing_forgetDone =>
-      'Path reset. The next message floods and learns a fresh one.';
+      'Cesta resetovaná. Ďalšia správa pôjde záplavou a naučí sa novú.';
 
   @override
-  String get routing_pathfinder => 'What Pathfinder knows';
+  String get routing_pathfinder => 'Čo vie Pathfinder';
 
   @override
   String get routing_pathfinderSubtitle =>
-      'Repeaters that hear you and them, and learned routes there and back';
+      'Opakovače, ktoré počujú vás aj tento kontakt, a naučené trasy tam a späť';
 
   @override
-  String get path_direct => 'Direct — no repeaters';
+  String get path_direct => 'Priamo — bez opakovačov';
 
   @override
-  String get path_directSubtitle =>
-      'Only when the contact can hear this radio itself';
+  String get path_directSubtitle => 'Len keď kontakt počuje toto rádio priamo';
 
   @override
-  String get chat_kindFlood => 'flood';
+  String get chat_kindFlood => 'záplavou';
 
   @override
-  String get chat_kindDirect => 'direct';
+  String get chat_kindDirect => 'priamo';
 
   @override
   String chat_kindRoute(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'skokov',
+      many: 'skoku',
+      few: 'skoky',
+      one: 'skok',
     );
-    return 'route ($count $_temp0)';
+    return 'trasou ($count $_temp0)';
   }
 
   @override
-  String get chat_statusQueued => 'Queued';
+  String get chat_statusQueued => 'Vo fronte';
 
   @override
   String get chat_statusNoRepeaterHeard =>
-      'No repeater heard you. Will try again when one is in range.';
+      'Žiadny opakovač vás nepočul. Skúsi sa to znova, keď bude niektorý v dosahu.';
 
   @override
   String chat_narrowHashNotice(String name) {
-    return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
+    return 'Rádio $name posiela krátke kódy opakovačov (1 bajt). Pathfinder sa nemôže naučiť trasy k tomuto kontaktu, kým jeho rádio nebude používať 2-bajtové kódy.';
   }
 
   @override
   String chat_statusSending(String kind) {
-    return 'Sending · $kind';
+    return 'Odosiela sa · $kind';
   }
 
   @override
   String chat_statusRetrying(int attempt, int max, String kind) {
-    return 'Retrying · $kind · attempt $attempt of $max';
+    return 'Opakuje sa · $kind · pokus $attempt z $max';
   }
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return 'Doručené · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return 'Doručené na $attempt. pokus · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return 'Doručené neskoro · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return 'Doručené · $secs s';
   }
 
   @override
@@ -3845,66 +3853,68 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       attempts,
       locale: localeName,
-      other: 'attempts',
-      one: 'attempt',
+      other: 'pokusoch',
+      many: 'pokusu',
+      few: 'pokusoch',
+      one: 'pokuse',
     );
-    return 'Failed after $attempts $_temp0 · tap to resend';
+    return 'Zlyhalo po $attempts $_temp0 · klepnutím odošlete znova';
   }
 
   @override
-  String get chat_statusFailedShort => 'Failed · tap to resend';
+  String get chat_statusFailedShort => 'Zlyhalo · klepnutím odošlete znova';
 
   @override
-  String get chat_resendingByFlood => 'Resending by flood';
+  String get chat_resendingByFlood => 'Opätovné odosielanie záplavou';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder (experimentálne)';
 
   @override
   String get settings_pathGraphSubtitle =>
-      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+      'Učí sa trasy zo všetkého, čo rádio počuje, a pri odosielaní DM najprv skúša tie najlepšie. Jantárová ikona cesty označuje správu odoslanú trasou Pathfindera.';
 
   @override
-  String get map_routeAndTrace => 'Route & trace';
+  String get map_routeAndTrace => 'Trasa a sledovanie';
 
   @override
-  String get map_pathfinderTrace => 'Trace there and back';
+  String get map_pathfinderTrace => 'Sledovanie tam a späť';
 
   @override
   String get map_pathfinderTraceSubtitle =>
-      'Out on Pathfinder\'s best route, back on its best route back';
+      'Tam najlepšou trasou Pathfindera, späť jeho najlepšou spätnou trasou';
 
   @override
   String get map_routeBackMirrored =>
-      'No route back known yet — coming back the same way';
+      'Spätná trasa zatiaľ nie je známa — návrat tou istou cestou';
 
   @override
-  String get map_traceHelpTitle => 'Path trace buttons';
+  String get map_traceHelpTitle => 'Tlačidlá sledovania cesty';
 
   @override
-  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+  String get map_traceHelpCustom => 'Napíšte alebo vyberte opakovače sami.';
 
   @override
   String get map_traceHelpRun =>
-      'Sends a trace out along the repeaters you tapped, one way.';
+      'Pošle sledovanie cez opakovače, na ktoré ste klepli, jedným smerom.';
 
   @override
-  String get map_traceHelpThereAndBack => 'There and back';
+  String get map_traceHelpThereAndBack => 'Tam a späť';
 
   @override
   String get map_traceHelpThereAndBackSubtitle =>
-      'Sends the trace out, then back over the same repeaters in reverse.';
+      'Pošle sledovanie tam a potom späť cez tie isté opakovače v opačnom poradí.';
 
   @override
   String get map_traceHelpPathfinder =>
-      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+      'Pathfinder vyberie najlepšiu trasu cez posledné dva opakovače, na ktoré ste klepli, a najlepšiu trasu späť k vám. Výsledok naučí Pathfinder, ktoré spojenia naozaj fungujú. Treba klepnúť na dva opakovače.';
 
   @override
-  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+  String get map_traceHelpRemoveLast => 'Odoberie posledný opakovač z cesty.';
 
   @override
   String get map_traceHelpCancel =>
-      'Stops building the trace. Shown before any repeater is tapped.';
+      'Zastaví vytváranie sledovania. Zobrazí sa, kým neklepnete na žiadny opakovač.';
 
   @override
   String get chat_resendingByRoute => 'Opätovné odosielanie nastavenou trasou';
@@ -3998,263 +4008,263 @@ class AppLocalizationsSk extends AppLocalizations {
   String get room_reloadFailed => 'Miestnosť sa nepodarilo resetovať na rádiu';
 
   @override
-  String get companionCli_title => 'Command line';
+  String get companionCli_title => 'Príkazový riadok';
 
   @override
   String get companionCli_settingsSubtitle =>
-      'Type text commands for this radio';
+      'Zadávajte textové príkazy pre toto rádio';
 
   @override
-  String get companionCli_rebooting => 'Restarting the radio…';
+  String get companionCli_rebooting => 'Reštartuje sa rádio…';
 
   @override
-  String get companionCli_cancelled => 'Cancelled';
+  String get companionCli_cancelled => 'Zrušené';
 
   @override
-  String get companionCli_poweringOff => 'Turning the radio off…';
+  String get companionCli_poweringOff => 'Vypína sa rádio…';
 
   @override
-  String get companionCli_noReply => 'No reply from the radio. Try again.';
+  String get companionCli_noReply => 'Rádio neodpovedá. Skúste to znova.';
 
   @override
-  String get companionCli_powerOffTitle => 'Turn the radio off?';
+  String get companionCli_powerOffTitle => 'Vypnúť rádio?';
 
   @override
   String get companionCli_powerOffBody =>
-      'It stays off until you press its button or plug it in.';
+      'Zostane vypnuté, kým nestlačíte jeho tlačidlo alebo ho nepripojíte k napájaniu.';
 
   @override
-  String get companionCli_powerOff => 'Turn off';
+  String get companionCli_powerOff => 'Vypnúť';
 
   @override
-  String get companionCli_quickBoard => 'Board';
+  String get companionCli_quickBoard => 'Doska';
 
   @override
-  String get companionCli_quickWifiStatus => 'WiFi status';
+  String get companionCli_quickWifiStatus => 'Stav WiFi';
 
   @override
-  String get companionCli_quickWifiAddress => 'WiFi address';
+  String get companionCli_quickWifiAddress => 'Adresa WiFi';
 
   @override
-  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+  String get companionCli_helpBoard => 'Zobrazí výrobcu a model dosky.';
 
   @override
-  String get companionCli_helpReboot => 'Restarts the radio.';
+  String get companionCli_helpReboot => 'Reštartuje rádio.';
 
   @override
-  String get companionCli_helpPowerOff => 'Turns the radio off.';
+  String get companionCli_helpPowerOff => 'Vypne rádio.';
 
   @override
   String get companionCli_helpSetPin =>
-      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+      'Nastaví PIN na párovanie Bluetooth. Platí po reštarte.';
 
   @override
   String get companionCli_helpSetTzOffset =>
-      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+      'Nastaví počet hodín pripočítaných k UTC pre hodiny na vlastnom displeji rádia (-12 až +14).';
 
   @override
   String get companionCli_helpSetTx =>
-      'Sets the transmit power in dBm. Applies at once.';
+      'Nastaví vysielací výkon v dBm. Platí okamžite.';
 
   @override
   String get companionCli_helpSetIntThresh =>
-      'Sets the interference threshold in dB. 0 turns interference detection off.';
+      'Nastaví prah rušenia v dB. 0 vypne detekciu rušenia.';
 
   @override
   String get companionCli_helpSetCad =>
-      'Listens for other radios before sending (channel activity detection).';
+      'Pred vysielaním počúva iné rádiá (detekcia aktivity kanála).';
 
   @override
   String get companionCli_helpSetRxGain =>
-      'Boosted receive gain, on SX126x radios.';
+      'Zosilnený príjem na rádiách SX126x.';
 
   @override
   String get companionCli_helpSetPathHashMode =>
-      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+      'Bajty na opakovač v trase: 0 = 1 bajt, 1 = 2 bajty, 2 = 3 bajty.';
 
   @override
   String get companionCli_helpWifiStatus =>
-      'Shows whether the radio is on the WiFi network.';
+      'Zobrazí, či je rádio v sieti WiFi.';
 
   @override
-  String get companionCli_helpWifiIp =>
-      'Shows the radio\'s address on the WiFi network.';
+  String get companionCli_helpWifiIp => 'Zobrazí adresu rádia v sieti WiFi.';
 
   @override
   String get companionCli_helpWifiSsid =>
-      'Sets the WiFi network name. Applies after a restart.';
+      'Nastaví názov siete WiFi. Platí po reštarte.';
 
   @override
   String get companionCli_helpWifiPwd =>
-      'Sets the WiFi password. Applies after a restart.';
+      'Nastaví heslo WiFi. Platí po reštarte.';
 
   @override
   String get companionCli_helpWifiEnabled =>
-      'Turns WiFi on (1) or off (0). Applies after a restart.';
+      'Zapne (1) alebo vypne (0) WiFi. Platí po reštarte.';
 
   @override
   String get companionCli_helpWifiClear =>
-      'Forgets the WiFi network. Applies after a restart.';
+      'Zabudne sieť WiFi. Platí po reštarte.';
 
   @override
   String get companionCli_remoteNoReply =>
-      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+      'Žiadna odpoveď. Druhé rádio potrebuje firmvér 1.18 alebo novší a musí vám povoliť používať svoj príkazový riadok.';
 
   @override
   String get companionCli_remoteSentNoAnswer =>
-      'Sent. A radio does not answer a restart or power-off.';
+      'Odoslané. Rádio na reštart ani vypnutie neodpovedá.';
 
   @override
   String companionCli_blocked(String name, String command) {
-    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '$name: pokus o použitie príkazového riadka vášho rádia: \"$command\". Nebolo to povolené.';
   }
 
   @override
   String companionCli_blockedBody(String command) {
-    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return 'Pokus o použitie príkazového riadka vášho rádia: \"$command\". Nebolo to povolené.';
   }
 
   @override
-  String get contact_remoteCli => 'Allow remote command line';
+  String get contact_remoteCli => 'Povoliť vzdialený príkazový riadok';
 
   @override
   String get contact_remoteCliSubtitle =>
-      'Lets this contact run commands on your radio';
+      'Umožní tomuto kontaktu spúšťať príkazy na vašom rádiu';
 
   @override
   String contact_remoteCliWarningTitle(String name) {
-    return 'Let $name control your radio?';
+    return 'Dovoliť $name ovládať vaše rádio?';
   }
 
   @override
   String contact_remoteCliWarning(String name) {
-    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+    return 'Kontakt $name bude môcť meniť nastavenia vášho rádia, čítať vaše heslo WiFi, premenovať rádio a reštartovať ho alebo vypnúť. Povoľte to len niekomu, komu úplne dôverujete.';
   }
 
   @override
-  String get contact_remoteCliAllow => 'Allow';
+  String get contact_remoteCliAllow => 'Povoliť';
 
   @override
   String get connection_secondApp =>
-      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+      'K tomuto rádiu je pripojená iná aplikácia. Správy a nastavenia sa môžu pomiešať. Zatvorte druhú aplikáciu.';
 
   @override
   String get wifi_title => 'WiFi';
 
   @override
-  String get wifi_settingsSubtitle => 'Network, password and connection';
+  String get wifi_settingsSubtitle => 'Sieť, heslo a pripojenie';
 
   @override
-  String get wifi_use => 'Use WiFi';
+  String get wifi_use => 'Používať WiFi';
 
   @override
-  String get wifi_networkName => 'Network name';
+  String get wifi_networkName => 'Názov siete';
 
   @override
-  String get wifi_password => 'Password';
+  String get wifi_password => 'Heslo';
 
   @override
-  String get wifi_passwordUnchanged => 'Unchanged';
+  String get wifi_passwordUnchanged => 'Nezmenené';
 
   @override
-  String get wifi_showPassword => 'Show password';
+  String get wifi_showPassword => 'Zobraziť heslo';
 
   @override
-  String get wifi_nameMissing => 'Enter the network name';
+  String get wifi_nameMissing => 'Zadajte názov siete';
 
   @override
   String get wifi_nameTooLong =>
-      'The network name is too long (32 bytes at most)';
+      'Názov siete je príliš dlhý (najviac 32 bajtov)';
 
   @override
-  String get wifi_passwordTooLong =>
-      'The password is too long (63 bytes at most)';
+  String get wifi_passwordTooLong => 'Heslo je príliš dlhé (najviac 63 bajtov)';
 
   @override
   String get wifi_savedRestart =>
-      'Saved. WiFi changes apply after the radio restarts.';
+      'Uložené. Zmeny WiFi sa prejavia po reštarte rádia.';
 
   @override
-  String get wifi_forget => 'Forget network';
+  String get wifi_forget => 'Zabudnúť sieť';
 
   @override
   String get wifi_forgetConfirm =>
-      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+      'Zabudnúť túto sieť WiFi? Rádio po reštarte prestane používať WiFi.';
 
   @override
   String wifi_notAccepted(String reply) {
-    return 'The radio did not accept that: $reply';
+    return 'Rádio to neprijalo: $reply';
   }
 
   @override
-  String get wifi_noReply => 'No reply from the radio. Try again.';
+  String get wifi_noReply => 'Rádio neodpovedá. Skúste to znova.';
 
   @override
-  String get wifi_restartTitle => 'Restart the radio?';
+  String get wifi_restartTitle => 'Reštartovať rádio?';
 
   @override
-  String get wifi_later => 'Later';
+  String get wifi_later => 'Neskôr';
 
   @override
   String get wifi_loadFailed =>
-      'Could not read the WiFi settings from the radio.';
+      'Nepodarilo sa načítať nastavenia WiFi z rádia.';
 
   @override
   String wifi_connectedTo(String address) {
-    return 'Connected · $address';
+    return 'Pripojené · $address';
   }
 
   @override
-  String get wifi_notConnected => 'Not connected to WiFi';
+  String get wifi_notConnected => 'Nepripojené k WiFi';
 
   @override
   String wifi_portNote(int port) {
-    return 'Apps on the same network can connect on port $port';
+    return 'Aplikácie v tej istej sieti sa môžu pripojiť na porte $port';
   }
 
   @override
-  String get wifi_connectOverWifi => 'Connect over WiFi';
+  String get wifi_connectOverWifi => 'Pripojiť cez WiFi';
 
   @override
   String wifi_connectOverWifiBody(String address, int port) {
-    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+    return 'MeshTrax sa odpojí od tohto rádia a otvorí obrazovku TCP s vyplnenou adresou $address a portom $port. Tam klepnite na \"Pripojiť\".';
   }
 
   @override
-  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+  String get wifi_noteRestart => 'Zmeny sa prejavia po reštarte rádia.';
 
   @override
   String get wifi_noteSecurity =>
-      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+      'Ktokoľvek vo vašej sieti WiFi sa môže pripojiť k rádiu na porte 5000. Nie je na to žiadne heslo.';
 
   @override
   String get wifi_noteBattery =>
-      'WiFi keeps the radio awake, so the battery runs down faster.';
+      'WiFi nenechá rádio spať, takže sa batéria vybíja rýchlejšie.';
 
   @override
   String get wifi_noteWrongPassword =>
-      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
+      'Ak je heslo nesprávne, rádio to skúša znova každých pár sekúnd. Bluetooth funguje ďalej.';
 
   @override
   String get room_selfDemoteWarning =>
       'Meníte svoj vlastný prístup. Ak sa vzdáte roly admina, vrátiť vám ju môže len konzola miestnosti.';
 
   @override
-  String get scanner_offlineMaps => 'Offline maps';
+  String get scanner_offlineMaps => 'Offline mapy';
 
   @override
-  String get appSettings_offlineMaps => 'Offline maps';
+  String get appSettings_offlineMaps => 'Offline mapy';
 
   @override
-  String get appSettings_offlineMapsNone => 'None downloaded';
+  String get appSettings_offlineMapsNone => 'Nič nestiahnuté';
 
   @override
   String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count regions',
-      one: '1 region',
+      other: '$count regiónov',
+      many: '$count regiónu',
+      few: '$count regióny',
+      one: '$count región',
     );
     return '$_temp0';
   }
@@ -4264,8 +4274,10 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count chart areas',
-      one: '1 chart area',
+      other: '$count oblastí námorných máp',
+      many: '$count oblasti námorných máp',
+      few: '$count oblasti námorných máp',
+      one: '$count oblasť námorných máp',
     );
     return '$_temp0';
   }
@@ -4275,81 +4287,85 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count updates available',
-      one: '1 update available',
+      other: '$count dostupných aktualizácií',
+      many: '$count dostupnej aktualizácie',
+      few: '$count dostupné aktualizácie',
+      one: '$count dostupná aktualizácia',
     );
     return '$_temp0';
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly => 'Sťahovať mapy len cez Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+      'Sťahovanie máp čaká na pripojenie Wi‑Fi';
 
   @override
-  String get offlineMaps_title => 'Offline maps';
+  String get offlineMaps_title => 'Offline mapy';
 
   @override
-  String get offlineMaps_tabMaps => 'Maps';
+  String get offlineMaps_tabMaps => 'Mapy';
 
   @override
-  String get offlineMaps_tabCharts => 'Charts';
+  String get offlineMaps_tabCharts => 'Námorné mapy';
 
   @override
-  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+  String get offlineMaps_chartsNotice => 'Nie na navigáciu · Prečo?';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
-    return 'Suggested · $coast';
+    return 'Navrhované · $coast';
   }
 
   @override
-  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+  String get offlineMaps_chartsByCoast => 'Oblasti máp podľa pobrežia';
 
   @override
   String offlineMaps_chartsCoastSummary(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count oblastí',
+      many: '$count oblasti',
+      few: '$count oblasti',
+      one: '$count oblasť',
     );
     return '$_temp0 · $size';
   }
 
   @override
   String offlineMaps_chartsDownloadedCount(int count) {
-    return '$count downloaded';
+    return 'Stiahnuté: $count';
   }
 
   @override
   String offlineMaps_chartsSelectedCount(int count) {
-    return '$count selected';
+    return 'Vybrané: $count';
   }
 
   @override
-  String get offlineMaps_selectAll => 'Select all';
+  String get offlineMaps_selectAll => 'Vybrať všetko';
 
   @override
-  String get offlineMaps_clearSelection => 'Clear';
+  String get offlineMaps_clearSelection => 'Vymazať';
 
   @override
   String offlineMaps_chartsAlsoIn(String coasts) {
-    return 'Also in $coasts';
+    return 'Aj v: $coasts';
   }
 
   @override
-  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+  String get offlineMaps_chartsNotAvailable => 'Zatiaľ nedostupné';
 
   @override
   String get offlineMaps_chartsHint =>
-      'NOAA charts are picked by coast, in the Charts tab.';
+      'Námorné mapy NOAA sa vyberajú podľa pobrežia na karte \"Námorné mapy\".';
 
   @override
   String offlineMaps_chartsName(String area) {
-    return '$area NOAA charts';
+    return 'Námorné mapy NOAA – $area';
   }
 
   @override
@@ -4357,243 +4373,247 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count oblastí',
+      many: '$count oblasti',
+      few: '$count oblasti',
+      one: '$count oblasť',
     );
     return '$_temp0';
   }
 
   @override
-  String get offlineMaps_tabDownloaded => 'Downloaded';
+  String get offlineMaps_tabDownloaded => 'Stiahnuté';
 
   @override
-  String get offlineMaps_refresh => 'Check for new maps';
+  String get offlineMaps_refresh => 'Hľadať nové mapy';
 
   @override
-  String get offlineMaps_loading => 'Loading available maps…';
+  String get offlineMaps_loading => 'Načítavajú sa dostupné mapy…';
 
   @override
-  String get offlineMaps_serverError => 'Can\'t reach the map server';
+  String get offlineMaps_serverError => 'Server máp je nedostupný';
 
   @override
-  String get offlineMaps_unavailable => 'No maps are available yet';
+  String get offlineMaps_unavailable => 'Zatiaľ nie sú dostupné žiadne mapy';
 
   @override
-  String get offlineMaps_unavailableHint => 'Check again later.';
+  String get offlineMaps_unavailableHint => 'Skúste to znova neskôr.';
 
   @override
   String get offlineMaps_chartsUnavailable =>
-      'No NOAA charts are available yet';
+      'Zatiaľ nie sú dostupné žiadne námorné mapy NOAA';
 
   @override
   String offlineMaps_cachedFrom(String date) {
-    return 'Showing the list from $date';
+    return 'Zobrazuje sa zoznam z $date';
   }
 
   @override
   String get offlineMaps_needsNewerApp =>
-      'Update MeshTrax to get the newest maps.';
+      'Aktualizujte MeshTrax, aby ste získali najnovšie mapy.';
 
   @override
-  String get offlineMaps_world => 'World';
+  String get offlineMaps_world => 'Svet';
 
   @override
-  String get offlineMaps_suggested => 'Suggested';
+  String get offlineMaps_suggested => 'Navrhované';
 
   @override
-  String get offlineMaps_regions => 'Regions';
+  String get offlineMaps_regions => 'Regióny';
 
   @override
   String offlineMaps_regionsIn(String name) {
-    return 'Regions in $name';
+    return 'Regióny: $name';
   }
 
   @override
   String offlineMaps_inside(int count) {
-    return '$count inside';
+    return 'Vnútri: $count';
   }
 
   @override
   String offlineMaps_storageUsed(String size) {
-    return '$size of offline maps on this device';
+    return '$size offline máp v tomto zariadení';
   }
 
   @override
   String offlineMaps_updates(int count) {
-    return 'Updates ($count)';
+    return 'Aktualizácie ($count)';
   }
 
   @override
   String offlineMaps_updateAll(String size) {
-    return 'Update all $size';
+    return 'Aktualizovať všetko ($size)';
   }
 
   @override
-  String get offlineMaps_downloading => 'Downloading';
+  String get offlineMaps_downloading => 'Sťahuje sa';
 
   @override
-  String get offlineMaps_update => 'Update';
+  String get offlineMaps_update => 'Aktualizovať';
 
   @override
   String offlineMaps_downloadedOn(String date) {
-    return 'Downloaded $date';
+    return 'Stiahnuté $date';
   }
 
   @override
-  String get offlineMaps_updateAvailable => 'Update available';
+  String get offlineMaps_updateAvailable => 'Dostupná aktualizácia';
 
   @override
-  String get offlineMaps_otherFiles => 'Other map files';
+  String get offlineMaps_otherFiles => 'Iné súbory máp';
 
   @override
-  String get offlineMaps_emptyTitle => 'No offline maps yet';
+  String get offlineMaps_emptyTitle => 'Zatiaľ žiadne offline mapy';
 
   @override
   String get offlineMaps_emptyBody =>
-      'Download a region to use the map without a connection.';
+      'Stiahnite si región a používajte mapu bez pripojenia.';
 
   @override
-  String get offlineMaps_findMaps => 'Find maps';
+  String get offlineMaps_findMaps => 'Nájsť mapy';
 
   @override
   String offlineMaps_deleteTitle(String name) {
-    return 'Delete $name?';
+    return 'Odstrániť $name?';
   }
 
   @override
   String offlineMaps_deleteBody(String size) {
-    return 'This frees $size. You can download it again later.';
+    return 'Uvoľní sa $size. Neskôr ho môžete stiahnuť znova.';
   }
 
   @override
   String offlineMaps_deleted(String name) {
-    return '$name deleted';
+    return '$name odstránené';
   }
 
   @override
   String offlineMaps_bytesProgress(String done, String total) {
-    return '$done of $total';
+    return '$done z $total';
   }
 
   @override
-  String get offlineMaps_kindMap => 'Map';
+  String get offlineMaps_kindMap => 'Mapa';
 
   @override
   String get offlineMaps_kindMapDetail =>
-      'OpenStreetMap streets, trails, places';
+      'Ulice, chodníky a miesta z OpenStreetMap';
 
   @override
-  String get offlineMaps_kindContours => 'Contours';
+  String get offlineMaps_kindContours => 'Vrstevnice';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail => 'Výškové čiary';
 
   @override
-  String get offlineMaps_kindUsgs => 'USGS topo map';
+  String get offlineMaps_kindUsgs => 'Topografická mapa USGS';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+  String get offlineMaps_kindUsgsDetail => 'Chodníky, potoky, rezervácie';
 
   @override
-  String get offlineMaps_kindTerrain => 'Hill shading';
+  String get offlineMaps_kindTerrain => 'Tieňovanie terénu';
 
   @override
   String get offlineMaps_kindTerrainDetail =>
-      'Hills and mountains, shaded under the map';
+      'Kopce a hory, vytieňované pod mapou';
 
   @override
-  String get offlineMaps_kindCharts => 'NOAA charts';
+  String get offlineMaps_kindCharts => 'Námorné mapy NOAA';
 
   @override
-  String get offlineMaps_usOnly => 'United States only';
+  String get offlineMaps_usOnly => 'Len Spojené štáty';
 
   @override
   String offlineMaps_download(String size) {
-    return 'Download $size';
+    return 'Stiahnuť $size';
   }
 
   @override
-  String get offlineMaps_downloadTotal => 'Download';
+  String get offlineMaps_downloadTotal => 'Stiahnuť';
 
   @override
   String offlineMaps_largeDownload(String size) {
-    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+    return 'Veľké sťahovanie ($size). Použite Wi‑Fi a nechajte zariadenie nabíjať.';
   }
 
   @override
-  String get offlineMaps_waiting => 'Waiting…';
+  String get offlineMaps_waiting => 'Čaká sa…';
 
   @override
-  String get offlineMaps_checking => 'Checking download…';
+  String get offlineMaps_checking => 'Kontroluje sa stiahnutý súbor…';
 
   @override
-  String get offlineMaps_retrying => 'Retrying…';
+  String get offlineMaps_retrying => 'Skúša sa znova…';
 
   @override
   String offlineMaps_failed(String error) {
-    return 'Download failed: $error';
+    return 'Sťahovanie zlyhalo: $error';
   }
 
   @override
-  String get offlineMaps_pause => 'Pause';
+  String get offlineMaps_pause => 'Pozastaviť';
 
   @override
-  String get offlineMaps_resume => 'Resume';
+  String get offlineMaps_resume => 'Pokračovať';
 
   @override
-  String get offlineMaps_deleteRegion => 'Delete region';
+  String get offlineMaps_deleteRegion => 'Odstrániť región';
 
   @override
-  String get offlineMaps_notInCatalogue => 'Not available for this region';
+  String get offlineMaps_notInCatalogue => 'Pre tento región nedostupné';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => 'Sťahuje sa mapa';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused => 'Sťahovanie mapy pozastavené';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed => 'Sťahovanie mapy zlyhalo';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+  String get offlineMaps_clearTileCache =>
+      'Vymazať uložené dlaždice online máp';
 
   @override
   String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+      'Odstrániť dlaždice online máp uložené pri prehliadaní? Stiahnuté mapy zostanú.';
 
   @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+  String get offlineMaps_tileCacheCleared =>
+      'Uložené dlaždice online máp boli odstránené';
 
   @override
-  String get map_notForNavigation => 'Not for navigation';
+  String get map_notForNavigation => 'Nie na navigáciu';
 
   @override
   String get map_chartsNoticeIntro =>
-      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+      'MeshTrax kreslí tieto mapy z údajov NOAA, aby vám pomohol vidieť vodu okolo vašich rádií a plánovať. Nie sú to oficiálne mapy. Neriaďte sa nimi pri plavbe.';
 
   @override
-  String get map_chartsNoticeWhy => 'Why:';
+  String get map_chartsNoticeWhy => 'Prečo:';
 
   @override
   String get map_chartsNoticeOutOfDate =>
-      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+      'Zastarávajú. NOAA svoje mapy neustále opravuje; stiahnutá mapa zostáva taká, aká je, kým ju neaktualizujete v \"Offline mapy\".';
 
   @override
   String get map_chartsNoticeLeftOut =>
-      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+      'Niečo vynechávajú. Mnohé symboly, sektory svetiel a poznámky sa nekreslia a niektoré popisy sa zobrazia až po priblížení.';
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      'Polohy môžu byť nesprávne alebo staré. GPS sa môže mýliť o 10 m (30 ft) aj viac a uzol je len tam, odkiaľ sa naposledy ozval.';
 
   @override
   String get map_chartsNoticeNotPlotter =>
-      'MeshTrax isn\'t a certified chart plotter.';
+      'MeshTrax nie je certifikovaný navigačný ploter.';
 
   @override
   String get map_chartsNoticeUse =>
-      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+      'Na navigáciu používajte oficiálne, aktuálne mapy NOAA (papierové alebo NOAA ENC v certifikovanom plotri) s najnovšími Oznámeniami pre námorníkov.';
 
   @override
   String get map_sourceOnline => 'Online';
@@ -4602,182 +4622,186 @@ class AppLocalizationsSk extends AppLocalizations {
   String get map_sourceOffline => 'Offline';
 
   @override
-  String get map_downloadForDetail => 'Download a region for detail';
+  String get map_downloadForDetail => 'Stiahnite región pre podrobnosti';
 
   @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+  String get map_zoomInForOfflineMap =>
+      'Priblížte, aby ste videli offline mapu';
 
   @override
-  String get map_noCharts => 'No charts here';
+  String get map_noCharts => 'Tu nie sú žiadne námorné mapy';
 
   @override
-  String get map_myLocation => 'My location';
+  String get map_myLocation => 'Moja poloha';
 
   @override
-  String get map_zoomIn => 'Zoom in';
+  String get map_zoomIn => 'Priblížiť';
 
   @override
-  String get map_zoomOut => 'Zoom out';
+  String get map_zoomOut => 'Oddialiť';
 
   @override
   String get gps_title => 'GPS';
 
   @override
-  String get gps_on => 'GPS on';
+  String get gps_on => 'GPS zapnuté';
 
   @override
-  String get gps_off => 'GPS off';
+  String get gps_off => 'GPS vypnuté';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => 'Rádio aktualizuje svoju polohu z GPS.';
 
   @override
   String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+      'Vypnuté šetrí batériu rádia. Po zapnutí môže nájdenie polohy trvať niekoľko minút.';
 
   @override
-  String get gps_asking => 'Asking the radio...';
+  String get gps_asking => 'Pýtam sa rádia...';
 
   @override
   String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+      'Zatiaľ žiadna poloha. Vonku môže prvá trvať niekoľko minút.';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => 'Poloha';
 
   @override
-  String get gps_altitude => 'Altitude';
+  String get gps_altitude => 'Nadmorská výška';
 
   @override
   String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
+    return 'Načítané z rádia pred $ago';
   }
 
   @override
-  String get gps_turnOnTitle => 'Turn on GPS?';
+  String get gps_turnOnTitle => 'Zapnúť GPS?';
 
   @override
   String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+      'GPS rádia je vypnuté. Po zapnutí môže nájdenie polohy trvať niekoľko minút.';
 
   @override
-  String get gps_turnOn => 'Turn on';
+  String get gps_turnOn => 'Zapnúť';
 
   @override
-  String get gps_notNow => 'Not now';
+  String get gps_notNow => 'Teraz nie';
 
   @override
-  String get map_zoomInForCharts => 'Zoom in to see your charts';
+  String get map_zoomInForCharts => 'Priblížte, aby ste videli námorné mapy';
 
   @override
   String map_downloadRegion(String region, String size) {
-    return 'Download $region · $size';
+    return 'Stiahnuť $region · $size';
   }
 
   @override
-  String get mapLayers_title => 'Map layers';
+  String get mapLayers_title => 'Vrstvy mapy';
 
   @override
-  String get mapLayers_mapType => 'Map type';
+  String get mapLayers_mapType => 'Typ mapy';
 
   @override
-  String get mapLayers_standard => 'Standard';
+  String get mapLayers_standard => 'Štandardná';
 
   @override
-  String get mapLayers_usgs => 'USGS topo';
+  String get mapLayers_usgs => 'Topografická USGS';
 
   @override
-  String get mapLayers_charts => 'Charts';
+  String get mapLayers_charts => 'Námorné mapy';
 
   @override
-  String get mapLayers_notDownloaded => 'Not downloaded';
+  String get mapLayers_notDownloaded => 'Nestiahnuté';
 
   @override
-  String get mapLayers_offlineOnly => 'Offline only';
+  String get mapLayers_offlineOnly => 'Len offline';
 
   @override
-  String get mapLayers_details => 'Map details';
+  String get mapLayers_details => 'Podrobnosti mapy';
 
   @override
-  String get mapLayers_contours => 'Contours';
+  String get mapLayers_contours => 'Vrstevnice';
 
   @override
-  String get mapLayers_hillShading => 'Hill shading';
+  String get mapLayers_hillShading => 'Tieňovanie terénu';
 
   @override
-  String get mapLayers_dark => 'Dark map';
+  String get mapLayers_dark => 'Tmavá mapa';
 
   @override
-  String get mapLayers_downloadedAreas => 'Downloaded areas';
+  String get mapLayers_downloadedAreas => 'Stiahnuté oblasti';
 
   @override
-  String get mapLayers_nodes => 'Nodes';
+  String get mapLayers_nodes => 'Uzly';
 
   @override
-  String get mapLayers_pins => 'Pins';
+  String get mapLayers_pins => 'Špendlíky';
 
   @override
-  String get mapLayers_guessed => 'Guessed';
+  String get mapLayers_guessed => 'Odhadnuté';
 
   @override
-  String get mapLayers_moreFilters => 'More filters';
+  String get mapLayers_moreFilters => 'Ďalšie filtre';
 
   @override
-  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+  String get mapLayers_moreFiltersDetail =>
+      'Naposledy videné, predpona kľúča, prekrytia';
 
   @override
-  String get map_legend => 'Legend';
+  String get map_legend => 'Legenda';
 
   @override
-  String get scanner_map => 'Map';
+  String get scanner_map => 'Mapa';
 
   @override
-  String get structured_openMap => 'Open map';
+  String get structured_openMap => 'Otvoriť mapu';
 
   @override
-  String get structured_addToCalendar => 'Add to calendar';
+  String get structured_addToCalendar => 'Pridať do kalendára';
 
   @override
-  String get structured_details => 'Details';
+  String get structured_details => 'Podrobnosti';
 
   @override
   String get structured_sos => 'SOS';
 
   @override
-  String get structured_event => 'Event';
+  String get structured_event => 'Udalosť';
 
   @override
-  String get structured_notice => 'Notice';
+  String get structured_notice => 'Oznam';
 
   @override
-  String get structured_allDay => 'All day';
+  String get structured_allDay => 'Celý deň';
 
   @override
-  String get structured_calendarFailed => 'Could not open the calendar';
+  String get structured_calendarFailed => 'Kalendár sa nepodarilo otvoriť';
 
   @override
-  String get structured_today => 'Today';
+  String get structured_today => 'Dnes';
 
   @override
-  String get structured_tomorrow => 'Tomorrow';
+  String get structured_tomorrow => 'Zajtra';
 
   @override
   String structured_inDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'In $count days',
-      one: 'In 1 day',
+      other: 'O $count dní',
+      many: 'O $count dňa',
+      few: 'O $count dni',
+      one: 'O $count deň',
     );
     return '$_temp0';
   }
 
   @override
-  String get structured_past => 'Past';
+  String get structured_past => 'Minulé';
 
   @override
   String structured_dayOfDays(int day, int total) {
-    return 'Day $day of $total';
+    return 'Deň $day z $total';
   }
 
   @override
@@ -4785,697 +4809,701 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days',
-      one: '1 day',
+      other: '$count dní',
+      many: '$count dňa',
+      few: '$count dni',
+      one: '$count deň',
     );
     return '$_temp0';
   }
 
   @override
-  String get dialog_eventEndDate => 'End date';
+  String get dialog_eventEndDate => 'Dátum konca';
 
   @override
-  String get dialog_eventSameDay => 'Same day';
+  String get dialog_eventSameDay => 'V ten istý deň';
 
   @override
-  String get structured_map => 'Map';
+  String get structured_map => 'Mapa';
 
   @override
-  String get structured_navigate => 'Navigate';
+  String get structured_navigate => 'Navigovať';
 
   @override
-  String get structured_channel => 'Channel';
+  String get structured_channel => 'Kanál';
 
   @override
-  String get structured_contact => 'Contact';
+  String get structured_contact => 'Kontakt';
 
   @override
-  String get structured_room => 'Room';
+  String get structured_room => 'Miestnosť';
 
   @override
-  String get structured_repeater => 'Repeater';
+  String get structured_repeater => 'Opakovač';
 
   @override
-  String get structured_sensor => 'Sensor';
+  String get structured_sensor => 'Senzor';
 
   @override
-  String get structured_joinChannel => 'Join channel';
+  String get structured_joinChannel => 'Pripojiť sa ku kanálu';
 
   @override
-  String get structured_addContact => 'Add contact';
+  String get structured_addContact => 'Pridať kontakt';
 
   @override
-  String get structured_addRoom => 'Add room';
+  String get structured_addRoom => 'Pridať miestnosť';
 
   @override
-  String get structured_addRepeater => 'Add repeater';
+  String get structured_addRepeater => 'Pridať opakovač';
 
   @override
-  String get structured_addSensor => 'Add sensor';
+  String get structured_addSensor => 'Pridať senzor';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => 'Otvoriť';
 
   @override
-  String get structured_added => 'Added';
+  String get structured_added => 'Pridané';
 
   @override
-  String get tray_add => 'Add';
+  String get tray_add => 'Pridať';
 
   @override
-  String get tray_myLocation => 'My location';
+  String get tray_myLocation => 'Moja poloha';
 
   @override
-  String get tray_pointOnMap => 'Point on map';
+  String get tray_pointOnMap => 'Bod na mape';
 
   @override
   String get tray_sos => 'SOS';
 
   @override
-  String get tray_event => 'Event';
+  String get tray_event => 'Udalosť';
 
   @override
-  String get tray_notice => 'Notice';
+  String get tray_notice => 'Oznam';
 
   @override
   String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+      'Vaše rádio zatiaľ nemá polohu. Vyberte ju na mape.';
 
   @override
-  String get dialog_insert => 'Insert';
+  String get dialog_insert => 'Vložiť';
 
   @override
-  String get dialog_eventTitle => 'Title';
+  String get dialog_eventTitle => 'Názov';
 
   @override
-  String get dialog_eventDate => 'Date';
+  String get dialog_eventDate => 'Dátum';
 
   @override
-  String get dialog_eventStart => 'Start';
+  String get dialog_eventStart => 'Začiatok';
 
   @override
-  String get dialog_eventEnd => 'End';
+  String get dialog_eventEnd => 'Koniec';
 
   @override
-  String get dialog_eventNoEnd => 'No end time';
+  String get dialog_eventNoEnd => 'Bez času konca';
 
   @override
-  String get dialog_eventPlace => 'Place (optional)';
+  String get dialog_eventPlace => 'Miesto (voliteľné)';
 
   @override
-  String get dialog_pickOnMap => 'Pick on map';
+  String get dialog_pickOnMap => 'Vybrať na mape';
 
   @override
-  String get dialog_sosTitle => 'Send SOS';
+  String get dialog_sosTitle => 'Poslať SOS';
 
   @override
-  String get dialog_sosText => 'What happened?';
+  String get dialog_sosText => 'Čo sa stalo?';
 
   @override
-  String get dialog_noticeTitle => 'Notice';
+  String get dialog_noticeTitle => 'Oznam';
 
   @override
-  String get dialog_noticeText => 'What should everyone know?';
+  String get dialog_noticeText => 'Čo by mali všetci vedieť?';
 
   @override
-  String get dialog_labelTitle => 'Point on map';
+  String get dialog_labelTitle => 'Bod na mape';
 
   @override
-  String get dialog_note => 'Note (optional)';
+  String get dialog_note => 'Poznámka (voliteľné)';
 
   @override
   String get paste_convertLocation =>
-      'Looks like a maps link. Convert it to a Location?';
+      'Vyzerá to ako odkaz na mapu. Previesť na polohu?';
 
   @override
   String get paste_convertEvent =>
-      'Looks like a calendar share. Convert it to an Event?';
+      'Vyzerá to ako zdieľaná udalosť z kalendára. Previesť na udalosť?';
 
   @override
-  String get paste_convert => 'Convert';
+  String get paste_convert => 'Previesť';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolving => 'Rozbaľuje sa odkaz…';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_resolveFailed => 'Odkaz sa nepodarilo rozbaliť';
 
   @override
-  String get pinned_dismiss => 'Dismiss';
+  String get pinned_dismiss => 'Zavrieť';
 
   @override
   String get tray_gif => 'GIF';
 
   @override
   String link_joinChannelBody(String name) {
-    return 'Join channel $name?';
+    return 'Pripojiť sa ku kanálu $name?';
   }
 
   @override
   String link_alreadyJoined(String name) {
-    return 'You are already in $name';
+    return 'Už ste v $name';
   }
 
   @override
   String link_channelJoined(String name) {
-    return 'Joined $name';
+    return 'Pripojené k $name';
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint => 'Klepnutím na mapu vyberte polohu';
 
   @override
-  String get map_legendMesh => 'Mesh';
+  String get map_legendMesh => 'Sieť mesh';
 
   @override
-  String get chartLegend_title => 'Chart symbols';
+  String get chartLegend_title => 'Symboly námorných máp';
 
   @override
-  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+  String get chartLegend_sectionBuoys => 'Bóje a pevné znaky';
 
   @override
-  String get chartLegend_sectionLights => 'Lights';
+  String get chartLegend_sectionLights => 'Svetlá';
 
   @override
-  String get chartLegend_sectionHazards => 'Hazards';
+  String get chartLegend_sectionHazards => 'Nebezpečenstvá';
 
   @override
-  String get chartLegend_sectionTides => 'Tides and currents';
+  String get chartLegend_sectionTides => 'Slapy a prúdy';
 
   @override
-  String get chartLegend_sectionDepths => 'Depths and seabed';
+  String get chartLegend_sectionDepths => 'Hĺbky a dno';
 
   @override
-  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+  String get chartLegend_sectionAreas => 'Oblasti, dráhy a čiary';
 
   @override
-  String get chartLegend_sectionLandmarks => 'Landmarks';
+  String get chartLegend_sectionLandmarks => 'Orientačné body';
 
   @override
-  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+  String get chartLegend_sectionAbbreviations => 'Skratky';
 
   @override
-  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+  String get chartLegend_chartNo1 => 'Všetky symboly: U.S. Chart No. 1';
 
   @override
-  String get chartLegend_portBuoy => 'Green can buoy';
+  String get chartLegend_portBuoy => 'Zelená valcová bója';
 
   @override
   String get chartLegend_portBuoyHint =>
-      'Keep it on your left coming in from sea';
+      'Pri vplávaní z mora ju nechajte vľavo';
 
   @override
-  String get chartLegend_starboardBuoy => 'Red nun buoy';
+  String get chartLegend_starboardBuoy => 'Červená kužeľová bója';
 
   @override
   String get chartLegend_starboardBuoyHint =>
-      'Keep it on your right coming in: red, right, returning';
+      'Pri vplávaní ju nechajte vpravo: pri návrate z mora je červená vpravo';
 
   @override
-  String get chartLegend_junctionBuoy => 'Banded buoy';
+  String get chartLegend_junctionBuoy => 'Pruhovaná bója';
 
   @override
   String get chartLegend_junctionBuoyHint =>
-      'A channel junction: treat it as the colour of its top band';
+      'Rozvetvenie kanála: riaďte sa farbou jej horného pruhu';
 
   @override
-  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+  String get chartLegend_safeWaterBuoy => 'Červeno-biele pruhy';
 
   @override
   String get chartLegend_safeWaterBuoyHint =>
-      'Safe water all around, often at a channel entrance';
+      'Bezpečná voda všade okolo, často pri vjazde do kanála';
 
   @override
-  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+  String get chartLegend_isolatedDangerBuoy => 'Čierno-červené pásy';
 
   @override
   String get chartLegend_isolatedDangerBuoyHint =>
-      'A small danger with safe water around it: keep clear';
+      'Malé nebezpečenstvo s bezpečnou vodou okolo: držte sa ďalej';
 
   @override
-  String get chartLegend_specialBuoy => 'Yellow buoy';
+  String get chartLegend_specialBuoy => 'Žltá bója';
 
   @override
   String get chartLegend_specialBuoyHint =>
-      'Special purpose, not for steering by: anchorage, cable, research';
+      'Zvláštny účel, nie na navigáciu: kotvisko, kábel, výskum';
 
   @override
-  String get chartLegend_cardinalBuoy => 'Black and yellow';
+  String get chartLegend_cardinalBuoy => 'Čierno-žltá';
 
   @override
   String get chartLegend_cardinalBuoyHint =>
-      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+      'Kardinálny znak: obíďte ho zo strany, podľa ktorej je pomenovaný (v USA zriedkavý)';
 
   @override
-  String get chartLegend_mooringBuoy => 'Mooring buoy';
+  String get chartLegend_mooringBuoy => 'Uväzovacia bója';
 
   @override
-  String get chartLegend_portBeacon => 'Green square daybeacon';
+  String get chartLegend_portBeacon => 'Zelený štvorcový denný znak';
 
   @override
   String get chartLegend_portBeaconHint =>
-      'Like a green buoy: keep it on your left coming in';
+      'Ako zelená bója: pri vplávaní ho nechajte vľavo';
 
   @override
-  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+  String get chartLegend_starboardBeacon => 'Červený trojuholníkový denný znak';
 
   @override
   String get chartLegend_starboardBeaconHint =>
-      'Like a red buoy: keep it on your right coming in';
+      'Ako červená bója: pri vplávaní ho nechajte vpravo';
 
   @override
-  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+  String get chartLegend_otherBeacon => 'Kosoštvorcový denný znak';
 
   @override
   String get chartLegend_otherBeaconHint =>
-      'Information or a warning, not a side of the channel';
+      'Informácia alebo varovanie, nie strana kanála';
 
   @override
-  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+  String get chartLegend_beaconTower => 'Svetelná veža alebo konštrukcia znaku';
 
   @override
-  String get chartLegend_topmark => 'Topmark';
+  String get chartLegend_topmark => 'Vrcholový znak';
 
   @override
   String get chartLegend_topmarkHint =>
-      'The shape on top of a mark adds to its meaning';
+      'Tvar na vrchu znaku dopĺňa jeho význam';
 
   @override
-  String get chartLegend_light => 'Light';
+  String get chartLegend_light => 'Svetlo';
 
   @override
   String get chartLegend_lightHint =>
-      'The magenta flare marks a light; its label tells how it flashes';
+      'Purpurový záblesk označuje svetlo; jeho popis hovorí, ako bliká';
 
   @override
-  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+  String get chartLegend_lightExample => 'Zábleskové zelené, každé 4 sekundy';
 
   @override
   String get chartLegend_lightExampleHint =>
-      'A light\'s label: rhythm, colour, then period';
+      'Popis svetla: rytmus, farba, potom perióda';
 
   @override
-  String get chartLegend_lightFixed => 'Fixed';
+  String get chartLegend_lightFixed => 'Stále';
 
   @override
-  String get chartLegend_lightFixedHint => 'A steady light';
+  String get chartLegend_lightFixedHint => 'Nepretržité svetlo';
 
   @override
-  String get chartLegend_lightFlashing => 'Flashing';
+  String get chartLegend_lightFlashing => 'Zábleskové';
 
   @override
   String get chartLegend_lightFlashingHint =>
-      'Short flashes, longer dark between';
+      'Krátke záblesky, medzi nimi dlhšia tma';
 
   @override
-  String get chartLegend_lightGroup => 'Group flashing';
+  String get chartLegend_lightGroup => 'Skupinové zábleskové';
 
   @override
   String get chartLegend_lightGroupHint =>
-      'Flashes in groups, here 2, then dark';
+      'Záblesky v skupinách, tu po 2, potom tma';
 
   @override
-  String get chartLegend_lightComposite => 'Composite group';
+  String get chartLegend_lightComposite => 'Zložené skupinové';
 
   @override
   String get chartLegend_lightCompositeHint =>
-      '2 flashes, then 1: marks a channel junction';
+      '2 záblesky, potom 1: označuje rozvetvenie kanála';
 
   @override
-  String get chartLegend_lightQuick => 'Quick';
+  String get chartLegend_lightQuick => 'Rýchle';
 
   @override
-  String get chartLegend_lightQuickHint => 'About one flash a second';
+  String get chartLegend_lightQuickHint => 'Asi jeden záblesk za sekundu';
 
   @override
-  String get chartLegend_lightIsophase => 'Isophase';
+  String get chartLegend_lightIsophase => 'Izofázové';
 
   @override
-  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+  String get chartLegend_lightIsophaseHint => 'Rovnako dlho svetlo a tma';
 
   @override
-  String get chartLegend_lightOcculting => 'Occulting';
+  String get chartLegend_lightOcculting => 'Prerušované';
 
   @override
-  String get chartLegend_lightOccultingHint => 'On longer than off';
+  String get chartLegend_lightOccultingHint => 'Svieti dlhšie, než je tma';
 
   @override
-  String get chartLegend_lightMorse => 'Morse code A';
+  String get chartLegend_lightMorse => 'Morseovka A';
 
   @override
-  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+  String get chartLegend_lightMorseHint => 'Krátky, dlhý: bezpečná voda';
 
   @override
-  String get chartLegend_lightAlternating => 'Alternating';
+  String get chartLegend_lightAlternating => 'Striedavé';
 
   @override
-  String get chartLegend_lightAlternatingHint => 'Changes colour';
+  String get chartLegend_lightAlternatingHint => 'Mení farbu';
 
   @override
-  String get chartLegend_lightColours => 'White, red, green, yellow';
+  String get chartLegend_lightColours => 'Biela, červená, zelená, žltá';
 
   @override
-  String get chartLegend_lightPeriod => 'Period';
+  String get chartLegend_lightPeriod => 'Perióda';
 
   @override
-  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+  String get chartLegend_lightPeriodHint => 'Sekundy na jeden celý cyklus';
 
   @override
-  String get chartLegend_rock => 'Underwater rock';
+  String get chartLegend_rock => 'Podvodná skala';
 
   @override
-  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+  String get chartLegend_rockHint => 'Vždy pod vodou, ale môže byť plytko';
 
   @override
-  String get chartLegend_rockAwash => 'Rock awash';
+  String get chartLegend_rockAwash => 'Skala na úrovni hladiny';
 
   @override
-  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+  String get chartLegend_rockAwashHint => 'Pri odlive tesne pri hladine';
 
   @override
-  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+  String get chartLegend_rockCovers => 'Skala zaplavovaná a odkrývaná';
 
   @override
   String get chartLegend_rockCoversHint =>
-      'Shows at low tide, covered at high tide';
+      'Pri odlive viditeľná, pri prílive pod vodou';
 
   @override
-  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+  String get chartLegend_wreckDangerous => 'Nebezpečný vrak';
 
   @override
-  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+  String get chartLegend_wreckDangerousHint =>
+      'Dosť plytko na to, aby ste doň narazili';
 
   @override
-  String get chartLegend_wreck => 'Wreck';
+  String get chartLegend_wreck => 'Vrak';
 
   @override
   String get chartLegend_wreckHint =>
-      'Deep enough for boats on the surface; don\'t anchor';
+      'Dosť hlboko pre lode na hladine; nekotvite';
 
   @override
-  String get chartLegend_wreckShowing => 'Wreck showing';
+  String get chartLegend_wreckShowing => 'Vyčnievajúci vrak';
 
   @override
-  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+  String get chartLegend_wreckShowingHint => 'Časť z neho trčí nad vodu';
 
   @override
-  String get chartLegend_obstruction => 'Obstruction';
+  String get chartLegend_obstruction => 'Prekážka';
 
   @override
   String get chartLegend_obstructionHint =>
-      'Something on the bottom; its depth when known';
+      'Niečo na dne; jeho hĺbka, ak je známa';
 
   @override
-  String get chartLegend_foulGround => 'Foul ground';
+  String get chartLegend_foulGround => 'Nečisté dno';
 
   @override
   String get chartLegend_foulGroundHint =>
-      'Safe to pass over, but don\'t anchor or trawl';
+      'Dá sa nad ním preplávať, ale nekotvite ani nelovte vlečnou sieťou';
 
   @override
-  String get chartLegend_hazardArea => 'Edge of a danger area';
+  String get chartLegend_hazardArea => 'Okraj nebezpečnej oblasti';
 
   @override
-  String get chartLegend_hazardAreaHint =>
-      'Rocks, wrecks or obstructions inside';
+  String get chartLegend_hazardAreaHint => 'Vnútri skaly, vraky alebo prekážky';
 
   @override
-  String get chartLegend_pile => 'Pile or post';
+  String get chartLegend_pile => 'Kôl alebo stĺpik';
 
   @override
-  String get chartLegend_floodStream => 'Flood stream';
+  String get chartLegend_floodStream => 'Prílivový prúd';
 
   @override
-  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+  String get chartLegend_floodStreamHint => 'Slapový prúd, keď voda stúpa';
 
   @override
-  String get chartLegend_ebbStream => 'Ebb stream';
+  String get chartLegend_ebbStream => 'Odlivový prúd';
 
   @override
-  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+  String get chartLegend_ebbStreamHint => 'Slapový prúd, keď voda klesá';
 
   @override
-  String get chartLegend_current => 'Current';
+  String get chartLegend_current => 'Prúd';
 
   @override
-  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+  String get chartLegend_currentHint =>
+      'Tečie rovnakým smerom bez ohľadu na slapy';
 
   @override
-  String get chartLegend_rips => 'Tide rips or eddies';
+  String get chartLegend_rips => 'Prúdové vlnenie alebo víry';
 
   @override
-  String get chartLegend_ripsHint => 'Rough, swirling water';
+  String get chartLegend_ripsHint => 'Rozbúrená, vírivá voda';
 
   @override
-  String get chartLegend_breakers => 'Breakers';
+  String get chartLegend_breakers => 'Príboj';
 
   @override
-  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+  String get chartLegend_breakersHint => 'Vlny lámajúce sa nad plytčinou';
 
   @override
-  String get chartLegend_sounding => 'Sounding';
+  String get chartLegend_sounding => 'Hĺbka';
 
   @override
-  String get chartLegend_soundingHint => 'Depth at an average low tide';
+  String get chartLegend_soundingHint => 'Hĺbka pri priemernom odlive';
 
   @override
-  String get chartLegend_depthContour => 'Depth contour';
+  String get chartLegend_depthContour => 'Izobata';
 
   @override
-  String get chartLegend_depthContourHint => 'Its label gives the depth';
+  String get chartLegend_depthContourHint => 'Jej popis udáva hĺbku';
 
   @override
-  String get chartLegend_drying => 'Dries at low tide';
+  String get chartLegend_drying => 'Pri odlive vysychá';
 
   @override
-  String get chartLegend_dredged => 'Dredged channel';
+  String get chartLegend_dredged => 'Prehĺbený kanál';
 
   @override
-  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+  String get chartLegend_dredgedHint => 'Udržiavaný na uvedenú hĺbku';
 
   @override
-  String get chartLegend_swept => 'Swept area';
+  String get chartLegend_swept => 'Prečistená oblasť';
 
   @override
-  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+  String get chartLegend_sweptHint => 'Overená ako voľná do uvedenej hĺbky';
 
   @override
-  String get chartLegend_unsurveyed => 'Unsurveyed';
+  String get chartLegend_unsurveyed => 'Nezmerané';
 
   @override
-  String get chartLegend_unsurveyedHint => 'No depths measured';
+  String get chartLegend_unsurveyedHint => 'Hĺbky neboli merané';
 
   @override
-  String get chartLegend_weed => 'Kelp or weed';
+  String get chartLegend_weed => 'Chaluhy alebo riasy';
 
   @override
-  String get chartLegend_restricted => 'Restricted area';
+  String get chartLegend_restricted => 'Obmedzená oblasť';
 
   @override
   String get chartLegend_restrictedHint =>
-      'Entry limited; the ticks point inside';
+      'Vstup obmedzený; zúbky smerujú dovnútra';
 
   @override
-  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+  String get chartLegend_regulatedLimit => 'Hranica regulovanej oblasti';
 
   @override
   String get chartLegend_regulatedLimitHint =>
-      'Anchorage, cable area, firing area and more: see its label';
+      'Kotvisko, káblová oblasť, strelnica a ďalšie: pozrite popis';
 
   @override
-  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+  String get chartLegend_greyLimit => 'Výsypisko, lovisko alebo farma';
 
   @override
-  String get chartLegend_anchorage => 'Anchorage';
+  String get chartLegend_anchorage => 'Kotvisko';
 
   @override
-  String get chartLegend_anchorBerth => 'Anchor berth';
+  String get chartLegend_anchorBerth => 'Kotviace miesto';
 
   @override
-  String get chartLegend_noAnchoring => 'No anchoring';
+  String get chartLegend_noAnchoring => 'Zákaz kotvenia';
 
   @override
-  String get chartLegend_caution => 'Caution area';
+  String get chartLegend_caution => 'Výstražná oblasť';
 
   @override
-  String get chartLegend_cautionHint => 'Take extra care here';
+  String get chartLegend_cautionHint => 'Tu buďte zvlášť opatrní';
 
   @override
-  String get chartLegend_trafficLane => 'Traffic lane';
+  String get chartLegend_trafficLane => 'Dopravný pruh';
 
   @override
   String get chartLegend_trafficLaneHint =>
-      'Big ships, one way: cross at right angles';
+      'Veľké lode, jedným smerom: križujte v pravom uhle';
 
   @override
-  String get chartLegend_separationZone => 'Separation zone';
+  String get chartLegend_separationZone => 'Deliaca zóna';
 
   @override
   String get chartLegend_separationZoneHint =>
-      'Between traffic lanes: keep out';
+      'Medzi dopravnými pruhmi: nevplávajte';
 
   @override
-  String get chartLegend_precautionary => 'Precautionary area';
+  String get chartLegend_precautionary => 'Oblasť zvýšenej opatrnosti';
 
   @override
-  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+  String get chartLegend_precautionaryHint =>
+      'Lode sa tu zbiehajú: dávajte pozor';
 
   @override
-  String get chartLegend_fairway => 'Fairway';
+  String get chartLegend_fairway => 'Plavebná dráha';
 
   @override
-  String get chartLegend_fairwayHint => 'A main channel';
+  String get chartLegend_fairwayHint => 'Hlavný kanál';
 
   @override
-  String get chartLegend_track => 'Recommended track';
+  String get chartLegend_track => 'Odporúčaná trasa';
 
   @override
-  String get chartLegend_ferry => 'Ferry route';
+  String get chartLegend_ferry => 'Trasa trajektu';
 
   @override
-  String get chartLegend_leadingLine => 'Leading line';
+  String get chartLegend_leadingLine => 'Vodiaca línia';
 
   @override
   String get chartLegend_leadingLineHint =>
-      'Line up its two marks to stay in the channel';
+      'Zarovnajte jej dva znaky do zákrytu, aby ste zostali v kanáli';
 
   @override
-  String get chartLegend_cable => 'Submarine cable';
+  String get chartLegend_cable => 'Podmorský kábel';
 
   @override
-  String get chartLegend_cableHint => 'Don\'t anchor';
+  String get chartLegend_cableHint => 'Nekotvite';
 
   @override
-  String get chartLegend_pipeline => 'Submarine pipeline';
+  String get chartLegend_pipeline => 'Podmorské potrubie';
 
   @override
-  String get chartLegend_pipelineHint => 'Don\'t anchor';
+  String get chartLegend_pipelineHint => 'Nekotvite';
 
   @override
-  String get chartLegend_overhead => 'Overhead cable';
+  String get chartLegend_overhead => 'Nadzemný kábel';
 
   @override
-  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+  String get chartLegend_overheadHint => 'Jeho svetlá výška je označená VC';
 
   @override
-  String get chartLegend_tower => 'Tower';
+  String get chartLegend_tower => 'Veža';
 
   @override
-  String get chartLegend_windTurbine => 'Wind turbine';
+  String get chartLegend_windTurbine => 'Veterná turbína';
 
   @override
-  String get chartLegend_chimney => 'Chimney';
+  String get chartLegend_chimney => 'Komín';
 
   @override
-  String get chartLegend_mast => 'Mast or antenna';
+  String get chartLegend_mast => 'Stožiar alebo anténa';
 
   @override
-  String get chartLegend_church => 'Church or spire';
+  String get chartLegend_church => 'Kostol alebo kostolná veža';
 
   @override
-  String get chartLegend_flagstaff => 'Flagstaff';
+  String get chartLegend_flagstaff => 'Stožiar na vlajku';
 
   @override
-  String get chartLegend_dome => 'Dome';
+  String get chartLegend_dome => 'Kupola';
 
   @override
-  String get chartLegend_landmark => 'Other landmark';
+  String get chartLegend_landmark => 'Iný orientačný bod';
 
   @override
-  String get chartLegend_abbrAnch => 'Anchorage';
+  String get chartLegend_abbrAnch => 'Kotvisko';
 
   @override
-  String get chartLegend_abbrWk => 'Wreck';
+  String get chartLegend_abbrWk => 'Vrak';
 
   @override
-  String get chartLegend_abbrBr => 'Breakers';
+  String get chartLegend_abbrBr => 'Príboj';
 
   @override
-  String get chartLegend_abbrWd => 'Weed';
+  String get chartLegend_abbrWd => 'Chaluhy';
 
   @override
-  String get chartLegend_abbrVar => 'Magnetic variation';
+  String get chartLegend_abbrVar => 'Magnetická deklinácia';
 
   @override
-  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+  String get chartLegend_abbrVc => 'Svetlá výška pod mostom alebo káblom';
 
   @override
-  String get chartLegend_abbrTr => 'Tower';
+  String get chartLegend_abbrTr => 'Veža';
 
   @override
-  String get chartLegend_abbrCh => 'Church';
+  String get chartLegend_abbrCh => 'Kostol';
 
   @override
-  String get chartLegend_abbrChy => 'Chimney';
+  String get chartLegend_abbrChy => 'Komín';
 
   @override
-  String get chartLegend_abbrFs => 'Flagstaff';
+  String get chartLegend_abbrFs => 'Stožiar na vlajku';
 
   @override
-  String get chartLegend_abbrTk => 'Tank';
+  String get chartLegend_abbrTk => 'Nádrž';
 
   @override
-  String get chartLegend_abbrRBn => 'Radio beacon';
+  String get chartLegend_abbrRBn => 'Rádiomaják';
 
   @override
-  String get chartLegend_abbrCg => 'Coast Guard station';
+  String get chartLegend_abbrCg => 'Stanica pobrežnej stráže';
 
   @override
-  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+  String get chartLegend_abbrRacon => 'Radarový maják: zobrazí sa na radare';
 
   @override
   String get chartLegend_abbrFog =>
-      'Fog signal: horn, bell, gong, whistle or siren';
+      'Hmlový signál: húkačka, zvon, gong, píšťala alebo siréna';
 
   @override
-  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+  String get chartLegend_abbrVAis => 'Virtuálny znak: zobrazený len v AIS';
 
   @override
   String chartLegend_depthRange(String from, String to) {
-    return '$from to $to';
+    return '$from až $to';
   }
 
   @override
   String chartLegend_depthOver(String depth) {
-    return 'Deeper than $depth';
+    return 'Hlbšie ako $depth';
   }
 
   @override
-  String get parkLegend_title => 'Park and trail symbols';
+  String get parkLegend_title => 'Symboly parkov a chodníkov';
 
   @override
-  String get parkLegend_campsite => 'Campsite';
+  String get parkLegend_campsite => 'Kemp';
 
   @override
-  String get parkLegend_picnicSite => 'Picnic site';
+  String get parkLegend_picnicSite => 'Miesto na piknik';
 
   @override
-  String get parkLegend_shelter => 'Shelter';
+  String get parkLegend_shelter => 'Prístrešok';
 
   @override
-  String get parkLegend_toilets => 'Toilets';
+  String get parkLegend_toilets => 'Toalety';
 
   @override
-  String get parkLegend_drinkingWater => 'Drinking water';
+  String get parkLegend_drinkingWater => 'Pitná voda';
 
   @override
-  String get parkLegend_parking => 'Parking';
+  String get parkLegend_parking => 'Parkovisko';
 
   @override
-  String get parkLegend_viewpoint => 'Viewpoint';
+  String get parkLegend_viewpoint => 'Vyhliadka';
 
   @override
-  String get parkLegend_attraction => 'Attraction';
+  String get parkLegend_attraction => 'Atrakcia';
 
   @override
-  String get parkLegend_gate => 'Gate';
+  String get parkLegend_gate => 'Brána';
 
   @override
-  String get parkLegend_telephone => 'Telephone';
+  String get parkLegend_telephone => 'Telefón';
 
   @override
-  String get parkLegend_information => 'Information board';
+  String get parkLegend_information => 'Informačná tabuľa';
 
   @override
-  String get parkLegend_guidepost => 'Guidepost';
+  String get parkLegend_guidepost => 'Smerovník';
 }

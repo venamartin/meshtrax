@@ -13,33 +13,33 @@ class AppLocalizationsHu extends AppLocalizations {
   String get appTitle => 'MeshTrax';
 
   @override
-  String get nav_chats => 'Chats';
+  String get nav_chats => 'Csevegések';
 
   @override
-  String get chats_title => 'Chats';
+  String get chats_title => 'Csevegések';
 
   @override
-  String get newChat_title => 'Select contact';
+  String get newChat_title => 'Kapcsolat kiválasztása';
 
   @override
   String newChat_contactCount(int count) {
-    return '$count contacts';
+    return '$count kapcsolat';
   }
 
   @override
-  String get newChat_newContact => 'New Contact';
+  String get newChat_newContact => 'Új kapcsolat';
 
   @override
-  String get newChat_newChannel => 'New Channel';
+  String get newChat_newChannel => 'Új csatorna';
 
   @override
-  String get newChat_myContacts => 'My Contacts';
+  String get newChat_myContacts => 'Saját kapcsolatok';
 
   @override
-  String get newChat_discovered => 'Discovered';
+  String get newChat_discovered => 'Felfedezett';
 
   @override
-  String get repeaters_title => 'Manage Repeaters';
+  String get repeaters_title => 'Repeaterek kezelése';
 
   @override
   String get nav_contacts => 'Kapcsolatok';
@@ -54,16 +54,16 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_cancel => 'Át kell venni';
 
   @override
-  String get common_syncing_device_info => 'Reading device info...';
+  String get common_syncing_device_info => 'Eszközadatok beolvasása...';
 
   @override
-  String get common_syncing_contacts => 'Reading contacts...';
+  String get common_syncing_contacts => 'Kapcsolatok beolvasása...';
 
   @override
-  String get common_syncing_channels => 'Reading channels...';
+  String get common_syncing_channels => 'Csatornák beolvasása...';
 
   @override
-  String get common_syncing_messages => 'Reading messages...';
+  String get common_syncing_messages => 'Üzenetek beolvasása...';
 
   @override
   String get common_ok => 'Rendben';
@@ -105,10 +105,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_disconnected => 'Elválasztva';
 
   @override
-  String get common_connectionLost => 'Connection lost. Reconnecting...';
+  String get common_connectionLost =>
+      'A kapcsolat megszakadt. Újracsatlakozás...';
 
   @override
-  String get common_reconnecting => 'Reconnecting...';
+  String get common_reconnecting => 'Újracsatlakozás...';
 
   @override
   String get common_create => 'Készítsd';
@@ -259,11 +260,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get usbErrorNativeLibraryMissing =>
-      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+      'Ebből a verzióból hiányzik az USB soros könyvtár, ezért az USB-eszközök nem nyithatók meg. Telepítse újra a MeshTraxot, vagy jelezze, hogy ez a verzió hibás.';
 
   @override
   String get usbErrorBrowserUnsupported =>
-      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+      'Ez a böngésző nem támogatja a Web Serialt. Használjon Chrome-ot vagy Edge-et HTTPS-en (vagy localhoston) keresztül.';
 
   @override
   String get usbErrorAlreadyActive => 'Az USB-kapcsolat már be van állítva.';
@@ -313,18 +314,18 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get scanner_showAllDevices => 'Show all Bluetooth devices';
+  String get scanner_showAllDevices => 'Minden Bluetooth-eszköz megjelenítése';
 
   @override
-  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
+  String get scanner_showMeshCoreOnly => 'Csak MeshCore rádiók megjelenítése';
 
   @override
   String get scanner_radioNotResponding =>
-      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+      'A rádió nem válaszol. Lehet, hogy párosítani kell: nyissa meg a Bluetooth-beállításokat, adja hozzá a rádiót, és írja be a PIN-kódját, majd próbálja újra.';
 
   @override
   String get scanner_pairingFailed =>
-      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+      'A Bluetooth-párosítás megszakadt vagy sikertelen volt. Ellenőrizze, hogy semmi más (például a telefonja) ne csatlakozzon a rádióhoz, majd próbálja újra, és írja be a PIN-kódját.';
 
   @override
   String scanner_connectionFailed(String error) {
@@ -338,10 +339,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get scanner_scan => 'Szkenálás';
 
   @override
-  String get scanner_scanFromImage => 'Scan from image';
+  String get scanner_scanFromImage => 'Beolvasás képről';
 
   @override
-  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+  String get scanner_noQrFoundInImage =>
+      'Nem található érvényes QR-kód a képen';
 
   @override
   String get scanner_bluetoothOff => 'A Bluetooth kikapcsolva';
@@ -739,18 +741,18 @@ class AppLocalizationsHu extends AppLocalizations {
       'Adja meg a üzenetek részletes útvonal- és időzítési adatokat.';
 
   @override
-  String get appSettings_senderNameColors => 'Colorful sender names';
+  String get appSettings_senderNameColors => 'Színes feladónevek';
 
   @override
   String get appSettings_senderNameColorsSubtitle =>
-      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+      'Minden csatornán küldő saját névszínt kap. Kikapcsolva mindenki a téma színét kapja.';
 
   @override
-  String get appSettings_showTextFormatting => 'Show text formatting';
+  String get appSettings_showTextFormatting => 'Szövegformázás megjelenítése';
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      'Markdown az üzenetekben: **félkövér**, *dőlt*, ||spoiler||, címsorok és linkek. Más MeshCore alkalmazások a nyers karaktereket mutatják.';
 
   @override
   String get appSettings_notifications => 'Értesítések';
@@ -809,11 +811,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get appSettings_maxChannelMessageRetries =>
-      'Max Channel Message Retries';
+      'Csatornaüzenet max. újraküldése';
 
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
-      'It will retry this many times until it hears at least one repeat';
+      'Ennyiszer próbálja újra, amíg legalább egy ismétlést nem hall';
 
   @override
   String get appSettings_battery => 'Akku';
@@ -926,11 +928,12 @@ class AppLocalizationsHu extends AppLocalizations {
       'Az alkalmazás hibaelhárítási naplózatának bekapcsolása kiküszöbölve';
 
   @override
-  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+  String get appSettings_incrementalContactSync =>
+      'Növekményes kapcsolatszinkronizálás';
 
   @override
   String get appSettings_incrementalContactSyncSubtitle =>
-      'On reconnect, ask the radio only for contacts that changed since last time';
+      'Újracsatlakozáskor csak a legutóbb óta megváltozott kapcsolatokat kéri le a rádiótól';
 
   @override
   String get contacts_title => 'Kapcsolatok';
@@ -939,11 +942,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get contacts_noContacts => 'Jelenleg még nincs kapcsolat.';
 
   @override
-  String get contacts_shareMyQrCode => 'Share My QR Code';
+  String get contacts_shareMyQrCode => 'Saját QR-kód megosztása';
 
   @override
   String get contacts_shareQrCodeDesc =>
-      'Let others scan to add you as a contact';
+      'Mások beolvashatják, hogy felvegyék Önt kapcsolatként';
 
   @override
   String get contacts_contactsWillAppear =>
@@ -992,21 +995,22 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String contacts_deleteContactConfirm(String contactName) {
-    return 'Are you sure you want to delete $contactName?';
+    return 'Biztosan törölni szeretné: $contactName?';
   }
 
   @override
   String contacts_contactDeleted(String contactName) {
-    return 'Contact $contactName deleted.';
+    return '$contactName kapcsolat törölve.';
   }
 
   @override
   String contacts_contactDeleteFailed(String contactName) {
-    return 'Failed to delete $contactName.';
+    return 'Nem sikerült törölni: $contactName.';
   }
 
   @override
-  String get contacts_noMatchingContacts => 'No contacts match the filter.';
+  String get contacts_noMatchingContacts =>
+      'Egy kapcsolat sem felel meg a szűrőnek.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -1124,7 +1128,7 @@ class AppLocalizationsHu extends AppLocalizations {
       'Engedje meg az érzékelő adatok megosztását';
 
   @override
-  String get contacts_publicKey => 'Public Key';
+  String get contacts_publicKey => 'Nyilvános kulcs';
 
   @override
   String get channels_title => 'Csatornák';
@@ -1165,24 +1169,24 @@ class AppLocalizationsHu extends AppLocalizations {
   String get channels_editChannel => 'Csatorna szerkesztése';
 
   @override
-  String get channels_shareChannel => 'Share Channel';
+  String get channels_shareChannel => 'Csatorna megosztása';
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      'Olvassa be a QR-kódot a csatorna hozzáadásához.\nMenü → Csatorna hozzáadása → Scanned egy QR-kódot';
 
   @override
-  String get channels_secretKey => 'Secret Key';
+  String get channels_secretKey => 'Titkos kulcs';
 
   @override
-  String get channels_meshcoreUri => 'MeshCore URI';
+  String get channels_meshcoreUri => 'MeshCore-URI';
 
   @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
+  String get channels_shareChannelQr => 'Csatorna QR-kódjának beolvasása';
 
   @override
   String get channels_shareChannelWarning =>
-      'Warning: Anyone who scans this QR code will have access to this channel.';
+      'Figyelem: aki beolvassa ezt a QR-kódot, hozzáfér ehhez a csatornához.';
 
   @override
   String get channels_muteChannel => 'Csendes csatorna';
@@ -1239,24 +1243,24 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get channels_addChannelConfirmation =>
-      'Do you want to add the following channel?';
+      'Hozzá szeretné adni a következő csatornát?';
 
   @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
+  String get channels_channelAddedSuccess => 'A csatorna hozzáadva.';
 
   @override
-  String get channels_noAvailableChannelSlots => 'No available channel slots.';
+  String get channels_noAvailableChannelSlots => 'Nincs szabad csatornahely.';
 
   @override
-  String get appSettings_mentionNotifications => 'Mention notifications';
+  String get appSettings_mentionNotifications => 'Említési értesítések';
 
   @override
   String get appSettings_mentionNotificationsSubtitle =>
-      'When someone mentions or replies to you — even in muted channels';
+      'Ha valaki megemlíti Önt vagy válaszol Önnek — némított csatornákon is';
 
   @override
   String notification_mentionIn(String channelName) {
-    return 'Mention in $channelName';
+    return 'Említés itt: $channelName';
   }
 
   @override
@@ -1369,13 +1373,14 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_location => 'Helyszín';
 
   @override
-  String get common_copiedToClipboard => 'Copied to clipboard';
+  String get common_copiedToClipboard => 'Vágólapra másolva';
 
   @override
-  String get common_copyToClipboard => 'Copy to clipboard';
+  String get common_copyToClipboard => 'Másolás a vágólapra';
 
   @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
+  String get contacts_copyContactToClipboard =>
+      'Saját kapcsolat másolása a vágólapra';
 
   @override
   String get chat_typeMessage => 'Írjon üzenetet...';
@@ -1404,7 +1409,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_reply => 'Válasz';
 
   @override
-  String get chat_newMessages => 'NEW MESSAGES';
+  String get chat_newMessages => 'ÚJ ÜZENETEK';
 
   @override
   String get chat_addReaction => 'Hozzon létre reakciót';
@@ -1413,76 +1418,77 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_mention => 'Említés';
 
   @override
-  String get dmChannel_menuLabel => 'Direct Message';
+  String get dmChannel_menuLabel => 'Közvetlen üzenet';
 
   @override
   String dmChannel_pickerTitle(String name) {
-    return 'Send DM to $name';
+    return 'DM küldése: $name';
   }
 
   @override
   String get dmChannel_pickerHint =>
-      'Check the key and last-seen time — names are not unique.';
+      'Ellenőrizze a kulcsot és az utolsó észlelés idejét — a nevek nem egyediek.';
 
   @override
-  String get dmChannel_warningTitle => 'Is this really them?';
+  String get dmChannel_warningTitle => 'Biztosan ő az?';
 
   @override
   String get dmChannel_warningBody =>
-      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+      'A csatornaneveket mindenki maga választja, és bárki utánozhatja őket. Bármi bizalmas előtt ellenőrizze ennek a kapcsolatnak a nyilvános kulcsát más úton.';
 
   @override
-  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+  String get dmChannel_dontShowAgain => 'Ne jelenjen meg újra';
 
   @override
-  String get batterySleep_title => 'Keep MeshTrax running';
+  String get batterySleep_title => 'MeshTrax futásban tartása';
 
   @override
   String get batterySleep_bodySamsung =>
-      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+      'A Samsung telefonok az akkumulátor kímélése érdekében elaltatják az alkalmazásokat, ami megszakítja a kapcsolatot a rádióval. Nyissa meg a Beállítások → Alkalmazások → MeshTrax → Akkumulátor menüt, és válassza a Korlátlan lehetőséget. Ellenőrizze az Akkumulátor → Háttérhasználati korlátok részt is, és győződjön meg róla, hogy a MeshTrax nem szerepel az Alvó alkalmazások vagy a Mélyen alvó alkalmazások között.';
 
   @override
   String get batterySleep_bodyGeneric =>
-      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+      'A telefon az akkumulátor kímélése érdekében leállíthatja a MeshTraxot a háttérben, ami megszakítja a kapcsolatot a rádióval. Nyissa meg az akkumulátor-beállításokat, és állítsa a MeshTraxot Korlátlan (vagy Nincs korlátozás) módra. Egyes telefonokon az Automatikus indítást is be kell kapcsolni a MeshTraxhoz.';
 
   @override
-  String get batterySleep_openSettings => 'Open settings';
+  String get batterySleep_openSettings => 'Beállítások megnyitása';
 
   @override
-  String get batterySleep_notNow => 'Not now';
+  String get batterySleep_notNow => 'Most nem';
 
   @override
-  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+  String get batterySleep_settingsTile => 'MeshTrax futtatása a háttérben';
 
   @override
   String get batterySleep_settingsTileSubtitle =>
-      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+      'Ne engedje, hogy a telefon energiatakarékos módja elaltassa a MeshTraxot';
 
   @override
   String dmChannel_noMatchTitle(String name) {
-    return 'Can\'t DM $name yet';
+    return 'Még nem küldhet DM-et: $name';
   }
 
   @override
   String get dmChannel_noMatchBody =>
-      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+      'Még nincs meg a kulcsa, és neki is szüksége lesz az Önére a válaszhoz — a kulcsok csak hirdetésekben utaznak. A „Hirdetésem küldése” innen sugározza az Önét. A „Kérés a csatornán” egy kérést ír az üzenetmezőbe, amelyet Ön küldhet el.';
 
   @override
-  String get dmChannel_askInChannel => 'Ask in channel';
+  String get dmChannel_askInChannel => 'Kérés a csatornán';
 
   @override
-  String get dmChannel_sendMyAdvert => 'Send my advert';
+  String get dmChannel_sendMyAdvert => 'Hirdetésem küldése';
 
   @override
-  String get dmChannel_askText => 'please send an advert so I can DM you';
+  String get dmChannel_askText =>
+      'kérlek, küldj egy hirdetést, hogy DM-et írhassak neked';
 
   @override
   String get dmChannel_watching =>
-      'Watching for their advert — you\'ll be asked here when it arrives.';
+      'Figyeljük a hirdetését — itt kérdezzük meg, amikor megérkezik.';
 
   @override
   String dmChannel_advertHeard(String name) {
-    return '$name is now reachable';
+    return '$name most már elérhető';
   }
 
   @override
@@ -1495,14 +1501,14 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_reset => 'Visszaállítás';
 
   @override
-  String get chat_reactionsTitle => 'Reactions';
+  String get chat_reactionsTitle => 'Reakciók';
 
   @override
-  String get chat_reactionUnknownSender => 'Unknown';
+  String get chat_reactionUnknownSender => 'Ismeretlen';
 
   @override
   String chat_reactionTargetMissing(String sender) {
-    return '$sender reacted to a message that isn\'t in this chat';
+    return '$sender egy olyan üzenetre reagált, amely nincs ebben a csevegésben';
   }
 
   @override
@@ -1551,22 +1557,22 @@ class AppLocalizationsHu extends AppLocalizations {
   String get debugLog_copyLog => 'Másolat napló';
 
   @override
-  String get debugLog_saveLog => 'Save log to file';
+  String get debugLog_saveLog => 'Napló mentése fájlba';
 
   @override
-  String get debugLog_saved => 'Log saved';
+  String get debugLog_saved => 'Napló mentve';
 
   @override
-  String get debugLog_saveCancelled => 'Save cancelled';
+  String get debugLog_saveCancelled => 'Mentés megszakítva';
 
   @override
-  String get debugLog_filterAll => 'All';
+  String get debugLog_filterAll => 'Mind';
 
   @override
-  String get debugLog_filterWarnings => 'Warnings';
+  String get debugLog_filterWarnings => 'Figyelmeztetések';
 
   @override
-  String get debugLog_filterErrors => 'Errors';
+  String get debugLog_filterErrors => 'Hibák';
 
   @override
   String get debugLog_clearLog => 'Jelzett napló';
@@ -1632,7 +1638,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get debugFrame_textTypeCli => 'Parancssori felület (CLI)';
 
   @override
-  String get debugFrame_textTypeCliCommand => 'CLI command';
+  String get debugFrame_textTypeCliCommand => 'CLI-parancs';
 
   @override
   String get debugFrame_textTypePlain => 'Egyszerű, alap, hagyományos';
@@ -3081,13 +3087,13 @@ class AppLocalizationsHu extends AppLocalizations {
   String get listFilter_filters => 'Szűrők';
 
   @override
-  String get listFilter_source => 'Source';
+  String get listFilter_source => 'Forrás';
 
   @override
-  String get listFilter_saved => 'Saved';
+  String get listFilter_saved => 'Mentett';
 
   @override
-  String get listFilter_discovered => 'Discovered';
+  String get listFilter_discovered => 'Felfedezett';
 
   @override
   String get listFilter_all => 'Mind';
@@ -3357,31 +3363,32 @@ class AppLocalizationsHu extends AppLocalizations {
       'Az hirdetés másolása a vágólapra sikertelen.';
 
   @override
-  String get contacts_addContact => 'Add Contact';
+  String get contacts_addContact => 'Kapcsolat hozzáadása';
 
   @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
+  String get contacts_scanQrCode => 'Kapcsolat QR-kódjának beolvasása';
 
   @override
   String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
+      'Kapcsolat QR-kódjának beolvasása a MeshCore alkalmazásból';
 
   @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
+  String get contacts_enterIdHash => 'Kapcsolat kézi megadása';
 
   @override
   String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
+      'Illesszen be egy kapcsolathirdetést vagy meshcore:// linket';
 
   @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
+  String get contacts_advertHint =>
+      'meshcore://... vagy nyilvános kulcs hexben';
 
   @override
-  String get contacts_import => 'Import';
+  String get contacts_import => 'Importálás';
 
   @override
   String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
+      'Olvasson be egy MeshCore kapcsolat-QR-kódot';
 
   @override
   String get notification_activityTitle => 'MeshCore tevékenységek';
@@ -3544,7 +3551,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get discoveredContacts_noMatching => 'Nincs megegyező kapcsolat.';
 
   @override
-  String get listFilter_searchHint => 'Search...';
+  String get listFilter_searchHint => 'Keresés...';
 
   @override
   String get discoveredContacts_searchHint => 'Keress új kapcsolatokat';
@@ -3576,7 +3583,8 @@ class AppLocalizationsHu extends AppLocalizations {
       'Kérjük, várjon egy pillanatot, mielőtt újra elküldené.';
 
   @override
-  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+  String get chat_notConnected =>
+      'Nincs rádióhoz csatlakozva. Az üzenet nem lett elküldve.';
 
   @override
   String get appSettings_jumpToOldestUnread =>
@@ -3764,118 +3772,118 @@ class AppLocalizationsHu extends AppLocalizations {
   String get translation_systemLanguage => 'Rendszer nyelvé';
 
   @override
-  String get routing_title => 'Routing';
+  String get routing_title => 'Útvonalválasztás';
 
   @override
   String routing_route(String route) {
-    return 'Stored path: $route';
+    return 'Tárolt útvonal: $route';
   }
 
   @override
   String get routing_noRoute =>
-      'none yet — the next message floods and learns one';
+      'még nincs — a következő üzenet elárasztással megy, és tanul egyet';
 
   @override
-  String get routing_auto => 'Automatic';
+  String get routing_auto => 'Automatikus';
 
   @override
   String get routing_autoSubtitle =>
-      'Use the radio\'s stored path. Recommended.';
+      'A rádió tárolt útvonalát használja. Ajánlott.';
 
   @override
   String get routing_pathfinderOn =>
-      'Pathfinder on: tries learned routes first';
+      'Pathfinder bekapcsolva: először a tanult útvonalakat próbálja';
 
   @override
-  String get routing_flood => 'Always flood';
+  String get routing_flood => 'Mindig elárasztás';
 
   @override
-  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+  String get routing_floodSubtitle => 'Minden üzenet az egész hálózatra kimegy';
 
   @override
-  String get routing_custom => 'Custom path';
+  String get routing_custom => 'Egyéni útvonal';
 
   @override
-  String get routing_customSubtitle => 'Choose the repeaters yourself';
+  String get routing_customSubtitle => 'A repeatereket Ön választja ki';
 
   @override
-  String get routing_forget => 'Reset path';
+  String get routing_forget => 'Útvonal törlése';
 
   @override
   String get routing_forgetDone =>
-      'Path reset. The next message floods and learns a fresh one.';
+      'Útvonal törölve. A következő üzenet elárasztással megy, és újat tanul.';
 
   @override
-  String get routing_pathfinder => 'What Pathfinder knows';
+  String get routing_pathfinder => 'Amit a Pathfinder tud';
 
   @override
   String get routing_pathfinderSubtitle =>
-      'Repeaters that hear you and them, and learned routes there and back';
+      'Repeaterek, amelyek Önt és őt hallják, valamint tanult útvonalak oda és vissza';
 
   @override
-  String get path_direct => 'Direct — no repeaters';
+  String get path_direct => 'Közvetlen — repeaterek nélkül';
 
   @override
   String get path_directSubtitle =>
-      'Only when the contact can hear this radio itself';
+      'Csak ha a kapcsolat közvetlenül hallja ezt a rádiót';
 
   @override
-  String get chat_kindFlood => 'flood';
+  String get chat_kindFlood => 'elárasztás';
 
   @override
-  String get chat_kindDirect => 'direct';
+  String get chat_kindDirect => 'közvetlen';
 
   @override
   String chat_kindRoute(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'ugrás',
+      one: 'ugrás',
     );
-    return 'route ($count $_temp0)';
+    return 'útvonal ($count $_temp0)';
   }
 
   @override
-  String get chat_statusQueued => 'Queued';
+  String get chat_statusQueued => 'Sorban áll';
 
   @override
   String get chat_statusNoRepeaterHeard =>
-      'No repeater heard you. Will try again when one is in range.';
+      'Egy repeater sem hallotta. Újra próbálja, amikor lesz egy hatótávon belül.';
 
   @override
   String chat_narrowHashNotice(String name) {
-    return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
+    return '$name rádiója rövid repeaterkódokat küld (1 bájt). A Pathfinder addig nem tud útvonalat tanulni hozzá, amíg a rádiója nem használ 2 bájtos kódokat.';
   }
 
   @override
   String chat_statusSending(String kind) {
-    return 'Sending · $kind';
+    return 'Küldés · $kind';
   }
 
   @override
   String chat_statusRetrying(int attempt, int max, String kind) {
-    return 'Retrying · $kind · attempt $attempt of $max';
+    return 'Újrapróbálás · $kind · $attempt. kísérlet ($max közül)';
   }
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return 'Kézbesítve · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return 'Kézbesítve, $attempt. kísérlet · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return 'Későn kézbesítve · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return 'Kézbesítve · $secs s';
   }
 
   @override
@@ -3883,66 +3891,69 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       attempts,
       locale: localeName,
-      other: 'attempts',
-      one: 'attempt',
+      other: 'kísérlet',
+      one: 'kísérlet',
     );
-    return 'Failed after $attempts $_temp0 · tap to resend';
+    return 'Sikertelen $attempts $_temp0 után · koppintson az újraküldéshez';
   }
 
   @override
-  String get chat_statusFailedShort => 'Failed · tap to resend';
+  String get chat_statusFailedShort =>
+      'Sikertelen · koppintson az újraküldéshez';
 
   @override
-  String get chat_resendingByFlood => 'Resending by flood';
+  String get chat_resendingByFlood => 'Újraküldés elárasztással';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder (kísérleti)';
 
   @override
   String get settings_pathGraphSubtitle =>
-      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+      'Útvonalakat tanul mindenből, amit a rádió hall, és DM küldésekor először a legjobbakat próbálja. A borostyánsárga útvonal-ikon a Pathfinder-útvonalon küldött üzenetet jelöli.';
 
   @override
-  String get map_routeAndTrace => 'Route & trace';
+  String get map_routeAndTrace => 'Útvonal és követés';
 
   @override
-  String get map_pathfinderTrace => 'Trace there and back';
+  String get map_pathfinderTrace => 'Követés oda-vissza';
 
   @override
   String get map_pathfinderTraceSubtitle =>
-      'Out on Pathfinder\'s best route, back on its best route back';
+      'Oda a Pathfinder legjobb útvonalán, vissza a legjobb visszaúton';
 
   @override
   String get map_routeBackMirrored =>
-      'No route back known yet — coming back the same way';
+      'Még nincs ismert visszaút — ugyanazon az úton jön vissza';
 
   @override
-  String get map_traceHelpTitle => 'Path trace buttons';
+  String get map_traceHelpTitle => 'Útvonalkövetés gombjai';
 
   @override
-  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+  String get map_traceHelpCustom =>
+      'Írja be vagy válassza ki a repeatereket saját maga.';
 
   @override
   String get map_traceHelpRun =>
-      'Sends a trace out along the repeaters you tapped, one way.';
+      'Követést küld a megérintett repeatereken át, egy irányba.';
 
   @override
-  String get map_traceHelpThereAndBack => 'There and back';
+  String get map_traceHelpThereAndBack => 'Oda-vissza';
 
   @override
   String get map_traceHelpThereAndBackSubtitle =>
-      'Sends the trace out, then back over the same repeaters in reverse.';
+      'Elküldi a követést, majd fordított sorrendben ugyanazokon a repeatereken hozza vissza.';
 
   @override
   String get map_traceHelpPathfinder =>
-      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+      'A Pathfinder kiválasztja a legjobb útvonalat az utoljára megérintett két repeateren át, és a legjobb visszautat Önhöz. Az eredményből a Pathfinder megtanulja, mely összeköttetések működnek valóban. Két megérintett repeater kell hozzá.';
 
   @override
-  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+  String get map_traceHelpRemoveLast =>
+      'Leveszi az utolsó repeatert az útvonalról.';
 
   @override
   String get map_traceHelpCancel =>
-      'Stops building the trace. Shown before any repeater is tapped.';
+      'Leállítja a követés összeállítását. Addig látszik, amíg nem érint meg egy repeatert sem.';
 
   @override
   String get chat_resendingByRoute => 'Újraküldés a beállított útvonalon';
@@ -4038,263 +4049,264 @@ class AppLocalizationsHu extends AppLocalizations {
       'A szobát nem sikerült visszaállítani a rádión';
 
   @override
-  String get companionCli_title => 'Command line';
+  String get companionCli_title => 'Parancssor';
 
   @override
   String get companionCli_settingsSubtitle =>
-      'Type text commands for this radio';
+      'Szöveges parancsok ennek a rádiónak';
 
   @override
-  String get companionCli_rebooting => 'Restarting the radio…';
+  String get companionCli_rebooting => 'A rádió újraindul…';
 
   @override
-  String get companionCli_cancelled => 'Cancelled';
+  String get companionCli_cancelled => 'Megszakítva';
 
   @override
-  String get companionCli_poweringOff => 'Turning the radio off…';
+  String get companionCli_poweringOff => 'A rádió kikapcsol…';
 
   @override
-  String get companionCli_noReply => 'No reply from the radio. Try again.';
+  String get companionCli_noReply => 'Nem válaszol a rádió. Próbálja újra.';
 
   @override
-  String get companionCli_powerOffTitle => 'Turn the radio off?';
+  String get companionCli_powerOffTitle => 'Kikapcsolja a rádiót?';
 
   @override
   String get companionCli_powerOffBody =>
-      'It stays off until you press its button or plug it in.';
+      'Kikapcsolva marad, amíg meg nem nyomja a gombját, vagy áramra nem köti.';
 
   @override
-  String get companionCli_powerOff => 'Turn off';
+  String get companionCli_powerOff => 'Kikapcsolás';
 
   @override
-  String get companionCli_quickBoard => 'Board';
+  String get companionCli_quickBoard => 'Alaplap';
 
   @override
-  String get companionCli_quickWifiStatus => 'WiFi status';
+  String get companionCli_quickWifiStatus => 'Wi‑Fi-állapot';
 
   @override
-  String get companionCli_quickWifiAddress => 'WiFi address';
+  String get companionCli_quickWifiAddress => 'Wi‑Fi-cím';
 
   @override
-  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+  String get companionCli_helpBoard =>
+      'Megmutatja az alaplap gyártóját és típusát.';
 
   @override
-  String get companionCli_helpReboot => 'Restarts the radio.';
+  String get companionCli_helpReboot => 'Újraindítja a rádiót.';
 
   @override
-  String get companionCli_helpPowerOff => 'Turns the radio off.';
+  String get companionCli_helpPowerOff => 'Kikapcsolja a rádiót.';
 
   @override
   String get companionCli_helpSetPin =>
-      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+      'Beállítja a Bluetooth-párosítás PIN-kódját. Újraindítás után lép életbe.';
 
   @override
   String get companionCli_helpSetTzOffset =>
-      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+      'Beállítja, hány órát adjon az UTC-hez a rádió saját kijelzőjén lévő óra (-12 és +14 között).';
 
   @override
   String get companionCli_helpSetTx =>
-      'Sets the transmit power in dBm. Applies at once.';
+      'Beállítja az adóteljesítményt dBm-ben. Azonnal érvényes.';
 
   @override
   String get companionCli_helpSetIntThresh =>
-      'Sets the interference threshold in dB. 0 turns interference detection off.';
+      'Beállítja az interferenciaküszöböt dB-ben. A 0 kikapcsolja az interferenciaészlelést.';
 
   @override
   String get companionCli_helpSetCad =>
-      'Listens for other radios before sending (channel activity detection).';
+      'Adás előtt figyeli, adnak-e más rádiók (csatornaaktivitás-észlelés).';
 
   @override
   String get companionCli_helpSetRxGain =>
-      'Boosted receive gain, on SX126x radios.';
+      'Megnövelt vételi erősítés SX126x rádiókon.';
 
   @override
   String get companionCli_helpSetPathHashMode =>
-      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+      'Bájt repeaterenként egy útvonalban: 0 = 1 bájt, 1 = 2 bájt, 2 = 3 bájt.';
 
   @override
   String get companionCli_helpWifiStatus =>
-      'Shows whether the radio is on the WiFi network.';
+      'Megmutatja, hogy a rádió csatlakozik-e a Wi‑Fi-hálózathoz.';
 
   @override
   String get companionCli_helpWifiIp =>
-      'Shows the radio\'s address on the WiFi network.';
+      'Megmutatja a rádió címét a Wi‑Fi-hálózaton.';
 
   @override
   String get companionCli_helpWifiSsid =>
-      'Sets the WiFi network name. Applies after a restart.';
+      'Beállítja a Wi‑Fi-hálózat nevét. Újraindítás után lép életbe.';
 
   @override
   String get companionCli_helpWifiPwd =>
-      'Sets the WiFi password. Applies after a restart.';
+      'Beállítja a Wi‑Fi-jelszót. Újraindítás után lép életbe.';
 
   @override
   String get companionCli_helpWifiEnabled =>
-      'Turns WiFi on (1) or off (0). Applies after a restart.';
+      'Be- (1) vagy kikapcsolja (0) a Wi‑Fi-t. Újraindítás után lép életbe.';
 
   @override
   String get companionCli_helpWifiClear =>
-      'Forgets the WiFi network. Applies after a restart.';
+      'Elfelejti a Wi‑Fi-hálózatot. Újraindítás után lép életbe.';
 
   @override
   String get companionCli_remoteNoReply =>
-      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+      'Nincs válasz. A másik rádiónak 1.18-as vagy újabb firmware kell, és engedélyeznie kell, hogy Ön használja a parancssorát.';
 
   @override
   String get companionCli_remoteSentNoAnswer =>
-      'Sent. A radio does not answer a restart or power-off.';
+      'Elküldve. A rádió nem válaszol újraindításra vagy kikapcsolásra.';
 
   @override
   String companionCli_blocked(String name, String command) {
-    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '$name megpróbálta használni a rádiója parancssorát: „$command”. Nem volt engedélyezve.';
   }
 
   @override
   String companionCli_blockedBody(String command) {
-    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return 'Megpróbálta használni a rádiója parancssorát: „$command”. Nem volt engedélyezve.';
   }
 
   @override
-  String get contact_remoteCli => 'Allow remote command line';
+  String get contact_remoteCli => 'Távoli parancssor engedélyezése';
 
   @override
   String get contact_remoteCliSubtitle =>
-      'Lets this contact run commands on your radio';
+      'Ez a kapcsolat parancsokat futtathat az Ön rádióján';
 
   @override
   String contact_remoteCliWarningTitle(String name) {
-    return 'Let $name control your radio?';
+    return 'Engedi, hogy $name irányítsa a rádióját?';
   }
 
   @override
   String contact_remoteCliWarning(String name) {
-    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+    return '$name módosíthatja a rádió beállításait, kiolvashatja a Wi‑Fi-jelszavát, átnevezheti a rádióját, valamint újraindíthatja vagy kikapcsolhatja. Csak olyannak engedélyezze, akiben teljesen megbízik.';
   }
 
   @override
-  String get contact_remoteCliAllow => 'Allow';
+  String get contact_remoteCliAllow => 'Engedélyezés';
 
   @override
   String get connection_secondApp =>
-      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+      'Egy másik alkalmazás is csatlakozik ehhez a rádióhoz. Az üzenetek és a beállítások összekeveredhetnek. Zárja be a másik alkalmazást.';
 
   @override
-  String get wifi_title => 'WiFi';
+  String get wifi_title => 'Wi‑Fi';
 
   @override
-  String get wifi_settingsSubtitle => 'Network, password and connection';
+  String get wifi_settingsSubtitle => 'Hálózat, jelszó és kapcsolat';
 
   @override
-  String get wifi_use => 'Use WiFi';
+  String get wifi_use => 'Wi‑Fi használata';
 
   @override
-  String get wifi_networkName => 'Network name';
+  String get wifi_networkName => 'Hálózat neve';
 
   @override
-  String get wifi_password => 'Password';
+  String get wifi_password => 'Jelszó';
 
   @override
-  String get wifi_passwordUnchanged => 'Unchanged';
+  String get wifi_passwordUnchanged => 'Változatlan';
 
   @override
-  String get wifi_showPassword => 'Show password';
+  String get wifi_showPassword => 'Jelszó megjelenítése';
 
   @override
-  String get wifi_nameMissing => 'Enter the network name';
+  String get wifi_nameMissing => 'Adja meg a hálózat nevét';
 
   @override
   String get wifi_nameTooLong =>
-      'The network name is too long (32 bytes at most)';
+      'A hálózat neve túl hosszú (legfeljebb 32 bájt)';
 
   @override
-  String get wifi_passwordTooLong =>
-      'The password is too long (63 bytes at most)';
+  String get wifi_passwordTooLong => 'A jelszó túl hosszú (legfeljebb 63 bájt)';
 
   @override
   String get wifi_savedRestart =>
-      'Saved. WiFi changes apply after the radio restarts.';
+      'Mentve. A Wi‑Fi-módosítások a rádió újraindítása után lépnek életbe.';
 
   @override
-  String get wifi_forget => 'Forget network';
+  String get wifi_forget => 'Hálózat elfelejtése';
 
   @override
   String get wifi_forgetConfirm =>
-      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+      'Elfelejti ezt a Wi‑Fi-hálózatot? A rádió újraindítás után nem használja tovább a Wi‑Fi-t.';
 
   @override
   String wifi_notAccepted(String reply) {
-    return 'The radio did not accept that: $reply';
+    return 'A rádió ezt nem fogadta el: $reply';
   }
 
   @override
-  String get wifi_noReply => 'No reply from the radio. Try again.';
+  String get wifi_noReply => 'Nem válaszol a rádió. Próbálja újra.';
 
   @override
-  String get wifi_restartTitle => 'Restart the radio?';
+  String get wifi_restartTitle => 'Újraindítja a rádiót?';
 
   @override
-  String get wifi_later => 'Later';
+  String get wifi_later => 'Később';
 
   @override
   String get wifi_loadFailed =>
-      'Could not read the WiFi settings from the radio.';
+      'Nem sikerült beolvasni a Wi‑Fi-beállításokat a rádióról.';
 
   @override
   String wifi_connectedTo(String address) {
-    return 'Connected · $address';
+    return 'Csatlakozva · $address';
   }
 
   @override
-  String get wifi_notConnected => 'Not connected to WiFi';
+  String get wifi_notConnected => 'Nincs Wi‑Fi-kapcsolat';
 
   @override
   String wifi_portNote(int port) {
-    return 'Apps on the same network can connect on port $port';
+    return 'Az azonos hálózaton lévő alkalmazások ezen a porton csatlakozhatnak: $port';
   }
 
   @override
-  String get wifi_connectOverWifi => 'Connect over WiFi';
+  String get wifi_connectOverWifi => 'Csatlakozás Wi‑Fi-n';
 
   @override
   String wifi_connectOverWifiBody(String address, int port) {
-    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+    return 'A MeshTrax bontja a kapcsolatot ezzel a rádióval, és megnyitja a TCP képernyőt kitöltött címmel ($address) és porttal ($port). Ott koppintson a „Kapcsolódj” gombra.';
   }
 
   @override
-  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+  String get wifi_noteRestart =>
+      'A módosítások a rádió újraindítása után lépnek életbe.';
 
   @override
   String get wifi_noteSecurity =>
-      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+      'A Wi‑Fi-hálózatán bárki csatlakozhat a rádióhoz az 5000-es porton. Ehhez nincs jelszó.';
 
   @override
   String get wifi_noteBattery =>
-      'WiFi keeps the radio awake, so the battery runs down faster.';
+      'A Wi‑Fi ébren tartja a rádiót, így az akkumulátor gyorsabban lemerül.';
 
   @override
   String get wifi_noteWrongPassword =>
-      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
+      'Ha a jelszó hibás, a rádió néhány másodpercenként újrapróbálkozik. A Bluetooth továbbra is működik.';
 
   @override
   String get room_selfDemoteWarning =>
       'A saját hozzáférésedet módosítod. Ha lemondasz az admin szerepről, csak a szoba saját konzolja adhatja vissza.';
 
   @override
-  String get scanner_offlineMaps => 'Offline maps';
+  String get scanner_offlineMaps => 'Offline térképek';
 
   @override
-  String get appSettings_offlineMaps => 'Offline maps';
+  String get appSettings_offlineMaps => 'Offline térképek';
 
   @override
-  String get appSettings_offlineMapsNone => 'None downloaded';
+  String get appSettings_offlineMapsNone => 'Nincs letöltve';
 
   @override
   String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count regions',
-      one: '1 region',
+      other: '$count régió',
+      one: '1 régió',
     );
     return '$_temp0';
   }
@@ -4304,8 +4316,8 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count chart areas',
-      one: '1 chart area',
+      other: '$count tengeri térképterület',
+      one: '1 tengeri térképterület',
     );
     return '$_temp0';
   }
@@ -4315,81 +4327,82 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count updates available',
-      one: '1 update available',
+      other: '$count frissítés érhető el',
+      one: '1 frissítés érhető el',
     );
     return '$_temp0';
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly => 'Térképletöltés csak Wi‑Fi-n';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+      'A térképletöltések Wi‑Fi-kapcsolatra várnak';
 
   @override
-  String get offlineMaps_title => 'Offline maps';
+  String get offlineMaps_title => 'Offline térképek';
 
   @override
-  String get offlineMaps_tabMaps => 'Maps';
+  String get offlineMaps_tabMaps => 'Térképek';
 
   @override
-  String get offlineMaps_tabCharts => 'Charts';
+  String get offlineMaps_tabCharts => 'Tengeri';
 
   @override
-  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+  String get offlineMaps_chartsNotice => 'Navigációra nem alkalmas · Miért?';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
-    return 'Suggested · $coast';
+    return 'Javasolt · $coast';
   }
 
   @override
-  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+  String get offlineMaps_chartsByCoast =>
+      'Tengeri térképterületek partszakaszonként';
 
   @override
   String offlineMaps_chartsCoastSummary(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count terület',
+      one: '1 terület',
     );
     return '$_temp0 · $size';
   }
 
   @override
   String offlineMaps_chartsDownloadedCount(int count) {
-    return '$count downloaded';
+    return '$count letöltve';
   }
 
   @override
   String offlineMaps_chartsSelectedCount(int count) {
-    return '$count selected';
+    return '$count kijelölve';
   }
 
   @override
-  String get offlineMaps_selectAll => 'Select all';
+  String get offlineMaps_selectAll => 'Az összes kijelölése';
 
   @override
-  String get offlineMaps_clearSelection => 'Clear';
+  String get offlineMaps_clearSelection => 'Törlés';
 
   @override
   String offlineMaps_chartsAlsoIn(String coasts) {
-    return 'Also in $coasts';
+    return 'Itt is: $coasts';
   }
 
   @override
-  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+  String get offlineMaps_chartsNotAvailable => 'Még nem érhető el';
 
   @override
   String get offlineMaps_chartsHint =>
-      'NOAA charts are picked by coast, in the Charts tab.';
+      'A NOAA tengeri térképei partszakasz szerint választhatók ki, a Tengeri lapon.';
 
   @override
   String offlineMaps_chartsName(String area) {
-    return '$area NOAA charts';
+    return '$area – NOAA tengeri térképek';
   }
 
   @override
@@ -4397,243 +4410,246 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count terület',
+      one: '1 terület',
     );
     return '$_temp0';
   }
 
   @override
-  String get offlineMaps_tabDownloaded => 'Downloaded';
+  String get offlineMaps_tabDownloaded => 'Letöltött';
 
   @override
-  String get offlineMaps_refresh => 'Check for new maps';
+  String get offlineMaps_refresh => 'Új térképek keresése';
 
   @override
-  String get offlineMaps_loading => 'Loading available maps…';
+  String get offlineMaps_loading => 'Elérhető térképek betöltése…';
 
   @override
-  String get offlineMaps_serverError => 'Can\'t reach the map server';
+  String get offlineMaps_serverError => 'A térképszerver nem érhető el';
 
   @override
-  String get offlineMaps_unavailable => 'No maps are available yet';
+  String get offlineMaps_unavailable => 'Még nincsenek elérhető térképek';
 
   @override
-  String get offlineMaps_unavailableHint => 'Check again later.';
+  String get offlineMaps_unavailableHint => 'Nézzen vissza később.';
 
   @override
   String get offlineMaps_chartsUnavailable =>
-      'No NOAA charts are available yet';
+      'Még nincsenek elérhető NOAA tengeri térképek';
 
   @override
   String offlineMaps_cachedFrom(String date) {
-    return 'Showing the list from $date';
+    return 'A lista állapota: $date';
   }
 
   @override
   String get offlineMaps_needsNewerApp =>
-      'Update MeshTrax to get the newest maps.';
+      'Frissítse a MeshTraxot a legújabb térképekhez.';
 
   @override
-  String get offlineMaps_world => 'World';
+  String get offlineMaps_world => 'Világ';
 
   @override
-  String get offlineMaps_suggested => 'Suggested';
+  String get offlineMaps_suggested => 'Javasolt';
 
   @override
-  String get offlineMaps_regions => 'Regions';
+  String get offlineMaps_regions => 'Régiók';
 
   @override
   String offlineMaps_regionsIn(String name) {
-    return 'Regions in $name';
+    return '$name régiói';
   }
 
   @override
   String offlineMaps_inside(int count) {
-    return '$count inside';
+    return '$count benne';
   }
 
   @override
   String offlineMaps_storageUsed(String size) {
-    return '$size of offline maps on this device';
+    return '$size offline térkép ezen az eszközön';
   }
 
   @override
   String offlineMaps_updates(int count) {
-    return 'Updates ($count)';
+    return 'Frissítések ($count)';
   }
 
   @override
   String offlineMaps_updateAll(String size) {
-    return 'Update all $size';
+    return 'Összes frissítése $size';
   }
 
   @override
-  String get offlineMaps_downloading => 'Downloading';
+  String get offlineMaps_downloading => 'Letöltés';
 
   @override
-  String get offlineMaps_update => 'Update';
+  String get offlineMaps_update => 'Frissítés';
 
   @override
   String offlineMaps_downloadedOn(String date) {
-    return 'Downloaded $date';
+    return 'Letöltve: $date';
   }
 
   @override
-  String get offlineMaps_updateAvailable => 'Update available';
+  String get offlineMaps_updateAvailable => 'Frissítés érhető el';
 
   @override
-  String get offlineMaps_otherFiles => 'Other map files';
+  String get offlineMaps_otherFiles => 'Egyéb térképfájlok';
 
   @override
-  String get offlineMaps_emptyTitle => 'No offline maps yet';
+  String get offlineMaps_emptyTitle => 'Még nincsenek offline térképek';
 
   @override
   String get offlineMaps_emptyBody =>
-      'Download a region to use the map without a connection.';
+      'Töltsön le egy régiót, hogy kapcsolat nélkül is használhassa a térképet.';
 
   @override
-  String get offlineMaps_findMaps => 'Find maps';
+  String get offlineMaps_findMaps => 'Térképek keresése';
 
   @override
   String offlineMaps_deleteTitle(String name) {
-    return 'Delete $name?';
+    return 'Törli: $name?';
   }
 
   @override
   String offlineMaps_deleteBody(String size) {
-    return 'This frees $size. You can download it again later.';
+    return 'Ez $size helyet szabadít fel. Később újra letöltheti.';
   }
 
   @override
   String offlineMaps_deleted(String name) {
-    return '$name deleted';
+    return '$name törölve';
   }
 
   @override
   String offlineMaps_bytesProgress(String done, String total) {
-    return '$done of $total';
+    return '$done / $total';
   }
 
   @override
-  String get offlineMaps_kindMap => 'Map';
+  String get offlineMaps_kindMap => 'Térkép';
 
   @override
   String get offlineMaps_kindMapDetail =>
-      'OpenStreetMap streets, trails, places';
+      'OpenStreetMap utcák, ösvények, helyek';
 
   @override
-  String get offlineMaps_kindContours => 'Contours';
+  String get offlineMaps_kindContours => 'Szintvonalak';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail => 'Magassági vonalak';
 
   @override
-  String get offlineMaps_kindUsgs => 'USGS topo map';
+  String get offlineMaps_kindUsgs => 'USGS topográfiai térkép';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+  String get offlineMaps_kindUsgsDetail =>
+      'Ösvények, patakok, védett területek';
 
   @override
-  String get offlineMaps_kindTerrain => 'Hill shading';
+  String get offlineMaps_kindTerrain => 'Domborzatárnyékolás';
 
   @override
   String get offlineMaps_kindTerrainDetail =>
-      'Hills and mountains, shaded under the map';
+      'Dombok és hegyek, árnyékolva a térkép alatt';
 
   @override
-  String get offlineMaps_kindCharts => 'NOAA charts';
+  String get offlineMaps_kindCharts => 'NOAA tengeri térképek';
 
   @override
-  String get offlineMaps_usOnly => 'United States only';
+  String get offlineMaps_usOnly => 'Csak az Egyesült Államok';
 
   @override
   String offlineMaps_download(String size) {
-    return 'Download $size';
+    return 'Letöltés $size';
   }
 
   @override
-  String get offlineMaps_downloadTotal => 'Download';
+  String get offlineMaps_downloadTotal => 'Letöltés';
 
   @override
   String offlineMaps_largeDownload(String size) {
-    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+    return 'Nagy letöltés ($size). Használjon Wi‑Fi-t, és tartsa töltőn az eszközt.';
   }
 
   @override
-  String get offlineMaps_waiting => 'Waiting…';
+  String get offlineMaps_waiting => 'Várakozás…';
 
   @override
-  String get offlineMaps_checking => 'Checking download…';
+  String get offlineMaps_checking => 'Letöltés ellenőrzése…';
 
   @override
-  String get offlineMaps_retrying => 'Retrying…';
+  String get offlineMaps_retrying => 'Újrapróbálás…';
 
   @override
   String offlineMaps_failed(String error) {
-    return 'Download failed: $error';
+    return 'Sikertelen letöltés: $error';
   }
 
   @override
-  String get offlineMaps_pause => 'Pause';
+  String get offlineMaps_pause => 'Szünet';
 
   @override
-  String get offlineMaps_resume => 'Resume';
+  String get offlineMaps_resume => 'Folytatás';
 
   @override
-  String get offlineMaps_deleteRegion => 'Delete region';
+  String get offlineMaps_deleteRegion => 'Régió törlése';
 
   @override
-  String get offlineMaps_notInCatalogue => 'Not available for this region';
+  String get offlineMaps_notInCatalogue => 'Ehhez a régióhoz nem érhető el';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => 'Térkép letöltése';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused => 'Térképletöltés szüneteltetve';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed => 'Sikertelen térképletöltés';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+  String get offlineMaps_clearTileCache =>
+      'Gyorsítótárazott online térképcsempék törlése';
 
   @override
   String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+      'Törli a böngészés közben mentett online térképcsempéket? A letöltött térképek megmaradnak.';
 
   @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+  String get offlineMaps_tileCacheCleared =>
+      'Gyorsítótárazott online térképcsempék törölve';
 
   @override
-  String get map_notForNavigation => 'Not for navigation';
+  String get map_notForNavigation => 'Navigációra nem alkalmas';
 
   @override
   String get map_chartsNoticeIntro =>
-      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+      'A MeshTrax a NOAA tengeri térképadataiból rajzolja ezeket a térképeket, hogy lássa a vizet a rádiói körül, és tervezni tudjon. Ezek nem hivatalos tengeri térképek. Ne navigáljon ezek alapján.';
 
   @override
-  String get map_chartsNoticeWhy => 'Why:';
+  String get map_chartsNoticeWhy => 'Miért:';
 
   @override
   String get map_chartsNoticeOutOfDate =>
-      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+      'Elavulnak. A NOAA folyamatosan javítja a térképeit; a letöltött térkép változatlan marad, amíg nem frissíti az Offline térképek alatt.';
 
   @override
   String get map_chartsNoticeLeftOut =>
-      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+      'Kimaradnak dolgok. Sok térképjel, fényszektor és megjegyzés nincs megrajzolva, és egyes feliratok csak nagyításkor jelennek meg.';
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      'A pozíciók hibásak vagy elavultak lehetnek. A GPS 10 m (30 ft) vagy nagyobb hibával is mérhet, és egy csomópont csak ott van, ahonnan utoljára jelentkezett.';
 
   @override
   String get map_chartsNoticeNotPlotter =>
-      'MeshTrax isn\'t a certified chart plotter.';
+      'A MeshTrax nem tanúsított térképplotter.';
 
   @override
   String get map_chartsNoticeUse =>
-      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+      'Navigációhoz hivatalos, naprakész NOAA tengeri térképeket használjon (papíron, vagy NOAA ENC-ket tanúsított térképplotteren) a legfrissebb hajózási hirdetményekkel.';
 
   @override
   String get map_sourceOnline => 'Online';
@@ -4642,182 +4658,185 @@ class AppLocalizationsHu extends AppLocalizations {
   String get map_sourceOffline => 'Offline';
 
   @override
-  String get map_downloadForDetail => 'Download a region for detail';
+  String get map_downloadForDetail => 'Töltsön le egy régiót a részletekhez';
 
   @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+  String get map_zoomInForOfflineMap =>
+      'Nagyítson rá az offline térkép megtekintéséhez';
 
   @override
-  String get map_noCharts => 'No charts here';
+  String get map_noCharts => 'Itt nincs tengeri térkép';
 
   @override
-  String get map_myLocation => 'My location';
+  String get map_myLocation => 'Saját helyzet';
 
   @override
-  String get map_zoomIn => 'Zoom in';
+  String get map_zoomIn => 'Nagyítás';
 
   @override
-  String get map_zoomOut => 'Zoom out';
+  String get map_zoomOut => 'Kicsinyítés';
 
   @override
   String get gps_title => 'GPS';
 
   @override
-  String get gps_on => 'GPS on';
+  String get gps_on => 'GPS be';
 
   @override
-  String get gps_off => 'GPS off';
+  String get gps_off => 'GPS ki';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => 'A rádió a GPS-ből frissíti a pozícióját.';
 
   @override
   String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+      'Kikapcsolva kíméli a rádió akkumulátorát. Bekapcsolás után néhány percig is tarthat, amíg megtalálja a pozícióját.';
 
   @override
-  String get gps_asking => 'Asking the radio...';
+  String get gps_asking => 'A rádió lekérdezése...';
 
   @override
   String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+      'Még nincs pozíció. Szabad ég alatt az első néhány percig is eltarthat.';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => 'Pozíció';
 
   @override
-  String get gps_altitude => 'Altitude';
+  String get gps_altitude => 'Magasság';
 
   @override
   String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
+    return '$ago ezelőtt kiolvasva a rádióból';
   }
 
   @override
-  String get gps_turnOnTitle => 'Turn on GPS?';
+  String get gps_turnOnTitle => 'Bekapcsolja a GPS-t?';
 
   @override
   String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+      'A rádió GPS-e ki van kapcsolva. Bekapcsolás után néhány percig is tarthat, amíg megtalálja a pozícióját.';
 
   @override
-  String get gps_turnOn => 'Turn on';
+  String get gps_turnOn => 'Bekapcsolás';
 
   @override
-  String get gps_notNow => 'Not now';
+  String get gps_notNow => 'Most nem';
 
   @override
-  String get map_zoomInForCharts => 'Zoom in to see your charts';
+  String get map_zoomInForCharts =>
+      'Nagyítson rá a tengeri térképek megtekintéséhez';
 
   @override
   String map_downloadRegion(String region, String size) {
-    return 'Download $region · $size';
+    return '$region letöltése · $size';
   }
 
   @override
-  String get mapLayers_title => 'Map layers';
+  String get mapLayers_title => 'Térképrétegek';
 
   @override
-  String get mapLayers_mapType => 'Map type';
+  String get mapLayers_mapType => 'Térképtípus';
 
   @override
-  String get mapLayers_standard => 'Standard';
+  String get mapLayers_standard => 'Normál';
 
   @override
-  String get mapLayers_usgs => 'USGS topo';
+  String get mapLayers_usgs => 'USGS topográfiai';
 
   @override
-  String get mapLayers_charts => 'Charts';
+  String get mapLayers_charts => 'Tengeri térképek';
 
   @override
-  String get mapLayers_notDownloaded => 'Not downloaded';
+  String get mapLayers_notDownloaded => 'Nincs letöltve';
 
   @override
-  String get mapLayers_offlineOnly => 'Offline only';
+  String get mapLayers_offlineOnly => 'Csak offline';
 
   @override
-  String get mapLayers_details => 'Map details';
+  String get mapLayers_details => 'Térkép részletei';
 
   @override
-  String get mapLayers_contours => 'Contours';
+  String get mapLayers_contours => 'Szintvonalak';
 
   @override
-  String get mapLayers_hillShading => 'Hill shading';
+  String get mapLayers_hillShading => 'Domborzatárnyékolás';
 
   @override
-  String get mapLayers_dark => 'Dark map';
+  String get mapLayers_dark => 'Sötét térkép';
 
   @override
-  String get mapLayers_downloadedAreas => 'Downloaded areas';
+  String get mapLayers_downloadedAreas => 'Letöltött területek';
 
   @override
-  String get mapLayers_nodes => 'Nodes';
+  String get mapLayers_nodes => 'Csomópontok';
 
   @override
-  String get mapLayers_pins => 'Pins';
+  String get mapLayers_pins => 'Jelölők';
 
   @override
-  String get mapLayers_guessed => 'Guessed';
+  String get mapLayers_guessed => 'Becsült';
 
   @override
-  String get mapLayers_moreFilters => 'More filters';
+  String get mapLayers_moreFilters => 'További szűrők';
 
   @override
-  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+  String get mapLayers_moreFiltersDetail =>
+      'Utoljára látva, kulcselőtag, átfedések';
 
   @override
-  String get map_legend => 'Legend';
+  String get map_legend => 'Jelmagyarázat';
 
   @override
-  String get scanner_map => 'Map';
+  String get scanner_map => 'Térkép';
 
   @override
-  String get structured_openMap => 'Open map';
+  String get structured_openMap => 'Térkép megnyitása';
 
   @override
-  String get structured_addToCalendar => 'Add to calendar';
+  String get structured_addToCalendar => 'Hozzáadás a naptárhoz';
 
   @override
-  String get structured_details => 'Details';
+  String get structured_details => 'Részletek';
 
   @override
   String get structured_sos => 'SOS';
 
   @override
-  String get structured_event => 'Event';
+  String get structured_event => 'Esemény';
 
   @override
-  String get structured_notice => 'Notice';
+  String get structured_notice => 'Közlemény';
 
   @override
-  String get structured_allDay => 'All day';
+  String get structured_allDay => 'Egész nap';
 
   @override
-  String get structured_calendarFailed => 'Could not open the calendar';
+  String get structured_calendarFailed => 'Nem sikerült megnyitni a naptárt';
 
   @override
-  String get structured_today => 'Today';
+  String get structured_today => 'Ma';
 
   @override
-  String get structured_tomorrow => 'Tomorrow';
+  String get structured_tomorrow => 'Holnap';
 
   @override
   String structured_inDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'In $count days',
-      one: 'In 1 day',
+      other: '$count nap múlva',
+      one: '1 nap múlva',
     );
     return '$_temp0';
   }
 
   @override
-  String get structured_past => 'Past';
+  String get structured_past => 'Elmúlt';
 
   @override
   String structured_dayOfDays(int day, int total) {
-    return 'Day $day of $total';
+    return '$day. nap ($total közül)';
   }
 
   @override
@@ -4825,697 +4844,705 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days',
-      one: '1 day',
+      other: '$count nap',
+      one: '1 nap',
     );
     return '$_temp0';
   }
 
   @override
-  String get dialog_eventEndDate => 'End date';
+  String get dialog_eventEndDate => 'Befejezés dátuma';
 
   @override
-  String get dialog_eventSameDay => 'Same day';
+  String get dialog_eventSameDay => 'Ugyanaznap';
 
   @override
-  String get structured_map => 'Map';
+  String get structured_map => 'Térkép';
 
   @override
-  String get structured_navigate => 'Navigate';
+  String get structured_navigate => 'Navigálás';
 
   @override
-  String get structured_channel => 'Channel';
+  String get structured_channel => 'Csatorna';
 
   @override
-  String get structured_contact => 'Contact';
+  String get structured_contact => 'Kapcsolat';
 
   @override
-  String get structured_room => 'Room';
+  String get structured_room => 'Szoba';
 
   @override
   String get structured_repeater => 'Repeater';
 
   @override
-  String get structured_sensor => 'Sensor';
+  String get structured_sensor => 'Érzékelő';
 
   @override
-  String get structured_joinChannel => 'Join channel';
+  String get structured_joinChannel => 'Csatlakozás a csatornához';
 
   @override
-  String get structured_addContact => 'Add contact';
+  String get structured_addContact => 'Kapcsolat hozzáadása';
 
   @override
-  String get structured_addRoom => 'Add room';
+  String get structured_addRoom => 'Szoba hozzáadása';
 
   @override
-  String get structured_addRepeater => 'Add repeater';
+  String get structured_addRepeater => 'Repeater hozzáadása';
 
   @override
-  String get structured_addSensor => 'Add sensor';
+  String get structured_addSensor => 'Érzékelő hozzáadása';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => 'Megnyitás';
 
   @override
-  String get structured_added => 'Added';
+  String get structured_added => 'Hozzáadva';
 
   @override
-  String get tray_add => 'Add';
+  String get tray_add => 'Hozzáadás';
 
   @override
-  String get tray_myLocation => 'My location';
+  String get tray_myLocation => 'Saját helyzet';
 
   @override
-  String get tray_pointOnMap => 'Point on map';
+  String get tray_pointOnMap => 'Pont a térképen';
 
   @override
   String get tray_sos => 'SOS';
 
   @override
-  String get tray_event => 'Event';
+  String get tray_event => 'Esemény';
 
   @override
-  String get tray_notice => 'Notice';
+  String get tray_notice => 'Közlemény';
 
   @override
   String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+      'A rádiójának még nincs pozíciója. Válasszon egyet a térképen.';
 
   @override
-  String get dialog_insert => 'Insert';
+  String get dialog_insert => 'Beszúrás';
 
   @override
-  String get dialog_eventTitle => 'Title';
+  String get dialog_eventTitle => 'Cím';
 
   @override
-  String get dialog_eventDate => 'Date';
+  String get dialog_eventDate => 'Dátum';
 
   @override
-  String get dialog_eventStart => 'Start';
+  String get dialog_eventStart => 'Kezdés';
 
   @override
-  String get dialog_eventEnd => 'End';
+  String get dialog_eventEnd => 'Befejezés';
 
   @override
-  String get dialog_eventNoEnd => 'No end time';
+  String get dialog_eventNoEnd => 'Nincs befejezési idő';
 
   @override
-  String get dialog_eventPlace => 'Place (optional)';
+  String get dialog_eventPlace => 'Helyszín (nem kötelező)';
 
   @override
-  String get dialog_pickOnMap => 'Pick on map';
+  String get dialog_pickOnMap => 'Kiválasztás a térképen';
 
   @override
-  String get dialog_sosTitle => 'Send SOS';
+  String get dialog_sosTitle => 'SOS küldése';
 
   @override
-  String get dialog_sosText => 'What happened?';
+  String get dialog_sosText => 'Mi történt?';
 
   @override
-  String get dialog_noticeTitle => 'Notice';
+  String get dialog_noticeTitle => 'Közlemény';
 
   @override
-  String get dialog_noticeText => 'What should everyone know?';
+  String get dialog_noticeText => 'Mit kell mindenkinek tudnia?';
 
   @override
-  String get dialog_labelTitle => 'Point on map';
+  String get dialog_labelTitle => 'Pont a térképen';
 
   @override
-  String get dialog_note => 'Note (optional)';
+  String get dialog_note => 'Megjegyzés (nem kötelező)';
 
   @override
   String get paste_convertLocation =>
-      'Looks like a maps link. Convert it to a Location?';
+      'Térképlinknek tűnik. Átalakítja Helyszínné?';
 
   @override
   String get paste_convertEvent =>
-      'Looks like a calendar share. Convert it to an Event?';
+      'Naptármegosztásnak tűnik. Átalakítja Eseménnyé?';
 
   @override
-  String get paste_convert => 'Convert';
+  String get paste_convert => 'Átalakítás';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolving => 'Link feloldása…';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_resolveFailed => 'Nem sikerült feloldani a linket';
 
   @override
-  String get pinned_dismiss => 'Dismiss';
+  String get pinned_dismiss => 'Elvetés';
 
   @override
   String get tray_gif => 'GIF';
 
   @override
   String link_joinChannelBody(String name) {
-    return 'Join channel $name?';
+    return 'Csatlakozik ehhez a csatornához: $name?';
   }
 
   @override
   String link_alreadyJoined(String name) {
-    return 'You are already in $name';
+    return 'Már tagja ennek a csatornának: $name';
   }
 
   @override
   String link_channelJoined(String name) {
-    return 'Joined $name';
+    return 'Csatlakozott: $name';
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint =>
+      'Koppintson a térképre egy pozíció kiválasztásához';
 
   @override
-  String get map_legendMesh => 'Mesh';
+  String get map_legendMesh => 'Mesh-hálózat';
 
   @override
-  String get chartLegend_title => 'Chart symbols';
+  String get chartLegend_title => 'Tengeri térképjelek';
 
   @override
-  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+  String get chartLegend_sectionBuoys => 'Bóják és fix jelek';
 
   @override
-  String get chartLegend_sectionLights => 'Lights';
+  String get chartLegend_sectionLights => 'Fények';
 
   @override
-  String get chartLegend_sectionHazards => 'Hazards';
+  String get chartLegend_sectionHazards => 'Veszélyek';
 
   @override
-  String get chartLegend_sectionTides => 'Tides and currents';
+  String get chartLegend_sectionTides => 'Árapály és áramlások';
 
   @override
-  String get chartLegend_sectionDepths => 'Depths and seabed';
+  String get chartLegend_sectionDepths => 'Mélységek és tengerfenék';
 
   @override
-  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+  String get chartLegend_sectionAreas => 'Területek, sávok és vonalak';
 
   @override
-  String get chartLegend_sectionLandmarks => 'Landmarks';
+  String get chartLegend_sectionLandmarks => 'Tájékozódási pontok';
 
   @override
-  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+  String get chartLegend_sectionAbbreviations => 'Rövidítések';
 
   @override
-  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+  String get chartLegend_chartNo1 => 'Az összes térképjel: U.S. Chart No. 1';
 
   @override
-  String get chartLegend_portBuoy => 'Green can buoy';
+  String get chartLegend_portBuoy => 'Zöld hengeres bója';
 
   @override
   String get chartLegend_portBuoyHint =>
-      'Keep it on your left coming in from sea';
+      'Tengerről befelé jövet tartsa a bal oldalán';
 
   @override
-  String get chartLegend_starboardBuoy => 'Red nun buoy';
+  String get chartLegend_starboardBuoy => 'Piros kúpos bója';
 
   @override
   String get chartLegend_starboardBuoyHint =>
-      'Keep it on your right coming in: red, right, returning';
+      'Befelé jövet tartsa a jobb oldalán: hazatérve a piros jobbra marad';
 
   @override
-  String get chartLegend_junctionBuoy => 'Banded buoy';
+  String get chartLegend_junctionBuoy => 'Sávos bója';
 
   @override
   String get chartLegend_junctionBuoyHint =>
-      'A channel junction: treat it as the colour of its top band';
+      'Hajóút-elágazás: a felső sáv színe szerint kezelje';
 
   @override
-  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+  String get chartLegend_safeWaterBuoy => 'Piros-fehér csíkos';
 
   @override
   String get chartLegend_safeWaterBuoyHint =>
-      'Safe water all around, often at a channel entrance';
+      'Körös-körül biztonságos víz, gyakran hajóút bejáratánál';
 
   @override
-  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+  String get chartLegend_isolatedDangerBuoy => 'Fekete-piros sávos';
 
   @override
   String get chartLegend_isolatedDangerBuoyHint =>
-      'A small danger with safe water around it: keep clear';
+      'Kis veszély, körülötte biztonságos víz: kerülje el';
 
   @override
-  String get chartLegend_specialBuoy => 'Yellow buoy';
+  String get chartLegend_specialBuoy => 'Sárga bója';
 
   @override
   String get chartLegend_specialBuoyHint =>
-      'Special purpose, not for steering by: anchorage, cable, research';
+      'Különleges célú, nem irányjelző: horgonyzóhely, kábel, kutatás';
 
   @override
-  String get chartLegend_cardinalBuoy => 'Black and yellow';
+  String get chartLegend_cardinalBuoy => 'Fekete-sárga';
 
   @override
   String get chartLegend_cardinalBuoyHint =>
-      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+      'Kardinális jel: azon az oldalán haladjon el, amelyről a nevét kapta (az USA-ban ritka)';
 
   @override
-  String get chartLegend_mooringBuoy => 'Mooring buoy';
+  String get chartLegend_mooringBuoy => 'Kikötőbója';
 
   @override
-  String get chartLegend_portBeacon => 'Green square daybeacon';
+  String get chartLegend_portBeacon => 'Zöld négyzetes nappali jel';
 
   @override
   String get chartLegend_portBeaconHint =>
-      'Like a green buoy: keep it on your left coming in';
+      'Mint a zöld bója: befelé jövet tartsa a bal oldalán';
 
   @override
-  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+  String get chartLegend_starboardBeacon => 'Piros háromszögű nappali jel';
 
   @override
   String get chartLegend_starboardBeaconHint =>
-      'Like a red buoy: keep it on your right coming in';
+      'Mint a piros bója: befelé jövet tartsa a jobb oldalán';
 
   @override
-  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+  String get chartLegend_otherBeacon => 'Rombusz alakú nappali jel';
 
   @override
   String get chartLegend_otherBeaconHint =>
-      'Information or a warning, not a side of the channel';
+      'Tájékoztatás vagy figyelmeztetés, nem a hajóút oldalát jelzi';
 
   @override
-  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+  String get chartLegend_beaconTower => 'Világítótorony vagy jelzőépítmény';
 
   @override
-  String get chartLegend_topmark => 'Topmark';
+  String get chartLegend_topmark => 'Csúcsjel';
 
   @override
   String get chartLegend_topmarkHint =>
-      'The shape on top of a mark adds to its meaning';
+      'A jel tetején lévő forma kiegészíti a jelentését';
 
   @override
-  String get chartLegend_light => 'Light';
+  String get chartLegend_light => 'Fény';
 
   @override
   String get chartLegend_lightHint =>
-      'The magenta flare marks a light; its label tells how it flashes';
+      'A magenta fényjel egy fényt jelöl; a felirata megmondja, hogyan villan';
 
   @override
-  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+  String get chartLegend_lightExample => 'Zöld villanó, 4 másodpercenként';
 
   @override
   String get chartLegend_lightExampleHint =>
-      'A light\'s label: rhythm, colour, then period';
+      'A fény felirata: ritmus, szín, majd periódus';
 
   @override
-  String get chartLegend_lightFixed => 'Fixed';
+  String get chartLegend_lightFixed => 'Állandó';
 
   @override
-  String get chartLegend_lightFixedHint => 'A steady light';
+  String get chartLegend_lightFixedHint => 'Folyamatos fény';
 
   @override
-  String get chartLegend_lightFlashing => 'Flashing';
+  String get chartLegend_lightFlashing => 'Villanó';
 
   @override
   String get chartLegend_lightFlashingHint =>
-      'Short flashes, longer dark between';
+      'Rövid villanások, köztük hosszabb sötét szakasz';
 
   @override
-  String get chartLegend_lightGroup => 'Group flashing';
+  String get chartLegend_lightGroup => 'Csoportos villanó';
 
   @override
   String get chartLegend_lightGroupHint =>
-      'Flashes in groups, here 2, then dark';
+      'Csoportokban villan, itt 2-esével, utána sötét';
 
   @override
-  String get chartLegend_lightComposite => 'Composite group';
+  String get chartLegend_lightComposite => 'Összetett csoport';
 
   @override
   String get chartLegend_lightCompositeHint =>
-      '2 flashes, then 1: marks a channel junction';
+      '2 villanás, majd 1: hajóút-elágazást jelöl';
 
   @override
-  String get chartLegend_lightQuick => 'Quick';
+  String get chartLegend_lightQuick => 'Gyors';
 
   @override
-  String get chartLegend_lightQuickHint => 'About one flash a second';
+  String get chartLegend_lightQuickHint => 'Kb. másodpercenként egy villanás';
 
   @override
-  String get chartLegend_lightIsophase => 'Isophase';
+  String get chartLegend_lightIsophase => 'Izofázisos';
 
   @override
-  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+  String get chartLegend_lightIsophaseHint => 'Egyforma hosszú fény és sötét';
 
   @override
-  String get chartLegend_lightOcculting => 'Occulting';
+  String get chartLegend_lightOcculting => 'Elsötétülő';
 
   @override
-  String get chartLegend_lightOccultingHint => 'On longer than off';
+  String get chartLegend_lightOccultingHint =>
+      'Tovább világít, mint ameddig sötét';
 
   @override
-  String get chartLegend_lightMorse => 'Morse code A';
+  String get chartLegend_lightMorse => 'Morse-kód A';
 
   @override
-  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+  String get chartLegend_lightMorseHint => 'Rövid, hosszú: biztonságos víz';
 
   @override
-  String get chartLegend_lightAlternating => 'Alternating';
+  String get chartLegend_lightAlternating => 'Váltakozó';
 
   @override
-  String get chartLegend_lightAlternatingHint => 'Changes colour';
+  String get chartLegend_lightAlternatingHint => 'Színt vált';
 
   @override
-  String get chartLegend_lightColours => 'White, red, green, yellow';
+  String get chartLegend_lightColours => 'Fehér, piros, zöld, sárga';
 
   @override
-  String get chartLegend_lightPeriod => 'Period';
+  String get chartLegend_lightPeriod => 'Periódus';
 
   @override
-  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+  String get chartLegend_lightPeriodHint => 'Egy teljes ciklus másodpercben';
 
   @override
-  String get chartLegend_rock => 'Underwater rock';
+  String get chartLegend_rock => 'Víz alatti szikla';
 
   @override
-  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+  String get chartLegend_rockHint => 'Mindig víz borítja, de sekélyen lehet';
 
   @override
-  String get chartLegend_rockAwash => 'Rock awash';
+  String get chartLegend_rockAwash => 'Vízszinten lévő szikla';
 
   @override
-  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+  String get chartLegend_rockAwashHint => 'Apálykor a felszín közelében van';
 
   @override
-  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+  String get chartLegend_rockCovers => 'Időnként szárazra kerülő szikla';
 
   @override
   String get chartLegend_rockCoversHint =>
-      'Shows at low tide, covered at high tide';
+      'Apálykor kilátszik, dagálykor víz borítja';
 
   @override
-  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+  String get chartLegend_wreckDangerous => 'Veszélyes roncs';
 
   @override
-  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+  String get chartLegend_wreckDangerousHint =>
+      'Elég sekélyen van ahhoz, hogy nekimenjen';
 
   @override
-  String get chartLegend_wreck => 'Wreck';
+  String get chartLegend_wreck => 'Roncs';
 
   @override
   String get chartLegend_wreckHint =>
-      'Deep enough for boats on the surface; don\'t anchor';
+      'Elég mélyen van a felszíni hajóknak; ne horgonyozzon';
 
   @override
-  String get chartLegend_wreckShowing => 'Wreck showing';
+  String get chartLegend_wreckShowing => 'Kiálló roncs';
 
   @override
-  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+  String get chartLegend_wreckShowingHint => 'Egy része kilátszik a vízből';
 
   @override
-  String get chartLegend_obstruction => 'Obstruction';
+  String get chartLegend_obstruction => 'Akadály';
 
   @override
   String get chartLegend_obstructionHint =>
-      'Something on the bottom; its depth when known';
+      'Valami a fenéken; ha ismert, a mélységével';
 
   @override
-  String get chartLegend_foulGround => 'Foul ground';
+  String get chartLegend_foulGround => 'Akadályos fenék';
 
   @override
   String get chartLegend_foulGroundHint =>
-      'Safe to pass over, but don\'t anchor or trawl';
+      'Át lehet haladni felette, de ne horgonyozzon és ne halásszon vonóhálóval';
 
   @override
-  String get chartLegend_hazardArea => 'Edge of a danger area';
+  String get chartLegend_hazardArea => 'Veszélyes terület széle';
 
   @override
   String get chartLegend_hazardAreaHint =>
-      'Rocks, wrecks or obstructions inside';
+      'Belül sziklák, roncsok vagy akadályok';
 
   @override
-  String get chartLegend_pile => 'Pile or post';
+  String get chartLegend_pile => 'Cölöp vagy oszlop';
 
   @override
-  String get chartLegend_floodStream => 'Flood stream';
+  String get chartLegend_floodStream => 'Dagályáram';
 
   @override
-  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+  String get chartLegend_floodStreamHint => 'Árapályáram, amíg a víz emelkedik';
 
   @override
-  String get chartLegend_ebbStream => 'Ebb stream';
+  String get chartLegend_ebbStream => 'Apályáram';
 
   @override
-  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+  String get chartLegend_ebbStreamHint => 'Árapályáram, amíg a víz apad';
 
   @override
-  String get chartLegend_current => 'Current';
+  String get chartLegend_current => 'Áramlás';
 
   @override
-  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+  String get chartLegend_currentHint =>
+      'Az árapálytól függetlenül mindig ugyanarra folyik';
 
   @override
-  String get chartLegend_rips => 'Tide rips or eddies';
+  String get chartLegend_rips => 'Áramlási hullámzás vagy örvények';
 
   @override
-  String get chartLegend_ripsHint => 'Rough, swirling water';
+  String get chartLegend_ripsHint => 'Háborgó, örvénylő víz';
 
   @override
-  String get chartLegend_breakers => 'Breakers';
+  String get chartLegend_breakers => 'Törőhullámok';
 
   @override
-  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+  String get chartLegend_breakersHint => 'Sekélyes felett megtörő hullámok';
 
   @override
-  String get chartLegend_sounding => 'Sounding';
+  String get chartLegend_sounding => 'Mélységadat';
 
   @override
-  String get chartLegend_soundingHint => 'Depth at an average low tide';
+  String get chartLegend_soundingHint => 'Mélység átlagos apálykor';
 
   @override
-  String get chartLegend_depthContour => 'Depth contour';
+  String get chartLegend_depthContour => 'Mélységvonal';
 
   @override
-  String get chartLegend_depthContourHint => 'Its label gives the depth';
+  String get chartLegend_depthContourHint => 'A felirata adja meg a mélységet';
 
   @override
-  String get chartLegend_drying => 'Dries at low tide';
+  String get chartLegend_drying => 'Apálykor szárazra kerül';
 
   @override
-  String get chartLegend_dredged => 'Dredged channel';
+  String get chartLegend_dredged => 'Kotort hajóút';
 
   @override
-  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+  String get chartLegend_dredgedHint => 'A feltüntetett mélységen tartják';
 
   @override
-  String get chartLegend_swept => 'Swept area';
+  String get chartLegend_swept => 'Átvizsgált terület';
 
   @override
-  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+  String get chartLegend_sweptHint =>
+      'A feltüntetett mélységig akadálymentesnek ellenőrizve';
 
   @override
-  String get chartLegend_unsurveyed => 'Unsurveyed';
+  String get chartLegend_unsurveyed => 'Felméretlen';
 
   @override
-  String get chartLegend_unsurveyedHint => 'No depths measured';
+  String get chartLegend_unsurveyedHint => 'Nincs mért mélység';
 
   @override
-  String get chartLegend_weed => 'Kelp or weed';
+  String get chartLegend_weed => 'Moszat vagy hínár';
 
   @override
-  String get chartLegend_restricted => 'Restricted area';
+  String get chartLegend_restricted => 'Korlátozott terület';
 
   @override
   String get chartLegend_restrictedHint =>
-      'Entry limited; the ticks point inside';
+      'Korlátozott belépés; a vonalkák befelé mutatnak';
 
   @override
-  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+  String get chartLegend_regulatedLimit => 'Szabályozott terület határa';
 
   @override
   String get chartLegend_regulatedLimitHint =>
-      'Anchorage, cable area, firing area and more: see its label';
+      'Horgonyzóhely, kábelterület, lőtér és más: lásd a feliratát';
 
   @override
-  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+  String get chartLegend_greyLimit =>
+      'Kotrási lerakóhely, halászterület vagy haltenyészet';
 
   @override
-  String get chartLegend_anchorage => 'Anchorage';
+  String get chartLegend_anchorage => 'Horgonyzóhely';
 
   @override
-  String get chartLegend_anchorBerth => 'Anchor berth';
+  String get chartLegend_anchorBerth => 'Kijelölt horgonyhely';
 
   @override
-  String get chartLegend_noAnchoring => 'No anchoring';
+  String get chartLegend_noAnchoring => 'Horgonyozni tilos';
 
   @override
-  String get chartLegend_caution => 'Caution area';
+  String get chartLegend_caution => 'Figyelmeztető terület';
 
   @override
-  String get chartLegend_cautionHint => 'Take extra care here';
+  String get chartLegend_cautionHint => 'Itt legyen különösen óvatos';
 
   @override
-  String get chartLegend_trafficLane => 'Traffic lane';
+  String get chartLegend_trafficLane => 'Forgalmi sáv';
 
   @override
   String get chartLegend_trafficLaneHint =>
-      'Big ships, one way: cross at right angles';
+      'Nagy hajók, egy irányban: derékszögben keresztezze';
 
   @override
-  String get chartLegend_separationZone => 'Separation zone';
+  String get chartLegend_separationZone => 'Elválasztó zóna';
 
   @override
   String get chartLegend_separationZoneHint =>
-      'Between traffic lanes: keep out';
+      'A forgalmi sávok között: ne hajózzon be';
 
   @override
-  String get chartLegend_precautionary => 'Precautionary area';
+  String get chartLegend_precautionary => 'Elővigyázatossági terület';
 
   @override
-  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+  String get chartLegend_precautionaryHint =>
+      'Itt hajók futnak össze: legyen óvatos';
 
   @override
-  String get chartLegend_fairway => 'Fairway';
+  String get chartLegend_fairway => 'Hajóút';
 
   @override
-  String get chartLegend_fairwayHint => 'A main channel';
+  String get chartLegend_fairwayHint => 'Fő hajózási útvonal';
 
   @override
-  String get chartLegend_track => 'Recommended track';
+  String get chartLegend_track => 'Ajánlott útirány';
 
   @override
-  String get chartLegend_ferry => 'Ferry route';
+  String get chartLegend_ferry => 'Kompútvonal';
 
   @override
-  String get chartLegend_leadingLine => 'Leading line';
+  String get chartLegend_leadingLine => 'Vezetővonal';
 
   @override
   String get chartLegend_leadingLineHint =>
-      'Line up its two marks to stay in the channel';
+      'Hozza fedésbe a két jelét, hogy a hajóútban maradjon';
 
   @override
-  String get chartLegend_cable => 'Submarine cable';
+  String get chartLegend_cable => 'Tenger alatti kábel';
 
   @override
-  String get chartLegend_cableHint => 'Don\'t anchor';
+  String get chartLegend_cableHint => 'Ne horgonyozzon';
 
   @override
-  String get chartLegend_pipeline => 'Submarine pipeline';
+  String get chartLegend_pipeline => 'Tenger alatti csővezeték';
 
   @override
-  String get chartLegend_pipelineHint => 'Don\'t anchor';
+  String get chartLegend_pipelineHint => 'Ne horgonyozzon';
 
   @override
-  String get chartLegend_overhead => 'Overhead cable';
+  String get chartLegend_overhead => 'Légkábel';
 
   @override
-  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+  String get chartLegend_overheadHint =>
+      'Szabad magassága VC jelöléssel szerepel';
 
   @override
-  String get chartLegend_tower => 'Tower';
+  String get chartLegend_tower => 'Torony';
 
   @override
-  String get chartLegend_windTurbine => 'Wind turbine';
+  String get chartLegend_windTurbine => 'Szélturbina';
 
   @override
-  String get chartLegend_chimney => 'Chimney';
+  String get chartLegend_chimney => 'Kémény';
 
   @override
-  String get chartLegend_mast => 'Mast or antenna';
+  String get chartLegend_mast => 'Árboc vagy antenna';
 
   @override
-  String get chartLegend_church => 'Church or spire';
+  String get chartLegend_church => 'Templom vagy templomtorony';
 
   @override
-  String get chartLegend_flagstaff => 'Flagstaff';
+  String get chartLegend_flagstaff => 'Zászlórúd';
 
   @override
-  String get chartLegend_dome => 'Dome';
+  String get chartLegend_dome => 'Kupola';
 
   @override
-  String get chartLegend_landmark => 'Other landmark';
+  String get chartLegend_landmark => 'Egyéb tájékozódási pont';
 
   @override
-  String get chartLegend_abbrAnch => 'Anchorage';
+  String get chartLegend_abbrAnch => 'Horgonyzóhely';
 
   @override
-  String get chartLegend_abbrWk => 'Wreck';
+  String get chartLegend_abbrWk => 'Roncs';
 
   @override
-  String get chartLegend_abbrBr => 'Breakers';
+  String get chartLegend_abbrBr => 'Törőhullámok';
 
   @override
-  String get chartLegend_abbrWd => 'Weed';
+  String get chartLegend_abbrWd => 'Hínár';
 
   @override
-  String get chartLegend_abbrVar => 'Magnetic variation';
+  String get chartLegend_abbrVar => 'Mágneses elhajlás';
 
   @override
-  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+  String get chartLegend_abbrVc => 'Szabad magasság híd vagy kábel alatt';
 
   @override
-  String get chartLegend_abbrTr => 'Tower';
+  String get chartLegend_abbrTr => 'Torony';
 
   @override
-  String get chartLegend_abbrCh => 'Church';
+  String get chartLegend_abbrCh => 'Templom';
 
   @override
-  String get chartLegend_abbrChy => 'Chimney';
+  String get chartLegend_abbrChy => 'Kémény';
 
   @override
-  String get chartLegend_abbrFs => 'Flagstaff';
+  String get chartLegend_abbrFs => 'Zászlórúd';
 
   @override
-  String get chartLegend_abbrTk => 'Tank';
+  String get chartLegend_abbrTk => 'Tartály';
 
   @override
-  String get chartLegend_abbrRBn => 'Radio beacon';
+  String get chartLegend_abbrRBn => 'Rádiójeladó';
 
   @override
-  String get chartLegend_abbrCg => 'Coast Guard station';
+  String get chartLegend_abbrCg => 'Parti őrség állomása';
 
   @override
-  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+  String get chartLegend_abbrRacon => 'Radarjeladó: megjelenik a radaron';
 
   @override
   String get chartLegend_abbrFog =>
-      'Fog signal: horn, bell, gong, whistle or siren';
+      'Ködjelző: kürt, harang, gong, síp vagy sziréna';
 
   @override
-  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+  String get chartLegend_abbrVAis => 'Virtuális jel: csak AIS-en látható';
 
   @override
   String chartLegend_depthRange(String from, String to) {
-    return '$from to $to';
+    return '$from–$to';
   }
 
   @override
   String chartLegend_depthOver(String depth) {
-    return 'Deeper than $depth';
+    return '$depth felett';
   }
 
   @override
-  String get parkLegend_title => 'Park and trail symbols';
+  String get parkLegend_title => 'Park- és túrajelek';
 
   @override
-  String get parkLegend_campsite => 'Campsite';
+  String get parkLegend_campsite => 'Kemping';
 
   @override
-  String get parkLegend_picnicSite => 'Picnic site';
+  String get parkLegend_picnicSite => 'Piknikező hely';
 
   @override
-  String get parkLegend_shelter => 'Shelter';
+  String get parkLegend_shelter => 'Menedékhely';
 
   @override
-  String get parkLegend_toilets => 'Toilets';
+  String get parkLegend_toilets => 'Mosdó';
 
   @override
-  String get parkLegend_drinkingWater => 'Drinking water';
+  String get parkLegend_drinkingWater => 'Ivóvíz';
 
   @override
-  String get parkLegend_parking => 'Parking';
+  String get parkLegend_parking => 'Parkoló';
 
   @override
-  String get parkLegend_viewpoint => 'Viewpoint';
+  String get parkLegend_viewpoint => 'Kilátópont';
 
   @override
-  String get parkLegend_attraction => 'Attraction';
+  String get parkLegend_attraction => 'Látnivaló';
 
   @override
-  String get parkLegend_gate => 'Gate';
+  String get parkLegend_gate => 'Kapu';
 
   @override
-  String get parkLegend_telephone => 'Telephone';
+  String get parkLegend_telephone => 'Telefon';
 
   @override
-  String get parkLegend_information => 'Information board';
+  String get parkLegend_information => 'Információs tábla';
 
   @override
-  String get parkLegend_guidepost => 'Guidepost';
+  String get parkLegend_guidepost => 'Útjelző tábla';
 }
