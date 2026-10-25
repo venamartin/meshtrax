@@ -15,15 +15,11 @@ class IngressEntry {
     required this.weight,
     required this.lastSeen,
     required this.tier,
-    this.observedLat,
-    this.observedLon,
   });
 
   double weight;
   int lastSeen; // arrival millis
   EvidenceTier tier;
-  double? observedLat;
-  double? observedLon;
 
   /// Arrival millis of the last proof in the SENDING direction: a
   /// delivered send through this hop, a trace, a Discover answer. Only
@@ -308,7 +304,7 @@ class EvidenceStore {
   /// A row already proven gains no weight from being heard: its weight
   /// ranks it as a repeater that hears ME, which hearing it cannot show.
   void recordLastHop(String selfPubkey, String repeaterHash, int arrival,
-      {double? lat, double? lon, double? downlinkSnr}) {
+      {double? downlinkSnr}) {
     final proven = entries[(selfPubkey, repeaterHash)]?.proven ?? false;
     _noteSelfRow(selfPubkey, repeaterHash, arrival);
     final e = _upsert(selfPubkey, repeaterHash, EvidenceTier.inferred,
@@ -318,8 +314,6 @@ class EvidenceStore {
       ..finalCount += 1
       ..lastHeardAt = arrival;
     _noteSelfAlive(arrival);
-    if (lat != null) e.observedLat = lat;
-    if (lon != null) e.observedLon = lon;
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
   }
 
@@ -650,11 +644,7 @@ class EvidenceStore {
         }
         target.failedSinceProof =
             math.max(target.failedSinceProof, ghost.failedSinceProof);
-        if (ghost.lastSeen > target.lastSeen) {
-          target.lastSeen = ghost.lastSeen;
-          target.observedLat = ghost.observedLat ?? target.observedLat;
-          target.observedLon = ghost.observedLon ?? target.observedLon;
-        }
+        if (ghost.lastSeen > target.lastSeen) target.lastSeen = ghost.lastSeen;
         if (ghost.tier.index > target.tier.index) target.tier = ghost.tier;
       }
       _dirty.add(bucket);
@@ -680,8 +670,6 @@ class EvidenceStore {
         weight: row.weight,
         lastSeen: row.lastSeen,
         tier: EvidenceTier.values.byName(row.evidence),
-        observedLat: row.observedLat,
-        observedLon: row.observedLon,
       )
         ..provenAt = row.provenAt
         ..uplinkSnr = row.uplinkSnr
@@ -728,8 +716,6 @@ class EvidenceStore {
             weight: e.weight,
             lastSeen: e.lastSeen,
             evidence: e.tier.name,
-            observedLat: Value(e.observedLat),
-            observedLon: Value(e.observedLon),
             provenAt: Value(e.provenAt),
             uplinkSnr: Value(e.uplinkSnr),
             downlinkSnr: Value(e.downlinkSnr),

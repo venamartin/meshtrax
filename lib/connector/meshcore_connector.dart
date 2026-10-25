@@ -563,6 +563,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// The radio's latest GPS reading ([requestSelfPosition]), for the GPS
   /// dialog. A notifier, so a reading that changes nothing rebuilds only it.
   final ValueNotifier<SelfGpsReading?> selfGps = ValueNotifier(null);
+
+  /// Whether a GPS reading this connection has differed from the position
+  /// SELF_INFO gave at connect. Until one does, the reading may be the
+  /// position the radio stored before its last restart, reported as if
+  /// current (seen 2026-10-22), so nothing treats it as where the radio is.
+  bool _selfPositionLive = false;
+  bool get selfPositionIsLive => _selfPositionLive;
   int _reconnectAttempts = 0;
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
@@ -3446,6 +3453,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _selfName = null;
     _selfLatitude = null;
     _selfLongitude = null;
+    _selfPositionLive = false;
+    // Every way off a radio drops its position: the next radio, or this
+    // one after a restart, must earn a live fix again.
+    _gpsPollTimer?.cancel();
+    _gpsPollTimer = null;
+    selfGps.value = null;
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
@@ -5156,6 +5169,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       }
       _selfLatitude = lat;
       _selfLongitude = lon;
+      _selfPositionLive = true;
       notifyListeners();
       return;
     }
@@ -6030,6 +6044,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _forgetNearbyOfOtherRadio(pubKeyToHex(_selfPublicKey!));
       _selfLatitude = reader.readInt32LE() / 1000000.0;
       _selfLongitude = reader.readInt32LE() / 1000000.0;
+      _selfPositionLive = false;
       _multiAcks = reader.readByte();
       _advertLocPolicy = reader.readByte();
       // Firmware packs (env << 4) | (loc << 2) | base
@@ -9661,6 +9676,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
     selfGps.value = null;
+    _selfPositionLive = false;
     _stopRadioStatsPolling();
     _latestRadioStats = null;
     radioStatsNotifier.value = null;

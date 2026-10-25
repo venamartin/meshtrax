@@ -43,7 +43,7 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// adverted, nothing proven or measured, every sighting in one burst
   /// (field: 3,674 of 5,014 codes).
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -158,6 +158,12 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             await customStatement('DELETE FROM graph_nodes WHERE hash_bytes '
                 'IN (SELECT hash FROM one_off_codes)');
             await customStatement('DROP TABLE one_off_codes');
+          }
+          if (from < 11) {
+            // The radio's exact position used to be written onto my
+            // doorstep rows. No precise location is stored any more
+            // (owner, 2026-10-25); the rebuild drops the two columns.
+            await m.alterTable(TableMigration(contactIngress));
           }
         },
       );

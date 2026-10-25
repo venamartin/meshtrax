@@ -17,6 +17,7 @@ import '../../storage/prefs_manager.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_info.dart';
 import 'frame_adapter.dart';
+import 'place_cell.dart';
 import 'radio_route_keeper.dart';
 
 /// Pathfinder: the path graph's hook into the app.
@@ -204,6 +205,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     );
     connector.onContactMessageCopy = keeper.onCopy;
     connector.onSendLadderEnded = keeper.reassert;
+    connector.selfGps.addListener(_syncPlace);
     _radioReady = false;
     WidgetsBinding.instance.addObserver(this);
     _onConnectorChanged();
@@ -255,9 +257,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   void _sweep() {
     final report = _graph?.sweepStale();
     if (report == null || report.isEmpty) return;
-    appLogger.info(
-        'path graph sweep: removed ${report.totalRemoved}, '
-        'cleared ${report.positionsCleared} positions',
+    appLogger.info('path graph sweep: removed ${report.totalRemoved}',
         tag: 'PathGraph');
   }
 
@@ -271,6 +271,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _notifyThrottle = null;
     await _frames?.cancel();
     _connector?.removeListener(_onConnectorChanged);
+    _connector?.selfGps.removeListener(_syncPlace);
     _connector?.onFirmwarePathLearned = null;
     _connector?.onSendAttemptResult = null;
     _connector?.onSendAttemptStarted = null;
@@ -377,6 +378,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       sw,
       detail: '${all.length} contacts',
     );
+    _syncPlace();
     // Routes are proved only from PATH_UPDATED (_onFirmwarePath), never
     // from the contact list: the list cannot tell a firmware route from
     // one this app wrote in an earlier session (a graph route, a Custom
@@ -384,6 +386,44 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     // reconnect broke one-proof-per-event. A route the radio learned while
     // the app was closed waits for its next PATH_UPDATED — a missed proof,
     // never a false one.
+  }
+
+  /// The radio's position reaches the graph only as a cell about 500 m
+  /// across ([PlaceCell]), and only while it is a live fix: a GPS the
+  /// radio has and has on, firmware that reports it, and a reading that
+  /// has moved off the position the radio reported at connect (a stored
+  /// position after a restart looks like a fix). Nothing here sends a
+  /// frame; the connector already polls the position while GPS is on.
+  /// The log says that the area is known or changed, never which.
+  void _syncPlace() {
+    final graph = _graph;
+    final c = _connector;
+    if (graph == null || c == null) return;
+    final fix = c.selfGps.value;
+    final live = c.isConnected &&
+        c.hasGps &&
+        c.gpsOn &&
+        (c.firmwareVerCode ?? 0) >= 6 &&
+        c.selfPositionIsLive &&
+        fix != null;
+    if (!live) {
+      if (graph.currentCell == null) return;
+      graph.setPlace(null, const {});
+      appLogger.info('Pathfinder no longer knows the area the radio is in',
+          tag: 'PathGraph');
+      _notifySoon();
+      return;
+    }
+    final cell = PlaceCell.of(fix.latitude, fix.longitude);
+    if (cell.key == graph.currentCell) return;
+    final first = graph.currentCell == null;
+    graph.setPlace(cell.key, cell.near);
+    appLogger.info(
+        first
+            ? 'Pathfinder knows the area the radio is in (about 500 m)'
+            : 'Pathfinder: the radio moved to another area',
+        tag: 'PathGraph');
+    _notifySoon();
   }
 
   /// Observations flush on a 30 s debounce; an Android kill inside that

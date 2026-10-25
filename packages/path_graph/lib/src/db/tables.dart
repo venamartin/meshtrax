@@ -68,8 +68,6 @@ class ContactIngress extends Table {
   RealColumn get weight => real()();
   IntColumn get lastSeen => integer()();
   TextColumn get evidence => text()();
-  RealColumn get observedLat => real().nullable()();
-  RealColumn get observedLon => real().nullable()();
 
   /// Arrival millis of the last proof in the SENDING direction (a
   /// delivered send, a trace, a Discover answer). Null = only ever

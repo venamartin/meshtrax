@@ -66,7 +66,7 @@ class DiscoverResponse {
   final double? rxSnr;
 }
 
-/// Geographic position (any of the three optional sources).
+/// Geographic position of a repeater, from its advert.
 class GeoPosition {
   const GeoPosition(this.lat, this.lon);
   final double lat;
@@ -356,10 +356,29 @@ class PathGraph {
   /// Identity of the connected radio; scopes egress rows and default
   /// observation stride.
   void setRadioIdentity(String selfPubkey, int stride) {
-    if (_selfPubkey != selfPubkey.toLowerCase()) clearHints();
+    if (_selfPubkey != selfPubkey.toLowerCase()) {
+      clearHints();
+      setPlace(null, const {});
+    }
     _selfPubkey = selfPubkey.toLowerCase();
     _selfStride = stride;
   }
+
+  // Where the radio is, as an opaque cell key the app computes from the
+  // radio's own GPS (about 500 m across) plus the cells around it. Never
+  // a coordinate, never stored, never logged: the owner's rule is that
+  // no precise location is kept (2026-10-25). Null when the radio has no
+  // live fix.
+  String? _cell;
+  Set<String> _nearCells = const {};
+
+  void setPlace(String? cell, Set<String> near) {
+    _cell = cell;
+    _nearCells = cell == null ? const {} : {cell, ...near};
+  }
+
+  String? get currentCell => _cell;
+  Set<String> get nearCells => _nearCells;
 
   /// Forgets every contact's inbound paths (the splice's hints): another
   /// radio, another mesh, or the graph was cleared.
@@ -385,7 +404,6 @@ class PathGraph {
     int stride,
     ObservationOrigin origin, {
     double? rxSnr,
-    GeoPosition? position,
     String? messageId,
     bool lastHopHeard = true,
   }) {
@@ -462,8 +480,7 @@ class PathGraph {
     // the graph knows: a junk last hop heard loud is still junk.
     final self = _selfPubkey;
     if (self != null && lastHopHeard && known(hops.last)) {
-      _evidence.recordLastHop(self, hops.last, arrival,
-          lat: position?.lat, lon: position?.lon, downlinkSnr: rxSnr);
+      _evidence.recordLastHop(self, hops.last, arrival, downlinkSnr: rxSnr);
       if (hopCount >= 2 && known(hops[hopCount - 2])) {
         _evidence.recordPenultimate(self, hops[hopCount - 2]);
       }
@@ -731,7 +748,6 @@ class PathGraph {
   /// Proven egress refresh; supersede/slash only in a failure episode.
   void observeDiscoverResults(
     List<DiscoverResponse> responses, {
-    GeoPosition? position,
     required bool failureEpisode,
   }) {
     final self = _selfPubkey;
@@ -1124,8 +1140,7 @@ class PathGraph {
           );
 
   /// Contact mirror feed (full PK→name refresh on connect, add/rename).
-  void ingestContact(String contactPubkey, String name,
-      {GeoPosition? position}) {
+  void ingestContact(String contactPubkey, String name) {
     _evidence.ingestContact(contactPubkey.toLowerCase(), name, _arrivalMillis);
     _scheduleFlush();
   }
@@ -1721,8 +1736,6 @@ class PathGraph {
             'last_seen': e.value.lastSeen,
             'tier': e.value.tier.name,
             if (e.value.provenAt != null) 'proven_at': e.value.provenAt,
-            if (e.value.observedLat != null) 'lat': e.value.observedLat,
-            if (e.value.observedLon != null) 'lon': e.value.observedLon,
             if (e.value.uplinkSnr != null) 'uplink_snr': e.value.uplinkSnr,
             if (e.value.downlinkSnr != null)
               'downlink_snr': e.value.downlinkSnr,
@@ -1818,8 +1831,6 @@ class PathGraph {
           weight: (i['weight'] as num).toDouble(),
           lastSeen: (i['last_seen'] as num).toInt(),
           tier: EvidenceTier.values.byName(i['tier'] as String),
-          observedLat: (i['lat'] as num?)?.toDouble(),
-          observedLon: (i['lon'] as num?)?.toDouble(),
         )
               ..provenAt = (i['proven_at'] as num?)?.toInt()
               ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()

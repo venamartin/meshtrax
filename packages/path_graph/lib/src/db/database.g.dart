@@ -1171,18 +1171,6 @@ class $ContactIngressTable extends ContactIngress
   late final GeneratedColumn<String> evidence = GeneratedColumn<String>(
       'evidence', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _observedLatMeta =
-      const VerificationMeta('observedLat');
-  @override
-  late final GeneratedColumn<double> observedLat = GeneratedColumn<double>(
-      'observed_lat', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _observedLonMeta =
-      const VerificationMeta('observedLon');
-  @override
-  late final GeneratedColumn<double> observedLon = GeneratedColumn<double>(
-      'observed_lon', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
   static const VerificationMeta _provenAtMeta =
       const VerificationMeta('provenAt');
   @override
@@ -1252,8 +1240,6 @@ class $ContactIngressTable extends ContactIngress
         weight,
         lastSeen,
         evidence,
-        observedLat,
-        observedLon,
         provenAt,
         uplinkSnr,
         downlinkSnr,
@@ -1307,18 +1293,6 @@ class $ContactIngressTable extends ContactIngress
           evidence.isAcceptableOrUnknown(data['evidence']!, _evidenceMeta));
     } else if (isInserting) {
       context.missing(_evidenceMeta);
-    }
-    if (data.containsKey('observed_lat')) {
-      context.handle(
-          _observedLatMeta,
-          observedLat.isAcceptableOrUnknown(
-              data['observed_lat']!, _observedLatMeta));
-    }
-    if (data.containsKey('observed_lon')) {
-      context.handle(
-          _observedLonMeta,
-          observedLon.isAcceptableOrUnknown(
-              data['observed_lon']!, _observedLonMeta));
     }
     if (data.containsKey('proven_at')) {
       context.handle(_provenAtMeta,
@@ -1389,10 +1363,6 @@ class $ContactIngressTable extends ContactIngress
           .read(DriftSqlType.int, data['${effectivePrefix}last_seen'])!,
       evidence: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}evidence'])!,
-      observedLat: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}observed_lat']),
-      observedLon: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}observed_lon']),
       provenAt: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}proven_at']),
       uplinkSnr: attachedDatabase.typeMapping
@@ -1427,8 +1397,6 @@ class ContactIngressData extends DataClass
   final double weight;
   final int lastSeen;
   final String evidence;
-  final double? observedLat;
-  final double? observedLon;
 
   /// Arrival millis of the last proof in the SENDING direction (a
   /// delivered send, a trace, a Discover answer). Null = only ever
@@ -1473,8 +1441,6 @@ class ContactIngressData extends DataClass
       required this.weight,
       required this.lastSeen,
       required this.evidence,
-      this.observedLat,
-      this.observedLon,
       this.provenAt,
       this.uplinkSnr,
       this.downlinkSnr,
@@ -1492,12 +1458,6 @@ class ContactIngressData extends DataClass
     map['weight'] = Variable<double>(weight);
     map['last_seen'] = Variable<int>(lastSeen);
     map['evidence'] = Variable<String>(evidence);
-    if (!nullToAbsent || observedLat != null) {
-      map['observed_lat'] = Variable<double>(observedLat);
-    }
-    if (!nullToAbsent || observedLon != null) {
-      map['observed_lon'] = Variable<double>(observedLon);
-    }
     if (!nullToAbsent || provenAt != null) {
       map['proven_at'] = Variable<int>(provenAt);
     }
@@ -1527,12 +1487,6 @@ class ContactIngressData extends DataClass
       weight: Value(weight),
       lastSeen: Value(lastSeen),
       evidence: Value(evidence),
-      observedLat: observedLat == null && nullToAbsent
-          ? const Value.absent()
-          : Value(observedLat),
-      observedLon: observedLon == null && nullToAbsent
-          ? const Value.absent()
-          : Value(observedLon),
       provenAt: provenAt == null && nullToAbsent
           ? const Value.absent()
           : Value(provenAt),
@@ -1564,8 +1518,6 @@ class ContactIngressData extends DataClass
       weight: serializer.fromJson<double>(json['weight']),
       lastSeen: serializer.fromJson<int>(json['lastSeen']),
       evidence: serializer.fromJson<String>(json['evidence']),
-      observedLat: serializer.fromJson<double?>(json['observedLat']),
-      observedLon: serializer.fromJson<double?>(json['observedLon']),
       provenAt: serializer.fromJson<int?>(json['provenAt']),
       uplinkSnr: serializer.fromJson<double?>(json['uplinkSnr']),
       downlinkSnr: serializer.fromJson<double?>(json['downlinkSnr']),
@@ -1586,8 +1538,6 @@ class ContactIngressData extends DataClass
       'weight': serializer.toJson<double>(weight),
       'lastSeen': serializer.toJson<int>(lastSeen),
       'evidence': serializer.toJson<String>(evidence),
-      'observedLat': serializer.toJson<double?>(observedLat),
-      'observedLon': serializer.toJson<double?>(observedLon),
       'provenAt': serializer.toJson<int?>(provenAt),
       'uplinkSnr': serializer.toJson<double?>(uplinkSnr),
       'downlinkSnr': serializer.toJson<double?>(downlinkSnr),
@@ -1606,8 +1556,6 @@ class ContactIngressData extends DataClass
           double? weight,
           int? lastSeen,
           String? evidence,
-          Value<double?> observedLat = const Value.absent(),
-          Value<double?> observedLon = const Value.absent(),
           Value<int?> provenAt = const Value.absent(),
           Value<double?> uplinkSnr = const Value.absent(),
           Value<double?> downlinkSnr = const Value.absent(),
@@ -1623,8 +1571,6 @@ class ContactIngressData extends DataClass
         weight: weight ?? this.weight,
         lastSeen: lastSeen ?? this.lastSeen,
         evidence: evidence ?? this.evidence,
-        observedLat: observedLat.present ? observedLat.value : this.observedLat,
-        observedLon: observedLon.present ? observedLon.value : this.observedLon,
         provenAt: provenAt.present ? provenAt.value : this.provenAt,
         uplinkSnr: uplinkSnr.present ? uplinkSnr.value : this.uplinkSnr,
         downlinkSnr: downlinkSnr.present ? downlinkSnr.value : this.downlinkSnr,
@@ -1646,10 +1592,6 @@ class ContactIngressData extends DataClass
       weight: data.weight.present ? data.weight.value : this.weight,
       lastSeen: data.lastSeen.present ? data.lastSeen.value : this.lastSeen,
       evidence: data.evidence.present ? data.evidence.value : this.evidence,
-      observedLat:
-          data.observedLat.present ? data.observedLat.value : this.observedLat,
-      observedLon:
-          data.observedLon.present ? data.observedLon.value : this.observedLon,
       provenAt: data.provenAt.present ? data.provenAt.value : this.provenAt,
       uplinkSnr: data.uplinkSnr.present ? data.uplinkSnr.value : this.uplinkSnr,
       downlinkSnr:
@@ -1680,8 +1622,6 @@ class ContactIngressData extends DataClass
           ..write('weight: $weight, ')
           ..write('lastSeen: $lastSeen, ')
           ..write('evidence: $evidence, ')
-          ..write('observedLat: $observedLat, ')
-          ..write('observedLon: $observedLon, ')
           ..write('provenAt: $provenAt, ')
           ..write('uplinkSnr: $uplinkSnr, ')
           ..write('downlinkSnr: $downlinkSnr, ')
@@ -1702,8 +1642,6 @@ class ContactIngressData extends DataClass
       weight,
       lastSeen,
       evidence,
-      observedLat,
-      observedLon,
       provenAt,
       uplinkSnr,
       downlinkSnr,
@@ -1722,8 +1660,6 @@ class ContactIngressData extends DataClass
           other.weight == this.weight &&
           other.lastSeen == this.lastSeen &&
           other.evidence == this.evidence &&
-          other.observedLat == this.observedLat &&
-          other.observedLon == this.observedLon &&
           other.provenAt == this.provenAt &&
           other.uplinkSnr == this.uplinkSnr &&
           other.downlinkSnr == this.downlinkSnr &&
@@ -1741,8 +1677,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
   final Value<double> weight;
   final Value<int> lastSeen;
   final Value<String> evidence;
-  final Value<double?> observedLat;
-  final Value<double?> observedLon;
   final Value<int?> provenAt;
   final Value<double?> uplinkSnr;
   final Value<double?> downlinkSnr;
@@ -1759,8 +1693,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.weight = const Value.absent(),
     this.lastSeen = const Value.absent(),
     this.evidence = const Value.absent(),
-    this.observedLat = const Value.absent(),
-    this.observedLon = const Value.absent(),
     this.provenAt = const Value.absent(),
     this.uplinkSnr = const Value.absent(),
     this.downlinkSnr = const Value.absent(),
@@ -1778,8 +1710,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     required double weight,
     required int lastSeen,
     required String evidence,
-    this.observedLat = const Value.absent(),
-    this.observedLon = const Value.absent(),
     this.provenAt = const Value.absent(),
     this.uplinkSnr = const Value.absent(),
     this.downlinkSnr = const Value.absent(),
@@ -1801,8 +1731,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     Expression<double>? weight,
     Expression<int>? lastSeen,
     Expression<String>? evidence,
-    Expression<double>? observedLat,
-    Expression<double>? observedLon,
     Expression<int>? provenAt,
     Expression<double>? uplinkSnr,
     Expression<double>? downlinkSnr,
@@ -1820,8 +1748,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       if (weight != null) 'weight': weight,
       if (lastSeen != null) 'last_seen': lastSeen,
       if (evidence != null) 'evidence': evidence,
-      if (observedLat != null) 'observed_lat': observedLat,
-      if (observedLon != null) 'observed_lon': observedLon,
       if (provenAt != null) 'proven_at': provenAt,
       if (uplinkSnr != null) 'uplink_snr': uplinkSnr,
       if (downlinkSnr != null) 'downlink_snr': downlinkSnr,
@@ -1841,8 +1767,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       Value<double>? weight,
       Value<int>? lastSeen,
       Value<String>? evidence,
-      Value<double?>? observedLat,
-      Value<double?>? observedLon,
       Value<int?>? provenAt,
       Value<double?>? uplinkSnr,
       Value<double?>? downlinkSnr,
@@ -1859,8 +1783,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       weight: weight ?? this.weight,
       lastSeen: lastSeen ?? this.lastSeen,
       evidence: evidence ?? this.evidence,
-      observedLat: observedLat ?? this.observedLat,
-      observedLon: observedLon ?? this.observedLon,
       provenAt: provenAt ?? this.provenAt,
       uplinkSnr: uplinkSnr ?? this.uplinkSnr,
       downlinkSnr: downlinkSnr ?? this.downlinkSnr,
@@ -1891,12 +1813,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     }
     if (evidence.present) {
       map['evidence'] = Variable<String>(evidence.value);
-    }
-    if (observedLat.present) {
-      map['observed_lat'] = Variable<double>(observedLat.value);
-    }
-    if (observedLon.present) {
-      map['observed_lon'] = Variable<double>(observedLon.value);
     }
     if (provenAt.present) {
       map['proven_at'] = Variable<int>(provenAt.value);
@@ -1939,8 +1855,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
           ..write('weight: $weight, ')
           ..write('lastSeen: $lastSeen, ')
           ..write('evidence: $evidence, ')
-          ..write('observedLat: $observedLat, ')
-          ..write('observedLon: $observedLon, ')
           ..write('provenAt: $provenAt, ')
           ..write('uplinkSnr: $uplinkSnr, ')
           ..write('downlinkSnr: $downlinkSnr, ')
@@ -3046,8 +2960,6 @@ typedef $$ContactIngressTableCreateCompanionBuilder = ContactIngressCompanion
   required double weight,
   required int lastSeen,
   required String evidence,
-  Value<double?> observedLat,
-  Value<double?> observedLon,
   Value<int?> provenAt,
   Value<double?> uplinkSnr,
   Value<double?> downlinkSnr,
@@ -3066,8 +2978,6 @@ typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
   Value<double> weight,
   Value<int> lastSeen,
   Value<String> evidence,
-  Value<double?> observedLat,
-  Value<double?> observedLon,
   Value<int?> provenAt,
   Value<double?> uplinkSnr,
   Value<double?> downlinkSnr,
@@ -3103,12 +3013,6 @@ class $$ContactIngressTableFilterComposer
 
   ColumnFilters<String> get evidence => $composableBuilder(
       column: $table.evidence, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get observedLat => $composableBuilder(
-      column: $table.observedLat, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get observedLon => $composableBuilder(
-      column: $table.observedLon, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get provenAt => $composableBuilder(
       column: $table.provenAt, builder: (column) => ColumnFilters(column));
@@ -3165,12 +3069,6 @@ class $$ContactIngressTableOrderingComposer
   ColumnOrderings<String> get evidence => $composableBuilder(
       column: $table.evidence, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get observedLat => $composableBuilder(
-      column: $table.observedLat, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get observedLon => $composableBuilder(
-      column: $table.observedLon, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<int> get provenAt => $composableBuilder(
       column: $table.provenAt, builder: (column) => ColumnOrderings(column));
 
@@ -3225,12 +3123,6 @@ class $$ContactIngressTableAnnotationComposer
 
   GeneratedColumn<String> get evidence =>
       $composableBuilder(column: $table.evidence, builder: (column) => column);
-
-  GeneratedColumn<double> get observedLat => $composableBuilder(
-      column: $table.observedLat, builder: (column) => column);
-
-  GeneratedColumn<double> get observedLon => $composableBuilder(
-      column: $table.observedLon, builder: (column) => column);
 
   GeneratedColumn<int> get provenAt =>
       $composableBuilder(column: $table.provenAt, builder: (column) => column);
@@ -3293,8 +3185,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<double> weight = const Value.absent(),
             Value<int> lastSeen = const Value.absent(),
             Value<String> evidence = const Value.absent(),
-            Value<double?> observedLat = const Value.absent(),
-            Value<double?> observedLon = const Value.absent(),
             Value<int?> provenAt = const Value.absent(),
             Value<double?> uplinkSnr = const Value.absent(),
             Value<double?> downlinkSnr = const Value.absent(),
@@ -3312,8 +3202,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             weight: weight,
             lastSeen: lastSeen,
             evidence: evidence,
-            observedLat: observedLat,
-            observedLon: observedLon,
             provenAt: provenAt,
             uplinkSnr: uplinkSnr,
             downlinkSnr: downlinkSnr,
@@ -3331,8 +3219,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             required double weight,
             required int lastSeen,
             required String evidence,
-            Value<double?> observedLat = const Value.absent(),
-            Value<double?> observedLon = const Value.absent(),
             Value<int?> provenAt = const Value.absent(),
             Value<double?> uplinkSnr = const Value.absent(),
             Value<double?> downlinkSnr = const Value.absent(),
@@ -3350,8 +3236,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             weight: weight,
             lastSeen: lastSeen,
             evidence: evidence,
-            observedLat: observedLat,
-            observedLon: observedLon,
             provenAt: provenAt,
             uplinkSnr: uplinkSnr,
             downlinkSnr: downlinkSnr,
