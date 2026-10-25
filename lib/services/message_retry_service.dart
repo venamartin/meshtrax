@@ -73,6 +73,10 @@ class RetryServiceConfig {
   // was heard echoing a flood of it (null: no flood of it was observable).
   final void Function(String contactKey,
       {required bool delivered, required bool? echoHeard})? onSendOutcome;
+  // A flood attempt that went on the air ended: its ACK came, or its wait
+  // ran out. Floods are never reported through onAttemptResult (nothing
+  // to judge a route by), but Pathfinder still needs to know.
+  final void Function(Contact, {required bool delivered})? onFloodAttemptEnded;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
 
@@ -95,6 +99,7 @@ class RetryServiceConfig {
     this.onAckMatched,
     this.onLadderEnded,
     this.onSendOutcome,
+    this.onFloodAttemptEnded,
     this.appSettingsService,
     this.debugLogService,
   });
@@ -697,6 +702,10 @@ class MessageRetryService extends ChangeNotifier {
     );
     config.updateMessage(parked);
     notifyListeners();
+    // A flood nobody echoed is a flood that ended without delivery for
+    // now: Pathfinder may answer it with one Discover, whose answers are
+    // repeater transmissions that resume the parked message.
+    config.onFloodAttemptEnded?.call(contact, delivered: false);
   }
 
   /// A repeater's transmission reached this radio: every parked message
@@ -736,6 +745,11 @@ class MessageRetryService extends ChangeNotifier {
   }
 
   bool get hasPendingMessages => _pendingMessages.isNotEmpty;
+
+  /// A message is queued, on the air, awaiting its ACK, or parked for a
+  /// repeater to come into range: something still wants to be sent.
+  bool get hasMessagesWaiting => _pendingMessages.values.any((m) =>
+      m.status == MessageStatus.pending || m.status == MessageStatus.sent);
 
   /// A message is queued, on the air or awaiting its ACK. Failed messages
   /// kept for a late ACK do not count.
@@ -866,6 +880,12 @@ class MessageRetryService extends ChangeNotifier {
     );
 
     _reportTimedOut(messageId, message.retryCount);
+    final timedOut = _attemptRoutes[messageId]?[message.retryCount];
+    if (timedOut != null &&
+        timedOut.useFlood &&
+        (_onAir[messageId]?.contains(message.retryCount) ?? false)) {
+      config?.onFloodAttemptEnded?.call(contact, delivered: false);
+    }
 
     if (message.retryCount < _attemptBudget(messageId) - 1) {
       const backoffMs = retryBackoffMs;
@@ -1013,6 +1033,9 @@ class MessageRetryService extends ChangeNotifier {
       // that happened to be in flight — its route too, since a later
       // attempt may have overwritten the message's.
       final acked = _attemptRoutes[matchedMessageId]?[ackedAttempt];
+      if (acked != null && acked.useFlood && contact != null) {
+        config?.onFloodAttemptEnded?.call(contact, delivered: true);
+      }
       final deliveredMessage = message.copyWith(
         status: MessageStatus.delivered,
         deliveredAt: DateTime.now(),

@@ -126,12 +126,7 @@ void main() {
   test('a failed flood attempt asks too, while the ladder is still running',
       () async {
     final (service, c) = await doubtful();
-    c.onSendAttemptResult!(
-        _bob,
-        const PathSelection(
-            pathBytes: [], hopCount: 0, hashSize: 2, useFlood: true),
-        false,
-        null);
+    c.onFloodAttemptEnded!(_bob, delivered: false);
     await settle();
     expect(c.discovers, 1);
     await service.stop();

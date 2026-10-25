@@ -63,6 +63,7 @@ void main() {
     expect(c.onChannelPacketHeard, isNull);
     expect(c.onOwnEchoHeard, isNull);
     expect(c.onSendOutcome, isNull);
+    expect(c.onFloodAttemptEnded, isNull);
     expect(c.graphRoomNeedsRelearn, isNull);
   });
 

@@ -444,9 +444,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (_retryService?.hasMessagesInFlight ?? false) ||
       _pendingChannelSentQueue.isNotEmpty;
 
-  /// A DM or room post is queued, on the air or awaiting its ACK: the
-  /// sends Pathfinder routes (channel messages are not).
-  bool get hasDmSendsInFlight => _retryService?.hasMessagesInFlight ?? false;
+  /// A DM or room post is queued, on the air, awaiting its ACK or parked
+  /// for a repeater: a send Pathfinder routes still wants to go (channel
+  /// messages are not its concern).
+  bool get hasDmSendsInFlight => _retryService?.hasMessagesWaiting ?? false;
 
   /// A channel message is waiting for the radio's OK.
   bool get hasChannelSendsQueued => _pendingChannelSentQueue.isNotEmpty;
@@ -1440,6 +1441,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         onSendOutcome: (contactKey, {required delivered, required echoHeard}) =>
             onSendOutcome?.call(contactKey,
                 delivered: delivered, echoHeard: echoHeard),
+        onFloodAttemptEnded: (contact, {required delivered}) =>
+            onFloodAttemptEnded?.call(contact, delivered: delivered),
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
       ),
@@ -1616,6 +1619,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// (null when no flood of it could have been observed).
   void Function(String contactKey,
       {required bool delivered, required bool? echoHeard})? onSendOutcome;
+
+  /// A flood attempt to [Contact] that went on the air got its ACK, or
+  /// its wait ran out (floods never go through [onSendAttemptResult]).
+  void Function(Contact, {required bool delivered})? onFloodAttemptEnded;
 
   /// A DM or room post from [contact] arrived while connected (copies
   /// drained after a reconnect are not passed on): its sender timestamp,

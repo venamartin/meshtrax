@@ -230,6 +230,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onContactMessageCopy = keeper.onCopy;
     connector.onSendLadderEnded = keeper.reassert;
     connector.onSendOutcome = _onSendOutcome;
+    connector.onFloodAttemptEnded = _onFloodAttempt;
     connector.graphRoomNeedsRelearn = roomNeedsRelearnAfterMove;
     connector.selfGps.addListener(_syncPlace);
     _radioReady = false;
@@ -312,6 +313,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
     _connector?.onSendOutcome = null;
+    _connector?.onFloodAttemptEnded = null;
     _connector?.graphRoomNeedsRelearn = null;
     _keeper?.dispose();
     _keeper = null;
@@ -643,22 +645,24 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           'a whole send went unanswered and no repeater echoed it',
       };
 
+  /// A flood attempt ended. Delivered: their radio learned the way back
+  /// from where I am now. Not delivered: the step most worth a Discover
+  /// after, since the ladder is still running and its next rung can use
+  /// the answers (the simulator's deaf-here run, 2026-10-25).
+  void _onFloodAttempt(Contact contact, {required bool delivered}) {
+    final graph = _graph;
+    if (graph == null) return;
+    if (delivered) {
+      graph.reportFloodDelivered(contact.publicKeyHex);
+    } else {
+      _considerDiscover(contact.publicKeyHex);
+    }
+  }
+
   void _onAttemptResult(
       Contact contact, PathSelection selection, bool delivered, int? tripMs) {
     final graph = _graph;
-    if (graph == null) return;
-    if (selection.useFlood) {
-      // Their radio learned the way back from where I am now.
-      if (delivered) {
-        graph.reportFloodDelivered(contact.publicKeyHex);
-      } else {
-        // A flood that got no ACK is the step most worth a Discover after:
-        // the ladder is still running, and its next rung can use the
-        // answers (the simulator's deaf-here run, 2026-10-25).
-        _considerDiscover(contact.publicKeyHex);
-      }
-      return;
-    }
+    if (graph == null || selection.useFlood) return;
     final guessed = selection.guessedHops;
     appLogger.info(
         '${delivered ? "delivered" : "failed"} to ${contact.name} via '
