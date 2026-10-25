@@ -62,6 +62,7 @@ void main() {
     expect(c.onContactMessageHeard, isNull);
     expect(c.onChannelPacketHeard, isNull);
     expect(c.onOwnEchoHeard, isNull);
+    expect(c.onSendOutcome, isNull);
   });
 
   test('two starts at once open one graph', () async {

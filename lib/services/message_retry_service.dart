@@ -69,6 +69,10 @@ class RetryServiceConfig {
   // The last ladder to this contact (pubkey hex) ended: the route it left
   // on the radio is no longer the ladder's to hold.
   final void Function(String contactKey)? onLadderEnded;
+  // One message's ladder is over: delivered or not, and whether a repeater
+  // was heard echoing a flood of it (null: no flood of it was observable).
+  final void Function(String contactKey,
+      {required bool delivered, required bool? echoHeard})? onSendOutcome;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
 
@@ -90,6 +94,7 @@ class RetryServiceConfig {
     this.onAttemptStarted,
     this.onAckMatched,
     this.onLadderEnded,
+    this.onSendOutcome,
     this.appSettingsService,
     this.debugLogService,
   });
@@ -287,7 +292,7 @@ class MessageRetryService extends ChangeNotifier {
             _pendingMessages[messageId] = failed;
             _config?.updateMessage(failed);
           }
-          _onMessageResolved(messageId, contactKey);
+          _onMessageResolved(messageId, contactKey, delivered: false);
         });
         return;
       }
@@ -357,13 +362,25 @@ class MessageRetryService extends ChangeNotifier {
       ? math.min(maxRetries, maxAttemptsForNearMaxText)
       : maxRetries;
 
-  void _onMessageResolved(String messageId, String contactKey) {
+  void _onMessageResolved(String messageId, String contactKey,
+      {required bool delivered}) {
     if (_resolvedMessages.contains(messageId)) return;
     _resolvedMessages.add(messageId);
     _activeMessages.remove(messageId);
+    _config?.onSendOutcome?.call(contactKey,
+        delivered: delivered,
+        echoHeard: _echoHeard.remove(messageId)
+            ? true
+            : _echoObservable.remove(messageId)
+                ? false
+                : null);
     _sendNextForContact(contactKey);
     if (!isSendingTo(contactKey)) _config?.onLadderEnded?.call(contactKey);
   }
+
+  // Messages a flood of which could be seen echoed, and those one was.
+  final Set<String> _echoObservable = {};
+  final Set<String> _echoHeard = {};
 
   /// Whether a message to [contactKey] is on its ladder now: that ladder
   /// owns the route stored on the radio.
@@ -630,6 +647,7 @@ class MessageRetryService extends ChangeNotifier {
     final waitMs = TimeoutHelper.echoWaitMs(
         airtime(txtMsgPacketBytes(textBytes, hops: width)), attemptTimeoutMs);
     _echoWaitMs[messageId] = waitMs;
+    _echoObservable.add(messageId);
     _echoTimers[messageId]?.cancel();
     _echoTimers[messageId] =
         Timer(Duration(milliseconds: waitMs), () => _park(messageId));
@@ -641,6 +659,7 @@ class MessageRetryService extends ChangeNotifier {
     for (final id in _echoTimers.keys.toList()) {
       final key = _pendingContacts[id]?.publicKey;
       if (key == null || key.isEmpty || key[0] != destByte) continue;
+      _echoHeard.add(id);
       _echoTimers.remove(id)?.cancel();
     }
   }
@@ -817,6 +836,8 @@ class MessageRetryService extends ChangeNotifier {
     _reported.remove(messageId);
     _echoTimers.remove(messageId)?.cancel();
     _echoWaitMs.remove(messageId);
+    _echoObservable.remove(messageId);
+    _echoHeard.remove(messageId);
     _parkedReady.remove(messageId);
     _cooldownTimers.remove(messageId)?.cancel();
     _autoResends.remove(messageId);
@@ -882,7 +903,7 @@ class MessageRetryService extends ChangeNotifier {
 
       notifyListeners();
 
-      _onMessageResolved(messageId, contact.publicKeyHex);
+      _onMessageResolved(messageId, contact.publicKeyHex, delivered: false);
 
       // Keep the message matchable so a late ACK from any attempt still
       // flips it to delivered; the firmware holds 8 expected ACKs itself.
@@ -1017,7 +1038,8 @@ class MessageRetryService extends ChangeNotifier {
       config?.updateMessage(deliveredMessage);
 
       if (contact != null && !wasAlreadyResolved) {
-        _onMessageResolved(matchedMessageId, contact.publicKeyHex);
+        _onMessageResolved(matchedMessageId, contact.publicKeyHex,
+            delivered: true);
       }
 
       // After the queue has moved on, so the listener can tell whether

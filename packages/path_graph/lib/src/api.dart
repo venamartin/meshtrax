@@ -68,6 +68,27 @@ class DiscoverResponse {
   final double? rxSnr;
 }
 
+/// Why Pathfinder would like one Discover now ([PathGraph.selfAdvice]):
+/// each is a doubt about MY side of the air that one zero-hop request
+/// settles for a packet, where a flood would cost the whole mesh.
+enum DiscoverReason {
+  /// The radio knows its area and no repeater has been heard hearing me
+  /// around here.
+  noDoorstepHere,
+
+  /// The radio has moved to another area since a doorstep last proved it
+  /// hears me.
+  movedSinceProof,
+
+  /// A doorstep of mine is held for failing my sends, toward two or more
+  /// different contacts (or it has gone quiet too): my side, not theirs.
+  doorstepsFailingMe,
+
+  /// A whole ladder, flood included, went unanswered and no repeater
+  /// echoed any of it.
+  ladderUnanswered,
+}
+
 /// Geographic position of a repeater, from its advert.
 class GeoPosition {
   const GeoPosition(this.lat, this.lon);
@@ -104,6 +125,13 @@ enum FloodReason {
   /// The radio knows the area it is in, and no doorstep of mine was ever
   /// heard hearing me there (or the ones that were have failed here).
   doorstepsNotHere,
+
+  /// The radio has moved to another area since this contact last got a
+  /// packet of mine, and their way back ends at a repeater not heard
+  /// hearing me here: a route out would reach them, but their ACK would
+  /// ride their stored route back and die (simulator, 2026-10-25). A
+  /// flood teaches their radio the way back.
+  movedSinceTheyReachedMe,
 
   /// Every repeater heard carrying the contact's packets has failed my last
   /// direct sends to them ([PathGraphConfig.contactFailGate]): it hears
@@ -382,12 +410,98 @@ class PathGraph {
   // live fix.
   String? _cell;
   Set<String> _nearCells = const {};
-  int? _cellChangedAt;
+
+  /// When the radio last left the block of cells it was in (a step to a
+  /// neighbouring cell is not a move). Null until it has.
+  int? _movedAt;
+
+  /// Contacts that have got a packet of mine since that move (a flooded
+  /// delivery, their PATH reply): their radio holds a way back that ends
+  /// where I am now.
+  final Set<String> _reachedSinceMove = {};
 
   void setPlace(String? cell, Set<String> near) {
-    if (cell != _cell) _cellChangedAt = _arrivalMillis;
+    final moved = cell != null && _cell != null && !_nearCells.contains(cell);
+    if (moved) {
+      _movedAt = _arrivalMillis;
+      _reachedSinceMove.clear();
+    }
     _cell = cell;
     _nearCells = cell == null ? const {} : {cell, ...near};
+  }
+
+  /// A flood of mine was delivered to them: their radio now holds the
+  /// way back from where I am.
+  void reportFloodDelivered(String contactPubkey) {
+    _reachedSinceMove.add(contactPubkey.toLowerCase());
+  }
+
+  /// Whether their known way back ends at a repeater heard hearing me
+  /// around here. True when nothing is known about their way back: that
+  /// is no reason to flood.
+  bool _theirWayBackEndsHere(String contactPubkey) {
+    final self = _selfPubkey;
+    if (self == null || _cell == null) return true;
+    final back = findReturnPath(contactPubkey);
+    if (back is! RouteResult) return true;
+    final bytes = back.pathBytes;
+    final last = bytes.sublist(bytes.length - hashWidthBytes);
+    final hash = last.map((b) => b.toRadixString(16).padLeft(2, '0')).join().toUpperCase();
+    return _places.rowIn(self, _nearCells, hash) != null;
+  }
+
+  // What selfAdvice reads: the last time any doorstep proved it hears me,
+  // which contacts each failing doorstep failed toward since it last
+  // proved itself, and when a whole ladder last went unanswered with no
+  // echo heard. Memory only — advice is about now.
+  int? _lastSelfProofAt;
+  final Map<String, Set<String>> _failedToward = {};
+  int? _unansweredLadderAt;
+  static const _unansweredAdviceMinutes = 10;
+
+  /// A ladder to [contactPubkey] ended. [echoHeard]: whether any repeater
+  /// was heard echoing a flood of it; null when no flood of it could have
+  /// been observed (nothing to conclude).
+  void reportLadderEnded(String contactPubkey,
+      {required bool delivered, required bool? echoHeard}) {
+    if (!delivered && echoHeard == false) _unansweredLadderAt = _arrivalMillis;
+  }
+
+  /// Whether one Discover would settle a doubt about my side of the air,
+  /// and which. Null when there is none, and always null while every
+  /// doorstep that reaches [contactPubkey] is failing deliveries to them:
+  /// that doubt is on their side, and a Discover cannot answer it.
+  DiscoverReason? selfAdvice({String? contactPubkey}) {
+    final self = _selfPubkey;
+    if (self == null) return null;
+    final now = _arrivalMillis;
+    if (contactPubkey != null &&
+        _theirDoorstepsAllFailing(contactPubkey.toLowerCase(), now)) {
+      return null;
+    }
+    final mine = _egressCandidates(self, now);
+    if (_cell != null &&
+        (mine.candidates?.isEmpty ?? true) &&
+        mine.held.values.every((r) => r == FloodReason.doorstepsNotHere)) {
+      return _movedAt != null && (_lastSelfProofAt ?? 0) < _movedAt!
+          ? DiscoverReason.movedSinceProof
+          : DiscoverReason.noDoorstepHere;
+    }
+    final all = _evidence.candidatesFor(self, now, isSelf: true);
+    for (final e in mine.held.entries) {
+      if (e.value != FloodReason.doorstepsFailing) continue;
+      final toward = _failedToward[e.key] ?? const <String>{};
+      final c = all.where((x) => x.repeaterHash == e.key).firstOrNull;
+      if (toward.length >= 2 || (c != null && _isQuiet(c, now))) {
+        return DiscoverReason.doorstepsFailingMe;
+      }
+    }
+    final unanswered = _unansweredLadderAt;
+    if (unanswered != null &&
+        now - unanswered <= _unansweredAdviceMinutes * 60 * 1000) {
+      return DiscoverReason.ladderUnanswered;
+    }
+    return null;
   }
 
   String? get currentCell => _cell;
@@ -418,10 +532,13 @@ class PathGraph {
   /// remember that for this area. Only a Discover answer or a trace
   /// brings a level; a proof without one leaves the level alone.
   void _notePlace(String repeater, {double? uplinkSnr}) {
+    final upper = repeater.toUpperCase();
+    _lastSelfProofAt = _arrivalMillis;
+    _failedToward.remove(upper);
+    _unansweredLadderAt = null;
     final self = _selfPubkey, cell = _cell;
     if (self == null || cell == null) return;
-    _places.note(self, cell, repeater.toUpperCase(), _today,
-        uplinkSnr: uplinkSnr);
+    _places.note(self, cell, upper, _today, uplinkSnr: uplinkSnr);
   }
 
   void _failPlace(String repeater) {
@@ -889,6 +1006,11 @@ class PathGraph {
       // (PathGraphConfig.selfFailGate); any proof resets it.
       _evidence.recordFailedEgress(_selfPubkey!, _hopHex(pathBytes, stride, 0));
       _failPlace(_hopHex(pathBytes, stride, 0));
+      if (contactPubkey != null) {
+        _failedToward
+            .putIfAbsent(_hopHex(pathBytes, stride, 0).toUpperCase(), () => {})
+            .add(contactPubkey);
+      }
       // ...and their end likewise: a doorstep that keeps failing deliveries
       // to them stops ending routes (PathGraphConfig.contactFailGate);
       // only a delivery through it resets that.
@@ -903,6 +1025,7 @@ class PathGraph {
       ];
       if (!tally && success && hopCount <= config.maxHops) {
         _liveRoutes[contactPubkey] = (hops: hops, at: arrival);
+        _reachedSinceMove.add(contactPubkey);
       } else if (!success &&
           _liveRoutes[contactPubkey]?.hops.join('>') == hops.join('>')) {
         _liveRoutes.remove(contactPubkey);
@@ -1427,16 +1550,22 @@ class PathGraph {
     }
     now ??= _arrivalMillis;
     if (_staleMoving(c, now, byProof: true)) return FloodReason.doorstepsMoving;
+    if (_isQuiet(c, now)) return FloodReason.doorstepsQuiet;
+    return null;
+  }
+
+  /// Whether doorstep [c] of mine has gone quiet while others are heard
+  /// ([PathGraphConfig.selfSilenceMinutes]).
+  bool _isQuiet(Candidate c, int now) {
+    final self = _selfPubkey;
+    if (self == null) return false;
     final windowMs = (config.selfSilenceMinutes * 60 * 1000).round();
     final newest = _evidence
         .candidatesFor(self, now, isSelf: true)
         .fold(0, (m, x) => x.lastSeen > m ? x.lastSeen : m);
-    if (newest - c.lastSeen > windowMs &&
+    return newest - c.lastSeen > windowMs &&
         _evidence.selfAliveEventsSince(newest - windowMs) >=
-            config.selfSilenceMinEvents) {
-      return FloodReason.doorstepsQuiet;
-    }
-    return null;
+            config.selfSilenceMinEvents;
   }
 
   /// A contact's route end may be a doorstep proven by a delivery or one
@@ -1987,9 +2116,18 @@ class PathGraph {
     // A direct reception from before the radio moved to another area
     // says nothing about here.
     if (_evidence.hasFreshDirect(contactPubkey, now) &&
-        (_cellChangedAt == null ||
-            _evidence.directSeenAt(contactPubkey) >= _cellChangedAt!)) {
+        (_movedAt == null ||
+            _evidence.directSeenAt(contactPubkey) >= _movedAt!)) {
       return const PathResult.direct();
+    }
+
+    // Since the move, nothing of mine has reached them and their way back
+    // ends where I no longer am: a route out would get there and its ACK
+    // would not get back.
+    if (_movedAt != null &&
+        !_reachedSinceMove.contains(contactPubkey) &&
+        !_theirWayBackEndsHere(contactPubkey)) {
+      return const PathResult.flood(FloodReason.movedSinceTheyReachedMe);
     }
 
     // Tier 2: the route a flood of mine just took to them.

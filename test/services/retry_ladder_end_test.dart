@@ -25,6 +25,7 @@ void main() {
   late MessageRetryService svc;
   late List<({String text, int attempt, int ts})> sends;
   late List<String> ended;
+  late List<({String key, bool delivered, bool? echoHeard})> outcomes;
 
   int ackFor(int i) => MessageRetryService.computeExpectedAckHash(
       sends[i].ts, sends[i].attempt, sends[i].text, selfKey);
@@ -33,7 +34,10 @@ void main() {
     svc = MessageRetryService();
     sends = [];
     ended = [];
+    outcomes = [];
     svc.initialize(RetryServiceConfig(
+      onSendOutcome: (key, {required delivered, required echoHeard}) =>
+          outcomes.add((key: key, delivered: delivered, echoHeard: echoHeard)),
       sendMessage: (_, text, attempt, ts) =>
           sends.add((text: text, attempt: attempt, ts: ts)),
       addMessage: (_, _) {},
@@ -64,6 +68,24 @@ void main() {
       async.flushMicrotasks();
       expect(ended, [bob.publicKeyHex]);
       expect(svc.isSendingTo(bob.publicKeyHex), isFalse);
+      expect(outcomes.map((o) => o.delivered), [true, true],
+          reason: 'one outcome per message, as each is resolved');
+    });
+  });
+
+  test('a message that times out reports an outcome with no echo verdict '
+      'when no flood of it was observable', () {
+    fakeAsync((async) {
+      svc.setMaxRetries(1);
+      svc.sendMessageWithRetry(contact: bob, text: 'lost');
+      async.flushMicrotasks();
+      svc.updateMessageFromSent(ackFor(0), _timeoutMs);
+      async.elapse(const Duration(milliseconds: _timeoutMs + 1));
+      expect(outcomes, hasLength(1));
+      expect(outcomes.single.delivered, isFalse);
+      expect(outcomes.single.echoHeard, isNull,
+          reason: 'no airtime estimator: the echo watch never armed');
+      async.elapse(MessageRetryService.lateAckGrace);
     });
   });
 

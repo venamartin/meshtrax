@@ -205,6 +205,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     );
     connector.onContactMessageCopy = keeper.onCopy;
     connector.onSendLadderEnded = keeper.reassert;
+    connector.onSendOutcome = _onSendOutcome;
     connector.selfGps.addListener(_syncPlace);
     _radioReady = false;
     WidgetsBinding.instance.addObserver(this);
@@ -283,6 +284,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onContactMessageHeard = null;
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
+    _connector?.onSendOutcome = null;
     _keeper?.dispose();
     _keeper = null;
     _connector = null;
@@ -507,10 +509,49 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
 
   /// How one direct DM attempt ended. A delivery proves the route it went
   /// on; a timeout is the small forward penalty. Floods carry no route.
+  /// One message's ladder is over. A ladder that went unanswered with no
+  /// repeater heard echoing its floods is a doubt about my side of the
+  /// air, which one Discover can settle ([PathGraph.selfAdvice]).
+  void _onSendOutcome(String contactKey,
+      {required bool delivered, required bool? echoHeard}) {
+    final graph = _graph;
+    if (graph == null) return;
+    graph.reportLadderEnded(contactKey,
+        delivered: delivered, echoHeard: echoHeard);
+    if (!delivered) _logAdvice(contactKey);
+  }
+
+  /// What Pathfinder would ask of a Discover right now, in the log.
+  void _logAdvice(String contactKey) {
+    final reason = _graph?.selfAdvice(contactPubkey: contactKey);
+    if (reason == null) return;
+    appLogger.info(
+        'Pathfinder would like one Discover: ${discoverReasonText(reason)}',
+        tag: 'PathGraph');
+  }
+
+  /// Why Pathfinder would like a Discover, in plain words.
+  static String discoverReasonText(DiscoverReason reason) => switch (reason) {
+        DiscoverReason.noDoorstepHere =>
+          'no repeater has been heard hearing this radio around here',
+        DiscoverReason.movedSinceProof =>
+          'the radio has moved since a repeater last proved it hears it',
+        DiscoverReason.doorstepsFailingMe =>
+          'the repeaters that hear this radio keep failing its sends to '
+              'more than one contact',
+        DiscoverReason.ladderUnanswered =>
+          'a whole send went unanswered and no repeater echoed it',
+      };
+
   void _onAttemptResult(
       Contact contact, PathSelection selection, bool delivered, int? tripMs) {
     final graph = _graph;
-    if (graph == null || selection.useFlood) return;
+    if (graph == null) return;
+    if (selection.useFlood) {
+      // Their radio learned the way back from where I am now.
+      if (delivered) graph.reportFloodDelivered(contact.publicKeyHex);
+      return;
+    }
     final guessed = selection.guessedHops;
     appLogger.info(
         '${delivered ? "delivered" : "failed"} to ${contact.name} via '
@@ -533,6 +574,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         _graphFailed++;
       }
     }
+    if (!delivered) _logAdvice(contact.publicKeyHex);
     _notifySoon();
   }
 

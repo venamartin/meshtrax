@@ -47,6 +47,8 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear it have not got my last sends through to it',
       FloodReason.doorstepsNotHere =>
         'no repeater has been heard hearing me around here yet',
+      FloodReason.movedSinceTheyReachedMe =>
+        'I have moved since it last got a packet of mine',
     };
   }
   if (back) {
@@ -70,6 +72,8 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear it have not got my last sends through to it',
       FloodReason.doorstepsNotHere =>
         'no repeater has been heard hearing me around here yet',
+      FloodReason.movedSinceTheyReachedMe =>
+        'I have moved since they last got a packet of mine',
     };
   }
   return switch (reason) {
@@ -94,6 +98,9 @@ String floodReasonText(FloodReason reason,
     FloodReason.doorstepsNotHere =>
       'no repeater has been heard hearing me around here yet — flooding so '
           'one can',
+    FloodReason.movedSinceTheyReachedMe =>
+      'I have moved since they last got a packet of mine and their way back '
+          'ends where I was — flooding so their radio learns the new one',
   };
 }
 

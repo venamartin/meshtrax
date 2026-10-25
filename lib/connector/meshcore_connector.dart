@@ -1396,6 +1396,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             onSendAttemptStarted?.call(contact, selection, attempt),
         onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
         onLadderEnded: (contactKey) => onSendLadderEnded?.call(contactKey),
+        onSendOutcome: (contactKey, {required delivered, required echoHeard}) =>
+            onSendOutcome?.call(contactKey,
+                delivered: delivered, echoHeard: echoHeard),
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
       ),
@@ -1566,6 +1569,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   /// The last DM ladder to this contact (pubkey hex) ended.
   void Function(String contactKey)? onSendLadderEnded;
+
+  /// One message's ladder to this contact (pubkey hex) is over: whether it
+  /// was delivered, and whether a repeater was heard echoing a flood of it
+  /// (null when no flood of it could have been observed).
+  void Function(String contactKey,
+      {required bool delivered, required bool? echoHeard})? onSendOutcome;
 
   /// A DM or room post from [contact] arrived while connected (copies
   /// drained after a reconnect are not passed on): its sender timestamp,
