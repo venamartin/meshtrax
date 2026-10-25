@@ -1,5 +1,10 @@
 ## Unreleased
 
+- **Each source is credited once.** `attributionOf` splits a pack's credit
+  on "; " into its sources (keeping Copernicus's "; all rights reserved"),
+  so the GLO-30 credit that Hawaii's base, contours and terrain all carry,
+  as do Alaska's Arctic, Interior and Western packs, shows once, not three
+  times.
 - **Units switch at once.** Switching between feet and metres left labels
   in the old units until the app restarted: the renderer caches tiles by
   theme id, which was the style's name, and both units' variants share it.

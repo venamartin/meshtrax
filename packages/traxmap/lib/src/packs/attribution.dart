@@ -1,14 +1,35 @@
 import 'pack.dart';
 import '../styles/style_registry.dart';
 
-/// Credits for [packs], de-duplicated, as plain text (HTML stripped).
+/// Credits for [packs], one per source and de-duplicated, as plain text
+/// (HTML stripped). A pack joins its sources' credits with "; ", so packs
+/// that share a source (Copernicus in Hawaii's base, contours and terrain)
+/// show it once.
 List<String> attributionOf(Iterable<Pack> packs) {
   final out = <String>[];
   for (final pack in packs) {
     final raw = pack.attribution;
     if (raw == null) continue;
-    final text = _plain(raw);
-    if (text.isNotEmpty && !out.contains(text)) out.add(text);
+    for (final credit in _credits(_plain(raw))) {
+      if (!out.contains(credit)) out.add(credit);
+    }
+  }
+  return out;
+}
+
+/// [text] split into its sources' credits. Copernicus's own credit ends
+/// "; all rights reserved", which stays with it.
+List<String> _credits(String text) {
+  final out = <String>[];
+  for (final part in text.split('; ')) {
+    final credit = part.trim();
+    if (credit.isEmpty) continue;
+    if (out.isNotEmpty &&
+        credit.toLowerCase().startsWith('all rights reserved')) {
+      out.last = '${out.last}; $credit';
+    } else {
+      out.add(credit);
+    }
   }
   return out;
 }
