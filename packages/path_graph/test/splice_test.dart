@@ -223,6 +223,33 @@ void main() {
     expect(route.guessedHops, 2);
   });
 
+  test('a link from before first-seen times were kept counts as old', () async {
+    myEnd();
+    // The export's BEEF→1000 and 1000→AD77 rows predate first_observed:
+    // seen plenty, no date. One fresh sighting of Bob's path is then enough.
+    final doc = graph.saveSession();
+    (doc['edges'] as List).cast<Map<String, Object?>>().addAll([
+      for (final (a, b) in [('BEEF', '1000'), ('1000', 'AD77')])
+        <String, Object?>{
+          'from': a,
+          'to': b,
+          'source': 'observed',
+          's': 0,
+          'n': 0,
+          'traffic_weight': 20.0,
+          'obs_count': 20,
+          'last_observed': nowMillis,
+        },
+    ]);
+    await graph.loadSession(doc);
+    graph.observePath(path([...beef, ...r1000, ...ad77]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk), messageId: 'bob-0');
+
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.pathBytes, [...a277, ...ad77, ...r1000, ...beef]);
+    expect(route.guessedHops, 2);
+  });
+
   test('a channel line matched by name supplies no hint', () {
     myEnd();
     graph.ingestContact(bobPk, 'Bob');

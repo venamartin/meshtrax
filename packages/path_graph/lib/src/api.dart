@@ -607,11 +607,13 @@ class PathGraph {
         final observed = (hops[i - 1], hops[i]);
         final guess = (hops[i], hops[i - 1]);
         if (hops[i] == hops[i - 1] || _store.edges.containsKey(guess)) continue;
+        // A link first seen before the graph kept first-seen times is old
+        // by definition (field 2026-10-24: BEEF→A277 in the real export).
         final seen = _store.edges[observed];
         if (seen == null ||
             seen.obsCount < 2 ||
-            seen.firstObserved == null ||
-            hint.at - seen.firstObserved! < minAgeMs) {
+            (seen.firstObserved != null &&
+                hint.at - seen.firstObserved! < minAgeMs)) {
           continue;
         }
         if (moving.contains(hops[i]) || moving.contains(hops[i - 1])) {
