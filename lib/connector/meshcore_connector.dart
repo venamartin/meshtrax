@@ -7314,6 +7314,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
       if (packet == null) return;
+      // A repeater's own advert, zero hops: a repeater transmission
+      // reached me just as surely as a relayed packet (the parked-message
+      // wake; simulator 2026-10-25, where a 30 s advert was all the air
+      // carried). Node type is the flags byte after key, time, signature.
+      if (packet.payloadType == payloadTypeADVERT &&
+          packet.payload.length > 100 &&
+          (packet.payload[100] & 0x0F) == advTypeRepeater) {
+        _retryService?.noteRepeaterHeard();
+      }
       // Message liveness, any hash width (the raw copy of my own flooded
       // DM carries [their byte][my byte]; a flood with hops passed through
       // a repeater I can hear). Never evidence for Pathfinder: it keeps
