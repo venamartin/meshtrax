@@ -444,6 +444,25 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (_retryService?.hasMessagesInFlight ?? false) ||
       _pendingChannelSentQueue.isNotEmpty;
 
+  /// A DM or room post is queued, on the air or awaiting its ACK: the
+  /// sends Pathfinder routes (channel messages are not).
+  bool get hasDmSendsInFlight => _retryService?.hasMessagesInFlight ?? false;
+
+  /// A channel message is waiting for the radio's OK.
+  bool get hasChannelSendsQueued => _pendingChannelSentQueue.isNotEmpty;
+
+  /// When a Discover that was not ours was last heard: somebody else's
+  /// request, or a repeater's answer carrying another tag. Repeaters
+  /// answer at most 4 Discovers per 2 minutes from everyone combined
+  /// (simple_repeater RateLimiter), so one of ours right after would get
+  /// silence that means nothing.
+  DateTime? get foreignDiscoverHeardAt => _foreignDiscoverHeardAt;
+  DateTime? _foreignDiscoverHeardAt;
+
+  /// Whether the last Discover was Pathfinder's own, not the user's.
+  bool get lastDiscoverAutomatic => _lastDiscoverAutomatic;
+  bool _lastDiscoverAutomatic = false;
+
   // When a room's route was last relearned after a flooded post.
   final Map<String, DateTime> _roomRouteRelearnAt = {};
   static const _roomRouteRelearnCooldown = Duration(minutes: 5);
@@ -5205,13 +5224,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await sendFrame(buildSendSelfAdvertFrame(flood: flood));
   }
 
-  Future<void> sendRepeaterDiscovery() async {
+  /// [automatic]: Pathfinder asked, not the user (the Nearby Repeaters
+  /// dialog says so).
+  Future<void> sendRepeaterDiscovery({bool automatic = false}) async {
     if (!isConnected) return;
 
     final rand = math.Random();
     final tag = rand.nextInt(0xFFFFFFFF);
     final previousScan = (_discoverScan, _discoverStartedAt, _discoverAsked);
     _pendingDiscoverTag = tag;
+    _lastDiscoverAutomatic = automatic;
     _discoverScan++;
     _discoverAsked = Set.identity()..addAll(_directRepeaters);
     _discoverStartedAt = DateTime.now();
@@ -5231,7 +5253,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 final frame = buildRepeaterDiscoveryFrame(tag);
 
     try {
-      await sendFrame(frame);
+      // The radio answers the request itself with OK; registered, so that
+      // OK is not taken for a queued channel message's.
+      await sendFrame(frame, expectsGenericAck: true);
       appLogger.info('Sent repeater discovery query with tag 0x${tag.toRadixString(16).padLeft(8, "0")}');
     } catch (e) {
       appLogger.error('Failed to send repeater discovery frame: $e');
@@ -7379,6 +7403,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (ctlPayload.isEmpty) return;
 
       final ctlType = ctlPayload[0] & 0xF0;
+      if (ctlType == ctlTypeNodeDiscoverReq) {
+        // Somebody near me is asking: their request uses up the repeaters'
+        // shared answer budget just as ours would.
+        _foreignDiscoverHeardAt = DateTime.now();
+        return;
+      }
       if (ctlType == ctlTypeNodeDiscoverResp) {
         final nodeType = ctlPayload[0] & 0x0F;
         if (nodeType != advTypeRepeater) return;
@@ -7389,6 +7419,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         final tag = ByteData.sublistView(ctlPayload, 2, 6).getUint32(0, Endian.little);
 
         if (_pendingDiscoverTag == null || tag != _pendingDiscoverTag) {
+          _foreignDiscoverHeardAt = DateTime.now();
           return;
         }
 

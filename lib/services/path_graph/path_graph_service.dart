@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show QueryExecutor;
@@ -32,7 +33,9 @@ import 'radio_route_keeper.dart';
 /// each active contact stored on the radio, the route the radio's ACKs
 /// go on ([RadioRouteKeeper]).
 class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
-  PathGraphService();
+  PathGraphService({math.Random? random}) : _random = random ?? math.Random();
+
+  final math.Random _random;
 
   PathGraph? _graph;
   PathLabAdapter? _adapter;
@@ -63,6 +66,26 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
 
   int _graphDelivered = 0;
   int _graphFailed = 0;
+
+  // The automatic Discover (owner, 2026-10-25, reversing D3 of 2026-10-17:
+  // a flood is repeated by every repeater; a Discover and its answers
+  // stay in the first ring). Sent only in the gap after a failed step,
+  // only when Pathfinder has a doubt about MY side of the air
+  // (PathGraph.selfAdvice), and never more than once in ten minutes.
+  DateTime? _lastAutoDiscoverAt;
+  Timer? _autoDiscoverTimer;
+  bool _inForeground = true;
+  static const autoDiscoverEvery = Duration(minutes: 10);
+  static const foreignDiscoverQuiet = Duration(seconds: 120);
+
+  /// A random wait before the automatic Discover, so radios that lost the
+  /// same repeater do not all ask in the same second; short enough to
+  /// stay inside the retry gap so the next rung can use the answers.
+  /// Tests set it to zero.
+  Duration autoDiscoverJitterMax = const Duration(seconds: 5);
+
+  /// When Pathfinder last sent a Discover of its own.
+  DateTime? get lastAutoDiscoverAt => _lastAutoDiscoverAt;
 
   PathGraph? get graph => _graph;
   PathLabAdapter? get adapter => _adapter;
@@ -270,6 +293,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _sweepTimer = null;
     _notifyThrottle?.cancel();
     _notifyThrottle = null;
+    _autoDiscoverTimer?.cancel();
+    _autoDiscoverTimer = null;
     await _frames?.cancel();
     _connector?.removeListener(_onConnectorChanged);
     _connector?.selfGps.removeListener(_syncPlace);
@@ -433,9 +458,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// foreground.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached) {
+    _inForeground = state != AppLifecycleState.paused &&
+        state != AppLifecycleState.hidden &&
+        state != AppLifecycleState.detached;
+    if (!_inForeground) {
       _graph?.flush();
     }
   }
@@ -518,16 +544,74 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     if (graph == null) return;
     graph.reportLadderEnded(contactKey,
         delivered: delivered, echoHeard: echoHeard);
-    if (!delivered) _logAdvice(contactKey);
+    if (!delivered) _considerDiscover(contactKey);
   }
 
-  /// What Pathfinder would ask of a Discover right now, in the log.
-  void _logAdvice(String contactKey) {
-    final reason = _graph?.selfAdvice(contactPubkey: contactKey);
+  /// A send to [contactKey] just failed a step: if Pathfinder has a doubt
+  /// about my side of the air that one Discover would settle, and every
+  /// gate is open, one goes out after a short random wait.
+  void _considerDiscover(String contactKey) {
+    final graph = _graph;
+    final c = _connector;
+    if (graph == null || c == null) return;
+    final reason = graph.selfAdvice(contactPubkey: contactKey);
     if (reason == null) return;
+    final words = discoverReasonText(reason);
+    final held = _discoverHold(c);
+    if (held != null) {
+      appLogger.info('Pathfinder would like one Discover ($words) but held it: $held',
+          tag: 'PathGraph');
+      return;
+    }
+    if (_autoDiscoverTimer != null) return;
+    final maxMs = autoDiscoverJitterMax.inMilliseconds;
+    final wait = Duration(milliseconds: maxMs == 0 ? 0 : _random.nextInt(maxMs));
+    _autoDiscoverTimer = Timer(wait, () {
+      _autoDiscoverTimer = null;
+      unawaited(_sendAutoDiscover(reason));
+    });
+  }
+
+  /// Why an automatic Discover may not go out now, or null.
+  String? _discoverHold(MeshCoreConnector c) {
+    if (!c.isConnected) return 'no radio';
+    if (!_inForeground) return 'the app is in the background';
+    if (c.isDiscovering) return 'a Discover is already listening';
+    if (c.hasChannelSendsQueued) return 'channel messages are queued';
+    if (!c.hasDmSendsInFlight) return 'nothing is waiting to be sent';
+    final now = DateTime.now();
+    final last = _lastAutoDiscoverAt;
+    if (last != null && now.difference(last) < autoDiscoverEvery) {
+      return 'the last automatic ask was ${now.difference(last).inMinutes} min ago';
+    }
+    final foreign = c.foreignDiscoverHeardAt;
+    if (foreign != null && now.difference(foreign) < foreignDiscoverQuiet) {
+      return 'another Discover was heard ${now.difference(foreign).inSeconds} s '
+          'ago (repeaters answer 4 per 2 minutes, shared)';
+    }
+    return null;
+  }
+
+  Future<void> _sendAutoDiscover(DiscoverReason reason) async {
+    final c = _connector;
+    if (c == null || _graph == null) return;
+    final held = _discoverHold(c);
+    final words = discoverReasonText(reason);
+    if (held != null) {
+      appLogger.info('Pathfinder would like one Discover ($words) but held it: $held',
+          tag: 'PathGraph');
+      return;
+    }
+    _lastAutoDiscoverAt = DateTime.now();
+    // A fresh position for the cell the answers are filed under (one
+    // frame to the radio, no RF).
+    unawaited(c.requestSelfPosition());
+    await c.sendRepeaterDiscovery(automatic: true);
     appLogger.info(
-        'Pathfinder would like one Discover: ${discoverReasonText(reason)}',
+        'Pathfinder asked which repeaters hear me: $words; next automatic '
+        'ask in ${autoDiscoverEvery.inMinutes} min at the earliest',
         tag: 'PathGraph');
+    _notifySoon();
   }
 
   /// Why Pathfinder would like a Discover, in plain words.
@@ -574,7 +658,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         _graphFailed++;
       }
     }
-    if (!delivered) _logAdvice(contact.publicKeyHex);
+    if (!delivered) _considerDiscover(contact.publicKeyHex);
     _notifySoon();
   }
 

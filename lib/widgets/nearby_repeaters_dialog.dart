@@ -163,14 +163,17 @@ class NearbyRepeatersDialog extends StatelessWidget {
       );
     }
     final ago = formatAgo(startedAt);
+    final whose = connector.lastDiscoverAutomatic
+        ? 'the Discover Pathfinder sent'
+        : 'your Discover';
     if (answered == 0) {
       return Text(
-        'No repeater answered your Discover ($ago ago). Repeaters answer at '
+        'No repeater answered $whose ($ago ago). Repeaters answer at '
         'most 4 times every 2 minutes, so try again shortly.',
       );
     }
     final heard = others == 0 ? '' : ' · $others didn\'t answer';
-    return Text('$answered $plural answered your Discover ($ago ago)$heard');
+    return Text('$answered $plural answered $whose ($ago ago)$heard');
   }
 
   Widget _row(BuildContext context, DirectRepeater repeater) {
