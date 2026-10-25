@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -94,6 +95,12 @@ class FlutterMapRenderer extends StatefulWidget {
       requested ??
       math.max(devicePixelRatio, math.min(devicePixelRatio * 2, 4));
 
+  /// The theme id, which keys the renderer's tile cache: the style's name
+  /// and its layers. A units switch keeps the name but swaps twin layers,
+  /// so the name alone kept serving tiles drawn in the old units.
+  static String themeIdOf(Map<String, Object?> style) =>
+      '${style['name']}#${jsonEncode(style['layers']).hashCode}';
+
   @override
   State<FlutterMapRenderer> createState() => _FlutterMapRendererState();
 }
@@ -162,7 +169,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
       }
       final theme = vt.ThemeReader(
         logger: kDebugMode ? const vt.Logger.console() : const vt.Logger.noop(),
-      ).read(style);
+      ).read(style, id: FlutterMapRenderer.themeIdOf(style));
       final sprites = await loadSpriteSheet(style['sprite']);
       if (!mounted || !identical(style, widget.style)) {
         vt.TileProviders(providers).dispose();

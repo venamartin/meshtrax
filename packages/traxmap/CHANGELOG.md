@@ -1,5 +1,9 @@
 ## Unreleased
 
+- **Units switch at once.** Switching between feet and metres left labels
+  in the old units until the app restarted: the renderer caches tiles by
+  theme id, which was the style's name, and both units' variants share it.
+  The id now includes the resolved layers (`FlutterMapRenderer.themeIdOf`).
 - **Hill shading shows on gentle land.** The light styles' shading is
   darker (OSM light 0.06/0.10/0.13/0.16, was 0.03/0.06/0.10/0.14;
   USGS light 0.09/0.15/0.21, was 0.06/0.12/0.19), tuned on traxmapmaker's
