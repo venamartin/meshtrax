@@ -16,6 +16,7 @@ import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/map_tile_cache_service.dart';
 
+import '../../packages/traxmap/test/support/fake_pmtiles.dart';
 import '../helpers/map_fakes.dart';
 
 /// Real catalogue files from maps.meshtrax.io/dev (kept in traxmap's tests).
@@ -227,6 +228,28 @@ void main() {
     await tester.tap(find.text('Find maps'));
     await tester.pumpAndSettle();
     expect(find.text('World'), findsOneWidget);
+  });
+
+  testWidgets('a pack of a region since split opens its parts', (tester) async {
+    // As whole-Alaska packs will once Alaska is 8 regions: here California,
+    // which the test catalogue has as Northern and Southern California.
+    final file = File('${tmp.path}/whole.src')
+      ..writeAsBytesSync(
+        fakePmTiles(
+          metadata: {'kind': 'osm', 'region': 'north-america/us/california'},
+        ),
+      );
+    await tester.runAsync(() async {
+      await maps.manager.install(file, id: 'us-california-osm', move: true);
+      await maps.reloadInstalled();
+    });
+    await open(tester, size: const Size(400, 900));
+    await tester.tap(find.widgetWithText(Tab, 'Downloaded'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('California'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Northern California'), findsOneWidget);
+    expect(find.textContaining('Southern California'), findsOneWidget);
   });
 
   testWidgets('a failed download can be retried or removed', (tester) async {

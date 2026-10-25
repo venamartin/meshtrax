@@ -263,6 +263,18 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing, reason: 'not again');
   });
 
+  testWidgets('mini maps draw charts without the notice', (tester) async {
+    await withCharts(tester, _Downloads());
+    await settings.setChartsNoticeDismissed(false);
+    await settings.setMapSource('offline');
+    await pumpMap(tester, compact: true);
+    expect(find.byType(AlertDialog), findsNothing);
+    // A full map still shows it.
+    await tester.pumpWidget(const SizedBox());
+    await pumpMap(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+  });
+
   testWidgets('offline on the Charts map: the card offers the area here', (
     tester,
   ) async {

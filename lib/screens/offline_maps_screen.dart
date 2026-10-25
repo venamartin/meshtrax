@@ -87,9 +87,17 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
 
   void _openRegion(String path) {
     final regions = context.read<MapPacksService>().regions;
+    final region = regions?[path];
     setState(() {
-      _selectedPath = path;
-      _browsePath = regions?[path]?.parentPath;
+      // A region since split (whole-Alaska packs once Alaska became 8
+      // regions) has nothing to download itself: show what it holds.
+      if (region != null && regions!.childrenOf(region).isNotEmpty) {
+        _selectedPath = null;
+        _browsePath = path;
+      } else {
+        _selectedPath = path;
+        _browsePath = region?.parentPath;
+      }
     });
     _tabs.animateTo(OfflineMapsTab.maps.index);
   }

@@ -30,7 +30,8 @@ bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
     };
 
 /// The map every MeshTrax map screen draws, with the credits the data's
-/// licences require. Charts open the "Not for navigation" dialog once a run.
+/// licences require. Charts open the "Not for navigation" dialog once a run
+/// (not from [compact] maps).
 ///
 /// An Online | Offline switch picks where the map comes from. Offline shows
 /// exactly what works without signal: downloaded maps, the bundled world
@@ -253,7 +254,9 @@ class _AppMapState extends State<AppMap> {
           onTileCoverage: (coverage) => setState(() => _coverage = coverage),
           onStyleLoaded: (s) {
             setState(() => _style = s);
-            if (s.disclaimer != null) {
+            // Mini maps draw charts too, but the notice is for the map
+            // screens, not a pop-up over a chat or a dialog.
+            if (s.disclaimer != null && !widget.compact) {
               unawaited(showChartsNoticeIfNeeded(context));
             }
           },
