@@ -108,33 +108,36 @@ class DownloadedTab extends StatelessWidget {
             ),
           ),
         ],
-        for (final path in regionPaths) ...[
+        if (regionPaths.isNotEmpty) ...[
           const SizedBox(height: 12),
-          _RegionCard(
-            path: path,
-            packs: byRegion[path]!,
-            name: _regionName(maps, path),
-            deleteName: _regionName(maps, path),
-            onOpen: maps.regions?[path] == null
-                ? null
-                : () => onOpenRegion(path),
-          ),
+          _Rows([
+            for (final path in regionPaths)
+              _RegionRow(
+                path: path,
+                packs: byRegion[path]!,
+                name: _regionName(maps, path),
+                deleteName: _regionName(maps, path),
+                onOpen: maps.regions?[path] == null
+                    ? null
+                    : () => onOpenRegion(path),
+              ),
+          ]),
         ],
         if (chartPaths.isNotEmpty) ...[
           const SizedBox(height: 16),
           _SectionLabel(l10n.offlineMaps_kindCharts),
-          for (final (i, path) in chartPaths.indexed) ...[
-            if (i > 0) const SizedBox(height: 12),
-            _RegionCard(
-              path: path,
-              packs: byRegion[path]!,
-              name: chartName(path),
-              deleteName: switch (maps.chartAreas?.byPackRegion(path)) {
-                final area? => l10n.offlineMaps_chartsName(area.name),
-                null => chartName(path),
-              },
-            ),
-          ],
+          _Rows([
+            for (final path in chartPaths)
+              _RegionRow(
+                path: path,
+                packs: byRegion[path]!,
+                name: chartName(path),
+                deleteName: switch (maps.chartAreas?.byPackRegion(path)) {
+                  final area? => l10n.offlineMaps_chartsName(area.name),
+                  null => chartName(path),
+                },
+              ),
+          ]),
         ],
         if (other.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -373,7 +376,28 @@ class _DownloadRow extends StatelessWidget {
 
 /// An installed region or chart area: its packs, size, date, and Update /
 /// Delete.
-class _RegionCard extends StatelessWidget {
+/// Rows in one card, divided, as the downloads in progress are.
+class _Rows extends StatelessWidget {
+  final List<Widget> rows;
+  const _Rows(this.rows);
+
+  @override
+  Widget build(BuildContext context) => Card.outlined(
+    margin: EdgeInsets.zero,
+    child: Column(
+      children: [
+        for (final (i, row) in rows.indexed) ...[
+          if (i > 0) const Divider(height: 1),
+          row,
+        ],
+      ],
+    ),
+  );
+}
+
+/// One downloaded region: its name, size and Delete on the first line, what
+/// it holds and when (or that an update is out) on the second.
+class _RegionRow extends StatelessWidget {
   final String path;
   final List<Pack> packs;
   final String name;
@@ -382,7 +406,7 @@ class _RegionCard extends StatelessWidget {
   final String deleteName;
   final VoidCallback? onOpen;
 
-  const _RegionCard({
+  const _RegionRow({
     required this.path,
     required this.packs,
     required this.name,
@@ -401,58 +425,46 @@ class _RegionCard extends StatelessWidget {
         if (maps.statusOf(e) == PackStatus.updateAvailable) e,
     ];
     final dates = [for (final p in packs) ?maps.installedAt(p)]..sort();
-    final date = dates.isEmpty
-        ? null
-        : DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
-              .format(dates.last);
-    final details = [
-      // A chart area's card needs no "NOAA charts" line: its section says so.
-      if (!packs.every((p) => p.kind == PackKind.charts))
-        (packs.toList()..sort(
-              (a, b) => _kindOrder
-                  .indexOf(a.kind)
-                  .compareTo(_kindOrder.indexOf(b.kind)),
-            ))
-            .map((p) => installedLabel(l10n, p))
-            .join(' · '),
-      [
-        if (date != null) l10n.offlineMaps_downloadedOn(date),
-        if (updates.isNotEmpty) l10n.offlineMaps_updateAvailable,
-      ].join(' · '),
-    ].where((s) => s.isNotEmpty).join('\n');
+    final details =
+        [
+              // A chart area's row needs no "NOAA charts": its section says so.
+              if (!packs.every((p) => p.kind == PackKind.charts))
+                ...(packs.toList()..sort(
+                      (a, b) => _kindOrder
+                          .indexOf(a.kind)
+                          .compareTo(_kindOrder.indexOf(b.kind)),
+                    ))
+                    .map((p) => installedLabel(l10n, p)),
+              if (updates.isNotEmpty)
+                l10n.offlineMaps_updateAvailable
+              else if (dates.isNotEmpty)
+                DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+                    .format(dates.last),
+            ]
+            // Lines break between items, not inside "Hill shading" or "Oct 24".
+            .map((item) => item.replaceAll(' ', '\u00a0'))
+            .join(' · ');
 
-    return Card.outlined(
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 16, right: 4),
+      title: Text(name),
+      subtitle: Text(details),
+      onTap: onOpen,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            title: Text(name),
-            subtitle: Text(details),
-            isThreeLine: details.contains('\n'),
-            trailing: Text(formatBytes(bytes), style: sizeStyle),
-            onTap: onOpen,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                if (updates.isNotEmpty)
-                  FilledButton.tonal(
-                    onPressed: () => maps.download(updates),
-                    child: Text(l10n.offlineMaps_update),
-                  ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error,
-                  ),
-                  onPressed: () =>
-                      confirmDeleteRegion(context, maps, path, deleteName),
-                  child: Text(l10n.common_delete),
-                ),
-              ],
+          if (updates.isNotEmpty)
+            TextButton(
+              onPressed: () => maps.download(updates),
+              child: Text(l10n.offlineMaps_update),
             ),
+          Text(formatBytes(bytes), style: sizeStyle),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            color: theme.colorScheme.error,
+            tooltip: l10n.common_delete,
+            onPressed: () =>
+                confirmDeleteRegion(context, maps, path, deleteName),
           ),
         ],
       ),

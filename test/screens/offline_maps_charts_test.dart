@@ -483,8 +483,8 @@ void main() {
 
     await tester.tap(
       find.descendant(
-        of: find.widgetWithText(Card, 'Rhode Island'),
-        matching: find.text('Delete'),
+        of: find.widgetWithText(ListTile, 'Rhode Island'),
+        matching: find.byTooltip('Delete'),
       ),
     );
     await tester.pumpAndSettle();
@@ -506,7 +506,7 @@ void main() {
     expect(find.text('Rhode Island (NOAA charts)'), findsOneWidget);
     expect(find.textContaining('rhode-island'), findsNothing);
 
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.byTooltip('Delete'));
     await tester.pumpAndSettle();
     expect(find.text('Delete Rhode Island (NOAA charts)?'), findsOneWidget);
   });
