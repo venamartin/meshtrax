@@ -60,6 +60,10 @@ void main() {
   const only = String.fromEnvironment('ONLY');
   const skipRoomA = only == 'A3';
   const skipRoomB = only == 'A12';
+  // NO_USB_POSTER=1: A3 never opens the COM14 radio; it logs in and waits a
+  // short window for pushes that something else (the owner, or a simulated
+  // member) makes the room send. The mesh simulator runs A3 this way.
+  const noUsbPoster = bool.fromEnvironment('NO_USB_POSTER');
 
   // Hour-minute-second with dashes: a Windows file name cannot hold colons.
   final stamp =
@@ -361,7 +365,12 @@ void main() {
     // Without it (or without the room on it) the owner posts by hand.
     var posterReady = false;
     final usb = BenchRadio('USB(${BenchConfig.usbPortName})');
+    if (noUsbPoster) {
+      blog('NO_USB_POSTER: not opening ${BenchConfig.usbPortName}; waiting '
+          'for pushes made by the room's other members');
+    }
     try {
+      if (noUsbPoster) throw StateError('no USB poster by request');
       usb.connector = await buildConnector(appSettings: settings);
       blog('connecting the bench radio on ${BenchConfig.usbPortName}…');
       await usb.connector.connectUsb(portName: BenchConfig.usbPortName);
@@ -405,12 +414,15 @@ void main() {
     } catch (e) {
       blog('bench radio unavailable: $e');
     }
-    if (!posterReady) {
+    if (!posterReady && !noUsbPoster) {
       blog('OWNER: please post TWICE in "${roomB!.name}" from your phone now '
           '("Test: ack route 1", "Test: ack route 2"). Waiting up to 8 minutes…');
     }
-    final deadline = DateTime.now()
-        .add(posterReady ? const Duration(minutes: 1) : const Duration(minutes: 8));
+    final deadline = DateTime.now().add(posterReady
+        ? const Duration(minutes: 1)
+        : noUsbPoster
+            ? const Duration(minutes: 2)
+            : const Duration(minutes: 8));
     var got = 0;
     while (DateTime.now().isBefore(deadline) && got < 2) {
       await Future<void>.delayed(const Duration(seconds: 5));
@@ -424,8 +436,10 @@ void main() {
     blog('radio route to ${roomB!.name} now: pathLength=${rb.pathLength} '
         'path="${rb.pathIdList}" (what my ACKs go on)');
     dump('after the keeper window', roomB!);
-    try {
-      await usb.connector.disconnect();
-    } catch (_) {}
+    if (!noUsbPoster) {
+      try {
+        await usb.connector.disconnect();
+      } catch (_) {}
+    }
   });
 }
