@@ -466,6 +466,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // When a room's route was last relearned after a flooded post.
   final Map<String, DateTime> _roomRouteRelearnAt = {};
   static const _roomRouteRelearnCooldown = Duration(minutes: 5);
+  static const _roomRouteRelearnForcedCooldown = Duration(seconds: 20);
+  final Map<String, DateTime> _roomRouteForcedRelearnAt = {};
 
   /// A room server answers a posted message with a plain ACK, never a PATH,
   /// so a post delivered by flood teaches the radio no route and the room
@@ -493,12 +495,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // the app (the keeper) just wrote is Pathfinder's guess, not knowledge.
     if (!force && room.pathLength >= 0 && !wroteContactPath(room)) return;
     if (!isConnected || hasSendsInFlight) return;
-    final last = _roomRouteRelearnAt[room.publicKeyHex];
+    // Forced: the five-minute cooldown is for relearning after floods that
+    // got through; a login sent from the old area is no reason to wait
+    // after a move (simulator deaf-here, 2026-10-25). Forced relearns keep
+    // their own short cooldown so a burst of posts sends one login, not
+    // one each.
+    final stamps = force ? _roomRouteForcedRelearnAt : _roomRouteRelearnAt;
+    final last = stamps[room.publicKeyHex];
     if (last != null &&
-        DateTime.now().difference(last) < _roomRouteRelearnCooldown) {
+        DateTime.now().difference(last) <
+            (force ? _roomRouteRelearnForcedCooldown : _roomRouteRelearnCooldown)) {
       return;
     }
-    _roomRouteRelearnAt[room.publicKeyHex] = DateTime.now();
+    stamps[room.publicKeyHex] = DateTime.now();
     final password =
         await StorageService().getRepeaterPassword(room.publicKeyHex) ?? '';
     appLogger.info(

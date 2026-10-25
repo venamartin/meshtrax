@@ -197,6 +197,33 @@ void main() {
         reason: 'the skipped relearn did not use up the cooldown');
   });
 
+  test('after a move, Pathfinder says so and a login goes first, cooldown or not',
+      () async {
+    final room = byName('ROOM');
+    // A flooded delivery at home: one relearn login, and the cooldown.
+    await deliverByFlood(room, 'at home');
+    expect(c.ofKind(cmdSendLogin).length, equals(1));
+    c.handleFrameForTest(
+        Uint8List.fromList([pushCodeLoginFail, 0, ...roomKey.sublist(0, 6)]));
+    await settle();
+
+    // Then the move: Pathfinder says the room's way back ends where I was.
+    c.graphRoomNeedsRelearn = (_) => true;
+    final posting = c.sendMessage(room, 'from the new place');
+    await settle();
+    expect(c.ofKind(cmdSendLogin).length, equals(2),
+        reason: 'a forced relearn is not held by the five-minute cooldown');
+    expect(c.ofKind(cmdSendTxtMsg).length, equals(1),
+        reason: 'only the earlier post: this one waits for the login');
+
+    // The room answers: the post goes out.
+    c.handleFrameForTest(
+        Uint8List.fromList([pushCodeLoginSuccess, 0, ...roomKey.sublist(0, 6)]));
+    await posting;
+    await settle();
+    expect(c.ofKind(cmdSendTxtMsg).length, equals(2));
+  });
+
   test('history reload re-adds the room with the radio\'s route', () async {
     final room = byName('ROOM');
     c.contactSnapshot = _contactFrame(

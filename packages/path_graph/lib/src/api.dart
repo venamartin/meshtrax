@@ -706,9 +706,14 @@ class PathGraph {
   /// edges and my own last-hop prior are not counted again here. An
   /// empty path means they reached me with no repeater in between, which
   /// only a proven key may claim. Returns whether anything was filed.
+  /// [deliveredAck]: this packet is the flooded ACK of a send of mine, so
+  /// its first hop just carried a delivery to them: that doorstep's
+  /// failed-delivery count starts again (the contact-side gate is reset
+  /// only by a delivery, and this is one; simulator 2026-10-25: without
+  /// it three delivered floods via BEEF left BEEF gated for good).
   bool observeContactSender(
       String contactPubkey, Uint8List pathBytes, int stride,
-      {required bool confirmed}) {
+      {required bool confirmed, bool deliveredAck = false}) {
     contactPubkey = contactPubkey.toLowerCase();
     if (contactPubkey == _selfPubkey) {
       observeOwnEcho(pathBytes, stride);
@@ -731,6 +736,9 @@ class PathGraph {
     if (pathBytes.length % stride != 0) return false;
     _creditContactDoorstep(contactPubkey, _hopHex(pathBytes, stride, 0),
         confirmed: confirmed, arrival: arrival);
+    if (deliveredAck) {
+      _evidence.clearContactFailures(contactPubkey, _hopHex(pathBytes, stride, 0));
+    }
     if (confirmed) {
       _recordHint(contactPubkey, [
         for (var i = 0; i < pathBytes.length ~/ stride; i++)

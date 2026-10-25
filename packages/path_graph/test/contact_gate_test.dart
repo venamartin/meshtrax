@@ -66,6 +66,20 @@ void main() {
         reason: 'F5EE no longer ends routes to the room');
   });
 
+  test('the flooded ACK of a delivery through the doorstep reopens it', () {
+    setupMesh();
+    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    expect(bytesOf(graph.findPath(roomPk)), [...a277, ...beef]);
+    // My flood got through and its ACK came back via F5EE: a delivery.
+    graph.observeContactSender(roomPk, path(f5ee), 2,
+        confirmed: true, deliveredAck: true);
+    final theirs = graph.ingressCandidates(roomPk)
+        .firstWhere((c) => c.repeaterHash == 'F5EE');
+    expect(graph.doorstepFailsThem(theirs), isFalse,
+        reason: 'their end is open again (my own F5EE row keeps its D1 count)');
+  });
+
   test('hearing them via the doorstep again does not reopen it', () {
     setupMesh();
     graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);

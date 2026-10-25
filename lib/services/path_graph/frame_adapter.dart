@@ -830,7 +830,7 @@ class PathLabAdapter {
     _floodAcks.removeWhere(matches.contains);
     if (!graph.observeContactSender(
         contactPubkeyHex, first.pathBytes, first.stride,
-        confirmed: true)) {
+        confirmed: true, deliveredAck: true)) {
       _log('ack', _fmtHops(first.pathBytes, first.stride),
           'from $who — ${_notFiled(first.pathBytes, first.stride)}',
           first.snrByte / 4.0);

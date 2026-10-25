@@ -300,6 +300,16 @@ class EvidenceStore {
   /// Proven contact ingress: the last hop of a send that was delivered
   /// (ACKed) or of a path-discovery out_path — a repeater that reached
   /// them, in the direction that matters.
+  /// A delivery to them just came back through [repeaterHash] (their
+  /// flooded ACK): its failed-delivery count starts again. Tier and
+  /// weight are untouched; this is the gate's reset, not a proof.
+  void clearContactFailures(String contactPubkey, String repeaterHash) {
+    final e = entries[(contactPubkey, repeaterHash)];
+    if (e == null || e.failedSinceProof == 0) return;
+    e.failedSinceProof = 0;
+    _dirty.add((contactPubkey, repeaterHash));
+  }
+
   void recordProvenIngress(
       String contactPubkey, String repeaterHash, int arrival) {
     _upsert(contactPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
