@@ -46,6 +46,7 @@ void main() {
 
   test('in a known area nobody has been heard hearing me', () {
     corridors();
+    advance(4 * minute); // long enough ago that nothing is filed here
     graph.setPlace('c1_1', const {});
     expect(graph.selfAdvice(), DiscoverReason.noDoorstepHere);
     graph.observeOwnEcho(path(a277), 2);

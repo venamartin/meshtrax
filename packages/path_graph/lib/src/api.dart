@@ -426,8 +426,30 @@ class PathGraph {
       _movedAt = _arrivalMillis;
       _reachedSinceMove.clear();
     }
+    final firstFix = cell != null && _cell == null;
     _cell = cell;
     _nearCells = cell == null ? const {} : {cell, ...near};
+    if (firstFix) _backfillPlace(cell);
+  }
+
+  /// Doorsteps that proved they hear me in the minutes before the area
+  /// became known were almost certainly proving it here: a radio on its
+  /// first fix after connecting has not gone anywhere. Filed under the
+  /// new cell so the first send here does not flood over proofs the
+  /// graph already holds (simulator 2026-10-25). Never on a move.
+  final Map<String, ({int at, double? uplinkSnr})> _recentSelfProofs = {};
+  static const _placeBackfillMinutes = 3;
+
+  void _backfillPlace(String cell) {
+    final self = _selfPubkey;
+    if (self == null) return;
+    final cutoff = _arrivalMillis - _placeBackfillMinutes * 60 * 1000;
+    for (final e in _recentSelfProofs.entries) {
+      if (e.value.at < cutoff) continue;
+      _places.note(self, cell, e.key, _today, uplinkSnr: e.value.uplinkSnr);
+    }
+    _recentSelfProofs.clear();
+    _scheduleFlush();
   }
 
   /// A flood of mine was delivered to them: their radio now holds the
@@ -537,7 +559,11 @@ class PathGraph {
     _failedToward.remove(upper);
     _unansweredLadderAt = null;
     final self = _selfPubkey, cell = _cell;
-    if (self == null || cell == null) return;
+    if (self == null) return;
+    if (cell == null) {
+      _recentSelfProofs[upper] = (at: _arrivalMillis, uplinkSnr: uplinkSnr);
+      return;
+    }
     _places.note(self, cell, upper, _today, uplinkSnr: uplinkSnr);
   }
 

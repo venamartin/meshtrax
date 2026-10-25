@@ -58,6 +58,7 @@ void main() {
   test('where the radio is known, only doorsteps heard here start routes',
       () {
     corridors(); // proven, but with no cell: no rows written
+    advance(4 * minute); // long enough ago that nothing is filed here
     graph.setPlace('c1_1', {'c1_2'});
     expect((graph.findPath(bobPk) as FloodResult).reason,
         FloodReason.doorstepsNotHere);
@@ -84,6 +85,7 @@ void main() {
 
   test('a row is not a proof: it never resets the fail gate', () {
     corridors();
+    advance(4 * minute); // long enough ago that nothing is filed here
     graph.setPlace('c1_1', const {});
     graph.observeOwnEcho(path(a277), 2);
     // Two failures from A277 trip D1 whatever the place rows say.
@@ -98,6 +100,7 @@ void main() {
   test('one failure here holds the row until the doorstep proves here again',
       () {
     corridors();
+    advance(4 * minute); // long enough ago that nothing is filed here
     graph.setPlace('c1_1', const {});
     graph.observeOwnEcho(path(a277), 2);
     graph.reportSendResult(path([...a277, ...a277]), false, contactPubkey: bobPk);
@@ -128,6 +131,26 @@ void main() {
     advance(minute);
     graph.setPlace('c9_9', const {});
     expect(graph.findPath(bobPk), isNot(isA<DirectResult>()));
+  });
+
+  test('proofs from the minutes before the first fix are filed under it',
+      () {
+    corridors(); // A277 and BEEF delivered just now, cell unknown
+    advance(2 * minute);
+    graph.setPlace('c1_1', const {});
+    expect(graph.placesHere().keys, containsAll(['A277', 'BEEF']));
+    expect(firstHop(), isIn(['A277', 'BEEF']));
+  });
+
+  test('older proofs are not, and a move backfills nothing', () {
+    corridors();
+    advance(4 * minute);
+    graph.setPlace('c1_1', const {});
+    expect(graph.placesHere(), isEmpty, reason: 'four minutes is too long ago');
+
+    graph.observeOwnEcho(path(a277), 2);
+    graph.setPlace('c9_9', const {});
+    expect(graph.placesHere(), isEmpty, reason: 'a move carries nothing over');
   });
 
   test('rows fade after 30 days', () {

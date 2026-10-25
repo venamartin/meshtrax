@@ -91,16 +91,17 @@ void main() {
     }
   }
 
-  /// A radio whose doorstep A277 was proven elsewhere, now in an area
+  /// A radio whose doorstep A277 was proven at home, driven to an area
   /// where nobody has been heard hearing it: Pathfinder's doubt.
   Future<(PathGraphService, _Connector)> doubtful() async {
     final c = _Connector();
     final service = PathGraphService()..autoDiscoverJitterMax = Duration.zero;
     await service.start(c, database: NativeDatabase.memory());
+    c.fix(36.9712, -121.7334);
     service.graph!.reportSendResult(
         Uint8List.fromList(_viaA277.pathBytes), true,
         contactPubkey: _bob.publicKeyHex);
-    c.fix(36.9712, -121.7334);
+    c.fix(36.9712 + 0.05, -121.7334); // a few kilometres: a move
     return (service, c);
   }
 
