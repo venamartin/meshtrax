@@ -6,6 +6,7 @@ import 'db/database.dart';
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'mesh_id.dart';
 import 'moving.dart';
 import 'retention.dart';
 import 'search.dart';
@@ -13,6 +14,7 @@ import 'search.dart';
 export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
 export 'graph_store.dart' show EdgeState, MovingOverride, NodeState, NodeSource;
+export 'mesh_id.dart' show MeshId;
 export 'moving.dart' show MovingCheck, MovingReason, MovingStatus;
 export 'retention.dart' show RetentionPolicy, RetentionReport;
 
@@ -201,6 +203,7 @@ class PathGraph {
     DateTime Function()? now,
     PathGraphConfig config = const PathGraphConfig(),
     this.hashWidthBytes = 2,
+    this.mesh,
   })  : assert(hashWidthBytes >= 2 && hashWidthBytes <= 4,
             'wire path hops are 1–4 bytes; buckets below 2 are useless'),
         _db = PathGraphDatabase(executor),
@@ -212,6 +215,11 @@ class PathGraph {
   }
 
   final int hashWidthBytes;
+
+  /// The radio preset this graph is for, when the caller knows it. Stamped
+  /// into exports and checkpoints; a checkpoint from another mesh is
+  /// refused, since its codes name other repeaters.
+  final MeshId? mesh;
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
@@ -1626,6 +1634,7 @@ class PathGraph {
       'graph': {
         'generated_at': _isoFromMillis(_arrivalMillis),
         'collector': collector,
+        if (mesh != null) 'mesh': mesh!.toJson(),
         if (regionHint != null) 'region_hint': regionHint,
         'hash_width': hashWidthBytes,
       },
@@ -1658,6 +1667,7 @@ class PathGraph {
       'private': true,
       'saved_at': _isoFromMillis(_arrivalMillis),
       'hash_width': hashWidthBytes,
+      if (mesh != null) 'mesh': mesh!.toJson(),
       'self': {'pubkey': _selfPubkey, 'stride': _selfStride},
       'counters': {
         'observations_applied': _observationsApplied,
@@ -1752,6 +1762,14 @@ class PathGraph {
       throw FormatException(
           'checkpoint was saved at hash width $docWidth, this graph runs '
           'at $hashWidthBytes — widths cannot mix');
+    }
+    // Checkpoints from before meshes were stamped carry no mesh and are
+    // taken on trust; a stamped one must match, since the same codes name
+    // other repeaters on another preset.
+    final docMesh = MeshId.fromJson(document['mesh']);
+    if (docMesh != null && mesh != null && docMesh != mesh) {
+      throw FormatException(
+          'backup is from another mesh ($docMesh); this graph is for $mesh');
     }
     // Parse everything before touching anything: one bad row must not
     // leave the graph wiped and the restore failed.

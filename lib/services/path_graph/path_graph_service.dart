@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_graph/path_graph.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../connector/meshcore_connector.dart';
 import '../../helpers/path_helper.dart';
@@ -12,6 +15,7 @@ import '../../models/contact.dart';
 import '../../models/path_selection.dart';
 import '../../storage/prefs_manager.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/platform_info.dart';
 import 'frame_adapter.dart';
 import 'radio_route_keeper.dart';
 
@@ -44,12 +48,49 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _op = Future.value();
   Object? _lastError;
 
+  // One database per mesh: a code names different repeaters on different
+  // presets, and a doorstep heard on one says nothing on another. The
+  // file follows the connected radio's preset; until one connects, the
+  // last mesh used; before any mesh was ever seen, the file from the days
+  // of one shared graph (adopted by the first mesh that connects).
+  MeshId? _mesh;
+  String? _databaseName;
+  bool _ownsDatabase = false;
+  QueryExecutor Function(String name)? _openDatabase;
+  static const _lastMeshPref = 'path_graph_last_mesh';
+  static const legacyDatabaseName = 'path_graph';
+
   int _graphDelivered = 0;
   int _graphFailed = 0;
 
   PathGraph? get graph => _graph;
   PathLabAdapter? get adapter => _adapter;
   bool get isRunning => _graph != null;
+
+  /// The mesh the open graph is for; null until a radio has ever connected.
+  MeshId? get mesh => _mesh;
+  String? get databaseName => _databaseName;
+
+  static MeshId? meshOf(MeshCoreConnector c) {
+    final f = c.currentFreqHz, b = c.currentBwHz, sf = c.currentSf, cr = c.currentCr;
+    if (f == null || b == null || sf == null || cr == null) return null;
+    return MeshId(freqHz: f, bwHz: b, sf: sf, cr: cr);
+  }
+
+  static String databaseNameFor(MeshId? mesh) =>
+      mesh == null ? legacyDatabaseName : 'path_graph_${mesh.key}';
+
+  static MeshId? _lastMesh() =>
+      MeshId.fromJson(_decode(PrefsManager.instance.getString(_lastMeshPref)));
+
+  static Object? _decode(String? json) {
+    if (json == null) return null;
+    try {
+      return jsonDecode(json);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Why the last start failed (the graph database would not open), or
   /// null. The app runs without Pathfinder rather than not at all.
@@ -59,12 +100,16 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   int get graphDelivered => _graphDelivered;
   int get graphFailed => _graphFailed;
 
-  /// Opens the graph on `path_graph.db` and starts listening. Idempotent,
-  /// and never throws: a database that will not open leaves Pathfinder
-  /// off with [lastError] set. The bench passes its own [database] (in
-  /// memory) so a run starts from nothing and leaves nothing behind.
-  Future<void> start(MeshCoreConnector connector, {QueryExecutor? database}) {
+  /// Opens the graph on this mesh's database and starts listening.
+  /// Idempotent, and never throws: a database that will not open leaves
+  /// Pathfinder off with [lastError] set. The bench passes its own
+  /// [database] (in memory) so a run starts from nothing, leaves nothing
+  /// behind, and keeps its graph when it retunes the radio. Tests pass
+  /// [openDatabase] to see which file each mesh would get.
+  Future<void> start(MeshCoreConnector connector,
+      {QueryExecutor? database, QueryExecutor Function(String name)? openDatabase}) {
     _wantRunning = true;
+    _openDatabase = openDatabase;
     return _op = _op.then((_) => _open(connector, database));
   }
 
@@ -75,9 +120,14 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _open(MeshCoreConnector connector, QueryExecutor? database) async {
     if (!_wantRunning || _graph != null) return;
+    final mesh = meshOf(connector) ?? (database == null ? _lastMesh() : null);
+    final name = database == null ? databaseNameFor(mesh) : null;
     PathGraph? graph;
     try {
-      graph = PathGraph(database ?? driftDatabase(name: 'path_graph'));
+      if (name != null && _openDatabase == null) await _adoptLegacyFile(name, mesh);
+      graph = PathGraph(
+          database ?? _openDatabase?.call(name!) ?? driftDatabase(name: name!),
+          mesh: mesh);
       await graph.init();
     } catch (e) {
       _lastError = e;
@@ -94,6 +144,13 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     _lastError = null;
+    _mesh = mesh;
+    _databaseName = name;
+    _ownsDatabase = database == null;
+    if (mesh != null && database == null) {
+      unawaited(PrefsManager.instance
+          .setString(_lastMeshPref, jsonEncode(mesh.toJson())));
+    }
     final live = _graph = graph;
     live.onMovingSign = (hash, reason, check) {
       final name = live.snapshot().nodes[hash]?.name;
@@ -150,10 +207,47 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _radioReady = false;
     WidgetsBinding.instance.addObserver(this);
     _onConnectorChanged();
-    appLogger.info('path graph started', tag: 'PathGraph');
+    appLogger.info(
+        mesh == null
+            ? 'path graph started; the mesh is unknown until a radio connects'
+            : 'path graph started for $mesh'
+                '${name == null ? "" : " (file $name)"}',
+        tag: 'PathGraph');
     _sweep();
     _sweepTimer = Timer.periodic(const Duration(days: 1), (_) => _sweep());
     notifyListeners();
+  }
+
+  /// The first time a mesh gets its own file, the graph learned before
+  /// meshes were kept apart moves into it: the first mesh to connect is
+  /// the one it was learned on for anybody with one radio and one mesh.
+  Future<void> _adoptLegacyFile(String name, MeshId? mesh) async {
+    if (PlatformInfo.isWeb || name == legacyDatabaseName) return;
+    final dir = (await getApplicationDocumentsDirectory()).path;
+    final sep = Platform.pathSeparator;
+    final target = File('$dir$sep$name.sqlite');
+    final legacy = File('$dir$sep$legacyDatabaseName.sqlite');
+    if (await target.exists() || !await legacy.exists()) return;
+    for (final suffix in const ['', '-journal', '-wal', '-shm']) {
+      final f = File('${legacy.path}$suffix');
+      if (await f.exists()) await f.rename('${target.path}$suffix');
+    }
+    appLogger.info(
+        'moved the graph learned before meshes were kept apart into the file for $mesh',
+        tag: 'PathGraph');
+  }
+
+  /// The radio reports another preset than the open graph is for: close
+  /// it and open the file of that mesh. Never while the caller owns the
+  /// database (the bench retunes mid-run and keeps its graph).
+  void _reopenFor(MeshCoreConnector connector, MeshId mesh) {
+    appLogger.info('radio is on $mesh; switching to the graph of that mesh',
+        tag: 'PathGraph');
+    _op = _op.then((_) async {
+      if (!_wantRunning) return;
+      await _close();
+      await _open(connector, null);
+    });
   }
 
   /// Forget idle hearsay and enforce the growth caps: on every open and
@@ -255,6 +349,12 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     final ready = connector.isConnected && !connector.isLoadingContacts;
     if (ready && !_radioReady) _keeper?.onConnected();
     _radioReady = ready;
+
+    final mesh = meshOf(connector);
+    if (mesh != null && mesh != _mesh && _ownsDatabase) {
+      _reopenFor(connector, mesh);
+      return;
+    }
 
     final self = connector.selfPublicKeyHex;
     // The radio's Path Hash Size can change without a new key; the graph
