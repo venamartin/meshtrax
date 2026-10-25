@@ -64,6 +64,10 @@ void main() {
   // short window for pushes that something else (the owner, or a simulated
   // member) makes the room send. The mesh simulator runs A3 this way.
   const noUsbPoster = bool.fromEnvironment('NO_USB_POSTER');
+  // A3_NO_LOGIN=1: A3 does not log in to room B (the radio is already a
+  // member with a route back, as the simulator seeds it), so the login's
+  // PATH reply does not install a live route ahead of Pathfinder's own.
+  const a3NoLogin = bool.fromEnvironment('A3_NO_LOGIN');
 
   // Hour-minute-second with dashes: a Windows file name cannot hold colons.
   final stamp =
@@ -351,10 +355,14 @@ void main() {
       skip: skipRoomB, (tester) async {
     if (!ready) fail('Bench not ready — see the first failure above.');
     await beginScenario(tester, 'A3 keeper window');
-    blog('>>> login to ${roomB!.name}…');
-    final (ok, _) = await repeaterLogin(radio, roomB!, '',
-        timeout: const Duration(seconds: 45));
-    blog('login result: ${ok == null ? 'TIMEOUT' : ok ? 'SUCCESS' : 'FAIL'}');
+    if (a3NoLogin) {
+      blog('A3_NO_LOGIN: not logging in to ${roomB!.name}; already a member');
+    } else {
+      blog('>>> login to ${roomB!.name}…');
+      final (ok, _) = await repeaterLogin(radio, roomB!, '',
+          timeout: const Duration(seconds: 45));
+      blog('login result: ${ok == null ? 'TIMEOUT' : ok ? 'SUCCESS' : 'FAIL'}');
+    }
     await Future<void>.delayed(const Duration(seconds: 5));
     dump('after the room B login', roomB!);
     final startCount = (await radio.connector.loadMessagesFor(live(roomB!)))
