@@ -13,33 +13,33 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appTitle => 'MeshTrax';
 
   @override
-  String get nav_chats => 'Chats';
+  String get nav_chats => '채팅';
 
   @override
-  String get chats_title => 'Chats';
+  String get chats_title => '채팅';
 
   @override
-  String get newChat_title => 'Select contact';
+  String get newChat_title => '연락처 선택';
 
   @override
   String newChat_contactCount(int count) {
-    return '$count contacts';
+    return '연락처 $count개';
   }
 
   @override
-  String get newChat_newContact => 'New Contact';
+  String get newChat_newContact => '새 연락처';
 
   @override
-  String get newChat_newChannel => 'New Channel';
+  String get newChat_newChannel => '새 채널';
 
   @override
-  String get newChat_myContacts => 'My Contacts';
+  String get newChat_myContacts => '내 연락처';
 
   @override
-  String get newChat_discovered => 'Discovered';
+  String get newChat_discovered => '발견됨';
 
   @override
-  String get repeaters_title => 'Manage Repeaters';
+  String get repeaters_title => '리피터 관리';
 
   @override
   String get nav_contacts => '연락처';
@@ -54,16 +54,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_cancel => '취소';
 
   @override
-  String get common_syncing_device_info => 'Reading device info...';
+  String get common_syncing_device_info => '장치 정보 읽는 중...';
 
   @override
-  String get common_syncing_contacts => 'Reading contacts...';
+  String get common_syncing_contacts => '연락처 읽는 중...';
 
   @override
-  String get common_syncing_channels => 'Reading channels...';
+  String get common_syncing_channels => '채널 읽는 중...';
 
   @override
-  String get common_syncing_messages => 'Reading messages...';
+  String get common_syncing_messages => '메시지 읽는 중...';
 
   @override
   String get common_ok => '알겠습니다';
@@ -105,10 +105,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_disconnected => '단절';
 
   @override
-  String get common_connectionLost => 'Connection lost. Reconnecting...';
+  String get common_connectionLost => '연결이 끊어졌습니다. 다시 연결하는 중...';
 
   @override
-  String get common_reconnecting => 'Reconnecting...';
+  String get common_reconnecting => '다시 연결하는 중...';
 
   @override
   String get common_create => '만들다';
@@ -250,11 +250,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get usbErrorNativeLibraryMissing =>
-      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+      '이 빌드에는 USB 시리얼 라이브러리가 없어 USB 장치를 열 수 없습니다. MeshTrax를 다시 설치하거나 이 빌드에 문제가 있다고 신고해 주세요.';
 
   @override
   String get usbErrorBrowserUnsupported =>
-      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+      '이 브라우저는 Web Serial을 지원하지 않습니다. HTTPS(또는 localhost)에서 Chrome이나 Edge를 사용하세요.';
 
   @override
   String get usbErrorAlreadyActive => 'USB 연결이 이미 활성화되어 있습니다.';
@@ -304,18 +304,18 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get scanner_showAllDevices => 'Show all Bluetooth devices';
+  String get scanner_showAllDevices => '모든 블루투스 장치 표시';
 
   @override
-  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
+  String get scanner_showMeshCoreOnly => 'MeshCore 무전기만 표시';
 
   @override
   String get scanner_radioNotResponding =>
-      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+      '무전기가 응답하지 않습니다. 페어링이 필요할 수 있습니다. 블루투스 설정을 열어 무전기를 추가하고 PIN을 입력한 다음 다시 시도하세요.';
 
   @override
   String get scanner_pairingFailed =>
-      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+      '블루투스 페어링이 취소되었거나 실패했습니다. 다른 기기(휴대폰 등)가 무전기에 연결되어 있지 않은지 확인한 뒤 다시 시도하고 PIN을 입력하세요.';
 
   @override
   String scanner_connectionFailed(String error) {
@@ -329,10 +329,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scanner_scan => '스캔';
 
   @override
-  String get scanner_scanFromImage => 'Scan from image';
+  String get scanner_scanFromImage => '이미지에서 스캔';
 
   @override
-  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+  String get scanner_noQrFoundInImage => '이미지에서 유효한 QR 코드를 찾지 못했습니다';
 
   @override
   String get scanner_bluetoothOff => '블루투스는 꺼져 있습니다.';
@@ -711,18 +711,18 @@ class AppLocalizationsKo extends AppLocalizations {
       '메시지에 대한 상세한 경로 및 시간 정보를 표시';
 
   @override
-  String get appSettings_senderNameColors => 'Colorful sender names';
+  String get appSettings_senderNameColors => '보낸 사람 이름 색상';
 
   @override
   String get appSettings_senderNameColorsSubtitle =>
-      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+      '채널에서 보낸 사람마다 이름 색을 다르게 표시합니다. 끄면 모두 테마 색상을 사용합니다.';
 
   @override
-  String get appSettings_showTextFormatting => 'Show text formatting';
+  String get appSettings_showTextFormatting => '텍스트 서식 표시';
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      '메시지의 마크다운: **굵게**, *기울임*, ||스포일러||, 제목, 링크. 다른 MeshCore 앱에서는 기호가 그대로 보입니다.';
 
   @override
   String get appSettings_notifications => '알림';
@@ -772,12 +772,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_maxMessageRetriesSubtitle => '메시지를 실패로 처리하기 전 시도 횟수';
 
   @override
-  String get appSettings_maxChannelMessageRetries =>
-      'Max Channel Message Retries';
+  String get appSettings_maxChannelMessageRetries => '채널 메시지 최대 재시도 횟수';
 
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
-      'It will retry this many times until it hears at least one repeat';
+      '중계가 한 번 이상 들릴 때까지 이 횟수만큼 다시 시도합니다';
 
   @override
   String get appSettings_battery => '배터리';
@@ -880,11 +879,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_appDebugLoggingDisabled => '앱 디버깅 로깅 비활성화';
 
   @override
-  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+  String get appSettings_incrementalContactSync => '연락처 증분 동기화';
 
   @override
   String get appSettings_incrementalContactSyncSubtitle =>
-      'On reconnect, ask the radio only for contacts that changed since last time';
+      '다시 연결할 때 지난번 이후 바뀐 연락처만 무전기에 요청합니다';
 
   @override
   String get contacts_title => '연락처';
@@ -893,11 +892,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_noContacts => '아직 연락처는 없습니다.';
 
   @override
-  String get contacts_shareMyQrCode => 'Share My QR Code';
+  String get contacts_shareMyQrCode => '내 QR 코드 공유';
 
   @override
-  String get contacts_shareQrCodeDesc =>
-      'Let others scan to add you as a contact';
+  String get contacts_shareQrCodeDesc => '다른 사람이 스캔해 나를 연락처에 추가할 수 있습니다';
 
   @override
   String get contacts_contactsWillAppear => '장치가 광고를 할 때, 연락처 정보가 표시됩니다.';
@@ -944,21 +942,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String contacts_deleteContactConfirm(String contactName) {
-    return 'Are you sure you want to delete $contactName?';
+    return '$contactName을(를) 삭제하시겠습니까?';
   }
 
   @override
   String contacts_contactDeleted(String contactName) {
-    return 'Contact $contactName deleted.';
+    return '연락처 $contactName을(를) 삭제했습니다.';
   }
 
   @override
   String contacts_contactDeleteFailed(String contactName) {
-    return 'Failed to delete $contactName.';
+    return '$contactName을(를) 삭제하지 못했습니다.';
   }
 
   @override
-  String get contacts_noMatchingContacts => 'No contacts match the filter.';
+  String get contacts_noMatchingContacts => '필터와 일치하는 연락처가 없습니다.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -1072,7 +1070,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contact_teleEnvSubtitle => '환경 센서 데이터를 공유하도록 허용';
 
   @override
-  String get contacts_publicKey => 'Public Key';
+  String get contacts_publicKey => '공개 키';
 
   @override
   String get channels_title => '채널';
@@ -1113,24 +1111,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_editChannel => '채널 편집';
 
   @override
-  String get channels_shareChannel => 'Share Channel';
+  String get channels_shareChannel => '채널 공유';
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      'QR 코드를 스캔해 채널을 추가하세요.\n메뉴 → 채널 추가 → QR 코드를 스캔';
 
   @override
-  String get channels_secretKey => 'Secret Key';
+  String get channels_secretKey => '비밀 키';
 
   @override
   String get channels_meshcoreUri => 'MeshCore URI';
 
   @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
+  String get channels_shareChannelQr => '채널 QR 코드 스캔';
 
   @override
   String get channels_shareChannelWarning =>
-      'Warning: Anyone who scans this QR code will have access to this channel.';
+      '경고: 이 QR 코드를 스캔하는 사람은 누구나 이 채널에 접근할 수 있습니다.';
 
   @override
   String get channels_muteChannel => '음소거 채널';
@@ -1184,25 +1182,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_pskMustBe32Hex => 'PSK(개인식별키)는 32자리 16진수 문자여야 합니다.';
 
   @override
-  String get channels_addChannelConfirmation =>
-      'Do you want to add the following channel?';
+  String get channels_addChannelConfirmation => '다음 채널을 추가하시겠습니까?';
 
   @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
+  String get channels_channelAddedSuccess => '채널을 추가했습니다.';
 
   @override
-  String get channels_noAvailableChannelSlots => 'No available channel slots.';
+  String get channels_noAvailableChannelSlots => '사용 가능한 채널 슬롯이 없습니다.';
 
   @override
-  String get appSettings_mentionNotifications => 'Mention notifications';
+  String get appSettings_mentionNotifications => '멘션 알림';
 
   @override
   String get appSettings_mentionNotificationsSubtitle =>
-      'When someone mentions or replies to you — even in muted channels';
+      '누군가 나를 멘션하거나 내게 답장할 때 — 음소거된 채널에서도';
 
   @override
   String notification_mentionIn(String channelName) {
-    return 'Mention in $channelName';
+    return '$channelName에서 멘션됨';
   }
 
   @override
@@ -1308,13 +1305,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_location => '위치';
 
   @override
-  String get common_copiedToClipboard => 'Copied to clipboard';
+  String get common_copiedToClipboard => '클립보드에 복사했습니다';
 
   @override
-  String get common_copyToClipboard => 'Copy to clipboard';
+  String get common_copyToClipboard => '클립보드에 복사';
 
   @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
+  String get contacts_copyContactToClipboard => '내 연락처를 클립보드에 복사';
 
   @override
   String get chat_typeMessage => '메시지를 입력하세요...';
@@ -1343,7 +1340,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_reply => '답변';
 
   @override
-  String get chat_newMessages => 'NEW MESSAGES';
+  String get chat_newMessages => '새 메시지';
 
   @override
   String get chat_addReaction => '댓글 추가';
@@ -1352,76 +1349,74 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_mention => '멘션';
 
   @override
-  String get dmChannel_menuLabel => 'Direct Message';
+  String get dmChannel_menuLabel => '다이렉트 메시지';
 
   @override
   String dmChannel_pickerTitle(String name) {
-    return 'Send DM to $name';
+    return '$name에게 DM 보내기';
   }
 
   @override
-  String get dmChannel_pickerHint =>
-      'Check the key and last-seen time — names are not unique.';
+  String get dmChannel_pickerHint => '키와 마지막 수신 시간을 확인하세요 — 같은 이름이 여럿일 수 있습니다.';
 
   @override
-  String get dmChannel_warningTitle => 'Is this really them?';
+  String get dmChannel_warningTitle => '정말 그 사람인가요?';
 
   @override
   String get dmChannel_warningBody =>
-      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+      '채널 이름은 스스로 정하는 것이라 누구나 흉내 낼 수 있습니다. 민감한 내용이라면 먼저 다른 방법으로 이 연락처의 공개 키를 확인하세요.';
 
   @override
-  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+  String get dmChannel_dontShowAgain => '다시 표시 안 함';
 
   @override
-  String get batterySleep_title => 'Keep MeshTrax running';
+  String get batterySleep_title => 'MeshTrax 계속 실행하기';
 
   @override
   String get batterySleep_bodySamsung =>
-      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+      '삼성 휴대폰은 배터리를 아끼려고 앱을 절전 상태로 만들어 무전기 연결이 끊깁니다. 설정 → 애플리케이션 → MeshTrax → 배터리를 열고 \'제한 없음\'을 선택하세요. 또한 배터리 → 백그라운드 사용 제한에서 MeshTrax가 \'절전 상태 앱\'이나 \'완전 절전 상태 앱\'에 들어 있지 않은지 확인하세요.';
 
   @override
   String get batterySleep_bodyGeneric =>
-      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+      '휴대폰이 배터리를 아끼려고 백그라운드에서 MeshTrax를 중지해 무전기 연결이 끊길 수 있습니다. 배터리 설정을 열어 MeshTrax를 \'제한 없음\'(또는 \'제한하지 않음\')으로 설정하세요. 일부 휴대폰에서는 MeshTrax의 \'자동 실행\'도 켜야 합니다.';
 
   @override
-  String get batterySleep_openSettings => 'Open settings';
+  String get batterySleep_openSettings => '설정 열기';
 
   @override
-  String get batterySleep_notNow => 'Not now';
+  String get batterySleep_notNow => '나중에';
 
   @override
-  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+  String get batterySleep_settingsTile => '백그라운드에서 MeshTrax 계속 실행';
 
   @override
   String get batterySleep_settingsTileSubtitle =>
-      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+      '휴대폰의 배터리 절약 기능이 MeshTrax를 절전 상태로 만들지 않게 합니다';
 
   @override
   String dmChannel_noMatchTitle(String name) {
-    return 'Can\'t DM $name yet';
+    return '아직 $name에게 DM을 보낼 수 없습니다';
   }
 
   @override
   String get dmChannel_noMatchBody =>
-      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+      '아직 상대의 키가 없고, 상대가 답장하려면 내 키가 필요합니다 — 키는 광고로만 전달됩니다. \'내 광고 보내기\'는 여기서 바로 내 광고를 보냅니다. \'채널에서 요청\'은 메시지 입력란에 요청 문구를 적어 주니 직접 보내면 됩니다.';
 
   @override
-  String get dmChannel_askInChannel => 'Ask in channel';
+  String get dmChannel_askInChannel => '채널에서 요청';
 
   @override
-  String get dmChannel_sendMyAdvert => 'Send my advert';
+  String get dmChannel_sendMyAdvert => '내 광고 보내기';
 
   @override
-  String get dmChannel_askText => 'please send an advert so I can DM you';
+  String get dmChannel_askText => 'DM을 보낼 수 있게 광고를 보내 주세요';
 
   @override
-  String get dmChannel_watching =>
-      'Watching for their advert — you\'ll be asked here when it arrives.';
+  String get dmChannel_watching => '상대의 광고를 기다리는 중 — 도착하면 여기서 알려 드립니다.';
 
   @override
   String dmChannel_advertHeard(String name) {
-    return '$name is now reachable';
+    return '이제 $name에게 연락할 수 있습니다';
   }
 
   @override
@@ -1434,14 +1429,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_reset => '재설정';
 
   @override
-  String get chat_reactionsTitle => 'Reactions';
+  String get chat_reactionsTitle => '반응';
 
   @override
-  String get chat_reactionUnknownSender => 'Unknown';
+  String get chat_reactionUnknownSender => '알 수 없음';
 
   @override
   String chat_reactionTargetMissing(String sender) {
-    return '$sender reacted to a message that isn\'t in this chat';
+    return '$sender님이 이 채팅에 없는 메시지에 반응했습니다';
   }
 
   @override
@@ -1490,22 +1485,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get debugLog_copyLog => '로그 기록';
 
   @override
-  String get debugLog_saveLog => 'Save log to file';
+  String get debugLog_saveLog => '로그를 파일로 저장';
 
   @override
-  String get debugLog_saved => 'Log saved';
+  String get debugLog_saved => '로그를 저장했습니다';
 
   @override
-  String get debugLog_saveCancelled => 'Save cancelled';
+  String get debugLog_saveCancelled => '저장을 취소했습니다';
 
   @override
-  String get debugLog_filterAll => 'All';
+  String get debugLog_filterAll => '전체';
 
   @override
-  String get debugLog_filterWarnings => 'Warnings';
+  String get debugLog_filterWarnings => '경고';
 
   @override
-  String get debugLog_filterErrors => 'Errors';
+  String get debugLog_filterErrors => '오류';
 
   @override
   String get debugLog_clearLog => '명확한 로그';
@@ -1568,7 +1563,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get debugFrame_textTypeCli => '명령줄 인터페이스 (CLI)';
 
   @override
-  String get debugFrame_textTypeCliCommand => 'CLI command';
+  String get debugFrame_textTypeCliCommand => 'CLI 명령';
 
   @override
   String get debugFrame_textTypePlain => '단순한';
@@ -2953,13 +2948,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get listFilter_filters => '필터';
 
   @override
-  String get listFilter_source => 'Source';
+  String get listFilter_source => '출처';
 
   @override
-  String get listFilter_saved => 'Saved';
+  String get listFilter_saved => '저장됨';
 
   @override
-  String get listFilter_discovered => 'Discovered';
+  String get listFilter_discovered => '발견됨';
 
   @override
   String get listFilter_all => '모든';
@@ -3214,31 +3209,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_contactAdvertCopyFailed => '광고를 클립보드에 복사하는 데 실패했습니다.';
 
   @override
-  String get contacts_addContact => 'Add Contact';
+  String get contacts_addContact => '연락처 추가';
 
   @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
+  String get contacts_scanQrCode => '연락처 QR 스캔';
 
   @override
-  String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
+  String get contacts_scanQrCodeDesc => 'MeshCore 앱의 연락처 QR 코드를 스캔합니다';
 
   @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
+  String get contacts_enterIdHash => '연락처 직접 입력';
 
   @override
-  String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
+  String get contacts_enterIdHashDesc => '연락처 광고 또는 meshcore:// 링크 붙여넣기';
 
   @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
+  String get contacts_advertHint => 'meshcore://... 또는 공개 키 hex';
 
   @override
-  String get contacts_import => 'Import';
+  String get contacts_import => '가져오기';
 
   @override
-  String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
+  String get contacts_scanContactInstructions => 'MeshCore 연락처 QR 코드를 스캔하세요';
 
   @override
   String get notification_activityTitle => '메쉬코어 활동';
@@ -3389,7 +3381,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get discoveredContacts_noMatching => '일치하는 연락처가 없습니다.';
 
   @override
-  String get listFilter_searchHint => 'Search...';
+  String get listFilter_searchHint => '검색...';
 
   @override
   String get discoveredContacts_searchHint => '발견된 연락처 검색';
@@ -3417,7 +3409,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_sendCooldown => '다시 보내기 전에 잠시 기다려 주시기 바랍니다.';
 
   @override
-  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+  String get chat_notConnected => '무전기에 연결되어 있지 않습니다. 메시지를 보내지 못했습니다.';
 
   @override
   String get appSettings_jumpToOldestUnread => '가장 오래된, 아직 읽지 않은 항목으로 이동';
@@ -3593,118 +3585,113 @@ class AppLocalizationsKo extends AppLocalizations {
   String get translation_systemLanguage => '시스템 언어';
 
   @override
-  String get routing_title => 'Routing';
+  String get routing_title => '경로 설정';
 
   @override
   String routing_route(String route) {
-    return 'Stored path: $route';
+    return '저장된 경로: $route';
   }
 
   @override
-  String get routing_noRoute =>
-      'none yet — the next message floods and learns one';
+  String get routing_noRoute => '아직 없음 — 다음 메시지가 플러드로 전송되며 경로를 학습합니다';
 
   @override
-  String get routing_auto => 'Automatic';
+  String get routing_auto => '자동';
 
   @override
-  String get routing_autoSubtitle =>
-      'Use the radio\'s stored path. Recommended.';
+  String get routing_autoSubtitle => '무전기에 저장된 경로를 사용합니다. 권장.';
 
   @override
-  String get routing_pathfinderOn =>
-      'Pathfinder on: tries learned routes first';
+  String get routing_pathfinderOn => 'Pathfinder 켜짐: 학습한 경로를 먼저 시도합니다';
 
   @override
-  String get routing_flood => 'Always flood';
+  String get routing_flood => '항상 플러드';
 
   @override
-  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+  String get routing_floodSubtitle => '모든 메시지가 메시 전체로 전송됩니다';
 
   @override
-  String get routing_custom => 'Custom path';
+  String get routing_custom => '사용자 지정 경로';
 
   @override
-  String get routing_customSubtitle => 'Choose the repeaters yourself';
+  String get routing_customSubtitle => '리피터를 직접 선택합니다';
 
   @override
-  String get routing_forget => 'Reset path';
+  String get routing_forget => '경로 초기화';
 
   @override
   String get routing_forgetDone =>
-      'Path reset. The next message floods and learns a fresh one.';
+      '경로를 초기화했습니다. 다음 메시지가 플러드로 전송되며 새 경로를 학습합니다.';
 
   @override
-  String get routing_pathfinder => 'What Pathfinder knows';
+  String get routing_pathfinder => 'Pathfinder가 아는 정보';
 
   @override
-  String get routing_pathfinderSubtitle =>
-      'Repeaters that hear you and them, and learned routes there and back';
+  String get routing_pathfinderSubtitle => '나와 상대의 신호를 듣는 리피터, 학습한 왕복 경로';
 
   @override
-  String get path_direct => 'Direct — no repeaters';
+  String get path_direct => '직접 — 리피터 없음';
 
   @override
-  String get path_directSubtitle =>
-      'Only when the contact can hear this radio itself';
+  String get path_directSubtitle => '상대가 이 무전기를 직접 들을 수 있을 때만';
 
   @override
-  String get chat_kindFlood => 'flood';
+  String get chat_kindFlood => '플러드';
 
   @override
-  String get chat_kindDirect => 'direct';
+  String get chat_kindDirect => '직접';
 
   @override
   String chat_kindRoute(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: '홉',
+      one: '홉',
     );
-    return 'route ($count $_temp0)';
+    return '경로 ($count$_temp0)';
   }
 
   @override
-  String get chat_statusQueued => 'Queued';
+  String get chat_statusQueued => '대기 중';
 
   @override
   String get chat_statusNoRepeaterHeard =>
-      'No repeater heard you. Will try again when one is in range.';
+      '내 신호를 들은 리피터가 없습니다. 범위 안에 리피터가 들어오면 다시 시도합니다.';
 
   @override
   String chat_narrowHashNotice(String name) {
-    return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
+    return '$name님의 무전기는 짧은 리피터 코드(1바이트)를 보냅니다. 상대 무전기가 2바이트 코드를 사용하기 전까지 Pathfinder는 상대에게 가는 경로를 학습할 수 없습니다.';
   }
 
   @override
   String chat_statusSending(String kind) {
-    return 'Sending · $kind';
+    return '보내는 중 · $kind';
   }
 
   @override
   String chat_statusRetrying(int attempt, int max, String kind) {
-    return 'Retrying · $kind · attempt $attempt of $max';
+    return '재시도 중 · $kind · $max번 중 $attempt번째';
   }
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return '전달됨 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return '$attempt번째 시도에 전달됨 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return '늦게 전달됨 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return '전달됨 · $secs초';
   }
 
   @override
@@ -3712,66 +3699,63 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       attempts,
       locale: localeName,
-      other: 'attempts',
-      one: 'attempt',
+      other: '번',
+      one: '번',
     );
-    return 'Failed after $attempts $_temp0 · tap to resend';
+    return '$attempts$_temp0 시도 후 실패 · 탭하여 다시 보내기';
   }
 
   @override
-  String get chat_statusFailedShort => 'Failed · tap to resend';
+  String get chat_statusFailedShort => '실패 · 탭하여 다시 보내기';
 
   @override
-  String get chat_resendingByFlood => 'Resending by flood';
+  String get chat_resendingByFlood => '플러드로 다시 보내는 중';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder (실험적)';
 
   @override
   String get settings_pathGraphSubtitle =>
-      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+      '무전기가 듣는 모든 것에서 경로를 학습하고, DM을 보낼 때 가장 좋은 경로부터 시도합니다. 호박색 경로 아이콘은 Pathfinder 경로로 보낸 메시지를 표시합니다.';
 
   @override
-  String get map_routeAndTrace => 'Route & trace';
+  String get map_routeAndTrace => '경로 및 추적';
 
   @override
-  String get map_pathfinderTrace => 'Trace there and back';
+  String get map_pathfinderTrace => '왕복 추적';
 
   @override
   String get map_pathfinderTraceSubtitle =>
-      'Out on Pathfinder\'s best route, back on its best route back';
+      '갈 때는 Pathfinder의 최적 경로, 돌아올 때는 최적 복귀 경로';
 
   @override
-  String get map_routeBackMirrored =>
-      'No route back known yet — coming back the same way';
+  String get map_routeBackMirrored => '아직 알려진 복귀 경로 없음 — 같은 길로 돌아옵니다';
 
   @override
-  String get map_traceHelpTitle => 'Path trace buttons';
+  String get map_traceHelpTitle => '경로 추적 버튼';
 
   @override
-  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+  String get map_traceHelpCustom => '리피터를 직접 입력하거나 선택합니다.';
 
   @override
-  String get map_traceHelpRun =>
-      'Sends a trace out along the repeaters you tapped, one way.';
+  String get map_traceHelpRun => '탭한 리피터를 따라 한 방향으로 추적을 보냅니다.';
 
   @override
-  String get map_traceHelpThereAndBack => 'There and back';
+  String get map_traceHelpThereAndBack => '왕복';
 
   @override
   String get map_traceHelpThereAndBackSubtitle =>
-      'Sends the trace out, then back over the same repeaters in reverse.';
+      '추적을 보낸 뒤, 같은 리피터를 거꾸로 거쳐 돌아오게 합니다.';
 
   @override
   String get map_traceHelpPathfinder =>
-      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+      'Pathfinder가 마지막으로 탭한 두 리피터를 지나는 최적 경로와 나에게 돌아오는 최적 경로를 고릅니다. 그 결과로 Pathfinder는 실제로 작동하는 링크를 배웁니다. 리피터 두 개를 탭해야 합니다.';
 
   @override
-  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+  String get map_traceHelpRemoveLast => '마지막 리피터를 경로에서 뺍니다.';
 
   @override
-  String get map_traceHelpCancel =>
-      'Stops building the trace. Shown before any repeater is tapped.';
+  String get map_traceHelpCancel => '추적 만들기를 중단합니다. 리피터를 탭하기 전에 표시됩니다.';
 
   @override
   String get chat_resendingByRoute => '설정한 경로로 다시 전송 중';
@@ -3863,263 +3847,250 @@ class AppLocalizationsKo extends AppLocalizations {
   String get room_reloadFailed => '무전기에서 룸을 초기화하지 못했습니다';
 
   @override
-  String get companionCli_title => 'Command line';
+  String get companionCli_title => '명령줄';
 
   @override
-  String get companionCli_settingsSubtitle =>
-      'Type text commands for this radio';
+  String get companionCli_settingsSubtitle => '이 무전기에 텍스트 명령 입력';
 
   @override
-  String get companionCli_rebooting => 'Restarting the radio…';
+  String get companionCli_rebooting => '무전기를 다시 시작하는 중…';
 
   @override
-  String get companionCli_cancelled => 'Cancelled';
+  String get companionCli_cancelled => '취소됨';
 
   @override
-  String get companionCli_poweringOff => 'Turning the radio off…';
+  String get companionCli_poweringOff => '무전기를 끄는 중…';
 
   @override
-  String get companionCli_noReply => 'No reply from the radio. Try again.';
+  String get companionCli_noReply => '무전기에서 응답이 없습니다. 다시 시도하세요.';
 
   @override
-  String get companionCli_powerOffTitle => 'Turn the radio off?';
+  String get companionCli_powerOffTitle => '무전기를 끌까요?';
 
   @override
-  String get companionCli_powerOffBody =>
-      'It stays off until you press its button or plug it in.';
+  String get companionCli_powerOffBody => '버튼을 누르거나 전원을 연결할 때까지 꺼진 상태로 유지됩니다.';
 
   @override
-  String get companionCli_powerOff => 'Turn off';
+  String get companionCli_powerOff => '끄기';
 
   @override
-  String get companionCli_quickBoard => 'Board';
+  String get companionCli_quickBoard => '보드';
 
   @override
-  String get companionCli_quickWifiStatus => 'WiFi status';
+  String get companionCli_quickWifiStatus => 'Wi‑Fi 상태';
 
   @override
-  String get companionCli_quickWifiAddress => 'WiFi address';
+  String get companionCli_quickWifiAddress => 'Wi‑Fi 주소';
 
   @override
-  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+  String get companionCli_helpBoard => '보드 제조사와 모델을 표시합니다.';
 
   @override
-  String get companionCli_helpReboot => 'Restarts the radio.';
+  String get companionCli_helpReboot => '무전기를 다시 시작합니다.';
 
   @override
-  String get companionCli_helpPowerOff => 'Turns the radio off.';
+  String get companionCli_helpPowerOff => '무전기를 끕니다.';
 
   @override
-  String get companionCli_helpSetPin =>
-      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+  String get companionCli_helpSetPin => '블루투스 페어링 PIN을 설정합니다. 다시 시작한 후 적용됩니다.';
 
   @override
   String get companionCli_helpSetTzOffset =>
-      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+      '무전기 자체 화면의 시계에 쓰도록 UTC에 더할 시간을 설정합니다(-12~+14).';
 
   @override
-  String get companionCli_helpSetTx =>
-      'Sets the transmit power in dBm. Applies at once.';
+  String get companionCli_helpSetTx => '송신 출력을 dBm 단위로 설정합니다. 바로 적용됩니다.';
 
   @override
   String get companionCli_helpSetIntThresh =>
-      'Sets the interference threshold in dB. 0 turns interference detection off.';
+      '간섭 임계값을 dB 단위로 설정합니다. 0이면 간섭 감지를 끕니다.';
 
   @override
   String get companionCli_helpSetCad =>
-      'Listens for other radios before sending (channel activity detection).';
+      '보내기 전에 다른 무전기의 신호가 있는지 확인합니다(채널 활동 감지).';
 
   @override
-  String get companionCli_helpSetRxGain =>
-      'Boosted receive gain, on SX126x radios.';
+  String get companionCli_helpSetRxGain => 'SX126x 무전기에서 수신 게인을 높입니다.';
 
   @override
   String get companionCli_helpSetPathHashMode =>
-      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+      '경로에서 리피터 하나당 바이트 수: 0 = 1바이트, 1 = 2바이트, 2 = 3바이트.';
 
   @override
-  String get companionCli_helpWifiStatus =>
-      'Shows whether the radio is on the WiFi network.';
+  String get companionCli_helpWifiStatus => '무전기가 Wi‑Fi 네트워크에 연결되어 있는지 표시합니다.';
 
   @override
-  String get companionCli_helpWifiIp =>
-      'Shows the radio\'s address on the WiFi network.';
+  String get companionCli_helpWifiIp => 'Wi‑Fi 네트워크에서 무전기의 주소를 표시합니다.';
 
   @override
   String get companionCli_helpWifiSsid =>
-      'Sets the WiFi network name. Applies after a restart.';
+      'Wi‑Fi 네트워크 이름을 설정합니다. 다시 시작한 후 적용됩니다.';
 
   @override
-  String get companionCli_helpWifiPwd =>
-      'Sets the WiFi password. Applies after a restart.';
+  String get companionCli_helpWifiPwd => 'Wi‑Fi 비밀번호를 설정합니다. 다시 시작한 후 적용됩니다.';
 
   @override
   String get companionCli_helpWifiEnabled =>
-      'Turns WiFi on (1) or off (0). Applies after a restart.';
+      'Wi‑Fi를 켜거나(1) 끕니다(0). 다시 시작한 후 적용됩니다.';
 
   @override
   String get companionCli_helpWifiClear =>
-      'Forgets the WiFi network. Applies after a restart.';
+      '저장된 Wi‑Fi 네트워크를 삭제합니다. 다시 시작한 후 적용됩니다.';
 
   @override
   String get companionCli_remoteNoReply =>
-      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+      '응답이 없습니다. 상대 무전기는 펌웨어 1.18 이상이어야 하며, 내가 명령줄을 사용하도록 허용해야 합니다.';
 
   @override
   String get companionCli_remoteSentNoAnswer =>
-      'Sent. A radio does not answer a restart or power-off.';
+      '보냈습니다. 무전기는 다시 시작이나 전원 끄기에는 응답하지 않습니다.';
 
   @override
   String companionCli_blocked(String name, String command) {
-    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '$name님이 내 무전기의 명령줄을 사용하려고 했습니다: \"$command\". 허용되지 않았습니다.';
   }
 
   @override
   String companionCli_blockedBody(String command) {
-    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '내 무전기의 명령줄을 사용하려고 했습니다: \"$command\". 허용되지 않았습니다.';
   }
 
   @override
-  String get contact_remoteCli => 'Allow remote command line';
+  String get contact_remoteCli => '원격 명령줄 허용';
 
   @override
-  String get contact_remoteCliSubtitle =>
-      'Lets this contact run commands on your radio';
+  String get contact_remoteCliSubtitle => '이 연락처가 내 무전기에서 명령을 실행할 수 있게 합니다';
 
   @override
   String contact_remoteCliWarningTitle(String name) {
-    return 'Let $name control your radio?';
+    return '$name님이 내 무전기를 제어하게 할까요?';
   }
 
   @override
   String contact_remoteCliWarning(String name) {
-    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+    return '$name님이 무전기 설정 변경, Wi‑Fi 비밀번호 확인, 무전기 이름 변경, 다시 시작 및 전원 끄기를 할 수 있게 됩니다. 완전히 신뢰하는 사람에게만 허용하세요.';
   }
 
   @override
-  String get contact_remoteCliAllow => 'Allow';
+  String get contact_remoteCliAllow => '허용';
 
   @override
   String get connection_secondApp =>
-      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+      '다른 앱이 이 무전기에 연결되어 있습니다. 메시지와 설정이 뒤섞일 수 있습니다. 다른 앱을 닫으세요.';
 
   @override
-  String get wifi_title => 'WiFi';
+  String get wifi_title => 'Wi‑Fi';
 
   @override
-  String get wifi_settingsSubtitle => 'Network, password and connection';
+  String get wifi_settingsSubtitle => '네트워크, 비밀번호, 연결';
 
   @override
-  String get wifi_use => 'Use WiFi';
+  String get wifi_use => 'Wi‑Fi 사용';
 
   @override
-  String get wifi_networkName => 'Network name';
+  String get wifi_networkName => '네트워크 이름';
 
   @override
-  String get wifi_password => 'Password';
+  String get wifi_password => '비밀번호';
 
   @override
-  String get wifi_passwordUnchanged => 'Unchanged';
+  String get wifi_passwordUnchanged => '변경 안 함';
 
   @override
-  String get wifi_showPassword => 'Show password';
+  String get wifi_showPassword => '비밀번호 표시';
 
   @override
-  String get wifi_nameMissing => 'Enter the network name';
+  String get wifi_nameMissing => '네트워크 이름을 입력하세요';
 
   @override
-  String get wifi_nameTooLong =>
-      'The network name is too long (32 bytes at most)';
+  String get wifi_nameTooLong => '네트워크 이름이 너무 깁니다(최대 32바이트)';
 
   @override
-  String get wifi_passwordTooLong =>
-      'The password is too long (63 bytes at most)';
+  String get wifi_passwordTooLong => '비밀번호가 너무 깁니다(최대 63바이트)';
 
   @override
-  String get wifi_savedRestart =>
-      'Saved. WiFi changes apply after the radio restarts.';
+  String get wifi_savedRestart => '저장했습니다. Wi‑Fi 변경 사항은 무전기를 다시 시작한 후 적용됩니다.';
 
   @override
-  String get wifi_forget => 'Forget network';
+  String get wifi_forget => '네트워크 삭제';
 
   @override
   String get wifi_forgetConfirm =>
-      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+      '이 Wi‑Fi 네트워크를 삭제할까요? 무전기는 다시 시작한 후 Wi‑Fi를 사용하지 않습니다.';
 
   @override
   String wifi_notAccepted(String reply) {
-    return 'The radio did not accept that: $reply';
+    return '무전기가 받아들이지 않았습니다: $reply';
   }
 
   @override
-  String get wifi_noReply => 'No reply from the radio. Try again.';
+  String get wifi_noReply => '무전기에서 응답이 없습니다. 다시 시도하세요.';
 
   @override
-  String get wifi_restartTitle => 'Restart the radio?';
+  String get wifi_restartTitle => '무전기를 다시 시작할까요?';
 
   @override
-  String get wifi_later => 'Later';
+  String get wifi_later => '나중에';
 
   @override
-  String get wifi_loadFailed =>
-      'Could not read the WiFi settings from the radio.';
+  String get wifi_loadFailed => '무전기에서 Wi‑Fi 설정을 읽지 못했습니다.';
 
   @override
   String wifi_connectedTo(String address) {
-    return 'Connected · $address';
+    return '연결됨 · $address';
   }
 
   @override
-  String get wifi_notConnected => 'Not connected to WiFi';
+  String get wifi_notConnected => 'Wi‑Fi에 연결되지 않음';
 
   @override
   String wifi_portNote(int port) {
-    return 'Apps on the same network can connect on port $port';
+    return '같은 네트워크의 앱은 포트 $port로 연결할 수 있습니다';
   }
 
   @override
-  String get wifi_connectOverWifi => 'Connect over WiFi';
+  String get wifi_connectOverWifi => 'Wi‑Fi로 연결';
 
   @override
   String wifi_connectOverWifiBody(String address, int port) {
-    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+    return 'MeshTrax가 이 무전기와 연결을 끊고 $address, 포트 $port가 입력된 TCP 화면을 엽니다. 그 화면에서 \'연결\'을 탭하세요.';
   }
 
   @override
-  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+  String get wifi_noteRestart => '변경 사항은 무전기를 다시 시작한 후 적용됩니다.';
 
   @override
   String get wifi_noteSecurity =>
-      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+      'Wi‑Fi 네트워크에 있는 누구나 포트 5000으로 무전기에 연결할 수 있습니다. 여기에는 비밀번호가 없습니다.';
 
   @override
   String get wifi_noteBattery =>
-      'WiFi keeps the radio awake, so the battery runs down faster.';
+      'Wi‑Fi를 켜면 무전기가 절전 상태로 들어가지 않아 배터리가 더 빨리 닳습니다.';
 
   @override
   String get wifi_noteWrongPassword =>
-      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
+      '비밀번호가 틀리면 무전기는 몇 초마다 계속 연결을 시도합니다. 블루투스는 계속 작동합니다.';
 
   @override
   String get room_selfDemoteWarning =>
       '자신의 접근 권한을 변경하려고 합니다. 관리자 역할을 잃으면 룸 자체 콘솔에서만 되돌릴 수 있습니다.';
 
   @override
-  String get scanner_offlineMaps => 'Offline maps';
+  String get scanner_offlineMaps => '오프라인 지도';
 
   @override
-  String get appSettings_offlineMaps => 'Offline maps';
+  String get appSettings_offlineMaps => '오프라인 지도';
 
   @override
-  String get appSettings_offlineMapsNone => 'None downloaded';
+  String get appSettings_offlineMapsNone => '다운로드한 지도 없음';
 
   @override
   String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count regions',
-      one: '1 region',
+      other: '지역 $count개',
+      one: '지역 1개',
     );
     return '$_temp0';
   }
@@ -4129,8 +4100,8 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count chart areas',
-      one: '1 chart area',
+      other: '해도 구역 $count개',
+      one: '해도 구역 1개',
     );
     return '$_temp0';
   }
@@ -4140,81 +4111,80 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count updates available',
-      one: '1 update available',
+      other: '업데이트 $count개 있음',
+      one: '업데이트 1개 있음',
     );
     return '$_temp0';
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly => 'Wi‑Fi에서만 지도 다운로드';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+      '지도 다운로드는 Wi‑Fi에 연결될 때까지 기다립니다';
 
   @override
-  String get offlineMaps_title => 'Offline maps';
+  String get offlineMaps_title => '오프라인 지도';
 
   @override
-  String get offlineMaps_tabMaps => 'Maps';
+  String get offlineMaps_tabMaps => '지도';
 
   @override
-  String get offlineMaps_tabCharts => 'Charts';
+  String get offlineMaps_tabCharts => '해도';
 
   @override
-  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+  String get offlineMaps_chartsNotice => '항해용 아님 · 이유는?';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
-    return 'Suggested · $coast';
+    return '추천 · $coast';
   }
 
   @override
-  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+  String get offlineMaps_chartsByCoast => '해안별 해도 구역';
 
   @override
   String offlineMaps_chartsCoastSummary(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '구역 $count개',
+      one: '구역 1개',
     );
     return '$_temp0 · $size';
   }
 
   @override
   String offlineMaps_chartsDownloadedCount(int count) {
-    return '$count downloaded';
+    return '$count개 다운로드됨';
   }
 
   @override
   String offlineMaps_chartsSelectedCount(int count) {
-    return '$count selected';
+    return '$count개 선택됨';
   }
 
   @override
-  String get offlineMaps_selectAll => 'Select all';
+  String get offlineMaps_selectAll => '모두 선택';
 
   @override
-  String get offlineMaps_clearSelection => 'Clear';
+  String get offlineMaps_clearSelection => '선택 해제';
 
   @override
   String offlineMaps_chartsAlsoIn(String coasts) {
-    return 'Also in $coasts';
+    return '$coasts에도 포함';
   }
 
   @override
-  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+  String get offlineMaps_chartsNotAvailable => '아직 사용할 수 없음';
 
   @override
-  String get offlineMaps_chartsHint =>
-      'NOAA charts are picked by coast, in the Charts tab.';
+  String get offlineMaps_chartsHint => 'NOAA 해도는 \'해도\' 탭에서 해안별로 고릅니다.';
 
   @override
   String offlineMaps_chartsName(String area) {
-    return '$area NOAA charts';
+    return '$area NOAA 해도';
   }
 
   @override
@@ -4222,427 +4192,418 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '구역 $count개',
+      one: '구역 1개',
     );
     return '$_temp0';
   }
 
   @override
-  String get offlineMaps_tabDownloaded => 'Downloaded';
+  String get offlineMaps_tabDownloaded => '다운로드됨';
 
   @override
-  String get offlineMaps_refresh => 'Check for new maps';
+  String get offlineMaps_refresh => '새 지도 확인';
 
   @override
-  String get offlineMaps_loading => 'Loading available maps…';
+  String get offlineMaps_loading => '사용 가능한 지도 불러오는 중…';
 
   @override
-  String get offlineMaps_serverError => 'Can\'t reach the map server';
+  String get offlineMaps_serverError => '지도 서버에 연결할 수 없습니다';
 
   @override
-  String get offlineMaps_unavailable => 'No maps are available yet';
+  String get offlineMaps_unavailable => '아직 사용할 수 있는 지도가 없습니다';
 
   @override
-  String get offlineMaps_unavailableHint => 'Check again later.';
+  String get offlineMaps_unavailableHint => '나중에 다시 확인하세요.';
 
   @override
-  String get offlineMaps_chartsUnavailable =>
-      'No NOAA charts are available yet';
+  String get offlineMaps_chartsUnavailable => '아직 사용할 수 있는 NOAA 해도가 없습니다';
 
   @override
   String offlineMaps_cachedFrom(String date) {
-    return 'Showing the list from $date';
+    return '$date 기준 목록 표시 중';
   }
 
   @override
-  String get offlineMaps_needsNewerApp =>
-      'Update MeshTrax to get the newest maps.';
+  String get offlineMaps_needsNewerApp => '최신 지도를 받으려면 MeshTrax를 업데이트하세요.';
 
   @override
-  String get offlineMaps_world => 'World';
+  String get offlineMaps_world => '세계';
 
   @override
-  String get offlineMaps_suggested => 'Suggested';
+  String get offlineMaps_suggested => '추천';
 
   @override
-  String get offlineMaps_regions => 'Regions';
+  String get offlineMaps_regions => '지역';
 
   @override
   String offlineMaps_regionsIn(String name) {
-    return 'Regions in $name';
+    return '$name의 지역';
   }
 
   @override
   String offlineMaps_inside(int count) {
-    return '$count inside';
+    return '$count개 포함';
   }
 
   @override
   String offlineMaps_storageUsed(String size) {
-    return '$size of offline maps on this device';
+    return '이 기기의 오프라인 지도: $size';
   }
 
   @override
   String offlineMaps_updates(int count) {
-    return 'Updates ($count)';
+    return '업데이트 ($count)';
   }
 
   @override
   String offlineMaps_updateAll(String size) {
-    return 'Update all $size';
+    return '모두 업데이트 $size';
   }
 
   @override
-  String get offlineMaps_downloading => 'Downloading';
+  String get offlineMaps_downloading => '다운로드 중';
 
   @override
-  String get offlineMaps_update => 'Update';
+  String get offlineMaps_update => '업데이트';
 
   @override
   String offlineMaps_downloadedOn(String date) {
-    return 'Downloaded $date';
+    return '$date에 다운로드함';
   }
 
   @override
-  String get offlineMaps_updateAvailable => 'Update available';
+  String get offlineMaps_updateAvailable => '업데이트 있음';
 
   @override
-  String get offlineMaps_otherFiles => 'Other map files';
+  String get offlineMaps_otherFiles => '기타 지도 파일';
 
   @override
-  String get offlineMaps_emptyTitle => 'No offline maps yet';
+  String get offlineMaps_emptyTitle => '아직 오프라인 지도가 없습니다';
 
   @override
-  String get offlineMaps_emptyBody =>
-      'Download a region to use the map without a connection.';
+  String get offlineMaps_emptyBody => '지역을 다운로드하면 인터넷 연결 없이도 지도를 쓸 수 있습니다.';
 
   @override
-  String get offlineMaps_findMaps => 'Find maps';
+  String get offlineMaps_findMaps => '지도 찾기';
 
   @override
   String offlineMaps_deleteTitle(String name) {
-    return 'Delete $name?';
+    return '$name을(를) 삭제할까요?';
   }
 
   @override
   String offlineMaps_deleteBody(String size) {
-    return 'This frees $size. You can download it again later.';
+    return '$size의 공간이 확보됩니다. 나중에 다시 다운로드할 수 있습니다.';
   }
 
   @override
   String offlineMaps_deleted(String name) {
-    return '$name deleted';
+    return '$name 삭제됨';
   }
 
   @override
   String offlineMaps_bytesProgress(String done, String total) {
-    return '$done of $total';
+    return '$done / $total';
   }
 
   @override
-  String get offlineMaps_kindMap => 'Map';
+  String get offlineMaps_kindMap => '지도';
 
   @override
-  String get offlineMaps_kindMapDetail =>
-      'OpenStreetMap streets, trails, places';
+  String get offlineMaps_kindMapDetail => 'OpenStreetMap 도로, 탐방로, 지명';
 
   @override
-  String get offlineMaps_kindContours => 'Contours';
+  String get offlineMaps_kindContours => '등고선';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail => '고도를 나타내는 선';
 
   @override
-  String get offlineMaps_kindUsgs => 'USGS topo map';
+  String get offlineMaps_kindUsgs => 'USGS 지형도';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+  String get offlineMaps_kindUsgsDetail => '탐방로, 하천, 보호구역';
 
   @override
-  String get offlineMaps_kindTerrain => 'Hill shading';
+  String get offlineMaps_kindTerrain => '음영 기복';
 
   @override
-  String get offlineMaps_kindTerrainDetail =>
-      'Hills and mountains, shaded under the map';
+  String get offlineMaps_kindTerrainDetail => '언덕과 산을 지도 아래에 음영으로 표시';
 
   @override
-  String get offlineMaps_kindCharts => 'NOAA charts';
+  String get offlineMaps_kindCharts => 'NOAA 해도';
 
   @override
-  String get offlineMaps_usOnly => 'United States only';
+  String get offlineMaps_usOnly => '미국만 해당';
 
   @override
   String offlineMaps_download(String size) {
-    return 'Download $size';
+    return '다운로드 $size';
   }
 
   @override
-  String get offlineMaps_downloadTotal => 'Download';
+  String get offlineMaps_downloadTotal => '다운로드';
 
   @override
   String offlineMaps_largeDownload(String size) {
-    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+    return '용량이 큰 다운로드입니다($size). Wi‑Fi를 사용하고 기기를 충전하면서 받으세요.';
   }
 
   @override
-  String get offlineMaps_waiting => 'Waiting…';
+  String get offlineMaps_waiting => '대기 중…';
 
   @override
-  String get offlineMaps_checking => 'Checking download…';
+  String get offlineMaps_checking => '다운로드 확인 중…';
 
   @override
-  String get offlineMaps_retrying => 'Retrying…';
+  String get offlineMaps_retrying => '다시 시도하는 중…';
 
   @override
   String offlineMaps_failed(String error) {
-    return 'Download failed: $error';
+    return '다운로드 실패: $error';
   }
 
   @override
-  String get offlineMaps_pause => 'Pause';
+  String get offlineMaps_pause => '일시 중지';
 
   @override
-  String get offlineMaps_resume => 'Resume';
+  String get offlineMaps_resume => '재개';
 
   @override
-  String get offlineMaps_deleteRegion => 'Delete region';
+  String get offlineMaps_deleteRegion => '지역 삭제';
 
   @override
-  String get offlineMaps_notInCatalogue => 'Not available for this region';
+  String get offlineMaps_notInCatalogue => '이 지역에서는 사용할 수 없음';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => '지도 다운로드 중';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused => '지도 다운로드 일시 중지됨';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed => '지도 다운로드 실패';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+  String get offlineMaps_clearTileCache => '온라인 지도 캐시 지우기';
 
   @override
   String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+      '둘러보는 동안 저장된 온라인 지도 타일을 삭제할까요? 다운로드한 지도는 그대로 남습니다.';
 
   @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+  String get offlineMaps_tileCacheCleared => '온라인 지도 캐시를 삭제했습니다';
 
   @override
-  String get map_notForNavigation => 'Not for navigation';
+  String get map_notForNavigation => '항해용 아님';
 
   @override
   String get map_chartsNoticeIntro =>
-      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+      'MeshTrax는 NOAA 해도 데이터로 이 해도를 그려, 무전기 주변 바다를 살펴보고 계획을 세우는 데 도움을 줍니다. 공식 해도가 아닙니다. 이 해도를 보고 배를 조종하지 마세요.';
 
   @override
-  String get map_chartsNoticeWhy => 'Why:';
+  String get map_chartsNoticeWhy => '이유:';
 
   @override
   String get map_chartsNoticeOutOfDate =>
-      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+      '정보가 오래됩니다. NOAA는 해도를 계속 수정하지만, 다운로드한 해도는 \'오프라인 지도\'에서 업데이트할 때까지 그대로입니다.';
 
   @override
   String get map_chartsNoticeLeftOut =>
-      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+      '빠진 정보가 있습니다. 많은 해도 기호, 등화 섹터, 주석이 그려지지 않으며, 일부 라벨은 확대해야 보입니다.';
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      '위치가 틀리거나 오래되었을 수 있습니다. GPS는 10 m (30 ft) 이상 어긋날 수 있고, 노드는 마지막으로 보고한 위치에 표시될 뿐입니다.';
 
   @override
-  String get map_chartsNoticeNotPlotter =>
-      'MeshTrax isn\'t a certified chart plotter.';
+  String get map_chartsNoticeNotPlotter => 'MeshTrax는 인증된 차트 플로터가 아닙니다.';
 
   @override
   String get map_chartsNoticeUse =>
-      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+      '항해할 때는 최신 항행통보와 함께 공식 최신 NOAA 해도(종이 해도 또는 인증된 차트 플로터의 NOAA ENC)를 사용하세요.';
 
   @override
-  String get map_sourceOnline => 'Online';
+  String get map_sourceOnline => '온라인';
 
   @override
-  String get map_sourceOffline => 'Offline';
+  String get map_sourceOffline => '오프라인';
 
   @override
-  String get map_downloadForDetail => 'Download a region for detail';
+  String get map_downloadForDetail => '자세히 보려면 지역 다운로드';
 
   @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+  String get map_zoomInForOfflineMap => '확대하면 오프라인 지도가 보입니다';
 
   @override
-  String get map_noCharts => 'No charts here';
+  String get map_noCharts => '이곳에는 해도가 없습니다';
 
   @override
-  String get map_myLocation => 'My location';
+  String get map_myLocation => '내 위치';
 
   @override
-  String get map_zoomIn => 'Zoom in';
+  String get map_zoomIn => '확대';
 
   @override
-  String get map_zoomOut => 'Zoom out';
+  String get map_zoomOut => '축소';
 
   @override
   String get gps_title => 'GPS';
 
   @override
-  String get gps_on => 'GPS on';
+  String get gps_on => 'GPS 켜짐';
 
   @override
-  String get gps_off => 'GPS off';
+  String get gps_off => 'GPS 꺼짐';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => '무전기가 GPS로 위치를 업데이트합니다.';
 
   @override
-  String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+  String get gps_offHint => '끄면 무전기 배터리를 아낄 수 있습니다. 켜면 위치를 찾는 데 몇 분 걸릴 수 있습니다.';
 
   @override
-  String get gps_asking => 'Asking the radio...';
+  String get gps_asking => '무전기에 묻는 중...';
 
   @override
-  String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+  String get gps_noPosition => '아직 위치가 없습니다. 실외에서는 첫 위치를 잡는 데 몇 분 걸릴 수 있습니다.';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => '위치';
 
   @override
-  String get gps_altitude => 'Altitude';
+  String get gps_altitude => '고도';
 
   @override
   String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
+    return '$ago 전에 무전기에서 읽음';
   }
 
   @override
-  String get gps_turnOnTitle => 'Turn on GPS?';
+  String get gps_turnOnTitle => 'GPS를 켤까요?';
 
   @override
-  String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+  String get gps_turnOnBody => '무전기의 GPS가 꺼져 있습니다. 켜면 위치를 찾는 데 몇 분 걸릴 수 있습니다.';
 
   @override
-  String get gps_turnOn => 'Turn on';
+  String get gps_turnOn => '켜기';
 
   @override
-  String get gps_notNow => 'Not now';
+  String get gps_notNow => '나중에';
 
   @override
-  String get map_zoomInForCharts => 'Zoom in to see your charts';
+  String get map_zoomInForCharts => '확대하면 해도가 보입니다';
 
   @override
   String map_downloadRegion(String region, String size) {
-    return 'Download $region · $size';
+    return '$region 다운로드 · $size';
   }
 
   @override
-  String get mapLayers_title => 'Map layers';
+  String get mapLayers_title => '지도 레이어';
 
   @override
-  String get mapLayers_mapType => 'Map type';
+  String get mapLayers_mapType => '지도 유형';
 
   @override
-  String get mapLayers_standard => 'Standard';
+  String get mapLayers_standard => '기본';
 
   @override
-  String get mapLayers_usgs => 'USGS topo';
+  String get mapLayers_usgs => 'USGS 지형도';
 
   @override
-  String get mapLayers_charts => 'Charts';
+  String get mapLayers_charts => '해도';
 
   @override
-  String get mapLayers_notDownloaded => 'Not downloaded';
+  String get mapLayers_notDownloaded => '다운로드 안 됨';
 
   @override
-  String get mapLayers_offlineOnly => 'Offline only';
+  String get mapLayers_offlineOnly => '오프라인 전용';
 
   @override
-  String get mapLayers_details => 'Map details';
+  String get mapLayers_details => '지도 세부 정보';
 
   @override
-  String get mapLayers_contours => 'Contours';
+  String get mapLayers_contours => '등고선';
 
   @override
-  String get mapLayers_hillShading => 'Hill shading';
+  String get mapLayers_hillShading => '음영 기복';
 
   @override
-  String get mapLayers_dark => 'Dark map';
+  String get mapLayers_dark => '어두운 지도';
 
   @override
-  String get mapLayers_downloadedAreas => 'Downloaded areas';
+  String get mapLayers_downloadedAreas => '다운로드한 지역';
 
   @override
-  String get mapLayers_nodes => 'Nodes';
+  String get mapLayers_nodes => '노드';
 
   @override
-  String get mapLayers_pins => 'Pins';
+  String get mapLayers_pins => '핀';
 
   @override
-  String get mapLayers_guessed => 'Guessed';
+  String get mapLayers_guessed => '추정 위치';
 
   @override
-  String get mapLayers_moreFilters => 'More filters';
+  String get mapLayers_moreFilters => '추가 필터';
 
   @override
-  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+  String get mapLayers_moreFiltersDetail => '마지막 수신, 키 접두사, 중복';
 
   @override
-  String get map_legend => 'Legend';
+  String get map_legend => '범례';
 
   @override
-  String get scanner_map => 'Map';
+  String get scanner_map => '지도';
 
   @override
-  String get structured_openMap => 'Open map';
+  String get structured_openMap => '지도 열기';
 
   @override
-  String get structured_addToCalendar => 'Add to calendar';
+  String get structured_addToCalendar => '캘린더에 추가';
 
   @override
-  String get structured_details => 'Details';
+  String get structured_details => '세부 정보';
 
   @override
   String get structured_sos => 'SOS';
 
   @override
-  String get structured_event => 'Event';
+  String get structured_event => '이벤트';
 
   @override
-  String get structured_notice => 'Notice';
+  String get structured_notice => '공지';
 
   @override
-  String get structured_allDay => 'All day';
+  String get structured_allDay => '종일';
 
   @override
-  String get structured_calendarFailed => 'Could not open the calendar';
+  String get structured_calendarFailed => '캘린더를 열 수 없습니다';
 
   @override
-  String get structured_today => 'Today';
+  String get structured_today => '오늘';
 
   @override
-  String get structured_tomorrow => 'Tomorrow';
+  String get structured_tomorrow => '내일';
 
   @override
   String structured_inDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'In $count days',
-      one: 'In 1 day',
+      other: '$count일 후',
+      one: '1일 후',
     );
     return '$_temp0';
   }
 
   @override
-  String get structured_past => 'Past';
+  String get structured_past => '지난 일정';
 
   @override
   String structured_dayOfDays(int day, int total) {
-    return 'Day $day of $total';
+    return '$total일 중 $day일째';
   }
 
   @override
@@ -4650,697 +4611,669 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days',
-      one: '1 day',
+      other: '$count일',
+      one: '1일',
     );
     return '$_temp0';
   }
 
   @override
-  String get dialog_eventEndDate => 'End date';
+  String get dialog_eventEndDate => '종료일';
 
   @override
-  String get dialog_eventSameDay => 'Same day';
+  String get dialog_eventSameDay => '같은 날';
 
   @override
-  String get structured_map => 'Map';
+  String get structured_map => '지도';
 
   @override
-  String get structured_navigate => 'Navigate';
+  String get structured_navigate => '길 안내';
 
   @override
-  String get structured_channel => 'Channel';
+  String get structured_channel => '채널';
 
   @override
-  String get structured_contact => 'Contact';
+  String get structured_contact => '연락처';
 
   @override
-  String get structured_room => 'Room';
+  String get structured_room => '룸';
 
   @override
-  String get structured_repeater => 'Repeater';
+  String get structured_repeater => '리피터';
 
   @override
-  String get structured_sensor => 'Sensor';
+  String get structured_sensor => '센서';
 
   @override
-  String get structured_joinChannel => 'Join channel';
+  String get structured_joinChannel => '채널 참여';
 
   @override
-  String get structured_addContact => 'Add contact';
+  String get structured_addContact => '연락처 추가';
 
   @override
-  String get structured_addRoom => 'Add room';
+  String get structured_addRoom => '룸 추가';
 
   @override
-  String get structured_addRepeater => 'Add repeater';
+  String get structured_addRepeater => '리피터 추가';
 
   @override
-  String get structured_addSensor => 'Add sensor';
+  String get structured_addSensor => '센서 추가';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => '열기';
 
   @override
-  String get structured_added => 'Added';
+  String get structured_added => '추가됨';
 
   @override
-  String get tray_add => 'Add';
+  String get tray_add => '추가';
 
   @override
-  String get tray_myLocation => 'My location';
+  String get tray_myLocation => '내 위치';
 
   @override
-  String get tray_pointOnMap => 'Point on map';
+  String get tray_pointOnMap => '지도상의 지점';
 
   @override
   String get tray_sos => 'SOS';
 
   @override
-  String get tray_event => 'Event';
+  String get tray_event => '이벤트';
 
   @override
-  String get tray_notice => 'Notice';
+  String get tray_notice => '공지';
 
   @override
-  String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+  String get tray_noRadioPosition => '무전기에 아직 위치가 없습니다. 지도에서 선택하세요.';
 
   @override
-  String get dialog_insert => 'Insert';
+  String get dialog_insert => '삽입';
 
   @override
-  String get dialog_eventTitle => 'Title';
+  String get dialog_eventTitle => '제목';
 
   @override
-  String get dialog_eventDate => 'Date';
+  String get dialog_eventDate => '날짜';
 
   @override
-  String get dialog_eventStart => 'Start';
+  String get dialog_eventStart => '시작';
 
   @override
-  String get dialog_eventEnd => 'End';
+  String get dialog_eventEnd => '종료';
 
   @override
-  String get dialog_eventNoEnd => 'No end time';
+  String get dialog_eventNoEnd => '종료 시간 없음';
 
   @override
-  String get dialog_eventPlace => 'Place (optional)';
+  String get dialog_eventPlace => '장소(선택)';
 
   @override
-  String get dialog_pickOnMap => 'Pick on map';
+  String get dialog_pickOnMap => '지도에서 선택';
 
   @override
-  String get dialog_sosTitle => 'Send SOS';
+  String get dialog_sosTitle => 'SOS 보내기';
 
   @override
-  String get dialog_sosText => 'What happened?';
+  String get dialog_sosText => '무슨 일이 있었나요?';
 
   @override
-  String get dialog_noticeTitle => 'Notice';
+  String get dialog_noticeTitle => '공지';
 
   @override
-  String get dialog_noticeText => 'What should everyone know?';
+  String get dialog_noticeText => '모두에게 무엇을 알릴까요?';
 
   @override
-  String get dialog_labelTitle => 'Point on map';
+  String get dialog_labelTitle => '지도상의 지점';
 
   @override
-  String get dialog_note => 'Note (optional)';
+  String get dialog_note => '메모(선택)';
 
   @override
-  String get paste_convertLocation =>
-      'Looks like a maps link. Convert it to a Location?';
+  String get paste_convertLocation => '지도 링크 같습니다. 위치로 변환할까요?';
 
   @override
-  String get paste_convertEvent =>
-      'Looks like a calendar share. Convert it to an Event?';
+  String get paste_convertEvent => '캘린더 공유 같습니다. 이벤트로 변환할까요?';
 
   @override
-  String get paste_convert => 'Convert';
+  String get paste_convert => '변환';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolving => '링크 확인 중…';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_resolveFailed => '링크를 확인할 수 없습니다';
 
   @override
-  String get pinned_dismiss => 'Dismiss';
+  String get pinned_dismiss => '닫기';
 
   @override
   String get tray_gif => 'GIF';
 
   @override
   String link_joinChannelBody(String name) {
-    return 'Join channel $name?';
+    return '$name 채널에 참여할까요?';
   }
 
   @override
   String link_alreadyJoined(String name) {
-    return 'You are already in $name';
+    return '이미 $name에 참여 중입니다';
   }
 
   @override
   String link_channelJoined(String name) {
-    return 'Joined $name';
+    return '$name에 참여했습니다';
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint => '지도를 탭해 위치를 선택하세요';
 
   @override
-  String get map_legendMesh => 'Mesh';
+  String get map_legendMesh => '메시';
 
   @override
-  String get chartLegend_title => 'Chart symbols';
+  String get chartLegend_title => '해도 기호';
 
   @override
-  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+  String get chartLegend_sectionBuoys => '부표와 입표';
 
   @override
-  String get chartLegend_sectionLights => 'Lights';
+  String get chartLegend_sectionLights => '등화';
 
   @override
-  String get chartLegend_sectionHazards => 'Hazards';
+  String get chartLegend_sectionHazards => '위험 요소';
 
   @override
-  String get chartLegend_sectionTides => 'Tides and currents';
+  String get chartLegend_sectionTides => '조석과 조류';
 
   @override
-  String get chartLegend_sectionDepths => 'Depths and seabed';
+  String get chartLegend_sectionDepths => '수심과 해저';
 
   @override
-  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+  String get chartLegend_sectionAreas => '구역, 항로, 선';
 
   @override
-  String get chartLegend_sectionLandmarks => 'Landmarks';
+  String get chartLegend_sectionLandmarks => '육상 목표물';
 
   @override
-  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+  String get chartLegend_sectionAbbreviations => '약어';
 
   @override
-  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+  String get chartLegend_chartNo1 => '모든 해도 기호: U.S. Chart No. 1';
 
   @override
-  String get chartLegend_portBuoy => 'Green can buoy';
+  String get chartLegend_portBuoy => '녹색 원통형 부표';
 
   @override
-  String get chartLegend_portBuoyHint =>
-      'Keep it on your left coming in from sea';
+  String get chartLegend_portBuoyHint => '바다에서 들어올 때 왼쪽에 두고 진행';
 
   @override
-  String get chartLegend_starboardBuoy => 'Red nun buoy';
+  String get chartLegend_starboardBuoy => '적색 원뿔형 부표';
 
   @override
-  String get chartLegend_starboardBuoyHint =>
-      'Keep it on your right coming in: red, right, returning';
+  String get chartLegend_starboardBuoyHint => '들어올 때 오른쪽에 두고 진행: 돌아올 때 빨강은 오른쪽';
 
   @override
-  String get chartLegend_junctionBuoy => 'Banded buoy';
+  String get chartLegend_junctionBuoy => '가로띠 부표';
 
   @override
-  String get chartLegend_junctionBuoyHint =>
-      'A channel junction: treat it as the colour of its top band';
+  String get chartLegend_junctionBuoyHint => '수로 분기점: 맨 위 띠의 색 표지로 간주';
 
   @override
-  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+  String get chartLegend_safeWaterBuoy => '빨강·흰색 세로줄';
 
   @override
-  String get chartLegend_safeWaterBuoyHint =>
-      'Safe water all around, often at a channel entrance';
+  String get chartLegend_safeWaterBuoyHint => '주변이 모두 안전한 수역, 주로 수로 입구에 있음';
 
   @override
-  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+  String get chartLegend_isolatedDangerBuoy => '검정·빨강 가로띠';
 
   @override
   String get chartLegend_isolatedDangerBuoyHint =>
-      'A small danger with safe water around it: keep clear';
+      '주변이 안전한 수역에 있는 작은 위험물: 가까이 가지 말 것';
 
   @override
-  String get chartLegend_specialBuoy => 'Yellow buoy';
+  String get chartLegend_specialBuoy => '노란색 부표';
 
   @override
-  String get chartLegend_specialBuoyHint =>
-      'Special purpose, not for steering by: anchorage, cable, research';
+  String get chartLegend_specialBuoyHint => '특수 목적, 항행 기준이 아님: 묘박지, 케이블, 조사 등';
 
   @override
-  String get chartLegend_cardinalBuoy => 'Black and yellow';
+  String get chartLegend_cardinalBuoy => '검정·노랑';
 
   @override
   String get chartLegend_cardinalBuoyHint =>
-      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+      '방위표지: 표지가 가리키는 방위 쪽으로 통과(미국에서는 드묾)';
 
   @override
-  String get chartLegend_mooringBuoy => 'Mooring buoy';
+  String get chartLegend_mooringBuoy => '계류 부표';
 
   @override
-  String get chartLegend_portBeacon => 'Green square daybeacon';
+  String get chartLegend_portBeacon => '녹색 사각형 입표';
 
   @override
-  String get chartLegend_portBeaconHint =>
-      'Like a green buoy: keep it on your left coming in';
+  String get chartLegend_portBeaconHint => '녹색 부표와 같음: 들어올 때 왼쪽에 두고 진행';
 
   @override
-  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+  String get chartLegend_starboardBeacon => '적색 삼각형 입표';
 
   @override
-  String get chartLegend_starboardBeaconHint =>
-      'Like a red buoy: keep it on your right coming in';
+  String get chartLegend_starboardBeaconHint => '적색 부표와 같음: 들어올 때 오른쪽에 두고 진행';
 
   @override
-  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+  String get chartLegend_otherBeacon => '마름모꼴 입표';
 
   @override
-  String get chartLegend_otherBeaconHint =>
-      'Information or a warning, not a side of the channel';
+  String get chartLegend_otherBeaconHint => '정보나 경고 표시, 수로의 좌우를 나타내지 않음';
 
   @override
-  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+  String get chartLegend_beaconTower => '등탑 또는 입표 구조물';
 
   @override
-  String get chartLegend_topmark => 'Topmark';
+  String get chartLegend_topmark => '두표';
 
   @override
-  String get chartLegend_topmarkHint =>
-      'The shape on top of a mark adds to its meaning';
+  String get chartLegend_topmarkHint => '표지 위의 형상이 의미를 더함';
 
   @override
-  String get chartLegend_light => 'Light';
+  String get chartLegend_light => '등화';
 
   @override
-  String get chartLegend_lightHint =>
-      'The magenta flare marks a light; its label tells how it flashes';
+  String get chartLegend_lightHint => '자홍색 불빛 모양은 등화를 나타내며, 라벨이 빛나는 방식을 알려 줌';
 
   @override
-  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+  String get chartLegend_lightExample => '녹색 섬광, 4초마다';
 
   @override
-  String get chartLegend_lightExampleHint =>
-      'A light\'s label: rhythm, colour, then period';
+  String get chartLegend_lightExampleHint => '등화 라벨: 등질, 색, 주기 순';
 
   @override
-  String get chartLegend_lightFixed => 'Fixed';
+  String get chartLegend_lightFixed => '부동광';
 
   @override
-  String get chartLegend_lightFixedHint => 'A steady light';
+  String get chartLegend_lightFixedHint => '계속 켜져 있는 빛';
 
   @override
-  String get chartLegend_lightFlashing => 'Flashing';
+  String get chartLegend_lightFlashing => '섬광';
 
   @override
-  String get chartLegend_lightFlashingHint =>
-      'Short flashes, longer dark between';
+  String get chartLegend_lightFlashingHint => '짧은 빛, 그 사이 더 긴 어둠';
 
   @override
-  String get chartLegend_lightGroup => 'Group flashing';
+  String get chartLegend_lightGroup => '군섬광';
 
   @override
-  String get chartLegend_lightGroupHint =>
-      'Flashes in groups, here 2, then dark';
+  String get chartLegend_lightGroupHint => '묶음으로 깜박임(여기서는 2회), 그다음 어둠';
 
   @override
-  String get chartLegend_lightComposite => 'Composite group';
+  String get chartLegend_lightComposite => '복합군섬광';
 
   @override
-  String get chartLegend_lightCompositeHint =>
-      '2 flashes, then 1: marks a channel junction';
+  String get chartLegend_lightCompositeHint => '2회 깜박인 뒤 1회: 수로 분기점 표시';
 
   @override
-  String get chartLegend_lightQuick => 'Quick';
+  String get chartLegend_lightQuick => '급섬광';
 
   @override
-  String get chartLegend_lightQuickHint => 'About one flash a second';
+  String get chartLegend_lightQuickHint => '1초에 약 1회 깜박임';
 
   @override
-  String get chartLegend_lightIsophase => 'Isophase';
+  String get chartLegend_lightIsophase => '등명암광';
 
   @override
-  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+  String get chartLegend_lightIsophaseHint => '밝음과 어둠이 같은 길이';
 
   @override
-  String get chartLegend_lightOcculting => 'Occulting';
+  String get chartLegend_lightOcculting => '명암광';
 
   @override
-  String get chartLegend_lightOccultingHint => 'On longer than off';
+  String get chartLegend_lightOccultingHint => '켜진 시간이 꺼진 시간보다 김';
 
   @override
-  String get chartLegend_lightMorse => 'Morse code A';
+  String get chartLegend_lightMorse => '모스 부호 A';
 
   @override
-  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+  String get chartLegend_lightMorseHint => '짧게, 길게: 안전 수역';
 
   @override
-  String get chartLegend_lightAlternating => 'Alternating';
+  String get chartLegend_lightAlternating => '호광';
 
   @override
-  String get chartLegend_lightAlternatingHint => 'Changes colour';
+  String get chartLegend_lightAlternatingHint => '색이 바뀜';
 
   @override
-  String get chartLegend_lightColours => 'White, red, green, yellow';
+  String get chartLegend_lightColours => '흰색, 빨강, 녹색, 노랑';
 
   @override
-  String get chartLegend_lightPeriod => 'Period';
+  String get chartLegend_lightPeriod => '주기';
 
   @override
-  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+  String get chartLegend_lightPeriodHint => '한 주기에 걸리는 시간(초)';
 
   @override
-  String get chartLegend_rock => 'Underwater rock';
+  String get chartLegend_rock => '암암';
 
   @override
-  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+  String get chartLegend_rockHint => '항상 물에 잠겨 있지만 얕을 수 있음';
 
   @override
-  String get chartLegend_rockAwash => 'Rock awash';
+  String get chartLegend_rockAwash => '세암';
 
   @override
-  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+  String get chartLegend_rockAwashHint => '저조 때 수면 가까이 있음';
 
   @override
-  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+  String get chartLegend_rockCovers => '간출암';
 
   @override
-  String get chartLegend_rockCoversHint =>
-      'Shows at low tide, covered at high tide';
+  String get chartLegend_rockCoversHint => '저조 때 드러나고 고조 때 잠김';
 
   @override
-  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+  String get chartLegend_wreckDangerous => '위험 침선';
 
   @override
-  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+  String get chartLegend_wreckDangerousHint => '배가 부딪힐 만큼 얕음';
 
   @override
-  String get chartLegend_wreck => 'Wreck';
+  String get chartLegend_wreck => '침선';
 
   @override
-  String get chartLegend_wreckHint =>
-      'Deep enough for boats on the surface; don\'t anchor';
+  String get chartLegend_wreckHint => '수면의 배에는 충분히 깊음, 닻을 내리지 말 것';
 
   @override
-  String get chartLegend_wreckShowing => 'Wreck showing';
+  String get chartLegend_wreckShowing => '일부 노출 침선';
 
   @override
-  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+  String get chartLegend_wreckShowingHint => '일부가 물 위로 드러나 있음';
 
   @override
-  String get chartLegend_obstruction => 'Obstruction';
+  String get chartLegend_obstruction => '장애물';
 
   @override
-  String get chartLegend_obstructionHint =>
-      'Something on the bottom; its depth when known';
+  String get chartLegend_obstructionHint => '해저에 있는 물체, 알려진 경우 수심 표시';
 
   @override
-  String get chartLegend_foulGround => 'Foul ground';
+  String get chartLegend_foulGround => '험악지';
 
   @override
-  String get chartLegend_foulGroundHint =>
-      'Safe to pass over, but don\'t anchor or trawl';
+  String get chartLegend_foulGroundHint => '지나가는 것은 안전하지만 닻을 내리거나 저인망을 끌지 말 것';
 
   @override
-  String get chartLegend_hazardArea => 'Edge of a danger area';
+  String get chartLegend_hazardArea => '위험 구역 경계';
 
   @override
-  String get chartLegend_hazardAreaHint =>
-      'Rocks, wrecks or obstructions inside';
+  String get chartLegend_hazardAreaHint => '안쪽에 암초, 침선 또는 장애물이 있음';
 
   @override
-  String get chartLegend_pile => 'Pile or post';
+  String get chartLegend_pile => '말뚝';
 
   @override
-  String get chartLegend_floodStream => 'Flood stream';
+  String get chartLegend_floodStream => '창조류';
 
   @override
-  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+  String get chartLegend_floodStreamHint => '밀물 때의 조류';
 
   @override
-  String get chartLegend_ebbStream => 'Ebb stream';
+  String get chartLegend_ebbStream => '낙조류';
 
   @override
-  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+  String get chartLegend_ebbStreamHint => '썰물 때의 조류';
 
   @override
-  String get chartLegend_current => 'Current';
+  String get chartLegend_current => '해류';
 
   @override
-  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+  String get chartLegend_currentHint => '조석과 관계없이 같은 방향으로 흐름';
 
   @override
-  String get chartLegend_rips => 'Tide rips or eddies';
+  String get chartLegend_rips => '급조 또는 소용돌이';
 
   @override
-  String get chartLegend_ripsHint => 'Rough, swirling water';
+  String get chartLegend_ripsHint => '거칠게 소용돌이치는 물';
 
   @override
-  String get chartLegend_breakers => 'Breakers';
+  String get chartLegend_breakers => '쇄파';
 
   @override
-  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+  String get chartLegend_breakersHint => '얕은 곳에서 부서지는 파도';
 
   @override
-  String get chartLegend_sounding => 'Sounding';
+  String get chartLegend_sounding => '수심';
 
   @override
-  String get chartLegend_soundingHint => 'Depth at an average low tide';
+  String get chartLegend_soundingHint => '평균 저조 때의 수심';
 
   @override
-  String get chartLegend_depthContour => 'Depth contour';
+  String get chartLegend_depthContour => '등심선';
 
   @override
-  String get chartLegend_depthContourHint => 'Its label gives the depth';
+  String get chartLegend_depthContourHint => '라벨이 수심을 나타냄';
 
   @override
-  String get chartLegend_drying => 'Dries at low tide';
+  String get chartLegend_drying => '저조 때 드러남';
 
   @override
-  String get chartLegend_dredged => 'Dredged channel';
+  String get chartLegend_dredged => '준설 수로';
 
   @override
-  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+  String get chartLegend_dredgedHint => '표시된 수심으로 유지됨';
 
   @override
-  String get chartLegend_swept => 'Swept area';
+  String get chartLegend_swept => '소해 구역';
 
   @override
-  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+  String get chartLegend_sweptHint => '표시된 수심까지 장애물이 없음을 확인함';
 
   @override
-  String get chartLegend_unsurveyed => 'Unsurveyed';
+  String get chartLegend_unsurveyed => '미측량';
 
   @override
-  String get chartLegend_unsurveyedHint => 'No depths measured';
+  String get chartLegend_unsurveyedHint => '측정된 수심 없음';
 
   @override
-  String get chartLegend_weed => 'Kelp or weed';
+  String get chartLegend_weed => '해초';
 
   @override
-  String get chartLegend_restricted => 'Restricted area';
+  String get chartLegend_restricted => '제한 구역';
 
   @override
-  String get chartLegend_restrictedHint =>
-      'Entry limited; the ticks point inside';
+  String get chartLegend_restrictedHint => '진입 제한, 짧은 선이 안쪽을 가리킴';
 
   @override
-  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+  String get chartLegend_regulatedLimit => '규제 구역 경계';
 
   @override
-  String get chartLegend_regulatedLimitHint =>
-      'Anchorage, cable area, firing area and more: see its label';
+  String get chartLegend_regulatedLimitHint => '묘박지, 케이블 구역, 사격 구역 등: 라벨 참고';
 
   @override
-  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+  String get chartLegend_greyLimit => '토사 투기장, 어장 또는 양식장';
 
   @override
-  String get chartLegend_anchorage => 'Anchorage';
+  String get chartLegend_anchorage => '묘박지';
 
   @override
-  String get chartLegend_anchorBerth => 'Anchor berth';
+  String get chartLegend_anchorBerth => '묘박 위치';
 
   @override
-  String get chartLegend_noAnchoring => 'No anchoring';
+  String get chartLegend_noAnchoring => '묘박 금지';
 
   @override
-  String get chartLegend_caution => 'Caution area';
+  String get chartLegend_caution => '주의 구역';
 
   @override
-  String get chartLegend_cautionHint => 'Take extra care here';
+  String get chartLegend_cautionHint => '이곳에서는 특히 주의';
 
   @override
-  String get chartLegend_trafficLane => 'Traffic lane';
+  String get chartLegend_trafficLane => '통항로';
 
   @override
-  String get chartLegend_trafficLaneHint =>
-      'Big ships, one way: cross at right angles';
+  String get chartLegend_trafficLaneHint => '대형 선박 일방통행: 직각으로 횡단';
 
   @override
-  String get chartLegend_separationZone => 'Separation zone';
+  String get chartLegend_separationZone => '분리대';
 
   @override
-  String get chartLegend_separationZoneHint =>
-      'Between traffic lanes: keep out';
+  String get chartLegend_separationZoneHint => '통항로 사이: 들어가지 말 것';
 
   @override
-  String get chartLegend_precautionary => 'Precautionary area';
+  String get chartLegend_precautionary => '경계 구역';
 
   @override
-  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+  String get chartLegend_precautionaryHint => '선박이 모이는 곳: 주의';
 
   @override
-  String get chartLegend_fairway => 'Fairway';
+  String get chartLegend_fairway => '항로';
 
   @override
-  String get chartLegend_fairwayHint => 'A main channel';
+  String get chartLegend_fairwayHint => '주요 수로';
 
   @override
-  String get chartLegend_track => 'Recommended track';
+  String get chartLegend_track => '추천 항로';
 
   @override
-  String get chartLegend_ferry => 'Ferry route';
+  String get chartLegend_ferry => '페리 항로';
 
   @override
-  String get chartLegend_leadingLine => 'Leading line';
+  String get chartLegend_leadingLine => '중시선';
 
   @override
-  String get chartLegend_leadingLineHint =>
-      'Line up its two marks to stay in the channel';
+  String get chartLegend_leadingLineHint => '두 표지를 일직선으로 맞추면 수로를 벗어나지 않음';
 
   @override
-  String get chartLegend_cable => 'Submarine cable';
+  String get chartLegend_cable => '해저 케이블';
 
   @override
-  String get chartLegend_cableHint => 'Don\'t anchor';
+  String get chartLegend_cableHint => '닻을 내리지 말 것';
 
   @override
-  String get chartLegend_pipeline => 'Submarine pipeline';
+  String get chartLegend_pipeline => '해저 파이프라인';
 
   @override
-  String get chartLegend_pipelineHint => 'Don\'t anchor';
+  String get chartLegend_pipelineHint => '닻을 내리지 말 것';
 
   @override
-  String get chartLegend_overhead => 'Overhead cable';
+  String get chartLegend_overhead => '가공 케이블';
 
   @override
-  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+  String get chartLegend_overheadHint => '아래 통과 높이는 VC로 표시';
 
   @override
-  String get chartLegend_tower => 'Tower';
+  String get chartLegend_tower => '탑';
 
   @override
-  String get chartLegend_windTurbine => 'Wind turbine';
+  String get chartLegend_windTurbine => '풍력 발전기';
 
   @override
-  String get chartLegend_chimney => 'Chimney';
+  String get chartLegend_chimney => '굴뚝';
 
   @override
-  String get chartLegend_mast => 'Mast or antenna';
+  String get chartLegend_mast => '마스트 또는 안테나';
 
   @override
-  String get chartLegend_church => 'Church or spire';
+  String get chartLegend_church => '교회 또는 첨탑';
 
   @override
-  String get chartLegend_flagstaff => 'Flagstaff';
+  String get chartLegend_flagstaff => '깃대';
 
   @override
-  String get chartLegend_dome => 'Dome';
+  String get chartLegend_dome => '돔';
 
   @override
-  String get chartLegend_landmark => 'Other landmark';
+  String get chartLegend_landmark => '기타 목표물';
 
   @override
-  String get chartLegend_abbrAnch => 'Anchorage';
+  String get chartLegend_abbrAnch => '묘박지';
 
   @override
-  String get chartLegend_abbrWk => 'Wreck';
+  String get chartLegend_abbrWk => '침선';
 
   @override
-  String get chartLegend_abbrBr => 'Breakers';
+  String get chartLegend_abbrBr => '쇄파';
 
   @override
-  String get chartLegend_abbrWd => 'Weed';
+  String get chartLegend_abbrWd => '해초';
 
   @override
-  String get chartLegend_abbrVar => 'Magnetic variation';
+  String get chartLegend_abbrVar => '자기 편차';
 
   @override
-  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+  String get chartLegend_abbrVc => '다리나 케이블 아래의 통과 높이';
 
   @override
-  String get chartLegend_abbrTr => 'Tower';
+  String get chartLegend_abbrTr => '탑';
 
   @override
-  String get chartLegend_abbrCh => 'Church';
+  String get chartLegend_abbrCh => '교회';
 
   @override
-  String get chartLegend_abbrChy => 'Chimney';
+  String get chartLegend_abbrChy => '굴뚝';
 
   @override
-  String get chartLegend_abbrFs => 'Flagstaff';
+  String get chartLegend_abbrFs => '깃대';
 
   @override
-  String get chartLegend_abbrTk => 'Tank';
+  String get chartLegend_abbrTk => '탱크';
 
   @override
-  String get chartLegend_abbrRBn => 'Radio beacon';
+  String get chartLegend_abbrRBn => '무선 표지';
 
   @override
-  String get chartLegend_abbrCg => 'Coast Guard station';
+  String get chartLegend_abbrCg => '해안경비대 기지';
 
   @override
-  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+  String get chartLegend_abbrRacon => '레이더 비컨: 레이더에 표시됨';
 
   @override
-  String get chartLegend_abbrFog =>
-      'Fog signal: horn, bell, gong, whistle or siren';
+  String get chartLegend_abbrFog => '무중 신호: 경적, 종, 징, 호각 또는 사이렌';
 
   @override
-  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+  String get chartLegend_abbrVAis => '가상 항로표지: AIS에서만 표시';
 
   @override
   String chartLegend_depthRange(String from, String to) {
-    return '$from to $to';
+    return '$from~$to';
   }
 
   @override
   String chartLegend_depthOver(String depth) {
-    return 'Deeper than $depth';
+    return '$depth보다 깊음';
   }
 
   @override
-  String get parkLegend_title => 'Park and trail symbols';
+  String get parkLegend_title => '공원·탐방로 기호';
 
   @override
-  String get parkLegend_campsite => 'Campsite';
+  String get parkLegend_campsite => '야영장';
 
   @override
-  String get parkLegend_picnicSite => 'Picnic site';
+  String get parkLegend_picnicSite => '피크닉 장소';
 
   @override
-  String get parkLegend_shelter => 'Shelter';
+  String get parkLegend_shelter => '대피소';
 
   @override
-  String get parkLegend_toilets => 'Toilets';
+  String get parkLegend_toilets => '화장실';
 
   @override
-  String get parkLegend_drinkingWater => 'Drinking water';
+  String get parkLegend_drinkingWater => '식수';
 
   @override
-  String get parkLegend_parking => 'Parking';
+  String get parkLegend_parking => '주차장';
 
   @override
-  String get parkLegend_viewpoint => 'Viewpoint';
+  String get parkLegend_viewpoint => '전망대';
 
   @override
-  String get parkLegend_attraction => 'Attraction';
+  String get parkLegend_attraction => '명소';
 
   @override
-  String get parkLegend_gate => 'Gate';
+  String get parkLegend_gate => '출입문';
 
   @override
-  String get parkLegend_telephone => 'Telephone';
+  String get parkLegend_telephone => '전화';
 
   @override
-  String get parkLegend_information => 'Information board';
+  String get parkLegend_information => '안내판';
 
   @override
-  String get parkLegend_guidepost => 'Guidepost';
+  String get parkLegend_guidepost => '이정표';
 }
