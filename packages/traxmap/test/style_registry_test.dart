@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' show Brightness;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:traxmap/src/renderer/flutter_map_renderer.dart';
 import 'package:traxmap/traxmap.dart';
 
 void main() {
@@ -166,6 +167,12 @@ void main() {
     ];
     expect(ids(Units.imperial), ['bg', 'label-ft']);
     expect(ids(Units.metric), ['bg', 'label-m']);
+    // The renderer caches tiles by theme id: a units switch must change it.
+    String themeId(Units u) => FlutterMapRenderer.themeIdOf(
+      StyleRegistry.resolve(tagged, StyleContext(units: u)),
+    );
+    expect(themeId(Units.metric), isNot(themeId(Units.imperial)));
+    expect(themeId(Units.metric), themeId(Units.metric), reason: 'reused');
   });
 
   test('does not modify the input', () {
