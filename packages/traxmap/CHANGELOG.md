@@ -1,5 +1,12 @@
 ## Unreleased
 
+- **Park and trail icons on the OSM map.** Campsites, picnic sites,
+  shelters, toilets, drinking water, parking, viewpoints and attractions
+  from z15, and gates, telephones, information boards and guideposts from
+  z16, as white glyphs on discs coloured by category (`poi-*` on the sprite
+  sheets), with the name below. Trail route markers stay unmarked. Glyphs
+  are centred optically and drawn one size (`tool/make_sprites.py`, now
+  needing Pillow). `ParkLegendItem` lists them for a legend.
 - **Each source is credited once.** `attributionOf` splits a pack's credit
   on "; " into its sources (keeping Copernicus's "; all rights reserved"),
   so the GLO-30 credit that Hawaii's base, contours and terrain all carry,

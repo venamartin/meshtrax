@@ -5470,4 +5470,43 @@ class AppLocalizationsIt extends AppLocalizations {
   String chartLegend_depthOver(String depth) {
     return 'Deeper than $depth';
   }
+
+  @override
+  String get parkLegend_title => 'Park and trail symbols';
+
+  @override
+  String get parkLegend_campsite => 'Campsite';
+
+  @override
+  String get parkLegend_picnicSite => 'Picnic site';
+
+  @override
+  String get parkLegend_shelter => 'Shelter';
+
+  @override
+  String get parkLegend_toilets => 'Toilets';
+
+  @override
+  String get parkLegend_drinkingWater => 'Drinking water';
+
+  @override
+  String get parkLegend_parking => 'Parking';
+
+  @override
+  String get parkLegend_viewpoint => 'Viewpoint';
+
+  @override
+  String get parkLegend_attraction => 'Attraction';
+
+  @override
+  String get parkLegend_gate => 'Gate';
+
+  @override
+  String get parkLegend_telephone => 'Telephone';
+
+  @override
+  String get parkLegend_information => 'Information board';
+
+  @override
+  String get parkLegend_guidepost => 'Guidepost';
 }

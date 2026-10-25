@@ -29,6 +29,18 @@ TRAIL = ["all", ["==", ["get", "class"], "path"],
 NOT_MARINE = ["!", ["match", ["get", "class"], ["national_marine_sanctuary", "state_marine_conservation_area",
               "state_marine_reserve", "state_marine_park", "marine_protected_area"], True, False]]
 
+# Park and trail features drawn as icons (tool/make_sprites.py poi-*), by the
+# poi layer's class; trail route markers stay unmarked (dozens per park).
+POI_ICON = ["match", ["get", "class"],
+            ["campsite", "picnic_site", "shelter", "toilets", "drinking_water", "parking", "gate", "telephone"],
+            ["concat", "poi-", ["get", "class"]],
+            "attraction", ["match", ["get", "subclass"], "viewpoint", "poi-viewpoint", "poi-attraction"],
+            "information", ["match", ["get", "subclass"], "route_marker", "", "guidepost", "poi-guidepost",
+                            "poi-information"],
+            ""]
+# Gates, phones and signs only from z16; the rest from z15.
+POI_MINOR = ["match", ["get", "class"], ["gate", "telephone", "information"], True, False]
+
 def O(id, type, sl, **kw): return {"id": id, "type": type, "source": "osm", "source-layer": sl, **kw}
 
 def units_twins(layer, metric_field):
@@ -122,7 +134,15 @@ def style(name, P, note):
           filter=["all", ["==", ["get", "class"], "path"], ["!=", ["get", "subclass"], "footway"]],
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ""], "text-font": ITA, "text-size": 11},
           paint={"text-color": P["trail"], "text-halo-color": P["halo"], "text-halo-width": 1.5}),
-        O("poi", "symbol", "poi", minzoom=P["poi_minzoom"], filter=["<=", ["get", "rank"], P["poi_rank"]],
+        *[O(id_, "symbol", "poi", minzoom=z, filter=["all", ["!=", POI_ICON, ""], tier],
+            layout={"icon-image": POI_ICON, "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 0.85, 17, 1],
+                    "symbol-sort-key": ["get", "rank"],
+                    "text-field": ["coalesce", ["get", "name"], ""], "text-font": REG, "text-size": 10,
+                    "text-max-width": 8, "text-anchor": "top", "text-offset": [0, 0.9], "text-optional": True},
+            paint={"text-color": P["poi_label"], "text-halo-color": P["halo"], "text-halo-width": 1.5})
+          for id_, z, tier in [("poi-icon", 15, ["!", POI_MINOR]), ("poi-icon-minor", 16, POI_MINOR)]],
+        O("poi", "symbol", "poi", minzoom=P["poi_minzoom"],
+          filter=["all", ["<=", ["get", "rank"], P["poi_rank"]], ["==", POI_ICON, ""]],
           layout={"text-field": ["get", "name"], "text-font": REG, "text-size": 10, "text-max-width": 8},
           paint={"text-color": P["poi_label"], "text-halo-color": P["halo"], "text-halo-width": 1.5}),
         *units_twins(O("peak", "symbol", "mountain_peak", minzoom=P["peak_minzoom"],
