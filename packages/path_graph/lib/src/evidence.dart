@@ -15,15 +15,11 @@ class IngressEntry {
     required this.weight,
     required this.lastSeen,
     required this.tier,
-    this.observedLat,
-    this.observedLon,
   });
 
   double weight;
   int lastSeen; // arrival millis
   EvidenceTier tier;
-  double? observedLat;
-  double? observedLon;
 
   /// Arrival millis of the last proof in the SENDING direction: a
   /// delivered send through this hop, a trace, a Discover answer. Only
@@ -105,6 +101,21 @@ class Candidate {
   final double? uplinkSnr;
   final double? downlinkSnr;
 
+  /// The same candidate with the level measured where I am now (the
+  /// place row's), in place of whatever was measured anywhere.
+  Candidate withUplink(double? snr) => Candidate(repeaterHash, weight, tier,
+      uplinkSnr: snr,
+      downlinkSnr: downlinkSnr,
+      proven: proven,
+      heard: heard,
+      finalCount: finalCount,
+      penultimateCount: penultimateCount,
+      provenCount: provenCount,
+      provenAt: provenAt,
+      lastSeen: lastSeen,
+      isSelf: isSelf,
+      failedSinceProof: failedSinceProof);
+
   /// The level in the direction a send travels. For one of my doorsteps
   /// only the uplink counts (how it heard me: a trace or a Discover
   /// answer); how loud I hear it says nothing about that, and a strong
@@ -183,6 +194,15 @@ class EvidenceStore {
         if (now - t < sliceMs * slices) (now - t) ~/ sliceMs,
     };
     return filled.length >= slices;
+  }
+
+  /// A direct send to [contactPubkey] that ended at [repeaterHash] got no
+  /// ACK: one more failure against that doorstep for this pair.
+  void recordFailedIngress(String contactPubkey, String repeaterHash) {
+    final e = entries[(contactPubkey, repeaterHash)];
+    if (e == null) return;
+    e.failedSinceProof++;
+    _dirty.add((contactPubkey, repeaterHash));
   }
 
   /// A direct send that started at [repeaterHash] got no ACK.
@@ -280,11 +300,22 @@ class EvidenceStore {
   /// Proven contact ingress: the last hop of a send that was delivered
   /// (ACKed) or of a path-discovery out_path — a repeater that reached
   /// them, in the direction that matters.
+  /// A delivery to them just came back through [repeaterHash] (their
+  /// flooded ACK): its failed-delivery count starts again. Tier and
+  /// weight are untouched; this is the gate's reset, not a proof.
+  void clearContactFailures(String contactPubkey, String repeaterHash) {
+    final e = entries[(contactPubkey, repeaterHash)];
+    if (e == null || e.failedSinceProof == 0) return;
+    e.failedSinceProof = 0;
+    _dirty.add((contactPubkey, repeaterHash));
+  }
+
   void recordProvenIngress(
       String contactPubkey, String repeaterHash, int arrival) {
     _upsert(contactPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
       ..provenAt = arrival
-      ..provenCount += 1;
+      ..provenCount += 1
+      ..failedSinceProof = 0;
   }
 
   /// EWMA so repeat measurements refine rather than overwrite.
@@ -298,7 +329,7 @@ class EvidenceStore {
   /// A row already proven gains no weight from being heard: its weight
   /// ranks it as a repeater that hears ME, which hearing it cannot show.
   void recordLastHop(String selfPubkey, String repeaterHash, int arrival,
-      {double? lat, double? lon, double? downlinkSnr}) {
+      {double? downlinkSnr}) {
     final proven = entries[(selfPubkey, repeaterHash)]?.proven ?? false;
     _noteSelfRow(selfPubkey, repeaterHash, arrival);
     final e = _upsert(selfPubkey, repeaterHash, EvidenceTier.inferred,
@@ -308,8 +339,6 @@ class EvidenceStore {
       ..finalCount += 1
       ..lastHeardAt = arrival;
     _noteSelfAlive(arrival);
-    if (lat != null) e.observedLat = lat;
-    if (lon != null) e.observedLon = lon;
     if (downlinkSnr != null) e.downlinkSnr = _blend(e.downlinkSnr, downlinkSnr);
   }
 
@@ -533,6 +562,10 @@ class EvidenceStore {
   /// [provenOnly], only when an empty-path send to them was delivered.
   /// A packet of theirs that came only through a repeater after it ends
   /// direct at once (see [PathGraphConfig.directFreshMinutes]).
+  /// Arrival millis of the last direct (no-hop) packet from them, 0 if none.
+  int directSeenAt(String contactPubkey) =>
+      entries[(contactPubkey, directHash)]?.lastSeen ?? 0;
+
   bool hasFreshDirect(String contactPubkey, int now,
       {bool provenOnly = false}) {
     final e = entries[(contactPubkey, directHash)];
@@ -640,11 +673,7 @@ class EvidenceStore {
         }
         target.failedSinceProof =
             math.max(target.failedSinceProof, ghost.failedSinceProof);
-        if (ghost.lastSeen > target.lastSeen) {
-          target.lastSeen = ghost.lastSeen;
-          target.observedLat = ghost.observedLat ?? target.observedLat;
-          target.observedLon = ghost.observedLon ?? target.observedLon;
-        }
+        if (ghost.lastSeen > target.lastSeen) target.lastSeen = ghost.lastSeen;
         if (ghost.tier.index > target.tier.index) target.tier = ghost.tier;
       }
       _dirty.add(bucket);
@@ -670,8 +699,6 @@ class EvidenceStore {
         weight: row.weight,
         lastSeen: row.lastSeen,
         tier: EvidenceTier.values.byName(row.evidence),
-        observedLat: row.observedLat,
-        observedLon: row.observedLon,
       )
         ..provenAt = row.provenAt
         ..uplinkSnr = row.uplinkSnr
@@ -718,8 +745,6 @@ class EvidenceStore {
             weight: e.weight,
             lastSeen: e.lastSeen,
             evidence: e.tier.name,
-            observedLat: Value(e.observedLat),
-            observedLon: Value(e.observedLon),
             provenAt: Value(e.provenAt),
             uplinkSnr: Value(e.uplinkSnr),
             downlinkSnr: Value(e.downlinkSnr),

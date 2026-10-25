@@ -68,8 +68,6 @@ class ContactIngress extends Table {
   RealColumn get weight => real()();
   IntColumn get lastSeen => integer()();
   TextColumn get evidence => text()();
-  RealColumn get observedLat => real().nullable()();
-  RealColumn get observedLon => real().nullable()();
 
   /// Arrival millis of the last proof in the SENDING direction (a
   /// delivered send, a trace, a Discover answer). Null = only ever
@@ -112,6 +110,24 @@ class ContactIngress extends Table {
 
   @override
   Set<Column> get primaryKey => {ownerPubkey, repeaterHash};
+}
+
+/// Which repeaters heard this radio in each area it has been: an opaque
+/// cell key about 500 m across that the app computes from the radio's
+/// own GPS, never a coordinate (owner, 2026-10-25), and a day, not a
+/// time. A row makes a doorstep eligible to start a route from here; it
+/// is never a proof.
+class PlaceDoorsteps extends Table {
+  TextColumn get selfPubkey => text()();
+  TextColumn get cell => text()();
+  TextColumn get repeaterHash => text()();
+  RealColumn get uplinkSnr => real().nullable()();
+  IntColumn get seenCount => integer().withDefault(const Constant(0))();
+  IntColumn get lastSeenDay => integer()();
+  BoolColumn get failedHere => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {selfPubkey, cell, repeaterHash};
 }
 
 /// Contact mirror fed exclusively by ingestContact (isolation invariant).

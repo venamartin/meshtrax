@@ -1171,18 +1171,6 @@ class $ContactIngressTable extends ContactIngress
   late final GeneratedColumn<String> evidence = GeneratedColumn<String>(
       'evidence', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _observedLatMeta =
-      const VerificationMeta('observedLat');
-  @override
-  late final GeneratedColumn<double> observedLat = GeneratedColumn<double>(
-      'observed_lat', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _observedLonMeta =
-      const VerificationMeta('observedLon');
-  @override
-  late final GeneratedColumn<double> observedLon = GeneratedColumn<double>(
-      'observed_lon', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
   static const VerificationMeta _provenAtMeta =
       const VerificationMeta('provenAt');
   @override
@@ -1252,8 +1240,6 @@ class $ContactIngressTable extends ContactIngress
         weight,
         lastSeen,
         evidence,
-        observedLat,
-        observedLon,
         provenAt,
         uplinkSnr,
         downlinkSnr,
@@ -1307,18 +1293,6 @@ class $ContactIngressTable extends ContactIngress
           evidence.isAcceptableOrUnknown(data['evidence']!, _evidenceMeta));
     } else if (isInserting) {
       context.missing(_evidenceMeta);
-    }
-    if (data.containsKey('observed_lat')) {
-      context.handle(
-          _observedLatMeta,
-          observedLat.isAcceptableOrUnknown(
-              data['observed_lat']!, _observedLatMeta));
-    }
-    if (data.containsKey('observed_lon')) {
-      context.handle(
-          _observedLonMeta,
-          observedLon.isAcceptableOrUnknown(
-              data['observed_lon']!, _observedLonMeta));
     }
     if (data.containsKey('proven_at')) {
       context.handle(_provenAtMeta,
@@ -1389,10 +1363,6 @@ class $ContactIngressTable extends ContactIngress
           .read(DriftSqlType.int, data['${effectivePrefix}last_seen'])!,
       evidence: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}evidence'])!,
-      observedLat: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}observed_lat']),
-      observedLon: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}observed_lon']),
       provenAt: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}proven_at']),
       uplinkSnr: attachedDatabase.typeMapping
@@ -1427,8 +1397,6 @@ class ContactIngressData extends DataClass
   final double weight;
   final int lastSeen;
   final String evidence;
-  final double? observedLat;
-  final double? observedLon;
 
   /// Arrival millis of the last proof in the SENDING direction (a
   /// delivered send, a trace, a Discover answer). Null = only ever
@@ -1473,8 +1441,6 @@ class ContactIngressData extends DataClass
       required this.weight,
       required this.lastSeen,
       required this.evidence,
-      this.observedLat,
-      this.observedLon,
       this.provenAt,
       this.uplinkSnr,
       this.downlinkSnr,
@@ -1492,12 +1458,6 @@ class ContactIngressData extends DataClass
     map['weight'] = Variable<double>(weight);
     map['last_seen'] = Variable<int>(lastSeen);
     map['evidence'] = Variable<String>(evidence);
-    if (!nullToAbsent || observedLat != null) {
-      map['observed_lat'] = Variable<double>(observedLat);
-    }
-    if (!nullToAbsent || observedLon != null) {
-      map['observed_lon'] = Variable<double>(observedLon);
-    }
     if (!nullToAbsent || provenAt != null) {
       map['proven_at'] = Variable<int>(provenAt);
     }
@@ -1527,12 +1487,6 @@ class ContactIngressData extends DataClass
       weight: Value(weight),
       lastSeen: Value(lastSeen),
       evidence: Value(evidence),
-      observedLat: observedLat == null && nullToAbsent
-          ? const Value.absent()
-          : Value(observedLat),
-      observedLon: observedLon == null && nullToAbsent
-          ? const Value.absent()
-          : Value(observedLon),
       provenAt: provenAt == null && nullToAbsent
           ? const Value.absent()
           : Value(provenAt),
@@ -1564,8 +1518,6 @@ class ContactIngressData extends DataClass
       weight: serializer.fromJson<double>(json['weight']),
       lastSeen: serializer.fromJson<int>(json['lastSeen']),
       evidence: serializer.fromJson<String>(json['evidence']),
-      observedLat: serializer.fromJson<double?>(json['observedLat']),
-      observedLon: serializer.fromJson<double?>(json['observedLon']),
       provenAt: serializer.fromJson<int?>(json['provenAt']),
       uplinkSnr: serializer.fromJson<double?>(json['uplinkSnr']),
       downlinkSnr: serializer.fromJson<double?>(json['downlinkSnr']),
@@ -1586,8 +1538,6 @@ class ContactIngressData extends DataClass
       'weight': serializer.toJson<double>(weight),
       'lastSeen': serializer.toJson<int>(lastSeen),
       'evidence': serializer.toJson<String>(evidence),
-      'observedLat': serializer.toJson<double?>(observedLat),
-      'observedLon': serializer.toJson<double?>(observedLon),
       'provenAt': serializer.toJson<int?>(provenAt),
       'uplinkSnr': serializer.toJson<double?>(uplinkSnr),
       'downlinkSnr': serializer.toJson<double?>(downlinkSnr),
@@ -1606,8 +1556,6 @@ class ContactIngressData extends DataClass
           double? weight,
           int? lastSeen,
           String? evidence,
-          Value<double?> observedLat = const Value.absent(),
-          Value<double?> observedLon = const Value.absent(),
           Value<int?> provenAt = const Value.absent(),
           Value<double?> uplinkSnr = const Value.absent(),
           Value<double?> downlinkSnr = const Value.absent(),
@@ -1623,8 +1571,6 @@ class ContactIngressData extends DataClass
         weight: weight ?? this.weight,
         lastSeen: lastSeen ?? this.lastSeen,
         evidence: evidence ?? this.evidence,
-        observedLat: observedLat.present ? observedLat.value : this.observedLat,
-        observedLon: observedLon.present ? observedLon.value : this.observedLon,
         provenAt: provenAt.present ? provenAt.value : this.provenAt,
         uplinkSnr: uplinkSnr.present ? uplinkSnr.value : this.uplinkSnr,
         downlinkSnr: downlinkSnr.present ? downlinkSnr.value : this.downlinkSnr,
@@ -1646,10 +1592,6 @@ class ContactIngressData extends DataClass
       weight: data.weight.present ? data.weight.value : this.weight,
       lastSeen: data.lastSeen.present ? data.lastSeen.value : this.lastSeen,
       evidence: data.evidence.present ? data.evidence.value : this.evidence,
-      observedLat:
-          data.observedLat.present ? data.observedLat.value : this.observedLat,
-      observedLon:
-          data.observedLon.present ? data.observedLon.value : this.observedLon,
       provenAt: data.provenAt.present ? data.provenAt.value : this.provenAt,
       uplinkSnr: data.uplinkSnr.present ? data.uplinkSnr.value : this.uplinkSnr,
       downlinkSnr:
@@ -1680,8 +1622,6 @@ class ContactIngressData extends DataClass
           ..write('weight: $weight, ')
           ..write('lastSeen: $lastSeen, ')
           ..write('evidence: $evidence, ')
-          ..write('observedLat: $observedLat, ')
-          ..write('observedLon: $observedLon, ')
           ..write('provenAt: $provenAt, ')
           ..write('uplinkSnr: $uplinkSnr, ')
           ..write('downlinkSnr: $downlinkSnr, ')
@@ -1702,8 +1642,6 @@ class ContactIngressData extends DataClass
       weight,
       lastSeen,
       evidence,
-      observedLat,
-      observedLon,
       provenAt,
       uplinkSnr,
       downlinkSnr,
@@ -1722,8 +1660,6 @@ class ContactIngressData extends DataClass
           other.weight == this.weight &&
           other.lastSeen == this.lastSeen &&
           other.evidence == this.evidence &&
-          other.observedLat == this.observedLat &&
-          other.observedLon == this.observedLon &&
           other.provenAt == this.provenAt &&
           other.uplinkSnr == this.uplinkSnr &&
           other.downlinkSnr == this.downlinkSnr &&
@@ -1741,8 +1677,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
   final Value<double> weight;
   final Value<int> lastSeen;
   final Value<String> evidence;
-  final Value<double?> observedLat;
-  final Value<double?> observedLon;
   final Value<int?> provenAt;
   final Value<double?> uplinkSnr;
   final Value<double?> downlinkSnr;
@@ -1759,8 +1693,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     this.weight = const Value.absent(),
     this.lastSeen = const Value.absent(),
     this.evidence = const Value.absent(),
-    this.observedLat = const Value.absent(),
-    this.observedLon = const Value.absent(),
     this.provenAt = const Value.absent(),
     this.uplinkSnr = const Value.absent(),
     this.downlinkSnr = const Value.absent(),
@@ -1778,8 +1710,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     required double weight,
     required int lastSeen,
     required String evidence,
-    this.observedLat = const Value.absent(),
-    this.observedLon = const Value.absent(),
     this.provenAt = const Value.absent(),
     this.uplinkSnr = const Value.absent(),
     this.downlinkSnr = const Value.absent(),
@@ -1801,8 +1731,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     Expression<double>? weight,
     Expression<int>? lastSeen,
     Expression<String>? evidence,
-    Expression<double>? observedLat,
-    Expression<double>? observedLon,
     Expression<int>? provenAt,
     Expression<double>? uplinkSnr,
     Expression<double>? downlinkSnr,
@@ -1820,8 +1748,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       if (weight != null) 'weight': weight,
       if (lastSeen != null) 'last_seen': lastSeen,
       if (evidence != null) 'evidence': evidence,
-      if (observedLat != null) 'observed_lat': observedLat,
-      if (observedLon != null) 'observed_lon': observedLon,
       if (provenAt != null) 'proven_at': provenAt,
       if (uplinkSnr != null) 'uplink_snr': uplinkSnr,
       if (downlinkSnr != null) 'downlink_snr': downlinkSnr,
@@ -1841,8 +1767,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       Value<double>? weight,
       Value<int>? lastSeen,
       Value<String>? evidence,
-      Value<double?>? observedLat,
-      Value<double?>? observedLon,
       Value<int?>? provenAt,
       Value<double?>? uplinkSnr,
       Value<double?>? downlinkSnr,
@@ -1859,8 +1783,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
       weight: weight ?? this.weight,
       lastSeen: lastSeen ?? this.lastSeen,
       evidence: evidence ?? this.evidence,
-      observedLat: observedLat ?? this.observedLat,
-      observedLon: observedLon ?? this.observedLon,
       provenAt: provenAt ?? this.provenAt,
       uplinkSnr: uplinkSnr ?? this.uplinkSnr,
       downlinkSnr: downlinkSnr ?? this.downlinkSnr,
@@ -1891,12 +1813,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
     }
     if (evidence.present) {
       map['evidence'] = Variable<String>(evidence.value);
-    }
-    if (observedLat.present) {
-      map['observed_lat'] = Variable<double>(observedLat.value);
-    }
-    if (observedLon.present) {
-      map['observed_lon'] = Variable<double>(observedLon.value);
     }
     if (provenAt.present) {
       map['proven_at'] = Variable<int>(provenAt.value);
@@ -1939,8 +1855,6 @@ class ContactIngressCompanion extends UpdateCompanion<ContactIngressData> {
           ..write('weight: $weight, ')
           ..write('lastSeen: $lastSeen, ')
           ..write('evidence: $evidence, ')
-          ..write('observedLat: $observedLat, ')
-          ..write('observedLon: $observedLon, ')
           ..write('provenAt: $provenAt, ')
           ..write('uplinkSnr: $uplinkSnr, ')
           ..write('downlinkSnr: $downlinkSnr, ')
@@ -2477,6 +2391,412 @@ class GraphMetaCompanion extends UpdateCompanion<GraphMetaData> {
   }
 }
 
+class $PlaceDoorstepsTable extends PlaceDoorsteps
+    with TableInfo<$PlaceDoorstepsTable, PlaceDoorstep> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlaceDoorstepsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _selfPubkeyMeta =
+      const VerificationMeta('selfPubkey');
+  @override
+  late final GeneratedColumn<String> selfPubkey = GeneratedColumn<String>(
+      'self_pubkey', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _cellMeta = const VerificationMeta('cell');
+  @override
+  late final GeneratedColumn<String> cell = GeneratedColumn<String>(
+      'cell', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _repeaterHashMeta =
+      const VerificationMeta('repeaterHash');
+  @override
+  late final GeneratedColumn<String> repeaterHash = GeneratedColumn<String>(
+      'repeater_hash', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _uplinkSnrMeta =
+      const VerificationMeta('uplinkSnr');
+  @override
+  late final GeneratedColumn<double> uplinkSnr = GeneratedColumn<double>(
+      'uplink_snr', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _seenCountMeta =
+      const VerificationMeta('seenCount');
+  @override
+  late final GeneratedColumn<int> seenCount = GeneratedColumn<int>(
+      'seen_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _lastSeenDayMeta =
+      const VerificationMeta('lastSeenDay');
+  @override
+  late final GeneratedColumn<int> lastSeenDay = GeneratedColumn<int>(
+      'last_seen_day', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _failedHereMeta =
+      const VerificationMeta('failedHere');
+  @override
+  late final GeneratedColumn<bool> failedHere = GeneratedColumn<bool>(
+      'failed_here', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("failed_here" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns => [
+        selfPubkey,
+        cell,
+        repeaterHash,
+        uplinkSnr,
+        seenCount,
+        lastSeenDay,
+        failedHere
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'place_doorsteps';
+  @override
+  VerificationContext validateIntegrity(Insertable<PlaceDoorstep> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('self_pubkey')) {
+      context.handle(
+          _selfPubkeyMeta,
+          selfPubkey.isAcceptableOrUnknown(
+              data['self_pubkey']!, _selfPubkeyMeta));
+    } else if (isInserting) {
+      context.missing(_selfPubkeyMeta);
+    }
+    if (data.containsKey('cell')) {
+      context.handle(
+          _cellMeta, cell.isAcceptableOrUnknown(data['cell']!, _cellMeta));
+    } else if (isInserting) {
+      context.missing(_cellMeta);
+    }
+    if (data.containsKey('repeater_hash')) {
+      context.handle(
+          _repeaterHashMeta,
+          repeaterHash.isAcceptableOrUnknown(
+              data['repeater_hash']!, _repeaterHashMeta));
+    } else if (isInserting) {
+      context.missing(_repeaterHashMeta);
+    }
+    if (data.containsKey('uplink_snr')) {
+      context.handle(_uplinkSnrMeta,
+          uplinkSnr.isAcceptableOrUnknown(data['uplink_snr']!, _uplinkSnrMeta));
+    }
+    if (data.containsKey('seen_count')) {
+      context.handle(_seenCountMeta,
+          seenCount.isAcceptableOrUnknown(data['seen_count']!, _seenCountMeta));
+    }
+    if (data.containsKey('last_seen_day')) {
+      context.handle(
+          _lastSeenDayMeta,
+          lastSeenDay.isAcceptableOrUnknown(
+              data['last_seen_day']!, _lastSeenDayMeta));
+    } else if (isInserting) {
+      context.missing(_lastSeenDayMeta);
+    }
+    if (data.containsKey('failed_here')) {
+      context.handle(
+          _failedHereMeta,
+          failedHere.isAcceptableOrUnknown(
+              data['failed_here']!, _failedHereMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {selfPubkey, cell, repeaterHash};
+  @override
+  PlaceDoorstep map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlaceDoorstep(
+      selfPubkey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}self_pubkey'])!,
+      cell: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cell'])!,
+      repeaterHash: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}repeater_hash'])!,
+      uplinkSnr: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}uplink_snr']),
+      seenCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}seen_count'])!,
+      lastSeenDay: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}last_seen_day'])!,
+      failedHere: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}failed_here'])!,
+    );
+  }
+
+  @override
+  $PlaceDoorstepsTable createAlias(String alias) {
+    return $PlaceDoorstepsTable(attachedDatabase, alias);
+  }
+}
+
+class PlaceDoorstep extends DataClass implements Insertable<PlaceDoorstep> {
+  final String selfPubkey;
+  final String cell;
+  final String repeaterHash;
+  final double? uplinkSnr;
+  final int seenCount;
+  final int lastSeenDay;
+  final bool failedHere;
+  const PlaceDoorstep(
+      {required this.selfPubkey,
+      required this.cell,
+      required this.repeaterHash,
+      this.uplinkSnr,
+      required this.seenCount,
+      required this.lastSeenDay,
+      required this.failedHere});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['self_pubkey'] = Variable<String>(selfPubkey);
+    map['cell'] = Variable<String>(cell);
+    map['repeater_hash'] = Variable<String>(repeaterHash);
+    if (!nullToAbsent || uplinkSnr != null) {
+      map['uplink_snr'] = Variable<double>(uplinkSnr);
+    }
+    map['seen_count'] = Variable<int>(seenCount);
+    map['last_seen_day'] = Variable<int>(lastSeenDay);
+    map['failed_here'] = Variable<bool>(failedHere);
+    return map;
+  }
+
+  PlaceDoorstepsCompanion toCompanion(bool nullToAbsent) {
+    return PlaceDoorstepsCompanion(
+      selfPubkey: Value(selfPubkey),
+      cell: Value(cell),
+      repeaterHash: Value(repeaterHash),
+      uplinkSnr: uplinkSnr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uplinkSnr),
+      seenCount: Value(seenCount),
+      lastSeenDay: Value(lastSeenDay),
+      failedHere: Value(failedHere),
+    );
+  }
+
+  factory PlaceDoorstep.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlaceDoorstep(
+      selfPubkey: serializer.fromJson<String>(json['selfPubkey']),
+      cell: serializer.fromJson<String>(json['cell']),
+      repeaterHash: serializer.fromJson<String>(json['repeaterHash']),
+      uplinkSnr: serializer.fromJson<double?>(json['uplinkSnr']),
+      seenCount: serializer.fromJson<int>(json['seenCount']),
+      lastSeenDay: serializer.fromJson<int>(json['lastSeenDay']),
+      failedHere: serializer.fromJson<bool>(json['failedHere']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'selfPubkey': serializer.toJson<String>(selfPubkey),
+      'cell': serializer.toJson<String>(cell),
+      'repeaterHash': serializer.toJson<String>(repeaterHash),
+      'uplinkSnr': serializer.toJson<double?>(uplinkSnr),
+      'seenCount': serializer.toJson<int>(seenCount),
+      'lastSeenDay': serializer.toJson<int>(lastSeenDay),
+      'failedHere': serializer.toJson<bool>(failedHere),
+    };
+  }
+
+  PlaceDoorstep copyWith(
+          {String? selfPubkey,
+          String? cell,
+          String? repeaterHash,
+          Value<double?> uplinkSnr = const Value.absent(),
+          int? seenCount,
+          int? lastSeenDay,
+          bool? failedHere}) =>
+      PlaceDoorstep(
+        selfPubkey: selfPubkey ?? this.selfPubkey,
+        cell: cell ?? this.cell,
+        repeaterHash: repeaterHash ?? this.repeaterHash,
+        uplinkSnr: uplinkSnr.present ? uplinkSnr.value : this.uplinkSnr,
+        seenCount: seenCount ?? this.seenCount,
+        lastSeenDay: lastSeenDay ?? this.lastSeenDay,
+        failedHere: failedHere ?? this.failedHere,
+      );
+  PlaceDoorstep copyWithCompanion(PlaceDoorstepsCompanion data) {
+    return PlaceDoorstep(
+      selfPubkey:
+          data.selfPubkey.present ? data.selfPubkey.value : this.selfPubkey,
+      cell: data.cell.present ? data.cell.value : this.cell,
+      repeaterHash: data.repeaterHash.present
+          ? data.repeaterHash.value
+          : this.repeaterHash,
+      uplinkSnr: data.uplinkSnr.present ? data.uplinkSnr.value : this.uplinkSnr,
+      seenCount: data.seenCount.present ? data.seenCount.value : this.seenCount,
+      lastSeenDay:
+          data.lastSeenDay.present ? data.lastSeenDay.value : this.lastSeenDay,
+      failedHere:
+          data.failedHere.present ? data.failedHere.value : this.failedHere,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaceDoorstep(')
+          ..write('selfPubkey: $selfPubkey, ')
+          ..write('cell: $cell, ')
+          ..write('repeaterHash: $repeaterHash, ')
+          ..write('uplinkSnr: $uplinkSnr, ')
+          ..write('seenCount: $seenCount, ')
+          ..write('lastSeenDay: $lastSeenDay, ')
+          ..write('failedHere: $failedHere')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(selfPubkey, cell, repeaterHash, uplinkSnr,
+      seenCount, lastSeenDay, failedHere);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlaceDoorstep &&
+          other.selfPubkey == this.selfPubkey &&
+          other.cell == this.cell &&
+          other.repeaterHash == this.repeaterHash &&
+          other.uplinkSnr == this.uplinkSnr &&
+          other.seenCount == this.seenCount &&
+          other.lastSeenDay == this.lastSeenDay &&
+          other.failedHere == this.failedHere);
+}
+
+class PlaceDoorstepsCompanion extends UpdateCompanion<PlaceDoorstep> {
+  final Value<String> selfPubkey;
+  final Value<String> cell;
+  final Value<String> repeaterHash;
+  final Value<double?> uplinkSnr;
+  final Value<int> seenCount;
+  final Value<int> lastSeenDay;
+  final Value<bool> failedHere;
+  final Value<int> rowid;
+  const PlaceDoorstepsCompanion({
+    this.selfPubkey = const Value.absent(),
+    this.cell = const Value.absent(),
+    this.repeaterHash = const Value.absent(),
+    this.uplinkSnr = const Value.absent(),
+    this.seenCount = const Value.absent(),
+    this.lastSeenDay = const Value.absent(),
+    this.failedHere = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PlaceDoorstepsCompanion.insert({
+    required String selfPubkey,
+    required String cell,
+    required String repeaterHash,
+    this.uplinkSnr = const Value.absent(),
+    this.seenCount = const Value.absent(),
+    required int lastSeenDay,
+    this.failedHere = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : selfPubkey = Value(selfPubkey),
+        cell = Value(cell),
+        repeaterHash = Value(repeaterHash),
+        lastSeenDay = Value(lastSeenDay);
+  static Insertable<PlaceDoorstep> custom({
+    Expression<String>? selfPubkey,
+    Expression<String>? cell,
+    Expression<String>? repeaterHash,
+    Expression<double>? uplinkSnr,
+    Expression<int>? seenCount,
+    Expression<int>? lastSeenDay,
+    Expression<bool>? failedHere,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (selfPubkey != null) 'self_pubkey': selfPubkey,
+      if (cell != null) 'cell': cell,
+      if (repeaterHash != null) 'repeater_hash': repeaterHash,
+      if (uplinkSnr != null) 'uplink_snr': uplinkSnr,
+      if (seenCount != null) 'seen_count': seenCount,
+      if (lastSeenDay != null) 'last_seen_day': lastSeenDay,
+      if (failedHere != null) 'failed_here': failedHere,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PlaceDoorstepsCompanion copyWith(
+      {Value<String>? selfPubkey,
+      Value<String>? cell,
+      Value<String>? repeaterHash,
+      Value<double?>? uplinkSnr,
+      Value<int>? seenCount,
+      Value<int>? lastSeenDay,
+      Value<bool>? failedHere,
+      Value<int>? rowid}) {
+    return PlaceDoorstepsCompanion(
+      selfPubkey: selfPubkey ?? this.selfPubkey,
+      cell: cell ?? this.cell,
+      repeaterHash: repeaterHash ?? this.repeaterHash,
+      uplinkSnr: uplinkSnr ?? this.uplinkSnr,
+      seenCount: seenCount ?? this.seenCount,
+      lastSeenDay: lastSeenDay ?? this.lastSeenDay,
+      failedHere: failedHere ?? this.failedHere,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (selfPubkey.present) {
+      map['self_pubkey'] = Variable<String>(selfPubkey.value);
+    }
+    if (cell.present) {
+      map['cell'] = Variable<String>(cell.value);
+    }
+    if (repeaterHash.present) {
+      map['repeater_hash'] = Variable<String>(repeaterHash.value);
+    }
+    if (uplinkSnr.present) {
+      map['uplink_snr'] = Variable<double>(uplinkSnr.value);
+    }
+    if (seenCount.present) {
+      map['seen_count'] = Variable<int>(seenCount.value);
+    }
+    if (lastSeenDay.present) {
+      map['last_seen_day'] = Variable<int>(lastSeenDay.value);
+    }
+    if (failedHere.present) {
+      map['failed_here'] = Variable<bool>(failedHere.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaceDoorstepsCompanion(')
+          ..write('selfPubkey: $selfPubkey, ')
+          ..write('cell: $cell, ')
+          ..write('repeaterHash: $repeaterHash, ')
+          ..write('uplinkSnr: $uplinkSnr, ')
+          ..write('seenCount: $seenCount, ')
+          ..write('lastSeenDay: $lastSeenDay, ')
+          ..write('failedHere: $failedHere, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$PathGraphDatabase extends GeneratedDatabase {
   _$PathGraphDatabase(QueryExecutor e) : super(e);
   $PathGraphDatabaseManager get managers => $PathGraphDatabaseManager(this);
@@ -2485,6 +2805,7 @@ abstract class _$PathGraphDatabase extends GeneratedDatabase {
   late final $ContactIngressTable contactIngress = $ContactIngressTable(this);
   late final $KnownContactsTable knownContacts = $KnownContactsTable(this);
   late final $GraphMetaTable graphMeta = $GraphMetaTable(this);
+  late final $PlaceDoorstepsTable placeDoorsteps = $PlaceDoorstepsTable(this);
   late final Index idxEdgesFrom = Index('idx_edges_from',
       'CREATE INDEX idx_edges_from ON graph_edges (from_hash)');
   @override
@@ -2497,6 +2818,7 @@ abstract class _$PathGraphDatabase extends GeneratedDatabase {
         contactIngress,
         knownContacts,
         graphMeta,
+        placeDoorsteps,
         idxEdgesFrom
       ];
 }
@@ -3046,8 +3368,6 @@ typedef $$ContactIngressTableCreateCompanionBuilder = ContactIngressCompanion
   required double weight,
   required int lastSeen,
   required String evidence,
-  Value<double?> observedLat,
-  Value<double?> observedLon,
   Value<int?> provenAt,
   Value<double?> uplinkSnr,
   Value<double?> downlinkSnr,
@@ -3066,8 +3386,6 @@ typedef $$ContactIngressTableUpdateCompanionBuilder = ContactIngressCompanion
   Value<double> weight,
   Value<int> lastSeen,
   Value<String> evidence,
-  Value<double?> observedLat,
-  Value<double?> observedLon,
   Value<int?> provenAt,
   Value<double?> uplinkSnr,
   Value<double?> downlinkSnr,
@@ -3103,12 +3421,6 @@ class $$ContactIngressTableFilterComposer
 
   ColumnFilters<String> get evidence => $composableBuilder(
       column: $table.evidence, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get observedLat => $composableBuilder(
-      column: $table.observedLat, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get observedLon => $composableBuilder(
-      column: $table.observedLon, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get provenAt => $composableBuilder(
       column: $table.provenAt, builder: (column) => ColumnFilters(column));
@@ -3165,12 +3477,6 @@ class $$ContactIngressTableOrderingComposer
   ColumnOrderings<String> get evidence => $composableBuilder(
       column: $table.evidence, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get observedLat => $composableBuilder(
-      column: $table.observedLat, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get observedLon => $composableBuilder(
-      column: $table.observedLon, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<int> get provenAt => $composableBuilder(
       column: $table.provenAt, builder: (column) => ColumnOrderings(column));
 
@@ -3225,12 +3531,6 @@ class $$ContactIngressTableAnnotationComposer
 
   GeneratedColumn<String> get evidence =>
       $composableBuilder(column: $table.evidence, builder: (column) => column);
-
-  GeneratedColumn<double> get observedLat => $composableBuilder(
-      column: $table.observedLat, builder: (column) => column);
-
-  GeneratedColumn<double> get observedLon => $composableBuilder(
-      column: $table.observedLon, builder: (column) => column);
 
   GeneratedColumn<int> get provenAt =>
       $composableBuilder(column: $table.provenAt, builder: (column) => column);
@@ -3293,8 +3593,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             Value<double> weight = const Value.absent(),
             Value<int> lastSeen = const Value.absent(),
             Value<String> evidence = const Value.absent(),
-            Value<double?> observedLat = const Value.absent(),
-            Value<double?> observedLon = const Value.absent(),
             Value<int?> provenAt = const Value.absent(),
             Value<double?> uplinkSnr = const Value.absent(),
             Value<double?> downlinkSnr = const Value.absent(),
@@ -3312,8 +3610,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             weight: weight,
             lastSeen: lastSeen,
             evidence: evidence,
-            observedLat: observedLat,
-            observedLon: observedLon,
             provenAt: provenAt,
             uplinkSnr: uplinkSnr,
             downlinkSnr: downlinkSnr,
@@ -3331,8 +3627,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             required double weight,
             required int lastSeen,
             required String evidence,
-            Value<double?> observedLat = const Value.absent(),
-            Value<double?> observedLon = const Value.absent(),
             Value<int?> provenAt = const Value.absent(),
             Value<double?> uplinkSnr = const Value.absent(),
             Value<double?> downlinkSnr = const Value.absent(),
@@ -3350,8 +3644,6 @@ class $$ContactIngressTableTableManager extends RootTableManager<
             weight: weight,
             lastSeen: lastSeen,
             evidence: evidence,
-            observedLat: observedLat,
-            observedLon: observedLon,
             provenAt: provenAt,
             uplinkSnr: uplinkSnr,
             downlinkSnr: downlinkSnr,
@@ -3703,6 +3995,215 @@ typedef $$GraphMetaTableProcessedTableManager = ProcessedTableManager<
     ),
     GraphMetaData,
     PrefetchHooks Function()>;
+typedef $$PlaceDoorstepsTableCreateCompanionBuilder = PlaceDoorstepsCompanion
+    Function({
+  required String selfPubkey,
+  required String cell,
+  required String repeaterHash,
+  Value<double?> uplinkSnr,
+  Value<int> seenCount,
+  required int lastSeenDay,
+  Value<bool> failedHere,
+  Value<int> rowid,
+});
+typedef $$PlaceDoorstepsTableUpdateCompanionBuilder = PlaceDoorstepsCompanion
+    Function({
+  Value<String> selfPubkey,
+  Value<String> cell,
+  Value<String> repeaterHash,
+  Value<double?> uplinkSnr,
+  Value<int> seenCount,
+  Value<int> lastSeenDay,
+  Value<bool> failedHere,
+  Value<int> rowid,
+});
+
+class $$PlaceDoorstepsTableFilterComposer
+    extends Composer<_$PathGraphDatabase, $PlaceDoorstepsTable> {
+  $$PlaceDoorstepsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get selfPubkey => $composableBuilder(
+      column: $table.selfPubkey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cell => $composableBuilder(
+      column: $table.cell, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get repeaterHash => $composableBuilder(
+      column: $table.repeaterHash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get uplinkSnr => $composableBuilder(
+      column: $table.uplinkSnr, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get seenCount => $composableBuilder(
+      column: $table.seenCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lastSeenDay => $composableBuilder(
+      column: $table.lastSeenDay, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get failedHere => $composableBuilder(
+      column: $table.failedHere, builder: (column) => ColumnFilters(column));
+}
+
+class $$PlaceDoorstepsTableOrderingComposer
+    extends Composer<_$PathGraphDatabase, $PlaceDoorstepsTable> {
+  $$PlaceDoorstepsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get selfPubkey => $composableBuilder(
+      column: $table.selfPubkey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cell => $composableBuilder(
+      column: $table.cell, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get repeaterHash => $composableBuilder(
+      column: $table.repeaterHash,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get uplinkSnr => $composableBuilder(
+      column: $table.uplinkSnr, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get seenCount => $composableBuilder(
+      column: $table.seenCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lastSeenDay => $composableBuilder(
+      column: $table.lastSeenDay, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get failedHere => $composableBuilder(
+      column: $table.failedHere, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PlaceDoorstepsTableAnnotationComposer
+    extends Composer<_$PathGraphDatabase, $PlaceDoorstepsTable> {
+  $$PlaceDoorstepsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get selfPubkey => $composableBuilder(
+      column: $table.selfPubkey, builder: (column) => column);
+
+  GeneratedColumn<String> get cell =>
+      $composableBuilder(column: $table.cell, builder: (column) => column);
+
+  GeneratedColumn<String> get repeaterHash => $composableBuilder(
+      column: $table.repeaterHash, builder: (column) => column);
+
+  GeneratedColumn<double> get uplinkSnr =>
+      $composableBuilder(column: $table.uplinkSnr, builder: (column) => column);
+
+  GeneratedColumn<int> get seenCount =>
+      $composableBuilder(column: $table.seenCount, builder: (column) => column);
+
+  GeneratedColumn<int> get lastSeenDay => $composableBuilder(
+      column: $table.lastSeenDay, builder: (column) => column);
+
+  GeneratedColumn<bool> get failedHere => $composableBuilder(
+      column: $table.failedHere, builder: (column) => column);
+}
+
+class $$PlaceDoorstepsTableTableManager extends RootTableManager<
+    _$PathGraphDatabase,
+    $PlaceDoorstepsTable,
+    PlaceDoorstep,
+    $$PlaceDoorstepsTableFilterComposer,
+    $$PlaceDoorstepsTableOrderingComposer,
+    $$PlaceDoorstepsTableAnnotationComposer,
+    $$PlaceDoorstepsTableCreateCompanionBuilder,
+    $$PlaceDoorstepsTableUpdateCompanionBuilder,
+    (
+      PlaceDoorstep,
+      BaseReferences<_$PathGraphDatabase, $PlaceDoorstepsTable, PlaceDoorstep>
+    ),
+    PlaceDoorstep,
+    PrefetchHooks Function()> {
+  $$PlaceDoorstepsTableTableManager(
+      _$PathGraphDatabase db, $PlaceDoorstepsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlaceDoorstepsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlaceDoorstepsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlaceDoorstepsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> selfPubkey = const Value.absent(),
+            Value<String> cell = const Value.absent(),
+            Value<String> repeaterHash = const Value.absent(),
+            Value<double?> uplinkSnr = const Value.absent(),
+            Value<int> seenCount = const Value.absent(),
+            Value<int> lastSeenDay = const Value.absent(),
+            Value<bool> failedHere = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PlaceDoorstepsCompanion(
+            selfPubkey: selfPubkey,
+            cell: cell,
+            repeaterHash: repeaterHash,
+            uplinkSnr: uplinkSnr,
+            seenCount: seenCount,
+            lastSeenDay: lastSeenDay,
+            failedHere: failedHere,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String selfPubkey,
+            required String cell,
+            required String repeaterHash,
+            Value<double?> uplinkSnr = const Value.absent(),
+            Value<int> seenCount = const Value.absent(),
+            required int lastSeenDay,
+            Value<bool> failedHere = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PlaceDoorstepsCompanion.insert(
+            selfPubkey: selfPubkey,
+            cell: cell,
+            repeaterHash: repeaterHash,
+            uplinkSnr: uplinkSnr,
+            seenCount: seenCount,
+            lastSeenDay: lastSeenDay,
+            failedHere: failedHere,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$PlaceDoorstepsTable, PlaceDoorstep>(table),
+                    BaseReferences<_$PathGraphDatabase, $PlaceDoorstepsTable,
+                        PlaceDoorstep>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PlaceDoorstepsTableProcessedTableManager = ProcessedTableManager<
+    _$PathGraphDatabase,
+    $PlaceDoorstepsTable,
+    PlaceDoorstep,
+    $$PlaceDoorstepsTableFilterComposer,
+    $$PlaceDoorstepsTableOrderingComposer,
+    $$PlaceDoorstepsTableAnnotationComposer,
+    $$PlaceDoorstepsTableCreateCompanionBuilder,
+    $$PlaceDoorstepsTableUpdateCompanionBuilder,
+    (
+      PlaceDoorstep,
+      BaseReferences<_$PathGraphDatabase, $PlaceDoorstepsTable, PlaceDoorstep>
+    ),
+    PlaceDoorstep,
+    PrefetchHooks Function()>;
 
 class $PathGraphDatabaseManager {
   final _$PathGraphDatabase _db;
@@ -3717,4 +4218,6 @@ class $PathGraphDatabaseManager {
       $$KnownContactsTableTableManager(_db, _db.knownContacts);
   $$GraphMetaTableTableManager get graphMeta =>
       $$GraphMetaTableTableManager(_db, _db.graphMeta);
+  $$PlaceDoorstepsTableTableManager get placeDoorsteps =>
+      $$PlaceDoorstepsTableTableManager(_db, _db.placeDoorsteps);
 }

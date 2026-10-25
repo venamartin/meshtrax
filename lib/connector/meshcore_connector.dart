@@ -444,9 +444,31 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (_retryService?.hasMessagesInFlight ?? false) ||
       _pendingChannelSentQueue.isNotEmpty;
 
+  /// A DM or room post is queued, on the air, awaiting its ACK or parked
+  /// for a repeater: a send Pathfinder routes still wants to go (channel
+  /// messages are not its concern).
+  bool get hasDmSendsInFlight => _retryService?.hasMessagesWaiting ?? false;
+
+  /// A channel message is waiting for the radio's OK.
+  bool get hasChannelSendsQueued => _pendingChannelSentQueue.isNotEmpty;
+
+  /// When a Discover that was not ours was last heard: somebody else's
+  /// request, or a repeater's answer carrying another tag. Repeaters
+  /// answer at most 4 Discovers per 2 minutes from everyone combined
+  /// (simple_repeater RateLimiter), so one of ours right after would get
+  /// silence that means nothing.
+  DateTime? get foreignDiscoverHeardAt => _foreignDiscoverHeardAt;
+  DateTime? _foreignDiscoverHeardAt;
+
+  /// Whether the last Discover was Pathfinder's own, not the user's.
+  bool get lastDiscoverAutomatic => _lastDiscoverAutomatic;
+  bool _lastDiscoverAutomatic = false;
+
   // When a room's route was last relearned after a flooded post.
   final Map<String, DateTime> _roomRouteRelearnAt = {};
   static const _roomRouteRelearnCooldown = Duration(minutes: 5);
+  static const _roomRouteRelearnForcedCooldown = Duration(seconds: 20);
+  final Map<String, DateTime> _roomRouteForcedRelearnAt = {};
 
   /// A room server answers a posted message with a plain ACK, never a PATH,
   /// so a post delivered by flood teaches the radio no route and the room
@@ -454,35 +476,59 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// answered with a PATH return, so send one: the last password that
   /// worked, or a blank one, which the room accepts from a client it knows,
   /// and it knows us, since it just ACKed our post.
-  void _relearnRoomRouteAfterFlood(Contact snapshot) {
+  void _relearnRoomRouteAfterFlood(Contact snapshot) =>
+      unawaited(relearnRoomRoute(snapshot));
+
+  /// Logs in to [snapshot]'s room by flood so its radio relearns the way
+  /// back (a room ACKs a post on its stored route back whatever way the
+  /// post came, and only a flooded login resets that route:
+  /// simple_room_server MyMesh.cpp). [force]: do it although the radio
+  /// holds a firmware route, because Pathfinder knows that route ends
+  /// where this radio no longer is.
+  Future<void> relearnRoomRoute(Contact snapshot, {bool force = false}) async {
     final room = _contacts.cast<Contact?>().firstWhere(
       (c) => c!.publicKeyHex == snapshot.publicKeyHex,
       orElse: () => null,
     );
     if (room == null || room.type != advTypeRoom) return;
-    if (room.pathOverride != null || room.pathLength >= 0) return;
+    if (room.pathOverride != null) return;
+    // A route the radio holds because the firmware learned it is enough; one
+    // the app (the keeper) just wrote is Pathfinder's guess, not knowledge.
+    if (!force && room.pathLength >= 0 && !wroteContactPath(room)) return;
     if (!isConnected || hasSendsInFlight) return;
-    final last = _roomRouteRelearnAt[room.publicKeyHex];
+    // Forced: the five-minute cooldown is for relearning after floods that
+    // got through; a login sent from the old area is no reason to wait
+    // after a move (simulator deaf-here, 2026-10-25). Forced relearns keep
+    // their own short cooldown so a burst of posts sends one login, not
+    // one each.
+    final stamps = force ? _roomRouteForcedRelearnAt : _roomRouteRelearnAt;
+    final last = stamps[room.publicKeyHex];
     if (last != null &&
-        DateTime.now().difference(last) < _roomRouteRelearnCooldown) {
+        DateTime.now().difference(last) <
+            (force ? _roomRouteRelearnForcedCooldown : _roomRouteRelearnCooldown)) {
       return;
     }
-    _roomRouteRelearnAt[room.publicKeyHex] = DateTime.now();
-    unawaited(() async {
-      final password =
-          await StorageService().getRepeaterPassword(room.publicKeyHex) ?? '';
-      appLogger.info(
-        'Relearning route to ${room.name}: login by flood',
-        tag: 'Routing',
-      );
-      await ServerLoginService(this).login(
-        room,
-        password,
-        maxAttempts: 1,
-        tag: 'Routing',
-      );
-    }());
+    stamps[room.publicKeyHex] = DateTime.now();
+    final password =
+        await StorageService().getRepeaterPassword(room.publicKeyHex) ?? '';
+    appLogger.info(
+      'Relearning route to ${room.name}: login by flood',
+      tag: 'Routing',
+    );
+    await ServerLoginService(this).login(
+      room,
+      password,
+      maxAttempts: 1,
+      tag: 'Routing',
+      forceFlood: true,
+    );
   }
+
+  /// Pathfinder's word that this room's way back ends where the radio no
+  /// longer is (it moved since the room last got a packet of its): a post
+  /// would arrive and its ACK would die, so the room is logged in to by
+  /// flood first. Null while Pathfinder is off.
+  bool Function(Contact room)? graphRoomNeedsRelearn;
 
   // When a clock sync was last sent per room. The skew banner measures from
   // the LAST login response, so after a fix it must stay down until a newer
@@ -559,6 +605,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// The radio's latest GPS reading ([requestSelfPosition]), for the GPS
   /// dialog. A notifier, so a reading that changes nothing rebuilds only it.
   final ValueNotifier<SelfGpsReading?> selfGps = ValueNotifier(null);
+
+  /// Whether a GPS reading this connection has differed from the position
+  /// SELF_INFO gave at connect. Until one does, the reading may be the
+  /// position the radio stored before its last restart, reported as if
+  /// current (seen 2026-10-22), so nothing treats it as where the radio is.
+  bool _selfPositionLive = false;
+  bool get selfPositionIsLive => _selfPositionLive;
   int _reconnectAttempts = 0;
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
@@ -1385,6 +1438,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             onSendAttemptStarted?.call(contact, selection, attempt),
         onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
         onLadderEnded: (contactKey) => onSendLadderEnded?.call(contactKey),
+        onSendOutcome: (contactKey, {required delivered, required echoHeard}) =>
+            onSendOutcome?.call(contactKey,
+                delivered: delivered, echoHeard: echoHeard),
+        onFloodAttemptEnded: (contact, {required delivered}) =>
+            onFloodAttemptEnded?.call(contact, delivered: delivered),
         appSettingsService: appSettingsService,
         debugLogService: _appDebugLogService,
       ),
@@ -1555,6 +1613,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   /// The last DM ladder to this contact (pubkey hex) ended.
   void Function(String contactKey)? onSendLadderEnded;
+
+  /// One message's ladder to this contact (pubkey hex) is over: whether it
+  /// was delivered, and whether a repeater was heard echoing a flood of it
+  /// (null when no flood of it could have been observed).
+  void Function(String contactKey,
+      {required bool delivered, required bool? echoHeard})? onSendOutcome;
+
+  /// A flood attempt to [Contact] that went on the air got its ACK, or
+  /// its wait ran out (floods never go through [onSendAttemptResult]).
+  void Function(Contact, {required bool delivered})? onFloodAttemptEnded;
 
   /// A DM or room post from [contact] arrived while connected (copies
   /// drained after a reconnect are not passed on): its sender timestamp,
@@ -3442,6 +3510,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _selfName = null;
     _selfLatitude = null;
     _selfLongitude = null;
+    _selfPositionLive = false;
+    // Every way off a radio drops its position: the next radio, or this
+    // one after a restart, must earn a live fix again.
+    _gpsPollTimer?.cancel();
+    _gpsPollTimer = null;
+    selfGps.value = null;
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
@@ -3934,6 +4008,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         await sendFrame(buildSendTextMsgFrame(contact.publicKey, outboundText));
       }
       return;
+    }
+
+    if (contact.type == advTypeRoom &&
+        !hasSendsInFlight &&
+        (graphRoomNeedsRelearn?.call(contact) ?? false)) {
+      appLogger.info(
+        'I have moved since ${contact.name} last got a packet of mine: '
+        'logging in by flood first so it learns the way back',
+        tag: 'Routing',
+      );
+      // Bounded: a room that never answers must not hold the post hostage.
+      await relearnRoomRoute(contact, force: true)
+          .timeout(const Duration(seconds: 12), onTimeout: () {});
     }
 
     if (_retryService != null) {
@@ -5152,6 +5239,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       }
       _selfLatitude = lat;
       _selfLongitude = lon;
+      _selfPositionLive = true;
       notifyListeners();
       return;
     }
@@ -5178,13 +5266,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await sendFrame(buildSendSelfAdvertFrame(flood: flood));
   }
 
-  Future<void> sendRepeaterDiscovery() async {
+  /// [automatic]: Pathfinder asked, not the user (the Nearby Repeaters
+  /// dialog says so).
+  Future<void> sendRepeaterDiscovery({bool automatic = false}) async {
     if (!isConnected) return;
 
     final rand = math.Random();
     final tag = rand.nextInt(0xFFFFFFFF);
     final previousScan = (_discoverScan, _discoverStartedAt, _discoverAsked);
     _pendingDiscoverTag = tag;
+    _lastDiscoverAutomatic = automatic;
     _discoverScan++;
     _discoverAsked = Set.identity()..addAll(_directRepeaters);
     _discoverStartedAt = DateTime.now();
@@ -5204,7 +5295,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 final frame = buildRepeaterDiscoveryFrame(tag);
 
     try {
-      await sendFrame(frame);
+      // The radio answers the request itself with OK; registered, so that
+      // OK is not taken for a queued channel message's.
+      await sendFrame(frame, expectsGenericAck: true);
       appLogger.info('Sent repeater discovery query with tag 0x${tag.toRadixString(16).padLeft(8, "0")}');
     } catch (e) {
       appLogger.error('Failed to send repeater discovery frame: $e');
@@ -5525,9 +5618,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   Future<void> _failPendingSendsFromEarlierRuns() async {
     final failed = await _channelMessageStore.failPendingSendsBefore(_startedAt);
-    if (failed == 0) return;
+    final failedDms = await _messageStore.failPendingSendsBefore(_startedAt);
+    if (failed == 0 && failedDms == 0) return;
     appLogger.info(
-      'Failed $failed channel send(s) left pending by an earlier run',
+      'Failed $failed channel send(s) and $failedDms direct message(s) '
+      'left in flight by an earlier run',
       tag: 'Connector',
     );
     notifyListeners();
@@ -6024,6 +6119,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _forgetNearbyOfOtherRadio(pubKeyToHex(_selfPublicKey!));
       _selfLatitude = reader.readInt32LE() / 1000000.0;
       _selfLongitude = reader.readInt32LE() / 1000000.0;
+      _selfPositionLive = false;
       _multiAcks = reader.readByte();
       _advertLocPolicy = reader.readByte();
       // Firmware packs (env << 4) | (loc << 2) | base
@@ -7218,6 +7314,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
       if (packet == null) return;
+      // A repeater's own advert, zero hops: a repeater transmission
+      // reached me just as surely as a relayed packet (the parked-message
+      // wake; simulator 2026-10-25, where a 30 s advert was all the air
+      // carried). Node type is the flags byte after key, time, signature.
+      if (packet.payloadType == payloadTypeADVERT &&
+          packet.payload.length > 100 &&
+          (packet.payload[100] & 0x0F) == advTypeRepeater) {
+        _retryService?.noteRepeaterHeard();
+      }
       // Message liveness, any hash width (the raw copy of my own flooded
       // DM carries [their byte][my byte]; a flood with hops passed through
       // a repeater I can hear). Never evidence for Pathfinder: it keeps
@@ -7349,6 +7454,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (ctlPayload.isEmpty) return;
 
       final ctlType = ctlPayload[0] & 0xF0;
+      if (ctlType == ctlTypeNodeDiscoverReq) {
+        // Somebody near me is asking: their request uses up the repeaters'
+        // shared answer budget just as ours would.
+        _foreignDiscoverHeardAt = DateTime.now();
+        return;
+      }
       if (ctlType == ctlTypeNodeDiscoverResp) {
         final nodeType = ctlPayload[0] & 0x0F;
         if (nodeType != advTypeRepeater) return;
@@ -7359,6 +7470,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         final tag = ByteData.sublistView(ctlPayload, 2, 6).getUint32(0, Endian.little);
 
         if (_pendingDiscoverTag == null || tag != _pendingDiscoverTag) {
+          _foreignDiscoverHeardAt = DateTime.now();
           return;
         }
 
@@ -7469,7 +7581,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     try {
       final reader = BufferReader(frame);
-      reader.skipBytes(2); //Skip code and is_flood
+      reader.skipBytes(1);
+      // How the radio actually sent it: it floods when it holds no route
+      // to the contact, whatever the app asked for.
+      final isFlood = reader.readUInt8() != 0;
       final ackHash = reader.readUInt32LE();
       final timeoutMs = reader.readUInt32LE();
 
@@ -7487,7 +7602,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       final retryService = _retryService;
       if (retryService != null &&
-          retryService.updateMessageFromSent(ackHash, timeoutMs)) {
+          retryService.updateMessageFromSent(ackHash, timeoutMs,
+              isFlood: isFlood)) {
         return;
       }
 
@@ -9651,6 +9767,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
     selfGps.value = null;
+    _selfPositionLive = false;
     _stopRadioStatsPolling();
     _latestRadioStats = null;
     radioStatsNotifier.value = null;

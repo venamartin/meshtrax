@@ -131,6 +131,27 @@ void main() {
     await tester.runAsync(() => service.stop());
   });
 
+  testWidgets('Backup asks about the areas the radio was heard in',
+      (tester) async {
+    await pump(tester, width: 1200, seed: (graph) {
+      graph.setPlace('c1_1', const {});
+      graph.observeOwnEcho(Uint8List.fromList([0xA2, 0x77]), 2);
+    });
+    await tester.tap(find.text('Backup & restore'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Backup'));
+    await tester.pumpAndSettle();
+    expect(find.text('Include where you have been?'), findsOneWidget);
+    expect(find.text('Leave it out'), findsOneWidget);
+    expect(find.text('Include'), findsOneWidget);
+    // Dismissed: nothing is written.
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.text('Include where you have been?'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.runAsync(() => service.stop());
+  });
+
   group('Trace', () {
     // Delivered on A277 › 1000 › 4F77: Pathfinder's route out to Bob.
     void routeOut(PathGraph g) => g.reportSendResult(

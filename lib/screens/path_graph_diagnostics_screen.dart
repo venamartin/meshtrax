@@ -106,6 +106,8 @@ class PathGraphDiagnosticsScreen extends StatelessWidget {
             _infoRow('Links held until heard again', '${c.linksHeld}'),
             _infoRow('DMs matched', '${adapter?.messagesAttributed ?? 0}'),
             _infoRow('Radio', graph.selfPubkey == null ? 'unknown' : 'known'),
+            _infoRow('Mesh',
+                graph.mesh?.label ?? 'unknown until a radio connects'),
             // A path's hash width is set by the node that built the packet,
             // so other nodes' traffic can be 1-byte no matter what this
             // radio uses.

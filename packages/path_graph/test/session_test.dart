@@ -18,8 +18,7 @@ Future<PathGraph> populated() async {
   g.ingestContact(bobPk, 'Bob');
   g.ingestNode('A277', name: 'Alpha', lat: 36.97, lon: -121.73);
   g.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
-      const ObservationOrigin.pubkeyConfirmed(bobPk),
-      position: const GeoPosition(36.9, -121.7));
+      const ObservationOrigin.pubkeyConfirmed(bobPk));
   g.observeTrace(['A277', '1312', 'A277'], [9.0, 6.5, -4.0]);
   g.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true,
       contactPubkey: bobPk);

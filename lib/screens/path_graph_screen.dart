@@ -17,6 +17,7 @@ import '../services/path_graph/frame_adapter.dart';
 import '../services/path_graph/path_graph_service.dart';
 import '../utils/contact_search.dart';
 import '../widgets/mention_composer.dart';
+import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/routing_dialog.dart';
 import 'path_graph_diagnostics_screen.dart';
 import 'path_trace_map.dart';
@@ -42,6 +43,12 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear me have gone quiet',
       FloodReason.doorstepsMoving =>
         'the repeaters that hear me are moving and none has answered me lately',
+      FloodReason.theirDoorstepsFailing =>
+        'the repeaters that hear it have not got my last sends through to it',
+      FloodReason.doorstepsNotHere =>
+        'no repeater has been heard hearing me around here yet',
+      FloodReason.movedSinceTheyReachedMe =>
+        'I have moved since it last got a packet of mine',
     };
   }
   if (back) {
@@ -61,6 +68,12 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear me have gone quiet',
       FloodReason.doorstepsMoving =>
         'the repeaters that hear me are moving and none has answered me lately',
+      FloodReason.theirDoorstepsFailing =>
+        'the repeaters that hear it have not got my last sends through to it',
+      FloodReason.doorstepsNotHere =>
+        'no repeater has been heard hearing me around here yet',
+      FloodReason.movedSinceTheyReachedMe =>
+        'I have moved since they last got a packet of mine',
     };
   }
   return switch (reason) {
@@ -80,6 +93,14 @@ String floodReasonText(FloodReason reason,
     FloodReason.doorstepsMoving =>
       'the repeaters that hear me are moving and none has answered me lately '
           '— flooding to find one',
+    FloodReason.theirDoorstepsFailing =>
+      'the repeaters that hear them have not got my last sends through to them',
+    FloodReason.doorstepsNotHere =>
+      'no repeater has been heard hearing me around here yet — flooding so '
+          'one can',
+    FloodReason.movedSinceTheyReachedMe =>
+      'I have moved since they last got a packet of mine and their way back '
+          'ends where I was — flooding so their radio learns the new one',
   };
 }
 
@@ -176,7 +197,36 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       PathHelper.pubKeyPrefix(c.publicKey, stride: graph.hashWidthBytes));
 
   Future<void> _backup(PathGraph graph) async {
-    final doc = const JsonEncoder.withIndent(' ').convert(graph.saveSession());
+    // The areas the radio has been heard in are a coarse history of
+    // where it went (about 500 m, by the day): the user decides whether
+    // a file carries them (owner, 2026-10-25).
+    var includePlaces = false;
+    if (graph.hasPlaces) {
+      final choice = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Include where you have been?'),
+          content: const Text(
+              'This backup can include which repeaters heard this radio in '
+              'each area of about 500 m over the last 30 days. It never '
+              'holds your exact position. Include it?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Leave it out'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Include'),
+            ),
+          ],
+        ),
+      );
+      if (choice == null || !mounted) return;
+      includePlaces = choice;
+    }
+    final doc = const JsonEncoder.withIndent(' ')
+        .convert(graph.saveSession(includePlaces: includePlaces));
     // The system save dialog, like the log export: the silent save lands
     // in the app's private folder where nobody can find it.
     final saved = await FileSaver.instance.saveAs(
@@ -254,6 +304,14 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           ],
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: context.l10n.pathfinderHelp_title,
+            onPressed: () =>
+                PathfinderHelpDialog.show(context, offerDontShowAgain: false),
+          ),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -264,7 +322,14 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
               title: Text(context.l10n.settings_pathGraph),
               subtitle: Text(context.l10n.settings_pathGraphSubtitle),
               value: settings.settings.pathGraphEnabled,
-              onChanged: (v) => settings.setPathGraphEnabled(v),
+              onChanged: (v) async {
+                await settings.setPathGraphEnabled(v);
+                // Switched on: say what it does and that it needs time to
+                // learn, once, unless the user asked not to see it again.
+                if (v && context.mounted) {
+                  await PathfinderHelpDialog.showIfNotSeen(context);
+                }
+              },
             ),
             const SizedBox(height: 16),
             if (graph == null)

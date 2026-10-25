@@ -481,6 +481,34 @@ void main() {
     expect(adapter.packetLog.first.verdict, contains('no logged flood'));
   });
 
+  test('a copy of the reply that arrives after PATH_UPDATED is kept as a hint',
+      () {
+    // Simulator (2026-10-24): the short copy came first, the radio stored
+    // the route and told the app, and the long copy landed 0.6 s later.
+    // It is the same reply heard the long way round: a splice hint, no
+    // second doorstep credit.
+    const roomPk = '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f'
+        '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f'
+        '3f' '3f' '3f' '3f' '3f' '3f';
+    adapter.handleFrame(rxFrame(
+        payloadType: 0x08, path: [0xBE, 0xEF], payload: [0xAB, 0x3F, 9, 9]));
+    adapter.attributePathReply(roomPk);
+    adapter.handleFrame(rxFrame(
+        payloadType: 0x08,
+        path: [0x5B, 0x98, 0xF5, 0xEE, 0xAA, 0x77, 0xA2, 0x77],
+        payload: [0xAB, 0x3F, 9, 9]));
+    // A different reply from the same first byte inside the window is not
+    // this one and stays out.
+    adapter.handleFrame(rxFrame(
+        payloadType: 0x08, path: [0x13, 0x12, 0xA2, 0x77], payload: [0xAB, 0x3F, 7, 7]));
+
+    expect(graph.ingressCandidates(roomPk).single.repeaterHash, 'BEEF');
+    final hints = graph.hintsFor(roomPk).map((h) => h.hops.join(','));
+    expect(hints, ['5B98,F5EE,AA77,A277']);
+    expect(adapter.packetLog.map((e) => e.verdict),
+        anyElement(contains('late copy')));
+  });
+
   group('a PATH reply is credited exactly or not at all', () {
     final roomPk = '3f' * 32;
     Uint8List reply(List<int> path, int tag) => rxFrame(

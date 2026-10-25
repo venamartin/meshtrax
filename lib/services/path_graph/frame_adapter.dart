@@ -377,7 +377,13 @@ class PathLabAdapter {
 
   /// Sender byte → until when: copies of a PATH reply already attributed
   /// (or refused) are not kept for the next one.
-  final Map<int, DateTime> _consumedPathReplies = {};
+  // Per sender byte: the PATH reply just credited — until when later
+  // copies of it count as the same reply, whose contact, and its payload
+  // fingerprint. A copy arriving after the radio told us about the first
+  // one (0.6 s later in the simulator, two seconds in the field) is the
+  // same reply heard the long way round: a splice hint, nothing else.
+  final Map<int, ({DateTime until, String contact, String fingerprint})>
+      _consumedPathReplies = {};
 
   /// PATH packets addressed to me that came direct (a reciprocal path, a
   /// return-path retry). They carry no hops to credit, but the radio
@@ -764,8 +770,17 @@ class PathLabAdapter {
     if (packet.payload[1] == myByte) return;
     final now = DateTime.now();
     if (packet.payloadType == _payloadTypePath) {
-      final until = _consumedPathReplies[packet.payload[1]];
-      if (until != null && now.isBefore(until)) return;
+      final consumed = _consumedPathReplies[packet.payload[1]];
+      if (consumed != null && now.isBefore(consumed.until)) {
+        if (payloadFingerprint(packet.payload) == consumed.fingerprint &&
+            graph.observeInboundCopy(
+                consumed.contact, packet.pathBytes, packet.stride)) {
+          _log('path reply', _fmtHops(packet.pathBytes, packet.stride),
+              'late copy of the reply already credited — kept as a hint',
+              snrByte / 4.0);
+        }
+        return;
+      }
     }
     _floodMessages.removeWhere(
         (m) => now.difference(m.at) > _floodMessageWindow);
@@ -815,13 +830,16 @@ class PathLabAdapter {
     _floodAcks.removeWhere(matches.contains);
     if (!graph.observeContactSender(
         contactPubkeyHex, first.pathBytes, first.stride,
-        confirmed: true)) {
+        confirmed: true, deliveredAck: true)) {
       _log('ack', _fmtHops(first.pathBytes, first.stride),
           'from $who — ${_notFiled(first.pathBytes, first.stride)}',
           first.snrByte / 4.0);
       return;
     }
     messagesAttributed++;
+    for (final m in matches.skip(1)) {
+      graph.observeInboundCopy(contactPubkeyHex, m.pathBytes, m.stride);
+    }
     final others = matches.skip(1).map((m) => _fmtHops(m.pathBytes, m.stride));
     _log(
         'ack',
@@ -867,7 +885,11 @@ class PathLabAdapter {
     final first = matches.first;
     // Later copies of this reply are the same reply: never a second one.
     _floodMessages.removeWhere(matches.contains);
-    _consumedPathReplies[srcHash] = now.add(_pathReplyWindow);
+    _consumedPathReplies[srcHash] = (
+      until: now.add(_pathReplyWindow),
+      contact: contactPubkeyHex,
+      fingerprint: payloadFingerprint(first.payload),
+    );
     // A logged reply shows only the sender's first key byte, but the
     // radio logs every packet before it decodes one (Dispatcher.cpp
     // checkRecv), so the reply it just decoded is among those logged,
@@ -900,6 +922,9 @@ class PathLabAdapter {
       return;
     }
     messagesAttributed++;
+    for (final m in matches.skip(1)) {
+      graph.observeInboundCopy(contactPubkeyHex, m.pathBytes, m.stride);
+    }
     final others = matches.skip(1).map((m) => _fmtHops(m.pathBytes, m.stride));
     _log(
         'path reply',
@@ -970,6 +995,9 @@ class PathLabAdapter {
       return;
     }
     messagesAttributed++;
+    for (final m in matches.skip(1)) {
+      graph.observeInboundCopy(contactPubkeyHex, m.pathBytes, m.stride);
+    }
     _log(
         'dm',
         _fmtHops(first.pathBytes, first.stride),

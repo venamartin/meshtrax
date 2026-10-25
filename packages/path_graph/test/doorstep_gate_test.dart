@@ -94,20 +94,30 @@ void main() {
       expect(floodReason(), FloodReason.doorstepsFailing);
 
       echo(a277); // the flood's echo: it still hears me
-      expect(firstHop(), 'a277');
       expect(graph.egressCandidates().single.failedSinceProof, 0);
+      // Their end keeps its own count (owner, 2026-10-24): nothing yet shows
+      // 1312 reaches Bob, so the next send still floods.
+      expect(floodReason(), FloodReason.theirDoorstepsFailing);
+      // The flood's PATH reply names the route it took: 1312 did reach him.
+      graph.reportSendResult(path([...a277, ...r1312]), true,
+          contactPubkey: bobPk, tally: false);
+      expect(firstHop(), 'a277');
     });
 
     test('another proven doorstep takes over', () {
+      const r2000 = [0x20, 0x00];
       for (var i = 0; i < 4; i++) {
         echo(a277);
       }
       echo(beef);
+      // Bob has two doorsteps: 1312 off A277, 2000 off BEEF.
       bobVia(r1312);
+      bobVia(r2000);
       corridor(a277, r1312);
-      corridor(beef, r1312);
+      corridor(beef, r2000);
       expect(firstHop(), 'a277', reason: 'the heavier doorstep starts');
 
+      // Two failures gate both ends of that route: my A277 and his 1312.
       failed([...a277, ...r1312]);
       failed([...a277, ...r1312]);
       expect(firstHop(), 'beef');

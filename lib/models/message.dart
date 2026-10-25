@@ -31,6 +31,10 @@ class Message {
   // Who chose the route of the attempt pathLength describes. Rows stored
   // before Pathfinder read as firmware.
   final RouteSource routeSource;
+  // Of a Pathfinder route's hops, how many were splice guesses (the
+  // reverse of links heard on the contact's inbound path) rather than
+  // links observed in the sending direction.
+  final int guessedHops;
   // The ACK arrived after every attempt had timed out and the message had
   // already been marked failed.
   final bool deliveredLate;
@@ -67,6 +71,7 @@ class Message {
     this.pathLength,
     this.pathHashSize,
     this.routeSource = RouteSource.firmware,
+    this.guessedHops = 0,
     this.deliveredLate = false,
     this.waitingForRepeater = false,
   }) : messageId = messageId ??
@@ -92,6 +97,7 @@ class Message {
     Uint8List? pathBytes,
     int? pathHashSize,
     RouteSource? routeSource,
+    int? guessedHops,
     bool? isCli,
     bool? deliveredLate,
     bool? waitingForRepeater,
@@ -120,6 +126,7 @@ class Message {
       pathBytes: pathBytes ?? this.pathBytes,
       pathHashSize: pathHashSize ?? this.pathHashSize,
       routeSource: routeSource ?? this.routeSource,
+      guessedHops: guessedHops ?? this.guessedHops,
       deliveredLate: deliveredLate ?? this.deliveredLate,
       waitingForRepeater: waitingForRepeater ?? this.waitingForRepeater,
       reactions: reactions ?? this.reactions,

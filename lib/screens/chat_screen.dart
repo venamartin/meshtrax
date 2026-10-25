@@ -3154,6 +3154,9 @@ class _MessageBubble extends StatelessWidget {
     final hops = message.pathLength;
     if (hops == null || hops < 0) return l10n.chat_kindFlood;
     if (hops == 0) return l10n.chat_kindDirect;
+    if (message.guessedHops > 0) {
+      return l10n.chat_kindRouteGuessed(hops, message.guessedHops);
+    }
     return l10n.chat_kindRoute(hops);
   }
 

@@ -63,8 +63,7 @@ void main() {
     // ingress list, my own doorstep, and a position tag.
     graph.ingestContact(bobPk, 'Bob');
     graph.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
-        const ObservationOrigin.pubkeyConfirmed(bobPk),
-        position: const GeoPosition(36.9712, -121.7334));
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
     graph.observeDiscoverResults(
         [const DiscoverResponse(repeaterHash: '1312', uplinkSnr: 9)],
         failureEpisode: false);

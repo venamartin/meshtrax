@@ -23,6 +23,13 @@ import '../../utils/app_logger.dart';
 /// override, a contact Pathfinder cannot route for, and a contact whose
 /// own ladder is running are left alone. A retry copy is never evidence
 /// for Pathfinder: the sender's timer may simply be short.
+///
+/// Splices (owner, 2026-10-24): a route with guessed hops may hold the
+/// stored route only at rung 0 and only with one guess; from the first
+/// step down the rungs are proven routes, then flood. A splice whose ACK
+/// was lost is retired for that contact, here and not in the graph, until
+/// a send of mine delivers on it — otherwise the same wrong guess would be
+/// written again for every new message while the hint stays fresh.
 class RadioRouteKeeper {
   RadioRouteKeeper({
     required this.contacts,
@@ -53,6 +60,31 @@ class RadioRouteKeeper {
 
   final Map<String, _Episode> _episodes = {};
   final Map<String, DateTime> _lastWrite = {};
+  // Per contact: guessed links ("FROM>TO") of splices that lost an ACK while
+  // held. Any route carrying one is not held again until a send of mine
+  // delivers over that link (simulator 2026-10-24: retiring the route let
+  // the same wrong guess back in on every alternative that carried it).
+  final Map<String, Set<String>> _retired = {};
+
+  /// How many guessed hops a route may carry and still hold the stored
+  /// route at rung 0.
+  static const maxGuessedHopsHeld = 1;
+
+  static String routeKey(PathSelection r) =>
+      r.hopCount == 0 ? 'direct' : '${r.hashSize}:${r.pathBytes.join(',')}';
+
+  /// The route's between-hop links as "FROM>TO", guessed ones only when
+  /// [guessedOnly].
+  static Set<String> linkKeys(PathSelection r, {bool guessedOnly = false}) {
+    if (r.useFlood || r.hopCount < 2) return const {};
+    final hops = PathHelper.formatPathHex(r.pathBytes, stride: r.hashSize)
+        .split(',');
+    return {
+      for (var i = 0; i < hops.length - 1; i++)
+        if (!guessedOnly || (i < r.guessedLinks.length && r.guessedLinks[i]))
+          '${hops[i]}>${hops[i + 1]}',
+    };
+  }
   Timer? _syncTimer;
   bool _syncing = false;
   bool _disposed = false;
@@ -101,6 +133,11 @@ class RadioRouteKeeper {
           '(${episode.newestAckOnRoute ? "on the stored route" : "a flood"}) '
           'never reached them',
           tag: 'PathGraph');
+      if (episode.newestAckOnRoute) {
+        episode.held ??=
+            routesFor(contact)?.where((r) => holds(contact, r)).firstOrNull;
+        _retireHeldSplice(contact, key);
+      }
     }
     if (direct) episode.directCopies++;
     episode.newestDirect = direct;
@@ -113,6 +150,26 @@ class RadioRouteKeeper {
       unawaited(_apply(key));
     });
     unawaited(_apply(key));
+  }
+
+  /// The stored route the last ACK went on was a splice: it is not held
+  /// again for this contact until a send of mine proves it.
+  void _retireHeldSplice(Contact contact, String key) {
+    final held = _rung0(contact);
+    if (held == null || held.guessedHops == 0 || !holds(contact, held)) return;
+    (_retired[key] ??= {}).addAll(linkKeys(held, guessedOnly: true));
+    appLogger.info(
+        'the stored route to ${contact.name} (${_describe(held)}, '
+        '${held.guessedHops} hop${held.guessedHops == 1 ? "" : "s"} guessed) '
+        'lost an ACK: not held again until a send of mine proves it',
+        tag: 'PathGraph');
+  }
+
+  /// A send of mine delivered on [route]: the route is proven, and a
+  /// retired splice of it may be held again.
+  void onDelivered(String contactKey, PathSelection route) {
+    if (route.useFlood) return;
+    _retired[_key(contactKey)]?.removeAll(linkKeys(route));
   }
 
   /// The radio's route to [contactKey] may no longer be Pathfinder's: the
@@ -145,6 +202,7 @@ class RadioRouteKeeper {
       episode.expiry?.cancel();
     }
     _episodes.clear();
+    _retired.clear();
   }
 
   Future<void> _syncAll() async {
@@ -215,17 +273,44 @@ class RadioRouteKeeper {
         : rungFor(
             directCopies: episode.directCopies,
             newestDirect: episode.newestDirect);
-    if (rung == 0) return _ladderFor(contact)?.first;
-    final ladder = episode!.ladder ??= _ladderFor(contact);
+    if (rung == 0) return _rung0(contact);
+    // The ladder a send would have run from the held route: that route
+    // first (its rung is the one that failed), then proven routes only.
+    final ladder = episode!.ladder ??=
+        _ladderFor(contact, provenOnly: true, first: episode.held);
     if (ladder == null) return null;
     return rung < ladder.length ? ladder[rung] : PathSelection.flood(radioWidth());
   }
 
-  List<PathSelection>? _ladderFor(Contact contact) {
+  /// The route held before any step down: Pathfinder's best among routes
+  /// with at most [maxGuessedHopsHeld] guessed hops that are not retired.
+  PathSelection? _rung0(Contact contact) {
+    final retired = _retired[_key(contact.publicKeyHex)] ?? const <String>{};
+    return _ladderFor(contact,
+        keep: (r) =>
+            r.guessedHops <= maxGuessedHopsHeld &&
+            linkKeys(r, guessedOnly: true).every((l) => !retired.contains(l)))
+        ?.first;
+  }
+
+  /// The DM ladder for [contact] over Pathfinder's routes, [keep] only;
+  /// [provenOnly] keeps routes with no guessed hop (the step-down rungs);
+  /// [first] goes ahead of them whatever it is.
+  List<PathSelection>? _ladderFor(Contact contact,
+      {bool provenOnly = false,
+      bool Function(PathSelection)? keep,
+      PathSelection? first}) {
     final routes = routesFor(contact);
     if (routes == null) return null;
     return planAttempts(contact,
-        radioWidth: radioWidth(), budget: budget(), graphRoutes: routes);
+        radioWidth: radioWidth(),
+        budget: budget(),
+        graphRoutes: [
+          ?first,
+          for (final r in routes)
+            if ((!provenOnly || r.guessedHops == 0) && (keep?.call(r) ?? true))
+              r,
+        ]);
   }
 
   static bool _eligible(Contact contact) =>
@@ -250,6 +335,9 @@ class _Episode {
   final String message;
   // Planned at the first step down, then kept, like a send's ladder.
   List<PathSelection>? ladder;
+  // The route the radio held when the first ACK was lost: the ladder's
+  // rung 0, whatever Pathfinder ranks now.
+  PathSelection? held;
   int directCopies = 0;
   bool newestDirect = false;
   bool newestAckOnRoute = false;

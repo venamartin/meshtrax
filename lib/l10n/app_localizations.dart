@@ -6630,6 +6630,12 @@ abstract class AppLocalizations {
   /// **'route ({count} {count, plural, =1{hop} other{hops}})'**
   String chat_kindRoute(int count);
 
+  /// A Pathfinder route of which some hops were guessed from the contact's inbound path (the splice).
+  ///
+  /// In en, this message translates to:
+  /// **'route ({count} {count, plural, =1{hop} other{hops}}, {guessed} guessed)'**
+  String chat_kindRouteGuessed(int count, int guessed);
+
   /// No description provided for @chat_statusQueued.
   ///
   /// In en, this message translates to:
@@ -6701,6 +6707,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resending by flood'**
   String get chat_resendingByFlood;
+
+  /// No description provided for @pathfinderHelp_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What Pathfinder does'**
+  String get pathfinderHelp_title;
+
+  /// No description provided for @pathfinderHelp_what.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.'**
+  String get pathfinderHelp_what;
+
+  /// No description provided for @pathfinderHelp_how.
+  ///
+  /// In en, this message translates to:
+  /// **'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.'**
+  String get pathfinderHelp_how;
+
+  /// No description provided for @pathfinderHelp_learning.
+  ///
+  /// In en, this message translates to:
+  /// **'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
+  String get pathfinderHelp_learning;
+
+  /// No description provided for @pathfinderHelp_guessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.'**
+  String get pathfinderHelp_guessed;
+
+  /// No description provided for @pathfinderHelp_discover.
+  ///
+  /// In en, this message translates to:
+  /// **'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.'**
+  String get pathfinderHelp_discover;
+
+  /// No description provided for @pathfinderHelp_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Pathfinder off and the radio routes exactly as it did before.'**
+  String get pathfinderHelp_off;
+
+  /// No description provided for @pathfinderHelp_dontShowAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show this again'**
+  String get pathfinderHelp_dontShowAgain;
+
+  /// No description provided for @pathfinderHelp_ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get pathfinderHelp_ok;
 
   /// No description provided for @settings_pathGraph.
   ///

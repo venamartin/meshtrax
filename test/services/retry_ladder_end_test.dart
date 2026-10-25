@@ -25,6 +25,8 @@ void main() {
   late MessageRetryService svc;
   late List<({String text, int attempt, int ts})> sends;
   late List<String> ended;
+  late List<({String key, bool delivered, bool? echoHeard})> outcomes;
+  late List<bool> floods;
 
   int ackFor(int i) => MessageRetryService.computeExpectedAckHash(
       sends[i].ts, sends[i].attempt, sends[i].text, selfKey);
@@ -33,7 +35,12 @@ void main() {
     svc = MessageRetryService();
     sends = [];
     ended = [];
+    outcomes = [];
+    floods = [];
     svc.initialize(RetryServiceConfig(
+      onFloodAttemptEnded: (_, {required delivered}) => floods.add(delivered),
+      onSendOutcome: (key, {required delivered, required echoHeard}) =>
+          outcomes.add((key: key, delivered: delivered, echoHeard: echoHeard)),
       sendMessage: (_, text, attempt, ts) =>
           sends.add((text: text, attempt: attempt, ts: ts)),
       addMessage: (_, _) {},
@@ -64,6 +71,71 @@ void main() {
       async.flushMicrotasks();
       expect(ended, [bob.publicKeyHex]);
       expect(svc.isSendingTo(bob.publicKeyHex), isFalse);
+      expect(outcomes.map((o) => o.delivered), [true, true],
+          reason: 'one outcome per message, as each is resolved');
+    });
+  });
+
+  test('a flood attempt that went on the air reports its end', () {
+    fakeAsync((async) {
+      svc.setMaxRetries(2);
+      svc.sendMessageWithRetry(contact: bob, text: 'flooded', floodFirst: true);
+      async.flushMicrotasks();
+      svc.updateMessageFromSent(ackFor(0), _timeoutMs);
+      async.elapse(const Duration(milliseconds: _timeoutMs + 1));
+      expect(floods, [false], reason: 'the first flood timed out');
+      async.elapse(const Duration(milliseconds: MessageRetryService.retryBackoffMs + 1));
+      svc.updateMessageFromSent(ackFor(1), _timeoutMs);
+      svc.handleAckReceived(ackFor(1), 100);
+      async.flushMicrotasks();
+      expect(floods, [false, true], reason: 'the second one was acked');
+      async.elapse(MessageRetryService.lateAckGrace);
+    });
+  });
+
+  test('a flood nobody echoed is parked and reported, and still counts as '
+      'waiting', () {
+    fakeAsync((async) {
+      final withEcho = MessageRetryService();
+      final ended = <bool>[];
+      withEcho.initialize(RetryServiceConfig(
+        sendMessage: (_, text, attempt, ts) =>
+            sends.add((text: text, attempt: attempt, ts: ts)),
+        addMessage: (_, _) {},
+        updateMessage: (_) {},
+        clearContactPath: (_) {},
+        calculateTimeout: (_, _, {contact}) => 30000,
+        getSelfPublicKey: () => selfKey,
+        pathHashByteWidth: () => 2,
+        estimateAirtime: (_) => 200,
+        onFloodAttemptEnded: (_, {required delivered}) => ended.add(delivered),
+      ));
+      withEcho.sendMessageWithRetry(contact: bob, text: 'anyone?', floodFirst: true);
+      async.flushMicrotasks();
+      withEcho.updateMessageFromSent(ackFor(0), 30000);
+      async.elapse(const Duration(seconds: 15)); // past the echo wait
+      expect(ended, [false], reason: 'parked: no repeater heard it');
+      expect(withEcho.hasMessagesInFlight, isFalse,
+          reason: 'nothing is on the air');
+      expect(withEcho.hasMessagesWaiting, isTrue,
+          reason: 'but the message still wants to go');
+      withEcho.dispose();
+    });
+  });
+
+  test('a message that times out reports an outcome with no echo verdict '
+      'when no flood of it was observable', () {
+    fakeAsync((async) {
+      svc.setMaxRetries(1);
+      svc.sendMessageWithRetry(contact: bob, text: 'lost');
+      async.flushMicrotasks();
+      svc.updateMessageFromSent(ackFor(0), _timeoutMs);
+      async.elapse(const Duration(milliseconds: _timeoutMs + 1));
+      expect(outcomes, hasLength(1));
+      expect(outcomes.single.delivered, isFalse);
+      expect(outcomes.single.echoHeard, isNull,
+          reason: 'no airtime estimator: the echo watch never armed');
+      async.elapse(MessageRetryService.lateAckGrace);
     });
   });
 

@@ -1,12 +1,13 @@
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'place_store.dart';
 
 /// Retention knobs. Set [maxAgeDays] to null for a permanent map.
 class RetentionPolicy {
   const RetentionPolicy({
     this.maxAgeDays = 30,
-    this.positionTagDays = 7,
+    this.placeDays = 30,
     this.maxNodes = 5000,
     this.maxEdges = 20000,
   });
@@ -15,10 +16,9 @@ class RetentionPolicy {
   /// pass entirely (caps still apply).
   final int? maxAgeDays;
 
-  /// Position tags run on their own, shorter clock: the coordinate is
-  /// only useful for recent distance-gating and is the most sensitive
-  /// thing stored. Ageing one out drops the column, never the row.
-  final int positionTagDays;
+  /// Days an area keeps remembering which repeaters heard me there.
+  final int placeDays;
+
 
   final int maxNodes;
   final int maxEdges;
@@ -31,22 +31,23 @@ class RetentionReport {
     this.edgesAged = 0,
     this.nodesAged = 0,
     this.ingressAged = 0,
-    this.positionsCleared = 0,
     this.edgesEvicted = 0,
     this.nodesEvicted = 0,
+    this.placesAged = 0,
   });
 
   final int edgesAged;
   final int nodesAged;
   final int ingressAged;
-  final int positionsCleared;
   final int edgesEvicted;
   final int nodesEvicted;
+  final int placesAged;
 
   int get totalRemoved =>
-      edgesAged + nodesAged + ingressAged + edgesEvicted + nodesEvicted;
+      edgesAged + nodesAged + ingressAged + edgesEvicted + nodesEvicted +
+      placesAged;
 
-  bool get isEmpty => totalRemoved == 0 && positionsCleared == 0;
+  bool get isEmpty => totalRemoved == 0;
 }
 
 /// Staleness sweep and growth caps.
@@ -57,11 +58,12 @@ class RetentionReport {
 /// idleness. Only unconfirmed hearsay ages, plus the genuinely
 /// perishable doorstep lists — people move even though repeaters don't.
 class Retention {
-  const Retention(this._store, this._evidence, this._estimator);
+  const Retention(this._store, this._evidence, this._estimator, this._places);
 
   final GraphStore _store;
   final EvidenceStore _evidence;
   final Estimator _estimator;
+  final PlaceStore _places;
 
   static const _trafficEpsilon = 0.05;
   static const _dayMillis = 24 * 60 * 60 * 1000;
@@ -69,7 +71,7 @@ class Retention {
   static bool _edgeProtected(EdgeState e) => e.n > 0 || e.measuredSnr != null;
 
   RetentionReport sweep(int nowMillis, RetentionPolicy policy) {
-    var edgesAged = 0, nodesAged = 0, ingressAged = 0, positionsCleared = 0;
+    var edgesAged = 0, nodesAged = 0, ingressAged = 0;
 
     final maxAgeDays = policy.maxAgeDays;
     if (maxAgeDays != null) {
@@ -103,22 +105,14 @@ class Retention {
       }
     }
 
-    final positionCutoff = nowMillis - policy.positionTagDays * _dayMillis;
-    for (final entry in _evidence.entries.entries) {
-      final e = entry.value;
-      if (e.observedLat == null && e.observedLon == null) continue;
-      if (e.lastSeen >= positionCutoff) continue;
-      e.observedLat = null;
-      e.observedLon = null;
-      _evidence.markDirty(entry.key);
-      positionsCleared++;
-    }
+    final placesAged =
+        _places.sweep(nowMillis ~/ _dayMillis, policy.placeDays);
 
     return RetentionReport(
+      placesAged: placesAged,
       edgesAged: edgesAged,
       nodesAged: nodesAged,
       ingressAged: ingressAged,
-      positionsCleared: positionsCleared,
       edgesEvicted: _capEdges(nowMillis, policy.maxEdges),
       nodesEvicted: _capNodes(policy.maxNodes),
     );
@@ -191,5 +185,6 @@ class Retention {
     for (final key in _evidence.entries.keys.toList()) {
       _evidence.removeEntry(key);
     }
+    _places.clear();
   }
 }

@@ -43,7 +43,58 @@ class PathGraphConfig {
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
     this.allowInferredEndpoints = false,
+    this.guessQ = 0.3,
+    this.maxGuessedHops = 2,
+    this.hintFreshMinutes = 10,
+    this.hintLinkMinAgeMinutes = 10,
+    this.hintMaxHopKm = 60,
+    this.hintsPerContact = 4,
+    this.contactFailGate = 2,
   });
+
+  /// A contact's doorstep is a repeater heard carrying their packets, which
+  /// proves it hears THEM; a route ending there assumes it also reaches
+  /// them. When this many direct sends ending at it have failed since its
+  /// last proven delivery, the assumption is wrong for this pair (field
+  /// 2026-10-24: F5EE heard Monterey Bay and this radio, the room did not
+  /// hear F5EE, four posts failed on it) and it stops ending routes to that
+  /// contact. Only a delivery through it resets the count — hearing them via
+  /// it again proves the wrong direction. Negative-only, like
+  /// [selfFailGate].
+  final int contactFailGate;
+
+  /// The splice (owner, 2026-10-23/24): a contact's recent inbound flood
+  /// path, read backwards, offers the reverse of each repeater-to-repeater
+  /// link on it as a GUESS for one search, never stored. My end still has
+  /// to be a proven doorstep; the search joins my proven corridor to the
+  /// reversed tail wherever that is cheapest. A guessed hop is priced at
+  /// this delivery estimate, below [passiveDefaultQ] on purpose: an
+  /// overheard-only link in the sending direction (0.5) must always beat
+  /// a guess, and a one-guess splice still beats a weak proven route
+  /// (p in 0.40..0.5). Checked by replay before the field.
+  final double guessQ;
+
+  /// A route may carry at most this many guessed hops.
+  final int maxGuessedHops;
+
+  /// An inbound path older than this is no hint: their doorstep and the
+  /// corridor may both have moved on.
+  final double hintFreshMinutes;
+
+  /// Ducting guard (owner: "crazy paths" from atmospheric conditions must
+  /// not drive routes). A link is reversible as a guess only when its
+  /// observed direction was heard in two different packets and first seen
+  /// at least this long before the hint. Ducting makes new links; stable
+  /// corridors have history. Copies of one flood always carry distinct
+  /// paths, so two sightings means two packets.
+  final double hintLinkMinAgeMinutes;
+
+  /// Where both repeaters have advert positions, a hop longer than this
+  /// cannot be a normal LoRa hop and is not reversed.
+  final double hintMaxHopKm;
+
+  /// Distinct inbound paths kept per contact, newest first.
+  final int hintsPerContact;
 
   /// Let a route START at a doorstep I only ever heard (a reciprocity
   /// guess about MY end). Off by default: a repeater that hears me is
@@ -290,6 +341,13 @@ class PathGraphConfig {
         slashFactorInferred: slashFactorInferred,
         allowInferredEndpoints:
             allowInferredEndpoints ?? this.allowInferredEndpoints,
+        guessQ: guessQ,
+        maxGuessedHops: maxGuessedHops,
+        hintFreshMinutes: hintFreshMinutes,
+        hintLinkMinAgeMinutes: hintLinkMinAgeMinutes,
+        hintMaxHopKm: hintMaxHopKm,
+        hintsPerContact: hintsPerContact,
+        contactFailGate: contactFailGate,
       );
 }
 
@@ -348,6 +406,11 @@ class Estimator {
     final p = calibratedP(e, nowMillis).clamp(0.01, 1.0);
     return -math.log(p) + config.tau;
   }
+
+  /// Cost of a guessed reverse hop ([PathGraphConfig.guessQ]). The hair
+  /// above the formula breaks any tie with an observed link in the
+  /// observed link's favour.
+  double get guessedCost => -math.log(config.guessQ) + config.tau + 1e-9;
 }
 
 /// Great-circle distance between two advert positions.

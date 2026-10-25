@@ -6,13 +6,17 @@ import 'db/database.dart';
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'mesh_id.dart';
 import 'moving.dart';
+import 'place_store.dart';
 import 'retention.dart';
 import 'search.dart';
 
 export 'estimator.dart' show Estimator, PathGraphConfig, haversineKm;
 export 'evidence.dart' show Candidate, EvidenceTier, directHash;
 export 'graph_store.dart' show EdgeState, MovingOverride, NodeState, NodeSource;
+export 'mesh_id.dart' show MeshId;
+export 'place_store.dart' show PlaceRow;
 export 'moving.dart' show MovingCheck, MovingReason, MovingStatus;
 export 'retention.dart' show RetentionPolicy, RetentionReport;
 
@@ -64,7 +68,28 @@ class DiscoverResponse {
   final double? rxSnr;
 }
 
-/// Geographic position (any of the three optional sources).
+/// Why Pathfinder would like one Discover now ([PathGraph.selfAdvice]):
+/// each is a doubt about MY side of the air that one zero-hop request
+/// settles for a packet, where a flood would cost the whole mesh.
+enum DiscoverReason {
+  /// The radio knows its area and no repeater has been heard hearing me
+  /// around here.
+  noDoorstepHere,
+
+  /// The radio has moved to another area since a doorstep last proved it
+  /// hears me.
+  movedSinceProof,
+
+  /// A doorstep of mine is held for failing my sends, toward two or more
+  /// different contacts (or it has gone quiet too): my side, not theirs.
+  doorstepsFailingMe,
+
+  /// A whole ladder, flood included, went unanswered and no repeater
+  /// echoed any of it.
+  ladderUnanswered,
+}
+
+/// Geographic position of a repeater, from its advert.
 class GeoPosition {
   const GeoPosition(this.lat, this.lon);
   final double lat;
@@ -96,6 +121,24 @@ enum FloodReason {
   /// that has not proved it hears me for
   /// [PathGraphConfig.mobileFreshMinutes].
   doorstepsMoving,
+
+  /// The radio knows the area it is in, and no doorstep of mine was ever
+  /// heard hearing me there (or the ones that were have failed here).
+  doorstepsNotHere,
+
+  /// The radio has moved to another area since this contact last got a
+  /// packet of mine, and their way back is not known to end at a repeater
+  /// heard hearing me here: a route out would reach them, but their ACK
+  /// would ride their stored route back and die (simulator, 2026-10-25).
+  /// A flood teaches their radio the way back. Unknown counts as
+  /// elsewhere: a contact whose ACKs always came direct never showed a
+  /// way back, and theirs ends where I was all the same.
+  movedSinceTheyReachedMe,
+
+  /// Every repeater heard carrying the contact's packets has failed my last
+  /// direct sends to them ([PathGraphConfig.contactFailGate]): it hears
+  /// them, they do not hear it.
+  theirDoorstepsFailing,
 }
 
 /// The three-tier return contract: direct | bidirectional path | flood.
@@ -107,6 +150,7 @@ sealed class PathResult {
     Uint8List pathBytes,
     double estDelivery, {
     List<double> hopProbabilities,
+    List<bool> guessedLinks,
     bool egressProven,
     bool ingressProven,
   }) = RouteResult;
@@ -128,6 +172,7 @@ class RouteResult extends PathResult {
     this.pathBytes,
     this.estDelivery, {
     this.hopProbabilities = const [],
+    this.guessedLinks = const [],
     this.egressProven = true,
     this.ingressProven = true,
   });
@@ -136,6 +181,15 @@ class RouteResult extends PathResult {
 
   /// Calibrated p of each between-hop link, in path order.
   final List<double> hopProbabilities;
+
+  /// Per between-hop link, in path order: a splice guess — the reverse of
+  /// a link heard on the contact's inbound path, never observed in this
+  /// direction — rather than an observed link. Empty when nothing was
+  /// guessed. See [PathGraphConfig.guessQ].
+  final List<bool> guessedLinks;
+
+  /// How many of the route's links are splice guesses.
+  int get guessedHops => guessedLinks.where((g) => g).length;
 
   /// Whether the first hop was proven to hear this radio (always, unless
   /// the graph was configured to allow inferred endpoints), and whether
@@ -185,6 +239,7 @@ class PathGraph {
     DateTime Function()? now,
     PathGraphConfig config = const PathGraphConfig(),
     this.hashWidthBytes = 2,
+    this.mesh,
   })  : assert(hashWidthBytes >= 2 && hashWidthBytes <= 4,
             'wire path hops are 1–4 bytes; buckets below 2 are useless'),
         _db = PathGraphDatabase(executor),
@@ -193,9 +248,15 @@ class PathGraph {
     _store = GraphStore(_db, hashWidthBytes: hashWidthBytes)
       ..onLinkSeen = _onLinkSeen;
     _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
+    _places = PlaceStore(_db);
   }
 
   final int hashWidthBytes;
+
+  /// The radio preset this graph is for, when the caller knows it. Stamped
+  /// into exports and checkpoints; a checkpoint from another mesh is
+  /// refused, since its codes name other repeaters.
+  final MeshId? mesh;
 
   final PathGraphDatabase _db;
   final DateTime Function() _now;
@@ -212,6 +273,7 @@ class PathGraph {
   }
   late final GraphStore _store;
   late final EvidenceStore _evidence;
+  late final PlaceStore _places;
 
   Timer? _flushTimer;
   static const _flushDelay = Duration(seconds: 30);
@@ -232,6 +294,16 @@ class PathGraph {
   // Per contact: the route their latest PATH reply named, and when
   // (see PathGraphConfig.liveRouteMinutes). Memory only.
   final Map<String, ({List<String> hops, int at})> _liveRoutes = {};
+  // Per contact: the distinct paths their recent keyed packets (decoded
+  // DM or post, signed advert, matched ACK or PATH reply) travelled to
+  // reach me, newest first — the splice's hints (PathGraphConfig.guessQ).
+  // Memory only, never exported, cleared with the radio identity.
+  final Map<String, List<({List<String> hops, int at})>> _hints = {};
+  // Guessed links a send failed on, with the arrival millis of the failure.
+  // Memory only, like the hints: nothing is minted, but the same guess is
+  // not offered again while a hint could carry it
+  // (PathGraphConfig.hintFreshMinutes). A delivery over the link clears it.
+  final Map<(String, String), int> _failedGuesses = {};
 
   // Watching-only moving-repeater detectors (PathGraphConfig.mobileNewLinks)
   // and, per node, the first sighting of its oldest link (0 = from before
@@ -276,6 +348,7 @@ class PathGraph {
 
     await _store.load();
     await _evidence.load();
+    await _places.load();
     // Heal rows minted before wide hops truncated into buckets.
     _store.normalizeKeys();
     _evidence.normalizeKeys();
@@ -293,6 +366,7 @@ class PathGraph {
     _flushTimer = null;
     await _store.flush();
     await _evidence.flush();
+    await _places.flush();
   }
 
   void _scheduleFlush() {
@@ -300,6 +374,7 @@ class PathGraph {
       _flushTimer = null;
       _store.flush();
       _evidence.flush();
+      _places.flush();
     });
   }
 
@@ -322,8 +397,191 @@ class PathGraph {
   /// Identity of the connected radio; scopes egress rows and default
   /// observation stride.
   void setRadioIdentity(String selfPubkey, int stride) {
+    if (_selfPubkey != selfPubkey.toLowerCase()) {
+      clearHints();
+      setPlace(null, const {});
+    }
     _selfPubkey = selfPubkey.toLowerCase();
     _selfStride = stride;
+  }
+
+  // Where the radio is, as an opaque cell key the app computes from the
+  // radio's own GPS (about 500 m across) plus the cells around it. Never
+  // a coordinate, never stored, never logged: the owner's rule is that
+  // no precise location is kept (2026-10-25). Null when the radio has no
+  // live fix.
+  String? _cell;
+  Set<String> _nearCells = const {};
+
+  /// When the radio last left the block of cells it was in (a step to a
+  /// neighbouring cell is not a move). Null until it has.
+  int? _movedAt;
+
+  /// Contacts that have got a packet of mine since that move (a flooded
+  /// delivery, their PATH reply): their radio holds a way back that ends
+  /// where I am now.
+  final Set<String> _reachedSinceMove = {};
+
+  void setPlace(String? cell, Set<String> near) {
+    final moved = cell != null && _cell != null && !_nearCells.contains(cell);
+    if (moved) {
+      _movedAt = _arrivalMillis;
+      _reachedSinceMove.clear();
+    }
+    final firstFix = cell != null && _cell == null;
+    _cell = cell;
+    _nearCells = cell == null ? const {} : {cell, ...near};
+    if (firstFix) _backfillPlace(cell);
+  }
+
+  /// Doorsteps that proved they hear me in the minutes before the area
+  /// became known were almost certainly proving it here: a radio on its
+  /// first fix after connecting has not gone anywhere. Filed under the
+  /// new cell so the first send here does not flood over proofs the
+  /// graph already holds (simulator 2026-10-25). Never on a move.
+  final Map<String, ({int at, double? uplinkSnr})> _recentSelfProofs = {};
+  static const _placeBackfillMinutes = 3;
+
+  void _backfillPlace(String cell) {
+    final self = _selfPubkey;
+    if (self == null) return;
+    final cutoff = _arrivalMillis - _placeBackfillMinutes * 60 * 1000;
+    for (final e in _recentSelfProofs.entries) {
+      if (e.value.at < cutoff) continue;
+      _places.note(self, cell, e.key, _today, uplinkSnr: e.value.uplinkSnr);
+    }
+    _recentSelfProofs.clear();
+    _scheduleFlush();
+  }
+
+  /// A flood of mine was delivered to them: their radio now holds the
+  /// way back from where I am.
+  void reportFloodDelivered(String contactPubkey) {
+    _reachedSinceMove.add(contactPubkey.toLowerCase());
+  }
+
+  /// Whether their way back is known to end at a repeater heard hearing
+  /// me around here. An unknown way back is not: their radio holds one
+  /// all the same, learned where I was (simulator 2026-10-25: a room
+  /// whose ACKs always came direct never showed its way back, and every
+  /// post after the move died on it).
+  bool _theirWayBackEndsHere(String contactPubkey) {
+    final self = _selfPubkey;
+    if (self == null || _cell == null) return true;
+    final back = findReturnPath(contactPubkey);
+    if (back is! RouteResult) return false;
+    final bytes = back.pathBytes;
+    final last = bytes.sublist(bytes.length - hashWidthBytes);
+    final hash = last.map((b) => b.toRadixString(16).padLeft(2, '0')).join().toUpperCase();
+    return _places.rowIn(self, _nearCells, hash) != null;
+  }
+
+  // What selfAdvice reads: the last time any doorstep proved it hears me,
+  // which contacts each failing doorstep failed toward since it last
+  // proved itself, and when a whole ladder last went unanswered with no
+  // echo heard. Memory only — advice is about now.
+  int? _lastSelfProofAt;
+  final Map<String, Set<String>> _failedToward = {};
+  int? _unansweredLadderAt;
+  static const _unansweredAdviceMinutes = 10;
+
+  /// A ladder to [contactPubkey] ended. [echoHeard]: whether any repeater
+  /// was heard echoing a flood of it; null when no flood of it could have
+  /// been observed (nothing to conclude).
+  void reportLadderEnded(String contactPubkey,
+      {required bool delivered, required bool? echoHeard}) {
+    if (!delivered && echoHeard == false) _unansweredLadderAt = _arrivalMillis;
+  }
+
+  /// Whether one Discover would settle a doubt about my side of the air,
+  /// and which. Null when there is none, and always null while every
+  /// doorstep that reaches [contactPubkey] is failing deliveries to them:
+  /// that doubt is on their side, and a Discover cannot answer it.
+  DiscoverReason? selfAdvice({String? contactPubkey}) {
+    final self = _selfPubkey;
+    if (self == null) return null;
+    final now = _arrivalMillis;
+    if (contactPubkey != null &&
+        _theirDoorstepsAllFailing(contactPubkey.toLowerCase(), now)) {
+      return null;
+    }
+    final mine = _egressCandidates(self, now);
+    if (_cell != null &&
+        (mine.candidates?.isEmpty ?? true) &&
+        mine.held.values.every((r) => r == FloodReason.doorstepsNotHere)) {
+      return _movedAt != null && (_lastSelfProofAt ?? 0) < _movedAt!
+          ? DiscoverReason.movedSinceProof
+          : DiscoverReason.noDoorstepHere;
+    }
+    final all = _evidence.candidatesFor(self, now, isSelf: true);
+    for (final e in mine.held.entries) {
+      if (e.value != FloodReason.doorstepsFailing) continue;
+      final toward = _failedToward[e.key] ?? const <String>{};
+      final c = all.where((x) => x.repeaterHash == e.key).firstOrNull;
+      if (toward.length >= 2 || (c != null && _isQuiet(c, now))) {
+        return DiscoverReason.doorstepsFailingMe;
+      }
+    }
+    final unanswered = _unansweredLadderAt;
+    if (unanswered != null &&
+        now - unanswered <= _unansweredAdviceMinutes * 60 * 1000) {
+      return DiscoverReason.ladderUnanswered;
+    }
+    return null;
+  }
+
+  String? get currentCell => _cell;
+  Set<String> get nearCells => _nearCells;
+
+  /// Whether any area remembers which repeaters heard this radio: what a
+  /// checkpoint would carry with [saveSession] includePlaces.
+  bool get hasPlaces => _places.rows.isNotEmpty;
+
+  /// Which repeaters heard me around here, for display: hash → row.
+  Map<String, PlaceRow> placesHere() {
+    final self = _selfPubkey;
+    if (self == null || _cell == null) return const {};
+    final out = <String, PlaceRow>{};
+    for (final e in _places.rows.entries) {
+      if (e.key.$1 != self || !_nearCells.contains(e.key.$2)) continue;
+      final have = out[e.key.$3];
+      if (have == null || e.value.lastSeenDay > have.lastSeenDay) {
+        out[e.key.$3] = e.value;
+      }
+    }
+    return out;
+  }
+
+  int get _today => _arrivalMillis ~/ Duration.millisecondsPerDay;
+
+  /// A repeater proved it hears me, and the radio knows where it is:
+  /// remember that for this area. Only a Discover answer or a trace
+  /// brings a level; a proof without one leaves the level alone.
+  void _notePlace(String repeater, {double? uplinkSnr}) {
+    final upper = repeater.toUpperCase();
+    _lastSelfProofAt = _arrivalMillis;
+    _failedToward.remove(upper);
+    _unansweredLadderAt = null;
+    final self = _selfPubkey, cell = _cell;
+    if (self == null) return;
+    if (cell == null) {
+      _recentSelfProofs[upper] = (at: _arrivalMillis, uplinkSnr: uplinkSnr);
+      return;
+    }
+    _places.note(self, cell, upper, _today, uplinkSnr: uplinkSnr);
+  }
+
+  void _failPlace(String repeater) {
+    final self = _selfPubkey, cell = _cell;
+    if (self == null || cell == null) return;
+    _places.markFailed(self, cell, repeater.toUpperCase());
+  }
+
+  /// Forgets every contact's inbound paths (the splice's hints): another
+  /// radio, another mesh, or the graph was cleared.
+  void clearHints() {
+    _hints.clear();
+    _failedGuesses.clear();
   }
 
   String? get selfPubkey => _selfPubkey;
@@ -343,7 +601,6 @@ class PathGraph {
     int stride,
     ObservationOrigin origin, {
     double? rxSnr,
-    GeoPosition? position,
     String? messageId,
     bool lastHopHeard = true,
   }) {
@@ -412,6 +669,7 @@ class PathGraph {
     if (contact != null) {
       _creditContactDoorstep(contact, hops.first,
           confirmed: origin is PubkeyConfirmedOrigin, arrival: arrival);
+      if (origin is PubkeyConfirmedOrigin) _recordHint(contact, hops, arrival);
     }
 
     // Self egress: final hop is the last-hop prior; penultimate feeds
@@ -419,8 +677,7 @@ class PathGraph {
     // the graph knows: a junk last hop heard loud is still junk.
     final self = _selfPubkey;
     if (self != null && lastHopHeard && known(hops.last)) {
-      _evidence.recordLastHop(self, hops.last, arrival,
-          lat: position?.lat, lon: position?.lon, downlinkSnr: rxSnr);
+      _evidence.recordLastHop(self, hops.last, arrival, downlinkSnr: rxSnr);
       if (hopCount >= 2 && known(hops[hopCount - 2])) {
         _evidence.recordPenultimate(self, hops[hopCount - 2]);
       }
@@ -479,9 +736,14 @@ class PathGraph {
   /// edges and my own last-hop prior are not counted again here. An
   /// empty path means they reached me with no repeater in between, which
   /// only a proven key may claim. Returns whether anything was filed.
+  /// [deliveredAck]: this packet is the flooded ACK of a send of mine, so
+  /// its first hop just carried a delivery to them: that doorstep's
+  /// failed-delivery count starts again (the contact-side gate is reset
+  /// only by a delivery, and this is one; simulator 2026-10-25: without
+  /// it three delivered floods via BEEF left BEEF gated for good).
   bool observeContactSender(
       String contactPubkey, Uint8List pathBytes, int stride,
-      {required bool confirmed}) {
+      {required bool confirmed, bool deliveredAck = false}) {
     contactPubkey = contactPubkey.toLowerCase();
     if (contactPubkey == _selfPubkey) {
       observeOwnEcho(pathBytes, stride);
@@ -504,9 +766,120 @@ class PathGraph {
     if (pathBytes.length % stride != 0) return false;
     _creditContactDoorstep(contactPubkey, _hopHex(pathBytes, stride, 0),
         confirmed: confirmed, arrival: arrival);
+    if (deliveredAck) {
+      _evidence.clearContactFailures(contactPubkey, _hopHex(pathBytes, stride, 0));
+    }
+    if (confirmed) {
+      _recordHint(contactPubkey, [
+        for (var i = 0; i < pathBytes.length ~/ stride; i++)
+          _hopHex(pathBytes, stride, i)
+      ], arrival);
+    }
     _observationsApplied++;
     _scheduleFlush();
     return true;
+  }
+
+  /// Another copy of a keyed packet from [contactPubkey] that
+  /// [observeContactSender] already filed, heard on [pathBytes]: a hint
+  /// for the splice and nothing else. The doorstep was credited by the
+  /// first copy and the raw feed already filed the corridor; what this
+  /// copy adds is a path with repeater-to-repeater links the first,
+  /// shortest copy did not have (field 2026-10-24: a room's reply arrived
+  /// as BEEF alone and as 5B98,F5EE,AA77,A277 — only the second can be
+  /// reversed). Returns whether a hint was kept.
+  bool observeInboundCopy(
+      String contactPubkey, Uint8List pathBytes, int stride) {
+    contactPubkey = contactPubkey.toLowerCase();
+    if (contactPubkey == _selfPubkey || pathBytes.isEmpty) return false;
+    if (stride < hashWidthBytes || pathBytes.length % stride != 0) {
+      return false;
+    }
+    final hops = pathBytes.length ~/ stride;
+    if (hops < 2) return false;
+    _recordHint(contactPubkey,
+        [for (var i = 0; i < hops; i++) _hopHex(pathBytes, stride, i)],
+        _arrivalMillis);
+    return true;
+  }
+
+  /// Keeps [hops] (travel order: their doorstep first, the repeater I
+  /// heard last) as one of [contactPubkey]'s recent inbound paths. Only
+  /// keyed packets get here: a channel line matched by name is not one.
+  void _recordHint(String contactPubkey, List<String> hops, int arrival) {
+    if (hops.length < 2) return; // nothing between doorsteps to reverse
+    final list = _hints.putIfAbsent(contactPubkey, () => []);
+    final key = hops.join('>');
+    list.removeWhere((h) => h.hops.join('>') == key);
+    list.insert(0, (hops: List.unmodifiable(hops), at: arrival));
+    while (list.length > config.hintsPerContact) {
+      list.removeLast();
+    }
+  }
+
+  /// A contact's recent inbound paths (the splice's hints) as kept, newest
+  /// first, with the arrival millis of each (UI/debug).
+  List<({List<String> hops, int at})> hintsFor(String contactPubkey) =>
+      List.unmodifiable(_hints[contactPubkey.toLowerCase()] ?? const []);
+
+  /// The reverse guesses the next search for [contactPubkey] would be
+  /// offered right now, after every guard (UI/debug).
+  Set<(String, String)> hintGuessesFor(String contactPubkey) =>
+      _hintGuesses(contactPubkey.toLowerCase(), _arrivalMillis);
+
+  /// The splice's guesses for one query: the reverse of each
+  /// repeater-to-repeater link on [contactPubkey]'s fresh inbound paths
+  /// (not their doorstep's link to them, which a route ends on anyway),
+  /// vetted link by link. A guess is offered only when the store knows
+  /// nothing about that direction, the observed direction has history
+  /// ([PathGraphConfig.hintLinkMinAgeMinutes], two packets), the hop is
+  /// not impossibly long ([PathGraphConfig.hintMaxHopKm]) and no end is a
+  /// moving repeater gone stale.
+  Set<(String, String)> _hintGuesses(String contactPubkey, int now) {
+    final hints = _hints[contactPubkey];
+    if (hints == null || hints.isEmpty) return const {};
+    final freshMs = (config.hintFreshMinutes * 60 * 1000).round();
+    final minAgeMs = (config.hintLinkMinAgeMinutes * 60 * 1000).round();
+    hints.removeWhere((h) => now - h.at > freshMs);
+    _failedGuesses.removeWhere((_, at) => now - at > freshMs);
+    if (hints.isEmpty) return const {};
+    final moving = _movingNow(now);
+    final out = <(String, String)>{};
+    for (final hint in hints) {
+      final hops = hint.hops;
+      for (var i = 1; i < hops.length; i++) {
+        final observed = (hops[i - 1], hops[i]);
+        final guess = (hops[i], hops[i - 1]);
+        if (hops[i] == hops[i - 1] ||
+            _store.edges.containsKey(guess) ||
+            _failedGuesses.containsKey(guess)) {
+          continue;
+        }
+        // A link first seen before the graph kept first-seen times is old
+        // by definition (field 2026-10-24: BEEF→A277 in the real export).
+        final seen = _store.edges[observed];
+        if (seen == null ||
+            seen.obsCount < 2 ||
+            (seen.firstObserved != null &&
+                hint.at - seen.firstObserved! < minAgeMs)) {
+          continue;
+        }
+        if (moving.contains(hops[i]) || moving.contains(hops[i - 1])) {
+          if (now - hint.at > _mobileFreshMs) continue;
+        }
+        final a = _store.nodes[hops[i]];
+        final b = _store.nodes[hops[i - 1]];
+        if (a?.lat != null &&
+            a?.lon != null &&
+            b?.lat != null &&
+            b?.lon != null &&
+            haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) > config.hintMaxHopKm) {
+          continue;
+        }
+        out.add(guess);
+      }
+    }
+    return out;
   }
 
   /// An echo of my own flood, heard back with the path it travelled.
@@ -528,6 +901,7 @@ class PathGraph {
     _evidence.recordProvenEgress(
         self, _hopHex(pathBytes, stride, 0), _arrivalMillis,
         supersede: true);
+    _notePlace(_hopHex(pathBytes, stride, 0));
     _observationsApplied++;
     _scheduleFlush();
   }
@@ -580,7 +954,6 @@ class PathGraph {
   /// Proven egress refresh; supersede/slash only in a failure episode.
   void observeDiscoverResults(
     List<DiscoverResponse> responses, {
-    GeoPosition? position,
     required bool failureEpisode,
   }) {
     final self = _selfPubkey;
@@ -594,6 +967,9 @@ class PathGraph {
       _arrivalMillis,
       failureEpisode: failureEpisode,
     );
+    for (final r in responses) {
+      _notePlace(r.repeaterHash, uplinkSnr: r.uplinkSnr);
+    }
     _scheduleFlush();
   }
 
@@ -619,6 +995,13 @@ class PathGraph {
   /// ([setRadioIdentity]). A path narrower than the graph's bucket is
   /// dropped and counted, like any other observation: reading 1-byte
   /// hashes two at a time would mint repeaters that do not exist.
+  ///
+  /// [guessedLinks], per between-hop link, marks the splice's guesses the
+  /// route was sent on ([RouteResult.guessedLinks]). A delivery proves
+  /// them like any other hop. A failure on a route with a guess in it
+  /// says nothing the graph may keep: the break was most likely the guess,
+  /// so no row is minted for a guessed pair and my doorstep is not charged
+  /// (owner, 2026-10-24).
   void reportSendResult(
     Uint8List pathBytes,
     bool success, {
@@ -627,6 +1010,7 @@ class PathGraph {
     int? stride,
     bool tally = true,
     bool proveEgress = true,
+    List<bool> guessedLinks = const [],
   }) {
     contactPubkey = contactPubkey?.toLowerCase();
     final arrival = _arrivalMillis;
@@ -644,11 +1028,34 @@ class PathGraph {
     }
     if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
-    if (!success && _selfPubkey != null) {
+    final anyGuessed = guessedLinks.any((g) => g);
+    for (var i = 0; i < hopCount - 1 && i < guessedLinks.length; i++) {
+      if (!guessedLinks[i]) continue;
+      final link = (_hopHex(pathBytes, stride, i), _hopHex(pathBytes, stride, i + 1));
+      if (success) {
+        _failedGuesses.remove(link);
+      } else {
+        _failedGuesses[link] = arrival;
+      }
+    }
+    if (!success && _selfPubkey != null && !anyGuessed) {
       // The break cannot be localised, but a doorstep that keeps failing
       // my sends since it last proved itself stops starting routes
       // (PathGraphConfig.selfFailGate); any proof resets it.
       _evidence.recordFailedEgress(_selfPubkey!, _hopHex(pathBytes, stride, 0));
+      _failPlace(_hopHex(pathBytes, stride, 0));
+      if (contactPubkey != null) {
+        _failedToward
+            .putIfAbsent(_hopHex(pathBytes, stride, 0).toUpperCase(), () => {})
+            .add(contactPubkey);
+      }
+      // ...and their end likewise: a doorstep that keeps failing deliveries
+      // to them stops ending routes (PathGraphConfig.contactFailGate);
+      // only a delivery through it resets that.
+      if (contactPubkey != null) {
+        _evidence.recordFailedIngress(
+            contactPubkey, _hopHex(pathBytes, stride, hopCount - 1));
+      }
     }
     if (contactPubkey != null) {
       final hops = [
@@ -656,6 +1063,7 @@ class PathGraph {
       ];
       if (!tally && success && hopCount <= config.maxHops) {
         _liveRoutes[contactPubkey] = (hops: hops, at: arrival);
+        _reachedSinceMove.add(contactPubkey);
       } else if (!success &&
           _liveRoutes[contactPubkey]?.hops.join('>') == hops.join('>')) {
         _liveRoutes.remove(contactPubkey);
@@ -668,6 +1076,7 @@ class PathGraph {
         _store.observeEdge(from, to, arrival);
         continue;
       }
+      if (!success && anyGuessed) continue;
       _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
       _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
       final edge = _store.edges.putIfAbsent((from, to),
@@ -687,6 +1096,7 @@ class PathGraph {
         _evidence.recordProvenEgress(
             self, _hopHex(pathBytes, stride, 0), arrival,
             floodProven: !tally);
+        _notePlace(_hopHex(pathBytes, stride, 0));
       }
       if (contactPubkey != null) {
         _evidence.recordProvenIngress(
@@ -714,6 +1124,7 @@ class PathGraph {
     if (self != null && snrs.isNotEmpty) {
       _evidence.recordProvenEgress(self, hops[0].toUpperCase(), arrival,
           uplinkSnr: snrs[0]);
+      _notePlace(hops[0], uplinkSnr: snrs[0]);
       if (snrs.length > hops.length) {
         _evidence.recordLastHop(self, hops.last.toUpperCase(), arrival,
             downlinkSnr: snrs[hops.length]);
@@ -947,8 +1358,7 @@ class PathGraph {
           );
 
   /// Contact mirror feed (full PK→name refresh on connect, add/rename).
-  void ingestContact(String contactPubkey, String name,
-      {GeoPosition? position}) {
+  void ingestContact(String contactPubkey, String name) {
     _evidence.ingestContact(contactPubkey.toLowerCase(), name, _arrivalMillis);
     _scheduleFlush();
   }
@@ -1142,10 +1552,23 @@ class PathGraph {
     FloodReason? gate;
     final kept = <Candidate>[];
     // candidatesFor sorts by weight, so the first held one is the heaviest.
+    final cell = _cell;
     for (final c in eligible) {
-      final hold = doorstepHold(c, now: now);
+      var hold = doorstepHold(c, now: now);
+      var use = c;
+      // Where the radio is known, a doorstep starts a route only if it
+      // was heard hearing me around here and has not failed here since;
+      // the level measured here replaces any measured elsewhere.
+      if (hold == null && cell != null && c.repeaterHash != directHash) {
+        final row = _places.rowIn(self, _nearCells, c.repeaterHash);
+        if (row == null || row.failedHere) {
+          hold = FloodReason.doorstepsNotHere;
+        } else {
+          use = c.withUplink(row.uplinkSnr);
+        }
+      }
       if (hold == null) {
-        kept.add(c);
+        kept.add(use);
       } else {
         held[c.repeaterHash] = hold;
         gate ??= hold;
@@ -1165,16 +1588,22 @@ class PathGraph {
     }
     now ??= _arrivalMillis;
     if (_staleMoving(c, now, byProof: true)) return FloodReason.doorstepsMoving;
+    if (_isQuiet(c, now)) return FloodReason.doorstepsQuiet;
+    return null;
+  }
+
+  /// Whether doorstep [c] of mine has gone quiet while others are heard
+  /// ([PathGraphConfig.selfSilenceMinutes]).
+  bool _isQuiet(Candidate c, int now) {
+    final self = _selfPubkey;
+    if (self == null) return false;
     final windowMs = (config.selfSilenceMinutes * 60 * 1000).round();
     final newest = _evidence
         .candidatesFor(self, now, isSelf: true)
         .fold(0, (m, x) => x.lastSeen > m ? x.lastSeen : m);
-    if (newest - c.lastSeen > windowMs &&
+    return newest - c.lastSeen > windowMs &&
         _evidence.selfAliveEventsSince(newest - windowMs) >=
-            config.selfSilenceMinEvents) {
-      return FloodReason.doorstepsQuiet;
-    }
-    return null;
+            config.selfSilenceMinEvents;
   }
 
   /// A contact's route end may be a doorstep proven by a delivery or one
@@ -1186,8 +1615,27 @@ class PathGraph {
     final all = _evidence.candidatesFor(contactPubkey.toLowerCase(), now, isSelf: false);
     if (all.isEmpty) return null;
     return _freshRows(
-        _provenOnly ? all.where((c) => c.proven || c.heard).toList() : all,
+        (_provenOnly ? all.where((c) => c.proven || c.heard) : all)
+            .where((c) => !doorstepFailsThem(c))
+            .toList(),
         now);
+  }
+
+  /// Whether [c], one of a contact's doorsteps, has failed my last direct
+  /// sends to them since its last proven delivery
+  /// ([PathGraphConfig.contactFailGate]).
+  bool doorstepFailsThem(Candidate c) =>
+      !c.isSelf &&
+      c.repeaterHash != directHash &&
+      c.failedSinceProof >= config.contactFailGate;
+
+  /// Whether every doorstep known for [contactPubkey] is held by
+  /// [doorstepFailsThem].
+  bool _theirDoorstepsAllFailing(String contactPubkey, int now) {
+    final all = _evidence.candidatesFor(contactPubkey, now, isSelf: false)
+        .where((c) => c.repeaterHash != directHash)
+        .toList();
+    return all.isNotEmpty && all.every(doorstepFailsThem);
   }
 
   int get _mobileFreshMs => (config.mobileFreshMinutes * 60 * 1000).round();
@@ -1218,6 +1666,7 @@ class PathGraph {
         _hopsToBytes(route.hops),
         route.estDelivery,
         hopProbabilities: route.hopProbabilities,
+        guessedLinks: route.guessedLinks,
         egressProven: route.egressProven,
         ingressProven: route.ingressProven,
       );
@@ -1242,7 +1691,8 @@ class PathGraph {
   /// (the retry ladder's alternative-path step, and the harness UI).
   List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) =>
       _alternatives(
-          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count);
+          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count,
+          guessedFor: (now) => _hintGuesses(contactPubkey.toLowerCase(), now));
 
   /// Alternatives with a repeater itself as the destination.
   List<RouteResult> findAlternativesToRepeater(String repeaterHash,
@@ -1250,7 +1700,8 @@ class PathGraph {
       _alternatives((_) => [_selfTarget(repeaterHash)], count);
 
   List<RouteResult> _alternatives(
-      List<Candidate> Function(int now) ingressFor, int count) {
+      List<Candidate> Function(int now) ingressFor, int count,
+      {Set<(String, String)> Function(int now)? guessedFor}) {
     final now = _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const [];
@@ -1259,6 +1710,7 @@ class PathGraph {
       ingress: ingressFor(now),
       count: count,
       now: now,
+      guessed: guessedFor?.call(now) ?? const {},
     );
   }
 
@@ -1267,6 +1719,7 @@ class PathGraph {
     required List<Candidate> ingress,
     required int count,
     required int now,
+    Set<(String, String)> guessed = const {},
   }) {
     if (egress.isEmpty || ingress.isEmpty) return const [];
     egress = List.of(egress);
@@ -1274,8 +1727,8 @@ class PathGraph {
 
     final finder = PathFinder(estimator.config, estimator);
     final moving = _movingNow(now);
-    final links =
-        finder.links(edges: _store.edges, nowMillis: now, moving: moving);
+    final links = finder.links(
+        edges: _store.edges, nowMillis: now, moving: moving, guessed: guessed);
     final penalties = <(String, String), double>{};
     final results = <RouteResult>[];
     final seen = <String>{};
@@ -1345,7 +1798,7 @@ class PathGraph {
   /// user's learned map would be the wrong kind of surprise.
   RetentionReport sweepStale(
       {RetentionPolicy policy = const RetentionPolicy()}) {
-    final report = Retention(_store, _evidence, _estimator)
+    final report = Retention(_store, _evidence, _estimator, _places)
         .sweep(_arrivalMillis, policy);
     if (!report.isEmpty) _scheduleFlush();
     return report;
@@ -1356,7 +1809,7 @@ class PathGraph {
   /// position tags. The graph relearns from the next packet. Flushes
   /// immediately.
   Future<void> clearLearnedData() async {
-    Retention(_store, _evidence, _estimator).clearLearnedData();
+    Retention(_store, _evidence, _estimator, _places).clearLearnedData();
     _observationsApplied = 0;
     _droppedNarrow = 0;
     _linksHeld = 0;
@@ -1433,6 +1886,7 @@ class PathGraph {
       'graph': {
         'generated_at': _isoFromMillis(_arrivalMillis),
         'collector': collector,
+        if (mesh != null) 'mesh': mesh!.toJson(),
         if (regionHint != null) 'region_hint': regionHint,
         'hash_width': hashWidthBytes,
       },
@@ -1459,18 +1913,22 @@ class PathGraph {
   /// Ordinary restarts do not need this — state persists in the
   /// database. It exists to checkpoint before an experiment and roll
   /// back after one.
-  Map<String, dynamic> saveSession() {
+  /// [includePlaces]: also the areas this radio has been heard in (the
+  /// user is asked first; they are a coarse history of where it went).
+  Map<String, dynamic> saveSession({bool includePlaces = false}) {
     return {
       'format': _sessionFormat,
       'private': true,
       'saved_at': _isoFromMillis(_arrivalMillis),
       'hash_width': hashWidthBytes,
+      if (mesh != null) 'mesh': mesh!.toJson(),
       'self': {'pubkey': _selfPubkey, 'stride': _selfStride},
       'counters': {
         'observations_applied': _observationsApplied,
         'dropped_narrow': _droppedNarrow,
         'links_held': _linksHeld,
       },
+      if (includePlaces && _places.rows.isNotEmpty) 'places': _places.toJson(),
       'nodes': [
         for (final e in _store.nodes.entries)
           {
@@ -1518,8 +1976,6 @@ class PathGraph {
             'last_seen': e.value.lastSeen,
             'tier': e.value.tier.name,
             if (e.value.provenAt != null) 'proven_at': e.value.provenAt,
-            if (e.value.observedLat != null) 'lat': e.value.observedLat,
-            if (e.value.observedLon != null) 'lon': e.value.observedLon,
             if (e.value.uplinkSnr != null) 'uplink_snr': e.value.uplinkSnr,
             if (e.value.downlinkSnr != null)
               'downlink_snr': e.value.downlinkSnr,
@@ -1559,6 +2015,14 @@ class PathGraph {
       throw FormatException(
           'checkpoint was saved at hash width $docWidth, this graph runs '
           'at $hashWidthBytes — widths cannot mix');
+    }
+    // Checkpoints from before meshes were stamped carry no mesh and are
+    // taken on trust; a stamped one must match, since the same codes name
+    // other repeaters on another preset.
+    final docMesh = MeshId.fromJson(document['mesh']);
+    if (docMesh != null && mesh != null && docMesh != mesh) {
+      throw FormatException(
+          'backup is from another mesh ($docMesh); this graph is for $mesh');
     }
     // Parse everything before touching anything: one bad row must not
     // leave the graph wiped and the restore failed.
@@ -1607,8 +2071,6 @@ class PathGraph {
           weight: (i['weight'] as num).toDouble(),
           lastSeen: (i['last_seen'] as num).toInt(),
           tier: EvidenceTier.values.byName(i['tier'] as String),
-          observedLat: (i['lat'] as num?)?.toDouble(),
-          observedLon: (i['lon'] as num?)?.toDouble(),
         )
               ..provenAt = (i['proven_at'] as num?)?.toInt()
               ..uplinkSnr = (i['uplink_snr'] as num?)?.toDouble()
@@ -1666,6 +2128,9 @@ class PathGraph {
         (counters['dropped_1byte'] as num?)?.toInt() ??
         0;
     _linksHeld = (counters['links_held'] as num?)?.toInt() ?? 0;
+    // A checkpoint saved without its areas restores none: the file is
+    // the whole of what the graph then knows.
+    _places.replaceAll(document['places']);
 
     _store.markAllDirty();
     _evidence.markAllDirty();
@@ -1686,8 +2151,21 @@ class PathGraph {
     // Tier 1: fresh direct-reception evidence → empty path wins. Their
     // packet arriving with no hops is the same symmetric evidence as a
     // delivered empty-path send.
-    if (_evidence.hasFreshDirect(contactPubkey, now)) {
+    // A direct reception from before the radio moved to another area
+    // says nothing about here.
+    if (_evidence.hasFreshDirect(contactPubkey, now) &&
+        (_movedAt == null ||
+            _evidence.directSeenAt(contactPubkey) >= _movedAt!)) {
       return const PathResult.direct();
+    }
+
+    // Since the move, nothing of mine has reached them and their way back
+    // ends where I no longer am: a route out would get there and its ACK
+    // would not get back.
+    if (_movedAt != null &&
+        !_reachedSinceMove.contains(contactPubkey) &&
+        !_theirWayBackEndsHere(contactPubkey)) {
+      return const PathResult.flood(FloodReason.movedSinceTheyReachedMe);
     }
 
     // Tier 2: the route a flood of mine just took to them.
@@ -1707,7 +2185,9 @@ class PathGraph {
       return PathResult.flood(mine.gate ?? FloodReason.noProvenEndpoint);
     }
     if (ingress.isEmpty) {
-      return const PathResult.flood(FloodReason.noProvenEndpoint);
+      return PathResult.flood(_theirDoorstepsAllFailing(contactPubkey, now)
+          ? FloodReason.theirDoorstepsFailing
+          : FloodReason.noProvenEndpoint);
     }
 
     final route = PathFinder(estimator.config, estimator).search(
@@ -1716,6 +2196,7 @@ class PathGraph {
       edges: _store.edges,
       nowMillis: now,
       moving: _movingNow(now),
+      guessed: _hintGuesses(contactPubkey, now),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
@@ -1747,6 +2228,12 @@ class PathGraph {
     // Its first hop may have failed my sends or gone quiet since.
     if (self != null &&
         _egressCandidates(self, now).held.containsKey(live.hops.first)) {
+      return null;
+    }
+    // Its last hop may have failed my deliveries to them since.
+    if (_evidence
+        .candidatesFor(contactPubkey, now, isSelf: false)
+        .any((c) => c.repeaterHash == live.hops.last && doorstepFailsThem(c))) {
       return null;
     }
     return _toResult(PathFinder(estimator.config, estimator).score(

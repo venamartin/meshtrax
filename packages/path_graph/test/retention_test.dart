@@ -87,35 +87,6 @@ void main() {
     });
   });
 
-  group('position tags', () {
-    test('age off on their own clock without deleting the row', () {
-      graph.observePath(Uint8List.fromList([0xA2, 0x77]), 2,
-          const ObservationOrigin.pubkeyConfirmed(bobPk),
-          position: const GeoPosition(36.9, -121.7));
-      nowMs += 10 * dayMs; // past 7-day tag clock, inside 30-day age gate
-      final report = graph.sweepStale();
-      expect(report.positionsCleared, 1);
-      expect(report.ingressAged, 0);
-      // The evidence rows themselves survive (decay has zeroed their
-      // routing weight by now, so inspect the session dump, not the
-      // candidate list).
-      final rows = graph.saveSession()['ingress'] as List;
-      expect(rows, isNotEmpty, reason: 'rows survive, only the tag goes');
-      for (final row in rows) {
-        expect((row as Map).containsKey('lat'), isFalse);
-        expect(row.containsKey('lon'), isFalse);
-      }
-    });
-
-    test('fresh tags are kept', () {
-      graph.observePath(Uint8List.fromList([0xA2, 0x77]), 2,
-          const ObservationOrigin.pubkeyConfirmed(bobPk),
-          position: const GeoPosition(36.9, -121.7));
-      nowMs += 3 * dayMs;
-      expect(graph.sweepStale().positionsCleared, 0);
-    });
-  });
-
   group('growth caps', () {
     test('evict lowest-traffic hearsay first, protected rows last', () {
       graph.reportSendResult(
