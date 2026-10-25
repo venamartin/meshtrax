@@ -399,6 +399,32 @@ void main() {
     await waitUntil(() => !usb.connector.isLoadingContacts,
         'bench radio contacts synced', timeout: const Duration(seconds: 60));
     await alignFrequency(usb, khz: BenchConfig.meshFreqKhz);
+    // Whale's own view of the air, so a lost first attempt can be placed:
+    // never transmitted, not heard, or heard and not answered.
+    final usbTap = usb.connector.receivedFrames.listen((frame) {
+      if (frame.isEmpty) return;
+      switch (frame[0]) {
+        case pushCodeLogRxData:
+          if (frame.length > 4) {
+            final snr = frame[1].toSigned(8) / 4.0;
+            final packet = parseRawPacket(Uint8List.sublistView(frame, 3));
+            if (packet == null) return;
+            final hops = packet.pathBytes.isEmpty
+                ? '(no path)'
+                : PathHelper.formatPathHex(packet.pathBytes, stride: packet.stride);
+            blog('W-RX ${packetKind(packet.payloadType).padRight(10)} '
+                '${packet.routeType == 0x02 ? "direct" : "flood"} · path $hops · '
+                '${snr.toStringAsFixed(1)} dB');
+          }
+        case pushCodeSendConfirmed:
+          blog('W-PUSH send confirmed (ack ${hex(frame.sublist(1, 5))})');
+        case pushCodePathUpdated:
+          blog('W-PUSH path updated for ${hex(frame.sublist(1, 4))}…');
+        case respCodeSent:
+          blog('W-RESP sent · ${frame.length > 1 && frame[1] != 0 ? "flood" : "direct"} · '
+              '${hex(frame.sublist(1, frame.length.clamp(1, 10)))}');
+      }
+    });
     final whaleKey = usb.connector.selfPublicKeyHex;
     final gwqKey = radio.connector.selfPublicKeyHex;
     blog('bench radio: ${usb.connector.selfName} (${whaleKey.substring(0, 12)}…) '
@@ -439,6 +465,8 @@ void main() {
       gwqOnWhale = await ensureSavedContact(usb, gwqKey, 'GWQ');
     }
 
+    blog('letting the air settle 45 s after the adverts…');
+    await Future<void>.delayed(const Duration(seconds: 45));
     if (whaleOnGwq != null) {
       dump('before GWQ -> bench radio', whaleOnGwq);
       await post(whaleOnGwq, 'Test $hm: pair 1');
@@ -467,6 +495,7 @@ void main() {
       blog('bench radio -> GWQ DM skipped: bench radio has no contact for GWQ');
     }
     if (whaleOnGwq != null) dump('after the pair DMs', whaleOnGwq);
+    await usbTap.cancel();
     try {
       await usb.connector.disconnect();
     } catch (_) {}
