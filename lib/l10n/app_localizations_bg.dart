@@ -13,33 +13,33 @@ class AppLocalizationsBg extends AppLocalizations {
   String get appTitle => 'MeshTrax';
 
   @override
-  String get nav_chats => 'Chats';
+  String get nav_chats => 'Чатове';
 
   @override
-  String get chats_title => 'Chats';
+  String get chats_title => 'Чатове';
 
   @override
-  String get newChat_title => 'Select contact';
+  String get newChat_title => 'Изберете контакт';
 
   @override
   String newChat_contactCount(int count) {
-    return '$count contacts';
+    return 'Контакти: $count';
   }
 
   @override
-  String get newChat_newContact => 'New Contact';
+  String get newChat_newContact => 'Нов контакт';
 
   @override
-  String get newChat_newChannel => 'New Channel';
+  String get newChat_newChannel => 'Нов канал';
 
   @override
-  String get newChat_myContacts => 'My Contacts';
+  String get newChat_myContacts => 'Моите контакти';
 
   @override
-  String get newChat_discovered => 'Discovered';
+  String get newChat_discovered => 'Открити';
 
   @override
-  String get repeaters_title => 'Manage Repeaters';
+  String get repeaters_title => 'Управление на повторители';
 
   @override
   String get nav_contacts => 'Контакти';
@@ -54,16 +54,17 @@ class AppLocalizationsBg extends AppLocalizations {
   String get common_cancel => 'Отказ';
 
   @override
-  String get common_syncing_device_info => 'Reading device info...';
+  String get common_syncing_device_info =>
+      'Четене на данните за устройството...';
 
   @override
-  String get common_syncing_contacts => 'Reading contacts...';
+  String get common_syncing_contacts => 'Четене на контактите...';
 
   @override
-  String get common_syncing_channels => 'Reading channels...';
+  String get common_syncing_channels => 'Четене на каналите...';
 
   @override
-  String get common_syncing_messages => 'Reading messages...';
+  String get common_syncing_messages => 'Четене на съобщенията...';
 
   @override
   String get common_ok => 'Добре';
@@ -105,10 +106,11 @@ class AppLocalizationsBg extends AppLocalizations {
   String get common_disconnected => 'Откъснато';
 
   @override
-  String get common_connectionLost => 'Connection lost. Reconnecting...';
+  String get common_connectionLost =>
+      'Връзката е загубена. Свързване отново...';
 
   @override
-  String get common_reconnecting => 'Reconnecting...';
+  String get common_reconnecting => 'Свързване отново...';
 
   @override
   String get common_create => 'Създай';
@@ -258,11 +260,11 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get usbErrorNativeLibraryMissing =>
-      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+      'В тази версия липсва библиотеката за USB serial, затова USB устройствата не могат да се отворят. Инсталирайте MeshTrax отново или съобщете, че тази версия е повредена.';
 
   @override
   String get usbErrorBrowserUnsupported =>
-      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+      'Този браузър не поддържа Web Serial. Използвайте Chrome или Edge през HTTPS (или localhost).';
 
   @override
   String get usbErrorAlreadyActive => 'USB връзката вече е активирана.';
@@ -313,18 +315,18 @@ class AppLocalizationsBg extends AppLocalizations {
   }
 
   @override
-  String get scanner_showAllDevices => 'Show all Bluetooth devices';
+  String get scanner_showAllDevices => 'Покажи всички Bluetooth устройства';
 
   @override
-  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
+  String get scanner_showMeshCoreOnly => 'Само радиа с MeshCore';
 
   @override
   String get scanner_radioNotResponding =>
-      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+      'Радиото не отговаря. Може да трябва сдвояване: отворете настройките на Bluetooth, добавете радиото и въведете неговия PIN, после опитайте отново.';
 
   @override
   String get scanner_pairingFailed =>
-      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+      'Сдвояването чрез Bluetooth е отказано или неуспешно. Уверете се, че нищо друго (например телефонът ви) не е свързано с радиото, после опитайте отново и въведете неговия PIN.';
 
   @override
   String scanner_connectionFailed(String error) {
@@ -338,10 +340,10 @@ class AppLocalizationsBg extends AppLocalizations {
   String get scanner_scan => 'Сканирай';
 
   @override
-  String get scanner_scanFromImage => 'Scan from image';
+  String get scanner_scanFromImage => 'Сканирай от изображение';
 
   @override
-  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+  String get scanner_noQrFoundInImage => 'В изображението няма валиден QR код';
 
   @override
   String get scanner_bluetoothOff => 'Bluetooth е изключен.';
@@ -740,18 +742,19 @@ class AppLocalizationsBg extends AppLocalizations {
       'Показване на подробни метаданни за маршрутизация и синхронизация за съобщения';
 
   @override
-  String get appSettings_senderNameColors => 'Colorful sender names';
+  String get appSettings_senderNameColors => 'Цветни имена на подателите';
 
   @override
   String get appSettings_senderNameColorsSubtitle =>
-      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+      'Всеки подател в канал получава свой цвят на името. Когато е изключено, всички са в цвета на темата.';
 
   @override
-  String get appSettings_showTextFormatting => 'Show text formatting';
+  String get appSettings_showTextFormatting =>
+      'Показвай форматирането на текста';
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      'Markdown в съобщенията: **удебелен**, *курсив*, ||спойлери||, заглавия и връзки. Другите приложения за MeshCore показват символите както са.';
 
   @override
   String get appSettings_notifications => 'Уведомления';
@@ -808,11 +811,11 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get appSettings_maxChannelMessageRetries =>
-      'Max Channel Message Retries';
+      'Макс. повторни опити за съобщения в канал';
 
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
-      'It will retry this many times until it hears at least one repeat';
+      'Толкова пъти ще опитва отново, докато не чуе поне едно повторение';
 
   @override
   String get appSettings_battery => 'Батерия';
@@ -924,11 +927,12 @@ class AppLocalizationsBg extends AppLocalizations {
       'Логването за отстраняване на грешки в приложението е изключено.';
 
   @override
-  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+  String get appSettings_incrementalContactSync =>
+      'Частична синхронизация на контактите';
 
   @override
   String get appSettings_incrementalContactSyncSubtitle =>
-      'On reconnect, ask the radio only for contacts that changed since last time';
+      'При повторно свързване иска от радиото само контактите, променени от последния път';
 
   @override
   String get contacts_title => 'Контакти';
@@ -937,11 +941,11 @@ class AppLocalizationsBg extends AppLocalizations {
   String get contacts_noContacts => 'Няма контакти към момента.';
 
   @override
-  String get contacts_shareMyQrCode => 'Share My QR Code';
+  String get contacts_shareMyQrCode => 'Сподели моя QR код';
 
   @override
   String get contacts_shareQrCodeDesc =>
-      'Let others scan to add you as a contact';
+      'Другите могат да го сканират, за да ви добавят като контакт';
 
   @override
   String get contacts_contactsWillAppear =>
@@ -989,21 +993,22 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String contacts_deleteContactConfirm(String contactName) {
-    return 'Are you sure you want to delete $contactName?';
+    return 'Сигурни ли сте, че искате да изтриете $contactName?';
   }
 
   @override
   String contacts_contactDeleted(String contactName) {
-    return 'Contact $contactName deleted.';
+    return 'Контактът $contactName е изтрит.';
   }
 
   @override
   String contacts_contactDeleteFailed(String contactName) {
-    return 'Failed to delete $contactName.';
+    return 'Неуспешно изтриване на $contactName.';
   }
 
   @override
-  String get contacts_noMatchingContacts => 'No contacts match the filter.';
+  String get contacts_noMatchingContacts =>
+      'Няма контакти, отговарящи на филтъра.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -1121,7 +1126,7 @@ class AppLocalizationsBg extends AppLocalizations {
       'Позволи споделяне на данни от средносферните датчици';
 
   @override
-  String get contacts_publicKey => 'Public Key';
+  String get contacts_publicKey => 'Публичен ключ';
 
   @override
   String get channels_title => 'Канали';
@@ -1162,24 +1167,24 @@ class AppLocalizationsBg extends AppLocalizations {
   String get channels_editChannel => 'Редактирай канал';
 
   @override
-  String get channels_shareChannel => 'Share Channel';
+  String get channels_shareChannel => 'Сподели канала';
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      'Сканирайте QR кода, за да добавите канала.\nМеню → Добави Канал → Сканирайте QR код';
 
   @override
-  String get channels_secretKey => 'Secret Key';
+  String get channels_secretKey => 'Таен ключ';
 
   @override
-  String get channels_meshcoreUri => 'MeshCore URI';
+  String get channels_meshcoreUri => 'URI на MeshCore';
 
   @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
+  String get channels_shareChannelQr => 'Сканирай QR кода на канал';
 
   @override
   String get channels_shareChannelWarning =>
-      'Warning: Anyone who scans this QR code will have access to this channel.';
+      'Внимание: всеки, който сканира този QR код, ще има достъп до този канал.';
 
   @override
   String get channels_muteChannel => 'Заглуши канала';
@@ -1235,24 +1240,25 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get channels_addChannelConfirmation =>
-      'Do you want to add the following channel?';
+      'Искате ли да добавите следния канал?';
 
   @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
+  String get channels_channelAddedSuccess => 'Каналът е добавен успешно.';
 
   @override
-  String get channels_noAvailableChannelSlots => 'No available channel slots.';
+  String get channels_noAvailableChannelSlots =>
+      'Няма свободни места за канали.';
 
   @override
-  String get appSettings_mentionNotifications => 'Mention notifications';
+  String get appSettings_mentionNotifications => 'Известия за споменавания';
 
   @override
   String get appSettings_mentionNotificationsSubtitle =>
-      'When someone mentions or replies to you — even in muted channels';
+      'Когато някой ви спомене или ви отговори — дори в заглушени канали';
 
   @override
   String notification_mentionIn(String channelName) {
-    return 'Mention in $channelName';
+    return 'Споменаване в $channelName';
   }
 
   @override
@@ -1361,13 +1367,14 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_location => 'Местоположение';
 
   @override
-  String get common_copiedToClipboard => 'Copied to clipboard';
+  String get common_copiedToClipboard => 'Копирано в клипборда';
 
   @override
-  String get common_copyToClipboard => 'Copy to clipboard';
+  String get common_copyToClipboard => 'Копирай в клипборда';
 
   @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
+  String get contacts_copyContactToClipboard =>
+      'Копирай моя контакт в клипборда';
 
   @override
   String get chat_typeMessage => 'Въведете съобщение...';
@@ -1396,7 +1403,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_reply => 'Отговори';
 
   @override
-  String get chat_newMessages => 'NEW MESSAGES';
+  String get chat_newMessages => 'НОВИ СЪОБЩЕНИЯ';
 
   @override
   String get chat_addReaction => 'Добави Реакция';
@@ -1405,80 +1412,81 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_mention => 'Споменаване';
 
   @override
-  String get dmChannel_menuLabel => 'Direct Message';
+  String get dmChannel_menuLabel => 'Лично съобщение';
 
   @override
   String dmChannel_pickerTitle(String name) {
-    return 'Send DM to $name';
+    return 'Лично съобщение до $name';
   }
 
   @override
   String get dmChannel_pickerHint =>
-      'Check the key and last-seen time — names are not unique.';
+      'Проверете ключа и кога е видян последно — имената не са уникални.';
 
   @override
-  String get dmChannel_warningTitle => 'Is this really them?';
+  String get dmChannel_warningTitle => 'Наистина ли е този човек?';
 
   @override
   String get dmChannel_warningBody =>
-      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+      'Имената в каналите се избират свободно и всеки може да ги имитира. За нещо поверително първо проверете публичния ключ на този контакт по друг начин.';
 
   @override
-  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+  String get dmChannel_dontShowAgain => 'Не показвай отново';
 
   @override
-  String get batterySleep_title => 'Keep MeshTrax running';
+  String get batterySleep_title => 'Нека MeshTrax работи';
 
   @override
   String get batterySleep_bodySamsung =>
-      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+      'Телефоните Samsung приспиват приложенията, за да пестят батерия, и това прекъсва връзката с радиото. Отворете Настройки → Приложения → MeshTrax → Батерия и изберете „Неограничено“. Проверете и Батерия → Ограничения за използване във фонов режим и се уверете, че MeshTrax не е в „Спящи приложения“ или „Приложения в дълбок сън“.';
 
   @override
   String get batterySleep_bodyGeneric =>
-      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+      'Телефонът може да спира MeshTrax във фонов режим, за да пести батерия, и това прекъсва връзката с радиото. Отворете настройките на батерията и задайте за MeshTrax „Неограничено“ (или „Без ограничения“). На някои телефони трябва да включите и „Автоматично стартиране“ за MeshTrax.';
 
   @override
-  String get batterySleep_openSettings => 'Open settings';
+  String get batterySleep_openSettings => 'Отвори настройките';
 
   @override
-  String get batterySleep_notNow => 'Not now';
+  String get batterySleep_notNow => 'Не сега';
 
   @override
-  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+  String get batterySleep_settingsTile => 'MeshTrax да работи във фонов режим';
 
   @override
   String get batterySleep_settingsTileSubtitle =>
-      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+      'Пестенето на батерия да не приспива MeshTrax';
 
   @override
   String dmChannel_noMatchTitle(String name) {
-    return 'Can\'t DM $name yet';
+    return 'Още не можете да пишете на $name';
   }
 
   @override
   String get dmChannel_noMatchBody =>
-      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+      'Още нямате ключа им, а на тях им трябва вашият, за да отговорят — ключовете се пренасят само в обяви. „Изпрати моята обява“ разпраща вашата оттук. „Попитай в канала“ написва молба в полето за съобщение, за да я изпратите.';
 
   @override
-  String get dmChannel_askInChannel => 'Ask in channel';
+  String get dmChannel_askInChannel => 'Попитай в канала';
 
   @override
-  String get dmChannel_sendMyAdvert => 'Send my advert';
+  String get dmChannel_sendMyAdvert => 'Изпрати моята обява';
 
   @override
-  String get dmChannel_askText => 'please send an advert so I can DM you';
+  String get dmChannel_askText =>
+      'моля, изпратете обява, за да мога да ви пиша лично';
 
   @override
   String get dmChannel_watching =>
-      'Watching for their advert — you\'ll be asked here when it arrives.';
+      'Чакаме обявата им — ще бъдете попитани тук, когато пристигне.';
 
   @override
   String dmChannel_advertHeard(String name) {
-    return '$name is now reachable';
+    return 'Вече можете да се свържете с $name';
   }
 
   @override
-  String get dmChannel_openDm => 'DM';
+  String get dmChannel_openDm => 'Пиши';
 
   @override
   String get appSettings_zoomLevel => 'Ниво на мащабиране';
@@ -1487,14 +1495,14 @@ class AppLocalizationsBg extends AppLocalizations {
   String get common_reset => 'Нулиране';
 
   @override
-  String get chat_reactionsTitle => 'Reactions';
+  String get chat_reactionsTitle => 'Реакции';
 
   @override
-  String get chat_reactionUnknownSender => 'Unknown';
+  String get chat_reactionUnknownSender => 'Неизвестен';
 
   @override
   String chat_reactionTargetMissing(String sender) {
-    return '$sender reacted to a message that isn\'t in this chat';
+    return '$sender: реакция на съобщение, което не е в този чат';
   }
 
   @override
@@ -1544,22 +1552,22 @@ class AppLocalizationsBg extends AppLocalizations {
   String get debugLog_copyLog => 'Копирай лог';
 
   @override
-  String get debugLog_saveLog => 'Save log to file';
+  String get debugLog_saveLog => 'Запази лога във файл';
 
   @override
-  String get debugLog_saved => 'Log saved';
+  String get debugLog_saved => 'Логът е запазен';
 
   @override
-  String get debugLog_saveCancelled => 'Save cancelled';
+  String get debugLog_saveCancelled => 'Запазването е отказано';
 
   @override
-  String get debugLog_filterAll => 'All';
+  String get debugLog_filterAll => 'Всички';
 
   @override
-  String get debugLog_filterWarnings => 'Warnings';
+  String get debugLog_filterWarnings => 'Предупреждения';
 
   @override
-  String get debugLog_filterErrors => 'Errors';
+  String get debugLog_filterErrors => 'Грешки';
 
   @override
   String get debugLog_clearLog => 'Изчисти логовете';
@@ -1623,7 +1631,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get debugFrame_textTypeCli => 'CLI';
 
   @override
-  String get debugFrame_textTypeCliCommand => 'CLI command';
+  String get debugFrame_textTypeCliCommand => 'CLI команда';
 
   @override
   String get debugFrame_textTypePlain => 'Просто';
@@ -3070,13 +3078,13 @@ class AppLocalizationsBg extends AppLocalizations {
   String get listFilter_filters => 'Филтри';
 
   @override
-  String get listFilter_source => 'Source';
+  String get listFilter_source => 'Източник';
 
   @override
-  String get listFilter_saved => 'Saved';
+  String get listFilter_saved => 'Запазени';
 
   @override
-  String get listFilter_discovered => 'Discovered';
+  String get listFilter_discovered => 'Открити';
 
   @override
   String get listFilter_all => 'Всички';
@@ -3340,31 +3348,31 @@ class AppLocalizationsBg extends AppLocalizations {
       'Копирането на обявата в клипборда не успя.';
 
   @override
-  String get contacts_addContact => 'Add Contact';
+  String get contacts_addContact => 'Добави контакт';
 
   @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
+  String get contacts_scanQrCode => 'Сканирай QR на контакт';
 
   @override
   String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
+      'Сканирайте QR кода на контакт от приложението MeshCore';
 
   @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
+  String get contacts_enterIdHash => 'Въведи контакт ръчно';
 
   @override
   String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
+      'Поставете обява на контакт или връзка meshcore://';
 
   @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
+  String get contacts_advertHint => 'meshcore://... или публичен ключ в hex';
 
   @override
-  String get contacts_import => 'Import';
+  String get contacts_import => 'Импортирай';
 
   @override
   String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
+      'Сканирайте QR кода на контакт от MeshCore';
 
   @override
   String get notification_activityTitle => 'Активност на MeshCore';
@@ -3526,7 +3534,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get discoveredContacts_noMatching => 'Няма съвпадащи контакти';
 
   @override
-  String get listFilter_searchHint => 'Search...';
+  String get listFilter_searchHint => 'Търсене...';
 
   @override
   String get discoveredContacts_searchHint => 'Търсене на открити контакти';
@@ -3556,7 +3564,8 @@ class AppLocalizationsBg extends AppLocalizations {
       'Моля, изчакайте малко, преди да изпратите отново.';
 
   @override
-  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+  String get chat_notConnected =>
+      'Няма връзка с радио. Съобщението не е изпратено.';
 
   @override
   String get appSettings_jumpToOldestUnread =>
@@ -3744,76 +3753,75 @@ class AppLocalizationsBg extends AppLocalizations {
   String get translation_systemLanguage => 'Език на системата';
 
   @override
-  String get routing_title => 'Routing';
+  String get routing_title => 'Маршрутизация';
 
   @override
   String routing_route(String route) {
-    return 'Stored path: $route';
+    return 'Запазен път: $route';
   }
 
   @override
   String get routing_noRoute =>
-      'none yet — the next message floods and learns one';
+      'още няма — следващото съобщение ще отиде до цялата мрежа и ще намери път';
 
   @override
-  String get routing_auto => 'Automatic';
+  String get routing_auto => 'Автоматично';
 
   @override
   String get routing_autoSubtitle =>
-      'Use the radio\'s stored path. Recommended.';
+      'Използва пътя, запазен в радиото. Препоръчително.';
 
   @override
   String get routing_pathfinderOn =>
-      'Pathfinder on: tries learned routes first';
+      'Pathfinder е включен: първо опитва научените маршрути';
 
   @override
-  String get routing_flood => 'Always flood';
+  String get routing_flood => 'Винаги до цялата мрежа';
 
   @override
-  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+  String get routing_floodSubtitle => 'Всяко съобщение отива до цялата мрежа';
 
   @override
-  String get routing_custom => 'Custom path';
+  String get routing_custom => 'Собствен път';
 
   @override
-  String get routing_customSubtitle => 'Choose the repeaters yourself';
+  String get routing_customSubtitle => 'Изберете повторителите сами';
 
   @override
-  String get routing_forget => 'Reset path';
+  String get routing_forget => 'Нулирай пътя';
 
   @override
   String get routing_forgetDone =>
-      'Path reset. The next message floods and learns a fresh one.';
+      'Пътят е нулиран. Следващото съобщение ще отиде до цялата мрежа и ще намери нов.';
 
   @override
-  String get routing_pathfinder => 'What Pathfinder knows';
+  String get routing_pathfinder => 'Какво знае Pathfinder';
 
   @override
   String get routing_pathfinderSubtitle =>
-      'Repeaters that hear you and them, and learned routes there and back';
+      'Повторители, които чуват вас и тях, и научени маршрути натам и обратно';
 
   @override
-  String get path_direct => 'Direct — no repeaters';
+  String get path_direct => 'Директно — без повторители';
 
   @override
-  String get path_directSubtitle =>
-      'Only when the contact can hear this radio itself';
+  String get path_directSubtitle => 'Само ако контактът чува самото това радио';
 
   @override
-  String get chat_kindFlood => 'flood';
+  String get chat_kindFlood => 'до цялата мрежа';
 
   @override
-  String get chat_kindDirect => 'direct';
+  String get chat_kindDirect => 'директно';
 
   @override
   String chat_kindRoute(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'скока',
+      one: 'скок',
     );
-    return 'route ($count $_temp0)';
+    return 'маршрут ($count $_temp0)';
   }
 
   @override
@@ -3828,45 +3836,45 @@ class AppLocalizationsBg extends AppLocalizations {
   }
 
   @override
-  String get chat_statusQueued => 'Queued';
+  String get chat_statusQueued => 'На опашка';
 
   @override
   String get chat_statusNoRepeaterHeard =>
-      'No repeater heard you. Will try again when one is in range.';
+      'Никой повторител не ви чу. Ще опита отново, когато има повторител в обхват.';
 
   @override
   String chat_narrowHashNotice(String name) {
-    return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
+    return 'Радиото на $name изпраща кратки кодове на повторители (1 байт). Pathfinder не може да научи маршрути до този контакт, докато радиото му не започне да използва 2-байтови кодове.';
   }
 
   @override
   String chat_statusSending(String kind) {
-    return 'Sending · $kind';
+    return 'Изпращане · $kind';
   }
 
   @override
   String chat_statusRetrying(int attempt, int max, String kind) {
-    return 'Retrying · $kind · attempt $attempt of $max';
+    return 'Нов опит · $kind · опит $attempt от $max';
   }
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return 'Доставено · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return 'Доставено при опит $attempt · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return 'Доставено със закъснение · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return 'Доставено · $secs с';
   }
 
   @override
@@ -3874,17 +3882,18 @@ class AppLocalizationsBg extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       attempts,
       locale: localeName,
-      other: 'attempts',
-      one: 'attempt',
+      other: 'опита',
+      one: 'опит',
     );
-    return 'Failed after $attempts $_temp0 · tap to resend';
+    return 'Неуспешно след $attempts $_temp0 · докоснете, за да изпратите отново';
   }
 
   @override
-  String get chat_statusFailedShort => 'Failed · tap to resend';
+  String get chat_statusFailedShort =>
+      'Неуспешно · докоснете, за да изпратите отново';
 
   @override
-  String get chat_resendingByFlood => 'Resending by flood';
+  String get chat_resendingByFlood => 'Повторно изпращане до цялата мрежа';
 
   @override
   String get pathfinderHelp_title => 'What Pathfinder does';
@@ -3920,53 +3929,54 @@ class AppLocalizationsBg extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder (експериментално)';
 
   @override
   String get settings_pathGraphSubtitle =>
-      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+      'Научава маршрути от всичко, което радиото чува, и при изпращане на лично съобщение първо опитва най-добрите. Кехлибарена икона на път отбелязва съобщение, изпратено по маршрут на Pathfinder.';
 
   @override
-  String get map_routeAndTrace => 'Route & trace';
+  String get map_routeAndTrace => 'Маршрут и трасиране';
 
   @override
-  String get map_pathfinderTrace => 'Trace there and back';
+  String get map_pathfinderTrace => 'Трасиране натам и обратно';
 
   @override
   String get map_pathfinderTraceSubtitle =>
-      'Out on Pathfinder\'s best route, back on its best route back';
+      'Натам по най-добрия маршрут на Pathfinder, обратно по най-добрия му обратен маршрут';
 
   @override
   String get map_routeBackMirrored =>
-      'No route back known yet — coming back the same way';
+      'Още няма известен обратен маршрут — връщане по същия път';
 
   @override
-  String get map_traceHelpTitle => 'Path trace buttons';
+  String get map_traceHelpTitle => 'Бутони за трасиране на път';
 
   @override
-  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+  String get map_traceHelpCustom => 'Въведете или изберете повторителите сами.';
 
   @override
   String get map_traceHelpRun =>
-      'Sends a trace out along the repeaters you tapped, one way.';
+      'Изпраща трасиране в една посока през докоснатите повторители.';
 
   @override
-  String get map_traceHelpThereAndBack => 'There and back';
+  String get map_traceHelpThereAndBack => 'Натам и обратно';
 
   @override
   String get map_traceHelpThereAndBackSubtitle =>
-      'Sends the trace out, then back over the same repeaters in reverse.';
+      'Изпраща трасирането натам, после обратно през същите повторители в обратен ред.';
 
   @override
   String get map_traceHelpPathfinder =>
-      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+      'Pathfinder избира най-добрия маршрут през последните два докоснати повторителя и най-добрия маршрут обратно до вас. Резултатът показва на Pathfinder кои връзки наистина работят. Трябва да докоснете два повторителя.';
 
   @override
-  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+  String get map_traceHelpRemoveLast =>
+      'Премахва последния повторител от пътя.';
 
   @override
   String get map_traceHelpCancel =>
-      'Stops building the trace. Shown before any repeater is tapped.';
+      'Спира изграждането на трасирането. Показва се, преди да е докоснат повторител.';
 
   @override
   String get chat_resendingByRoute =>
@@ -4063,263 +4073,264 @@ class AppLocalizationsBg extends AppLocalizations {
   String get room_reloadFailed => 'Стаята не можа да бъде нулирана на радиото';
 
   @override
-  String get companionCli_title => 'Command line';
+  String get companionCli_title => 'Команден ред';
 
   @override
-  String get companionCli_settingsSubtitle =>
-      'Type text commands for this radio';
+  String get companionCli_settingsSubtitle => 'Текстови команди за това радио';
 
   @override
-  String get companionCli_rebooting => 'Restarting the radio…';
+  String get companionCli_rebooting => 'Рестартиране на радиото…';
 
   @override
-  String get companionCli_cancelled => 'Cancelled';
+  String get companionCli_cancelled => 'Отказано';
 
   @override
-  String get companionCli_poweringOff => 'Turning the radio off…';
+  String get companionCli_poweringOff => 'Изключване на радиото…';
 
   @override
-  String get companionCli_noReply => 'No reply from the radio. Try again.';
+  String get companionCli_noReply =>
+      'Няма отговор от радиото. Опитайте отново.';
 
   @override
-  String get companionCli_powerOffTitle => 'Turn the radio off?';
+  String get companionCli_powerOffTitle => 'Да се изключи ли радиото?';
 
   @override
   String get companionCli_powerOffBody =>
-      'It stays off until you press its button or plug it in.';
+      'Ще остане изключено, докато не натиснете бутона му или не го включите към захранване.';
 
   @override
-  String get companionCli_powerOff => 'Turn off';
+  String get companionCli_powerOff => 'Изключи';
 
   @override
-  String get companionCli_quickBoard => 'Board';
+  String get companionCli_quickBoard => 'Платка';
 
   @override
-  String get companionCli_quickWifiStatus => 'WiFi status';
+  String get companionCli_quickWifiStatus => 'Състояние на Wi‑Fi';
 
   @override
-  String get companionCli_quickWifiAddress => 'WiFi address';
+  String get companionCli_quickWifiAddress => 'Адрес в Wi‑Fi';
 
   @override
-  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+  String get companionCli_helpBoard =>
+      'Показва производителя и модела на платката.';
 
   @override
-  String get companionCli_helpReboot => 'Restarts the radio.';
+  String get companionCli_helpReboot => 'Рестартира радиото.';
 
   @override
-  String get companionCli_helpPowerOff => 'Turns the radio off.';
+  String get companionCli_helpPowerOff => 'Изключва радиото.';
 
   @override
   String get companionCli_helpSetPin =>
-      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+      'Задава PIN за сдвояване чрез Bluetooth. Влиза в сила след рестарт.';
 
   @override
   String get companionCli_helpSetTzOffset =>
-      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+      'Задава часовете, добавяни към UTC, за часовника на собствения екран на радиото (от -12 до +14).';
 
   @override
   String get companionCli_helpSetTx =>
-      'Sets the transmit power in dBm. Applies at once.';
+      'Задава мощността на предаване в dBm. Влиза в сила веднага.';
 
   @override
   String get companionCli_helpSetIntThresh =>
-      'Sets the interference threshold in dB. 0 turns interference detection off.';
+      'Задава прага на смущенията в dB. 0 изключва откриването на смущения.';
 
   @override
   String get companionCli_helpSetCad =>
-      'Listens for other radios before sending (channel activity detection).';
+      'Слуша за други радиа преди изпращане (откриване на активност в канала).';
 
   @override
-  String get companionCli_helpSetRxGain =>
-      'Boosted receive gain, on SX126x radios.';
+  String get companionCli_helpSetRxGain => 'Усилено приемане при радиа SX126x.';
 
   @override
   String get companionCli_helpSetPathHashMode =>
-      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+      'Байтове на повторител в маршрута: 0 = 1 байт, 1 = 2 байта, 2 = 3 байта.';
 
   @override
   String get companionCli_helpWifiStatus =>
-      'Shows whether the radio is on the WiFi network.';
+      'Показва дали радиото е свързано към Wi‑Fi мрежата.';
 
   @override
   String get companionCli_helpWifiIp =>
-      'Shows the radio\'s address on the WiFi network.';
+      'Показва адреса на радиото в Wi‑Fi мрежата.';
 
   @override
   String get companionCli_helpWifiSsid =>
-      'Sets the WiFi network name. Applies after a restart.';
+      'Задава името на Wi‑Fi мрежата. Влиза в сила след рестарт.';
 
   @override
   String get companionCli_helpWifiPwd =>
-      'Sets the WiFi password. Applies after a restart.';
+      'Задава паролата за Wi‑Fi. Влиза в сила след рестарт.';
 
   @override
   String get companionCli_helpWifiEnabled =>
-      'Turns WiFi on (1) or off (0). Applies after a restart.';
+      'Включва (1) или изключва (0) Wi‑Fi. Влиза в сила след рестарт.';
 
   @override
   String get companionCli_helpWifiClear =>
-      'Forgets the WiFi network. Applies after a restart.';
+      'Забравя Wi‑Fi мрежата. Влиза в сила след рестарт.';
 
   @override
   String get companionCli_remoteNoReply =>
-      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+      'Няма отговор. Другото радио трябва да има фърмуер 1.18 или по-нов и да ви позволява да използвате командния му ред.';
 
   @override
   String get companionCli_remoteSentNoAnswer =>
-      'Sent. A radio does not answer a restart or power-off.';
+      'Изпратено. Радиото не отговаря на рестарт или изключване.';
 
   @override
   String companionCli_blocked(String name, String command) {
-    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '$name опита да използва командния ред на радиото ви: „$command“. Не беше разрешено.';
   }
 
   @override
   String companionCli_blockedBody(String command) {
-    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return 'Опит за използване на командния ред на радиото ви: „$command“. Не беше разрешено.';
   }
 
   @override
-  String get contact_remoteCli => 'Allow remote command line';
+  String get contact_remoteCli => 'Разреши отдалечен команден ред';
 
   @override
   String get contact_remoteCliSubtitle =>
-      'Lets this contact run commands on your radio';
+      'Позволява на този контакт да изпълнява команди на радиото ви';
 
   @override
   String contact_remoteCliWarningTitle(String name) {
-    return 'Let $name control your radio?';
+    return 'Да позволите ли на $name да управлява радиото ви?';
   }
 
   @override
   String contact_remoteCliWarning(String name) {
-    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+    return '$name ще може да променя настройките на радиото ви, да чете паролата ви за Wi‑Fi, да преименува радиото и да го рестартира или изключва. Разрешавайте само на човек, на когото имате пълно доверие.';
   }
 
   @override
-  String get contact_remoteCliAllow => 'Allow';
+  String get contact_remoteCliAllow => 'Разреши';
 
   @override
   String get connection_secondApp =>
-      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+      'Друго приложение е свързано с това радио. Съобщенията и настройките може да се объркат. Затворете другото приложение.';
 
   @override
-  String get wifi_title => 'WiFi';
+  String get wifi_title => 'Wi‑Fi';
 
   @override
-  String get wifi_settingsSubtitle => 'Network, password and connection';
+  String get wifi_settingsSubtitle => 'Мрежа, парола и връзка';
 
   @override
-  String get wifi_use => 'Use WiFi';
+  String get wifi_use => 'Използвай Wi‑Fi';
 
   @override
-  String get wifi_networkName => 'Network name';
+  String get wifi_networkName => 'Име на мрежата';
 
   @override
-  String get wifi_password => 'Password';
+  String get wifi_password => 'Парола';
 
   @override
-  String get wifi_passwordUnchanged => 'Unchanged';
+  String get wifi_passwordUnchanged => 'Без промяна';
 
   @override
-  String get wifi_showPassword => 'Show password';
+  String get wifi_showPassword => 'Покажи паролата';
 
   @override
-  String get wifi_nameMissing => 'Enter the network name';
+  String get wifi_nameMissing => 'Въведете името на мрежата';
 
   @override
   String get wifi_nameTooLong =>
-      'The network name is too long (32 bytes at most)';
+      'Името на мрежата е твърде дълго (най-много 32 байта)';
 
   @override
   String get wifi_passwordTooLong =>
-      'The password is too long (63 bytes at most)';
+      'Паролата е твърде дълга (най-много 63 байта)';
 
   @override
   String get wifi_savedRestart =>
-      'Saved. WiFi changes apply after the radio restarts.';
+      'Запазено. Промените в Wi‑Fi влизат в сила след рестарт на радиото.';
 
   @override
-  String get wifi_forget => 'Forget network';
+  String get wifi_forget => 'Забрави мрежата';
 
   @override
   String get wifi_forgetConfirm =>
-      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+      'Да се забрави ли тази Wi‑Fi мрежа? След рестарт радиото спира да използва Wi‑Fi.';
 
   @override
   String wifi_notAccepted(String reply) {
-    return 'The radio did not accept that: $reply';
+    return 'Радиото не прие това: $reply';
   }
 
   @override
-  String get wifi_noReply => 'No reply from the radio. Try again.';
+  String get wifi_noReply => 'Няма отговор от радиото. Опитайте отново.';
 
   @override
-  String get wifi_restartTitle => 'Restart the radio?';
+  String get wifi_restartTitle => 'Да се рестартира ли радиото?';
 
   @override
-  String get wifi_later => 'Later';
+  String get wifi_later => 'По-късно';
 
   @override
   String get wifi_loadFailed =>
-      'Could not read the WiFi settings from the radio.';
+      'Настройките за Wi‑Fi не можаха да се прочетат от радиото.';
 
   @override
   String wifi_connectedTo(String address) {
-    return 'Connected · $address';
+    return 'Свързано · $address';
   }
 
   @override
-  String get wifi_notConnected => 'Not connected to WiFi';
+  String get wifi_notConnected => 'Няма връзка с Wi‑Fi';
 
   @override
   String wifi_portNote(int port) {
-    return 'Apps on the same network can connect on port $port';
+    return 'Приложения в същата мрежа могат да се свържат на порт $port';
   }
 
   @override
-  String get wifi_connectOverWifi => 'Connect over WiFi';
+  String get wifi_connectOverWifi => 'Свързване през Wi‑Fi';
 
   @override
   String wifi_connectOverWifiBody(String address, int port) {
-    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+    return 'MeshTrax ще прекъсне връзката с това радио и ще отвори екрана за TCP с попълнени адрес $address и порт $port. Там докоснете „Свържи се“.';
   }
 
   @override
-  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+  String get wifi_noteRestart =>
+      'Промените влизат в сила след рестарт на радиото.';
 
   @override
   String get wifi_noteSecurity =>
-      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+      'Всеки във вашата Wi‑Fi мрежа може да се свърже с радиото на порт 5000. За това няма парола.';
 
   @override
   String get wifi_noteBattery =>
-      'WiFi keeps the radio awake, so the battery runs down faster.';
+      'Wi‑Fi държи радиото будно, затова батерията се изтощава по-бързо.';
 
   @override
   String get wifi_noteWrongPassword =>
-      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
+      'Ако паролата е грешна, радиото продължава да опитва на всеки няколко секунди. Bluetooth продължава да работи.';
 
   @override
   String get room_selfDemoteWarning =>
       'Променяте собствения си достъп. Ако се откажете от ролята на админ, само конзолата на стаята може да я върне.';
 
   @override
-  String get scanner_offlineMaps => 'Offline maps';
+  String get scanner_offlineMaps => 'Офлайн карти';
 
   @override
-  String get appSettings_offlineMaps => 'Offline maps';
+  String get appSettings_offlineMaps => 'Офлайн карти';
 
   @override
-  String get appSettings_offlineMapsNone => 'None downloaded';
+  String get appSettings_offlineMapsNone => 'Няма изтеглени';
 
   @override
   String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count regions',
-      one: '1 region',
+      other: '$count региона',
+      one: '$count регион',
     );
     return '$_temp0';
   }
@@ -4329,8 +4340,8 @@ class AppLocalizationsBg extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count chart areas',
-      one: '1 chart area',
+      other: '$count района с морски карти',
+      one: '$count район с морски карти',
     );
     return '$_temp0';
   }
@@ -4340,81 +4351,82 @@ class AppLocalizationsBg extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count updates available',
-      one: '1 update available',
+      other: '$count налични актуализации',
+      one: '$count налична актуализация',
     );
     return '$_temp0';
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly =>
+      'Изтегляй карти само през Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+      'Изтеглянето на карти чака Wi‑Fi връзка';
 
   @override
-  String get offlineMaps_title => 'Offline maps';
+  String get offlineMaps_title => 'Офлайн карти';
 
   @override
-  String get offlineMaps_tabMaps => 'Maps';
+  String get offlineMaps_tabMaps => 'Карти';
 
   @override
-  String get offlineMaps_tabCharts => 'Charts';
+  String get offlineMaps_tabCharts => 'Морски карти';
 
   @override
-  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+  String get offlineMaps_chartsNotice => 'Не е за навигация · Защо?';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
-    return 'Suggested · $coast';
+    return 'Предложени · $coast';
   }
 
   @override
-  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+  String get offlineMaps_chartsByCoast => 'Райони с карти по крайбрежие';
 
   @override
   String offlineMaps_chartsCoastSummary(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count района',
+      one: '$count район',
     );
     return '$_temp0 · $size';
   }
 
   @override
   String offlineMaps_chartsDownloadedCount(int count) {
-    return '$count downloaded';
+    return 'Изтеглени: $count';
   }
 
   @override
   String offlineMaps_chartsSelectedCount(int count) {
-    return '$count selected';
+    return 'Избрани: $count';
   }
 
   @override
-  String get offlineMaps_selectAll => 'Select all';
+  String get offlineMaps_selectAll => 'Избери всички';
 
   @override
-  String get offlineMaps_clearSelection => 'Clear';
+  String get offlineMaps_clearSelection => 'Изчисти';
 
   @override
   String offlineMaps_chartsAlsoIn(String coasts) {
-    return 'Also in $coasts';
+    return 'Също в: $coasts';
   }
 
   @override
-  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+  String get offlineMaps_chartsNotAvailable => 'Още не е налично';
 
   @override
   String get offlineMaps_chartsHint =>
-      'NOAA charts are picked by coast, in the Charts tab.';
+      'Картите на NOAA се избират по крайбрежие в раздела „Морски карти“.';
 
   @override
   String offlineMaps_chartsName(String area) {
-    return '$area NOAA charts';
+    return '$area — карти на NOAA';
   }
 
   @override
@@ -4422,427 +4434,429 @@ class AppLocalizationsBg extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count района',
+      one: '$count район',
     );
     return '$_temp0';
   }
 
   @override
-  String get offlineMaps_tabDownloaded => 'Downloaded';
+  String get offlineMaps_tabDownloaded => 'Изтеглени';
 
   @override
-  String get offlineMaps_refresh => 'Check for new maps';
+  String get offlineMaps_refresh => 'Провери за нови карти';
 
   @override
-  String get offlineMaps_loading => 'Loading available maps…';
+  String get offlineMaps_loading => 'Зареждане на наличните карти…';
 
   @override
-  String get offlineMaps_serverError => 'Can\'t reach the map server';
+  String get offlineMaps_serverError => 'Няма връзка със сървъра за карти';
 
   @override
-  String get offlineMaps_unavailable => 'No maps are available yet';
+  String get offlineMaps_unavailable => 'Още няма налични карти';
 
   @override
-  String get offlineMaps_unavailableHint => 'Check again later.';
+  String get offlineMaps_unavailableHint => 'Проверете отново по-късно.';
 
   @override
-  String get offlineMaps_chartsUnavailable =>
-      'No NOAA charts are available yet';
+  String get offlineMaps_chartsUnavailable => 'Още няма налични карти на NOAA';
 
   @override
   String offlineMaps_cachedFrom(String date) {
-    return 'Showing the list from $date';
+    return 'Показан е списъкът от $date';
   }
 
   @override
   String get offlineMaps_needsNewerApp =>
-      'Update MeshTrax to get the newest maps.';
+      'Обновете MeshTrax, за да получите най-новите карти.';
 
   @override
-  String get offlineMaps_world => 'World';
+  String get offlineMaps_world => 'Свят';
 
   @override
-  String get offlineMaps_suggested => 'Suggested';
+  String get offlineMaps_suggested => 'Предложени';
 
   @override
-  String get offlineMaps_regions => 'Regions';
+  String get offlineMaps_regions => 'Региони';
 
   @override
   String offlineMaps_regionsIn(String name) {
-    return 'Regions in $name';
+    return 'Региони в $name';
   }
 
   @override
   String offlineMaps_inside(int count) {
-    return '$count inside';
+    return 'Вътре: $count';
   }
 
   @override
   String offlineMaps_storageUsed(String size) {
-    return '$size of offline maps on this device';
+    return 'Офлайн карти на това устройство: $size';
   }
 
   @override
   String offlineMaps_updates(int count) {
-    return 'Updates ($count)';
+    return 'Актуализации ($count)';
   }
 
   @override
   String offlineMaps_updateAll(String size) {
-    return 'Update all $size';
+    return 'Актуализирай всички ($size)';
   }
 
   @override
-  String get offlineMaps_downloading => 'Downloading';
+  String get offlineMaps_downloading => 'Изтегляне';
 
   @override
-  String get offlineMaps_update => 'Update';
+  String get offlineMaps_update => 'Актуализирай';
 
   @override
   String offlineMaps_downloadedOn(String date) {
-    return 'Downloaded $date';
+    return 'Изтеглено на $date';
   }
 
   @override
-  String get offlineMaps_updateAvailable => 'Update available';
+  String get offlineMaps_updateAvailable => 'Има актуализация';
 
   @override
-  String get offlineMaps_otherFiles => 'Other map files';
+  String get offlineMaps_otherFiles => 'Други файлове с карти';
 
   @override
-  String get offlineMaps_emptyTitle => 'No offline maps yet';
+  String get offlineMaps_emptyTitle => 'Още няма офлайн карти';
 
   @override
   String get offlineMaps_emptyBody =>
-      'Download a region to use the map without a connection.';
+      'Изтеглете регион, за да използвате картата без връзка.';
 
   @override
-  String get offlineMaps_findMaps => 'Find maps';
+  String get offlineMaps_findMaps => 'Намери карти';
 
   @override
   String offlineMaps_deleteTitle(String name) {
-    return 'Delete $name?';
+    return 'Да се изтрие ли $name?';
   }
 
   @override
   String offlineMaps_deleteBody(String size) {
-    return 'This frees $size. You can download it again later.';
+    return 'Ще се освободят $size. Можете да го изтеглите отново по-късно.';
   }
 
   @override
   String offlineMaps_deleted(String name) {
-    return '$name deleted';
+    return 'Изтрито: $name';
   }
 
   @override
   String offlineMaps_bytesProgress(String done, String total) {
-    return '$done of $total';
+    return '$done от $total';
   }
 
   @override
-  String get offlineMaps_kindMap => 'Map';
+  String get offlineMaps_kindMap => 'Карта';
 
   @override
-  String get offlineMaps_kindMapDetail =>
-      'OpenStreetMap streets, trails, places';
+  String get offlineMaps_kindMapDetail => 'OpenStreetMap: улици, пътеки, места';
 
   @override
-  String get offlineMaps_kindContours => 'Contours';
+  String get offlineMaps_kindContours => 'Хоризонтали';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail => 'Линии на надморската височина';
 
   @override
-  String get offlineMaps_kindUsgs => 'USGS topo map';
+  String get offlineMaps_kindUsgs => 'Топографска карта USGS';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+  String get offlineMaps_kindUsgsDetail => 'Пътеки, потоци, резервати';
 
   @override
-  String get offlineMaps_kindTerrain => 'Hill shading';
+  String get offlineMaps_kindTerrain => 'Засенчване на релефа';
 
   @override
   String get offlineMaps_kindTerrainDetail =>
-      'Hills and mountains, shaded under the map';
+      'Хълмове и планини, засенчени под картата';
 
   @override
-  String get offlineMaps_kindCharts => 'NOAA charts';
+  String get offlineMaps_kindCharts => 'Морски карти на NOAA';
 
   @override
-  String get offlineMaps_usOnly => 'United States only';
+  String get offlineMaps_usOnly => 'Само за САЩ';
 
   @override
   String offlineMaps_download(String size) {
-    return 'Download $size';
+    return 'Изтегли $size';
   }
 
   @override
-  String get offlineMaps_downloadTotal => 'Download';
+  String get offlineMaps_downloadTotal => 'Изтегли';
 
   @override
   String offlineMaps_largeDownload(String size) {
-    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+    return 'Голямо изтегляне ($size). Използвайте Wi‑Fi и дръжте устройството на зарядно.';
   }
 
   @override
-  String get offlineMaps_waiting => 'Waiting…';
+  String get offlineMaps_waiting => 'Изчакване…';
 
   @override
-  String get offlineMaps_checking => 'Checking download…';
+  String get offlineMaps_checking => 'Проверка на изтеглянето…';
 
   @override
-  String get offlineMaps_retrying => 'Retrying…';
+  String get offlineMaps_retrying => 'Нов опит…';
 
   @override
   String offlineMaps_failed(String error) {
-    return 'Download failed: $error';
+    return 'Неуспешно изтегляне: $error';
   }
 
   @override
-  String get offlineMaps_pause => 'Pause';
+  String get offlineMaps_pause => 'Пауза';
 
   @override
-  String get offlineMaps_resume => 'Resume';
+  String get offlineMaps_resume => 'Продължи';
 
   @override
-  String get offlineMaps_deleteRegion => 'Delete region';
+  String get offlineMaps_deleteRegion => 'Изтрий региона';
 
   @override
-  String get offlineMaps_notInCatalogue => 'Not available for this region';
+  String get offlineMaps_notInCatalogue => 'Не е налично за този регион';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => 'Изтегляне на карта';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused =>
+      'Изтеглянето на картата е на пауза';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed => 'Неуспешно изтегляне на картата';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+  String get offlineMaps_clearTileCache => 'Изчисти кеша на онлайн картите';
 
   @override
   String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+      'Да се премахнат ли плочките от онлайн картите, запазени при разглеждане? Изтеглените карти остават.';
 
   @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+  String get offlineMaps_tileCacheCleared =>
+      'Кешът на онлайн картите е изчистен';
 
   @override
-  String get map_notForNavigation => 'Not for navigation';
+  String get map_notForNavigation => 'Не е за навигация';
 
   @override
   String get map_chartsNoticeIntro =>
-      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+      'MeshTrax рисува тези карти по данни на NOAA, за да виждате водата около радиата си и да планирате. Те не са официални карти. Не се ориентирайте по тях при плаване.';
 
   @override
-  String get map_chartsNoticeWhy => 'Why:';
+  String get map_chartsNoticeWhy => 'Защо:';
 
   @override
   String get map_chartsNoticeOutOfDate =>
-      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+      'Остаряват. NOAA постоянно коригира картите си, а изтеглената карта остава същата, докато не я обновите в „Офлайн карти“.';
 
   @override
   String get map_chartsNoticeLeftOut =>
-      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+      'Не показват всичко. Много символи, сектори на светлините и бележки не се изобразяват, а някои надписи се появяват само при увеличение.';
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      'Местоположенията може да са неточни или стари. GPS може да греши с 10 м (30 фута) или повече, а възелът е там, откъдето се е обадил последно.';
 
   @override
   String get map_chartsNoticeNotPlotter =>
-      'MeshTrax isn\'t a certified chart plotter.';
+      'MeshTrax не е сертифициран картплотер.';
 
   @override
   String get map_chartsNoticeUse =>
-      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+      'За навигация използвайте официални, актуални карти на NOAA (хартиени или ENC на NOAA в сертифициран картплотер) с последните Известия до мореплавателите.';
 
   @override
-  String get map_sourceOnline => 'Online';
+  String get map_sourceOnline => 'Онлайн';
 
   @override
-  String get map_sourceOffline => 'Offline';
+  String get map_sourceOffline => 'Офлайн';
 
   @override
-  String get map_downloadForDetail => 'Download a region for detail';
+  String get map_downloadForDetail => 'Изтеглете регион за повече подробности';
 
   @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+  String get map_zoomInForOfflineMap =>
+      'Увеличете, за да видите офлайн картата';
 
   @override
-  String get map_noCharts => 'No charts here';
+  String get map_noCharts => 'Тук няма морски карти';
 
   @override
-  String get map_myLocation => 'My location';
+  String get map_myLocation => 'Моето местоположение';
 
   @override
-  String get map_zoomIn => 'Zoom in';
+  String get map_zoomIn => 'Увеличи';
 
   @override
-  String get map_zoomOut => 'Zoom out';
+  String get map_zoomOut => 'Намали';
 
   @override
   String get gps_title => 'GPS';
 
   @override
-  String get gps_on => 'GPS on';
+  String get gps_on => 'GPS вкл.';
 
   @override
-  String get gps_off => 'GPS off';
+  String get gps_off => 'GPS изкл.';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => 'Радиото обновява местоположението си от GPS.';
 
   @override
   String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+      'Изключеният GPS пести батерията на радиото. След включване намирането на местоположението може да отнеме няколко минути.';
 
   @override
-  String get gps_asking => 'Asking the radio...';
+  String get gps_asking => 'Запитване към радиото...';
 
   @override
   String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+      'Още няма местоположение. На открито първото може да отнеме няколко минути.';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => 'Координати';
 
   @override
-  String get gps_altitude => 'Altitude';
+  String get gps_altitude => 'Надморска височина';
 
   @override
   String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
+    return 'Прочетено от радиото преди $ago';
   }
 
   @override
-  String get gps_turnOnTitle => 'Turn on GPS?';
+  String get gps_turnOnTitle => 'Да се включи ли GPS?';
 
   @override
   String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+      'GPS на радиото е изключен. След включване намирането на местоположението може да отнеме няколко минути.';
 
   @override
-  String get gps_turnOn => 'Turn on';
+  String get gps_turnOn => 'Включи';
 
   @override
-  String get gps_notNow => 'Not now';
+  String get gps_notNow => 'Не сега';
 
   @override
-  String get map_zoomInForCharts => 'Zoom in to see your charts';
+  String get map_zoomInForCharts => 'Увеличете, за да видите морските карти';
 
   @override
   String map_downloadRegion(String region, String size) {
-    return 'Download $region · $size';
+    return 'Изтегли $region · $size';
   }
 
   @override
-  String get mapLayers_title => 'Map layers';
+  String get mapLayers_title => 'Слоеве на картата';
 
   @override
-  String get mapLayers_mapType => 'Map type';
+  String get mapLayers_mapType => 'Тип карта';
 
   @override
-  String get mapLayers_standard => 'Standard';
+  String get mapLayers_standard => 'Стандартна';
 
   @override
-  String get mapLayers_usgs => 'USGS topo';
+  String get mapLayers_usgs => 'Топографска USGS';
 
   @override
-  String get mapLayers_charts => 'Charts';
+  String get mapLayers_charts => 'Морски карти';
 
   @override
-  String get mapLayers_notDownloaded => 'Not downloaded';
+  String get mapLayers_notDownloaded => 'Не е изтеглено';
 
   @override
-  String get mapLayers_offlineOnly => 'Offline only';
+  String get mapLayers_offlineOnly => 'Само офлайн';
 
   @override
-  String get mapLayers_details => 'Map details';
+  String get mapLayers_details => 'Детайли на картата';
 
   @override
-  String get mapLayers_contours => 'Contours';
+  String get mapLayers_contours => 'Хоризонтали';
 
   @override
-  String get mapLayers_hillShading => 'Hill shading';
+  String get mapLayers_hillShading => 'Засенчване на релефа';
 
   @override
-  String get mapLayers_dark => 'Dark map';
+  String get mapLayers_dark => 'Тъмна карта';
 
   @override
-  String get mapLayers_downloadedAreas => 'Downloaded areas';
+  String get mapLayers_downloadedAreas => 'Изтеглени области';
 
   @override
-  String get mapLayers_nodes => 'Nodes';
+  String get mapLayers_nodes => 'Възли';
 
   @override
-  String get mapLayers_pins => 'Pins';
+  String get mapLayers_pins => 'Маркери';
 
   @override
-  String get mapLayers_guessed => 'Guessed';
+  String get mapLayers_guessed => 'Предполагаеми';
 
   @override
-  String get mapLayers_moreFilters => 'More filters';
+  String get mapLayers_moreFilters => 'Още филтри';
 
   @override
-  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+  String get mapLayers_moreFiltersDetail =>
+      'Последно видени, префикс на ключа, припокривания';
 
   @override
-  String get map_legend => 'Legend';
+  String get map_legend => 'Легенда';
 
   @override
-  String get scanner_map => 'Map';
+  String get scanner_map => 'Карта';
 
   @override
-  String get structured_openMap => 'Open map';
+  String get structured_openMap => 'Отвори картата';
 
   @override
-  String get structured_addToCalendar => 'Add to calendar';
+  String get structured_addToCalendar => 'Добави в календара';
 
   @override
-  String get structured_details => 'Details';
+  String get structured_details => 'Подробности';
 
   @override
   String get structured_sos => 'SOS';
 
   @override
-  String get structured_event => 'Event';
+  String get structured_event => 'Събитие';
 
   @override
-  String get structured_notice => 'Notice';
+  String get structured_notice => 'Обявление';
 
   @override
-  String get structured_allDay => 'All day';
+  String get structured_allDay => 'Цял ден';
 
   @override
-  String get structured_calendarFailed => 'Could not open the calendar';
+  String get structured_calendarFailed => 'Календарът не можа да се отвори';
 
   @override
-  String get structured_today => 'Today';
+  String get structured_today => 'Днес';
 
   @override
-  String get structured_tomorrow => 'Tomorrow';
+  String get structured_tomorrow => 'Утре';
 
   @override
   String structured_inDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'In $count days',
-      one: 'In 1 day',
+      other: 'След $count дни',
+      one: 'След $count ден',
     );
     return '$_temp0';
   }
 
   @override
-  String get structured_past => 'Past';
+  String get structured_past => 'Минало';
 
   @override
   String structured_dayOfDays(int day, int total) {
-    return 'Day $day of $total';
+    return 'Ден $day от $total';
   }
 
   @override
@@ -4850,658 +4864,707 @@ class AppLocalizationsBg extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days',
-      one: '1 day',
+      other: '$count дни',
+      one: '$count ден',
     );
     return '$_temp0';
   }
 
   @override
-  String get dialog_eventEndDate => 'End date';
+  String get dialog_eventEndDate => 'Крайна дата';
 
   @override
-  String get dialog_eventSameDay => 'Same day';
+  String get dialog_eventSameDay => 'Същия ден';
 
   @override
-  String get structured_map => 'Map';
+  String get structured_map => 'Карта';
 
   @override
-  String get structured_navigate => 'Navigate';
+  String get structured_navigate => 'Навигация';
 
   @override
-  String get structured_channel => 'Channel';
+  String get structured_channel => 'Канал';
 
   @override
-  String get structured_contact => 'Contact';
+  String get structured_contact => 'Контакт';
 
   @override
-  String get structured_room => 'Room';
+  String get structured_room => 'Стая';
 
   @override
-  String get structured_repeater => 'Repeater';
+  String get structured_repeater => 'Повторител';
 
   @override
-  String get structured_sensor => 'Sensor';
+  String get structured_sensor => 'Датчик';
 
   @override
-  String get structured_joinChannel => 'Join channel';
+  String get structured_joinChannel => 'Присъедини се към канала';
 
   @override
-  String get structured_addContact => 'Add contact';
+  String get structured_addContact => 'Добави контакт';
 
   @override
-  String get structured_addRoom => 'Add room';
+  String get structured_addRoom => 'Добави стая';
 
   @override
-  String get structured_addRepeater => 'Add repeater';
+  String get structured_addRepeater => 'Добави повторител';
 
   @override
-  String get structured_addSensor => 'Add sensor';
+  String get structured_addSensor => 'Добави датчик';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => 'Отвори';
 
   @override
-  String get structured_added => 'Added';
+  String get structured_added => 'Добавено';
 
   @override
-  String get tray_add => 'Add';
+  String get tray_add => 'Добави';
 
   @override
-  String get tray_myLocation => 'My location';
+  String get tray_myLocation => 'Моето местоположение';
 
   @override
-  String get tray_pointOnMap => 'Point on map';
+  String get tray_pointOnMap => 'Точка на картата';
 
   @override
   String get tray_sos => 'SOS';
 
   @override
-  String get tray_event => 'Event';
+  String get tray_event => 'Събитие';
 
   @override
-  String get tray_notice => 'Notice';
+  String get tray_notice => 'Обявление';
 
   @override
   String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+      'Радиото ви още няма местоположение. Изберете го на картата.';
 
   @override
-  String get dialog_insert => 'Insert';
+  String get dialog_insert => 'Вмъкни';
 
   @override
-  String get dialog_eventTitle => 'Title';
+  String get dialog_eventTitle => 'Заглавие';
 
   @override
-  String get dialog_eventDate => 'Date';
+  String get dialog_eventDate => 'Дата';
 
   @override
-  String get dialog_eventStart => 'Start';
+  String get dialog_eventStart => 'Начало';
 
   @override
-  String get dialog_eventEnd => 'End';
+  String get dialog_eventEnd => 'Край';
 
   @override
-  String get dialog_eventNoEnd => 'No end time';
+  String get dialog_eventNoEnd => 'Без краен час';
 
   @override
-  String get dialog_eventPlace => 'Place (optional)';
+  String get dialog_eventPlace => 'Място (по избор)';
 
   @override
-  String get dialog_pickOnMap => 'Pick on map';
+  String get dialog_pickOnMap => 'Избери на картата';
 
   @override
-  String get dialog_sosTitle => 'Send SOS';
+  String get dialog_sosTitle => 'Изпрати SOS';
 
   @override
-  String get dialog_sosText => 'What happened?';
+  String get dialog_sosText => 'Какво се случи?';
 
   @override
-  String get dialog_noticeTitle => 'Notice';
+  String get dialog_noticeTitle => 'Обявление';
 
   @override
-  String get dialog_noticeText => 'What should everyone know?';
+  String get dialog_noticeText => 'Какво трябва да знаят всички?';
 
   @override
-  String get dialog_labelTitle => 'Point on map';
+  String get dialog_labelTitle => 'Точка на картата';
 
   @override
-  String get dialog_note => 'Note (optional)';
+  String get dialog_note => 'Бележка (по избор)';
 
   @override
   String get paste_convertLocation =>
-      'Looks like a maps link. Convert it to a Location?';
+      'Изглежда като връзка към карта. Да се превърне ли в местоположение?';
 
   @override
   String get paste_convertEvent =>
-      'Looks like a calendar share. Convert it to an Event?';
+      'Изглежда като споделено събитие от календар. Да се превърне ли в събитие?';
 
   @override
-  String get paste_convert => 'Convert';
+  String get paste_convert => 'Превърни';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolving => 'Обработка на връзката…';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_resolveFailed => 'Връзката не можа да се обработи';
 
   @override
-  String get pinned_dismiss => 'Dismiss';
+  String get pinned_dismiss => 'Скрий';
 
   @override
   String get tray_gif => 'GIF';
 
   @override
   String link_joinChannelBody(String name) {
-    return 'Join channel $name?';
+    return 'Да се присъедините ли към канала $name?';
   }
 
   @override
   String link_alreadyJoined(String name) {
-    return 'You are already in $name';
+    return 'Вече сте в $name';
   }
 
   @override
   String link_channelJoined(String name) {
-    return 'Joined $name';
+    return 'Присъединихте се към $name';
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint => 'Докоснете картата, за да изберете място';
 
   @override
-  String get map_legendMesh => 'Mesh';
+  String get map_legendMesh => 'Мрежа';
 
   @override
-  String get chartLegend_title => 'Chart symbols';
+  String get chartLegend_title => 'Условни знаци на картата';
 
   @override
-  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+  String get chartLegend_sectionBuoys => 'Шамандури и знаци';
 
   @override
-  String get chartLegend_sectionLights => 'Lights';
+  String get chartLegend_sectionLights => 'Светлини';
 
   @override
-  String get chartLegend_sectionHazards => 'Hazards';
+  String get chartLegend_sectionHazards => 'Опасности';
 
   @override
-  String get chartLegend_sectionTides => 'Tides and currents';
+  String get chartLegend_sectionTides => 'Приливи и течения';
 
   @override
-  String get chartLegend_sectionDepths => 'Depths and seabed';
+  String get chartLegend_sectionDepths => 'Дълбочини и дъно';
 
   @override
-  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+  String get chartLegend_sectionAreas => 'Райони, платна и линии';
 
   @override
-  String get chartLegend_sectionLandmarks => 'Landmarks';
+  String get chartLegend_sectionLandmarks => 'Ориентири';
 
   @override
-  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+  String get chartLegend_sectionAbbreviations => 'Съкращения';
 
   @override
-  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+  String get chartLegend_chartNo1 => 'Всички условни знаци: U.S. Chart No. 1';
 
   @override
-  String get chartLegend_portBuoy => 'Green can buoy';
+  String get chartLegend_portBuoy => 'Зелена цилиндрична шамандура';
 
   @override
   String get chartLegend_portBuoyHint =>
-      'Keep it on your left coming in from sea';
+      'Оставете я вляво, когато влизате от морето';
 
   @override
-  String get chartLegend_starboardBuoy => 'Red nun buoy';
+  String get chartLegend_starboardBuoy => 'Червена конична шамандура';
 
   @override
   String get chartLegend_starboardBuoyHint =>
-      'Keep it on your right coming in: red, right, returning';
+      'Оставете я вдясно при влизане: червено — вдясно, когато се връщате от морето';
 
   @override
-  String get chartLegend_junctionBuoy => 'Banded buoy';
+  String get chartLegend_junctionBuoy => 'Шамандура с хоризонтални ивици';
 
   @override
   String get chartLegend_junctionBuoyHint =>
-      'A channel junction: treat it as the colour of its top band';
+      'Разклонение на фарватера: приемете я за цвета на горната ивица';
 
   @override
-  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+  String get chartLegend_safeWaterBuoy => 'Червени и бели вертикални ивици';
 
   @override
   String get chartLegend_safeWaterBuoyHint =>
-      'Safe water all around, often at a channel entrance';
+      'Безопасни води наоколо, често при входа на фарватер';
 
   @override
-  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+  String get chartLegend_isolatedDangerBuoy => 'Черни и червени ивици';
 
   @override
   String get chartLegend_isolatedDangerBuoyHint =>
-      'A small danger with safe water around it: keep clear';
+      'Малка опасност с безопасни води около нея: стойте настрана';
 
   @override
-  String get chartLegend_specialBuoy => 'Yellow buoy';
+  String get chartLegend_specialBuoy => 'Жълта шамандура';
 
   @override
   String get chartLegend_specialBuoyHint =>
-      'Special purpose, not for steering by: anchorage, cable, research';
+      'Специален знак, не за навигация: котвена стоянка, кабел, изследвания';
 
   @override
-  String get chartLegend_cardinalBuoy => 'Black and yellow';
+  String get chartLegend_cardinalBuoy => 'Черно и жълто';
 
   @override
   String get chartLegend_cardinalBuoyHint =>
-      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+      'Кардинален знак: минете от страната, на която е наречен (рядко в САЩ)';
 
   @override
-  String get chartLegend_mooringBuoy => 'Mooring buoy';
+  String get chartLegend_mooringBuoy => 'Швартова шамандура';
 
   @override
-  String get chartLegend_portBeacon => 'Green square daybeacon';
+  String get chartLegend_portBeacon => 'Зелен квадратен знак';
 
   @override
   String get chartLegend_portBeaconHint =>
-      'Like a green buoy: keep it on your left coming in';
+      'Като зелена шамандура: оставете го вляво при влизане';
 
   @override
-  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+  String get chartLegend_starboardBeacon => 'Червен триъгълен знак';
 
   @override
   String get chartLegend_starboardBeaconHint =>
-      'Like a red buoy: keep it on your right coming in';
+      'Като червена шамандура: оставете го вдясно при влизане';
 
   @override
-  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+  String get chartLegend_otherBeacon => 'Ромбовиден знак';
 
   @override
   String get chartLegend_otherBeaconHint =>
-      'Information or a warning, not a side of the channel';
+      'Информация или предупреждение, а не страна на фарватера';
 
   @override
-  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+  String get chartLegend_beaconTower => 'Фарова кула или конструкция на знак';
 
   @override
-  String get chartLegend_topmark => 'Topmark';
+  String get chartLegend_topmark => 'Топова фигура';
 
   @override
   String get chartLegend_topmarkHint =>
-      'The shape on top of a mark adds to its meaning';
+      'Фигурата върху знака допълва значението му';
 
   @override
-  String get chartLegend_light => 'Light';
+  String get chartLegend_light => 'Светлина';
 
   @override
   String get chartLegend_lightHint =>
-      'The magenta flare marks a light; its label tells how it flashes';
+      'Пурпурният пламък обозначава светлина; надписът казва как мига';
 
   @override
-  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+  String get chartLegend_lightExample =>
+      'Зелена проблясваща, на всеки 4 секунди';
 
   @override
   String get chartLegend_lightExampleHint =>
-      'A light\'s label: rhythm, colour, then period';
+      'Надписът на светлината: ритъм, цвят, после период';
 
   @override
-  String get chartLegend_lightFixed => 'Fixed';
+  String get chartLegend_lightFixed => 'Постоянна';
 
   @override
-  String get chartLegend_lightFixedHint => 'A steady light';
+  String get chartLegend_lightFixedHint => 'Свети без прекъсване';
 
   @override
-  String get chartLegend_lightFlashing => 'Flashing';
+  String get chartLegend_lightFlashing => 'Проблясваща';
 
   @override
   String get chartLegend_lightFlashingHint =>
-      'Short flashes, longer dark between';
+      'Кратки проблясъци, по-дълга тъмнина между тях';
 
   @override
-  String get chartLegend_lightGroup => 'Group flashing';
+  String get chartLegend_lightGroup => 'Групово проблясваща';
 
   @override
   String get chartLegend_lightGroupHint =>
-      'Flashes in groups, here 2, then dark';
+      'Проблясъци на групи, тук по 2, после тъмно';
 
   @override
-  String get chartLegend_lightComposite => 'Composite group';
+  String get chartLegend_lightComposite => 'Съставна групово проблясваща';
 
   @override
   String get chartLegend_lightCompositeHint =>
-      '2 flashes, then 1: marks a channel junction';
+      '2 проблясъка, после 1: разклонение на фарватера';
 
   @override
-  String get chartLegend_lightQuick => 'Quick';
+  String get chartLegend_lightQuick => 'Бързо проблясваща';
 
   @override
-  String get chartLegend_lightQuickHint => 'About one flash a second';
+  String get chartLegend_lightQuickHint => 'Около един проблясък в секунда';
 
   @override
-  String get chartLegend_lightIsophase => 'Isophase';
+  String get chartLegend_lightIsophase => 'Изофазна';
 
   @override
-  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+  String get chartLegend_lightIsophaseHint =>
+      'Еднакво време светлина и тъмнина';
 
   @override
-  String get chartLegend_lightOcculting => 'Occulting';
+  String get chartLegend_lightOcculting => 'Затъмняваща се';
 
   @override
-  String get chartLegend_lightOccultingHint => 'On longer than off';
+  String get chartLegend_lightOccultingHint =>
+      'Свети по-дълго, отколкото е тъмно';
 
   @override
-  String get chartLegend_lightMorse => 'Morse code A';
+  String get chartLegend_lightMorse => 'Морзов код A';
 
   @override
-  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+  String get chartLegend_lightMorseHint => 'Кратко, дълго: безопасни води';
 
   @override
-  String get chartLegend_lightAlternating => 'Alternating';
+  String get chartLegend_lightAlternating => 'Редуваща се';
 
   @override
-  String get chartLegend_lightAlternatingHint => 'Changes colour';
+  String get chartLegend_lightAlternatingHint => 'Сменя цвета си';
 
   @override
-  String get chartLegend_lightColours => 'White, red, green, yellow';
+  String get chartLegend_lightColours => 'Бяла, червена, зелена, жълта';
 
   @override
-  String get chartLegend_lightPeriod => 'Period';
+  String get chartLegend_lightPeriod => 'Период';
 
   @override
-  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+  String get chartLegend_lightPeriodHint => 'Секунди за един пълен цикъл';
 
   @override
-  String get chartLegend_rock => 'Underwater rock';
+  String get chartLegend_rock => 'Подводна скала';
 
   @override
-  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+  String get chartLegend_rockHint =>
+      'Винаги под водата, но може да е близо до повърхността';
 
   @override
-  String get chartLegend_rockAwash => 'Rock awash';
+  String get chartLegend_rockAwash => 'Скала на нивото на водата';
 
   @override
-  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+  String get chartLegend_rockAwashHint => 'Близо до повърхността при отлив';
 
   @override
-  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+  String get chartLegend_rockCovers => 'Скала, която се показва и скрива';
 
   @override
   String get chartLegend_rockCoversHint =>
-      'Shows at low tide, covered at high tide';
+      'Показва се при отлив, скрита е при прилив';
 
   @override
-  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+  String get chartLegend_wreckDangerous => 'Опасен потънал кораб';
 
   @override
-  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+  String get chartLegend_wreckDangerousHint =>
+      'Достатъчно плитко, за да го ударите';
 
   @override
-  String get chartLegend_wreck => 'Wreck';
+  String get chartLegend_wreck => 'Потънал кораб';
 
   @override
   String get chartLegend_wreckHint =>
-      'Deep enough for boats on the surface; don\'t anchor';
+      'Достатъчно дълбоко за плавателни съдове; не пускайте котва';
 
   @override
-  String get chartLegend_wreckShowing => 'Wreck showing';
+  String get chartLegend_wreckShowing => 'Потънал кораб, видим над водата';
 
   @override
-  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+  String get chartLegend_wreckShowingHint => 'Част от него се вижда над водата';
 
   @override
-  String get chartLegend_obstruction => 'Obstruction';
+  String get chartLegend_obstruction => 'Препятствие';
 
   @override
   String get chartLegend_obstructionHint =>
-      'Something on the bottom; its depth when known';
+      'Нещо на дъното; дълбочината над него, ако е известна';
 
   @override
-  String get chartLegend_foulGround => 'Foul ground';
+  String get chartLegend_foulGround => 'Замърсено дъно';
 
   @override
   String get chartLegend_foulGroundHint =>
-      'Safe to pass over, but don\'t anchor or trawl';
+      'Може да се минава отгоре, но не пускайте котва и не тралете';
 
   @override
-  String get chartLegend_hazardArea => 'Edge of a danger area';
+  String get chartLegend_hazardArea => 'Граница на опасен район';
 
   @override
   String get chartLegend_hazardAreaHint =>
-      'Rocks, wrecks or obstructions inside';
+      'Вътре има скали, потънали кораби или препятствия';
 
   @override
-  String get chartLegend_pile => 'Pile or post';
+  String get chartLegend_pile => 'Пилон или стълб';
 
   @override
-  String get chartLegend_floodStream => 'Flood stream';
+  String get chartLegend_floodStream => 'Приливно течение';
 
   @override
-  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+  String get chartLegend_floodStreamHint => 'Течение, докато водата се покачва';
 
   @override
-  String get chartLegend_ebbStream => 'Ebb stream';
+  String get chartLegend_ebbStream => 'Отливно течение';
 
   @override
-  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+  String get chartLegend_ebbStreamHint => 'Течение, докато водата спада';
 
   @override
-  String get chartLegend_current => 'Current';
+  String get chartLegend_current => 'Постоянно течение';
 
   @override
-  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+  String get chartLegend_currentHint =>
+      'Тече в една посока независимо от прилива';
 
   @override
-  String get chartLegend_rips => 'Tide rips or eddies';
+  String get chartLegend_rips => 'Вълнения или водовъртежи';
 
   @override
-  String get chartLegend_ripsHint => 'Rough, swirling water';
+  String get chartLegend_ripsHint => 'Бурна, завихрена вода';
 
   @override
-  String get chartLegend_breakers => 'Breakers';
+  String get chartLegend_breakers => 'Разбиващи се вълни';
 
   @override
-  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+  String get chartLegend_breakersHint => 'Вълни се разбиват над плитчини';
 
   @override
-  String get chartLegend_sounding => 'Sounding';
+  String get chartLegend_sounding => 'Измерена дълбочина';
 
   @override
-  String get chartLegend_soundingHint => 'Depth at an average low tide';
+  String get chartLegend_soundingHint => 'Дълбочина при среден отлив';
 
   @override
-  String get chartLegend_depthContour => 'Depth contour';
+  String get chartLegend_depthContour => 'Изобата';
 
   @override
-  String get chartLegend_depthContourHint => 'Its label gives the depth';
+  String get chartLegend_depthContourHint => 'Надписът ѝ показва дълбочината';
 
   @override
-  String get chartLegend_drying => 'Dries at low tide';
+  String get chartLegend_drying => 'Пресъхва при отлив';
 
   @override
-  String get chartLegend_dredged => 'Dredged channel';
+  String get chartLegend_dredged => 'Драгиран канал';
 
   @override
-  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+  String get chartLegend_dredgedHint => 'Поддържа се показаната дълбочина';
 
   @override
-  String get chartLegend_swept => 'Swept area';
+  String get chartLegend_swept => 'Протрален район';
 
   @override
-  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+  String get chartLegend_sweptHint =>
+      'Проверен като чист до показаната дълбочина';
 
   @override
-  String get chartLegend_unsurveyed => 'Unsurveyed';
+  String get chartLegend_unsurveyed => 'Непроучено';
 
   @override
-  String get chartLegend_unsurveyedHint => 'No depths measured';
+  String get chartLegend_unsurveyedHint => 'Няма измерени дълбочини';
 
   @override
-  String get chartLegend_weed => 'Kelp or weed';
+  String get chartLegend_weed => 'Ламинария или водорасли';
 
   @override
-  String get chartLegend_restricted => 'Restricted area';
+  String get chartLegend_restricted => 'Район с ограничения';
 
   @override
   String get chartLegend_restrictedHint =>
-      'Entry limited; the ticks point inside';
+      'Достъпът е ограничен; чертичките сочат навътре';
 
   @override
-  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+  String get chartLegend_regulatedLimit => 'Граница на регулиран район';
 
   @override
   String get chartLegend_regulatedLimitHint =>
-      'Anchorage, cable area, firing area and more: see its label';
+      'Котвена стоянка, кабелен район, район за стрелби и др.: вижте надписа';
 
   @override
-  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+  String get chartLegend_greyLimit =>
+      'Депо за изкопан грунт, риболовен район или ферма';
 
   @override
-  String get chartLegend_anchorage => 'Anchorage';
+  String get chartLegend_anchorage => 'Котвена стоянка';
 
   @override
-  String get chartLegend_anchorBerth => 'Anchor berth';
+  String get chartLegend_anchorBerth => 'Котвено място';
 
   @override
-  String get chartLegend_noAnchoring => 'No anchoring';
+  String get chartLegend_noAnchoring => 'Забранено пускане на котва';
 
   @override
-  String get chartLegend_caution => 'Caution area';
+  String get chartLegend_caution => 'Предупредителен район';
 
   @override
-  String get chartLegend_cautionHint => 'Take extra care here';
+  String get chartLegend_cautionHint => 'Бъдете особено внимателни тук';
 
   @override
-  String get chartLegend_trafficLane => 'Traffic lane';
+  String get chartLegend_trafficLane => 'Платно за движение';
 
   @override
   String get chartLegend_trafficLaneHint =>
-      'Big ships, one way: cross at right angles';
+      'Големи кораби, еднопосочно: пресичайте под прав ъгъл';
 
   @override
-  String get chartLegend_separationZone => 'Separation zone';
+  String get chartLegend_separationZone => 'Разделителна зона';
 
   @override
   String get chartLegend_separationZoneHint =>
-      'Between traffic lanes: keep out';
+      'Между платната за движение: не влизайте';
 
   @override
-  String get chartLegend_precautionary => 'Precautionary area';
+  String get chartLegend_precautionary => 'Район за повишено внимание';
 
   @override
-  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+  String get chartLegend_precautionaryHint =>
+      'Тук корабите се събират: внимавайте';
 
   @override
-  String get chartLegend_fairway => 'Fairway';
+  String get chartLegend_fairway => 'Фарватер';
 
   @override
-  String get chartLegend_fairwayHint => 'A main channel';
+  String get chartLegend_fairwayHint => 'Основен плавателен път';
 
   @override
-  String get chartLegend_track => 'Recommended track';
+  String get chartLegend_track => 'Препоръчителен курс';
 
   @override
-  String get chartLegend_ferry => 'Ferry route';
+  String get chartLegend_ferry => 'Фериботна линия';
 
   @override
-  String get chartLegend_leadingLine => 'Leading line';
+  String get chartLegend_leadingLine => 'Створна линия';
 
   @override
   String get chartLegend_leadingLineHint =>
-      'Line up its two marks to stay in the channel';
+      'Подравнете двата ѝ знака, за да останете във фарватера';
 
   @override
-  String get chartLegend_cable => 'Submarine cable';
+  String get chartLegend_cable => 'Подводен кабел';
 
   @override
-  String get chartLegend_cableHint => 'Don\'t anchor';
+  String get chartLegend_cableHint => 'Не пускайте котва';
 
   @override
-  String get chartLegend_pipeline => 'Submarine pipeline';
+  String get chartLegend_pipeline => 'Подводен тръбопровод';
 
   @override
-  String get chartLegend_pipelineHint => 'Don\'t anchor';
+  String get chartLegend_pipelineHint => 'Не пускайте котва';
 
   @override
-  String get chartLegend_overhead => 'Overhead cable';
+  String get chartLegend_overhead => 'Въздушен кабел';
 
   @override
-  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+  String get chartLegend_overheadHint => 'Височината под него е означена с VC';
 
   @override
-  String get chartLegend_tower => 'Tower';
+  String get chartLegend_tower => 'Кула';
 
   @override
-  String get chartLegend_windTurbine => 'Wind turbine';
+  String get chartLegend_windTurbine => 'Вятърна турбина';
 
   @override
-  String get chartLegend_chimney => 'Chimney';
+  String get chartLegend_chimney => 'Комин';
 
   @override
-  String get chartLegend_mast => 'Mast or antenna';
+  String get chartLegend_mast => 'Мачта или антена';
 
   @override
-  String get chartLegend_church => 'Church or spire';
+  String get chartLegend_church => 'Църква или шпил';
 
   @override
-  String get chartLegend_flagstaff => 'Flagstaff';
+  String get chartLegend_flagstaff => 'Флагщок';
 
   @override
-  String get chartLegend_dome => 'Dome';
+  String get chartLegend_dome => 'Купол';
 
   @override
-  String get chartLegend_landmark => 'Other landmark';
+  String get chartLegend_landmark => 'Друг ориентир';
 
   @override
-  String get chartLegend_abbrAnch => 'Anchorage';
+  String get chartLegend_abbrAnch => 'Котвена стоянка';
 
   @override
-  String get chartLegend_abbrWk => 'Wreck';
+  String get chartLegend_abbrWk => 'Потънал кораб';
 
   @override
-  String get chartLegend_abbrBr => 'Breakers';
+  String get chartLegend_abbrBr => 'Разбиващи се вълни';
 
   @override
-  String get chartLegend_abbrWd => 'Weed';
+  String get chartLegend_abbrWd => 'Водорасли';
 
   @override
-  String get chartLegend_abbrVar => 'Magnetic variation';
+  String get chartLegend_abbrVar => 'Магнитна деклинация';
 
   @override
-  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+  String get chartLegend_abbrVc => 'Височина под мост или кабел';
 
   @override
-  String get chartLegend_abbrTr => 'Tower';
+  String get chartLegend_abbrTr => 'Кула';
 
   @override
-  String get chartLegend_abbrCh => 'Church';
+  String get chartLegend_abbrCh => 'Църква';
 
   @override
-  String get chartLegend_abbrChy => 'Chimney';
+  String get chartLegend_abbrChy => 'Комин';
 
   @override
-  String get chartLegend_abbrFs => 'Flagstaff';
+  String get chartLegend_abbrFs => 'Флагщок';
 
   @override
-  String get chartLegend_abbrTk => 'Tank';
+  String get chartLegend_abbrTk => 'Резервоар';
 
   @override
-  String get chartLegend_abbrRBn => 'Radio beacon';
+  String get chartLegend_abbrRBn => 'Радиофар';
 
   @override
-  String get chartLegend_abbrCg => 'Coast Guard station';
+  String get chartLegend_abbrCg => 'Станция на бреговата охрана';
 
   @override
-  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+  String get chartLegend_abbrRacon =>
+      'Радарен маяк-отговарящ: вижда се на радара';
 
   @override
   String get chartLegend_abbrFog =>
-      'Fog signal: horn, bell, gong, whistle or siren';
+      'Мъглов сигнал: тифон, камбана, гонг, свирка или сирена';
 
   @override
-  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+  String get chartLegend_abbrVAis => 'Виртуален знак: показва се само в AIS';
 
   @override
   String chartLegend_depthRange(String from, String to) {
-    return '$from to $to';
+    return 'от $from до $to';
   }
 
   @override
   String chartLegend_depthOver(String depth) {
-    return 'Deeper than $depth';
+    return 'По-дълбоко от $depth';
   }
+
+  @override
+  String get parkLegend_title => 'Символи за паркове и пътеки';
+
+  @override
+  String get parkLegend_campsite => 'Къмпинг';
+
+  @override
+  String get parkLegend_picnicSite => 'Място за пикник';
+
+  @override
+  String get parkLegend_shelter => 'Заслон';
+
+  @override
+  String get parkLegend_toilets => 'Тоалетна';
+
+  @override
+  String get parkLegend_drinkingWater => 'Питейна вода';
+
+  @override
+  String get parkLegend_parking => 'Паркинг';
+
+  @override
+  String get parkLegend_viewpoint => 'Панорамна площадка';
+
+  @override
+  String get parkLegend_attraction => 'Забележителност';
+
+  @override
+  String get parkLegend_gate => 'Порта';
+
+  @override
+  String get parkLegend_telephone => 'Телефон';
+
+  @override
+  String get parkLegend_information => 'Информационно табло';
+
+  @override
+  String get parkLegend_guidepost => 'Указателна табела';
 }

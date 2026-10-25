@@ -131,9 +131,14 @@ void main() {
     expect(tester.getTopLeft(find.text('Map details')).dy, lessThan(before));
   });
 
-  testWidgets('the legend button shows only on the chart map', (tester) async {
+  testWidgets('the legend button shows on offline maps with symbols', (
+    tester,
+  ) async {
     await pumpScreen(tester);
-    expect(find.byTooltip('Legend'), findsNothing);
+    expect(find.byTooltip('Legend'), findsNothing, reason: 'online');
+    await settings.setMapSource('offline');
+    await tester.pump();
+    expect(find.byTooltip('Legend'), findsOneWidget, reason: 'OSM icons');
 
     await settings.setChartsNoticeDismissed(true);
     await settings.setMapSource('offline');

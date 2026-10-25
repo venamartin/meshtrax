@@ -13,33 +13,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'MeshTrax';
 
   @override
-  String get nav_chats => 'Chats';
+  String get nav_chats => '聊天';
 
   @override
-  String get chats_title => 'Chats';
+  String get chats_title => '聊天';
 
   @override
-  String get newChat_title => 'Select contact';
+  String get newChat_title => '选择联系人';
 
   @override
   String newChat_contactCount(int count) {
-    return '$count contacts';
+    return '$count 个联系人';
   }
 
   @override
-  String get newChat_newContact => 'New Contact';
+  String get newChat_newContact => '新建联系人';
 
   @override
-  String get newChat_newChannel => 'New Channel';
+  String get newChat_newChannel => '新建频道';
 
   @override
-  String get newChat_myContacts => 'My Contacts';
+  String get newChat_myContacts => '我的联系人';
 
   @override
-  String get newChat_discovered => 'Discovered';
+  String get newChat_discovered => '已发现';
 
   @override
-  String get repeaters_title => 'Manage Repeaters';
+  String get repeaters_title => '管理转发节点';
 
   @override
   String get nav_contacts => '联系人';
@@ -54,16 +54,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_cancel => '取消';
 
   @override
-  String get common_syncing_device_info => 'Reading device info...';
+  String get common_syncing_device_info => '正在读取设备信息...';
 
   @override
-  String get common_syncing_contacts => 'Reading contacts...';
+  String get common_syncing_contacts => '正在读取联系人...';
 
   @override
-  String get common_syncing_channels => 'Reading channels...';
+  String get common_syncing_channels => '正在读取频道...';
 
   @override
-  String get common_syncing_messages => 'Reading messages...';
+  String get common_syncing_messages => '正在读取消息...';
 
   @override
   String get common_ok => '确定';
@@ -105,10 +105,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_disconnected => '已断开';
 
   @override
-  String get common_connectionLost => 'Connection lost. Reconnecting...';
+  String get common_connectionLost => '连接已断开。正在重新连接...';
 
   @override
-  String get common_reconnecting => 'Reconnecting...';
+  String get common_reconnecting => '正在重新连接...';
 
   @override
   String get common_create => '创建';
@@ -249,11 +249,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get usbErrorNativeLibraryMissing =>
-      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+      '此版本缺少 USB 串口库，无法打开 USB 设备。请重新安装 MeshTrax，或报告此版本有问题。';
 
   @override
   String get usbErrorBrowserUnsupported =>
-      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+      '此浏览器不支持 Web Serial。请通过 HTTPS（或 localhost）使用 Chrome 或 Edge。';
 
   @override
   String get usbErrorAlreadyActive => 'USB 连接已建立。';
@@ -302,18 +302,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get scanner_showAllDevices => 'Show all Bluetooth devices';
+  String get scanner_showAllDevices => '显示所有蓝牙设备';
 
   @override
-  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
+  String get scanner_showMeshCoreOnly => '仅显示 MeshCore 电台';
 
   @override
   String get scanner_radioNotResponding =>
-      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+      '电台没有响应。可能需要先配对：打开蓝牙设置，添加该电台并输入其 PIN，然后重试。';
 
   @override
   String get scanner_pairingFailed =>
-      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+      '蓝牙配对已取消或失败。请确保没有其他设备（例如您的手机）连接着该电台，然后重试并输入其 PIN。';
 
   @override
   String scanner_connectionFailed(String error) {
@@ -327,10 +327,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanner_scan => '扫描';
 
   @override
-  String get scanner_scanFromImage => 'Scan from image';
+  String get scanner_scanFromImage => '从图片扫描';
 
   @override
-  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+  String get scanner_noQrFoundInImage => '图片中未找到有效的二维码';
 
   @override
   String get scanner_bluetoothOff => '蓝牙已关闭';
@@ -702,18 +702,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_enableMessageTracingSubtitle => '显示消息的详细路由和时间元数据';
 
   @override
-  String get appSettings_senderNameColors => 'Colorful sender names';
+  String get appSettings_senderNameColors => '彩色发送者名称';
 
   @override
   String get appSettings_senderNameColorsSubtitle =>
-      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+      '为每位频道发送者分配各自的名称颜色。关闭后所有人都使用主题颜色。';
 
   @override
-  String get appSettings_showTextFormatting => 'Show text formatting';
+  String get appSettings_showTextFormatting => '显示文本格式';
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      '消息中的 Markdown：**粗体**、*斜体*、||剧透||、标题和链接。其他 MeshCore 应用会显示原始字符。';
 
   @override
   String get appSettings_notifications => '通知';
@@ -761,12 +761,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_maxMessageRetriesSubtitle => '在将消息标记为失败之前，允许尝试的次数';
 
   @override
-  String get appSettings_maxChannelMessageRetries =>
-      'Max Channel Message Retries';
+  String get appSettings_maxChannelMessageRetries => '频道消息最大重试次数';
 
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
-      'It will retry this many times until it hears at least one repeat';
+      '在听到至少一次转发之前，最多重试这么多次';
 
   @override
   String get appSettings_battery => '电池';
@@ -869,11 +868,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_appDebugLoggingDisabled => '应用调试日志已禁用';
 
   @override
-  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+  String get appSettings_incrementalContactSync => '增量同步联系人';
 
   @override
   String get appSettings_incrementalContactSyncSubtitle =>
-      'On reconnect, ask the radio only for contacts that changed since last time';
+      '重新连接时，只向电台请求自上次以来有变化的联系人';
 
   @override
   String get contacts_title => '联系人';
@@ -882,11 +881,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contacts_noContacts => '暂无联系人';
 
   @override
-  String get contacts_shareMyQrCode => 'Share My QR Code';
+  String get contacts_shareMyQrCode => '分享我的二维码';
 
   @override
-  String get contacts_shareQrCodeDesc =>
-      'Let others scan to add you as a contact';
+  String get contacts_shareQrCodeDesc => '让他人扫描以将您添加为联系人';
 
   @override
   String get contacts_contactsWillAppear => '当设备发送广播时，联系人将显示。';
@@ -933,21 +931,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String contacts_deleteContactConfirm(String contactName) {
-    return 'Are you sure you want to delete $contactName?';
+    return '确定要删除 $contactName 吗？';
   }
 
   @override
   String contacts_contactDeleted(String contactName) {
-    return 'Contact $contactName deleted.';
+    return '已删除联系人 $contactName。';
   }
 
   @override
   String contacts_contactDeleteFailed(String contactName) {
-    return 'Failed to delete $contactName.';
+    return '删除 $contactName 失败。';
   }
 
   @override
-  String get contacts_noMatchingContacts => 'No contacts match the filter.';
+  String get contacts_noMatchingContacts => '没有符合筛选条件的联系人。';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -1061,7 +1059,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contact_teleEnvSubtitle => '允许共享环境传感器数据';
 
   @override
-  String get contacts_publicKey => 'Public Key';
+  String get contacts_publicKey => '公钥';
 
   @override
   String get channels_title => '频道';
@@ -1102,24 +1100,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channels_editChannel => '编辑频道';
 
   @override
-  String get channels_shareChannel => 'Share Channel';
+  String get channels_shareChannel => '分享频道';
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      '扫描二维码以添加频道。\n菜单 → 添加频道 → 扫描二维码';
 
   @override
-  String get channels_secretKey => 'Secret Key';
+  String get channels_secretKey => '密钥';
 
   @override
   String get channels_meshcoreUri => 'MeshCore URI';
 
   @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
+  String get channels_shareChannelQr => '扫描频道二维码';
 
   @override
-  String get channels_shareChannelWarning =>
-      'Warning: Anyone who scans this QR code will have access to this channel.';
+  String get channels_shareChannelWarning => '警告：任何扫描此二维码的人都能访问此频道。';
 
   @override
   String get channels_muteChannel => '静音频道';
@@ -1173,25 +1170,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channels_pskMustBe32Hex => 'PSK 必须为 32 个十六进制字符';
 
   @override
-  String get channels_addChannelConfirmation =>
-      'Do you want to add the following channel?';
+  String get channels_addChannelConfirmation => '是否添加以下频道？';
 
   @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
+  String get channels_channelAddedSuccess => '频道添加成功。';
 
   @override
-  String get channels_noAvailableChannelSlots => 'No available channel slots.';
+  String get channels_noAvailableChannelSlots => '没有可用的频道槽位。';
 
   @override
-  String get appSettings_mentionNotifications => 'Mention notifications';
+  String get appSettings_mentionNotifications => '提及通知';
 
   @override
   String get appSettings_mentionNotificationsSubtitle =>
-      'When someone mentions or replies to you — even in muted channels';
+      '有人提及或回复您时 — 即使在已静音的频道中';
 
   @override
   String notification_mentionIn(String channelName) {
-    return 'Mention in $channelName';
+    return '在 $channelName 中被提及';
   }
 
   @override
@@ -1297,13 +1293,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_location => '位置';
 
   @override
-  String get common_copiedToClipboard => 'Copied to clipboard';
+  String get common_copiedToClipboard => '已复制到剪贴板';
 
   @override
-  String get common_copyToClipboard => 'Copy to clipboard';
+  String get common_copyToClipboard => '复制到剪贴板';
 
   @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
+  String get contacts_copyContactToClipboard => '复制我的联系人到剪贴板';
 
   @override
   String get chat_typeMessage => '输入消息...';
@@ -1332,7 +1328,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_reply => '回复';
 
   @override
-  String get chat_newMessages => 'NEW MESSAGES';
+  String get chat_newMessages => '新消息';
 
   @override
   String get chat_addReaction => '添加表情';
@@ -1341,80 +1337,77 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_mention => '提及';
 
   @override
-  String get dmChannel_menuLabel => 'Direct Message';
+  String get dmChannel_menuLabel => '私信';
 
   @override
   String dmChannel_pickerTitle(String name) {
-    return 'Send DM to $name';
+    return '给 $name 发私信';
   }
 
   @override
-  String get dmChannel_pickerHint =>
-      'Check the key and last-seen time — names are not unique.';
+  String get dmChannel_pickerHint => '请核对公钥和最后出现时间 — 名称可能重复。';
 
   @override
-  String get dmChannel_warningTitle => 'Is this really them?';
+  String get dmChannel_warningTitle => '真的是对方吗？';
 
   @override
   String get dmChannel_warningBody =>
-      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+      '频道中的名称是自己取的，任何人都可以冒充。涉及敏感内容时，请先通过其他方式核实此联系人的公钥。';
 
   @override
-  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+  String get dmChannel_dontShowAgain => '不再显示';
 
   @override
-  String get batterySleep_title => 'Keep MeshTrax running';
+  String get batterySleep_title => '保持 MeshTrax 运行';
 
   @override
   String get batterySleep_bodySamsung =>
-      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+      '三星手机会让应用休眠以节省电量，这会切断与电台的连接。请打开 设置 → 应用程序 → MeshTrax → 电池，选择“不受限制”。另请在 电池 → 后台使用限制 中确认 MeshTrax 不在“休眠应用程序”或“深度休眠应用程序”中。';
 
   @override
   String get batterySleep_bodyGeneric =>
-      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+      '手机可能会为节省电量在后台停止 MeshTrax，这会切断与电台的连接。请打开电池设置，将 MeshTrax 设为“不受限制”（或“无限制”）。部分手机还需要为 MeshTrax 开启“自启动”。';
 
   @override
-  String get batterySleep_openSettings => 'Open settings';
+  String get batterySleep_openSettings => '打开设置';
 
   @override
-  String get batterySleep_notNow => 'Not now';
+  String get batterySleep_notNow => '以后再说';
 
   @override
-  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+  String get batterySleep_settingsTile => '让 MeshTrax 在后台保持运行';
 
   @override
-  String get batterySleep_settingsTileSubtitle =>
-      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+  String get batterySleep_settingsTileSubtitle => '防止手机的省电功能让 MeshTrax 休眠';
 
   @override
   String dmChannel_noMatchTitle(String name) {
-    return 'Can\'t DM $name yet';
+    return '暂时无法给 $name 发私信';
   }
 
   @override
   String get dmChannel_noMatchBody =>
-      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+      '您还没有对方的密钥，对方也需要您的密钥才能回复 — 密钥只通过广播传递。“发送我的广播”会在这里直接广播您的密钥。“在频道中请求”会在消息框中写好一条请求，由您发送。';
 
   @override
-  String get dmChannel_askInChannel => 'Ask in channel';
+  String get dmChannel_askInChannel => '在频道中请求';
 
   @override
-  String get dmChannel_sendMyAdvert => 'Send my advert';
+  String get dmChannel_sendMyAdvert => '发送我的广播';
 
   @override
-  String get dmChannel_askText => 'please send an advert so I can DM you';
+  String get dmChannel_askText => '请发一次广播，方便我给你发私信';
 
   @override
-  String get dmChannel_watching =>
-      'Watching for their advert — you\'ll be asked here when it arrives.';
+  String get dmChannel_watching => '正在等待对方的广播 — 收到后会在这里提示您。';
 
   @override
   String dmChannel_advertHeard(String name) {
-    return '$name is now reachable';
+    return '现在可以联系 $name 了';
   }
 
   @override
-  String get dmChannel_openDm => 'DM';
+  String get dmChannel_openDm => '私信';
 
   @override
   String get appSettings_zoomLevel => '缩放级别';
@@ -1423,14 +1416,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_reset => '重置';
 
   @override
-  String get chat_reactionsTitle => 'Reactions';
+  String get chat_reactionsTitle => '表情回应';
 
   @override
-  String get chat_reactionUnknownSender => 'Unknown';
+  String get chat_reactionUnknownSender => '未知';
 
   @override
   String chat_reactionTargetMissing(String sender) {
-    return '$sender reacted to a message that isn\'t in this chat';
+    return '$sender 回应了一条不在此聊天中的消息';
   }
 
   @override
@@ -1479,22 +1472,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get debugLog_copyLog => '复制日志';
 
   @override
-  String get debugLog_saveLog => 'Save log to file';
+  String get debugLog_saveLog => '将日志保存到文件';
 
   @override
-  String get debugLog_saved => 'Log saved';
+  String get debugLog_saved => '日志已保存';
 
   @override
-  String get debugLog_saveCancelled => 'Save cancelled';
+  String get debugLog_saveCancelled => '已取消保存';
 
   @override
-  String get debugLog_filterAll => 'All';
+  String get debugLog_filterAll => '全部';
 
   @override
-  String get debugLog_filterWarnings => 'Warnings';
+  String get debugLog_filterWarnings => '警告';
 
   @override
-  String get debugLog_filterErrors => 'Errors';
+  String get debugLog_filterErrors => '错误';
 
   @override
   String get debugLog_clearLog => '清除日志';
@@ -1557,7 +1550,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get debugFrame_textTypeCli => '命令行';
 
   @override
-  String get debugFrame_textTypeCliCommand => 'CLI command';
+  String get debugFrame_textTypeCliCommand => 'CLI 命令';
 
   @override
   String get debugFrame_textTypePlain => '纯文本';
@@ -2894,13 +2887,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listFilter_filters => '筛选';
 
   @override
-  String get listFilter_source => 'Source';
+  String get listFilter_source => '来源';
 
   @override
-  String get listFilter_saved => 'Saved';
+  String get listFilter_saved => '已保存';
 
   @override
-  String get listFilter_discovered => 'Discovered';
+  String get listFilter_discovered => '已发现';
 
   @override
   String get listFilter_all => '全部';
@@ -3154,31 +3147,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contacts_contactAdvertCopyFailed => '复制广播到剪贴板失败。';
 
   @override
-  String get contacts_addContact => 'Add Contact';
+  String get contacts_addContact => '添加联系人';
 
   @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
+  String get contacts_scanQrCode => '扫描联系人二维码';
 
   @override
-  String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
+  String get contacts_scanQrCodeDesc => '扫描 MeshCore 应用中的联系人二维码';
 
   @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
+  String get contacts_enterIdHash => '手动输入联系人';
 
   @override
-  String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
+  String get contacts_enterIdHashDesc => '粘贴联系人广播或 meshcore:// 链接';
 
   @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
+  String get contacts_advertHint => 'meshcore://... 或公钥 hex';
 
   @override
-  String get contacts_import => 'Import';
+  String get contacts_import => '导入';
 
   @override
-  String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
+  String get contacts_scanContactInstructions => '扫描 MeshCore 联系人二维码';
 
   @override
   String get notification_activityTitle => 'MeshCore 活动';
@@ -3304,7 +3294,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discoveredContacts_noMatching => '没有匹配的联系人';
 
   @override
-  String get listFilter_searchHint => 'Search...';
+  String get listFilter_searchHint => '搜索...';
 
   @override
   String get discoveredContacts_searchHint => '搜索已发现的联系人';
@@ -3331,7 +3321,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_sendCooldown => '请稍等片刻后再尝试发送。';
 
   @override
-  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+  String get chat_notConnected => '未连接电台。消息未发送。';
 
   @override
   String get appSettings_jumpToOldestUnread => '跳转到最旧、未读的文章';
@@ -3506,76 +3496,70 @@ class AppLocalizationsZh extends AppLocalizations {
   String get translation_systemLanguage => '系统语言';
 
   @override
-  String get routing_title => 'Routing';
+  String get routing_title => '路由';
 
   @override
   String routing_route(String route) {
-    return 'Stored path: $route';
+    return '已存路径：$route';
   }
 
   @override
-  String get routing_noRoute =>
-      'none yet — the next message floods and learns one';
+  String get routing_noRoute => '暂无 — 下一条消息会泛洪发送并学习路径';
 
   @override
-  String get routing_auto => 'Automatic';
+  String get routing_auto => '自动';
 
   @override
-  String get routing_autoSubtitle =>
-      'Use the radio\'s stored path. Recommended.';
+  String get routing_autoSubtitle => '使用电台已存的路径。推荐。';
 
   @override
-  String get routing_pathfinderOn =>
-      'Pathfinder on: tries learned routes first';
+  String get routing_pathfinderOn => 'Pathfinder 已开启：优先尝试学到的路由';
 
   @override
-  String get routing_flood => 'Always flood';
+  String get routing_flood => '始终泛洪';
 
   @override
-  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+  String get routing_floodSubtitle => '每条消息都发往整个网络';
 
   @override
-  String get routing_custom => 'Custom path';
+  String get routing_custom => '自定义路径';
 
   @override
-  String get routing_customSubtitle => 'Choose the repeaters yourself';
+  String get routing_customSubtitle => '自己选择转发节点';
 
   @override
-  String get routing_forget => 'Reset path';
+  String get routing_forget => '重置路径';
 
   @override
-  String get routing_forgetDone =>
-      'Path reset. The next message floods and learns a fresh one.';
+  String get routing_forgetDone => '路径已重置。下一条消息会泛洪发送并学习新路径。';
 
   @override
-  String get routing_pathfinder => 'What Pathfinder knows';
+  String get routing_pathfinder => 'Pathfinder 掌握的信息';
 
   @override
-  String get routing_pathfinderSubtitle =>
-      'Repeaters that hear you and them, and learned routes there and back';
+  String get routing_pathfinderSubtitle => '能听到您和对方的转发节点，以及学到的往返路由';
 
   @override
-  String get path_direct => 'Direct — no repeaters';
+  String get path_direct => '直连 — 不经过转发节点';
 
   @override
-  String get path_directSubtitle =>
-      'Only when the contact can hear this radio itself';
+  String get path_directSubtitle => '仅当对方能直接听到本电台时';
 
   @override
-  String get chat_kindFlood => 'flood';
+  String get chat_kindFlood => '泛洪';
 
   @override
-  String get chat_kindDirect => 'direct';
+  String get chat_kindDirect => '直连';
 
   @override
   String chat_kindRoute(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: '跳',
+      one: '跳',
     );
-    return 'route ($count $_temp0)';
+    return '路由（$count $_temp0）';
   }
 
   @override
@@ -3590,45 +3574,44 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chat_statusQueued => 'Queued';
+  String get chat_statusQueued => '排队中';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'No repeater heard you. Will try again when one is in range.';
+  String get chat_statusNoRepeaterHeard => '没有转发节点听到您。有转发节点进入范围时会再试。';
 
   @override
   String chat_narrowHashNotice(String name) {
-    return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
+    return '$name 的电台发送的是短转发节点代码（1 字节）。在对方电台改用 2 字节代码之前，Pathfinder 无法学习到对方的路由。';
   }
 
   @override
   String chat_statusSending(String kind) {
-    return 'Sending · $kind';
+    return '正在发送 · $kind';
   }
 
   @override
   String chat_statusRetrying(int attempt, int max, String kind) {
-    return 'Retrying · $kind · attempt $attempt of $max';
+    return '正在重试 · $kind · 第 $attempt/$max 次';
   }
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return '已送达 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return '第 $attempt 次尝试送达 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return '延迟送达 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return '已送达 · $secs 秒';
   }
 
   @override
@@ -3636,17 +3619,17 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       attempts,
       locale: localeName,
-      other: 'attempts',
-      one: 'attempt',
+      other: '次',
+      one: '次',
     );
-    return 'Failed after $attempts $_temp0 · tap to resend';
+    return '尝试 $attempts $_temp0后失败 · 点按重新发送';
   }
 
   @override
-  String get chat_statusFailedShort => 'Failed · tap to resend';
+  String get chat_statusFailedShort => '失败 · 点按重新发送';
 
   @override
-  String get chat_resendingByFlood => 'Resending by flood';
+  String get chat_resendingByFlood => '正在通过泛洪重新发送';
 
   @override
   String get pathfinderHelp_title => 'What Pathfinder does';
@@ -3682,53 +3665,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder（实验性）';
 
   @override
   String get settings_pathGraphSubtitle =>
-      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+      '从电台听到的所有内容中学习路由，发私信时优先尝试最佳路由。琥珀色路径图标表示该消息经 Pathfinder 路由发送。';
 
   @override
-  String get map_routeAndTrace => 'Route & trace';
+  String get map_routeAndTrace => '路由与追踪';
 
   @override
-  String get map_pathfinderTrace => 'Trace there and back';
+  String get map_pathfinderTrace => '往返追踪';
 
   @override
-  String get map_pathfinderTraceSubtitle =>
-      'Out on Pathfinder\'s best route, back on its best route back';
+  String get map_pathfinderTraceSubtitle => '去程走 Pathfinder 的最佳路由，回程走最佳回程路由';
 
   @override
-  String get map_routeBackMirrored =>
-      'No route back known yet — coming back the same way';
+  String get map_routeBackMirrored => '尚不知道回程路由 — 原路返回';
 
   @override
-  String get map_traceHelpTitle => 'Path trace buttons';
+  String get map_traceHelpTitle => '路径追踪按钮';
 
   @override
-  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+  String get map_traceHelpCustom => '自己输入或选择转发节点。';
 
   @override
-  String get map_traceHelpRun =>
-      'Sends a trace out along the repeaters you tapped, one way.';
+  String get map_traceHelpRun => '沿您点按的转发节点单程发送追踪。';
 
   @override
-  String get map_traceHelpThereAndBack => 'There and back';
+  String get map_traceHelpThereAndBack => '往返';
 
   @override
-  String get map_traceHelpThereAndBackSubtitle =>
-      'Sends the trace out, then back over the same repeaters in reverse.';
+  String get map_traceHelpThereAndBackSubtitle => '发出追踪，然后沿相同的转发节点反向返回。';
 
   @override
   String get map_traceHelpPathfinder =>
-      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+      'Pathfinder 会选出经过您最后点按的两个转发节点的最佳路由，以及返回您的最佳路由。结果会让 Pathfinder 知道哪些链路真正可用。需要点按两个转发节点。';
 
   @override
-  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+  String get map_traceHelpRemoveLast => '从路径中移除最后一个转发节点。';
 
   @override
-  String get map_traceHelpCancel =>
-      'Stops building the trace. Shown before any repeater is tapped.';
+  String get map_traceHelpCancel => '停止构建追踪。在点按任何转发节点之前显示。';
 
   @override
   String get chat_resendingByRoute => '正在通过您设置的路由重新发送';
@@ -3818,262 +3796,238 @@ class AppLocalizationsZh extends AppLocalizations {
   String get room_reloadFailed => '无法在电台上重置房间';
 
   @override
-  String get companionCli_title => 'Command line';
+  String get companionCli_title => '命令行';
 
   @override
-  String get companionCli_settingsSubtitle =>
-      'Type text commands for this radio';
+  String get companionCli_settingsSubtitle => '向此电台输入文本命令';
 
   @override
-  String get companionCli_rebooting => 'Restarting the radio…';
+  String get companionCli_rebooting => '正在重启电台…';
 
   @override
-  String get companionCli_cancelled => 'Cancelled';
+  String get companionCli_cancelled => '已取消';
 
   @override
-  String get companionCli_poweringOff => 'Turning the radio off…';
+  String get companionCli_poweringOff => '正在关闭电台…';
 
   @override
-  String get companionCli_noReply => 'No reply from the radio. Try again.';
+  String get companionCli_noReply => '电台没有回复。请重试。';
 
   @override
-  String get companionCli_powerOffTitle => 'Turn the radio off?';
+  String get companionCli_powerOffTitle => '关闭电台？';
 
   @override
-  String get companionCli_powerOffBody =>
-      'It stays off until you press its button or plug it in.';
+  String get companionCli_powerOffBody => '在您按下按钮或接通电源之前，它会一直保持关闭。';
 
   @override
-  String get companionCli_powerOff => 'Turn off';
+  String get companionCli_powerOff => '关闭';
 
   @override
-  String get companionCli_quickBoard => 'Board';
+  String get companionCli_quickBoard => '主板';
 
   @override
-  String get companionCli_quickWifiStatus => 'WiFi status';
+  String get companionCli_quickWifiStatus => 'Wi‑Fi 状态';
 
   @override
-  String get companionCli_quickWifiAddress => 'WiFi address';
+  String get companionCli_quickWifiAddress => 'Wi‑Fi 地址';
 
   @override
-  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+  String get companionCli_helpBoard => '显示主板的制造商和型号。';
 
   @override
-  String get companionCli_helpReboot => 'Restarts the radio.';
+  String get companionCli_helpReboot => '重启电台。';
 
   @override
-  String get companionCli_helpPowerOff => 'Turns the radio off.';
+  String get companionCli_helpPowerOff => '关闭电台。';
 
   @override
-  String get companionCli_helpSetPin =>
-      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+  String get companionCli_helpSetPin => '设置蓝牙配对 PIN。重启后生效。';
 
   @override
   String get companionCli_helpSetTzOffset =>
-      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+      '设置电台自身屏幕上的时钟在 UTC 基础上增加的小时数（-12 到 +14）。';
 
   @override
-  String get companionCli_helpSetTx =>
-      'Sets the transmit power in dBm. Applies at once.';
+  String get companionCli_helpSetTx => '设置发射功率（dBm）。立即生效。';
 
   @override
-  String get companionCli_helpSetIntThresh =>
-      'Sets the interference threshold in dB. 0 turns interference detection off.';
+  String get companionCli_helpSetIntThresh => '设置干扰阈值（dB）。设为 0 则关闭干扰检测。';
 
   @override
-  String get companionCli_helpSetCad =>
-      'Listens for other radios before sending (channel activity detection).';
+  String get companionCli_helpSetCad => '发送前先监听是否有其他电台在发射（信道活动检测）。';
 
   @override
-  String get companionCli_helpSetRxGain =>
-      'Boosted receive gain, on SX126x radios.';
+  String get companionCli_helpSetRxGain => '增强接收增益，适用于 SX126x 电台。';
 
   @override
   String get companionCli_helpSetPathHashMode =>
-      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+      '路由中每个转发节点占用的字节数：0 = 1 字节，1 = 2 字节，2 = 3 字节。';
 
   @override
-  String get companionCli_helpWifiStatus =>
-      'Shows whether the radio is on the WiFi network.';
+  String get companionCli_helpWifiStatus => '显示电台是否已连接 Wi‑Fi 网络。';
 
   @override
-  String get companionCli_helpWifiIp =>
-      'Shows the radio\'s address on the WiFi network.';
+  String get companionCli_helpWifiIp => '显示电台在 Wi‑Fi 网络中的地址。';
 
   @override
-  String get companionCli_helpWifiSsid =>
-      'Sets the WiFi network name. Applies after a restart.';
+  String get companionCli_helpWifiSsid => '设置 Wi‑Fi 网络名称。重启后生效。';
 
   @override
-  String get companionCli_helpWifiPwd =>
-      'Sets the WiFi password. Applies after a restart.';
+  String get companionCli_helpWifiPwd => '设置 Wi‑Fi 密码。重启后生效。';
 
   @override
-  String get companionCli_helpWifiEnabled =>
-      'Turns WiFi on (1) or off (0). Applies after a restart.';
+  String get companionCli_helpWifiEnabled => '开启（1）或关闭（0）Wi‑Fi。重启后生效。';
 
   @override
-  String get companionCli_helpWifiClear =>
-      'Forgets the WiFi network. Applies after a restart.';
+  String get companionCli_helpWifiClear => '忘记 Wi‑Fi 网络。重启后生效。';
 
   @override
   String get companionCli_remoteNoReply =>
-      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+      '没有回复。对方电台需要 1.18 或更高版本的固件，并且必须允许您使用其命令行。';
 
   @override
-  String get companionCli_remoteSentNoAnswer =>
-      'Sent. A radio does not answer a restart or power-off.';
+  String get companionCli_remoteSentNoAnswer => '已发送。电台不会回复重启或关机命令。';
 
   @override
   String companionCli_blocked(String name, String command) {
-    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '$name 试图使用您电台的命令行：“$command”。已被拒绝。';
   }
 
   @override
   String companionCli_blockedBody(String command) {
-    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '试图使用您电台的命令行：“$command”。已被拒绝。';
   }
 
   @override
-  String get contact_remoteCli => 'Allow remote command line';
+  String get contact_remoteCli => '允许远程命令行';
 
   @override
-  String get contact_remoteCliSubtitle =>
-      'Lets this contact run commands on your radio';
+  String get contact_remoteCliSubtitle => '允许此联系人在您的电台上运行命令';
 
   @override
   String contact_remoteCliWarningTitle(String name) {
-    return 'Let $name control your radio?';
+    return '允许 $name 控制您的电台？';
   }
 
   @override
   String contact_remoteCliWarning(String name) {
-    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+    return '$name 将能更改您电台的设置、读取您的 Wi‑Fi 密码、重命名您的电台，以及重启或关闭它。只允许您完全信任的人。';
   }
 
   @override
-  String get contact_remoteCliAllow => 'Allow';
+  String get contact_remoteCliAllow => '允许';
 
   @override
-  String get connection_secondApp =>
-      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+  String get connection_secondApp => '另一个应用已连接到此电台。消息和设置可能会混乱。请关闭另一个应用。';
 
   @override
-  String get wifi_title => 'WiFi';
+  String get wifi_title => 'Wi‑Fi';
 
   @override
-  String get wifi_settingsSubtitle => 'Network, password and connection';
+  String get wifi_settingsSubtitle => '网络、密码和连接';
 
   @override
-  String get wifi_use => 'Use WiFi';
+  String get wifi_use => '使用 Wi‑Fi';
 
   @override
-  String get wifi_networkName => 'Network name';
+  String get wifi_networkName => '网络名称';
 
   @override
-  String get wifi_password => 'Password';
+  String get wifi_password => '密码';
 
   @override
-  String get wifi_passwordUnchanged => 'Unchanged';
+  String get wifi_passwordUnchanged => '未更改';
 
   @override
-  String get wifi_showPassword => 'Show password';
+  String get wifi_showPassword => '显示密码';
 
   @override
-  String get wifi_nameMissing => 'Enter the network name';
+  String get wifi_nameMissing => '请输入网络名称';
 
   @override
-  String get wifi_nameTooLong =>
-      'The network name is too long (32 bytes at most)';
+  String get wifi_nameTooLong => '网络名称过长（最多 32 字节）';
 
   @override
-  String get wifi_passwordTooLong =>
-      'The password is too long (63 bytes at most)';
+  String get wifi_passwordTooLong => '密码过长（最多 63 字节）';
 
   @override
-  String get wifi_savedRestart =>
-      'Saved. WiFi changes apply after the radio restarts.';
+  String get wifi_savedRestart => '已保存。Wi‑Fi 更改将在电台重启后生效。';
 
   @override
-  String get wifi_forget => 'Forget network';
+  String get wifi_forget => '忘记网络';
 
   @override
-  String get wifi_forgetConfirm =>
-      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+  String get wifi_forgetConfirm => '忘记此 Wi‑Fi 网络？电台重启后将不再使用 Wi‑Fi。';
 
   @override
   String wifi_notAccepted(String reply) {
-    return 'The radio did not accept that: $reply';
+    return '电台未接受：$reply';
   }
 
   @override
-  String get wifi_noReply => 'No reply from the radio. Try again.';
+  String get wifi_noReply => '电台没有回复。请重试。';
 
   @override
-  String get wifi_restartTitle => 'Restart the radio?';
+  String get wifi_restartTitle => '重启电台？';
 
   @override
-  String get wifi_later => 'Later';
+  String get wifi_later => '稍后';
 
   @override
-  String get wifi_loadFailed =>
-      'Could not read the WiFi settings from the radio.';
+  String get wifi_loadFailed => '无法从电台读取 Wi‑Fi 设置。';
 
   @override
   String wifi_connectedTo(String address) {
-    return 'Connected · $address';
+    return '已连接 · $address';
   }
 
   @override
-  String get wifi_notConnected => 'Not connected to WiFi';
+  String get wifi_notConnected => '未连接 Wi‑Fi';
 
   @override
   String wifi_portNote(int port) {
-    return 'Apps on the same network can connect on port $port';
+    return '同一网络中的应用可以通过端口 $port 连接';
   }
 
   @override
-  String get wifi_connectOverWifi => 'Connect over WiFi';
+  String get wifi_connectOverWifi => '通过 Wi‑Fi 连接';
 
   @override
   String wifi_connectOverWifiBody(String address, int port) {
-    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+    return 'MeshTrax 将断开与此电台的连接，并打开已填好 $address、端口 $port 的 TCP 页面。请在那里点按“连接”。';
   }
 
   @override
-  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+  String get wifi_noteRestart => '更改将在电台重启后生效。';
 
   @override
-  String get wifi_noteSecurity =>
-      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+  String get wifi_noteSecurity => '您 Wi‑Fi 网络中的任何人都能通过端口 5000 连接到电台，而且无需密码。';
 
   @override
-  String get wifi_noteBattery =>
-      'WiFi keeps the radio awake, so the battery runs down faster.';
+  String get wifi_noteBattery => 'Wi‑Fi 会让电台保持唤醒，因此电池消耗更快。';
 
   @override
-  String get wifi_noteWrongPassword =>
-      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
+  String get wifi_noteWrongPassword => '如果密码错误，电台会每隔几秒不断重试。蓝牙仍可正常使用。';
 
   @override
   String get room_selfDemoteWarning => '您正在更改自己的访问权限。如果放弃管理员角色，只能通过房间自身的控制台恢复。';
 
   @override
-  String get scanner_offlineMaps => 'Offline maps';
+  String get scanner_offlineMaps => '离线地图';
 
   @override
-  String get appSettings_offlineMaps => 'Offline maps';
+  String get appSettings_offlineMaps => '离线地图';
 
   @override
-  String get appSettings_offlineMapsNone => 'None downloaded';
+  String get appSettings_offlineMapsNone => '未下载';
 
   @override
   String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count regions',
-      one: '1 region',
+      other: '$count 个地区',
+      one: '1 个地区',
     );
     return '$_temp0';
   }
@@ -4083,8 +4037,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count chart areas',
-      one: '1 chart area',
+      other: '$count 个海图区域',
+      one: '1 个海图区域',
     );
     return '$_temp0';
   }
@@ -4094,81 +4048,79 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count updates available',
-      one: '1 update available',
+      other: '有 $count 个更新',
+      one: '有 1 个更新',
     );
     return '$_temp0';
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly => '仅在 Wi‑Fi 下下载地图';
 
   @override
-  String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+  String get appSettings_mapDownloadsWifiOnlySubtitle => '地图下载会等待 Wi‑Fi 连接';
 
   @override
-  String get offlineMaps_title => 'Offline maps';
+  String get offlineMaps_title => '离线地图';
 
   @override
-  String get offlineMaps_tabMaps => 'Maps';
+  String get offlineMaps_tabMaps => '地图';
 
   @override
-  String get offlineMaps_tabCharts => 'Charts';
+  String get offlineMaps_tabCharts => '海图';
 
   @override
-  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+  String get offlineMaps_chartsNotice => '不可用于导航 · 为什么？';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
-    return 'Suggested · $coast';
+    return '推荐 · $coast';
   }
 
   @override
-  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+  String get offlineMaps_chartsByCoast => '按海岸划分的海图区域';
 
   @override
   String offlineMaps_chartsCoastSummary(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count 个区域',
+      one: '1 个区域',
     );
     return '$_temp0 · $size';
   }
 
   @override
   String offlineMaps_chartsDownloadedCount(int count) {
-    return '$count downloaded';
+    return '已下载 $count 个';
   }
 
   @override
   String offlineMaps_chartsSelectedCount(int count) {
-    return '$count selected';
+    return '已选 $count 个';
   }
 
   @override
-  String get offlineMaps_selectAll => 'Select all';
+  String get offlineMaps_selectAll => '全选';
 
   @override
-  String get offlineMaps_clearSelection => 'Clear';
+  String get offlineMaps_clearSelection => '清除';
 
   @override
   String offlineMaps_chartsAlsoIn(String coasts) {
-    return 'Also in $coasts';
+    return '也属于 $coasts';
   }
 
   @override
-  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+  String get offlineMaps_chartsNotAvailable => '暂不可用';
 
   @override
-  String get offlineMaps_chartsHint =>
-      'NOAA charts are picked by coast, in the Charts tab.';
+  String get offlineMaps_chartsHint => 'NOAA 海图在“海图”标签页中按海岸选择。';
 
   @override
   String offlineMaps_chartsName(String area) {
-    return '$area NOAA charts';
+    return '$area NOAA 海图';
   }
 
   @override
@@ -4176,427 +4128,416 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count 个区域',
+      one: '1 个区域',
     );
     return '$_temp0';
   }
 
   @override
-  String get offlineMaps_tabDownloaded => 'Downloaded';
+  String get offlineMaps_tabDownloaded => '已下载';
 
   @override
-  String get offlineMaps_refresh => 'Check for new maps';
+  String get offlineMaps_refresh => '检查新地图';
 
   @override
-  String get offlineMaps_loading => 'Loading available maps…';
+  String get offlineMaps_loading => '正在加载可用地图…';
 
   @override
-  String get offlineMaps_serverError => 'Can\'t reach the map server';
+  String get offlineMaps_serverError => '无法连接地图服务器';
 
   @override
-  String get offlineMaps_unavailable => 'No maps are available yet';
+  String get offlineMaps_unavailable => '暂无可用地图';
 
   @override
-  String get offlineMaps_unavailableHint => 'Check again later.';
+  String get offlineMaps_unavailableHint => '请稍后再查看。';
 
   @override
-  String get offlineMaps_chartsUnavailable =>
-      'No NOAA charts are available yet';
+  String get offlineMaps_chartsUnavailable => '暂无可用的 NOAA 海图';
 
   @override
   String offlineMaps_cachedFrom(String date) {
-    return 'Showing the list from $date';
+    return '正在显示 $date 的列表';
   }
 
   @override
-  String get offlineMaps_needsNewerApp =>
-      'Update MeshTrax to get the newest maps.';
+  String get offlineMaps_needsNewerApp => '请更新 MeshTrax 以获取最新地图。';
 
   @override
-  String get offlineMaps_world => 'World';
+  String get offlineMaps_world => '世界';
 
   @override
-  String get offlineMaps_suggested => 'Suggested';
+  String get offlineMaps_suggested => '推荐';
 
   @override
-  String get offlineMaps_regions => 'Regions';
+  String get offlineMaps_regions => '地区';
 
   @override
   String offlineMaps_regionsIn(String name) {
-    return 'Regions in $name';
+    return '$name 的地区';
   }
 
   @override
   String offlineMaps_inside(int count) {
-    return '$count inside';
+    return '包含 $count 个';
   }
 
   @override
   String offlineMaps_storageUsed(String size) {
-    return '$size of offline maps on this device';
+    return '本设备上的离线地图占用 $size';
   }
 
   @override
   String offlineMaps_updates(int count) {
-    return 'Updates ($count)';
+    return '更新（$count）';
   }
 
   @override
   String offlineMaps_updateAll(String size) {
-    return 'Update all $size';
+    return '全部更新 $size';
   }
 
   @override
-  String get offlineMaps_downloading => 'Downloading';
+  String get offlineMaps_downloading => '正在下载';
 
   @override
-  String get offlineMaps_update => 'Update';
+  String get offlineMaps_update => '更新';
 
   @override
   String offlineMaps_downloadedOn(String date) {
-    return 'Downloaded $date';
+    return '下载于 $date';
   }
 
   @override
-  String get offlineMaps_updateAvailable => 'Update available';
+  String get offlineMaps_updateAvailable => '有可用更新';
 
   @override
-  String get offlineMaps_otherFiles => 'Other map files';
+  String get offlineMaps_otherFiles => '其他地图文件';
 
   @override
-  String get offlineMaps_emptyTitle => 'No offline maps yet';
+  String get offlineMaps_emptyTitle => '还没有离线地图';
 
   @override
-  String get offlineMaps_emptyBody =>
-      'Download a region to use the map without a connection.';
+  String get offlineMaps_emptyBody => '下载一个地区，即可在没有网络时使用地图。';
 
   @override
-  String get offlineMaps_findMaps => 'Find maps';
+  String get offlineMaps_findMaps => '查找地图';
 
   @override
   String offlineMaps_deleteTitle(String name) {
-    return 'Delete $name?';
+    return '删除 $name？';
   }
 
   @override
   String offlineMaps_deleteBody(String size) {
-    return 'This frees $size. You can download it again later.';
+    return '这将释放 $size。之后可以重新下载。';
   }
 
   @override
   String offlineMaps_deleted(String name) {
-    return '$name deleted';
+    return '已删除 $name';
   }
 
   @override
   String offlineMaps_bytesProgress(String done, String total) {
-    return '$done of $total';
+    return '$done / $total';
   }
 
   @override
-  String get offlineMaps_kindMap => 'Map';
+  String get offlineMaps_kindMap => '地图';
 
   @override
-  String get offlineMaps_kindMapDetail =>
-      'OpenStreetMap streets, trails, places';
+  String get offlineMaps_kindMapDetail => 'OpenStreetMap 街道、步道、地名';
 
   @override
-  String get offlineMaps_kindContours => 'Contours';
+  String get offlineMaps_kindContours => '等高线';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail => '表示海拔高度的线';
 
   @override
-  String get offlineMaps_kindUsgs => 'USGS topo map';
+  String get offlineMaps_kindUsgs => 'USGS 地形图';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+  String get offlineMaps_kindUsgsDetail => '步道、溪流、保护区';
 
   @override
-  String get offlineMaps_kindTerrain => 'Hill shading';
+  String get offlineMaps_kindTerrain => '山体阴影';
 
   @override
-  String get offlineMaps_kindTerrainDetail =>
-      'Hills and mountains, shaded under the map';
+  String get offlineMaps_kindTerrainDetail => '在地图下方以阴影显示丘陵和山脉';
 
   @override
-  String get offlineMaps_kindCharts => 'NOAA charts';
+  String get offlineMaps_kindCharts => 'NOAA 海图';
 
   @override
-  String get offlineMaps_usOnly => 'United States only';
+  String get offlineMaps_usOnly => '仅限美国';
 
   @override
   String offlineMaps_download(String size) {
-    return 'Download $size';
+    return '下载 $size';
   }
 
   @override
-  String get offlineMaps_downloadTotal => 'Download';
+  String get offlineMaps_downloadTotal => '下载';
 
   @override
   String offlineMaps_largeDownload(String size) {
-    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+    return '下载文件较大（$size）。请使用 Wi‑Fi 并保持设备充电。';
   }
 
   @override
-  String get offlineMaps_waiting => 'Waiting…';
+  String get offlineMaps_waiting => '等待中…';
 
   @override
-  String get offlineMaps_checking => 'Checking download…';
+  String get offlineMaps_checking => '正在检查下载…';
 
   @override
-  String get offlineMaps_retrying => 'Retrying…';
+  String get offlineMaps_retrying => '正在重试…';
 
   @override
   String offlineMaps_failed(String error) {
-    return 'Download failed: $error';
+    return '下载失败：$error';
   }
 
   @override
-  String get offlineMaps_pause => 'Pause';
+  String get offlineMaps_pause => '暂停';
 
   @override
-  String get offlineMaps_resume => 'Resume';
+  String get offlineMaps_resume => '继续';
 
   @override
-  String get offlineMaps_deleteRegion => 'Delete region';
+  String get offlineMaps_deleteRegion => '删除地区';
 
   @override
-  String get offlineMaps_notInCatalogue => 'Not available for this region';
+  String get offlineMaps_notInCatalogue => '此地区不可用';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => '正在下载地图';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused => '地图下载已暂停';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed => '地图下载失败';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+  String get offlineMaps_clearTileCache => '清除在线地图缓存';
 
   @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+  String get offlineMaps_clearTileCachePrompt => '删除浏览时保存的在线地图图块？已下载的地图会保留。';
 
   @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+  String get offlineMaps_tileCacheCleared => '已清除在线地图缓存';
 
   @override
-  String get map_notForNavigation => 'Not for navigation';
+  String get map_notForNavigation => '不可用于导航';
 
   @override
   String get map_chartsNoticeIntro =>
-      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+      'MeshTrax 根据 NOAA 的海图数据绘制这些海图，帮助您查看电台周围的水域并做规划。它们不是官方海图。请勿据此驾驶船只。';
 
   @override
-  String get map_chartsNoticeWhy => 'Why:';
+  String get map_chartsNoticeWhy => '原因：';
 
   @override
   String get map_chartsNoticeOutOfDate =>
-      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+      '内容会过时。NOAA 一直在修正其海图；已下载的海图在您于“离线地图”中更新之前保持不变。';
 
   @override
-  String get map_chartsNoticeLeftOut =>
-      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+  String get map_chartsNoticeLeftOut => '内容有遗漏。许多海图符号、灯光扇区和注记没有绘制，部分标签要放大后才显示。';
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      '位置可能有误或已过时。GPS 可能偏差 10 m (30 ft) 或更多，而节点的位置只是它最后一次报告的位置。';
 
   @override
-  String get map_chartsNoticeNotPlotter =>
-      'MeshTrax isn\'t a certified chart plotter.';
+  String get map_chartsNoticeNotPlotter => 'MeshTrax 不是经过认证的海图仪。';
 
   @override
   String get map_chartsNoticeUse =>
-      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+      '导航请使用官方、最新的 NOAA 海图（纸质海图，或在认证海图仪中使用 NOAA ENC），并参考最新的航海通告。';
 
   @override
-  String get map_sourceOnline => 'Online';
+  String get map_sourceOnline => '在线';
 
   @override
-  String get map_sourceOffline => 'Offline';
+  String get map_sourceOffline => '离线';
 
   @override
-  String get map_downloadForDetail => 'Download a region for detail';
+  String get map_downloadForDetail => '下载地区以查看详情';
 
   @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+  String get map_zoomInForOfflineMap => '放大以查看离线地图';
 
   @override
-  String get map_noCharts => 'No charts here';
+  String get map_noCharts => '此处没有海图';
 
   @override
-  String get map_myLocation => 'My location';
+  String get map_myLocation => '我的位置';
 
   @override
-  String get map_zoomIn => 'Zoom in';
+  String get map_zoomIn => '放大';
 
   @override
-  String get map_zoomOut => 'Zoom out';
+  String get map_zoomOut => '缩小';
 
   @override
   String get gps_title => 'GPS';
 
   @override
-  String get gps_on => 'GPS on';
+  String get gps_on => 'GPS 已开启';
 
   @override
-  String get gps_off => 'GPS off';
+  String get gps_off => 'GPS 已关闭';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => '电台通过 GPS 更新其位置。';
 
   @override
-  String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+  String get gps_offHint => '关闭可节省电台电量。开启后可能需要几分钟才能定位。';
 
   @override
-  String get gps_asking => 'Asking the radio...';
+  String get gps_asking => '正在询问电台...';
 
   @override
-  String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+  String get gps_noPosition => '尚无位置。在户外，首次定位可能需要几分钟。';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => '位置';
 
   @override
-  String get gps_altitude => 'Altitude';
+  String get gps_altitude => '海拔';
 
   @override
   String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
+    return '$ago前从电台读取';
   }
 
   @override
-  String get gps_turnOnTitle => 'Turn on GPS?';
+  String get gps_turnOnTitle => '开启 GPS？';
 
   @override
-  String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+  String get gps_turnOnBody => '电台的 GPS 已关闭。开启后可能需要几分钟才能定位。';
 
   @override
-  String get gps_turnOn => 'Turn on';
+  String get gps_turnOn => '开启';
 
   @override
-  String get gps_notNow => 'Not now';
+  String get gps_notNow => '以后再说';
 
   @override
-  String get map_zoomInForCharts => 'Zoom in to see your charts';
+  String get map_zoomInForCharts => '放大以查看海图';
 
   @override
   String map_downloadRegion(String region, String size) {
-    return 'Download $region · $size';
+    return '下载 $region · $size';
   }
 
   @override
-  String get mapLayers_title => 'Map layers';
+  String get mapLayers_title => '地图图层';
 
   @override
-  String get mapLayers_mapType => 'Map type';
+  String get mapLayers_mapType => '地图类型';
 
   @override
-  String get mapLayers_standard => 'Standard';
+  String get mapLayers_standard => '标准';
 
   @override
-  String get mapLayers_usgs => 'USGS topo';
+  String get mapLayers_usgs => 'USGS 地形图';
 
   @override
-  String get mapLayers_charts => 'Charts';
+  String get mapLayers_charts => '海图';
 
   @override
-  String get mapLayers_notDownloaded => 'Not downloaded';
+  String get mapLayers_notDownloaded => '未下载';
 
   @override
-  String get mapLayers_offlineOnly => 'Offline only';
+  String get mapLayers_offlineOnly => '仅离线';
 
   @override
-  String get mapLayers_details => 'Map details';
+  String get mapLayers_details => '地图详情';
 
   @override
-  String get mapLayers_contours => 'Contours';
+  String get mapLayers_contours => '等高线';
 
   @override
-  String get mapLayers_hillShading => 'Hill shading';
+  String get mapLayers_hillShading => '山体阴影';
 
   @override
-  String get mapLayers_dark => 'Dark map';
+  String get mapLayers_dark => '深色地图';
 
   @override
-  String get mapLayers_downloadedAreas => 'Downloaded areas';
+  String get mapLayers_downloadedAreas => '已下载区域';
 
   @override
-  String get mapLayers_nodes => 'Nodes';
+  String get mapLayers_nodes => '节点';
 
   @override
-  String get mapLayers_pins => 'Pins';
+  String get mapLayers_pins => '标记';
 
   @override
-  String get mapLayers_guessed => 'Guessed';
+  String get mapLayers_guessed => '推测位置';
 
   @override
-  String get mapLayers_moreFilters => 'More filters';
+  String get mapLayers_moreFilters => '更多筛选';
 
   @override
-  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+  String get mapLayers_moreFiltersDetail => '最后出现时间、公钥前缀、重叠';
 
   @override
-  String get map_legend => 'Legend';
+  String get map_legend => '图例';
 
   @override
-  String get scanner_map => 'Map';
+  String get scanner_map => '地图';
 
   @override
-  String get structured_openMap => 'Open map';
+  String get structured_openMap => '打开地图';
 
   @override
-  String get structured_addToCalendar => 'Add to calendar';
+  String get structured_addToCalendar => '添加到日历';
 
   @override
-  String get structured_details => 'Details';
+  String get structured_details => '详情';
 
   @override
   String get structured_sos => 'SOS';
 
   @override
-  String get structured_event => 'Event';
+  String get structured_event => '活动';
 
   @override
-  String get structured_notice => 'Notice';
+  String get structured_notice => '公告';
 
   @override
-  String get structured_allDay => 'All day';
+  String get structured_allDay => '全天';
 
   @override
-  String get structured_calendarFailed => 'Could not open the calendar';
+  String get structured_calendarFailed => '无法打开日历';
 
   @override
-  String get structured_today => 'Today';
+  String get structured_today => '今天';
 
   @override
-  String get structured_tomorrow => 'Tomorrow';
+  String get structured_tomorrow => '明天';
 
   @override
   String structured_inDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'In $count days',
-      one: 'In 1 day',
+      other: '$count 天后',
+      one: '1 天后',
     );
     return '$_temp0';
   }
 
   @override
-  String get structured_past => 'Past';
+  String get structured_past => '已结束';
 
   @override
   String structured_dayOfDays(int day, int total) {
-    return 'Day $day of $total';
+    return '第 $day 天，共 $total 天';
   }
 
   @override
@@ -4604,658 +4545,667 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days',
-      one: '1 day',
+      other: '$count 天',
+      one: '1 天',
     );
     return '$_temp0';
   }
 
   @override
-  String get dialog_eventEndDate => 'End date';
+  String get dialog_eventEndDate => '结束日期';
 
   @override
-  String get dialog_eventSameDay => 'Same day';
+  String get dialog_eventSameDay => '同一天';
 
   @override
-  String get structured_map => 'Map';
+  String get structured_map => '地图';
 
   @override
-  String get structured_navigate => 'Navigate';
+  String get structured_navigate => '导航';
 
   @override
-  String get structured_channel => 'Channel';
+  String get structured_channel => '频道';
 
   @override
-  String get structured_contact => 'Contact';
+  String get structured_contact => '联系人';
 
   @override
-  String get structured_room => 'Room';
+  String get structured_room => '房间';
 
   @override
-  String get structured_repeater => 'Repeater';
+  String get structured_repeater => '转发节点';
 
   @override
-  String get structured_sensor => 'Sensor';
+  String get structured_sensor => '传感器';
 
   @override
-  String get structured_joinChannel => 'Join channel';
+  String get structured_joinChannel => '加入频道';
 
   @override
-  String get structured_addContact => 'Add contact';
+  String get structured_addContact => '添加联系人';
 
   @override
-  String get structured_addRoom => 'Add room';
+  String get structured_addRoom => '添加房间';
 
   @override
-  String get structured_addRepeater => 'Add repeater';
+  String get structured_addRepeater => '添加转发节点';
 
   @override
-  String get structured_addSensor => 'Add sensor';
+  String get structured_addSensor => '添加传感器';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => '打开';
 
   @override
-  String get structured_added => 'Added';
+  String get structured_added => '已添加';
 
   @override
-  String get tray_add => 'Add';
+  String get tray_add => '添加';
 
   @override
-  String get tray_myLocation => 'My location';
+  String get tray_myLocation => '我的位置';
 
   @override
-  String get tray_pointOnMap => 'Point on map';
+  String get tray_pointOnMap => '地图上的点';
 
   @override
   String get tray_sos => 'SOS';
 
   @override
-  String get tray_event => 'Event';
+  String get tray_event => '活动';
 
   @override
-  String get tray_notice => 'Notice';
+  String get tray_notice => '公告';
 
   @override
-  String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+  String get tray_noRadioPosition => '您的电台还没有位置。请在地图上选择一个。';
 
   @override
-  String get dialog_insert => 'Insert';
+  String get dialog_insert => '插入';
 
   @override
-  String get dialog_eventTitle => 'Title';
+  String get dialog_eventTitle => '标题';
 
   @override
-  String get dialog_eventDate => 'Date';
+  String get dialog_eventDate => '日期';
 
   @override
-  String get dialog_eventStart => 'Start';
+  String get dialog_eventStart => '开始';
 
   @override
-  String get dialog_eventEnd => 'End';
+  String get dialog_eventEnd => '结束';
 
   @override
-  String get dialog_eventNoEnd => 'No end time';
+  String get dialog_eventNoEnd => '无结束时间';
 
   @override
-  String get dialog_eventPlace => 'Place (optional)';
+  String get dialog_eventPlace => '地点（可选）';
 
   @override
-  String get dialog_pickOnMap => 'Pick on map';
+  String get dialog_pickOnMap => '在地图上选择';
 
   @override
-  String get dialog_sosTitle => 'Send SOS';
+  String get dialog_sosTitle => '发送 SOS';
 
   @override
-  String get dialog_sosText => 'What happened?';
+  String get dialog_sosText => '发生了什么？';
 
   @override
-  String get dialog_noticeTitle => 'Notice';
+  String get dialog_noticeTitle => '公告';
 
   @override
-  String get dialog_noticeText => 'What should everyone know?';
+  String get dialog_noticeText => '想让大家知道什么？';
 
   @override
-  String get dialog_labelTitle => 'Point on map';
+  String get dialog_labelTitle => '地图上的点';
 
   @override
-  String get dialog_note => 'Note (optional)';
+  String get dialog_note => '备注（可选）';
 
   @override
-  String get paste_convertLocation =>
-      'Looks like a maps link. Convert it to a Location?';
+  String get paste_convertLocation => '看起来是地图链接。要转换为位置吗？';
 
   @override
-  String get paste_convertEvent =>
-      'Looks like a calendar share. Convert it to an Event?';
+  String get paste_convertEvent => '看起来是日历分享。要转换为活动吗？';
 
   @override
-  String get paste_convert => 'Convert';
+  String get paste_convert => '转换';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolving => '正在解析链接…';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_resolveFailed => '无法解析链接';
 
   @override
-  String get pinned_dismiss => 'Dismiss';
+  String get pinned_dismiss => '关闭';
 
   @override
   String get tray_gif => 'GIF';
 
   @override
   String link_joinChannelBody(String name) {
-    return 'Join channel $name?';
+    return '加入频道 $name？';
   }
 
   @override
   String link_alreadyJoined(String name) {
-    return 'You are already in $name';
+    return '您已在 $name 中';
   }
 
   @override
   String link_channelJoined(String name) {
-    return 'Joined $name';
+    return '已加入 $name';
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint => '点按地图以选择位置';
 
   @override
-  String get map_legendMesh => 'Mesh';
+  String get map_legendMesh => '网状网络';
 
   @override
-  String get chartLegend_title => 'Chart symbols';
+  String get chartLegend_title => '海图符号';
 
   @override
-  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+  String get chartLegend_sectionBuoys => '浮标与立标';
 
   @override
-  String get chartLegend_sectionLights => 'Lights';
+  String get chartLegend_sectionLights => '灯标';
 
   @override
-  String get chartLegend_sectionHazards => 'Hazards';
+  String get chartLegend_sectionHazards => '危险物';
 
   @override
-  String get chartLegend_sectionTides => 'Tides and currents';
+  String get chartLegend_sectionTides => '潮汐与潮流';
 
   @override
-  String get chartLegend_sectionDepths => 'Depths and seabed';
+  String get chartLegend_sectionDepths => '水深与海底';
 
   @override
-  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+  String get chartLegend_sectionAreas => '区域、航道与线条';
 
   @override
-  String get chartLegend_sectionLandmarks => 'Landmarks';
+  String get chartLegend_sectionLandmarks => '陆标';
 
   @override
-  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+  String get chartLegend_sectionAbbreviations => '缩写';
 
   @override
-  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+  String get chartLegend_chartNo1 => '所有海图符号：U.S. Chart No. 1';
 
   @override
-  String get chartLegend_portBuoy => 'Green can buoy';
+  String get chartLegend_portBuoy => '绿色罐形浮标';
 
   @override
-  String get chartLegend_portBuoyHint =>
-      'Keep it on your left coming in from sea';
+  String get chartLegend_portBuoyHint => '从海上进港时，使其保持在您的左侧';
 
   @override
-  String get chartLegend_starboardBuoy => 'Red nun buoy';
+  String get chartLegend_starboardBuoy => '红色锥形浮标';
 
   @override
-  String get chartLegend_starboardBuoyHint =>
-      'Keep it on your right coming in: red, right, returning';
+  String get chartLegend_starboardBuoyHint => '进港时使其保持在右侧：返航时红色在右';
 
   @override
-  String get chartLegend_junctionBuoy => 'Banded buoy';
+  String get chartLegend_junctionBuoy => '横带浮标';
 
   @override
-  String get chartLegend_junctionBuoyHint =>
-      'A channel junction: treat it as the colour of its top band';
+  String get chartLegend_junctionBuoyHint => '航道分叉处：按其最上方色带的颜色对待';
 
   @override
-  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+  String get chartLegend_safeWaterBuoy => '红白竖条纹';
 
   @override
-  String get chartLegend_safeWaterBuoyHint =>
-      'Safe water all around, often at a channel entrance';
+  String get chartLegend_safeWaterBuoyHint => '四周均为安全水域，常位于航道入口';
 
   @override
-  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+  String get chartLegend_isolatedDangerBuoy => '黑红横带';
 
   @override
-  String get chartLegend_isolatedDangerBuoyHint =>
-      'A small danger with safe water around it: keep clear';
+  String get chartLegend_isolatedDangerBuoyHint => '周围是安全水域的小型危险物：远离';
 
   @override
-  String get chartLegend_specialBuoy => 'Yellow buoy';
+  String get chartLegend_specialBuoy => '黄色浮标';
 
   @override
-  String get chartLegend_specialBuoyHint =>
-      'Special purpose, not for steering by: anchorage, cable, research';
+  String get chartLegend_specialBuoyHint => '专用标志，不作航行引导：锚地、电缆、科研等';
 
   @override
-  String get chartLegend_cardinalBuoy => 'Black and yellow';
+  String get chartLegend_cardinalBuoy => '黑黄相间';
 
   @override
-  String get chartLegend_cardinalBuoyHint =>
-      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+  String get chartLegend_cardinalBuoyHint => '方位标：从其所指方位一侧通过（在美国少见）';
 
   @override
-  String get chartLegend_mooringBuoy => 'Mooring buoy';
+  String get chartLegend_mooringBuoy => '系泊浮标';
 
   @override
-  String get chartLegend_portBeacon => 'Green square daybeacon';
+  String get chartLegend_portBeacon => '绿色方形立标';
 
   @override
-  String get chartLegend_portBeaconHint =>
-      'Like a green buoy: keep it on your left coming in';
+  String get chartLegend_portBeaconHint => '与绿色浮标相同：进港时保持在左侧';
 
   @override
-  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+  String get chartLegend_starboardBeacon => '红色三角形立标';
 
   @override
-  String get chartLegend_starboardBeaconHint =>
-      'Like a red buoy: keep it on your right coming in';
+  String get chartLegend_starboardBeaconHint => '与红色浮标相同：进港时保持在右侧';
 
   @override
-  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+  String get chartLegend_otherBeacon => '菱形立标';
 
   @override
-  String get chartLegend_otherBeaconHint =>
-      'Information or a warning, not a side of the channel';
+  String get chartLegend_otherBeaconHint => '表示信息或警告，不标示航道的某一侧';
 
   @override
-  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+  String get chartLegend_beaconTower => '灯桩或立标结构';
 
   @override
-  String get chartLegend_topmark => 'Topmark';
+  String get chartLegend_topmark => '顶标';
 
   @override
-  String get chartLegend_topmarkHint =>
-      'The shape on top of a mark adds to its meaning';
+  String get chartLegend_topmarkHint => '标志顶部的形状补充其含义';
 
   @override
-  String get chartLegend_light => 'Light';
+  String get chartLegend_light => '灯标';
 
   @override
-  String get chartLegend_lightHint =>
-      'The magenta flare marks a light; its label tells how it flashes';
+  String get chartLegend_lightHint => '品红色光芒表示灯标；其标签说明闪光方式';
 
   @override
-  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+  String get chartLegend_lightExample => '绿色闪光，每 4 秒一次';
 
   @override
-  String get chartLegend_lightExampleHint =>
-      'A light\'s label: rhythm, colour, then period';
+  String get chartLegend_lightExampleHint => '灯标的标签：灯质、颜色、周期';
 
   @override
-  String get chartLegend_lightFixed => 'Fixed';
+  String get chartLegend_lightFixed => '定光';
 
   @override
-  String get chartLegend_lightFixedHint => 'A steady light';
+  String get chartLegend_lightFixedHint => '持续不灭的灯光';
 
   @override
-  String get chartLegend_lightFlashing => 'Flashing';
+  String get chartLegend_lightFlashing => '闪光';
 
   @override
-  String get chartLegend_lightFlashingHint =>
-      'Short flashes, longer dark between';
+  String get chartLegend_lightFlashingHint => '短暂闪光，间隔较长的暗期';
 
   @override
-  String get chartLegend_lightGroup => 'Group flashing';
+  String get chartLegend_lightGroup => '联闪光';
 
   @override
-  String get chartLegend_lightGroupHint =>
-      'Flashes in groups, here 2, then dark';
+  String get chartLegend_lightGroupHint => '成组闪光（此处为 2 次），然后熄灭';
 
   @override
-  String get chartLegend_lightComposite => 'Composite group';
+  String get chartLegend_lightComposite => '混合联闪光';
 
   @override
-  String get chartLegend_lightCompositeHint =>
-      '2 flashes, then 1: marks a channel junction';
+  String get chartLegend_lightCompositeHint => '闪 2 次再闪 1 次：标示航道分叉';
 
   @override
-  String get chartLegend_lightQuick => 'Quick';
+  String get chartLegend_lightQuick => '快闪光';
 
   @override
-  String get chartLegend_lightQuickHint => 'About one flash a second';
+  String get chartLegend_lightQuickHint => '约每秒闪一次';
 
   @override
-  String get chartLegend_lightIsophase => 'Isophase';
+  String get chartLegend_lightIsophase => '等明暗光';
 
   @override
-  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+  String get chartLegend_lightIsophaseHint => '明暗时间相等';
 
   @override
-  String get chartLegend_lightOcculting => 'Occulting';
+  String get chartLegend_lightOcculting => '明暗光';
 
   @override
-  String get chartLegend_lightOccultingHint => 'On longer than off';
+  String get chartLegend_lightOccultingHint => '亮的时间比暗的时间长';
 
   @override
-  String get chartLegend_lightMorse => 'Morse code A';
+  String get chartLegend_lightMorse => '莫尔斯码 A';
 
   @override
-  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+  String get chartLegend_lightMorseHint => '短、长：安全水域';
 
   @override
-  String get chartLegend_lightAlternating => 'Alternating';
+  String get chartLegend_lightAlternating => '互光';
 
   @override
-  String get chartLegend_lightAlternatingHint => 'Changes colour';
+  String get chartLegend_lightAlternatingHint => '颜色交替变化';
 
   @override
-  String get chartLegend_lightColours => 'White, red, green, yellow';
+  String get chartLegend_lightColours => '白、红、绿、黄';
 
   @override
-  String get chartLegend_lightPeriod => 'Period';
+  String get chartLegend_lightPeriod => '周期';
 
   @override
-  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+  String get chartLegend_lightPeriodHint => '完成一个周期所需的秒数';
 
   @override
-  String get chartLegend_rock => 'Underwater rock';
+  String get chartLegend_rock => '暗礁';
 
   @override
-  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+  String get chartLegend_rockHint => '始终在水下，但可能很浅';
 
   @override
-  String get chartLegend_rockAwash => 'Rock awash';
+  String get chartLegend_rockAwash => '适淹礁';
 
   @override
-  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+  String get chartLegend_rockAwashHint => '低潮时接近水面';
 
   @override
-  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+  String get chartLegend_rockCovers => '干出礁';
 
   @override
-  String get chartLegend_rockCoversHint =>
-      'Shows at low tide, covered at high tide';
+  String get chartLegend_rockCoversHint => '低潮时露出，高潮时淹没';
 
   @override
-  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+  String get chartLegend_wreckDangerous => '危险沉船';
 
   @override
-  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+  String get chartLegend_wreckDangerousHint => '浅到船只可能撞上';
 
   @override
-  String get chartLegend_wreck => 'Wreck';
+  String get chartLegend_wreck => '沉船';
 
   @override
-  String get chartLegend_wreckHint =>
-      'Deep enough for boats on the surface; don\'t anchor';
+  String get chartLegend_wreckHint => '水面船只可安全通过；勿抛锚';
 
   @override
-  String get chartLegend_wreckShowing => 'Wreck showing';
+  String get chartLegend_wreckShowing => '部分露出的沉船';
 
   @override
-  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+  String get chartLegend_wreckShowingHint => '部分露出水面';
 
   @override
-  String get chartLegend_obstruction => 'Obstruction';
+  String get chartLegend_obstruction => '障碍物';
 
   @override
-  String get chartLegend_obstructionHint =>
-      'Something on the bottom; its depth when known';
+  String get chartLegend_obstructionHint => '海底的物体；如已知则标注其水深';
 
   @override
-  String get chartLegend_foulGround => 'Foul ground';
+  String get chartLegend_foulGround => '险恶地';
 
   @override
-  String get chartLegend_foulGroundHint =>
-      'Safe to pass over, but don\'t anchor or trawl';
+  String get chartLegend_foulGroundHint => '可安全驶过，但勿抛锚或拖网';
 
   @override
-  String get chartLegend_hazardArea => 'Edge of a danger area';
+  String get chartLegend_hazardArea => '危险区边界';
 
   @override
-  String get chartLegend_hazardAreaHint =>
-      'Rocks, wrecks or obstructions inside';
+  String get chartLegend_hazardAreaHint => '内有礁石、沉船或障碍物';
 
   @override
-  String get chartLegend_pile => 'Pile or post';
+  String get chartLegend_pile => '桩';
 
   @override
-  String get chartLegend_floodStream => 'Flood stream';
+  String get chartLegend_floodStream => '涨潮流';
 
   @override
-  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+  String get chartLegend_floodStreamHint => '涨潮时的潮流';
 
   @override
-  String get chartLegend_ebbStream => 'Ebb stream';
+  String get chartLegend_ebbStream => '落潮流';
 
   @override
-  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+  String get chartLegend_ebbStreamHint => '落潮时的潮流';
 
   @override
-  String get chartLegend_current => 'Current';
+  String get chartLegend_current => '海流';
 
   @override
-  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+  String get chartLegend_currentHint => '无论潮汐如何都朝同一方向流动';
 
   @override
-  String get chartLegend_rips => 'Tide rips or eddies';
+  String get chartLegend_rips => '急流或漩涡';
 
   @override
-  String get chartLegend_ripsHint => 'Rough, swirling water';
+  String get chartLegend_ripsHint => '汹涌、打旋的水面';
 
   @override
-  String get chartLegend_breakers => 'Breakers';
+  String get chartLegend_breakers => '碎浪';
 
   @override
-  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+  String get chartLegend_breakersHint => '在浅滩上破碎的波浪';
 
   @override
-  String get chartLegend_sounding => 'Sounding';
+  String get chartLegend_sounding => '水深';
 
   @override
-  String get chartLegend_soundingHint => 'Depth at an average low tide';
+  String get chartLegend_soundingHint => '平均低潮时的水深';
 
   @override
-  String get chartLegend_depthContour => 'Depth contour';
+  String get chartLegend_depthContour => '等深线';
 
   @override
-  String get chartLegend_depthContourHint => 'Its label gives the depth';
+  String get chartLegend_depthContourHint => '标签标出水深';
 
   @override
-  String get chartLegend_drying => 'Dries at low tide';
+  String get chartLegend_drying => '低潮时干出';
 
   @override
-  String get chartLegend_dredged => 'Dredged channel';
+  String get chartLegend_dredged => '疏浚航道';
 
   @override
-  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+  String get chartLegend_dredgedHint => '维持在所标水深';
 
   @override
-  String get chartLegend_swept => 'Swept area';
+  String get chartLegend_swept => '扫测区';
 
   @override
-  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+  String get chartLegend_sweptHint => '已确认至所标水深无障碍';
 
   @override
-  String get chartLegend_unsurveyed => 'Unsurveyed';
+  String get chartLegend_unsurveyed => '未测量';
 
   @override
-  String get chartLegend_unsurveyedHint => 'No depths measured';
+  String get chartLegend_unsurveyedHint => '未测水深';
 
   @override
-  String get chartLegend_weed => 'Kelp or weed';
+  String get chartLegend_weed => '海藻';
 
   @override
-  String get chartLegend_restricted => 'Restricted area';
+  String get chartLegend_restricted => '限制区';
 
   @override
-  String get chartLegend_restrictedHint =>
-      'Entry limited; the ticks point inside';
+  String get chartLegend_restrictedHint => '限制进入；短线指向区域内侧';
 
   @override
-  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+  String get chartLegend_regulatedLimit => '管制区边界';
 
   @override
-  String get chartLegend_regulatedLimitHint =>
-      'Anchorage, cable area, firing area and more: see its label';
+  String get chartLegend_regulatedLimitHint => '锚地、电缆区、射击区等：见其标签';
 
   @override
-  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+  String get chartLegend_greyLimit => '倾倒区、渔场或养殖场';
 
   @override
-  String get chartLegend_anchorage => 'Anchorage';
+  String get chartLegend_anchorage => '锚地';
 
   @override
-  String get chartLegend_anchorBerth => 'Anchor berth';
+  String get chartLegend_anchorBerth => '锚位';
 
   @override
-  String get chartLegend_noAnchoring => 'No anchoring';
+  String get chartLegend_noAnchoring => '禁止抛锚';
 
   @override
-  String get chartLegend_caution => 'Caution area';
+  String get chartLegend_caution => '警示区';
 
   @override
-  String get chartLegend_cautionHint => 'Take extra care here';
+  String get chartLegend_cautionHint => '在此需格外小心';
 
   @override
-  String get chartLegend_trafficLane => 'Traffic lane';
+  String get chartLegend_trafficLane => '通航分道';
 
   @override
-  String get chartLegend_trafficLaneHint =>
-      'Big ships, one way: cross at right angles';
+  String get chartLegend_trafficLaneHint => '大船单向通行：以直角穿越';
 
   @override
-  String get chartLegend_separationZone => 'Separation zone';
+  String get chartLegend_separationZone => '分隔带';
 
   @override
-  String get chartLegend_separationZoneHint =>
-      'Between traffic lanes: keep out';
+  String get chartLegend_separationZoneHint => '位于通航分道之间：勿进入';
 
   @override
-  String get chartLegend_precautionary => 'Precautionary area';
+  String get chartLegend_precautionary => '警戒区';
 
   @override
-  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+  String get chartLegend_precautionaryHint => '船舶汇聚：注意安全';
 
   @override
-  String get chartLegend_fairway => 'Fairway';
+  String get chartLegend_fairway => '航道';
 
   @override
-  String get chartLegend_fairwayHint => 'A main channel';
+  String get chartLegend_fairwayHint => '主要航道';
 
   @override
-  String get chartLegend_track => 'Recommended track';
+  String get chartLegend_track => '推荐航线';
 
   @override
-  String get chartLegend_ferry => 'Ferry route';
+  String get chartLegend_ferry => '渡轮航线';
 
   @override
-  String get chartLegend_leadingLine => 'Leading line';
+  String get chartLegend_leadingLine => '叠标线';
 
   @override
-  String get chartLegend_leadingLineHint =>
-      'Line up its two marks to stay in the channel';
+  String get chartLegend_leadingLineHint => '将两个标志对成一条直线，即可保持在航道内';
 
   @override
-  String get chartLegend_cable => 'Submarine cable';
+  String get chartLegend_cable => '海底电缆';
 
   @override
-  String get chartLegend_cableHint => 'Don\'t anchor';
+  String get chartLegend_cableHint => '勿抛锚';
 
   @override
-  String get chartLegend_pipeline => 'Submarine pipeline';
+  String get chartLegend_pipeline => '海底管道';
 
   @override
-  String get chartLegend_pipelineHint => 'Don\'t anchor';
+  String get chartLegend_pipelineHint => '勿抛锚';
 
   @override
-  String get chartLegend_overhead => 'Overhead cable';
+  String get chartLegend_overhead => '架空电缆';
 
   @override
-  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+  String get chartLegend_overheadHint => '其净空高度标为 VC';
 
   @override
-  String get chartLegend_tower => 'Tower';
+  String get chartLegend_tower => '塔';
 
   @override
-  String get chartLegend_windTurbine => 'Wind turbine';
+  String get chartLegend_windTurbine => '风力发电机';
 
   @override
-  String get chartLegend_chimney => 'Chimney';
+  String get chartLegend_chimney => '烟囱';
 
   @override
-  String get chartLegend_mast => 'Mast or antenna';
+  String get chartLegend_mast => '桅杆或天线';
 
   @override
-  String get chartLegend_church => 'Church or spire';
+  String get chartLegend_church => '教堂或尖塔';
 
   @override
-  String get chartLegend_flagstaff => 'Flagstaff';
+  String get chartLegend_flagstaff => '旗杆';
 
   @override
-  String get chartLegend_dome => 'Dome';
+  String get chartLegend_dome => '圆顶';
 
   @override
-  String get chartLegend_landmark => 'Other landmark';
+  String get chartLegend_landmark => '其他陆标';
 
   @override
-  String get chartLegend_abbrAnch => 'Anchorage';
+  String get chartLegend_abbrAnch => '锚地';
 
   @override
-  String get chartLegend_abbrWk => 'Wreck';
+  String get chartLegend_abbrWk => '沉船';
 
   @override
-  String get chartLegend_abbrBr => 'Breakers';
+  String get chartLegend_abbrBr => '碎浪';
 
   @override
-  String get chartLegend_abbrWd => 'Weed';
+  String get chartLegend_abbrWd => '海藻';
 
   @override
-  String get chartLegend_abbrVar => 'Magnetic variation';
+  String get chartLegend_abbrVar => '磁差';
 
   @override
-  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+  String get chartLegend_abbrVc => '桥梁或电缆下方的净空高度';
 
   @override
-  String get chartLegend_abbrTr => 'Tower';
+  String get chartLegend_abbrTr => '塔';
 
   @override
-  String get chartLegend_abbrCh => 'Church';
+  String get chartLegend_abbrCh => '教堂';
 
   @override
-  String get chartLegend_abbrChy => 'Chimney';
+  String get chartLegend_abbrChy => '烟囱';
 
   @override
-  String get chartLegend_abbrFs => 'Flagstaff';
+  String get chartLegend_abbrFs => '旗杆';
 
   @override
-  String get chartLegend_abbrTk => 'Tank';
+  String get chartLegend_abbrTk => '储罐';
 
   @override
-  String get chartLegend_abbrRBn => 'Radio beacon';
+  String get chartLegend_abbrRBn => '无线电信标';
 
   @override
-  String get chartLegend_abbrCg => 'Coast Guard station';
+  String get chartLegend_abbrCg => '海岸警卫队站';
 
   @override
-  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+  String get chartLegend_abbrRacon => '雷达应答器：在雷达上显示';
 
   @override
-  String get chartLegend_abbrFog =>
-      'Fog signal: horn, bell, gong, whistle or siren';
+  String get chartLegend_abbrFog => '雾号：号角、钟、锣、哨或警笛';
 
   @override
-  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+  String get chartLegend_abbrVAis => '虚拟航标：仅在 AIS 上显示';
 
   @override
   String chartLegend_depthRange(String from, String to) {
-    return '$from to $to';
+    return '$from 至 $to';
   }
 
   @override
   String chartLegend_depthOver(String depth) {
-    return 'Deeper than $depth';
+    return '深于 $depth';
   }
+
+  @override
+  String get parkLegend_title => '公园与步道符号';
+
+  @override
+  String get parkLegend_campsite => '露营地';
+
+  @override
+  String get parkLegend_picnicSite => '野餐区';
+
+  @override
+  String get parkLegend_shelter => '避难所';
+
+  @override
+  String get parkLegend_toilets => '厕所';
+
+  @override
+  String get parkLegend_drinkingWater => '饮用水';
+
+  @override
+  String get parkLegend_parking => '停车场';
+
+  @override
+  String get parkLegend_viewpoint => '观景点';
+
+  @override
+  String get parkLegend_attraction => '景点';
+
+  @override
+  String get parkLegend_gate => '大门';
+
+  @override
+  String get parkLegend_telephone => '电话';
+
+  @override
+  String get parkLegend_information => '信息牌';
+
+  @override
+  String get parkLegend_guidepost => '路标';
 }

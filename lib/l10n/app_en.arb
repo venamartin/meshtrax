@@ -2822,5 +2822,18 @@
   "chartLegend_depthRange": "{from} to {to}",
   "@chartLegend_depthRange": {"placeholders": {"from": {"type": "String"}, "to": {"type": "String"}}},
   "chartLegend_depthOver": "Deeper than {depth}",
-  "@chartLegend_depthOver": {"placeholders": {"depth": {"type": "String"}}}
+  "@chartLegend_depthOver": {"placeholders": {"depth": {"type": "String"}}},
+  "parkLegend_title": "Park and trail symbols",
+  "parkLegend_campsite": "Campsite",
+  "parkLegend_picnicSite": "Picnic site",
+  "parkLegend_shelter": "Shelter",
+  "parkLegend_toilets": "Toilets",
+  "parkLegend_drinkingWater": "Drinking water",
+  "parkLegend_parking": "Parking",
+  "parkLegend_viewpoint": "Viewpoint",
+  "parkLegend_attraction": "Attraction",
+  "parkLegend_gate": "Gate",
+  "parkLegend_telephone": "Telephone",
+  "parkLegend_information": "Information board",
+  "parkLegend_guidepost": "Guidepost"
 }

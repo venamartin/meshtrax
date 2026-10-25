@@ -31,6 +31,23 @@ void main() {
     ]);
   });
 
+  test('a source credited by several packs shows once', () {
+    // Hawaii: the base, contours and terrain all draw on GLO-30 (the NW
+    // Hawaiian Islands), each listing it after its own source.
+    const glo30 =
+        'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © '
+        'Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by '
+        'the European Union and ESA; all rights reserved';
+    expect(
+      attributionOf([
+        _pack('hi', 'base', 'USGS The National Map; $glo30'),
+        _pack('hi-contours-20ft', 'contours', 'USGS 3DEP; $glo30'),
+        _pack('hi-terrain', 'terrain', 'USGS 3DEP; $glo30'),
+      ]),
+      ['USGS The National Map', glo30, 'USGS 3DEP'],
+    );
+  });
+
   test('licence notices: every distinct line, from packs that have one', () {
     Pack withNotice(String id, String notice) => Pack(
       id: id,

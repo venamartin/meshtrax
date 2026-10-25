@@ -1,5 +1,21 @@
 ## Unreleased
 
+- **Park and trail icons on the OSM map.** Campsites, picnic sites,
+  shelters, toilets, drinking water, parking, viewpoints and attractions
+  from z15, and gates, telephones, information boards and guideposts from
+  z16, as white glyphs on discs coloured by category (`poi-*` on the sprite
+  sheets), with the name below. Trail route markers stay unmarked. Glyphs
+  are centred optically and drawn one size (`tool/make_sprites.py`, now
+  needing Pillow). `ParkLegendItem` lists them for a legend.
+- **Each source is credited once.** `attributionOf` splits a pack's credit
+  on "; " into its sources (keeping Copernicus's "; all rights reserved"),
+  so the GLO-30 credit that Hawaii's base, contours and terrain all carry,
+  as do Alaska's Arctic, Interior and Western packs, shows once, not three
+  times.
+- **Units switch at once.** Switching between feet and metres left labels
+  in the old units until the app restarted: the renderer caches tiles by
+  theme id, which was the style's name, and both units' variants share it.
+  The id now includes the resolved layers (`FlutterMapRenderer.themeIdOf`).
 - **Hill shading shows on gentle land.** The light styles' shading is
   darker (OSM light 0.06/0.10/0.13/0.16, was 0.03/0.06/0.10/0.14;
   USGS light 0.09/0.15/0.21, was 0.06/0.12/0.19), tuned on traxmapmaker's

@@ -4,7 +4,8 @@ format). Rerun after editing a symbol or a palette:
 
     python3 tool/make_sprites.py assets/sprites
 
-Needs rsvg-convert (librsvg2-bin). Light styles use the light
+Needs rsvg-convert (librsvg2-bin), and Pillow to centre the park icons'
+glyphs. Light styles use the light
 sheet and dark styles the dark one; both hold the same names.
 
 Symbols follow US Chart No. 1 (buoys lean, a small circle marks the
@@ -68,6 +69,7 @@ FAMILIES = {
     "arrow": (12, 26, 6, 13),
     "landmark": (14, 18, 7, 15),
     "peak": (11, 10, 5.5, 5),
+    "poi": (18, 18, 9, 9),
 }
 # Where that point goes relative to the feature, when it isn't on it:
 # topmarks sit above the buoy or beacon they belong to.
@@ -95,6 +97,7 @@ def palette(name):
         "pos_fill": "#ffffff" if name == "light" else "#0c1e30",
         "pos_stroke": "#222222" if name == "light" else P["ink"],
         "peak": PEAK[name], **HAZARD[name],
+        "poi": POI_COLOURS[name], "poi_ring": "#ffffff" if name == "light" else "#1c2026",
     }
 
 
@@ -323,6 +326,93 @@ def peak(P):
     return stroked([], P["peak"], P, fill_paths=["M0,-3.4 L4,3.4 L-4,3.4 Z"])
 
 
+# --- park and trail features (OSM poi layer) ---------------------------------
+# A white glyph on a disc in its category's colour (badges, Martin's choice
+# over plain glyphs: they read on park fills and hill shading). Glyphs are
+# drawn on a 24-unit grid.
+
+POI_COLOURS = {
+    "light": {"recreation": "#3f8a3a", "water": "#2f7fc4", "facility": "#5f6b78", "sight": "#a0522d"},
+    "dark": {"recreation": "#5fb85a", "water": "#5aa6e8", "facility": "#8d98a5", "sight": "#d08a5f"},
+}
+
+
+def _star(cx, cy, r, inner):
+    pts = [f"{cx + (r if i % 2 == 0 else r * inner) * math.cos(-math.pi / 2 + i * math.pi / 5):.2f},"
+           f"{cy + (r if i % 2 == 0 else r * inner) * math.sin(-math.pi / 2 + i * math.pi / 5):.2f}"
+           for i in range(10)]
+    return f'<polygon points="{" ".join(pts)}"/>'
+
+
+POIS = {  # name: (category, glyph)
+    "campsite": ("recreation", '<path fill-rule="evenodd" d="M12 3.5 L21 19.5 H3 Z M12 11 L8.8 19.5 H15.2 Z"/>'),
+    "picnic_site": ("recreation", '<rect x="4" y="7" width="16" height="2.6" rx="0.6"/>'
+                    '<rect x="2.5" y="13" width="19" height="2.2" rx="0.6"/>'
+                    '<path d="M8.6 9.4 L6 20 M15.4 9.4 L18 20" stroke-width="2.4" stroke-linecap="round" fill="none"/>'),
+    "shelter": ("recreation", '<path d="M2.5 11.5 L12 4 L21.5 11.5" stroke-width="2.6" fill="none" '
+                'stroke-linecap="round" stroke-linejoin="round"/>'
+                '<rect x="5.6" y="10" width="2.4" height="10"/><rect x="16" y="10" width="2.4" height="10"/>'),
+    "toilets": ("water", '<circle cx="7.5" cy="5" r="2.1"/><rect x="5.2" y="8" width="4.6" height="7" rx="1"/>'
+                '<rect x="5.9" y="14" width="1.5" height="6"/><rect x="7.6" y="14" width="1.5" height="6"/>'
+                '<circle cx="16.5" cy="5" r="2.1"/><path d="M16.5 7.8 L20.3 15.5 H12.7 Z"/>'
+                '<rect x="14.9" y="15" width="1.4" height="5"/><rect x="16.7" y="15" width="1.4" height="5"/>'),
+    "drinking_water": ("water", '<path d="M12 2.8 C9.5 7 6 10.8 6 14.6 A6 6 0 0 0 18 14.6 C18 10.8 14.5 7 12 2.8 Z"/>'),
+    "parking": ("facility", '<path d="M8.5 20 V4.5 H13.6 A4.4 4.4 0 0 1 13.6 13.3 H8.5" stroke-width="3.2" '
+                'fill="none" stroke-linejoin="round"/>'),
+    "gate": ("facility", '<rect x="3" y="5" width="2.6" height="15"/><rect x="18.4" y="5" width="2.6" height="15"/>'
+             '<path d="M5.6 8.5 H18.4 M5.6 15 H18.4 M5.6 15 L18.4 8.5" stroke-width="2" fill="none"/>'),
+    "telephone": ("facility", '<path d="M6.6 10.8 c1.4 2.8 3.8 5.1 6.6 6.6 l2.2-2.2 c.3-.3.7-.4 1-.2 1.1.4 2.3.6 '
+                  '3.6.6 .6 0 1 .4 1 1 V20 c0 .6-.4 1-1 1 C10.6 21 3 13.4 3 4 c0-.6.4-1 1-1 h3.5 c.6 0 1 .4 1 1 '
+                  '0 1.2.2 2.4.6 3.6 .1.3 0 .7-.2 1 Z"/>'),
+    "viewpoint": ("sight", '<circle cx="7.5" cy="15" r="4.2" stroke-width="2.4" fill="none"/>'
+                  '<circle cx="16.5" cy="15" r="4.2" stroke-width="2.4" fill="none"/>'
+                  '<rect x="4.6" y="5" width="4.6" height="7" rx="1"/><rect x="14.8" y="5" width="4.6" height="7" rx="1"/>'
+                  '<rect x="9" y="8" width="6" height="3"/>'),
+    "information": ("sight", '<circle cx="12" cy="5.2" r="2.2"/>'
+                    '<path d="M9 9.5 H13.6 V18 H15.5 V20.5 H8.5 V18 H10.4 V12 H9 Z"/>'),
+    "guidepost": ("sight", '<rect x="10.8" y="4" width="2.4" height="17"/><path d="M4 5.5 H16.5 L20 8.6 L16.5 11.7 H4 Z"/>'),
+    "attraction": ("sight", _star(12, 12.5, 9, 0.45)),
+}
+
+
+POI_GLYPH = 9.5  # logical px, the larger side of every glyph in its 18 px badge
+
+
+def _poi_fit(glyph, _cache={}):
+    """The scale that gives [glyph] POI_GLYPH px on its larger side, and its
+    optical centre in grid units: two thirds of the way from its box centre
+    to its centre of mass, so a tent's heavy base doesn't sit low in the
+    disc (all the way looks high; Martin found the box centre low)."""
+    if glyph in _cache:
+        return _cache[glyph]
+    import io
+
+    from PIL import Image
+    px = 480
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{px}" height="{px}" viewBox="0 0 24 24">'
+           f'<g fill="#000" stroke="#000">{glyph}</g></svg>')
+    png = subprocess.run(["rsvg-convert"], input=svg.encode(), capture_output=True, check=True).stdout
+    alpha = Image.open(io.BytesIO(png)).getchannel("A")
+    x0, y0, x1, y1 = alpha.getbbox()
+    w, data = alpha.size[0], alpha.getdata()
+    total = sum(data)
+    mx = sum(v * (i % w) for i, v in enumerate(data) if v) / total
+    my = sum(v * (i // w) for i, v in enumerate(data) if v) / total
+    unit = 24 / px
+    bx, by = (x0 + x1) / 2, (y0 + y1) / 2
+    centre = ((bx + (mx - bx) * 2 / 3) * unit, (by + (my - by) * 2 / 3) * unit)
+    _cache[glyph] = (POI_GLYPH / (max(x1 - x0, y1 - y0) * unit), centre)
+    return _cache[glyph]
+
+
+def poi(kind, P):
+    category, glyph = POIS[kind]
+    scale, (cx, cy) = _poi_fit(glyph)
+    return (f'<circle r="8.4" fill="{P["poi"][category]}" stroke="{P["poi_ring"]}" stroke-width="1.1"/>'
+            f'<g transform="scale({scale:.4f}) translate({-cx:.3f},{-cy:.3f})" fill="#ffffff" '
+            f'stroke="#ffffff">{glyph}</g>')
+
+
 # --- line patterns: stamped along a line, one sprite per repeat --------------
 # MapLibre line-pattern scales the sprite's height to the line width, so the
 # style sets line-width to the pattern's height.
@@ -376,6 +466,8 @@ def symbols(P):
     for kind in LANDMARKS:
         add(f"landmark-{kind}", "landmark", landmark(kind, P))
     add("peak", "peak", peak(P))
+    for kind in POIS:
+        add(f"poi-{kind}", "poi", poi(kind, P))
     for kind, size in PATTERNS.items():
         add(f"pattern-{kind}", None, pattern(kind, P), size)
     return out

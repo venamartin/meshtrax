@@ -23,9 +23,13 @@ class LegendSample {
 
   static const _zoom = 15.0;
 
+  /// The zoom [layer] is drawn at: 15, or its first zoom if later.
+  static double _zoomFor(vt.ThemeLayer layer) => math.max(_zoom, layer.minzoom);
+
   /// The context [layer] draws this sample in: the first geometry type its
   /// filter accepts, starting with the layer type's own.
   vt.EvalContext context(vt.ThemeLayer layer) {
+    final zoom = _zoomFor(layer);
     final own = switch (layer) {
       vt.FillThemeLayer() => 'Polygon',
       vt.LineThemeLayer() => 'LineString',
@@ -33,14 +37,14 @@ class LegendSample {
     };
     for (final type in {own, 'Polygon', 'LineString', 'Point'}) {
       final ctx = vt.EvalContext(
-        zoom: _zoom,
+        zoom: zoom,
         properties: properties,
         geometryType: type,
       );
       if (_truthy(layer.filter(ctx))) return ctx;
     }
     return vt.EvalContext(
-      zoom: _zoom,
+      zoom: zoom,
       properties: properties,
       geometryType: own,
     );
@@ -48,9 +52,7 @@ class LegendSample {
 
   /// Whether [layer]'s filter accepts this sample as some geometry type.
   bool drawnBy(vt.ThemeLayer layer) =>
-      _truthy(layer.filter(context(layer))) &&
-      layer.minzoom <= _zoom &&
-      layer.maxzoom > _zoom;
+      _truthy(layer.filter(context(layer))) && layer.maxzoom > _zoomFor(layer);
 
   static bool _truthy(Object? v) => v != null && v != false;
 }
@@ -141,6 +143,12 @@ class _LegendPainter extends CustomPainter {
     if (layer == null) return;
     final ctx = sample.context(layer);
     switch (layer) {
+      case vt.BackgroundThemeLayer():
+        canvas.drawRect(
+          box,
+          Paint()
+            ..color = _fade(layer.color.eval(ctx), layer.opacity.eval(ctx)),
+        );
       case vt.FillThemeLayer():
         canvas.drawRect(
           box,

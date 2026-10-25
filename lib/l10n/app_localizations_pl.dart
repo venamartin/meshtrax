@@ -13,33 +13,33 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appTitle => 'MeshTrax';
 
   @override
-  String get nav_chats => 'Chats';
+  String get nav_chats => 'Czaty';
 
   @override
-  String get chats_title => 'Chats';
+  String get chats_title => 'Czaty';
 
   @override
-  String get newChat_title => 'Select contact';
+  String get newChat_title => 'Wybierz kontakt';
 
   @override
   String newChat_contactCount(int count) {
-    return '$count contacts';
+    return 'Kontakty: $count';
   }
 
   @override
-  String get newChat_newContact => 'New Contact';
+  String get newChat_newContact => 'Nowy kontakt';
 
   @override
-  String get newChat_newChannel => 'New Channel';
+  String get newChat_newChannel => 'Nowy kanał';
 
   @override
-  String get newChat_myContacts => 'My Contacts';
+  String get newChat_myContacts => 'Moje kontakty';
 
   @override
-  String get newChat_discovered => 'Discovered';
+  String get newChat_discovered => 'Odkryte';
 
   @override
-  String get repeaters_title => 'Manage Repeaters';
+  String get repeaters_title => 'Zarządzaj przekaźnikami';
 
   @override
   String get nav_contacts => 'Kontakty';
@@ -54,16 +54,16 @@ class AppLocalizationsPl extends AppLocalizations {
   String get common_cancel => 'Anuluj';
 
   @override
-  String get common_syncing_device_info => 'Reading device info...';
+  String get common_syncing_device_info => 'Odczyt informacji o urządzeniu...';
 
   @override
-  String get common_syncing_contacts => 'Reading contacts...';
+  String get common_syncing_contacts => 'Odczyt kontaktów...';
 
   @override
-  String get common_syncing_channels => 'Reading channels...';
+  String get common_syncing_channels => 'Odczyt kanałów...';
 
   @override
-  String get common_syncing_messages => 'Reading messages...';
+  String get common_syncing_messages => 'Odczyt wiadomości...';
 
   @override
   String get common_ok => 'OK';
@@ -105,10 +105,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get common_disconnected => 'Odłączony';
 
   @override
-  String get common_connectionLost => 'Connection lost. Reconnecting...';
+  String get common_connectionLost =>
+      'Utracono połączenie. Ponowne łączenie...';
 
   @override
-  String get common_reconnecting => 'Reconnecting...';
+  String get common_reconnecting => 'Ponowne łączenie...';
 
   @override
   String get common_create => 'Utwórz';
@@ -261,11 +262,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get usbErrorNativeLibraryMissing =>
-      'This build is missing its USB serial library, so USB devices cannot be opened. Please reinstall MeshTrax or report this build as broken.';
+      'W tej wersji brakuje biblioteki portu szeregowego USB, więc nie można otworzyć urządzeń USB. Zainstaluj MeshTrax ponownie lub zgłoś tę wersję jako uszkodzoną.';
 
   @override
   String get usbErrorBrowserUnsupported =>
-      'This browser does not support Web Serial. Use Chrome or Edge over HTTPS (or localhost).';
+      'Ta przeglądarka nie obsługuje Web Serial. Użyj Chrome lub Edge przez HTTPS (lub localhost).';
 
   @override
   String get usbErrorAlreadyActive => 'Połączenie USB jest już aktywne.';
@@ -317,18 +318,18 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get scanner_showAllDevices => 'Show all Bluetooth devices';
+  String get scanner_showAllDevices => 'Pokaż wszystkie urządzenia Bluetooth';
 
   @override
-  String get scanner_showMeshCoreOnly => 'Show MeshCore radios only';
+  String get scanner_showMeshCoreOnly => 'Pokaż tylko radia MeshCore';
 
   @override
   String get scanner_radioNotResponding =>
-      'The radio isn\'t responding. It may need to be paired: open Bluetooth settings, add the radio and enter its PIN, then try again.';
+      'Radio nie odpowiada. Może wymagać sparowania: otwórz ustawienia Bluetooth, dodaj radio i wpisz jego PIN, a potem spróbuj ponownie.';
 
   @override
   String get scanner_pairingFailed =>
-      'Bluetooth pairing was cancelled or failed. Make sure nothing else (like your phone) is connected to the radio, then try again and enter its PIN.';
+      'Parowanie Bluetooth zostało anulowane lub się nie powiodło. Upewnij się, że nic innego (np. Twój telefon) nie jest połączone z radiem, a potem spróbuj ponownie i wpisz jego PIN.';
 
   @override
   String scanner_connectionFailed(String error) {
@@ -342,10 +343,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get scanner_scan => 'Przeskanuj';
 
   @override
-  String get scanner_scanFromImage => 'Scan from image';
+  String get scanner_scanFromImage => 'Skanuj z obrazu';
 
   @override
-  String get scanner_noQrFoundInImage => 'No valid QR code found in image';
+  String get scanner_noQrFoundInImage =>
+      'Nie znaleziono prawidłowego kodu QR na obrazie';
 
   @override
   String get scanner_bluetoothOff => 'Bluetooth jest wyłączony';
@@ -740,18 +742,18 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pokaż szczegółowe metadane trasowania i czasu dla wiadomości';
 
   @override
-  String get appSettings_senderNameColors => 'Colorful sender names';
+  String get appSettings_senderNameColors => 'Kolorowe nazwy nadawców';
 
   @override
   String get appSettings_senderNameColorsSubtitle =>
-      'Give each channel sender their own name color. Off uses the theme color for everyone.';
+      'Każdy nadawca na kanale dostaje własny kolor nazwy. Po wyłączeniu wszyscy mają kolor motywu.';
 
   @override
-  String get appSettings_showTextFormatting => 'Show text formatting';
+  String get appSettings_showTextFormatting => 'Pokaż formatowanie tekstu';
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      'Markdown w wiadomościach: **pogrubienie**, *kursywa*, ||spoilery||, nagłówki i linki. Inne aplikacje MeshCore pokazują surowe znaki.';
 
   @override
   String get appSettings_notifications => 'Powiadomienia';
@@ -810,11 +812,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get appSettings_maxChannelMessageRetries =>
-      'Max Channel Message Retries';
+      'Maks. ponowień wiadomości na kanale';
 
   @override
   String get appSettings_maxChannelMessageRetriesSubtitle =>
-      'It will retry this many times until it hears at least one repeat';
+      'Ponawia tyle razy, aż usłyszy co najmniej jedno powtórzenie';
 
   @override
   String get appSettings_battery => 'Bateria';
@@ -924,11 +926,12 @@ class AppLocalizationsPl extends AppLocalizations {
       'Logowanie debugowania aplikacji wyłączone.';
 
   @override
-  String get appSettings_incrementalContactSync => 'Incremental contact sync';
+  String get appSettings_incrementalContactSync =>
+      'Przyrostowa synchronizacja kontaktów';
 
   @override
   String get appSettings_incrementalContactSyncSubtitle =>
-      'On reconnect, ask the radio only for contacts that changed since last time';
+      'Po ponownym połączeniu pobieraj z radia tylko kontakty zmienione od ostatniego razu';
 
   @override
   String get contacts_title => 'Kontakty';
@@ -937,11 +940,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get contacts_noContacts => 'Brak jeszcze kontaktów.';
 
   @override
-  String get contacts_shareMyQrCode => 'Share My QR Code';
+  String get contacts_shareMyQrCode => 'Udostępnij mój kod QR';
 
   @override
   String get contacts_shareQrCodeDesc =>
-      'Let others scan to add you as a contact';
+      'Pozwól innym go zeskanować, by dodali Cię jako kontakt';
 
   @override
   String get contacts_contactsWillAppear =>
@@ -998,21 +1001,22 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String contacts_deleteContactConfirm(String contactName) {
-    return 'Are you sure you want to delete $contactName?';
+    return 'Czy na pewno chcesz usunąć $contactName?';
   }
 
   @override
   String contacts_contactDeleted(String contactName) {
-    return 'Contact $contactName deleted.';
+    return 'Usunięto kontakt $contactName.';
   }
 
   @override
   String contacts_contactDeleteFailed(String contactName) {
-    return 'Failed to delete $contactName.';
+    return 'Nie udało się usunąć $contactName.';
   }
 
   @override
-  String get contacts_noMatchingContacts => 'No contacts match the filter.';
+  String get contacts_noMatchingContacts =>
+      'Żaden kontakt nie pasuje do filtra.';
 
   @override
   String contacts_removeConfirm(String contactName) {
@@ -1130,7 +1134,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Zezwalaj na udostępnianie danych czujników środowiskowych';
 
   @override
-  String get contacts_publicKey => 'Public Key';
+  String get contacts_publicKey => 'Klucz publiczny';
 
   @override
   String get channels_title => 'Kanały';
@@ -1171,24 +1175,24 @@ class AppLocalizationsPl extends AppLocalizations {
   String get channels_editChannel => 'Edytuj kanał';
 
   @override
-  String get channels_shareChannel => 'Share Channel';
+  String get channels_shareChannel => 'Udostępnij kanał';
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      'Zeskanuj kod QR, aby dodać kanał.\nMenu → Dodaj Kanał → Skanuj kod QR';
 
   @override
-  String get channels_secretKey => 'Secret Key';
+  String get channels_secretKey => 'Tajny klucz';
 
   @override
-  String get channels_meshcoreUri => 'MeshCore URI';
+  String get channels_meshcoreUri => 'URI MeshCore';
 
   @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
+  String get channels_shareChannelQr => 'Zeskanuj kod QR kanału';
 
   @override
   String get channels_shareChannelWarning =>
-      'Warning: Anyone who scans this QR code will have access to this channel.';
+      'Uwaga: każdy, kto zeskanuje ten kod QR, uzyska dostęp do tego kanału.';
 
   @override
   String get channels_muteChannel => 'Wycisz kanał';
@@ -1243,25 +1247,25 @@ class AppLocalizationsPl extends AppLocalizations {
       'PSK musi składać się z 32 znaków szesnastkowych.';
 
   @override
-  String get channels_addChannelConfirmation =>
-      'Do you want to add the following channel?';
+  String get channels_addChannelConfirmation => 'Czy chcesz dodać ten kanał?';
 
   @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
+  String get channels_channelAddedSuccess => 'Kanał został dodany.';
 
   @override
-  String get channels_noAvailableChannelSlots => 'No available channel slots.';
+  String get channels_noAvailableChannelSlots =>
+      'Brak wolnych miejsc na kanały.';
 
   @override
-  String get appSettings_mentionNotifications => 'Mention notifications';
+  String get appSettings_mentionNotifications => 'Powiadomienia o wzmiankach';
 
   @override
   String get appSettings_mentionNotificationsSubtitle =>
-      'When someone mentions or replies to you — even in muted channels';
+      'Gdy ktoś Cię wspomni lub Ci odpowie — nawet na wyciszonych kanałach';
 
   @override
   String notification_mentionIn(String channelName) {
-    return 'Mention in $channelName';
+    return 'Wzmianka w $channelName';
   }
 
   @override
@@ -1372,13 +1376,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_location => 'Lokalizacja';
 
   @override
-  String get common_copiedToClipboard => 'Copied to clipboard';
+  String get common_copiedToClipboard => 'Skopiowano do schowka';
 
   @override
-  String get common_copyToClipboard => 'Copy to clipboard';
+  String get common_copyToClipboard => 'Kopiuj do schowka';
 
   @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
+  String get contacts_copyContactToClipboard => 'Kopiuj mój kontakt do schowka';
 
   @override
   String get chat_typeMessage => 'Wpisz wiadomość...';
@@ -1407,7 +1411,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_reply => 'Odpowiedz';
 
   @override
-  String get chat_newMessages => 'NEW MESSAGES';
+  String get chat_newMessages => 'NOWE WIADOMOŚCI';
 
   @override
   String get chat_addReaction => 'Dodaj Reakcję';
@@ -1416,76 +1420,77 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_mention => 'Wspomnij';
 
   @override
-  String get dmChannel_menuLabel => 'Direct Message';
+  String get dmChannel_menuLabel => 'Wiadomość prywatna';
 
   @override
   String dmChannel_pickerTitle(String name) {
-    return 'Send DM to $name';
+    return 'Wyślij DM do $name';
   }
 
   @override
   String get dmChannel_pickerHint =>
-      'Check the key and last-seen time — names are not unique.';
+      'Sprawdź klucz i kiedy ostatnio był widziany — nazwy nie są unikalne.';
 
   @override
-  String get dmChannel_warningTitle => 'Is this really them?';
+  String get dmChannel_warningTitle => 'Czy to na pewno ta osoba?';
 
   @override
   String get dmChannel_warningBody =>
-      'Channel names are self-chosen and can be imitated by anyone. For anything sensitive, verify this contact\'s public key another way first.';
+      'Nazwy na kanałach każdy wybiera sam i każdy może je podrobić. Przy czymkolwiek poufnym najpierw sprawdź klucz publiczny tego kontaktu w inny sposób.';
 
   @override
-  String get dmChannel_dontShowAgain => 'Don\'t show this again';
+  String get dmChannel_dontShowAgain => 'Nie pokazuj ponownie';
 
   @override
-  String get batterySleep_title => 'Keep MeshTrax running';
+  String get batterySleep_title => 'Utrzymaj działanie MeshTrax';
 
   @override
   String get batterySleep_bodySamsung =>
-      'Samsung phones put apps to sleep to save battery, which cuts off your radio. Open Settings → Apps → MeshTrax → Battery and choose Unrestricted. Also check Battery → Background usage limits and make sure MeshTrax is not in Sleeping apps or Deep sleeping apps.';
+      'Telefony Samsung usypiają aplikacje, by oszczędzać baterię, co odcina Twoje radio. Otwórz Ustawienia → Aplikacje → MeshTrax → Bateria i wybierz Bez ograniczeń. Sprawdź też Bateria → Limity użycia w tle i upewnij się, że MeshTrax nie ma na liście Uśpione aplikacje ani Aplikacje w głębokim uśpieniu.';
 
   @override
   String get batterySleep_bodyGeneric =>
-      'Your phone may stop MeshTrax in the background to save battery, which cuts off your radio. Open battery settings and set MeshTrax to Unrestricted (or No restrictions). On some phones you also need to turn on Autostart for MeshTrax.';
+      'Telefon może zatrzymywać MeshTrax w tle, by oszczędzać baterię, co odcina Twoje radio. Otwórz ustawienia baterii i ustaw dla MeshTrax Bez ograniczeń (lub Brak ograniczeń). Na niektórych telefonach trzeba też włączyć Autostart dla MeshTrax.';
 
   @override
-  String get batterySleep_openSettings => 'Open settings';
+  String get batterySleep_openSettings => 'Otwórz ustawienia';
 
   @override
-  String get batterySleep_notNow => 'Not now';
+  String get batterySleep_notNow => 'Nie teraz';
 
   @override
-  String get batterySleep_settingsTile => 'Keep MeshTrax running in background';
+  String get batterySleep_settingsTile => 'Utrzymuj MeshTrax w działaniu w tle';
 
   @override
   String get batterySleep_settingsTileSubtitle =>
-      'Stop the phone\'s battery saver from putting MeshTrax to sleep';
+      'Nie pozwól oszczędzaniu baterii usypiać MeshTrax';
 
   @override
   String dmChannel_noMatchTitle(String name) {
-    return 'Can\'t DM $name yet';
+    return 'Nie można jeszcze wysłać DM do $name';
   }
 
   @override
   String get dmChannel_noMatchBody =>
-      'You don\'t have their key yet, and they\'ll need yours to reply — keys only travel in adverts. \"Send my advert\" broadcasts yours from right here. \"Ask in channel\" writes a request into the message box for you to send.';
+      'Nie masz jeszcze klucza tej osoby, a ona potrzebuje Twojego, by odpowiedzieć — klucze krążą tylko w rozgłoszeniach. \"Wyślij moje rozgłoszenie\" nadaje Twoje stąd. \"Zapytaj na kanale\" wpisuje prośbę do pola wiadomości, a Ty ją wysyłasz.';
 
   @override
-  String get dmChannel_askInChannel => 'Ask in channel';
+  String get dmChannel_askInChannel => 'Zapytaj na kanale';
 
   @override
-  String get dmChannel_sendMyAdvert => 'Send my advert';
+  String get dmChannel_sendMyAdvert => 'Wyślij moje rozgłoszenie';
 
   @override
-  String get dmChannel_askText => 'please send an advert so I can DM you';
+  String get dmChannel_askText =>
+      'proszę o rozgłoszenie, chcę napisać do Ciebie DM';
 
   @override
   String get dmChannel_watching =>
-      'Watching for their advert — you\'ll be asked here when it arrives.';
+      'Czekam na rozgłoszenie tej osoby — gdy dotrze, zapytam Cię tutaj.';
 
   @override
   String dmChannel_advertHeard(String name) {
-    return '$name is now reachable';
+    return 'Kontakt $name jest już osiągalny';
   }
 
   @override
@@ -1498,14 +1503,14 @@ class AppLocalizationsPl extends AppLocalizations {
   String get common_reset => 'Resetuj';
 
   @override
-  String get chat_reactionsTitle => 'Reactions';
+  String get chat_reactionsTitle => 'Reakcje';
 
   @override
-  String get chat_reactionUnknownSender => 'Unknown';
+  String get chat_reactionUnknownSender => 'Nieznany';
 
   @override
   String chat_reactionTargetMissing(String sender) {
-    return '$sender reacted to a message that isn\'t in this chat';
+    return '$sender: reakcja na wiadomość, której nie ma w tym czacie';
   }
 
   @override
@@ -1554,22 +1559,22 @@ class AppLocalizationsPl extends AppLocalizations {
   String get debugLog_copyLog => 'Kopiuj log';
 
   @override
-  String get debugLog_saveLog => 'Save log to file';
+  String get debugLog_saveLog => 'Zapisz log do pliku';
 
   @override
-  String get debugLog_saved => 'Log saved';
+  String get debugLog_saved => 'Log zapisany';
 
   @override
-  String get debugLog_saveCancelled => 'Save cancelled';
+  String get debugLog_saveCancelled => 'Zapisywanie anulowane';
 
   @override
-  String get debugLog_filterAll => 'All';
+  String get debugLog_filterAll => 'Wszystko';
 
   @override
-  String get debugLog_filterWarnings => 'Warnings';
+  String get debugLog_filterWarnings => 'Ostrzeżenia';
 
   @override
-  String get debugLog_filterErrors => 'Errors';
+  String get debugLog_filterErrors => 'Błędy';
 
   @override
   String get debugLog_clearLog => 'Wyczyść dziennik';
@@ -1633,7 +1638,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get debugFrame_textTypeCli => 'CLI';
 
   @override
-  String get debugFrame_textTypeCliCommand => 'CLI command';
+  String get debugFrame_textTypeCliCommand => 'Polecenie CLI';
 
   @override
   String get debugFrame_textTypePlain => 'Zwykły';
@@ -3077,13 +3082,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get listFilter_filters => 'Filtry';
 
   @override
-  String get listFilter_source => 'Source';
+  String get listFilter_source => 'Źródło';
 
   @override
-  String get listFilter_saved => 'Saved';
+  String get listFilter_saved => 'Zapisane';
 
   @override
-  String get listFilter_discovered => 'Discovered';
+  String get listFilter_discovered => 'Odkryte';
 
   @override
   String get listFilter_all => 'Wszystko';
@@ -3350,31 +3355,31 @@ class AppLocalizationsPl extends AppLocalizations {
       'Kopiowanie rozgłoszenia do schowka nie powiodło się.';
 
   @override
-  String get contacts_addContact => 'Add Contact';
+  String get contacts_addContact => 'Dodaj kontakt';
 
   @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
+  String get contacts_scanQrCode => 'Zeskanuj QR kontaktu';
 
   @override
   String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
+      'Zeskanuj kod QR kontaktu z aplikacji MeshCore';
 
   @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
+  String get contacts_enterIdHash => 'Wprowadź kontakt ręcznie';
 
   @override
   String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
+      'Wklej rozgłoszenie kontaktu lub link meshcore://';
 
   @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
+  String get contacts_advertHint => 'meshcore://... lub klucz publiczny hex';
 
   @override
-  String get contacts_import => 'Import';
+  String get contacts_import => 'Importuj';
 
   @override
   String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
+      'Zeskanuj kod QR kontaktu MeshCore';
 
   @override
   String get notification_activityTitle => 'Aktywność MeshCore';
@@ -3542,7 +3547,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get discoveredContacts_noMatching => 'Brak pasujących kontaktów';
 
   @override
-  String get listFilter_searchHint => 'Search...';
+  String get listFilter_searchHint => 'Szukaj...';
 
   @override
   String get discoveredContacts_searchHint => 'Wyszukaj odkryte kontakty';
@@ -3572,7 +3577,8 @@ class AppLocalizationsPl extends AppLocalizations {
       'Prosimy o chwilowe oczekiwanie przed ponownym wysłaniem.';
 
   @override
-  String get chat_notConnected => 'Not connected to a radio. Message not sent.';
+  String get chat_notConnected =>
+      'Brak połączenia z radiem. Wiadomość nie została wysłana.';
 
   @override
   String get appSettings_jumpToOldestUnread =>
@@ -3757,76 +3763,78 @@ class AppLocalizationsPl extends AppLocalizations {
   String get translation_systemLanguage => 'Język systemu';
 
   @override
-  String get routing_title => 'Routing';
+  String get routing_title => 'Trasowanie';
 
   @override
   String routing_route(String route) {
-    return 'Stored path: $route';
+    return 'Zapisana ścieżka: $route';
   }
 
   @override
   String get routing_noRoute =>
-      'none yet — the next message floods and learns one';
+      'jeszcze brak — następna wiadomość pójdzie zalewem i ją pozna';
 
   @override
-  String get routing_auto => 'Automatic';
+  String get routing_auto => 'Automatycznie';
 
   @override
   String get routing_autoSubtitle =>
-      'Use the radio\'s stored path. Recommended.';
+      'Używa ścieżki zapisanej w radiu. Zalecane.';
 
   @override
   String get routing_pathfinderOn =>
-      'Pathfinder on: tries learned routes first';
+      'Pathfinder włączony: najpierw próbuje poznanych tras';
 
   @override
-  String get routing_flood => 'Always flood';
+  String get routing_flood => 'Zawsze zalewem';
 
   @override
-  String get routing_floodSubtitle => 'Every message goes to the whole mesh';
+  String get routing_floodSubtitle => 'Każda wiadomość trafia do całej sieci';
 
   @override
-  String get routing_custom => 'Custom path';
+  String get routing_custom => 'Własna ścieżka';
 
   @override
-  String get routing_customSubtitle => 'Choose the repeaters yourself';
+  String get routing_customSubtitle => 'Wybierz przekaźniki samodzielnie';
 
   @override
-  String get routing_forget => 'Reset path';
+  String get routing_forget => 'Resetuj ścieżkę';
 
   @override
   String get routing_forgetDone =>
-      'Path reset. The next message floods and learns a fresh one.';
+      'Ścieżka zresetowana. Następna wiadomość pójdzie zalewem i pozna nową.';
 
   @override
-  String get routing_pathfinder => 'What Pathfinder knows';
+  String get routing_pathfinder => 'Co wie Pathfinder';
 
   @override
   String get routing_pathfinderSubtitle =>
-      'Repeaters that hear you and them, and learned routes there and back';
+      'Przekaźniki, które słyszą Ciebie i ten kontakt, oraz poznane trasy tam i z powrotem';
 
   @override
-  String get path_direct => 'Direct — no repeaters';
+  String get path_direct => 'Bezpośrednio — bez przekaźników';
 
   @override
   String get path_directSubtitle =>
-      'Only when the contact can hear this radio itself';
+      'Tylko gdy kontakt słyszy to radio bezpośrednio';
 
   @override
-  String get chat_kindFlood => 'flood';
+  String get chat_kindFlood => 'zalewem';
 
   @override
-  String get chat_kindDirect => 'direct';
+  String get chat_kindDirect => 'bezpośrednio';
 
   @override
   String chat_kindRoute(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'skoków',
+      many: 'skoków',
+      few: 'skoki',
+      one: 'skok',
     );
-    return 'route ($count $_temp0)';
+    return 'trasą ($count $_temp0)';
   }
 
   @override
@@ -3841,45 +3849,45 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get chat_statusQueued => 'Queued';
+  String get chat_statusQueued => 'W kolejce';
 
   @override
   String get chat_statusNoRepeaterHeard =>
-      'No repeater heard you. Will try again when one is in range.';
+      'Żaden przekaźnik Cię nie usłyszał. Ponowna próba, gdy któryś będzie w zasięgu.';
 
   @override
   String chat_narrowHashNotice(String name) {
-    return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
+    return 'Radio $name wysyła krótkie kody przekaźników (1 bajt). Pathfinder nie pozna tras do tego kontaktu, dopóki jego radio nie przejdzie na kody 2-bajtowe.';
   }
 
   @override
   String chat_statusSending(String kind) {
-    return 'Sending · $kind';
+    return 'Wysyłanie · $kind';
   }
 
   @override
   String chat_statusRetrying(int attempt, int max, String kind) {
-    return 'Retrying · $kind · attempt $attempt of $max';
+    return 'Ponawianie · $kind · próba $attempt z $max';
   }
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return 'Dostarczono · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return 'Dostarczono w próbie $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return 'Dostarczono z opóźnieniem · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return 'Dostarczono · $secs s';
   }
 
   @override
@@ -3887,17 +3895,20 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       attempts,
       locale: localeName,
-      other: 'attempts',
-      one: 'attempt',
+      other: 'próbach',
+      many: 'próbach',
+      few: 'próbach',
+      one: 'próbie',
     );
-    return 'Failed after $attempts $_temp0 · tap to resend';
+    return 'Niepowodzenie po $attempts $_temp0 · stuknij, by wysłać ponownie';
   }
 
   @override
-  String get chat_statusFailedShort => 'Failed · tap to resend';
+  String get chat_statusFailedShort =>
+      'Niepowodzenie · stuknij, by wysłać ponownie';
 
   @override
-  String get chat_resendingByFlood => 'Resending by flood';
+  String get chat_resendingByFlood => 'Ponowne wysyłanie zalewem';
 
   @override
   String get pathfinderHelp_title => 'What Pathfinder does';
@@ -3933,53 +3944,54 @@ class AppLocalizationsPl extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder (eksperymentalny)';
 
   @override
   String get settings_pathGraphSubtitle =>
-      'Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.';
+      'Uczy się tras ze wszystkiego, co słyszy radio, i przy wysyłaniu DM najpierw próbuje najlepszych. Bursztynowa ikona ścieżki oznacza wiadomość wysłaną trasą Pathfindera.';
 
   @override
-  String get map_routeAndTrace => 'Route & trace';
+  String get map_routeAndTrace => 'Trasa i śledzenie';
 
   @override
-  String get map_pathfinderTrace => 'Trace there and back';
+  String get map_pathfinderTrace => 'Śledzenie tam i z powrotem';
 
   @override
   String get map_pathfinderTraceSubtitle =>
-      'Out on Pathfinder\'s best route, back on its best route back';
+      'Tam najlepszą trasą Pathfindera, z powrotem jego najlepszą trasą powrotną';
 
   @override
   String get map_routeBackMirrored =>
-      'No route back known yet — coming back the same way';
+      'Trasa powrotna jeszcze nieznana — powrót tą samą drogą';
 
   @override
-  String get map_traceHelpTitle => 'Path trace buttons';
+  String get map_traceHelpTitle => 'Przyciski śledzenia ścieżki';
 
   @override
-  String get map_traceHelpCustom => 'Type or pick the repeaters yourself.';
+  String get map_traceHelpCustom =>
+      'Wpisz lub wybierz przekaźniki samodzielnie.';
 
   @override
   String get map_traceHelpRun =>
-      'Sends a trace out along the repeaters you tapped, one way.';
+      'Wysyła śledzenie przez stuknięte przekaźniki, w jedną stronę.';
 
   @override
-  String get map_traceHelpThereAndBack => 'There and back';
+  String get map_traceHelpThereAndBack => 'Tam i z powrotem';
 
   @override
   String get map_traceHelpThereAndBackSubtitle =>
-      'Sends the trace out, then back over the same repeaters in reverse.';
+      'Wysyła śledzenie tam, a potem z powrotem przez te same przekaźniki w odwrotnej kolejności.';
 
   @override
   String get map_traceHelpPathfinder =>
-      'Pathfinder picks the best route through the last two repeaters you tapped, and the best route back to you. The result teaches Pathfinder which links really work. Needs two repeaters tapped.';
+      'Pathfinder wybiera najlepszą trasę przez dwa ostatnio stuknięte przekaźniki i najlepszą trasę z powrotem do Ciebie. Wynik uczy Pathfindera, które połączenia naprawdę działają. Wymaga stuknięcia dwóch przekaźników.';
 
   @override
-  String get map_traceHelpRemoveLast => 'Takes the last repeater off the path.';
+  String get map_traceHelpRemoveLast => 'Usuwa ostatni przekaźnik ze ścieżki.';
 
   @override
   String get map_traceHelpCancel =>
-      'Stops building the trace. Shown before any repeater is tapped.';
+      'Przerywa budowanie śledzenia. Widoczny, zanim stukniesz jakikolwiek przekaźnik.';
 
   @override
   String get chat_resendingByRoute => 'Ponowne wysyłanie ustawioną trasą';
@@ -4075,263 +4087,265 @@ class AppLocalizationsPl extends AppLocalizations {
   String get room_reloadFailed => 'Nie udało się zresetować pokoju w radiu';
 
   @override
-  String get companionCli_title => 'Command line';
+  String get companionCli_title => 'Wiersz poleceń';
 
   @override
   String get companionCli_settingsSubtitle =>
-      'Type text commands for this radio';
+      'Wpisuj polecenia tekstowe dla tego radia';
 
   @override
-  String get companionCli_rebooting => 'Restarting the radio…';
+  String get companionCli_rebooting => 'Ponowne uruchamianie radia…';
 
   @override
-  String get companionCli_cancelled => 'Cancelled';
+  String get companionCli_cancelled => 'Anulowano';
 
   @override
-  String get companionCli_poweringOff => 'Turning the radio off…';
+  String get companionCli_poweringOff => 'Wyłączanie radia…';
 
   @override
-  String get companionCli_noReply => 'No reply from the radio. Try again.';
+  String get companionCli_noReply =>
+      'Brak odpowiedzi z radia. Spróbuj ponownie.';
 
   @override
-  String get companionCli_powerOffTitle => 'Turn the radio off?';
+  String get companionCli_powerOffTitle => 'Wyłączyć radio?';
 
   @override
   String get companionCli_powerOffBody =>
-      'It stays off until you press its button or plug it in.';
+      'Pozostanie wyłączone, dopóki nie naciśniesz jego przycisku lub go nie podłączysz.';
 
   @override
-  String get companionCli_powerOff => 'Turn off';
+  String get companionCli_powerOff => 'Wyłącz';
 
   @override
-  String get companionCli_quickBoard => 'Board';
+  String get companionCli_quickBoard => 'Płytka';
 
   @override
-  String get companionCli_quickWifiStatus => 'WiFi status';
+  String get companionCli_quickWifiStatus => 'Stan WiFi';
 
   @override
-  String get companionCli_quickWifiAddress => 'WiFi address';
+  String get companionCli_quickWifiAddress => 'Adres WiFi';
 
   @override
-  String get companionCli_helpBoard => 'Shows the board\'s maker and model.';
+  String get companionCli_helpBoard => 'Pokazuje producenta i model płytki.';
 
   @override
-  String get companionCli_helpReboot => 'Restarts the radio.';
+  String get companionCli_helpReboot => 'Uruchamia radio ponownie.';
 
   @override
-  String get companionCli_helpPowerOff => 'Turns the radio off.';
+  String get companionCli_helpPowerOff => 'Wyłącza radio.';
 
   @override
   String get companionCli_helpSetPin =>
-      'Sets the Bluetooth pairing PIN. Applies after a restart.';
+      'Ustawia PIN parowania Bluetooth. Działa po ponownym uruchomieniu.';
 
   @override
   String get companionCli_helpSetTzOffset =>
-      'Sets the hours added to UTC for the clock on the radio\'s own screen (-12 to +14).';
+      'Ustawia liczbę godzin dodawaną do UTC dla zegara na ekranie radia (-12 do +14).';
 
   @override
   String get companionCli_helpSetTx =>
-      'Sets the transmit power in dBm. Applies at once.';
+      'Ustawia moc nadawania w dBm. Działa od razu.';
 
   @override
   String get companionCli_helpSetIntThresh =>
-      'Sets the interference threshold in dB. 0 turns interference detection off.';
+      'Ustawia próg zakłóceń w dB. 0 wyłącza wykrywanie zakłóceń.';
 
   @override
   String get companionCli_helpSetCad =>
-      'Listens for other radios before sending (channel activity detection).';
+      'Nasłuchuje innych radiów przed nadawaniem (wykrywanie aktywności kanału).';
 
   @override
   String get companionCli_helpSetRxGain =>
-      'Boosted receive gain, on SX126x radios.';
+      'Zwiększone wzmocnienie odbioru w radiach SX126x.';
 
   @override
   String get companionCli_helpSetPathHashMode =>
-      'Bytes per repeater in a route: 0 = 1 byte, 1 = 2 bytes, 2 = 3 bytes.';
+      'Bajty na przekaźnik w trasie: 0 = 1 bajt, 1 = 2 bajty, 2 = 3 bajty.';
 
   @override
   String get companionCli_helpWifiStatus =>
-      'Shows whether the radio is on the WiFi network.';
+      'Pokazuje, czy radio jest w sieci WiFi.';
 
   @override
-  String get companionCli_helpWifiIp =>
-      'Shows the radio\'s address on the WiFi network.';
+  String get companionCli_helpWifiIp => 'Pokazuje adres radia w sieci WiFi.';
 
   @override
   String get companionCli_helpWifiSsid =>
-      'Sets the WiFi network name. Applies after a restart.';
+      'Ustawia nazwę sieci WiFi. Działa po ponownym uruchomieniu.';
 
   @override
   String get companionCli_helpWifiPwd =>
-      'Sets the WiFi password. Applies after a restart.';
+      'Ustawia hasło WiFi. Działa po ponownym uruchomieniu.';
 
   @override
   String get companionCli_helpWifiEnabled =>
-      'Turns WiFi on (1) or off (0). Applies after a restart.';
+      'Włącza (1) lub wyłącza (0) WiFi. Działa po ponownym uruchomieniu.';
 
   @override
   String get companionCli_helpWifiClear =>
-      'Forgets the WiFi network. Applies after a restart.';
+      'Zapomina sieć WiFi. Działa po ponownym uruchomieniu.';
 
   @override
   String get companionCli_remoteNoReply =>
-      'No reply. The other radio needs firmware 1.18 or newer, and must allow you to use its command line.';
+      'Brak odpowiedzi. Drugie radio potrzebuje oprogramowania 1.18 lub nowszego i musi pozwalać Ci korzystać ze swojego wiersza poleceń.';
 
   @override
   String get companionCli_remoteSentNoAnswer =>
-      'Sent. A radio does not answer a restart or power-off.';
+      'Wysłano. Radio nie odpowiada na ponowne uruchomienie ani wyłączenie.';
 
   @override
   String companionCli_blocked(String name, String command) {
-    return '$name tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return '$name: próba użycia wiersza poleceń Twojego radia: \"$command\". Odmówiono.';
   }
 
   @override
   String companionCli_blockedBody(String command) {
-    return 'Tried to use your radio\'s command line: \"$command\". It was not allowed.';
+    return 'Próba użycia wiersza poleceń Twojego radia: \"$command\". Odmówiono.';
   }
 
   @override
-  String get contact_remoteCli => 'Allow remote command line';
+  String get contact_remoteCli => 'Zezwól na zdalny wiersz poleceń';
 
   @override
   String get contact_remoteCliSubtitle =>
-      'Lets this contact run commands on your radio';
+      'Pozwala temu kontaktowi wykonywać polecenia na Twoim radiu';
 
   @override
   String contact_remoteCliWarningTitle(String name) {
-    return 'Let $name control your radio?';
+    return 'Pozwolić $name sterować Twoim radiem?';
   }
 
   @override
   String contact_remoteCliWarning(String name) {
-    return '$name will be able to change your radio\'s settings, read your WiFi password, rename your radio, and restart or turn it off. Only allow someone you trust completely.';
+    return 'Kontakt $name będzie mógł zmieniać ustawienia Twojego radia, odczytać hasło WiFi, zmienić nazwę radia oraz je zrestartować lub wyłączyć. Zezwalaj tylko komuś, komu ufasz całkowicie.';
   }
 
   @override
-  String get contact_remoteCliAllow => 'Allow';
+  String get contact_remoteCliAllow => 'Zezwól';
 
   @override
   String get connection_secondApp =>
-      'Another app is connected to this radio. Messages and settings can get mixed up. Close the other app.';
+      'Inna aplikacja jest połączona z tym radiem. Wiadomości i ustawienia mogą się pomieszać. Zamknij tę drugą aplikację.';
 
   @override
   String get wifi_title => 'WiFi';
 
   @override
-  String get wifi_settingsSubtitle => 'Network, password and connection';
+  String get wifi_settingsSubtitle => 'Sieć, hasło i połączenie';
 
   @override
-  String get wifi_use => 'Use WiFi';
+  String get wifi_use => 'Używaj WiFi';
 
   @override
-  String get wifi_networkName => 'Network name';
+  String get wifi_networkName => 'Nazwa sieci';
 
   @override
-  String get wifi_password => 'Password';
+  String get wifi_password => 'Hasło';
 
   @override
-  String get wifi_passwordUnchanged => 'Unchanged';
+  String get wifi_passwordUnchanged => 'Bez zmian';
 
   @override
-  String get wifi_showPassword => 'Show password';
+  String get wifi_showPassword => 'Pokaż hasło';
 
   @override
-  String get wifi_nameMissing => 'Enter the network name';
+  String get wifi_nameMissing => 'Wpisz nazwę sieci';
 
   @override
   String get wifi_nameTooLong =>
-      'The network name is too long (32 bytes at most)';
+      'Nazwa sieci jest za długa (maksymalnie 32 bajty)';
 
   @override
   String get wifi_passwordTooLong =>
-      'The password is too long (63 bytes at most)';
+      'Hasło jest za długie (maksymalnie 63 bajty)';
 
   @override
   String get wifi_savedRestart =>
-      'Saved. WiFi changes apply after the radio restarts.';
+      'Zapisano. Zmiany WiFi zadziałają po ponownym uruchomieniu radia.';
 
   @override
-  String get wifi_forget => 'Forget network';
+  String get wifi_forget => 'Zapomnij sieć';
 
   @override
   String get wifi_forgetConfirm =>
-      'Forget this WiFi network? The radio stops using WiFi after it restarts.';
+      'Zapomnieć tę sieć WiFi? Radio przestanie używać WiFi po ponownym uruchomieniu.';
 
   @override
   String wifi_notAccepted(String reply) {
-    return 'The radio did not accept that: $reply';
+    return 'Radio nie przyjęło tego: $reply';
   }
 
   @override
-  String get wifi_noReply => 'No reply from the radio. Try again.';
+  String get wifi_noReply => 'Brak odpowiedzi z radia. Spróbuj ponownie.';
 
   @override
-  String get wifi_restartTitle => 'Restart the radio?';
+  String get wifi_restartTitle => 'Uruchomić radio ponownie?';
 
   @override
-  String get wifi_later => 'Later';
+  String get wifi_later => 'Później';
 
   @override
-  String get wifi_loadFailed =>
-      'Could not read the WiFi settings from the radio.';
+  String get wifi_loadFailed => 'Nie udało się odczytać ustawień WiFi z radia.';
 
   @override
   String wifi_connectedTo(String address) {
-    return 'Connected · $address';
+    return 'Połączono · $address';
   }
 
   @override
-  String get wifi_notConnected => 'Not connected to WiFi';
+  String get wifi_notConnected => 'Brak połączenia z WiFi';
 
   @override
   String wifi_portNote(int port) {
-    return 'Apps on the same network can connect on port $port';
+    return 'Aplikacje w tej samej sieci mogą łączyć się na porcie $port';
   }
 
   @override
-  String get wifi_connectOverWifi => 'Connect over WiFi';
+  String get wifi_connectOverWifi => 'Połącz przez WiFi';
 
   @override
   String wifi_connectOverWifiBody(String address, int port) {
-    return 'MeshTrax will disconnect from this radio and open the TCP screen with $address, port $port filled in. Tap Connect there.';
+    return 'MeshTrax odłączy się od tego radia i otworzy ekran TCP z wypełnionym adresem $address i portem $port. Stuknij tam \"Połącz\".';
   }
 
   @override
-  String get wifi_noteRestart => 'Changes apply after the radio restarts.';
+  String get wifi_noteRestart =>
+      'Zmiany zadziałają po ponownym uruchomieniu radia.';
 
   @override
   String get wifi_noteSecurity =>
-      'Anyone on your WiFi network can connect to the radio on port 5000. There is no password for that.';
+      'Każdy w Twojej sieci WiFi może połączyć się z radiem na porcie 5000. Nie ma do tego hasła.';
 
   @override
   String get wifi_noteBattery =>
-      'WiFi keeps the radio awake, so the battery runs down faster.';
+      'WiFi nie pozwala radiu zasnąć, więc bateria rozładowuje się szybciej.';
 
   @override
   String get wifi_noteWrongPassword =>
-      'If the password is wrong, the radio keeps trying every few seconds. Bluetooth keeps working.';
+      'Jeśli hasło jest błędne, radio próbuje ponownie co kilka sekund. Bluetooth nadal działa.';
 
   @override
   String get room_selfDemoteWarning =>
       'Zmieniasz własny dostęp. Jeśli utracisz rolę administratora, przywrócić ją może tylko konsola pokoju.';
 
   @override
-  String get scanner_offlineMaps => 'Offline maps';
+  String get scanner_offlineMaps => 'Mapy offline';
 
   @override
-  String get appSettings_offlineMaps => 'Offline maps';
+  String get appSettings_offlineMaps => 'Mapy offline';
 
   @override
-  String get appSettings_offlineMapsNone => 'None downloaded';
+  String get appSettings_offlineMapsNone => 'Nic nie pobrano';
 
   @override
   String appSettings_offlineMapsRegions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count regions',
-      one: '1 region',
+      other: '$count regionów',
+      many: '$count regionów',
+      few: '$count regiony',
+      one: '$count region',
     );
     return '$_temp0';
   }
@@ -4341,8 +4355,10 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count chart areas',
-      one: '1 chart area',
+      other: '$count obszarów map morskich',
+      many: '$count obszarów map morskich',
+      few: '$count obszary map morskich',
+      one: '$count obszar map morskich',
     );
     return '$_temp0';
   }
@@ -4352,81 +4368,86 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count updates available',
-      one: '1 update available',
+      other: 'Dostępnych $count aktualizacji',
+      many: 'Dostępnych $count aktualizacji',
+      few: 'Dostępne $count aktualizacje',
+      one: 'Dostępna $count aktualizacja',
     );
     return '$_temp0';
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly =>
+      'Pobieraj mapy tylko przez Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+      'Pobieranie map czeka na połączenie Wi‑Fi';
 
   @override
-  String get offlineMaps_title => 'Offline maps';
+  String get offlineMaps_title => 'Mapy offline';
 
   @override
-  String get offlineMaps_tabMaps => 'Maps';
+  String get offlineMaps_tabMaps => 'Mapy';
 
   @override
-  String get offlineMaps_tabCharts => 'Charts';
+  String get offlineMaps_tabCharts => 'Mapy morskie';
 
   @override
-  String get offlineMaps_chartsNotice => 'Not for navigation · Why?';
+  String get offlineMaps_chartsNotice => 'Nie do nawigacji · Dlaczego?';
 
   @override
   String offlineMaps_chartsSuggested(String coast) {
-    return 'Suggested · $coast';
+    return 'Sugerowane · $coast';
   }
 
   @override
-  String get offlineMaps_chartsByCoast => 'Chart areas by coast';
+  String get offlineMaps_chartsByCoast => 'Obszary map według wybrzeża';
 
   @override
   String offlineMaps_chartsCoastSummary(int count, String size) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count obszarów',
+      many: '$count obszarów',
+      few: '$count obszary',
+      one: '$count obszar',
     );
     return '$_temp0 · $size';
   }
 
   @override
   String offlineMaps_chartsDownloadedCount(int count) {
-    return '$count downloaded';
+    return 'Pobrano: $count';
   }
 
   @override
   String offlineMaps_chartsSelectedCount(int count) {
-    return '$count selected';
+    return 'Wybrano: $count';
   }
 
   @override
-  String get offlineMaps_selectAll => 'Select all';
+  String get offlineMaps_selectAll => 'Zaznacz wszystko';
 
   @override
-  String get offlineMaps_clearSelection => 'Clear';
+  String get offlineMaps_clearSelection => 'Wyczyść';
 
   @override
   String offlineMaps_chartsAlsoIn(String coasts) {
-    return 'Also in $coasts';
+    return 'Także w: $coasts';
   }
 
   @override
-  String get offlineMaps_chartsNotAvailable => 'Not available yet';
+  String get offlineMaps_chartsNotAvailable => 'Jeszcze niedostępne';
 
   @override
   String get offlineMaps_chartsHint =>
-      'NOAA charts are picked by coast, in the Charts tab.';
+      'Mapy morskie NOAA wybiera się według wybrzeża, na karcie \"Mapy morskie\".';
 
   @override
   String offlineMaps_chartsName(String area) {
-    return '$area NOAA charts';
+    return 'Mapy morskie NOAA – $area';
   }
 
   @override
@@ -4434,243 +4455,248 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count areas',
-      one: '1 area',
+      other: '$count obszarów',
+      many: '$count obszarów',
+      few: '$count obszary',
+      one: '$count obszar',
     );
     return '$_temp0';
   }
 
   @override
-  String get offlineMaps_tabDownloaded => 'Downloaded';
+  String get offlineMaps_tabDownloaded => 'Pobrane';
 
   @override
-  String get offlineMaps_refresh => 'Check for new maps';
+  String get offlineMaps_refresh => 'Sprawdź nowe mapy';
 
   @override
-  String get offlineMaps_loading => 'Loading available maps…';
+  String get offlineMaps_loading => 'Wczytywanie dostępnych map…';
 
   @override
-  String get offlineMaps_serverError => 'Can\'t reach the map server';
+  String get offlineMaps_serverError => 'Brak połączenia z serwerem map';
 
   @override
-  String get offlineMaps_unavailable => 'No maps are available yet';
+  String get offlineMaps_unavailable => 'Brak dostępnych map';
 
   @override
-  String get offlineMaps_unavailableHint => 'Check again later.';
+  String get offlineMaps_unavailableHint => 'Sprawdź ponownie później.';
 
   @override
   String get offlineMaps_chartsUnavailable =>
-      'No NOAA charts are available yet';
+      'Brak dostępnych map morskich NOAA';
 
   @override
   String offlineMaps_cachedFrom(String date) {
-    return 'Showing the list from $date';
+    return 'Lista z dnia $date';
   }
 
   @override
   String get offlineMaps_needsNewerApp =>
-      'Update MeshTrax to get the newest maps.';
+      'Zaktualizuj MeshTrax, aby pobrać najnowsze mapy.';
 
   @override
-  String get offlineMaps_world => 'World';
+  String get offlineMaps_world => 'Świat';
 
   @override
-  String get offlineMaps_suggested => 'Suggested';
+  String get offlineMaps_suggested => 'Sugerowane';
 
   @override
-  String get offlineMaps_regions => 'Regions';
+  String get offlineMaps_regions => 'Regiony';
 
   @override
   String offlineMaps_regionsIn(String name) {
-    return 'Regions in $name';
+    return 'Regiony: $name';
   }
 
   @override
   String offlineMaps_inside(int count) {
-    return '$count inside';
+    return 'W środku: $count';
   }
 
   @override
   String offlineMaps_storageUsed(String size) {
-    return '$size of offline maps on this device';
+    return '$size map offline na tym urządzeniu';
   }
 
   @override
   String offlineMaps_updates(int count) {
-    return 'Updates ($count)';
+    return 'Aktualizacje ($count)';
   }
 
   @override
   String offlineMaps_updateAll(String size) {
-    return 'Update all $size';
+    return 'Aktualizuj wszystko ($size)';
   }
 
   @override
-  String get offlineMaps_downloading => 'Downloading';
+  String get offlineMaps_downloading => 'Pobieranie';
 
   @override
-  String get offlineMaps_update => 'Update';
+  String get offlineMaps_update => 'Aktualizuj';
 
   @override
   String offlineMaps_downloadedOn(String date) {
-    return 'Downloaded $date';
+    return 'Pobrano $date';
   }
 
   @override
-  String get offlineMaps_updateAvailable => 'Update available';
+  String get offlineMaps_updateAvailable => 'Dostępna aktualizacja';
 
   @override
-  String get offlineMaps_otherFiles => 'Other map files';
+  String get offlineMaps_otherFiles => 'Inne pliki map';
 
   @override
-  String get offlineMaps_emptyTitle => 'No offline maps yet';
+  String get offlineMaps_emptyTitle => 'Brak map offline';
 
   @override
   String get offlineMaps_emptyBody =>
-      'Download a region to use the map without a connection.';
+      'Pobierz region, aby korzystać z mapy bez połączenia.';
 
   @override
-  String get offlineMaps_findMaps => 'Find maps';
+  String get offlineMaps_findMaps => 'Znajdź mapy';
 
   @override
   String offlineMaps_deleteTitle(String name) {
-    return 'Delete $name?';
+    return 'Usunąć $name?';
   }
 
   @override
   String offlineMaps_deleteBody(String size) {
-    return 'This frees $size. You can download it again later.';
+    return 'Zwolni to $size. Możesz go później pobrać ponownie.';
   }
 
   @override
   String offlineMaps_deleted(String name) {
-    return '$name deleted';
+    return 'Usunięto $name';
   }
 
   @override
   String offlineMaps_bytesProgress(String done, String total) {
-    return '$done of $total';
+    return '$done z $total';
   }
 
   @override
-  String get offlineMaps_kindMap => 'Map';
+  String get offlineMaps_kindMap => 'Mapa';
 
   @override
   String get offlineMaps_kindMapDetail =>
-      'OpenStreetMap streets, trails, places';
+      'Ulice, szlaki i miejsca z OpenStreetMap';
 
   @override
-  String get offlineMaps_kindContours => 'Contours';
+  String get offlineMaps_kindContours => 'Poziomice';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail => 'Linie wysokości';
 
   @override
-  String get offlineMaps_kindUsgs => 'USGS topo map';
+  String get offlineMaps_kindUsgs => 'Mapa topograficzna USGS';
 
   @override
-  String get offlineMaps_kindUsgsDetail => 'Trails, streams, reserves';
+  String get offlineMaps_kindUsgsDetail => 'Szlaki, cieki, rezerwaty';
 
   @override
-  String get offlineMaps_kindTerrain => 'Hill shading';
+  String get offlineMaps_kindTerrain => 'Cieniowanie rzeźby';
 
   @override
   String get offlineMaps_kindTerrainDetail =>
-      'Hills and mountains, shaded under the map';
+      'Wzgórza i góry, cieniowane pod mapą';
 
   @override
-  String get offlineMaps_kindCharts => 'NOAA charts';
+  String get offlineMaps_kindCharts => 'Mapy morskie NOAA';
 
   @override
-  String get offlineMaps_usOnly => 'United States only';
+  String get offlineMaps_usOnly => 'Tylko Stany Zjednoczone';
 
   @override
   String offlineMaps_download(String size) {
-    return 'Download $size';
+    return 'Pobierz $size';
   }
 
   @override
-  String get offlineMaps_downloadTotal => 'Download';
+  String get offlineMaps_downloadTotal => 'Pobierz';
 
   @override
   String offlineMaps_largeDownload(String size) {
-    return 'Large download ($size). Use Wi‑Fi and keep your device charging.';
+    return 'Duże pobieranie ($size). Użyj Wi‑Fi i podłącz urządzenie do ładowania.';
   }
 
   @override
-  String get offlineMaps_waiting => 'Waiting…';
+  String get offlineMaps_waiting => 'Oczekiwanie…';
 
   @override
-  String get offlineMaps_checking => 'Checking download…';
+  String get offlineMaps_checking => 'Sprawdzanie pobranego pliku…';
 
   @override
-  String get offlineMaps_retrying => 'Retrying…';
+  String get offlineMaps_retrying => 'Ponawianie…';
 
   @override
   String offlineMaps_failed(String error) {
-    return 'Download failed: $error';
+    return 'Pobieranie nie powiodło się: $error';
   }
 
   @override
-  String get offlineMaps_pause => 'Pause';
+  String get offlineMaps_pause => 'Wstrzymaj';
 
   @override
-  String get offlineMaps_resume => 'Resume';
+  String get offlineMaps_resume => 'Wznów';
 
   @override
-  String get offlineMaps_deleteRegion => 'Delete region';
+  String get offlineMaps_deleteRegion => 'Usuń region';
 
   @override
-  String get offlineMaps_notInCatalogue => 'Not available for this region';
+  String get offlineMaps_notInCatalogue => 'Niedostępne dla tego regionu';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => 'Pobieranie mapy';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused => 'Pobieranie mapy wstrzymane';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed =>
+      'Pobieranie mapy nie powiodło się';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
+  String get offlineMaps_clearTileCache =>
+      'Wyczyść zapisane kafelki map online';
 
   @override
   String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
+      'Usunąć kafelki map online zapisane podczas przeglądania? Pobrane mapy pozostaną.';
 
   @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
+  String get offlineMaps_tileCacheCleared =>
+      'Usunięto zapisane kafelki map online';
 
   @override
-  String get map_notForNavigation => 'Not for navigation';
+  String get map_notForNavigation => 'Nie do nawigacji';
 
   @override
   String get map_chartsNoticeIntro =>
-      'MeshTrax draws these charts from NOAA\'s chart data to help you see the water around your radios and plan. They are not official charts. Don\'t steer by them.';
+      'MeshTrax rysuje te mapy z danych NOAA, aby pomóc Ci zobaczyć wodę wokół Twoich radiów i planować. To nie są oficjalne mapy. Nie nawiguj według nich.';
 
   @override
-  String get map_chartsNoticeWhy => 'Why:';
+  String get map_chartsNoticeWhy => 'Dlaczego:';
 
   @override
   String get map_chartsNoticeOutOfDate =>
-      'They go out of date. NOAA corrects its charts all the time; a downloaded chart stays as it is until you update it in Offline maps.';
+      'Dezaktualizują się. NOAA stale poprawia swoje mapy; pobrana mapa pozostaje bez zmian, dopóki nie zaktualizujesz jej w \"Mapy offline\".';
 
   @override
   String get map_chartsNoticeLeftOut =>
-      'They leave things out. Many chart symbols, light sectors and notes aren\'t drawn, and some labels hide until you zoom in.';
+      'Pomijają szczegóły. Wiele symboli, sektorów świateł i uwag nie jest rysowanych, a niektóre opisy pojawiają się dopiero po przybliżeniu.';
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      'Pozycje mogą być błędne lub nieaktualne. GPS może się mylić o 10 m (30 ft) lub więcej, a węzeł jest tylko tam, gdzie ostatnio się zgłosił.';
 
   @override
   String get map_chartsNoticeNotPlotter =>
-      'MeshTrax isn\'t a certified chart plotter.';
+      'MeshTrax nie jest certyfikowanym ploterem nawigacyjnym.';
 
   @override
   String get map_chartsNoticeUse =>
-      'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
+      'Do nawigacji używaj oficjalnych, aktualnych map NOAA (papierowych lub NOAA ENC w certyfikowanym ploterze) z najnowszymi Wiadomościami Żeglarskimi.';
 
   @override
   String get map_sourceOnline => 'Online';
@@ -4679,182 +4705,185 @@ class AppLocalizationsPl extends AppLocalizations {
   String get map_sourceOffline => 'Offline';
 
   @override
-  String get map_downloadForDetail => 'Download a region for detail';
+  String get map_downloadForDetail => 'Pobierz region, by zobaczyć szczegóły';
 
   @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
+  String get map_zoomInForOfflineMap => 'Przybliż, aby zobaczyć mapę offline';
 
   @override
-  String get map_noCharts => 'No charts here';
+  String get map_noCharts => 'Brak map morskich w tym miejscu';
 
   @override
-  String get map_myLocation => 'My location';
+  String get map_myLocation => 'Moja lokalizacja';
 
   @override
-  String get map_zoomIn => 'Zoom in';
+  String get map_zoomIn => 'Przybliż';
 
   @override
-  String get map_zoomOut => 'Zoom out';
+  String get map_zoomOut => 'Oddal';
 
   @override
   String get gps_title => 'GPS';
 
   @override
-  String get gps_on => 'GPS on';
+  String get gps_on => 'GPS włączony';
 
   @override
-  String get gps_off => 'GPS off';
+  String get gps_off => 'GPS wyłączony';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => 'Radio aktualizuje swoją pozycję z GPS.';
 
   @override
   String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+      'Wyłączenie oszczędza baterię radia. Po włączeniu ustalenie pozycji może potrwać kilka minut.';
 
   @override
-  String get gps_asking => 'Asking the radio...';
+  String get gps_asking => 'Pytanie radia...';
 
   @override
   String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+      'Brak pozycji. Na zewnątrz pierwsza może zająć kilka minut.';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => 'Pozycja';
 
   @override
-  String get gps_altitude => 'Altitude';
+  String get gps_altitude => 'Wysokość';
 
   @override
   String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
+    return 'Odczytano z radia $ago temu';
   }
 
   @override
-  String get gps_turnOnTitle => 'Turn on GPS?';
+  String get gps_turnOnTitle => 'Włączyć GPS?';
 
   @override
   String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+      'GPS radia jest wyłączony. Po włączeniu ustalenie pozycji może potrwać kilka minut.';
 
   @override
-  String get gps_turnOn => 'Turn on';
+  String get gps_turnOn => 'Włącz';
 
   @override
-  String get gps_notNow => 'Not now';
+  String get gps_notNow => 'Nie teraz';
 
   @override
-  String get map_zoomInForCharts => 'Zoom in to see your charts';
+  String get map_zoomInForCharts => 'Przybliż, aby zobaczyć mapy morskie';
 
   @override
   String map_downloadRegion(String region, String size) {
-    return 'Download $region · $size';
+    return 'Pobierz $region · $size';
   }
 
   @override
-  String get mapLayers_title => 'Map layers';
+  String get mapLayers_title => 'Warstwy mapy';
 
   @override
-  String get mapLayers_mapType => 'Map type';
+  String get mapLayers_mapType => 'Typ mapy';
 
   @override
-  String get mapLayers_standard => 'Standard';
+  String get mapLayers_standard => 'Standardowa';
 
   @override
-  String get mapLayers_usgs => 'USGS topo';
+  String get mapLayers_usgs => 'Topograficzna USGS';
 
   @override
-  String get mapLayers_charts => 'Charts';
+  String get mapLayers_charts => 'Mapy morskie';
 
   @override
-  String get mapLayers_notDownloaded => 'Not downloaded';
+  String get mapLayers_notDownloaded => 'Nie pobrano';
 
   @override
-  String get mapLayers_offlineOnly => 'Offline only';
+  String get mapLayers_offlineOnly => 'Tylko offline';
 
   @override
-  String get mapLayers_details => 'Map details';
+  String get mapLayers_details => 'Szczegóły mapy';
 
   @override
-  String get mapLayers_contours => 'Contours';
+  String get mapLayers_contours => 'Poziomice';
 
   @override
-  String get mapLayers_hillShading => 'Hill shading';
+  String get mapLayers_hillShading => 'Cieniowanie rzeźby';
 
   @override
-  String get mapLayers_dark => 'Dark map';
+  String get mapLayers_dark => 'Ciemna mapa';
 
   @override
-  String get mapLayers_downloadedAreas => 'Downloaded areas';
+  String get mapLayers_downloadedAreas => 'Pobrane obszary';
 
   @override
-  String get mapLayers_nodes => 'Nodes';
+  String get mapLayers_nodes => 'Węzły';
 
   @override
-  String get mapLayers_pins => 'Pins';
+  String get mapLayers_pins => 'Pinezki';
 
   @override
-  String get mapLayers_guessed => 'Guessed';
+  String get mapLayers_guessed => 'Przypuszczalne';
 
   @override
-  String get mapLayers_moreFilters => 'More filters';
+  String get mapLayers_moreFilters => 'Więcej filtrów';
 
   @override
-  String get mapLayers_moreFiltersDetail => 'Last seen, key prefix, overlaps';
+  String get mapLayers_moreFiltersDetail =>
+      'Ostatnio widziane, prefiks klucza, nakładanie się';
 
   @override
-  String get map_legend => 'Legend';
+  String get map_legend => 'Legenda';
 
   @override
-  String get scanner_map => 'Map';
+  String get scanner_map => 'Mapa';
 
   @override
-  String get structured_openMap => 'Open map';
+  String get structured_openMap => 'Otwórz mapę';
 
   @override
-  String get structured_addToCalendar => 'Add to calendar';
+  String get structured_addToCalendar => 'Dodaj do kalendarza';
 
   @override
-  String get structured_details => 'Details';
+  String get structured_details => 'Szczegóły';
 
   @override
   String get structured_sos => 'SOS';
 
   @override
-  String get structured_event => 'Event';
+  String get structured_event => 'Wydarzenie';
 
   @override
-  String get structured_notice => 'Notice';
+  String get structured_notice => 'Ogłoszenie';
 
   @override
-  String get structured_allDay => 'All day';
+  String get structured_allDay => 'Cały dzień';
 
   @override
-  String get structured_calendarFailed => 'Could not open the calendar';
+  String get structured_calendarFailed => 'Nie udało się otworzyć kalendarza';
 
   @override
-  String get structured_today => 'Today';
+  String get structured_today => 'Dziś';
 
   @override
-  String get structured_tomorrow => 'Tomorrow';
+  String get structured_tomorrow => 'Jutro';
 
   @override
   String structured_inDays(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'In $count days',
-      one: 'In 1 day',
+      other: 'Za $count dni',
+      many: 'Za $count dni',
+      few: 'Za $count dni',
+      one: 'Za $count dzień',
     );
     return '$_temp0';
   }
 
   @override
-  String get structured_past => 'Past';
+  String get structured_past => 'Minione';
 
   @override
   String structured_dayOfDays(int day, int total) {
-    return 'Day $day of $total';
+    return 'Dzień $day z $total';
   }
 
   @override
@@ -4862,658 +4891,705 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days',
-      one: '1 day',
+      other: '$count dni',
+      many: '$count dni',
+      few: '$count dni',
+      one: '$count dzień',
     );
     return '$_temp0';
   }
 
   @override
-  String get dialog_eventEndDate => 'End date';
+  String get dialog_eventEndDate => 'Data zakończenia';
 
   @override
-  String get dialog_eventSameDay => 'Same day';
+  String get dialog_eventSameDay => 'Ten sam dzień';
 
   @override
-  String get structured_map => 'Map';
+  String get structured_map => 'Mapa';
 
   @override
-  String get structured_navigate => 'Navigate';
+  String get structured_navigate => 'Nawiguj';
 
   @override
-  String get structured_channel => 'Channel';
+  String get structured_channel => 'Kanał';
 
   @override
-  String get structured_contact => 'Contact';
+  String get structured_contact => 'Kontakt';
 
   @override
-  String get structured_room => 'Room';
+  String get structured_room => 'Pokój';
 
   @override
-  String get structured_repeater => 'Repeater';
+  String get structured_repeater => 'Przekaźnik';
 
   @override
-  String get structured_sensor => 'Sensor';
+  String get structured_sensor => 'Czujnik';
 
   @override
-  String get structured_joinChannel => 'Join channel';
+  String get structured_joinChannel => 'Dołącz do kanału';
 
   @override
-  String get structured_addContact => 'Add contact';
+  String get structured_addContact => 'Dodaj kontakt';
 
   @override
-  String get structured_addRoom => 'Add room';
+  String get structured_addRoom => 'Dodaj pokój';
 
   @override
-  String get structured_addRepeater => 'Add repeater';
+  String get structured_addRepeater => 'Dodaj przekaźnik';
 
   @override
-  String get structured_addSensor => 'Add sensor';
+  String get structured_addSensor => 'Dodaj czujnik';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => 'Otwórz';
 
   @override
-  String get structured_added => 'Added';
+  String get structured_added => 'Dodano';
 
   @override
-  String get tray_add => 'Add';
+  String get tray_add => 'Dodaj';
 
   @override
-  String get tray_myLocation => 'My location';
+  String get tray_myLocation => 'Moja lokalizacja';
 
   @override
-  String get tray_pointOnMap => 'Point on map';
+  String get tray_pointOnMap => 'Punkt na mapie';
 
   @override
   String get tray_sos => 'SOS';
 
   @override
-  String get tray_event => 'Event';
+  String get tray_event => 'Wydarzenie';
 
   @override
-  String get tray_notice => 'Notice';
+  String get tray_notice => 'Ogłoszenie';
 
   @override
   String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+      'Twoje radio nie ma jeszcze pozycji. Wybierz ją na mapie.';
 
   @override
-  String get dialog_insert => 'Insert';
+  String get dialog_insert => 'Wstaw';
 
   @override
-  String get dialog_eventTitle => 'Title';
+  String get dialog_eventTitle => 'Tytuł';
 
   @override
-  String get dialog_eventDate => 'Date';
+  String get dialog_eventDate => 'Data';
 
   @override
-  String get dialog_eventStart => 'Start';
+  String get dialog_eventStart => 'Początek';
 
   @override
-  String get dialog_eventEnd => 'End';
+  String get dialog_eventEnd => 'Koniec';
 
   @override
-  String get dialog_eventNoEnd => 'No end time';
+  String get dialog_eventNoEnd => 'Bez godziny zakończenia';
 
   @override
-  String get dialog_eventPlace => 'Place (optional)';
+  String get dialog_eventPlace => 'Miejsce (opcjonalnie)';
 
   @override
-  String get dialog_pickOnMap => 'Pick on map';
+  String get dialog_pickOnMap => 'Wybierz na mapie';
 
   @override
-  String get dialog_sosTitle => 'Send SOS';
+  String get dialog_sosTitle => 'Wyślij SOS';
 
   @override
-  String get dialog_sosText => 'What happened?';
+  String get dialog_sosText => 'Co się stało?';
 
   @override
-  String get dialog_noticeTitle => 'Notice';
+  String get dialog_noticeTitle => 'Ogłoszenie';
 
   @override
-  String get dialog_noticeText => 'What should everyone know?';
+  String get dialog_noticeText => 'Co wszyscy powinni wiedzieć?';
 
   @override
-  String get dialog_labelTitle => 'Point on map';
+  String get dialog_labelTitle => 'Punkt na mapie';
 
   @override
-  String get dialog_note => 'Note (optional)';
+  String get dialog_note => 'Notatka (opcjonalnie)';
 
   @override
   String get paste_convertLocation =>
-      'Looks like a maps link. Convert it to a Location?';
+      'To wygląda na link do map. Zamienić na lokalizację?';
 
   @override
   String get paste_convertEvent =>
-      'Looks like a calendar share. Convert it to an Event?';
+      'To wygląda na wydarzenie udostępnione z kalendarza. Zamienić na wydarzenie?';
 
   @override
-  String get paste_convert => 'Convert';
+  String get paste_convert => 'Zamień';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolving => 'Rozwijanie linku…';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_resolveFailed => 'Nie udało się rozwinąć linku';
 
   @override
-  String get pinned_dismiss => 'Dismiss';
+  String get pinned_dismiss => 'Zamknij';
 
   @override
   String get tray_gif => 'GIF';
 
   @override
   String link_joinChannelBody(String name) {
-    return 'Join channel $name?';
+    return 'Dołączyć do kanału $name?';
   }
 
   @override
   String link_alreadyJoined(String name) {
-    return 'You are already in $name';
+    return 'Jesteś już w $name';
   }
 
   @override
   String link_channelJoined(String name) {
-    return 'Joined $name';
+    return 'Dołączono do $name';
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint => 'Stuknij mapę, aby wybrać pozycję';
 
   @override
-  String get map_legendMesh => 'Mesh';
+  String get map_legendMesh => 'Sieć mesh';
 
   @override
-  String get chartLegend_title => 'Chart symbols';
+  String get chartLegend_title => 'Symbole map morskich';
 
   @override
-  String get chartLegend_sectionBuoys => 'Buoys and beacons';
+  String get chartLegend_sectionBuoys => 'Pławy i stawy';
 
   @override
-  String get chartLegend_sectionLights => 'Lights';
+  String get chartLegend_sectionLights => 'Światła';
 
   @override
-  String get chartLegend_sectionHazards => 'Hazards';
+  String get chartLegend_sectionHazards => 'Niebezpieczeństwa';
 
   @override
-  String get chartLegend_sectionTides => 'Tides and currents';
+  String get chartLegend_sectionTides => 'Pływy i prądy';
 
   @override
-  String get chartLegend_sectionDepths => 'Depths and seabed';
+  String get chartLegend_sectionDepths => 'Głębokości i dno';
 
   @override
-  String get chartLegend_sectionAreas => 'Areas, lanes and lines';
+  String get chartLegend_sectionAreas => 'Obszary, tory i linie';
 
   @override
-  String get chartLegend_sectionLandmarks => 'Landmarks';
+  String get chartLegend_sectionLandmarks => 'Obiekty orientacyjne';
 
   @override
-  String get chartLegend_sectionAbbreviations => 'Abbreviations';
+  String get chartLegend_sectionAbbreviations => 'Skróty';
 
   @override
-  String get chartLegend_chartNo1 => 'Every chart symbol: U.S. Chart No. 1';
+  String get chartLegend_chartNo1 => 'Wszystkie symbole: U.S. Chart No. 1';
 
   @override
-  String get chartLegend_portBuoy => 'Green can buoy';
+  String get chartLegend_portBuoy => 'Zielona pława walcowa';
 
   @override
   String get chartLegend_portBuoyHint =>
-      'Keep it on your left coming in from sea';
+      'Zostaw ją po lewej, wchodząc od morza';
 
   @override
-  String get chartLegend_starboardBuoy => 'Red nun buoy';
+  String get chartLegend_starboardBuoy => 'Czerwona pława stożkowa';
 
   @override
   String get chartLegend_starboardBuoyHint =>
-      'Keep it on your right coming in: red, right, returning';
+      'Zostaw ją po prawej, wchodząc: czerwona po prawej, gdy wracasz z morza';
 
   @override
-  String get chartLegend_junctionBuoy => 'Banded buoy';
+  String get chartLegend_junctionBuoy => 'Pława w poziome pasy';
 
   @override
   String get chartLegend_junctionBuoyHint =>
-      'A channel junction: treat it as the colour of its top band';
+      'Rozwidlenie toru: traktuj ją jak kolor jej górnego pasa';
 
   @override
-  String get chartLegend_safeWaterBuoy => 'Red and white stripes';
+  String get chartLegend_safeWaterBuoy => 'Pasy czerwono-białe';
 
   @override
   String get chartLegend_safeWaterBuoyHint =>
-      'Safe water all around, often at a channel entrance';
+      'Bezpieczna woda dookoła, często u wejścia do toru';
 
   @override
-  String get chartLegend_isolatedDangerBuoy => 'Black and red bands';
+  String get chartLegend_isolatedDangerBuoy => 'Pasy czarno-czerwone';
 
   @override
   String get chartLegend_isolatedDangerBuoyHint =>
-      'A small danger with safe water around it: keep clear';
+      'Małe niebezpieczeństwo z bezpieczną wodą wokół: trzymaj się z dala';
 
   @override
-  String get chartLegend_specialBuoy => 'Yellow buoy';
+  String get chartLegend_specialBuoy => 'Żółta pława';
 
   @override
   String get chartLegend_specialBuoyHint =>
-      'Special purpose, not for steering by: anchorage, cable, research';
+      'Znak specjalny, nie do prowadzenia nawigacji: kotwicowisko, kabel, badania';
 
   @override
-  String get chartLegend_cardinalBuoy => 'Black and yellow';
+  String get chartLegend_cardinalBuoy => 'Czarno-żółta';
 
   @override
   String get chartLegend_cardinalBuoyHint =>
-      'Cardinal mark: pass on the side it\'s named for (rare in the US)';
+      'Znak kardynalny: mijaj go od strony, którą wskazuje jego nazwa (rzadki w USA)';
 
   @override
-  String get chartLegend_mooringBuoy => 'Mooring buoy';
+  String get chartLegend_mooringBuoy => 'Pława cumownicza';
 
   @override
-  String get chartLegend_portBeacon => 'Green square daybeacon';
+  String get chartLegend_portBeacon => 'Zielona stawa kwadratowa';
 
   @override
   String get chartLegend_portBeaconHint =>
-      'Like a green buoy: keep it on your left coming in';
+      'Jak zielona pława: zostaw ją po lewej, wchodząc';
 
   @override
-  String get chartLegend_starboardBeacon => 'Red triangle daybeacon';
+  String get chartLegend_starboardBeacon => 'Czerwona stawa trójkątna';
 
   @override
   String get chartLegend_starboardBeaconHint =>
-      'Like a red buoy: keep it on your right coming in';
+      'Jak czerwona pława: zostaw ją po prawej, wchodząc';
 
   @override
-  String get chartLegend_otherBeacon => 'Diamond daybeacon';
+  String get chartLegend_otherBeacon => 'Stawa rombowa';
 
   @override
   String get chartLegend_otherBeaconHint =>
-      'Information or a warning, not a side of the channel';
+      'Informacja lub ostrzeżenie, nie strona toru';
 
   @override
-  String get chartLegend_beaconTower => 'Light tower or beacon structure';
+  String get chartLegend_beaconTower => 'Wieża świetlna lub konstrukcja stawy';
 
   @override
-  String get chartLegend_topmark => 'Topmark';
+  String get chartLegend_topmark => 'Znak szczytowy';
 
   @override
   String get chartLegend_topmarkHint =>
-      'The shape on top of a mark adds to its meaning';
+      'Kształt na szczycie znaku uzupełnia jego znaczenie';
 
   @override
-  String get chartLegend_light => 'Light';
+  String get chartLegend_light => 'Światło';
 
   @override
   String get chartLegend_lightHint =>
-      'The magenta flare marks a light; its label tells how it flashes';
+      'Purpurowy rozbłysk oznacza światło; jego opis mówi, jak błyska';
 
   @override
-  String get chartLegend_lightExample => 'Flashing green, every 4 seconds';
+  String get chartLegend_lightExample => 'Błyskowe zielone, co 4 sekundy';
 
   @override
   String get chartLegend_lightExampleHint =>
-      'A light\'s label: rhythm, colour, then period';
+      'Opis światła: rytm, kolor, potem okres';
 
   @override
-  String get chartLegend_lightFixed => 'Fixed';
+  String get chartLegend_lightFixed => 'Stałe';
 
   @override
-  String get chartLegend_lightFixedHint => 'A steady light';
+  String get chartLegend_lightFixedHint => 'Światło ciągłe';
 
   @override
-  String get chartLegend_lightFlashing => 'Flashing';
+  String get chartLegend_lightFlashing => 'Błyskowe';
 
   @override
   String get chartLegend_lightFlashingHint =>
-      'Short flashes, longer dark between';
+      'Krótkie błyski, dłuższa ciemność pomiędzy';
 
   @override
-  String get chartLegend_lightGroup => 'Group flashing';
+  String get chartLegend_lightGroup => 'Grupowe błyskowe';
 
   @override
   String get chartLegend_lightGroupHint =>
-      'Flashes in groups, here 2, then dark';
+      'Błyski w grupach, tu po 2, potem ciemność';
 
   @override
-  String get chartLegend_lightComposite => 'Composite group';
+  String get chartLegend_lightComposite => 'Złożone grupowe';
 
   @override
   String get chartLegend_lightCompositeHint =>
-      '2 flashes, then 1: marks a channel junction';
+      '2 błyski, potem 1: oznacza rozwidlenie toru';
 
   @override
-  String get chartLegend_lightQuick => 'Quick';
+  String get chartLegend_lightQuick => 'Szybkobłyskowe';
 
   @override
-  String get chartLegend_lightQuickHint => 'About one flash a second';
+  String get chartLegend_lightQuickHint => 'Około jednego błysku na sekundę';
 
   @override
-  String get chartLegend_lightIsophase => 'Isophase';
+  String get chartLegend_lightIsophase => 'Izofazowe';
 
   @override
-  String get chartLegend_lightIsophaseHint => 'Equal light and dark';
+  String get chartLegend_lightIsophaseHint => 'Tyle samo światła co ciemności';
 
   @override
-  String get chartLegend_lightOcculting => 'Occulting';
+  String get chartLegend_lightOcculting => 'Przerywane';
 
   @override
-  String get chartLegend_lightOccultingHint => 'On longer than off';
+  String get chartLegend_lightOccultingHint => 'Świeci dłużej, niż jest ciemne';
 
   @override
-  String get chartLegend_lightMorse => 'Morse code A';
+  String get chartLegend_lightMorse => 'Alfabet Morse\'a A';
 
   @override
-  String get chartLegend_lightMorseHint => 'Short, long: safe water';
+  String get chartLegend_lightMorseHint => 'Krótki, długi: bezpieczna woda';
 
   @override
-  String get chartLegend_lightAlternating => 'Alternating';
+  String get chartLegend_lightAlternating => 'Zmienne';
 
   @override
-  String get chartLegend_lightAlternatingHint => 'Changes colour';
+  String get chartLegend_lightAlternatingHint => 'Zmienia kolor';
 
   @override
-  String get chartLegend_lightColours => 'White, red, green, yellow';
+  String get chartLegend_lightColours => 'Białe, czerwone, zielone, żółte';
 
   @override
-  String get chartLegend_lightPeriod => 'Period';
+  String get chartLegend_lightPeriod => 'Okres';
 
   @override
-  String get chartLegend_lightPeriodHint => 'Seconds for one full cycle';
+  String get chartLegend_lightPeriodHint => 'Sekundy na jeden pełny cykl';
 
   @override
-  String get chartLegend_rock => 'Underwater rock';
+  String get chartLegend_rock => 'Skała podwodna';
 
   @override
-  String get chartLegend_rockHint => 'Always covered, but may be shallow';
+  String get chartLegend_rockHint => 'Zawsze pod wodą, ale może być płytko';
 
   @override
-  String get chartLegend_rockAwash => 'Rock awash';
+  String get chartLegend_rockAwash => 'Skała na poziomie wody';
 
   @override
-  String get chartLegend_rockAwashHint => 'Near the surface at low tide';
+  String get chartLegend_rockAwashHint =>
+      'Tuż przy powierzchni przy niskiej wodzie';
 
   @override
-  String get chartLegend_rockCovers => 'Rock that covers and uncovers';
+  String get chartLegend_rockCovers => 'Skała odsłaniająca się';
 
   @override
   String get chartLegend_rockCoversHint =>
-      'Shows at low tide, covered at high tide';
+      'Widoczna przy odpływie, zakryta przy przypływie';
 
   @override
-  String get chartLegend_wreckDangerous => 'Dangerous wreck';
+  String get chartLegend_wreckDangerous => 'Niebezpieczny wrak';
 
   @override
-  String get chartLegend_wreckDangerousHint => 'Shallow enough to hit';
+  String get chartLegend_wreckDangerousHint =>
+      'Na tyle płytko, że można w niego uderzyć';
 
   @override
-  String get chartLegend_wreck => 'Wreck';
+  String get chartLegend_wreck => 'Wrak';
 
   @override
   String get chartLegend_wreckHint =>
-      'Deep enough for boats on the surface; don\'t anchor';
+      'Na tyle głęboko, że łodzie przepłyną nad nim; nie kotwicz';
 
   @override
-  String get chartLegend_wreckShowing => 'Wreck showing';
+  String get chartLegend_wreckShowing => 'Wrak wystający';
 
   @override
-  String get chartLegend_wreckShowingHint => 'Part of it shows above the water';
+  String get chartLegend_wreckShowingHint => 'Część wystaje nad wodę';
 
   @override
-  String get chartLegend_obstruction => 'Obstruction';
+  String get chartLegend_obstruction => 'Przeszkoda';
 
   @override
   String get chartLegend_obstructionHint =>
-      'Something on the bottom; its depth when known';
+      'Coś na dnie; głębokość, jeśli jest znana';
 
   @override
-  String get chartLegend_foulGround => 'Foul ground';
+  String get chartLegend_foulGround => 'Nieczyste dno';
 
   @override
   String get chartLegend_foulGroundHint =>
-      'Safe to pass over, but don\'t anchor or trawl';
+      'Można nad nim przepłynąć, ale nie kotwicz ani nie trałuj';
 
   @override
-  String get chartLegend_hazardArea => 'Edge of a danger area';
+  String get chartLegend_hazardArea => 'Granica obszaru niebezpiecznego';
 
   @override
   String get chartLegend_hazardAreaHint =>
-      'Rocks, wrecks or obstructions inside';
+      'W środku skały, wraki lub przeszkody';
 
   @override
-  String get chartLegend_pile => 'Pile or post';
+  String get chartLegend_pile => 'Pal lub słupek';
 
   @override
-  String get chartLegend_floodStream => 'Flood stream';
+  String get chartLegend_floodStream => 'Prąd przypływu';
 
   @override
-  String get chartLegend_floodStreamHint => 'Tidal stream while the tide rises';
+  String get chartLegend_floodStreamHint => 'Prąd pływowy, gdy woda przybiera';
 
   @override
-  String get chartLegend_ebbStream => 'Ebb stream';
+  String get chartLegend_ebbStream => 'Prąd odpływu';
 
   @override
-  String get chartLegend_ebbStreamHint => 'Tidal stream while the tide falls';
+  String get chartLegend_ebbStreamHint => 'Prąd pływowy, gdy woda opada';
 
   @override
-  String get chartLegend_current => 'Current';
+  String get chartLegend_current => 'Prąd';
 
   @override
-  String get chartLegend_currentHint => 'Flows the same way whatever the tide';
+  String get chartLegend_currentHint =>
+      'Płynie w tę samą stronę niezależnie od pływu';
 
   @override
-  String get chartLegend_rips => 'Tide rips or eddies';
+  String get chartLegend_rips => 'Sulój lub wiry';
 
   @override
-  String get chartLegend_ripsHint => 'Rough, swirling water';
+  String get chartLegend_ripsHint => 'Wzburzona, wirująca woda';
 
   @override
-  String get chartLegend_breakers => 'Breakers';
+  String get chartLegend_breakers => 'Przybój';
 
   @override
-  String get chartLegend_breakersHint => 'Waves breaking over shallows';
+  String get chartLegend_breakersHint => 'Fale łamiące się na płyciznach';
 
   @override
-  String get chartLegend_sounding => 'Sounding';
+  String get chartLegend_sounding => 'Głębokość';
 
   @override
-  String get chartLegend_soundingHint => 'Depth at an average low tide';
+  String get chartLegend_soundingHint =>
+      'Głębokość przy średniej niskiej wodzie';
 
   @override
-  String get chartLegend_depthContour => 'Depth contour';
+  String get chartLegend_depthContour => 'Izobata';
 
   @override
-  String get chartLegend_depthContourHint => 'Its label gives the depth';
+  String get chartLegend_depthContourHint => 'Jej opis podaje głębokość';
 
   @override
-  String get chartLegend_drying => 'Dries at low tide';
+  String get chartLegend_drying => 'Osycha przy odpływie';
 
   @override
-  String get chartLegend_dredged => 'Dredged channel';
+  String get chartLegend_dredged => 'Tor pogłębiany';
 
   @override
-  String get chartLegend_dredgedHint => 'Kept to the depth shown';
+  String get chartLegend_dredgedHint => 'Utrzymywany na podanej głębokości';
 
   @override
-  String get chartLegend_swept => 'Swept area';
+  String get chartLegend_swept => 'Obszar wytrałowany';
 
   @override
-  String get chartLegend_sweptHint => 'Checked clear to the depth shown';
+  String get chartLegend_sweptHint =>
+      'Sprawdzony jako wolny do podanej głębokości';
 
   @override
-  String get chartLegend_unsurveyed => 'Unsurveyed';
+  String get chartLegend_unsurveyed => 'Niezbadane';
 
   @override
-  String get chartLegend_unsurveyedHint => 'No depths measured';
+  String get chartLegend_unsurveyedHint => 'Głębokości nie zmierzono';
 
   @override
-  String get chartLegend_weed => 'Kelp or weed';
+  String get chartLegend_weed => 'Wodorosty';
 
   @override
-  String get chartLegend_restricted => 'Restricted area';
+  String get chartLegend_restricted => 'Obszar zastrzeżony';
 
   @override
   String get chartLegend_restrictedHint =>
-      'Entry limited; the ticks point inside';
+      'Wejście ograniczone; ząbki wskazują do środka';
 
   @override
-  String get chartLegend_regulatedLimit => 'Limit of a regulated area';
+  String get chartLegend_regulatedLimit => 'Granica obszaru regulowanego';
 
   @override
   String get chartLegend_regulatedLimitHint =>
-      'Anchorage, cable area, firing area and more: see its label';
+      'Kotwicowisko, obszar kablowy, strzelnica i inne: zobacz opis';
 
   @override
-  String get chartLegend_greyLimit => 'Spoil ground, fishing ground or farm';
+  String get chartLegend_greyLimit => 'Klapowisko, łowisko lub hodowla';
 
   @override
-  String get chartLegend_anchorage => 'Anchorage';
+  String get chartLegend_anchorage => 'Kotwicowisko';
 
   @override
-  String get chartLegend_anchorBerth => 'Anchor berth';
+  String get chartLegend_anchorBerth => 'Stanowisko kotwiczne';
 
   @override
-  String get chartLegend_noAnchoring => 'No anchoring';
+  String get chartLegend_noAnchoring => 'Zakaz kotwiczenia';
 
   @override
-  String get chartLegend_caution => 'Caution area';
+  String get chartLegend_caution => 'Obszar ostrzegawczy';
 
   @override
-  String get chartLegend_cautionHint => 'Take extra care here';
+  String get chartLegend_cautionHint => 'Zachowaj tu szczególną ostrożność';
 
   @override
-  String get chartLegend_trafficLane => 'Traffic lane';
+  String get chartLegend_trafficLane => 'Tor ruchu';
 
   @override
   String get chartLegend_trafficLaneHint =>
-      'Big ships, one way: cross at right angles';
+      'Duże statki, w jedną stronę: przecinaj pod kątem prostym';
 
   @override
-  String get chartLegend_separationZone => 'Separation zone';
+  String get chartLegend_separationZone => 'Strefa rozgraniczenia';
 
   @override
   String get chartLegend_separationZoneHint =>
-      'Between traffic lanes: keep out';
+      'Między torami ruchu: nie wpływaj';
 
   @override
-  String get chartLegend_precautionary => 'Precautionary area';
+  String get chartLegend_precautionary => 'Rejon szczególnej ostrożności';
 
   @override
-  String get chartLegend_precautionaryHint => 'Ships converge: take care';
+  String get chartLegend_precautionaryHint => 'Statki się zbiegają: uważaj';
 
   @override
-  String get chartLegend_fairway => 'Fairway';
+  String get chartLegend_fairway => 'Tor wodny';
 
   @override
-  String get chartLegend_fairwayHint => 'A main channel';
+  String get chartLegend_fairwayHint => 'Główny tor';
 
   @override
-  String get chartLegend_track => 'Recommended track';
+  String get chartLegend_track => 'Zalecana trasa';
 
   @override
-  String get chartLegend_ferry => 'Ferry route';
+  String get chartLegend_ferry => 'Trasa promu';
 
   @override
-  String get chartLegend_leadingLine => 'Leading line';
+  String get chartLegend_leadingLine => 'Nabieżnik';
 
   @override
   String get chartLegend_leadingLineHint =>
-      'Line up its two marks to stay in the channel';
+      'Ustaw jego dwa znaki w jednej linii, aby pozostać w torze';
 
   @override
-  String get chartLegend_cable => 'Submarine cable';
+  String get chartLegend_cable => 'Kabel podmorski';
 
   @override
-  String get chartLegend_cableHint => 'Don\'t anchor';
+  String get chartLegend_cableHint => 'Nie kotwicz';
 
   @override
-  String get chartLegend_pipeline => 'Submarine pipeline';
+  String get chartLegend_pipeline => 'Rurociąg podmorski';
 
   @override
-  String get chartLegend_pipelineHint => 'Don\'t anchor';
+  String get chartLegend_pipelineHint => 'Nie kotwicz';
 
   @override
-  String get chartLegend_overhead => 'Overhead cable';
+  String get chartLegend_overhead => 'Kabel napowietrzny';
 
   @override
-  String get chartLegend_overheadHint => 'Its clearance is labelled VC';
+  String get chartLegend_overheadHint => 'Jego prześwit jest oznaczony VC';
 
   @override
-  String get chartLegend_tower => 'Tower';
+  String get chartLegend_tower => 'Wieża';
 
   @override
-  String get chartLegend_windTurbine => 'Wind turbine';
+  String get chartLegend_windTurbine => 'Turbina wiatrowa';
 
   @override
-  String get chartLegend_chimney => 'Chimney';
+  String get chartLegend_chimney => 'Komin';
 
   @override
-  String get chartLegend_mast => 'Mast or antenna';
+  String get chartLegend_mast => 'Maszt lub antena';
 
   @override
-  String get chartLegend_church => 'Church or spire';
+  String get chartLegend_church => 'Kościół lub iglica';
 
   @override
-  String get chartLegend_flagstaff => 'Flagstaff';
+  String get chartLegend_flagstaff => 'Maszt flagowy';
 
   @override
-  String get chartLegend_dome => 'Dome';
+  String get chartLegend_dome => 'Kopuła';
 
   @override
-  String get chartLegend_landmark => 'Other landmark';
+  String get chartLegend_landmark => 'Inny obiekt orientacyjny';
 
   @override
-  String get chartLegend_abbrAnch => 'Anchorage';
+  String get chartLegend_abbrAnch => 'Kotwicowisko';
 
   @override
-  String get chartLegend_abbrWk => 'Wreck';
+  String get chartLegend_abbrWk => 'Wrak';
 
   @override
-  String get chartLegend_abbrBr => 'Breakers';
+  String get chartLegend_abbrBr => 'Przybój';
 
   @override
-  String get chartLegend_abbrWd => 'Weed';
+  String get chartLegend_abbrWd => 'Wodorosty';
 
   @override
-  String get chartLegend_abbrVar => 'Magnetic variation';
+  String get chartLegend_abbrVar => 'Deklinacja magnetyczna';
 
   @override
-  String get chartLegend_abbrVc => 'Vertical clearance under a bridge or cable';
+  String get chartLegend_abbrVc => 'Prześwit pionowy pod mostem lub kablem';
 
   @override
-  String get chartLegend_abbrTr => 'Tower';
+  String get chartLegend_abbrTr => 'Wieża';
 
   @override
-  String get chartLegend_abbrCh => 'Church';
+  String get chartLegend_abbrCh => 'Kościół';
 
   @override
-  String get chartLegend_abbrChy => 'Chimney';
+  String get chartLegend_abbrChy => 'Komin';
 
   @override
-  String get chartLegend_abbrFs => 'Flagstaff';
+  String get chartLegend_abbrFs => 'Maszt flagowy';
 
   @override
-  String get chartLegend_abbrTk => 'Tank';
+  String get chartLegend_abbrTk => 'Zbiornik';
 
   @override
-  String get chartLegend_abbrRBn => 'Radio beacon';
+  String get chartLegend_abbrRBn => 'Radiolatarnia';
 
   @override
-  String get chartLegend_abbrCg => 'Coast Guard station';
+  String get chartLegend_abbrCg => 'Stacja Straży Przybrzeżnej';
 
   @override
-  String get chartLegend_abbrRacon => 'Radar beacon: shows on radar';
+  String get chartLegend_abbrRacon =>
+      'Radarowy znak odzewowy: widoczny na radarze';
 
   @override
   String get chartLegend_abbrFog =>
-      'Fog signal: horn, bell, gong, whistle or siren';
+      'Sygnał mgłowy: tyfon, dzwon, gong, gwizd lub syrena';
 
   @override
-  String get chartLegend_abbrVAis => 'Virtual aid: shown only on AIS';
+  String get chartLegend_abbrVAis => 'Znak wirtualny: widoczny tylko w AIS';
 
   @override
   String chartLegend_depthRange(String from, String to) {
-    return '$from to $to';
+    return 'od $from do $to';
   }
 
   @override
   String chartLegend_depthOver(String depth) {
-    return 'Deeper than $depth';
+    return 'Głębiej niż $depth';
   }
+
+  @override
+  String get parkLegend_title => 'Symbole parków i szlaków';
+
+  @override
+  String get parkLegend_campsite => 'Pole namiotowe';
+
+  @override
+  String get parkLegend_picnicSite => 'Miejsce na piknik';
+
+  @override
+  String get parkLegend_shelter => 'Wiata';
+
+  @override
+  String get parkLegend_toilets => 'Toalety';
+
+  @override
+  String get parkLegend_drinkingWater => 'Woda pitna';
+
+  @override
+  String get parkLegend_parking => 'Parking';
+
+  @override
+  String get parkLegend_viewpoint => 'Punkt widokowy';
+
+  @override
+  String get parkLegend_attraction => 'Atrakcja';
+
+  @override
+  String get parkLegend_gate => 'Brama';
+
+  @override
+  String get parkLegend_telephone => 'Telefon';
+
+  @override
+  String get parkLegend_information => 'Tablica informacyjna';
+
+  @override
+  String get parkLegend_guidepost => 'Drogowskaz';
 }
