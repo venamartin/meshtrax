@@ -58,8 +58,11 @@ void main() {
   // ONLY=A3 runs the bring-up and the keeper window alone (no room A RF);
   // ONLY=A12 runs the room A steps and skips the keeper window.
   const only = String.fromEnvironment('ONLY');
-  const skipRoomA = only == 'A3';
-  const skipRoomB = only == 'A12';
+  const skipRoomA = only == 'A3' || only == 'DM';
+  const skipRoomB = only == 'A12' || only == 'DM';
+  // ONLY=DM: two DMs to the chat contact named DM_CONTACT (name prefix,
+  // case-blind), on the normal ladder, with a dump before and after.
+  const dmContactName = String.fromEnvironment('DM_CONTACT', defaultValue: 'RedTail1');
   // NO_USB_POSTER=1: A3 never opens the COM14 radio; it logs in and waits a
   // short window for pushes that something else (the owner, or a simulated
   // member) makes the room send. The mesh simulator runs A3 this way.
@@ -354,6 +357,32 @@ void main() {
             '${e == null ? "not in the graph (no delivery proved it)" : "s=${e.s} n=${e.n} (proven forward)"}');
       }
     }
+  });
+
+  testWidgets('D1 DM: two messages to a chat contact on the normal ladder',
+      skip: only != 'DM', (tester) async {
+    if (!ready) fail('Bench not ready — see the first failure above.');
+    await beginScenario(tester, 'D1 DM to $dmContactName');
+    final c = radio.connector;
+    final hits = c.contacts
+        .where((x) =>
+            x.type == advTypeChat &&
+            x.name.trim().toLowerCase().startsWith(dmContactName.toLowerCase()))
+        .toList();
+    blog('chat contacts matching "$dmContactName": '
+        '${hits.map((x) => '"${x.name}" ${x.publicKeyHex.substring(0, 8)} route=${x.pathLength}').join(', ')}');
+    expect(hits, hasLength(1), reason: 'need exactly one contact named like that');
+    final who = hits.single;
+    await clearRoute(who);
+    dump('before the DMs', who);
+    await post(who, 'Test $hm: dm 1');
+    dump('after DM 1', who);
+    await post(who, 'Test $hm: dm 2');
+    blog('listening 45 s for anything ${who.name} sends back…');
+    await Future<void>.delayed(const Duration(seconds: 45));
+    final w = live(who);
+    blog('radio route to ${who.name} now: pathLength=${w.pathLength} path="${w.pathIdList}"');
+    dump('after the DMs', who);
   });
 
   testWidgets('A3 keeper: login to room B, then a window for pushes from it',
