@@ -649,7 +649,14 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     if (graph == null) return;
     if (selection.useFlood) {
       // Their radio learned the way back from where I am now.
-      if (delivered) graph.reportFloodDelivered(contact.publicKeyHex);
+      if (delivered) {
+        graph.reportFloodDelivered(contact.publicKeyHex);
+      } else {
+        // A flood that got no ACK is the step most worth a Discover after:
+        // the ladder is still running, and its next rung can use the
+        // answers (the simulator's deaf-here run, 2026-10-25).
+        _considerDiscover(contact.publicKeyHex);
+      }
       return;
     }
     final guessed = selection.guessedHops;
