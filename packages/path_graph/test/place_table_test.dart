@@ -125,7 +125,12 @@ void main() {
     graph.reportFloodDelivered(bobPk);
     expect((graph.findPath(bobPk) as FloodResult).reason,
         FloodReason.doorstepsNotHere);
-    graph.setPlace('c1_1', const {}); // back home: the row is still there
+    // Back home is a move too: one flood so Bob's radio relearns the way
+    // back, then the row from before is still there and routes.
+    graph.setPlace('c1_1', const {});
+    expect((graph.findPath(bobPk) as FloodResult).reason,
+        FloodReason.movedSinceTheyReachedMe);
+    graph.reportFloodDelivered(bobPk);
     expect(firstHop(), 'A277');
   });
 
