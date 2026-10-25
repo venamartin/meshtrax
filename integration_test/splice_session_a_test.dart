@@ -78,6 +78,9 @@ void main() {
   // is the firmware one (the radio's own route, then floods) — the A/B
   // against a phone running with Pathfinder off.
   const noPathfinder = bool.fromEnvironment('NO_PATHFINDER');
+  // DISCOVER=true: one Discover at bring-up so the log says which repeaters
+  // hear this radio from where it sits (and how loudly, both ways).
+  const discoverFirst = bool.fromEnvironment('DISCOVER');
 
   // Hour-minute-second with dashes: a Windows file name cannot hold colons.
   final stamp =
@@ -304,6 +307,19 @@ void main() {
           '${(doc['edges'] as List?)?.length ?? 0} links, saved ${doc['saved_at']}');
     } else {
       blog('fresh graph (no SESSION_FILE)');
+    }
+    if (discoverFirst) {
+      blog('>>> Discover (one request, zero hop)…');
+      await c.sendRepeaterDiscovery();
+      await waitUntil(() => !c.isDiscovering, 'discovery window closed',
+          timeout: const Duration(seconds: 40));
+      final answered = c.directRepeaters
+          .where((r) => r.answeredScan == c.discoverScan)
+          .toList()
+        ..sort((a, b) => b.uplinkSnr!.compareTo(a.uplinkSnr!));
+      blog('repeaters that answered (${answered.length}): '
+          '${answered.isEmpty ? "(none)" : answered.map((r) => '${hex(r.pubkeyPrefix).replaceAll(" ", "")}${r.name == null ? "" : " ${r.name}"} '
+              'hears me ${r.uplinkSnr!.toStringAsFixed(1)} dB / I hear it ${r.snr.toStringAsFixed(1)} dB').join(' | ')}');
     }
     for (final r in [roomA!, roomB!]) {
       await clearRoute(r);
