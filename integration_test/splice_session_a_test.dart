@@ -74,6 +74,10 @@ void main() {
   // A1_POSTS: how many baseline posts A1 sends (default 2). The simulator
   // uses 4 to show a doorstep being given up after two failed deliveries.
   const a1Posts = int.fromEnvironment('A1_POSTS', defaultValue: 2);
+  // NO_PATHFINDER=true: the graph service is never started, so the ladder
+  // is the firmware one (the radio's own route, then floods) — the A/B
+  // against a phone running with Pathfinder off.
+  const noPathfinder = bool.fromEnvironment('NO_PATHFINDER');
 
   // Hour-minute-second with dashes: a Windows file name cannot hold colons.
   final stamp =
@@ -127,7 +131,11 @@ void main() {
       'conf=${(graph.doorstepConfidence(c) * 100).toStringAsFixed(0)}%';
 
   void dump(String when, Contact contact) {
-    final graph = service.graph!;
+    final graph = service.graph;
+    if (graph == null) {
+      blog('=== GRAPH $when === (Pathfinder off: firmware routing)');
+      return;
+    }
     final pk = contact.publicKeyHex;
     blog('=== GRAPH $when ===');
     blog('repeaters that hear me: '
@@ -279,11 +287,15 @@ void main() {
       }
     });
 
-    blog('starting the real PathGraphService on an in-memory graph…');
-    await service.start(c, database: NativeDatabase.memory());
-    await waitUntil(() => service.graph?.selfPubkey != null,
-        'graph knows the radio identity');
-    if (sessionFile.isNotEmpty) {
+    if (noPathfinder) {
+      blog('NO_PATHFINDER: Pathfinder stays OFF — the radio routes on its own');
+    } else {
+      blog('starting the real PathGraphService on an in-memory graph…');
+      await service.start(c, database: NativeDatabase.memory());
+      await waitUntil(() => service.graph?.selfPubkey != null,
+          'graph knows the radio identity');
+    }
+    if (sessionFile.isNotEmpty && !noPathfinder) {
       final doc = jsonDecode(await File(sessionFile).readAsString())
           as Map<String, dynamic>;
       await service.graph!.loadSession(doc);
@@ -326,7 +338,11 @@ void main() {
       'posts', skip: skipRoomA, (tester) async {
     if (!ready) fail('Bench not ready — see the first failure above.');
     await beginScenario(tester, 'A2 splice');
-    final graph = service.graph!;
+    final graph = service.graph;
+    if (graph == null) {
+      blog('A2 skipped: Pathfinder off');
+      return;
+    }
     final pk = roomA!.publicKeyHex;
     // Removing links to force a splice was wrong: it deleted the very
     // corridors a splice joins onto. The splice fires or not on its own.
