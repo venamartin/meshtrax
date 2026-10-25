@@ -165,6 +165,24 @@ void main() {
     'mountain_peak': [
       {'name': 'Bare Rock', 'ele_ft': 1200, 'ele': 366},
     ],
+    'poi': combos({
+      'class': [
+        'campsite',
+        'picnic_site',
+        'shelter',
+        'toilets',
+        'drinking_water',
+        'parking',
+        'gate',
+        'telephone',
+        'attraction',
+        'information',
+        'restaurant',
+        null,
+      ],
+      'subclass': ['viewpoint', 'guidepost', 'route_marker', 'board', null],
+      'rank': [1],
+    }),
   };
 
   for (final id in ['charts-light', 'charts-dark', 'osm-light', 'osm-dark']) {

@@ -9437,6 +9437,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deeper than {depth}'**
   String chartLegend_depthOver(String depth);
+
+  /// No description provided for @parkLegend_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Park and trail symbols'**
+  String get parkLegend_title;
+
+  /// No description provided for @parkLegend_campsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Campsite'**
+  String get parkLegend_campsite;
+
+  /// No description provided for @parkLegend_picnicSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Picnic site'**
+  String get parkLegend_picnicSite;
+
+  /// No description provided for @parkLegend_shelter.
+  ///
+  /// In en, this message translates to:
+  /// **'Shelter'**
+  String get parkLegend_shelter;
+
+  /// No description provided for @parkLegend_toilets.
+  ///
+  /// In en, this message translates to:
+  /// **'Toilets'**
+  String get parkLegend_toilets;
+
+  /// No description provided for @parkLegend_drinkingWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Drinking water'**
+  String get parkLegend_drinkingWater;
+
+  /// No description provided for @parkLegend_parking.
+  ///
+  /// In en, this message translates to:
+  /// **'Parking'**
+  String get parkLegend_parking;
+
+  /// No description provided for @parkLegend_viewpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewpoint'**
+  String get parkLegend_viewpoint;
+
+  /// No description provided for @parkLegend_attraction.
+  ///
+  /// In en, this message translates to:
+  /// **'Attraction'**
+  String get parkLegend_attraction;
+
+  /// No description provided for @parkLegend_gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Gate'**
+  String get parkLegend_gate;
+
+  /// No description provided for @parkLegend_telephone.
+  ///
+  /// In en, this message translates to:
+  /// **'Telephone'**
+  String get parkLegend_telephone;
+
+  /// No description provided for @parkLegend_information.
+  ///
+  /// In en, this message translates to:
+  /// **'Information board'**
+  String get parkLegend_information;
+
+  /// No description provided for @parkLegend_guidepost.
+  ///
+  /// In en, this message translates to:
+  /// **'Guidepost'**
+  String get parkLegend_guidepost;
 }
 
 class _AppLocalizationsDelegate

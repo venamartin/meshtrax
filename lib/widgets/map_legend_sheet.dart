@@ -24,8 +24,15 @@ bool mapShowsCharts(AppSettings settings, MapPacksService maps) =>
     !mapIsOnline(settings, maps) &&
     MapType.parse(settings.mapType) == MapType.charts;
 
+/// Whether the map is the offline OSM map, which draws park and trail
+/// features as icons (online, the online tiles draw their own).
+bool mapShowsParkIcons(AppSettings settings, MapPacksService maps) =>
+    !mapIsOnline(settings, maps) &&
+    (MapType.parse(settings.mapType) ?? MapType.osm) == MapType.osm;
+
 /// Opens the map legend: the Mesh symbols and [counts] (none without a
-/// radio), then, while the map draws charts, the chart symbols by section.
+/// radio), then the symbols of the map shown: park and trail icons on the
+/// offline OSM map, or the chart symbols by section on charts.
 /// It opens at half height and drags up to full.
 Future<void> showMapLegend(BuildContext context, {MeshLegendCounts? counts}) =>
     showModalBottomSheet<void>(
@@ -44,7 +51,8 @@ Future<void> showMapLegend(BuildContext context, {MeshLegendCounts? counts}) =>
     );
 
 /// The map's "i" button, opening [showMapLegend]. Without [counts] (no
-/// radio) there's only the chart part, so it shows only on the chart map.
+/// radio) there's only the map's symbols, so it shows only on maps that
+/// have some to explain (charts, the offline OSM map).
 class MapLegendButton extends StatelessWidget {
   final MeshLegendCounts Function()? counts;
 
@@ -53,11 +61,13 @@ class MapLegendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final counts = this.counts;
-    final charts = mapShowsCharts(
-      context.watch<AppSettingsService>().settings,
-      context.watch<MapPacksService>(),
-    );
-    if (counts == null && !charts) return const SizedBox.shrink();
+    final settings = context.watch<AppSettingsService>().settings;
+    final maps = context.watch<MapPacksService>();
+    if (counts == null &&
+        !mapShowsCharts(settings, maps) &&
+        !mapShowsParkIcons(settings, maps)) {
+      return const SizedBox.shrink();
+    }
     final colors = Theme.of(context).colorScheme;
     return FloatingActionButton.small(
       heroTag: null,
@@ -86,8 +96,12 @@ class MapLegendSheet extends StatelessWidget {
     final maps = context.watch<MapPacksService>();
     final settings = context.watch<AppSettingsService>().settings;
     final counts = this.counts;
+    final dark = settings.mapTheme == 'dark';
     final chartsStyle = mapShowsCharts(settings, maps)
-        ? maps.styleId(MapType.charts, dark: settings.mapTheme == 'dark')
+        ? maps.styleId(MapType.charts, dark: dark)
+        : null;
+    final osmStyle = mapShowsParkIcons(settings, maps)
+        ? maps.styleId(MapType.osm, dark: dark)
         : null;
     final heading = Theme.of(context).textTheme.titleSmall;
 
@@ -104,6 +118,10 @@ class MapLegendSheet extends StatelessWidget {
             counts: counts,
             showGuessed: settings.mapShowGuessedLocations,
           ),
+        ],
+        if (osmStyle != null) ...[
+          if (counts != null) const Divider(height: 24),
+          _ParkSymbols(styleId: osmStyle),
         ],
         if (chartsStyle != null) ...[
           if (counts != null) const Divider(height: 24),
@@ -219,6 +237,58 @@ class _MeshLegend extends StatelessWidget {
     );
   }
 }
+
+/// The OSM map's park and trail icons, in one collapsible section.
+class _ParkSymbols extends StatelessWidget {
+  final String styleId;
+
+  const _ParkSymbols({required this.styleId});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final maps = context.watch<MapPacksService>();
+    return FutureBuilder(
+      future: LegendStyle.load(maps.styles, styleId),
+      builder: (context, snapshot) {
+        final style = snapshot.data;
+        return ExpansionTile(
+          title: Text(l10n.parkLegend_title),
+          shape: const Border(),
+          childrenPadding: const EdgeInsets.only(bottom: 8),
+          children: [
+            if (style != null)
+              for (final item in ParkLegendItem.values)
+                ListTile(
+                  dense: true,
+                  leading: LegendSymbol(
+                    style: style,
+                    samples: [item.sample],
+                    ground: parkLegendGround,
+                  ),
+                  title: Text(_parkText(l10n, item)),
+                ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+String _parkText(AppLocalizations l10n, ParkLegendItem item) => switch (item) {
+  ParkLegendItem.campsite => l10n.parkLegend_campsite,
+  ParkLegendItem.picnicSite => l10n.parkLegend_picnicSite,
+  ParkLegendItem.shelter => l10n.parkLegend_shelter,
+  ParkLegendItem.toilets => l10n.parkLegend_toilets,
+  ParkLegendItem.drinkingWater => l10n.parkLegend_drinkingWater,
+  ParkLegendItem.parking => l10n.parkLegend_parking,
+  ParkLegendItem.viewpoint => l10n.parkLegend_viewpoint,
+  ParkLegendItem.attraction => l10n.parkLegend_attraction,
+  ParkLegendItem.gate => l10n.parkLegend_gate,
+  ParkLegendItem.telephone => l10n.parkLegend_telephone,
+  ParkLegendItem.information => l10n.parkLegend_information,
+  ParkLegendItem.guidepost => l10n.parkLegend_guidepost,
+};
 
 class _ChartSection extends StatelessWidget {
   final ChartLegendSection section;

@@ -1365,18 +1365,420 @@
       }
     },
     {
+      "id": "poi-icon",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 15,
+      "filter": [
+        "all",
+        [
+          "!=",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "campsite",
+              "picnic_site",
+              "shelter",
+              "toilets",
+              "drinking_water",
+              "parking",
+              "gate",
+              "telephone"
+            ],
+            [
+              "concat",
+              "poi-",
+              [
+                "get",
+                "class"
+              ]
+            ],
+            "attraction",
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              "viewpoint",
+              "poi-viewpoint",
+              "poi-attraction"
+            ],
+            "information",
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              "route_marker",
+              "",
+              "guidepost",
+              "poi-guidepost",
+              "poi-information"
+            ],
+            ""
+          ],
+          ""
+        ],
+        [
+          "!",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "gate",
+              "telephone",
+              "information"
+            ],
+            true,
+            false
+          ]
+        ]
+      ],
+      "layout": {
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "campsite",
+            "picnic_site",
+            "shelter",
+            "toilets",
+            "drinking_water",
+            "parking",
+            "gate",
+            "telephone"
+          ],
+          [
+            "concat",
+            "poi-",
+            [
+              "get",
+              "class"
+            ]
+          ],
+          "attraction",
+          [
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            "viewpoint",
+            "poi-viewpoint",
+            "poi-attraction"
+          ],
+          "information",
+          [
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            "route_marker",
+            "",
+            "guidepost",
+            "poi-guidepost",
+            "poi-information"
+          ],
+          ""
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          0.85,
+          17,
+          1
+        ],
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ],
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "text-anchor": "top",
+        "text-offset": [
+          0,
+          0.9
+        ],
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#9aa3ad",
+        "text-halo-color": "#1c2026",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-icon-minor",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 16,
+      "filter": [
+        "all",
+        [
+          "!=",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "campsite",
+              "picnic_site",
+              "shelter",
+              "toilets",
+              "drinking_water",
+              "parking",
+              "gate",
+              "telephone"
+            ],
+            [
+              "concat",
+              "poi-",
+              [
+                "get",
+                "class"
+              ]
+            ],
+            "attraction",
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              "viewpoint",
+              "poi-viewpoint",
+              "poi-attraction"
+            ],
+            "information",
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              "route_marker",
+              "",
+              "guidepost",
+              "poi-guidepost",
+              "poi-information"
+            ],
+            ""
+          ],
+          ""
+        ],
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "gate",
+            "telephone",
+            "information"
+          ],
+          true,
+          false
+        ]
+      ],
+      "layout": {
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "campsite",
+            "picnic_site",
+            "shelter",
+            "toilets",
+            "drinking_water",
+            "parking",
+            "gate",
+            "telephone"
+          ],
+          [
+            "concat",
+            "poi-",
+            [
+              "get",
+              "class"
+            ]
+          ],
+          "attraction",
+          [
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            "viewpoint",
+            "poi-viewpoint",
+            "poi-attraction"
+          ],
+          "information",
+          [
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            "route_marker",
+            "",
+            "guidepost",
+            "poi-guidepost",
+            "poi-information"
+          ],
+          ""
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          0.85,
+          17,
+          1
+        ],
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ],
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name"
+          ],
+          ""
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "text-anchor": "top",
+        "text-offset": [
+          0,
+          0.9
+        ],
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#9aa3ad",
+        "text-halo-color": "#1c2026",
+        "text-halo-width": 1.5
+      }
+    },
+    {
       "id": "poi",
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
       "minzoom": 15,
       "filter": [
-        "<=",
+        "all",
         [
-          "get",
-          "rank"
+          "<=",
+          [
+            "get",
+            "rank"
+          ],
+          20
         ],
-        20
+        [
+          "==",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "campsite",
+              "picnic_site",
+              "shelter",
+              "toilets",
+              "drinking_water",
+              "parking",
+              "gate",
+              "telephone"
+            ],
+            [
+              "concat",
+              "poi-",
+              [
+                "get",
+                "class"
+              ]
+            ],
+            "attraction",
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              "viewpoint",
+              "poi-viewpoint",
+              "poi-attraction"
+            ],
+            "information",
+            [
+              "match",
+              [
+                "get",
+                "subclass"
+              ],
+              "route_marker",
+              "",
+              "guidepost",
+              "poi-guidepost",
+              "poi-information"
+            ],
+            ""
+          ],
+          ""
+        ]
       ],
       "layout": {
         "text-field": [

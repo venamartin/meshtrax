@@ -48,16 +48,17 @@ void main() {
   });
   tearDown(() => tmp.delete(recursive: true));
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    (MapType, bool) styles = (MapType.charts, false),
+  }) async {
+    final (type, dark) = styles;
     // The styles come from the asset bundle: real I/O, outside fake time.
     await tester.runAsync(() async {
-      while (maps.styleId(MapType.charts, dark: false) == null) {
+      while (maps.styleId(type, dark: dark) == null) {
         await Future<void>.delayed(const Duration(milliseconds: 10));
       }
-      await LegendStyle.load(
-        maps.styles,
-        maps.styleId(MapType.charts, dark: false)!,
-      );
+      await LegendStyle.load(maps.styles, maps.styleId(type, dark: dark)!);
     });
     await tester.pumpWidget(
       MultiProvider(
@@ -106,6 +107,22 @@ void main() {
       findsNWidgets(ChartLegendItem.of(ChartLegendSection.buoys).length),
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the offline OSM map adds its park and trail icons', (
+    tester,
+  ) async {
+    await settings.setMapSource('offline');
+    await pump(tester, styles: (MapType.osm, false));
+    expect(find.text('Park and trail symbols'), findsOneWidget);
+    expect(find.text('Chart symbols'), findsNothing);
+    await tester.tap(find.text('Park and trail symbols'));
+    await tester.pumpAndSettle();
+    expect(find.text('Campsite'), findsOneWidget);
+    expect(
+      find.byType(LegendSymbol),
+      findsNWidgets(ParkLegendItem.values.length),
+    );
   });
 
   testWidgets('depth areas read in the user\'s units', (tester) async {
