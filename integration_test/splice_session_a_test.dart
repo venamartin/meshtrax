@@ -367,7 +367,7 @@ void main() {
     final usb = BenchRadio('USB(${BenchConfig.usbPortName})');
     if (noUsbPoster) {
       blog('NO_USB_POSTER: not opening ${BenchConfig.usbPortName}; waiting '
-          'for pushes made by the room's other members');
+          'for pushes made by other members of the room');
     }
     try {
       if (noUsbPoster) throw StateError('no USB poster by request');
