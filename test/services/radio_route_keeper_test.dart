@@ -340,6 +340,27 @@ void main() {
       });
     });
 
+    test('retiring is per guessed link: another route with the same guess '
+        'is skipped too', () {
+      fakeAsync((async) {
+        // oneGuess and sameGuess both guess AD77→1000; otherGuess guesses
+        // a different link.
+        final sameGuess = splice(
+            [0xA2, 0x77, 0xF5, 0xEE, 0xAD, 0x77, 0x10, 0x00],
+            [false, false, true]);
+        final otherGuess =
+            splice([0xA2, 0x77, 0xBE, 0xEF, 0x10, 0x00], [false, true]);
+        final radio = _Radio([_contact(stored: oneGuess)])
+          ..routes = [oneGuess, sameGuess, otherGuess, _pf2];
+        final carol = radio.contacts.first;
+        radio.copy(async, carol);
+        radio.copy(async, carol); // the splice's ACK was lost: retired
+        radio.copy(async, radio.contacts.first, stamp: 2000, text: 'next');
+        expect(radio.contacts.first.path, otherGuess.pathBytes,
+            reason: 'sameGuess carries the retired link; otherGuess does not');
+      });
+    });
+
     test('a send of mine delivering on the splice brings it back', () {
       fakeAsync((async) {
         final radio = _Radio([_contact(stored: oneGuess)])

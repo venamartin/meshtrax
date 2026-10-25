@@ -56,8 +56,6 @@ void main() {
     }
   }
 
-  List<int> bytesOf(PathResult r) => (r as RouteResult).pathBytes;
-
   test("joins my proven corridor to the reversed tail of Bob's path", () {
     myEnd();
     bobsFlood();
@@ -171,8 +169,11 @@ void main() {
     final a277Row =
         graph.egressCandidates().firstWhere((c) => c.repeaterHash == 'A277');
     expect(a277Row.failedSinceProof, 0);
-    // The guess stands for the next ladder: nothing real said no.
-    expect(bytesOf(graph.findPath(bobPk)), route.pathBytes);
+    // Nothing is minted, but the guess that just failed is not offered
+    // again while a hint could carry it (simulator 2026-10-24: the same
+    // wrong guess rode back in on every alternative).
+    expect((graph.findPath(bobPk) as FloodResult).reason,
+        FloodReason.noCorridor);
   });
 
   test('a delivered splice proves its guessed hops forward', () {

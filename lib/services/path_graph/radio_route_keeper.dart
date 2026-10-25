@@ -60,8 +60,10 @@ class RadioRouteKeeper {
 
   final Map<String, _Episode> _episodes = {};
   final Map<String, DateTime> _lastWrite = {};
-  // Per contact: splices that lost an ACK while held, keyed like a ladder
-  // rung, until a send of mine proves them.
+  // Per contact: guessed links ("FROM>TO") of splices that lost an ACK while
+  // held. Any route carrying one is not held again until a send of mine
+  // delivers over that link (simulator 2026-10-24: retiring the route let
+  // the same wrong guess back in on every alternative that carried it).
   final Map<String, Set<String>> _retired = {};
 
   /// How many guessed hops a route may carry and still hold the stored
@@ -70,6 +72,19 @@ class RadioRouteKeeper {
 
   static String routeKey(PathSelection r) =>
       r.hopCount == 0 ? 'direct' : '${r.hashSize}:${r.pathBytes.join(',')}';
+
+  /// The route's between-hop links as "FROM>TO", guessed ones only when
+  /// [guessedOnly].
+  static Set<String> linkKeys(PathSelection r, {bool guessedOnly = false}) {
+    if (r.useFlood || r.hopCount < 2) return const {};
+    final hops = PathHelper.formatPathHex(r.pathBytes, stride: r.hashSize)
+        .split(',');
+    return {
+      for (var i = 0; i < hops.length - 1; i++)
+        if (!guessedOnly || (i < r.guessedLinks.length && r.guessedLinks[i]))
+          '${hops[i]}>${hops[i + 1]}',
+    };
+  }
   Timer? _syncTimer;
   bool _syncing = false;
   bool _disposed = false;
@@ -142,7 +157,7 @@ class RadioRouteKeeper {
   void _retireHeldSplice(Contact contact, String key) {
     final held = _rung0(contact);
     if (held == null || held.guessedHops == 0 || !holds(contact, held)) return;
-    (_retired[key] ??= {}).add(routeKey(held));
+    (_retired[key] ??= {}).addAll(linkKeys(held, guessedOnly: true));
     appLogger.info(
         'the stored route to ${contact.name} (${_describe(held)}, '
         '${held.guessedHops} hop${held.guessedHops == 1 ? "" : "s"} guessed) '
@@ -154,7 +169,7 @@ class RadioRouteKeeper {
   /// retired splice of it may be held again.
   void onDelivered(String contactKey, PathSelection route) {
     if (route.useFlood) return;
-    _retired[_key(contactKey)]?.remove(routeKey(route));
+    _retired[_key(contactKey)]?.removeAll(linkKeys(route));
   }
 
   /// The radio's route to [contactKey] may no longer be Pathfinder's: the
@@ -274,7 +289,8 @@ class RadioRouteKeeper {
     return _ladderFor(contact,
         keep: (r) =>
             r.guessedHops <= maxGuessedHopsHeld &&
-            !retired.contains(routeKey(r)))?.first;
+            linkKeys(r, guessedOnly: true).every((l) => !retired.contains(l)))
+        ?.first;
   }
 
   /// The DM ladder for [contact] over Pathfinder's routes, [keep] only;

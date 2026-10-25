@@ -253,6 +253,11 @@ class PathGraph {
   // reach me, newest first — the splice's hints (PathGraphConfig.guessQ).
   // Memory only, never exported, cleared with the radio identity.
   final Map<String, List<({List<String> hops, int at})>> _hints = {};
+  // Guessed links a send failed on, with the arrival millis of the failure.
+  // Memory only, like the hints: nothing is minted, but the same guess is
+  // not offered again while a hint could carry it
+  // (PathGraphConfig.hintFreshMinutes). A delivery over the link clears it.
+  final Map<(String, String), int> _failedGuesses = {};
 
   // Watching-only moving-repeater detectors (PathGraphConfig.mobileNewLinks)
   // and, per node, the first sighting of its oldest link (0 = from before
@@ -350,7 +355,10 @@ class PathGraph {
 
   /// Forgets every contact's inbound paths (the splice's hints): another
   /// radio, another mesh, or the graph was cleared.
-  void clearHints() => _hints.clear();
+  void clearHints() {
+    _hints.clear();
+    _failedGuesses.clear();
+  }
 
   String? get selfPubkey => _selfPubkey;
   int get selfStride => _selfStride;
@@ -603,6 +611,7 @@ class PathGraph {
     final freshMs = (config.hintFreshMinutes * 60 * 1000).round();
     final minAgeMs = (config.hintLinkMinAgeMinutes * 60 * 1000).round();
     hints.removeWhere((h) => now - h.at > freshMs);
+    _failedGuesses.removeWhere((_, at) => now - at > freshMs);
     if (hints.isEmpty) return const {};
     final moving = _movingNow(now);
     final out = <(String, String)>{};
@@ -611,7 +620,11 @@ class PathGraph {
       for (var i = 1; i < hops.length; i++) {
         final observed = (hops[i - 1], hops[i]);
         final guess = (hops[i], hops[i - 1]);
-        if (hops[i] == hops[i - 1] || _store.edges.containsKey(guess)) continue;
+        if (hops[i] == hops[i - 1] ||
+            _store.edges.containsKey(guess) ||
+            _failedGuesses.containsKey(guess)) {
+          continue;
+        }
         // A link first seen before the graph kept first-seen times is old
         // by definition (field 2026-10-24: BEEF→A277 in the real export).
         final seen = _store.edges[observed];
@@ -783,6 +796,15 @@ class PathGraph {
     if (pathBytes.length % stride != 0) return;
     final hopCount = pathBytes.length ~/ stride;
     final anyGuessed = guessedLinks.any((g) => g);
+    for (var i = 0; i < hopCount - 1 && i < guessedLinks.length; i++) {
+      if (!guessedLinks[i]) continue;
+      final link = (_hopHex(pathBytes, stride, i), _hopHex(pathBytes, stride, i + 1));
+      if (success) {
+        _failedGuesses.remove(link);
+      } else {
+        _failedGuesses[link] = arrival;
+      }
+    }
     if (!success && _selfPubkey != null && !anyGuessed) {
       // The break cannot be localised, but a doorstep that keeps failing
       // my sends since it last proved itself stops starting routes
