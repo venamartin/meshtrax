@@ -32,15 +32,22 @@ class ServerLoginService {
   ServerLoginService(this._connector, {StorageService? storage})
       : _storage = storage ?? StorageService();
 
+  /// [forceFlood]: every attempt floods, whatever Pathfinder or the radio
+  /// holds. The relearn after a flooded post needs this: its whole point is
+  /// the PATH reply only a flooded login earns, and Pathfinder's best route
+  /// (or the route the keeper just wrote) would send it direct — field
+  /// 2026-10-24: "login by flood" went out on F5EE and timed out.
   Future<LoginOutcome> login(
     Contact server,
     String password, {
     int maxAttempts = 5,
     void Function(int attempt)? onAttempt,
     String tag = 'Login',
+    bool forceFlood = false,
   }) async {
-    final selection = _connector.planRequestAttempts(server, 1).first;
     final flood = PathSelection.flood(_connector.pathHashByteWidth);
+    final selection =
+        forceFlood ? flood : _connector.planRequestAttempts(server, 1).first;
     final frame = buildSendLoginFrame(server.publicKey, password);
     final responseBytes =
         frame.length > maxFrameSize ? frame.length : maxFrameSize;
@@ -54,7 +61,7 @@ class ServerLoginService {
     var flooding = selection.useFlood;
     var timeout = timeoutFor(flooding ? -1 : selection.hopCount);
     appLogger.info(
-      'Login routing: ${flooding ? 'flood' : '${selection.hopCount} hops'}',
+      'Login routing: ${flooding ? forceFlood ? 'flood (forced)' : 'flood' : '${selection.hopCount} hops'}',
       tag: tag,
     );
 

@@ -460,7 +460,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       orElse: () => null,
     );
     if (room == null || room.type != advTypeRoom) return;
-    if (room.pathOverride != null || room.pathLength >= 0) return;
+    if (room.pathOverride != null) return;
+    // A route the radio holds because the firmware learned it is enough; one
+    // the app (the keeper) just wrote is Pathfinder's guess, not knowledge.
+    if (room.pathLength >= 0 && !wroteContactPath(room)) return;
     if (!isConnected || hasSendsInFlight) return;
     final last = _roomRouteRelearnAt[room.publicKeyHex];
     if (last != null &&
@@ -480,6 +483,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         password,
         maxAttempts: 1,
         tag: 'Routing',
+        forceFlood: true,
       );
     }());
   }

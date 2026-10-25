@@ -122,6 +122,24 @@ void main() {
     });
   });
 
+  // Field 2026-10-24: the relearn after a flooded post said "login by
+  // flood" but went out on the route the keeper had just written (F5EE),
+  // and timed out. The relearn exists to earn the PATH reply only a
+  // flooded login gets, so it must flood whatever is stored.
+  test('forced flood: the stored route is reset and the first attempt floods',
+      () {
+    fakeAsync((async) {
+      final room = _server(pathLength: 1, path: const [0xF5]);
+      ServerLoginService(c).login(room, '', maxAttempts: 1, forceFlood: true);
+      async.flushMicrotasks();
+      async.elapse(const Duration(milliseconds: 10));
+
+      expect(c.resets, equals([room.publicKeyHex]),
+          reason: 'the route is cleared before the login goes out');
+      expect(c.logins, equals(1));
+    });
+  });
+
   test('no route: floods from the first attempt, nothing to reset', () {
     fakeAsync((async) {
       final room = _server();
