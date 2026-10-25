@@ -68,6 +68,9 @@ void main() {
   // member with a route back, as the simulator seeds it), so the login's
   // PATH reply does not install a live route ahead of Pathfinder's own.
   const a3NoLogin = bool.fromEnvironment('A3_NO_LOGIN');
+  // A1_POSTS: how many baseline posts A1 sends (default 2). The simulator
+  // uses 4 to show a doorstep being given up after two failed deliveries.
+  const a1Posts = int.fromEnvironment('A1_POSTS', defaultValue: 2);
 
   // Hour-minute-second with dashes: a Windows file name cannot hold colons.
   final stamp =
@@ -309,8 +312,10 @@ void main() {
     dump('after the flooded login', roomA!);
     expect(ok, isTrue, reason: 'login failed — nothing to measure against');
 
-    await post(roomA!, 'Test $hm: before 1');
-    await post(roomA!, 'Test $hm: before 2');
+    for (var i = 1; i <= a1Posts; i++) {
+      await post(roomA!, 'Test $hm: before $i');
+      if (i >= 2 && i < a1Posts) dump('after baseline post $i', roomA!);
+    }
     dump('after the baseline posts', roomA!);
   });
 
