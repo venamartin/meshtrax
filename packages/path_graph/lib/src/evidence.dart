@@ -185,6 +185,15 @@ class EvidenceStore {
     return filled.length >= slices;
   }
 
+  /// A direct send to [contactPubkey] that ended at [repeaterHash] got no
+  /// ACK: one more failure against that doorstep for this pair.
+  void recordFailedIngress(String contactPubkey, String repeaterHash) {
+    final e = entries[(contactPubkey, repeaterHash)];
+    if (e == null) return;
+    e.failedSinceProof++;
+    _dirty.add((contactPubkey, repeaterHash));
+  }
+
   /// A direct send that started at [repeaterHash] got no ACK.
   void recordFailedEgress(String selfPubkey, String repeaterHash) {
     final e = entries[(selfPubkey, repeaterHash)];
@@ -284,7 +293,8 @@ class EvidenceStore {
       String contactPubkey, String repeaterHash, int arrival) {
     _upsert(contactPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
       ..provenAt = arrival
-      ..provenCount += 1;
+      ..provenCount += 1
+      ..failedSinceProof = 0;
   }
 
   /// EWMA so repeat measurements refine rather than overwrite.

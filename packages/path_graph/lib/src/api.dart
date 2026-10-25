@@ -96,6 +96,11 @@ enum FloodReason {
   /// that has not proved it hears me for
   /// [PathGraphConfig.mobileFreshMinutes].
   doorstepsMoving,
+
+  /// Every repeater heard carrying the contact's packets has failed my last
+  /// direct sends to them ([PathGraphConfig.contactFailGate]): it hears
+  /// them, they do not hear it.
+  theirDoorstepsFailing,
 }
 
 /// The three-tier return contract: direct | bidirectional path | flood.
@@ -783,6 +788,13 @@ class PathGraph {
       // my sends since it last proved itself stops starting routes
       // (PathGraphConfig.selfFailGate); any proof resets it.
       _evidence.recordFailedEgress(_selfPubkey!, _hopHex(pathBytes, stride, 0));
+      // ...and their end likewise: a doorstep that keeps failing deliveries
+      // to them stops ending routes (PathGraphConfig.contactFailGate);
+      // only a delivery through it resets that.
+      if (contactPubkey != null) {
+        _evidence.recordFailedIngress(
+            contactPubkey, _hopHex(pathBytes, stride, hopCount - 1));
+      }
     }
     if (contactPubkey != null) {
       final hops = [
@@ -1321,8 +1333,27 @@ class PathGraph {
     final all = _evidence.candidatesFor(contactPubkey.toLowerCase(), now, isSelf: false);
     if (all.isEmpty) return null;
     return _freshRows(
-        _provenOnly ? all.where((c) => c.proven || c.heard).toList() : all,
+        (_provenOnly ? all.where((c) => c.proven || c.heard) : all)
+            .where((c) => !doorstepFailsThem(c))
+            .toList(),
         now);
+  }
+
+  /// Whether [c], one of a contact's doorsteps, has failed my last direct
+  /// sends to them since its last proven delivery
+  /// ([PathGraphConfig.contactFailGate]).
+  bool doorstepFailsThem(Candidate c) =>
+      !c.isSelf &&
+      c.repeaterHash != directHash &&
+      c.failedSinceProof >= config.contactFailGate;
+
+  /// Whether every doorstep known for [contactPubkey] is held by
+  /// [doorstepFailsThem].
+  bool _theirDoorstepsAllFailing(String contactPubkey, int now) {
+    final all = _evidence.candidatesFor(contactPubkey, now, isSelf: false)
+        .where((c) => c.repeaterHash != directHash)
+        .toList();
+    return all.isNotEmpty && all.every(doorstepFailsThem);
   }
 
   int get _mobileFreshMs => (config.mobileFreshMinutes * 60 * 1000).round();
@@ -1847,7 +1878,9 @@ class PathGraph {
       return PathResult.flood(mine.gate ?? FloodReason.noProvenEndpoint);
     }
     if (ingress.isEmpty) {
-      return const PathResult.flood(FloodReason.noProvenEndpoint);
+      return PathResult.flood(_theirDoorstepsAllFailing(contactPubkey, now)
+          ? FloodReason.theirDoorstepsFailing
+          : FloodReason.noProvenEndpoint);
     }
 
     final route = PathFinder(estimator.config, estimator).search(
@@ -1888,6 +1921,12 @@ class PathGraph {
     // Its first hop may have failed my sends or gone quiet since.
     if (self != null &&
         _egressCandidates(self, now).held.containsKey(live.hops.first)) {
+      return null;
+    }
+    // Its last hop may have failed my deliveries to them since.
+    if (_evidence
+        .candidatesFor(contactPubkey, now, isSelf: false)
+        .any((c) => c.repeaterHash == live.hops.last && doorstepFailsThem(c))) {
       return null;
     }
     return _toResult(PathFinder(estimator.config, estimator).score(

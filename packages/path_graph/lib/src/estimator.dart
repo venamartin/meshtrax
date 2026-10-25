@@ -49,7 +49,19 @@ class PathGraphConfig {
     this.hintLinkMinAgeMinutes = 10,
     this.hintMaxHopKm = 60,
     this.hintsPerContact = 4,
+    this.contactFailGate = 2,
   });
+
+  /// A contact's doorstep is a repeater heard carrying their packets, which
+  /// proves it hears THEM; a route ending there assumes it also reaches
+  /// them. When this many direct sends ending at it have failed since its
+  /// last proven delivery, the assumption is wrong for this pair (field
+  /// 2026-10-24: F5EE heard Monterey Bay and this radio, the room did not
+  /// hear F5EE, four posts failed on it) and it stops ending routes to that
+  /// contact. Only a delivery through it resets the count — hearing them via
+  /// it again proves the wrong direction. Negative-only, like
+  /// [selfFailGate].
+  final int contactFailGate;
 
   /// The splice (owner, 2026-10-23/24): a contact's recent inbound flood
   /// path, read backwards, offers the reverse of each repeater-to-repeater
