@@ -1,11 +1,13 @@
 import 'estimator.dart';
 import 'evidence.dart';
 import 'graph_store.dart';
+import 'place_store.dart';
 
 /// Retention knobs. Set [maxAgeDays] to null for a permanent map.
 class RetentionPolicy {
   const RetentionPolicy({
     this.maxAgeDays = 30,
+    this.placeDays = 30,
     this.maxNodes = 5000,
     this.maxEdges = 20000,
   });
@@ -13,6 +15,9 @@ class RetentionPolicy {
   /// Idle hearsay older than this is forgotten. Null disables the age
   /// pass entirely (caps still apply).
   final int? maxAgeDays;
+
+  /// Days an area keeps remembering which repeaters heard me there.
+  final int placeDays;
 
 
   final int maxNodes;
@@ -28,6 +33,7 @@ class RetentionReport {
     this.ingressAged = 0,
     this.edgesEvicted = 0,
     this.nodesEvicted = 0,
+    this.placesAged = 0,
   });
 
   final int edgesAged;
@@ -35,9 +41,11 @@ class RetentionReport {
   final int ingressAged;
   final int edgesEvicted;
   final int nodesEvicted;
+  final int placesAged;
 
   int get totalRemoved =>
-      edgesAged + nodesAged + ingressAged + edgesEvicted + nodesEvicted;
+      edgesAged + nodesAged + ingressAged + edgesEvicted + nodesEvicted +
+      placesAged;
 
   bool get isEmpty => totalRemoved == 0;
 }
@@ -50,11 +58,12 @@ class RetentionReport {
 /// idleness. Only unconfirmed hearsay ages, plus the genuinely
 /// perishable doorstep lists — people move even though repeaters don't.
 class Retention {
-  const Retention(this._store, this._evidence, this._estimator);
+  const Retention(this._store, this._evidence, this._estimator, this._places);
 
   final GraphStore _store;
   final EvidenceStore _evidence;
   final Estimator _estimator;
+  final PlaceStore _places;
 
   static const _trafficEpsilon = 0.05;
   static const _dayMillis = 24 * 60 * 60 * 1000;
@@ -96,7 +105,11 @@ class Retention {
       }
     }
 
+    final placesAged =
+        _places.sweep(nowMillis ~/ _dayMillis, policy.placeDays);
+
     return RetentionReport(
+      placesAged: placesAged,
       edgesAged: edgesAged,
       nodesAged: nodesAged,
       ingressAged: ingressAged,
@@ -172,5 +185,6 @@ class Retention {
     for (final key in _evidence.entries.keys.toList()) {
       _evidence.removeEntry(key);
     }
+    _places.clear();
   }
 }

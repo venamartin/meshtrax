@@ -101,6 +101,21 @@ class Candidate {
   final double? uplinkSnr;
   final double? downlinkSnr;
 
+  /// The same candidate with the level measured where I am now (the
+  /// place row's), in place of whatever was measured anywhere.
+  Candidate withUplink(double? snr) => Candidate(repeaterHash, weight, tier,
+      uplinkSnr: snr,
+      downlinkSnr: downlinkSnr,
+      proven: proven,
+      heard: heard,
+      finalCount: finalCount,
+      penultimateCount: penultimateCount,
+      provenCount: provenCount,
+      provenAt: provenAt,
+      lastSeen: lastSeen,
+      isSelf: isSelf,
+      failedSinceProof: failedSinceProof);
+
   /// The level in the direction a send travels. For one of my doorsteps
   /// only the uplink counts (how it heard me: a trace or a Discover
   /// answer); how loud I hear it says nothing about that, and a strong
@@ -537,6 +552,10 @@ class EvidenceStore {
   /// [provenOnly], only when an empty-path send to them was delivered.
   /// A packet of theirs that came only through a repeater after it ends
   /// direct at once (see [PathGraphConfig.directFreshMinutes]).
+  /// Arrival millis of the last direct (no-hop) packet from them, 0 if none.
+  int directSeenAt(String contactPubkey) =>
+      entries[(contactPubkey, directHash)]?.lastSeen ?? 0;
+
   bool hasFreshDirect(String contactPubkey, int now,
       {bool provenOnly = false}) {
     final e = entries[(contactPubkey, directHash)];

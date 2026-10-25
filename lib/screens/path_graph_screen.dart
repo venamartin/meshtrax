@@ -45,6 +45,8 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear me are moving and none has answered me lately',
       FloodReason.theirDoorstepsFailing =>
         'the repeaters that hear it have not got my last sends through to it',
+      FloodReason.doorstepsNotHere =>
+        'no repeater has been heard hearing me around here yet',
     };
   }
   if (back) {
@@ -66,6 +68,8 @@ String floodReasonText(FloodReason reason,
         'the repeaters that hear me are moving and none has answered me lately',
       FloodReason.theirDoorstepsFailing =>
         'the repeaters that hear it have not got my last sends through to it',
+      FloodReason.doorstepsNotHere =>
+        'no repeater has been heard hearing me around here yet',
     };
   }
   return switch (reason) {
@@ -87,6 +91,9 @@ String floodReasonText(FloodReason reason,
           '— flooding to find one',
     FloodReason.theirDoorstepsFailing =>
       'the repeaters that hear them have not got my last sends through to them',
+    FloodReason.doorstepsNotHere =>
+      'no repeater has been heard hearing me around here yet — flooding so '
+          'one can',
   };
 }
 
@@ -183,7 +190,36 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       PathHelper.pubKeyPrefix(c.publicKey, stride: graph.hashWidthBytes));
 
   Future<void> _backup(PathGraph graph) async {
-    final doc = const JsonEncoder.withIndent(' ').convert(graph.saveSession());
+    // The areas the radio has been heard in are a coarse history of
+    // where it went (about 500 m, by the day): the user decides whether
+    // a file carries them (owner, 2026-10-25).
+    var includePlaces = false;
+    if (graph.hasPlaces) {
+      final choice = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Include where you have been?'),
+          content: const Text(
+              'This backup can include which repeaters heard this radio in '
+              'each area of about 500 m over the last 30 days. It never '
+              'holds your exact position. Include it?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Leave it out'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Include'),
+            ),
+          ],
+        ),
+      );
+      if (choice == null || !mounted) return;
+      includePlaces = choice;
+    }
+    final doc = const JsonEncoder.withIndent(' ')
+        .convert(graph.saveSession(includePlaces: includePlaces));
     // The system save dialog, like the log export: the silent save lands
     // in the app's private folder where nobody can find it.
     final saved = await FileSaver.instance.saveAs(

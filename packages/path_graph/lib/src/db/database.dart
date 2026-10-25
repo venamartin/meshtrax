@@ -5,7 +5,14 @@ import 'tables.dart';
 part 'database.g.dart';
 
 @DriftDatabase(
-  tables: [GraphNodes, GraphEdges, ContactIngress, KnownContacts, GraphMeta],
+  tables: [
+    GraphNodes,
+    GraphEdges,
+    ContactIngress,
+    KnownContacts,
+    GraphMeta,
+    PlaceDoorsteps,
+  ],
 )
 class PathGraphDatabase extends _$PathGraphDatabase {
   /// The executor is injected — the package knows nothing about
@@ -43,7 +50,7 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// adverted, nothing proven or measured, every sighting in one burst
   /// (field: 3,674 of 5,014 codes).
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -164,6 +171,9 @@ class PathGraphDatabase extends _$PathGraphDatabase {
             // doorstep rows. No precise location is stored any more
             // (owner, 2026-10-25); the rebuild drops the two columns.
             await m.alterTable(TableMigration(contactIngress));
+          }
+          if (from < 12) {
+            await m.createTable(placeDoorsteps);
           }
         },
       );
