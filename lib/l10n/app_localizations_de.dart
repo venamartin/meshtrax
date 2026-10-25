@@ -3919,6 +3919,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
 
   @override
+  String get pathfinderHelp_discover =>
+      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+
+  @override
   String get pathfinderHelp_off =>
       'Turn Pathfinder off and the radio routes exactly as it did before.';
 

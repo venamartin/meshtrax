@@ -11,6 +11,7 @@ import 'package:path_graph/path_graph.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../connector/meshcore_connector.dart';
+import '../../connector/meshcore_protocol.dart';
 import '../../helpers/path_helper.dart';
 import '../../models/contact.dart';
 import '../../models/path_selection.dart';
@@ -229,6 +230,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onContactMessageCopy = keeper.onCopy;
     connector.onSendLadderEnded = keeper.reassert;
     connector.onSendOutcome = _onSendOutcome;
+    connector.graphRoomNeedsRelearn = roomNeedsRelearnAfterMove;
     connector.selfGps.addListener(_syncPlace);
     _radioReady = false;
     WidgetsBinding.instance.addObserver(this);
@@ -310,6 +312,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
     _connector?.onSendOutcome = null;
+    _connector?.graphRoomNeedsRelearn = null;
     _keeper?.dispose();
     _keeper = null;
     _connector = null;
@@ -612,6 +615,19 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         'ask in ${autoDiscoverEvery.inMinutes} min at the earliest',
         tag: 'PathGraph');
     _notifySoon();
+  }
+
+  /// Whether the radio has moved since [room] last got a packet of its
+  /// and the room's way back ends where the radio no longer is. A flooded
+  /// post would not fix that (the room ACKs on its stored route back and
+  /// sends no PATH); only a flooded login does, so the connector does one
+  /// before the post. Pure: nothing is sent from here.
+  bool roomNeedsRelearnAfterMove(Contact room) {
+    final graph = _graph;
+    if (graph == null || room.type != advTypeRoom) return false;
+    final result = graph.findPath(room.publicKeyHex);
+    return result is FloodResult &&
+        result.reason == FloodReason.movedSinceTheyReachedMe;
   }
 
   /// Why Pathfinder would like a Discover, in plain words.

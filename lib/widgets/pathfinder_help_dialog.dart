@@ -50,6 +50,7 @@ class _PathfinderHelpDialogState extends State<PathfinderHelpDialog> {
       l10n.pathfinderHelp_how,
       l10n.pathfinderHelp_learning,
       l10n.pathfinderHelp_guessed,
+      l10n.pathfinderHelp_discover,
       l10n.pathfinderHelp_off,
     ];
     return AlertDialog(

@@ -473,7 +473,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// answered with a PATH return, so send one: the last password that
   /// worked, or a blank one, which the room accepts from a client it knows,
   /// and it knows us, since it just ACKed our post.
-  void _relearnRoomRouteAfterFlood(Contact snapshot) {
+  void _relearnRoomRouteAfterFlood(Contact snapshot) =>
+      unawaited(relearnRoomRoute(snapshot));
+
+  /// Logs in to [snapshot]'s room by flood so its radio relearns the way
+  /// back (a room ACKs a post on its stored route back whatever way the
+  /// post came, and only a flooded login resets that route:
+  /// simple_room_server MyMesh.cpp). [force]: do it although the radio
+  /// holds a firmware route, because Pathfinder knows that route ends
+  /// where this radio no longer is.
+  Future<void> relearnRoomRoute(Contact snapshot, {bool force = false}) async {
     final room = _contacts.cast<Contact?>().firstWhere(
       (c) => c!.publicKeyHex == snapshot.publicKeyHex,
       orElse: () => null,
@@ -482,7 +491,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (room.pathOverride != null) return;
     // A route the radio holds because the firmware learned it is enough; one
     // the app (the keeper) just wrote is Pathfinder's guess, not knowledge.
-    if (room.pathLength >= 0 && !wroteContactPath(room)) return;
+    if (!force && room.pathLength >= 0 && !wroteContactPath(room)) return;
     if (!isConnected || hasSendsInFlight) return;
     final last = _roomRouteRelearnAt[room.publicKeyHex];
     if (last != null &&
@@ -490,22 +499,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     _roomRouteRelearnAt[room.publicKeyHex] = DateTime.now();
-    unawaited(() async {
-      final password =
-          await StorageService().getRepeaterPassword(room.publicKeyHex) ?? '';
-      appLogger.info(
-        'Relearning route to ${room.name}: login by flood',
-        tag: 'Routing',
-      );
-      await ServerLoginService(this).login(
-        room,
-        password,
-        maxAttempts: 1,
-        tag: 'Routing',
-        forceFlood: true,
-      );
-    }());
+    final password =
+        await StorageService().getRepeaterPassword(room.publicKeyHex) ?? '';
+    appLogger.info(
+      'Relearning route to ${room.name}: login by flood',
+      tag: 'Routing',
+    );
+    await ServerLoginService(this).login(
+      room,
+      password,
+      maxAttempts: 1,
+      tag: 'Routing',
+      forceFlood: true,
+    );
   }
+
+  /// Pathfinder's word that this room's way back ends where the radio no
+  /// longer is (it moved since the room last got a packet of its): a post
+  /// would arrive and its ACK would die, so the room is logged in to by
+  /// flood first. Null while Pathfinder is off.
+  bool Function(Contact room)? graphRoomNeedsRelearn;
 
   // When a clock sync was last sent per room. The skew banner measures from
   // the LAST login response, so after a fix it must stay down until a newer
@@ -3979,6 +3992,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         await sendFrame(buildSendTextMsgFrame(contact.publicKey, outboundText));
       }
       return;
+    }
+
+    if (contact.type == advTypeRoom &&
+        !hasSendsInFlight &&
+        (graphRoomNeedsRelearn?.call(contact) ?? false)) {
+      appLogger.info(
+        'I have moved since ${contact.name} last got a packet of mine: '
+        'logging in by flood first so it learns the way back',
+        tag: 'Routing',
+      );
+      // Bounded: a room that never answers must not hold the post hostage.
+      await relearnRoomRoute(contact, force: true)
+          .timeout(const Duration(seconds: 12), onTimeout: () {});
     }
 
     if (_retryService != null) {

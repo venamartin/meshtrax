@@ -10,6 +10,7 @@ import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:path_graph/path_graph.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // The automatic Discover: one, after a failed step, when Pathfinder has a
@@ -145,6 +146,41 @@ void main() {
       expect(c.discovers, 0);
       await service.stop();
     }
+  });
+
+  test('a room whose way back ends where I was needs a flooded login first',
+      () async {
+    final c = _Connector();
+    final service = PathGraphService();
+    await service.start(c, database: NativeDatabase.memory());
+    final graph = service.graph!;
+    final room = Contact(
+      publicKey: Uint8List.fromList([0x70, 0x70, ...List.filled(30, 0x22)]),
+      name: 'Room',
+      type: advTypeRoom,
+      pathLength: -1,
+      path: Uint8List(0),
+      pathHashSize: 2,
+      lastSeen: DateTime(2026, 10, 25),
+    );
+    // Home: A277 hears me, the room reaches me BEEF -> A277.
+    c.fix(36.9712, -121.7334);
+    graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0xBE, 0xEF]), true,
+        contactPubkey: room.publicKeyHex);
+    for (var i = 0; i < 2; i++) {
+      graph.observePath(Uint8List.fromList([0xBE, 0xEF, 0xA2, 0x77]), 2,
+          ObservationOrigin.pubkeyConfirmed(room.publicKeyHex),
+          messageId: 'room-$i');
+    }
+    expect(service.roomNeedsRelearnAfterMove(room), isFalse);
+    // Two kilometres on: only F5EE hears me here.
+    c.fix(36.9712 + 0.02, -121.7334);
+    graph.observeDiscoverResults(
+        [const DiscoverResponse(repeaterHash: 'F5EE', uplinkSnr: 8)],
+        failureEpisode: false);
+    expect(service.roomNeedsRelearnAfterMove(room), isTrue);
+    expect(c.graphRoomNeedsRelearn!(room), isTrue);
+    await service.stop();
   });
 
   test('a foreign Discover older than two minutes no longer holds it',

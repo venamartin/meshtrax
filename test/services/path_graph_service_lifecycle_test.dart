@@ -63,6 +63,7 @@ void main() {
     expect(c.onChannelPacketHeard, isNull);
     expect(c.onOwnEchoHeard, isNull);
     expect(c.onSendOutcome, isNull);
+    expect(c.graphRoomNeedsRelearn, isNull);
   });
 
   test('two starts at once open one graph', () async {

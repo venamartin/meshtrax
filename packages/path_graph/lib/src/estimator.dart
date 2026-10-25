@@ -341,6 +341,13 @@ class PathGraphConfig {
         slashFactorInferred: slashFactorInferred,
         allowInferredEndpoints:
             allowInferredEndpoints ?? this.allowInferredEndpoints,
+        guessQ: guessQ,
+        maxGuessedHops: maxGuessedHops,
+        hintFreshMinutes: hintFreshMinutes,
+        hintLinkMinAgeMinutes: hintLinkMinAgeMinutes,
+        hintMaxHopKm: hintMaxHopKm,
+        hintsPerContact: hintsPerContact,
+        contactFailGate: contactFailGate,
       );
 }
 
