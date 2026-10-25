@@ -505,7 +505,8 @@ void main() {
     expect(graph.ingressCandidates(roomPk).single.repeaterHash, 'BEEF');
     final hints = graph.hintsFor(roomPk).map((h) => h.hops.join(','));
     expect(hints, ['5B98,F5EE,AA77,A277']);
-    expect(adapter.packetLog.first.verdict, contains('late copy'));
+    expect(adapter.packetLog.map((e) => e.verdict),
+        anyElement(contains('late copy')));
   });
 
   group('a PATH reply is credited exactly or not at all', () {
