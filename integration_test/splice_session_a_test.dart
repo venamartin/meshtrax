@@ -58,8 +58,8 @@ void main() {
   // ONLY=A3 runs the bring-up and the keeper window alone (no room A RF);
   // ONLY=A12 runs the room A steps and skips the keeper window.
   const only = String.fromEnvironment('ONLY');
-  const skipRoomA = only == 'A3' || only == 'DM';
-  const skipRoomB = only == 'A12' || only == 'DM';
+  const skipRoomA = only == 'A3' || only == 'DM' || only == 'PAIR';
+  const skipRoomB = only == 'A12' || only == 'DM' || only == 'PAIR';
   // ONLY=DM: two DMs to the chat contact named DM_CONTACT (name prefix,
   // case-blind), on the normal ladder, with a dump before and after.
   const dmContactName = String.fromEnvironment('DM_CONTACT', defaultValue: 'RedTail1');
@@ -383,6 +383,59 @@ void main() {
     final w = live(who);
     blog('radio route to ${who.name} now: pathLength=${w.pathLength} path="${w.pathIdList}"');
     dump('after the DMs', who);
+  });
+
+  // ONLY=PAIR: a sanity check that DMs work at all tonight. The COM14 bench
+  // radio adverts, GWQ adverts, then one DM each way on the normal ladder.
+  testWidgets('P1 pair: adverts both ways, then a DM each way',
+      skip: only != 'PAIR', (tester) async {
+    if (!ready) fail('Bench not ready — see the first failure above.');
+    await beginScenario(tester, 'P1 Whale <-> GWQ');
+    final usb = BenchRadio('USB(${BenchConfig.usbPortName})');
+    usb.connector = await buildConnector(appSettings: settings);
+    blog('connecting the bench radio on ${BenchConfig.usbPortName}…');
+    await usb.connector.connectUsb(portName: BenchConfig.usbPortName);
+    await waitConnectedVerified(usb);
+    await waitUntil(() => !usb.connector.isLoadingContacts,
+        'bench radio contacts synced', timeout: const Duration(seconds: 60));
+    await alignFrequency(usb, khz: BenchConfig.meshFreqKhz);
+    final whaleKey = usb.connector.selfPublicKeyHex;
+    final gwqKey = radio.connector.selfPublicKeyHex;
+    blog('bench radio: ${usb.connector.selfName} (${whaleKey.substring(0, 12)}…) · '
+        'GWQ: ${radio.connector.selfName} (${gwqKey.substring(0, 12)}…)');
+
+    blog('>>> bench radio adverts (flood)…');
+    await usb.connector.sendSelfAdvert(flood: true);
+    await Future<void>.delayed(const Duration(seconds: 12));
+    blog('>>> GWQ adverts (flood)…');
+    await radio.connector.sendSelfAdvert(flood: true);
+    await Future<void>.delayed(const Duration(seconds: 12));
+
+    final whaleOnGwq = await ensureSavedContact(radio, whaleKey, 'bench radio');
+    final gwqOnWhale = await ensureSavedContact(usb, gwqKey, 'GWQ');
+    blog('each radio has the other: GWQ sees "${whaleOnGwq.name}" route=${whaleOnGwq.pathLength}; '
+        'bench radio sees "${gwqOnWhale.name}" route=${gwqOnWhale.pathLength}');
+
+    dump('before the pair DMs', whaleOnGwq);
+    await post(whaleOnGwq, 'Test $hm: pair 1');
+    final arrived1 = await dmArrived(usb, gwqOnWhale, 'Test $hm: pair 1',
+        timeout: const Duration(seconds: 20));
+    blog('bench radio received "pair 1": $arrived1');
+
+    final target = usb.connector.contacts
+        .firstWhere((c) => c.publicKeyHex == gwqOnWhale.publicKeyHex);
+    blog('>>> bench radio posts "Test $hm: pair 2" to GWQ '
+        '(its route: pathLength=${target.pathLength})…');
+    await usb.connector.sendMessage(target, 'Test $hm: pair 2');
+    final st2 = await awaitDmStatus(usb, target, 'Test $hm: pair 2',
+        timeout: const Duration(seconds: 150));
+    final arrived2 = await dmArrived(radio, whaleOnGwq, 'Test $hm: pair 2',
+        timeout: const Duration(seconds: 20));
+    blog('bench radio -> GWQ "pair 2": status $st2 · GWQ received: $arrived2');
+    dump('after the pair DMs', whaleOnGwq);
+    try {
+      await usb.connector.disconnect();
+    } catch (_) {}
   });
 
   testWidgets('A3 keeper: login to room B, then a window for pushes from it',
