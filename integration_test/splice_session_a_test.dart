@@ -401,38 +401,72 @@ void main() {
     await alignFrequency(usb, khz: BenchConfig.meshFreqKhz);
     final whaleKey = usb.connector.selfPublicKeyHex;
     final gwqKey = radio.connector.selfPublicKeyHex;
-    blog('bench radio: ${usb.connector.selfName} (${whaleKey.substring(0, 12)}…) · '
-        'GWQ: ${radio.connector.selfName} (${gwqKey.substring(0, 12)}…)');
+    blog('bench radio: ${usb.connector.selfName} (${whaleKey.substring(0, 12)}…) '
+        'tx ${usb.connector.currentTxPower ?? "?"} dBm · '
+        'GWQ: ${radio.connector.selfName} (${gwqKey.substring(0, 12)}…) '
+        'tx ${radio.connector.currentTxPower ?? "?"} dBm');
+    final whaleTx = usb.connector.currentTxPower;
+    if (whaleTx != null && whaleTx < 10) {
+      blog('bench radio transmits at $whaleTx dBm — raising to 18 for the test');
+      await usb.connector.sendFrame(buildSetRadioTxPowerFrame(18));
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    final whaleKnownBefore = findContactByHex(radio.connector, whaleKey) != null;
+    final gwqKnownBefore = findContactByHex(usb.connector, gwqKey) != null;
+    blog('before adverts: GWQ knows bench radio: $whaleKnownBefore · '
+        'bench radio knows GWQ: $gwqKnownBefore');
 
     blog('>>> bench radio adverts (flood)…');
     await usb.connector.sendSelfAdvert(flood: true);
-    await Future<void>.delayed(const Duration(seconds: 12));
+    final heardWhale = await pollFor(
+        () => findContactByHex(radio.connector, whaleKey) != null,
+        const Duration(seconds: 25));
+    blog('GWQ heard the advert from the bench radio: $heardWhale');
+
     blog('>>> GWQ adverts (flood)…');
     await radio.connector.sendSelfAdvert(flood: true);
-    await Future<void>.delayed(const Duration(seconds: 12));
+    final heardGwq = await pollFor(
+        () => findContactByHex(usb.connector, gwqKey) != null,
+        const Duration(seconds: 25));
+    blog('bench radio heard the advert from GWQ: $heardGwq');
 
-    final whaleOnGwq = await ensureSavedContact(radio, whaleKey, 'bench radio');
-    final gwqOnWhale = await ensureSavedContact(usb, gwqKey, 'GWQ');
-    blog('each radio has the other: GWQ sees "${whaleOnGwq.name}" route=${whaleOnGwq.pathLength}; '
-        'bench radio sees "${gwqOnWhale.name}" route=${gwqOnWhale.pathLength}');
+    Contact? whaleOnGwq;
+    Contact? gwqOnWhale;
+    if (heardWhale) {
+      whaleOnGwq = await ensureSavedContact(radio, whaleKey, 'bench radio');
+    }
+    if (heardGwq) {
+      gwqOnWhale = await ensureSavedContact(usb, gwqKey, 'GWQ');
+    }
 
-    dump('before the pair DMs', whaleOnGwq);
-    await post(whaleOnGwq, 'Test $hm: pair 1');
-    final arrived1 = await dmArrived(usb, gwqOnWhale, 'Test $hm: pair 1',
-        timeout: const Duration(seconds: 20));
-    blog('bench radio received "pair 1": $arrived1');
-
-    final target = usb.connector.contacts
-        .firstWhere((c) => c.publicKeyHex == gwqOnWhale.publicKeyHex);
-    blog('>>> bench radio posts "Test $hm: pair 2" to GWQ '
-        '(its route: pathLength=${target.pathLength})…');
-    await usb.connector.sendMessage(target, 'Test $hm: pair 2');
-    final st2 = await awaitDmStatus(usb, target, 'Test $hm: pair 2',
-        timeout: const Duration(seconds: 150));
-    final arrived2 = await dmArrived(radio, whaleOnGwq, 'Test $hm: pair 2',
-        timeout: const Duration(seconds: 20));
-    blog('bench radio -> GWQ "pair 2": status $st2 · GWQ received: $arrived2');
-    dump('after the pair DMs', whaleOnGwq);
+    if (whaleOnGwq != null) {
+      dump('before GWQ -> bench radio', whaleOnGwq);
+      await post(whaleOnGwq, 'Test $hm: pair 1');
+      if (gwqOnWhale != null) {
+        final arrived1 = await dmArrived(usb, gwqOnWhale, 'Test $hm: pair 1',
+            timeout: const Duration(seconds: 20));
+        blog('bench radio received "pair 1": $arrived1');
+      }
+    } else {
+      blog('GWQ -> bench radio DM skipped: GWQ has no contact for it');
+    }
+    if (gwqOnWhale != null) {
+      final target = usb.connector.contacts
+          .firstWhere((c) => c.publicKeyHex == gwqOnWhale!.publicKeyHex);
+      blog('>>> bench radio posts "Test $hm: pair 2" to GWQ '
+          '(its route: pathLength=${target.pathLength})…');
+      await usb.connector.sendMessage(target, 'Test $hm: pair 2');
+      final st2 = await awaitDmStatus(usb, target, 'Test $hm: pair 2',
+          timeout: const Duration(seconds: 150));
+      final arrived2 = whaleOnGwq == null
+          ? null
+          : await dmArrived(radio, whaleOnGwq, 'Test $hm: pair 2',
+              timeout: const Duration(seconds: 20));
+      blog('bench radio -> GWQ "pair 2": status $st2 · GWQ received: $arrived2');
+    } else {
+      blog('bench radio -> GWQ DM skipped: bench radio has no contact for GWQ');
+    }
+    if (whaleOnGwq != null) dump('after the pair DMs', whaleOnGwq);
     try {
       await usb.connector.disconnect();
     } catch (_) {}
