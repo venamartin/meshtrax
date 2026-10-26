@@ -30,8 +30,12 @@ void main() {
                 onLongPress: () => showMessageActions(context, actions()),
                 // The bubble text: selectable on desktop, where it takes
                 // right-clicks itself; plain on phones.
+                // As MessageText draws it: no text menu of its own.
                 child: rightClick
-                    ? const SelectableText('a message with text')
+                    ? const SelectableText(
+                        'a message with text',
+                        contextMenuBuilder: null,
+                      )
                     : const Text('a message with text'),
               ),
             ),
@@ -54,13 +58,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(PopupMenuItem<MessageAction>), findsNWidgets(2));
+    expect(find.text('Select all'), findsNothing, reason: 'one menu, ours');
     final menuTop = tester.getTopLeft(find.text('Reply'));
     expect((menuTop.dy - at.dy).abs(), lessThan(60));
 
     await tester.tap(find.text('Copy'));
     await tester.pumpAndSettle();
     expect(picked, ['copy']);
-  });
+  }, variant: TargetPlatformVariant.desktop());
 
   testWidgets('a left-click opens nothing', (tester) async {
     await pump(tester, rightClick: true);
@@ -71,7 +76,7 @@ void main() {
     await mouse.up();
     await tester.pumpAndSettle();
     expect(find.byType(PopupMenuItem<MessageAction>), findsNothing);
-  });
+  }, variant: TargetPlatformVariant.desktop());
 
   testWidgets('a long-press opens the sheet, with Cancel', (tester) async {
     await pump(tester, rightClick: false);
