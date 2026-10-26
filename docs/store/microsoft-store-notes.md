@@ -30,6 +30,70 @@ Every submission needs a higher version than the last: the MSIX version is
 `major.minor.patch.0` taken from pubspec `version:`, so the normal patch bump
 covers it. The `+build` number is not used.
 
+## Publishing updates from release.sh
+
+`./release.sh --msstore` builds the same `.msix` and submits it to the Store
+through the Microsoft Store Developer CLI (`msstore`). Upload tool:
+`tool/msstore_upload.py` (run with `uv`).
+
+```bash
+./release.sh --apk --windows --play --msstore   # GitHub release + both stores
+./release.sh --msstore                          # Store only (no GitHub release or tag)
+```
+
+1. **Preflight**, before any build: `msstore` can reach MeshTrax, no
+   submission is in progress, and the pubspec version is higher than the one
+   in the Store.
+2. **Store notes**: the same `dist/whatsnew-v<version>.txt` that Google Play
+   uses. One file feeds every store.
+3. The Windows release is built and packaged as
+   `dist/meshtrax-v<version>.msix`. Without `--windows` no zip is made.
+4. **Last**, after the GitHub release goes live: the package is uploaded into
+   a new draft, the "What's new in this version" text is set on every listing,
+   and the draft is submitted for certification. The draft is copied from the
+   last published submission, so the listing, images, age rating and publish
+   mode carry over. The publish mode is "as soon as it passes certification".
+   Certification takes hours to 3 business days.
+
+If the submission fails, fix the cause and run `./release.sh --msstore`. If
+the preflight then says a submission is in progress, a draft was left behind:
+delete it in Partner Center → MeshTrax first.
+
+Do not edit a submission made by the script in Partner Center while it is in
+progress. Change the listing in Partner Center only when nothing is pending.
+
+### One-time setup
+
+1. **Partner Center**, signed in as the account owner: Account settings →
+   **Tenants** → Create or Associate a Microsoft Entra ID. Sign out and back in
+   as the tenant's admin before the next step.
+2. Account settings → **User management** → **Microsoft Entra applications** →
+   Add Microsoft Entra application → Create, with the **Manager(Windows)**
+   role. Open it → **Add new key**. Copy the Tenant ID, Client ID and key, and
+   keep a copy with the other release keys. Never commit them.
+3. **Seller ID**: Account settings → Legal info (Developer tab) or Identifiers.
+4. Install and sign in once, in PowerShell:
+
+   ```
+   winget install Microsoft.DotNet.DesktopRuntime.9
+   winget install "Microsoft Store Developer CLI"
+   msstore reconfigure --tenantId <T> --clientId <C> --sellerId <S> --clientSecret <K>
+   ```
+
+   The CLI keeps the credentials; nothing in the repo or `release.sh` does.
+5. Check it: `uv run tool/msstore_upload.py check --version 1.0.0` should fail
+   with "not above ... in the Store". That proves access works.
+
+**Every call returns 403** (`msstore apps list` says "no Managed apps"): in
+User management → Microsoft Entra applications, the greyed **Service
+Principal** row for the app must show Manager(Windows) as well. If its role is
+blank, open the app row, re-save its roles with **Update**, and try again a few
+minutes later.
+
+**Keys expire.** The expiry date is in the Entra admin center → App
+registrations → the app → Certificates & secrets. Before it runs out, add a
+new key there and run `msstore reconfigure` with it.
+
 ## Sideload test before submitting
 
 Store packages cannot be installed locally. Build a self-signed test package
