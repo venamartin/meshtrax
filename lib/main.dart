@@ -35,6 +35,7 @@ import 'services/ui_view_state_service.dart';
 import 'services/keyboard_inset_logger.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
+import 'utils/scroll_jank_reporter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,6 +87,10 @@ void main() async {
         );
       }
     });
+    // A scroll stutters on frames well under 50 ms: one line per scroll
+    // that dropped any (the app is wrapped in its listener below).
+    SchedulerBinding.instance
+        .addTimingsCallback(ScrollJankReporter.instance.onTimings);
   }
   KeyboardInsetLogger().start();
 
@@ -375,7 +380,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
                 paused: l10n.offlineMaps_notificationPaused,
                 failed: l10n.offlineMaps_notificationFailed,
               );
-              return child ?? const SizedBox.shrink();
+              if (child == null) return const SizedBox.shrink();
+              return AppLogger.perfEnabled
+                  ? ScrollJankReporter.instance.wrap(child)
+                  : child;
             },
             home: (PlatformInfo.isWeb && !PlatformInfo.isChrome)
                 ? const ChromeRequiredScreen()
