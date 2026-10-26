@@ -28,6 +28,10 @@ class Message {
   // Hash width of pathBytes. Null for messages stored before it was recorded;
   // their bytes can only be shown at the contact's current width.
   final int? pathHashSize;
+  // Incoming: pathBytes are the repeaters this very packet passed, read from
+  // the radio's raw log. Rows stored before carry a copy of our route to the
+  // sender instead, which is not shown as theirs.
+  final bool pathFromPacket;
   // Who chose the route of the attempt pathLength describes. Rows stored
   // before Pathfinder read as firmware.
   final RouteSource routeSource;
@@ -70,6 +74,7 @@ class Message {
     Map<String, MessageStatus>? reactionStatuses,
     this.pathLength,
     this.pathHashSize,
+    this.pathFromPacket = false,
     this.routeSource = RouteSource.firmware,
     this.guessedHops = 0,
     this.deliveredLate = false,
@@ -96,6 +101,7 @@ class Message {
     int? pathLength,
     Uint8List? pathBytes,
     int? pathHashSize,
+    bool? pathFromPacket,
     RouteSource? routeSource,
     int? guessedHops,
     bool? isCli,
@@ -125,6 +131,7 @@ class Message {
       pathLength: pathLength ?? this.pathLength,
       pathBytes: pathBytes ?? this.pathBytes,
       pathHashSize: pathHashSize ?? this.pathHashSize,
+      pathFromPacket: pathFromPacket ?? this.pathFromPacket,
       routeSource: routeSource ?? this.routeSource,
       guessedHops: guessedHops ?? this.guessedHops,
       deliveredLate: deliveredLate ?? this.deliveredLate,

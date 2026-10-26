@@ -1006,9 +1006,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   roomAuthor != null &&
                   roomAuthor.publicKeyHex == resolvedContact.publicKeyHex;
               // Same format as the channel screen: raw hop prefixes, not
-              // resolved names ("via AA,3F").
+              // resolved names ("via AA,3F"). Incoming: only the packet's
+              // own path, never a copy of our route to the sender.
               String? viaLabel;
-              if (message.pathBytes.isNotEmpty) {
+              if (message.pathBytes.isNotEmpty &&
+                  (message.isOutgoing || message.pathFromPacket)) {
                 final hexPath = PathHelper.formatPathHex(
                   message.pathBytes,
                   stride: message.pathHashSize ?? resolvedContact.pathHashSize,
@@ -2207,7 +2209,11 @@ class _ChatScreenState extends State<ChatScreen> {
       status: ChannelMessageStatus.sent,
       repeatCount: 0,
       pathLength: message.pathLength,
-      pathBytes: message.pathBytes,
+      // An incoming row's bytes are its own path only when read from its
+      // packet; older rows hold a copy of our route to the sender.
+      pathBytes: message.isOutgoing || message.pathFromPacket
+          ? message.pathBytes
+          : Uint8List(0),
       pathHashSize:
           message.pathHashSize ?? _resolveContact(connector).pathHashSize,
     );
@@ -2367,8 +2373,8 @@ class _MessageBubble extends StatelessWidget {
 
   /// Hex hop prefixes for this message's path (channel-screen format),
   /// shown under the body when message tracing is on — outgoing: the route
-  /// the send used; incoming: our known route, only when its length matches
-  /// the hops the packet actually reported.
+  /// the send used; incoming: the repeaters its own packet passed, when the
+  /// radio's raw log held it.
   final String? viaLabel;
 
   /// Post authored by the room server itself (room.post / system post),

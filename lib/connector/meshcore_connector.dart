@@ -6864,30 +6864,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         orElse: () => null,
       );
       if (contact != null) {
-        // Before the route bytes below replace the packet's own width.
         final layout = parseContactMsgLayout(frame);
         if (layout != null) {
+          final snrByte =
+              frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null;
           onContactMessageHeard?.call(
             contact.publicKeyHex,
             layout.pathLen,
-            frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
+            snrByte,
           );
           if (_completedFirstQueueDrain) {
             onContactMessageCopy?.call(contact, layout.timestampRaw,
                 layout.txtType, layout.text, layout.pathLen == 0xFF);
           }
-        }
-        // The frame's path_len is the hops THIS packet traveled — keep it.
-        // Attach our known route's bytes only when its length agrees, so a
-        // repeater-names line never claims hops the packet didn't report.
-        final hops = message.pathLength ?? -1;
-        if (hops > 0 &&
-            contact.pathLength == hops &&
-            contact.path.isNotEmpty) {
-          message = message.copyWith(
-            pathBytes: contact.path,
-            pathHashSize: contact.pathHashSize,
-          );
+          // The frame says only how many hops the packet took; which
+          // repeaters is in the copy the radio logged. Never our route to
+          // the contact: that is a different way, the other way round.
+          final path = _takeFloodedTextPath(contact, layout.pathLen, snrByte);
+          if (path != null) {
+            message = message.copyWith(
+              pathBytes: path,
+              pathHashSize: PathHelper.pathLenWidth(layout.pathLen),
+              pathFromPacket: true,
+            );
+          }
         }
       }
       if (contact != null) {
@@ -7331,6 +7331,55 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
+  /// Raw copies of flooded DMs and room posts to me, for [_takeFloodedTextPath].
+  final List<_FloodedText> _floodedTexts = [];
+  static const _floodedTextWindow = Duration(seconds: 60);
+  static const _floodedTextCap = 32;
+
+  void _rememberFloodedText(_RawPacket packet, int snrByte) {
+    final now = DateTime.now();
+    _floodedTexts
+      ..removeWhere((t) => now.difference(t.at) > _floodedTextWindow)
+      ..add(_FloodedText(
+        at: now,
+        srcByte: packet.payload[1],
+        snrByte: snrByte,
+        pathLenRaw: packet.pathLenRaw,
+        pathBytes: Uint8List.fromList(packet.pathBytes),
+      ));
+    if (_floodedTexts.length > _floodedTextCap) _floodedTexts.removeAt(0);
+  }
+
+  /// The repeaters the decoded message from [contact] passed, read from its
+  /// logged copy, or null. The radio decrypts DMs itself and reports only
+  /// the hop count, so the copy is found the way Pathfinder finds it: the
+  /// sender's first key byte, the same path_len (hops and width) and, on a
+  /// V3 frame, the same signal byte. Every matching copy must agree on the
+  /// whole path, or none is shown. For display only; Pathfinder reads its
+  /// own copies.
+  Uint8List? _takeFloodedTextPath(
+    Contact contact,
+    int pathLenRaw,
+    int? snrByte,
+  ) {
+    // Zero hops: no repeater to show. 0xFF: a direct route, no path kept.
+    if (PathHelper.pathLenHops(pathLenRaw) <= 0) return null;
+    if (contact.publicKey.isEmpty) return null;
+    final now = DateTime.now();
+    _floodedTexts.removeWhere((t) => now.difference(t.at) > _floodedTextWindow);
+    final matches = _floodedTexts
+        .where((t) =>
+            t.srcByte == contact.publicKey[0] &&
+            t.pathLenRaw == pathLenRaw &&
+            (snrByte == null || t.snrByte == snrByte))
+        .toList();
+    if (matches.isEmpty) return null;
+    final path = matches.first.pathBytes;
+    _floodedTexts.removeWhere(matches.contains);
+    if (matches.any((t) => !listEquals(t.pathBytes, path))) return null;
+    return path;
+  }
+
   void _handleLogRxData(Uint8List frame) {
     if (frame.length < 4) return;
     try {
@@ -7362,6 +7411,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             packet.payload[1] == me[0] &&
             packet.payload[0] != me[0]) {
           _retryService?.noteOwnFloodEcho(packet.payload[0]);
+        }
+        // A DM or room post to me ([my byte][their byte]): kept until the
+        // radio hands over the decoded message, for its path line.
+        if (packet.payloadType == _payloadTypeTxtMsg &&
+            packet.payload.length >= 2 &&
+            me != null &&
+            packet.payload[0] == me[0] &&
+            packet.payload[1] != me[0]) {
+          _rememberFloodedText(packet, frame[1].toSigned(8));
         }
       }
       if (packet.payloadType != _payloadTypeGroupText) return;
@@ -11155,6 +11213,27 @@ class _RawPacket {
   int get hopCount => PathHelper.pathLenHops(pathLenRaw);
 
   int get hashSize => PathHelper.pathLenWidth(pathLenRaw);
+}
+
+/// A flooded DM or room post to this radio, as its raw copy was logged.
+class _FloodedText {
+  final DateTime at;
+
+  /// The sender's first key byte (the payload's second byte).
+  final int srcByte;
+
+  /// The frame's signed SNR byte, which a V3 message frame repeats.
+  final int snrByte;
+  final int pathLenRaw;
+  final Uint8List pathBytes;
+
+  _FloodedText({
+    required this.at,
+    required this.srcByte,
+    required this.snrByte,
+    required this.pathLenRaw,
+    required this.pathBytes,
+  });
 }
 
 class _ParsedText {

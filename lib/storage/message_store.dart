@@ -752,6 +752,7 @@ class MessageStore {
           ? base64Encode(msg.pathBytes)
           : null,
       'pathHashSize': msg.pathHashSize,
+      if (msg.pathFromPacket) 'pathFromPacket': true,
       'routeSource': msg.routeSource.name,
       'guessedHops': msg.guessedHops,
       'reactions': msg.reactions,
@@ -798,6 +799,7 @@ class MessageStore {
           ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
           : Uint8List(0),
       pathHashSize: json['pathHashSize'] as int?,
+      pathFromPacket: json['pathFromPacket'] as bool? ?? false,
       routeSource: RouteSource.values
               .asNameMap()[json['routeSource'] as String?] ??
           RouteSource.firmware,
