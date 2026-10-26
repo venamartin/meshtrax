@@ -38,7 +38,10 @@ class _FakeMeshCoreConnector extends MeshCoreConnector {
   List<Contact> get allContacts => [contact];
 
   @override
-  Future<bool> importDiscoveredContact(Contact contact) async {
+  Future<bool> importDiscoveredContact(
+    Contact contact, {
+    int? lastAdvertEpochSeconds,
+  }) async {
     importCalls++;
     saved = true;
     notifyListeners();

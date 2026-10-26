@@ -5625,4 +5625,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reaction_noResults => 'No emoji found';
+
+  @override
+  String get share_qrAndLink => 'Share QR code and link';
+
+  @override
+  String get share_roomTitle => 'Share Room';
+
+  @override
+  String get share_contactTitle => 'Share Contact';
+
+  @override
+  String get share_roomInstructions =>
+      'Scan to add this room. You\'ll need its password to log in.';
+
+  @override
+  String get share_contactInstructions => 'Scan to add this contact.';
 }

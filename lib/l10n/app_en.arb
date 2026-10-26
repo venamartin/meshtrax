@@ -2860,5 +2860,10 @@
     }
   },
   "reaction_searchHint": "Search emoji",
-  "reaction_noResults": "No emoji found"
+  "reaction_noResults": "No emoji found",
+  "share_qrAndLink": "Share QR code and link",
+  "share_roomTitle": "Share Room",
+  "share_contactTitle": "Share Contact",
+  "share_roomInstructions": "Scan to add this room. You'll need its password to log in.",
+  "share_contactInstructions": "Scan to add this contact."
 }

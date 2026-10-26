@@ -421,20 +421,22 @@ class StructuredMessageCard extends StatelessWidget {
   void _openShared(BuildContext context, ShareMessage m) {
     final connector = context.read<MeshCoreConnector>();
     final key = m.keyHex.toLowerCase();
-    final Widget? screen;
     if (m.kind == ShareKind.channel) {
       final channel = connector.channels
           .where((c) => c.idKey.toLowerCase() == key)
           .firstOrNull;
-      screen = channel == null ? null : ChannelChatScreen(channel: channel);
-    } else {
-      final contact = connector.contacts
-          .where((c) => c.publicKeyHex.toLowerCase() == key)
-          .firstOrNull;
-      screen = contact == null ? null : ChatScreen(contact: contact);
+      if (channel == null) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel)),
+      );
+      return;
     }
-    if (screen == null) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
+    final contact = connector.contacts
+        .where((c) => c.publicKeyHex.toLowerCase() == key)
+        .firstOrNull;
+    // A room asks for its password when none is remembered.
+    if (contact != null) ChatScreen.open(context, contact);
   }
 
   Widget _scaffold(

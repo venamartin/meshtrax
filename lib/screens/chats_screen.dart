@@ -481,6 +481,23 @@ class _ChatsScreenState extends State<ChatsScreen>
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.qr_code),
+                title: Text(context.l10n.share_qrAndLink),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ContactShareScreen(
+                        name: contact.name,
+                        pubKeyHex: contact.publicKeyHex,
+                        type: contact.type,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.copy),
                 title: Text(context.l10n.contacts_ShareContact),
                 onTap: () {
@@ -850,6 +867,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                                   : connector.selfName!,
                               pubKeyHex: connector.selfPublicKeyHex,
                               type: advTypeChat,
+                              isSelf: true,
                             ),
                           ),
                         );

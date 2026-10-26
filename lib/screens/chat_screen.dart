@@ -37,6 +37,7 @@ import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'companion_cli_screen.dart';
+import 'contact_share_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
@@ -66,6 +67,30 @@ class ChatScreen extends StatefulWidget {
   final int? unreadCount;
 
   const ChatScreen({super.key, required this.contact, this.unreadCount});
+
+  /// Opens the chat with [contact]. A room with no remembered password asks
+  /// for one first: its posts only arrive once logged in, and the screen
+  /// logs in by itself only with a password that worked before.
+  static Future<void> open(BuildContext context, Contact contact) async {
+    final navigator = Navigator.of(context);
+    void push() => navigator.push(
+          MaterialPageRoute(builder: (_) => ChatScreen(contact: contact)),
+        );
+    if (contact.type != advTypeRoom ||
+        await StorageService().getRepeaterPassword(contact.publicKeyHex) !=
+            null) {
+      push();
+      return;
+    }
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => RoomLoginDialog(
+        room: contact,
+        onLogin: (password, isAdmin) => push(),
+      ),
+    );
+  }
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -666,6 +691,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (value == 'info') {
                     _showContactInfo(context);
                   }
+                  if (value == 'share') {
+                    final contact = _resolveContact(connector);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContactShareScreen(
+                          name: contact.name,
+                          pubKeyHex: contact.publicKeyHex,
+                          type: contact.type,
+                        ),
+                      ),
+                    );
+                  }
                   if (value == 'settings') {
                     _showContactSettings(context);
                   }
@@ -703,6 +741,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         const Icon(Icons.info_outline, size: 20),
                         const SizedBox(width: 12),
                         Text(context.l10n.contact_info),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.qr_code, size: 20),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.common_share),
                       ],
                     ),
                   ),

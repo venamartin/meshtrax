@@ -4820,7 +4820,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return readded;
   }
 
-  Future<bool> importDiscoveredContact(Contact contact) async {
+  /// [lastAdvertEpochSeconds] is the advert time the radio records (default
+  /// now); it drops any later advert that is not newer.
+  Future<bool> importDiscoveredContact(
+    Contact contact, {
+    int? lastAdvertEpochSeconds,
+  }) async {
     if (!isConnected) return false;
 
     final success = await _sendAndWaitForAck(
@@ -4835,6 +4840,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: contact.latitude,
         lon: contact.longitude,
         lastModified: contact.lastSeen,
+        lastAdvertEpochSeconds: lastAdvertEpochSeconds,
       ),
     );
 

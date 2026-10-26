@@ -9641,6 +9641,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No emoji found'**
   String get reaction_noResults;
+
+  /// No description provided for @share_qrAndLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Share QR code and link'**
+  String get share_qrAndLink;
+
+  /// No description provided for @share_roomTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Room'**
+  String get share_roomTitle;
+
+  /// No description provided for @share_contactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Contact'**
+  String get share_contactTitle;
+
+  /// No description provided for @share_roomInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to add this room. You\'ll need its password to log in.'**
+  String get share_roomInstructions;
+
+  /// No description provided for @share_contactInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to add this contact.'**
+  String get share_contactInstructions;
 }
 
 class _AppLocalizationsDelegate
