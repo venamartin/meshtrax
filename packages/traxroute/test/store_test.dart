@@ -29,15 +29,22 @@ void main() {
     return gz;
   }
 
-  /// The names and contents in a plain tar, read back by unpacking it.
-  Future<Map<String, String>> tarContents(File tar) async {
-    final gz = File('${tar.path}.gz')
-      ..writeAsBytesSync(gzip.encode(tar.readAsBytesSync()));
-    final out = Directory('${tmp.path}/check-${tar.hashCode}');
-    final names = await extractTiles(gz, out);
-    return {
-      for (final n in names) n: File('${out.path}/$n').readAsStringSync(),
-    };
+  /// The names and contents in a plain tar.
+  Map<String, String> tarContents(File tar) {
+    final b = tar.readAsBytesSync();
+    final out = <String, String>{};
+    var at = 0;
+    while (at + 512 <= b.length && b.sublist(at, at + 512).any((x) => x != 0)) {
+      final h = b.sublist(at, at + 512);
+      final name = String.fromCharCodes(h.sublist(0, h.indexOf(0)));
+      final size = int.parse(
+        String.fromCharCodes(h.sublist(124, 135)).trim(),
+        radix: 8,
+      );
+      out[name] = String.fromCharCodes(b.sublist(at + 512, at + 512 + size));
+      at += 512 + (size + 511) ~/ 512 * 512;
+    }
+    return out;
   }
 
   const shared = '0/002/898.gph';
@@ -53,7 +60,10 @@ void main() {
     });
     expect(store.build, 'b1');
     expect(store.regions.keys, unorderedEquals(['test/a', 'test/b']));
-    expect((await tarContents(store.tileFile!)).keys, [shared, a1, b1]);
+    expect(
+      tarContents(store.tileFile!).keys,
+      unorderedEquals([shared, a1, b1]),
+    );
   });
 
   test('removing a region keeps the tiles another region uses', () async {
@@ -63,7 +73,7 @@ void main() {
     });
     await store.remove('test/a');
     expect(store.regions.keys, ['test/b']);
-    expect((await tarContents(store.tileFile!)).keys, [shared, b1]);
+    expect(tarContents(store.tileFile!).keys, [shared, b1]);
     await store.remove('test/b');
     expect(store.tileFile, isNull);
   });
@@ -76,7 +86,7 @@ void main() {
       'test/a': (await bundle('a2', [shared, a1], 'new'), 'sha-a2'),
     });
     expect(store.build, 'b2');
-    final contents = await tarContents(store.tileFile!);
+    final contents = tarContents(store.tileFile!);
     expect(contents[shared], 'new $shared');
     expect(Directory('${tmp.path}/routing/b1').existsSync(), isFalse);
   });
@@ -114,10 +124,42 @@ void main() {
     final gz = File('${tmp.path}/evil.tar.gz')
       ..writeAsBytesSync(gzip.encode(bytes));
     expect(
-      () => extractTiles(gz, Directory('${tmp.path}/out')),
+      () => store.install('b1', {'test/evil': (gz, 'x')}),
       throwsFormatException,
     );
+    expect(store.tileFile, isNull);
     expect(File('${tmp.path}/escape.gph').existsSync(), isFalse);
+  });
+
+  test('a failed install keeps what was there', () async {
+    await store.install('b1', {
+      'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
+    });
+    final before = tarContents(store.tileFile!);
+    final broken = File('${tmp.path}/broken.tar.gz')
+      ..writeAsBytesSync([0x1f, 0x8b, 1, 2, 3]);
+    await expectLater(
+      store.install('b1', {'test/b': (broken, 'sha-b')}),
+      throwsA(anything),
+    );
+    expect(store.regions.keys, ['test/a']);
+    expect(tarContents(store.tileFile!), before);
+  });
+
+  test('sizes, and no loose tiles on disk', () async {
+    await store.install('b1', {
+      'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
+      'test/b': (await bundle('b', [shared, b1], 'b1'), 'sha-b'),
+    });
+    expect(store.sizeOf('test/a'), 'b1 $shared'.length + 'b1 $a1'.length);
+    final files =
+        Directory('${tmp.path}/routing')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .map((f) => f.path.split('/routing/').last)
+            .toList()
+          ..sort();
+    expect(files, ['b1/tiles.tar', 'manifest.json']);
   });
 
   test("reads the catalogue's routing entry", () {

@@ -1,82 +1,76 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 /// Valhalla tile paths, the only names a routing bundle may hold.
 final tilePath = RegExp(r'^[0-2]/\d{3}/\d{3}(/\d{3})?\.gph$');
 
-/// Unpacks the `.gph` tiles of a gzipped tar into [into], streaming, and
-/// returns their paths. Anything that isn't a plain file with a tile path
-/// is refused, so a bundle can't write outside [into].
-Future<List<String>> extractTiles(File archive, Directory into) async {
-  final names = <String>[];
-  final pending = BytesBuilder(copy: false);
-  IOSink? sink;
+/// Copies the tiles of the tar streamed from [source] that [take] wants
+/// into [out] as tar entries, streaming. The end-of-archive blocks are
+/// left to the caller, who may copy from several sources into one tar.
+///
+/// An entry that isn't a plain file with a tile path is refused, so a
+/// bundle can only ever add routing tiles.
+Future<void> copyTiles(
+  Stream<List<int>> source,
+  IOSink out,
+  bool Function(String name, int size) take,
+) async {
+  final header = BytesBuilder(copy: false);
   var remaining = 0, padding = 0;
-  var done = false;
-
-  Future<void> consume(Uint8List chunk) async {
-    var data = chunk;
+  var copying = false, done = false;
+  await for (final chunk in source) {
+    var data = chunk is Uint8List ? chunk : Uint8List.fromList(chunk);
     while (data.isNotEmpty && !done) {
       if (remaining > 0) {
-        final n = remaining < data.length ? remaining : data.length;
-        final out = sink!..add(data.sublist(0, n));
+        final n = math.min(remaining, data.length);
+        if (copying) out.add(data.sublist(0, n));
         remaining -= n;
         data = data.sublist(n);
-        if (remaining == 0) {
-          await out.close();
-          sink = null;
+        if (remaining == 0 && copying && padding > 0) {
+          out.add(Uint8List(padding));
         }
         continue;
       }
       if (padding > 0) {
-        final n = padding < data.length ? padding : data.length;
+        final n = math.min(padding, data.length);
         padding -= n;
         data = data.sublist(n);
         continue;
       }
-      final need = 512 - pending.length;
-      final take = need < data.length ? need : data.length;
-      pending.add(data.sublist(0, take));
-      data = data.sublist(take);
-      if (pending.length < 512) continue;
-      final header = pending.takeBytes();
-      if (header.every((b) => b == 0)) {
+      final n = math.min(512 - header.length, data.length);
+      header.add(data.sublist(0, n));
+      data = data.sublist(n);
+      if (header.length < 512) continue;
+      final h = header.takeBytes();
+      if (h.every((b) => b == 0)) {
         done = true;
         break;
       }
-      final name = _text(header, 345, 155).isEmpty
-          ? _text(header, 0, 100)
-          : '${_text(header, 345, 155)}/${_text(header, 0, 100)}';
-      final size = int.parse(_text(header, 124, 12).trim(), radix: 8);
-      final type = header[156];
+      final prefix = _text(h, 345, 155);
+      final name = prefix.isEmpty
+          ? _text(h, 0, 100)
+          : '$prefix/${_text(h, 0, 100)}';
+      final size = int.parse(_text(h, 124, 12).trim(), radix: 8);
+      final type = h[156];
       if ((type != 0x30 && type != 0) || !tilePath.hasMatch(name)) {
         throw FormatException('Not a routing tile: $name');
       }
-      final file = File('${into.path}/$name')
-        ..parent.createSync(recursive: true);
-      names.add(name);
-      sink = file.openWrite();
+      copying = take(name, size);
+      if (copying) out.add(_header(name, size));
       remaining = size;
       padding = (512 - size % 512) % 512;
-      if (size == 0) {
-        await sink!.close();
-        sink = null;
-      }
+      if (size == 0 && copying && padding > 0) out.add(Uint8List(padding));
     }
-  }
-
-  await for (final chunk in archive.openRead().transform(gzip.decoder)) {
-    await consume(chunk is Uint8List ? chunk : Uint8List.fromList(chunk));
     if (done) break;
   }
-  await sink?.close();
-  return names;
 }
 
-/// Writes a plain tar of [names] (paths under [root]), streaming: the
-/// combined tile file Valhalla opens.
+/// The two empty blocks that end a tar.
+final tarEnd = Uint8List(1024);
+
+/// Writes a plain tar of [names] (paths under [root]), streaming.
 Future<void> writeTar(File out, Directory root, Iterable<String> names) async {
   final sink = out.openWrite();
   for (final name in names) {
@@ -87,7 +81,7 @@ Future<void> writeTar(File out, Directory root, Iterable<String> names) async {
     final pad = (512 - size % 512) % 512;
     if (pad > 0) sink.add(Uint8List(pad));
   }
-  sink.add(Uint8List(1024));
+  sink.add(tarEnd);
   await sink.close();
 }
 
