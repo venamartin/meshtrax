@@ -9821,6 +9821,546 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create'**
   String get pathfinder_graphCreate;
+
+  /// No description provided for @route_pathPaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Paved'**
+  String get route_pathPaved;
+
+  /// No description provided for @route_pathDirt.
+  ///
+  /// In en, this message translates to:
+  /// **'Dirt road'**
+  String get route_pathDirt;
+
+  /// No description provided for @route_pathHiking.
+  ///
+  /// In en, this message translates to:
+  /// **'Hiking'**
+  String get route_pathHiking;
+
+  /// No description provided for @route_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String route_minutes(int minutes);
+
+  /// No description provided for @route_hoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String route_hoursMinutes(int hours, int minutes);
+
+  /// No description provided for @route_to.
+  ///
+  /// In en, this message translates to:
+  /// **'To {destination}'**
+  String route_to(String destination);
+
+  /// No description provided for @route_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear route'**
+  String get route_clear;
+
+  /// No description provided for @route_finding.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding a route…'**
+  String get route_finding;
+
+  /// No description provided for @route_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No route found'**
+  String get route_none;
+
+  /// No description provided for @route_endsShortPaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}, where the pavement ends.'**
+  String route_endsShortPaved(String distance, String destination);
+
+  /// No description provided for @route_endsShortDirt.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}, where the road ends.'**
+  String route_endsShortDirt(String distance, String destination);
+
+  /// No description provided for @route_endsShortHiking.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}, where the trails end.'**
+  String route_endsShortHiking(String distance, String destination);
+
+  /// No description provided for @route_directions.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get route_directions;
+
+  /// No description provided for @route_here.
+  ///
+  /// In en, this message translates to:
+  /// **'Route here'**
+  String get route_here;
+
+  /// No description provided for @place_nrhp.
+  ///
+  /// In en, this message translates to:
+  /// **'National Register of Historic Places'**
+  String get place_nrhp;
+
+  /// No description provided for @place_textCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Text: Wikipedia, CC BY-SA 4.0'**
+  String get place_textCredit;
+
+  /// No description provided for @place_photoCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo: {author}, {licence}'**
+  String place_photoCredit(String author, String licence);
+
+  /// No description provided for @search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search places, addresses or coordinates'**
+  String get search_hint;
+
+  /// No description provided for @search_noPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Points of interest for a region to search its places. Coordinates work without it.'**
+  String get search_noPlaces;
+
+  /// No description provided for @search_noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get search_noResults;
+
+  /// No description provided for @coordFormat_decimalDegrees.
+  ///
+  /// In en, this message translates to:
+  /// **'Decimal degrees'**
+  String get coordFormat_decimalDegrees;
+
+  /// No description provided for @coordFormat_degreesMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Degrees and minutes'**
+  String get coordFormat_degreesMinutes;
+
+  /// No description provided for @coordFormat_dms.
+  ///
+  /// In en, this message translates to:
+  /// **'Degrees, minutes, seconds'**
+  String get coordFormat_dms;
+
+  /// No description provided for @coordFormat_utm.
+  ///
+  /// In en, this message translates to:
+  /// **'UTM'**
+  String get coordFormat_utm;
+
+  /// No description provided for @coordFormat_mgrs.
+  ///
+  /// In en, this message translates to:
+  /// **'MGRS / USNG'**
+  String get coordFormat_mgrs;
+
+  /// No description provided for @coordFormat_maidenhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Maidenhead grid'**
+  String get coordFormat_maidenhead;
+
+  /// No description provided for @coordFormat_geohash.
+  ///
+  /// In en, this message translates to:
+  /// **'Geohash'**
+  String get coordFormat_geohash;
+
+  /// No description provided for @poiKind_peak.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get poiKind_peak;
+
+  /// No description provided for @poiKind_volcano.
+  ///
+  /// In en, this message translates to:
+  /// **'Volcano'**
+  String get poiKind_volcano;
+
+  /// No description provided for @poiKind_saddle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saddle'**
+  String get poiKind_saddle;
+
+  /// No description provided for @poiKind_pass.
+  ///
+  /// In en, this message translates to:
+  /// **'Mountain pass'**
+  String get poiKind_pass;
+
+  /// No description provided for @poiKind_spring.
+  ///
+  /// In en, this message translates to:
+  /// **'Spring'**
+  String get poiKind_spring;
+
+  /// No description provided for @poiKind_hotSpring.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot spring'**
+  String get poiKind_hotSpring;
+
+  /// No description provided for @poiKind_waterfall.
+  ///
+  /// In en, this message translates to:
+  /// **'Waterfall'**
+  String get poiKind_waterfall;
+
+  /// No description provided for @poiKind_cave.
+  ///
+  /// In en, this message translates to:
+  /// **'Cave'**
+  String get poiKind_cave;
+
+  /// No description provided for @poiKind_arch.
+  ///
+  /// In en, this message translates to:
+  /// **'Arch'**
+  String get poiKind_arch;
+
+  /// No description provided for @poiKind_glacier.
+  ///
+  /// In en, this message translates to:
+  /// **'Glacier'**
+  String get poiKind_glacier;
+
+  /// No description provided for @poiKind_rock.
+  ///
+  /// In en, this message translates to:
+  /// **'Rock'**
+  String get poiKind_rock;
+
+  /// No description provided for @poiKind_cliff.
+  ///
+  /// In en, this message translates to:
+  /// **'Cliff'**
+  String get poiKind_cliff;
+
+  /// No description provided for @poiKind_beach.
+  ///
+  /// In en, this message translates to:
+  /// **'Beach'**
+  String get poiKind_beach;
+
+  /// No description provided for @poiKind_trailhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Trailhead'**
+  String get poiKind_trailhead;
+
+  /// No description provided for @poiKind_campground.
+  ///
+  /// In en, this message translates to:
+  /// **'Campground'**
+  String get poiKind_campground;
+
+  /// No description provided for @poiKind_picnicSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Picnic site'**
+  String get poiKind_picnicSite;
+
+  /// No description provided for @poiKind_hut.
+  ///
+  /// In en, this message translates to:
+  /// **'Hut'**
+  String get poiKind_hut;
+
+  /// No description provided for @poiKind_shelter.
+  ///
+  /// In en, this message translates to:
+  /// **'Shelter'**
+  String get poiKind_shelter;
+
+  /// No description provided for @poiKind_drinkingWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Drinking water'**
+  String get poiKind_drinkingWater;
+
+  /// No description provided for @poiKind_toilets.
+  ///
+  /// In en, this message translates to:
+  /// **'Toilets'**
+  String get poiKind_toilets;
+
+  /// No description provided for @poiKind_viewpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewpoint'**
+  String get poiKind_viewpoint;
+
+  /// No description provided for @poiKind_attraction.
+  ///
+  /// In en, this message translates to:
+  /// **'Attraction'**
+  String get poiKind_attraction;
+
+  /// No description provided for @poiKind_mine.
+  ///
+  /// In en, this message translates to:
+  /// **'Mine'**
+  String get poiKind_mine;
+
+  /// No description provided for @poiKind_mineShaft.
+  ///
+  /// In en, this message translates to:
+  /// **'Mine shaft'**
+  String get poiKind_mineShaft;
+
+  /// No description provided for @poiKind_adit.
+  ///
+  /// In en, this message translates to:
+  /// **'Adit'**
+  String get poiKind_adit;
+
+  /// No description provided for @poiKind_ghostTown.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost town'**
+  String get poiKind_ghostTown;
+
+  /// No description provided for @poiKind_ruins.
+  ///
+  /// In en, this message translates to:
+  /// **'Ruins'**
+  String get poiKind_ruins;
+
+  /// No description provided for @poiKind_monument.
+  ///
+  /// In en, this message translates to:
+  /// **'Monument'**
+  String get poiKind_monument;
+
+  /// No description provided for @poiKind_memorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Memorial'**
+  String get poiKind_memorial;
+
+  /// No description provided for @poiKind_fort.
+  ///
+  /// In en, this message translates to:
+  /// **'Fort'**
+  String get poiKind_fort;
+
+  /// No description provided for @poiKind_historic.
+  ///
+  /// In en, this message translates to:
+  /// **'Historic place'**
+  String get poiKind_historic;
+
+  /// No description provided for @poiKind_rangerStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranger station'**
+  String get poiKind_rangerStation;
+
+  /// No description provided for @poiKind_visitorCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Visitor center'**
+  String get poiKind_visitorCenter;
+
+  /// No description provided for @poiKind_hospital.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospital'**
+  String get poiKind_hospital;
+
+  /// No description provided for @poiKind_police.
+  ///
+  /// In en, this message translates to:
+  /// **'Police'**
+  String get poiKind_police;
+
+  /// No description provided for @poiKind_fireStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire station'**
+  String get poiKind_fireStation;
+
+  /// No description provided for @poiKind_emergencyPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency phone'**
+  String get poiKind_emergencyPhone;
+
+  /// No description provided for @poiKind_fuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get poiKind_fuel;
+
+  /// No description provided for @poiKind_museum.
+  ///
+  /// In en, this message translates to:
+  /// **'Museum'**
+  String get poiKind_museum;
+
+  /// No description provided for @poiKind_city.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get poiKind_city;
+
+  /// No description provided for @poiKind_town.
+  ///
+  /// In en, this message translates to:
+  /// **'Town'**
+  String get poiKind_town;
+
+  /// No description provided for @poiKind_locality.
+  ///
+  /// In en, this message translates to:
+  /// **'Area'**
+  String get poiKind_locality;
+
+  /// No description provided for @poiKind_lake.
+  ///
+  /// In en, this message translates to:
+  /// **'Lake'**
+  String get poiKind_lake;
+
+  /// No description provided for @poiKind_river.
+  ///
+  /// In en, this message translates to:
+  /// **'River'**
+  String get poiKind_river;
+
+  /// No description provided for @poiKind_valley.
+  ///
+  /// In en, this message translates to:
+  /// **'Valley'**
+  String get poiKind_valley;
+
+  /// No description provided for @poiKind_range.
+  ///
+  /// In en, this message translates to:
+  /// **'Mountain range'**
+  String get poiKind_range;
+
+  /// No description provided for @poiKind_trail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail'**
+  String get poiKind_trail;
+
+  /// No description provided for @poiKind_dirtRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Dirt road'**
+  String get poiKind_dirtRoad;
+
+  /// No description provided for @poiKind_road.
+  ///
+  /// In en, this message translates to:
+  /// **'Road'**
+  String get poiKind_road;
+
+  /// No description provided for @poiKind_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get poiKind_address;
+
+  /// No description provided for @poiKind_place.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get poiKind_place;
+
+  /// No description provided for @offlineMaps_kindRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail routing'**
+  String get offlineMaps_kindRouting;
+
+  /// No description provided for @offlineMaps_kindRoutingDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes on trails, dirt roads and paved roads'**
+  String get offlineMaps_kindRoutingDetail;
+
+  /// No description provided for @offlineMaps_kindPoi.
+  ///
+  /// In en, this message translates to:
+  /// **'Points of interest'**
+  String get offlineMaps_kindPoi;
+
+  /// No description provided for @offlineMaps_kindPoiDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Places to search for, with Wikipedia'**
+  String get offlineMaps_kindPoiDetail;
+
+  /// No description provided for @offlineMaps_kindAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses'**
+  String get offlineMaps_kindAddresses;
+
+  /// No description provided for @offlineMaps_kindAddressesDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'House addresses to search for'**
+  String get offlineMaps_kindAddressesDetail;
+
+  /// No description provided for @map_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get map_search;
+
+  /// No description provided for @route_fromHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Route from here'**
+  String get route_fromHere;
+
+  /// No description provided for @route_startSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Route start set. Now choose where to go.'**
+  String get route_startSet;
+
+  /// No description provided for @route_noStart.
+  ///
+  /// In en, this message translates to:
+  /// **'No starting position. Long-press the map and choose Route from here.'**
+  String get route_noStart;
+
+  /// No description provided for @route_noData.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Trail routing for this region in Offline maps to find routes here.'**
+  String get route_noData;
+
+  /// No description provided for @route_pin.
+  ///
+  /// In en, this message translates to:
+  /// **'Dropped pin'**
+  String get route_pin;
 }
 
 class _AppLocalizationsDelegate

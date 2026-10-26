@@ -11,7 +11,12 @@ import 'package:path_graph/path_graph.dart'
 import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
+import 'package:traxcoords/traxcoords.dart' show CoordFormat, formatCoordinates;
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
+import 'package:traxpoi/traxpoi.dart' show GeoPoint;
+import 'package:traxroute/traxroute.dart'
+    as trax
+    show PathType, RouteError, RouteResult;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -23,6 +28,8 @@ import '../services/app_settings_service.dart';
 import '../helpers/path_helper.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
+import '../services/poi_service.dart';
+import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/contact_search.dart';
@@ -32,6 +39,8 @@ import '../widgets/app_map.dart';
 import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
+import '../widgets/place_sheet.dart';
+import '../widgets/route_panel.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 import 'chat_screen.dart';
@@ -47,6 +56,7 @@ import '../services/short_link_resolver.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
+import 'map_search_screen.dart';
 import 'offline_maps_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -93,6 +103,16 @@ class _MapScreenState extends State<MapScreen> {
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
+
+  // Offline routing: where to and from (null: your position), the path
+  // type, and the route found.
+  ({String name, LatLng point})? _routeTo;
+  LatLng? _routeFrom;
+  trax.PathType _pathType = trax.PathType.hiking;
+  trax.RouteResult? _route;
+  bool _routing = false;
+  String? _routeError;
+  int _routeGeneration = 0;
   late final MeshCoreConnector _connector;
 
   @override
@@ -412,6 +432,16 @@ class _MapScreenState extends State<MapScreen> {
               centerTitle: true,
               automaticallyImplyLeading: isPoiLink,
               actions: [
+                if (!_isBuildingPathTrace && !widget.pickPosition)
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: context.l10n.map_search,
+                    onPressed: () => _openSearch(
+                      connector,
+                      selfPosition,
+                      settings.unitSystem,
+                    ),
+                  ),
                 if (!_isBuildingPathTrace)
                   IconButton(
                     icon: const Icon(Icons.radar),
@@ -528,10 +558,12 @@ class _MapScreenState extends State<MapScreen> {
                       context: context,
                       connector: connector,
                       position: position.toLatLong2(),
+                      selfPosition: selfPosition,
                     );
                   },
                   onCameraChanged: _onCameraChanged,
                   overlays: [
+                    ..._routeOverlays(),
                     if (_isBuildingPathTrace && _points.length > 1)
                       MapLine(
                         id: 'path-trace',
@@ -594,6 +626,21 @@ class _MapScreenState extends State<MapScreen> {
                 if (_isBuildingPathTrace) _buildPathTraceOverlay(),
               ],
             ),
+            bottomSheet: _routeTo == null
+                ? null
+                : RoutePanel(
+                    destination: _routeTo!.name,
+                    pathType: _pathType,
+                    onPathType: (type) {
+                      setState(() => _pathType = type);
+                      unawaited(_findRoute(selfPosition));
+                    },
+                    result: _route,
+                    loading: _routing,
+                    error: _routeError,
+                    units: settings.unitSystem,
+                    onClose: _clearRoute,
+                  ),
             bottomNavigationBar: isPoiLink
                 ? null
                 : QuickSwitchBar(
@@ -1505,13 +1552,48 @@ class _MapScreenState extends State<MapScreen> {
     required BuildContext context,
     required MeshCoreConnector connector,
     required LatLng position,
+    LatLng? selfPosition,
+    String? title,
   }) {
+    final routing = context.read<RoutingService?>();
+    final canRoute = routing != null && routing.available;
+    final name =
+        title ??
+        formatCoordinates((
+          lat: position.latitude,
+          lon: position.longitude,
+        ), CoordFormat.decimalDegrees)!;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (title != null)
+              ListTile(
+                title: Text(
+                  title,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+              ),
+            if (canRoute) ...[
+              ListTile(
+                leading: const Icon(Icons.directions),
+                title: Text(context.l10n.route_here),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _routeHere(name, position, selfPosition);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.trip_origin),
+                title: Text(context.l10n.route_fromHere),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _routeFromHere(position, selfPosition);
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.place),
               title: Text(context.l10n.map_shareMarkerHere),
@@ -1551,6 +1633,204 @@ class _MapScreenState extends State<MapScreen> {
               onTap: () => Navigator.pop(sheetContext),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _routeHere(String name, LatLng to, LatLng? selfPosition) {
+    final routing = context.read<RoutingService?>();
+    if (routing == null || !routing.hasRoutingData) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.route_noData),
+      );
+      return;
+    }
+    setState(() => _routeTo = (name: name, point: to));
+    unawaited(_findRoute(selfPosition));
+  }
+
+  void _routeFromHere(LatLng from, LatLng? selfPosition) {
+    setState(() => _routeFrom = from);
+    if (_routeTo != null) {
+      unawaited(_findRoute(selfPosition));
+    } else {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.route_startSet),
+      );
+    }
+  }
+
+  Future<void> _findRoute(LatLng? selfPosition) async {
+    final to = _routeTo;
+    final routing = context.read<RoutingService?>();
+    if (to == null || routing == null) return;
+    final from = _routeFrom ?? selfPosition;
+    final generation = ++_routeGeneration;
+    if (from == null) {
+      setState(() {
+        _route = null;
+        _routing = false;
+        _routeError = context.l10n.route_noStart;
+      });
+      return;
+    }
+    setState(() {
+      _routing = true;
+      _routeError = null;
+    });
+    final noRoute = context.l10n.route_none;
+    try {
+      final r = await routing.route(
+        (lat: from.latitude, lon: from.longitude),
+        (lat: to.point.latitude, lon: to.point.longitude),
+        _pathType,
+      );
+      if (!mounted || generation != _routeGeneration) return;
+      setState(() {
+        _route = r;
+        _routing = false;
+      });
+      _mapController.fitPoints(
+        [
+          for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
+          to.point.toOvm(),
+        ],
+        padding: const EdgeInsets.fromLTRB(48, 48, 48 + MapControls.width, 48),
+      );
+    } on trax.RouteError {
+      if (!mounted || generation != _routeGeneration) return;
+      setState(() {
+        _route = null;
+        _routing = false;
+        _routeError = noRoute;
+      });
+    }
+  }
+
+  void _clearRoute() => setState(() {
+    _routeGeneration++;
+    _routeTo = null;
+    _routeFrom = null;
+    _route = null;
+    _routing = false;
+    _routeError = null;
+  });
+
+  List<MapOverlay> _routeOverlays() {
+    final to = _routeTo;
+    if (to == null) return const [];
+    final r = _route;
+    final color = routeColor(context);
+    return [
+      if (r != null) ...[
+        if (!r.reachesDestination)
+          MapLine(
+            id: 'route-rest',
+            points: [
+              LatLng(r.points.last.lat, r.points.last.lon).toOvm(),
+              to.point.toOvm(),
+            ],
+            color: color,
+            width: 2,
+            pattern: MapLinePattern.dotted,
+          ),
+        MapLine(
+          id: 'route',
+          points: [for (final p in r.points) LatLng(p.lat, p.lon).toOvm()],
+          color: color.withValues(alpha: 0.85),
+          width: 5,
+        ),
+        MapMarker(
+          id: 'route-start',
+          position: LatLng(r.points.first.lat, r.points.first.lon).toOvm(),
+          color: const Color(0xFF2E7D32),
+          radius: 7,
+          interactive: false,
+        ),
+      ],
+      MapMarker(
+        id: 'route-end',
+        position: to.point.toOvm(),
+        color: const Color(0xFFC62828),
+        radius: 7,
+        interactive: false,
+      ),
+    ];
+  }
+
+  Future<void> _openSearch(
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    final camera = _mapController.camera;
+    final near = selfPosition != null
+        ? GeoPoint(selfPosition.latitude, selfPosition.longitude)
+        : camera == null
+        ? null
+        : GeoPoint(camera.center.latitude, camera.center.longitude);
+    final pick = await Navigator.push<MapSearchPick>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapSearchScreen(
+          regions: context.read<PoiService?>()?.regions ?? const [],
+          near: near,
+          units: units,
+        ),
+      ),
+    );
+    if (pick == null || !mounted) return;
+    final point = LatLng(pick.point.lat, pick.point.lon);
+    _mapController.move(point.toOvm(), zoom: 15);
+    final region = pick.region;
+    final detail = pick.placeId == null || region == null
+        ? null
+        : await region.detail(pick.placeId!);
+    if (!mounted) return;
+    if (detail == null) {
+      _showShareMarkerAtPositionSheet(
+        context: context,
+        connector: connector,
+        position: point,
+        selfPosition: selfPosition,
+        title: pick.name,
+      );
+      return;
+    }
+    final canRoute = context.read<RoutingService?>()?.available ?? false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        minChildSize: 0.25,
+        maxChildSize: 0.9,
+        builder: (_, controller) => PlaceSheet(
+          detail: detail,
+          format: CoordFormat.decimalDegrees,
+          units: units,
+          controller: controller,
+          onRoute: canRoute
+              ? () {
+                  Navigator.pop(sheetContext);
+                  _routeHere(detail.place.name, point, selfPosition);
+                }
+              : null,
+          onShare: () {
+            Navigator.pop(sheetContext);
+            _shareMarker(
+              context: context,
+              connector: connector,
+              position: point,
+              defaultLabel: detail.place.name,
+            );
+          },
         ),
       ),
     );

@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+
 import 'helpers/snack_bar_builder.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/l10n.dart';
-import 'package:provider/provider.dart';
 
+import 'package:provider/provider.dart';
 
 import 'screens/chrome_required_screen.dart';
 import 'utils/platform_info.dart';
@@ -30,6 +31,8 @@ import 'services/app_debug_log_service.dart';
 import 'services/background_service.dart';
 import 'services/map_tile_cache_service.dart';
 import 'services/map_packs_service.dart';
+import 'services/poi_service.dart';
+import 'services/routing_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
 import 'services/keyboard_inset_logger.dart';
@@ -127,6 +130,13 @@ void main() async {
   final mapPacksService = PlatformInfo.isWeb
       ? null
       : await MapPacksService.create(appSettingsService);
+  // Offline routing and points of interest, per region, beside the packs.
+  final routingService = mapPacksService == null
+      ? null
+      : await RoutingService.create(mapPacksService);
+  final poiService = mapPacksService == null
+      ? null
+      : await PoiService.create(mapPacksService);
 
   await connector.loadContactCache();
   // Channel settings and messages are keyed by channel identity, so the
@@ -148,6 +158,8 @@ void main() async {
       appDebugLogService: appDebugLogService,
       mapTileCacheService: mapTileCacheService,
       mapPacksService: mapPacksService,
+      routingService: routingService,
+      poiService: poiService,
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
     ),
@@ -187,6 +199,8 @@ class MeshTraxApp extends StatefulWidget {
 
   /// Null on the web, where offline maps aren't available.
   final MapPacksService? mapPacksService;
+  final RoutingService? routingService;
+  final PoiService? poiService;
   final ChatTextScaleService chatTextScaleService;
   final UiViewStateService uiViewStateService;
 
@@ -201,6 +215,8 @@ class MeshTraxApp extends StatefulWidget {
     required this.appDebugLogService,
     required this.mapTileCacheService,
     required this.mapPacksService,
+    this.routingService,
+    this.poiService,
     required this.chatTextScaleService,
     required this.uiViewStateService,
   });
@@ -329,6 +345,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         Provider.value(value: widget.mapTileCacheService),
         if (widget.mapPacksService case final maps?)
           ChangeNotifierProvider.value(value: maps),
+        if (widget.routingService case final routing?)
+          ChangeNotifierProvider.value(value: routing),
+        if (widget.poiService case final poi?)
+          ChangeNotifierProvider.value(value: poi),
       ],
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {
