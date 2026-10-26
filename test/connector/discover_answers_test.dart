@@ -128,41 +128,50 @@ void main() {
     expect(c.directRepeaters, isEmpty);
   });
 
+  // Keys with distinct first bytes for up to 22 repeaters.
+  int seed(int i) => 0x10 + i * 0x0B;
+  const max = DirectRepeater.maxTracked;
+
+  test('the list holds more than five overheard repeaters', () async {
+    for (var i = 0; i < 8; i++) {
+      c.handleFrameForTest(_advert(_key(seed(i)), 'R$i'));
+    }
+    expect(c.directRepeaters, hasLength(8));
+  });
+
   test('overheard adverts never push out a repeater that answered', () async {
     await c.sendRepeaterDiscovery();
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < max; i++) {
       c.handleFrameForTest(
-        _answer(_key(0x40 + i * 0x20), c.pendingDiscoverTag!, iHeardQ: -40),
+        _answer(_key(seed(i)), c.pendingDiscoverTag!, iHeardQ: -40),
       );
     }
     // A louder overheard advert: before, it evicted the weakest answer.
     c.handleFrameForTest(_advert(_key(0x05), 'Loud', snrQ: 60));
 
-    expect(c.directRepeaters, hasLength(5));
+    expect(c.directRepeaters, hasLength(max));
     expect(
       c.directRepeaters.every((r) => r.answeredScan == c.discoverScan),
       isTrue,
     );
   });
 
-  test('every answer is kept, even past five', () async {
+  test('every answer is kept, even past the cap', () async {
     await c.sendRepeaterDiscovery();
-    for (var i = 0; i < 7; i++) {
-      c.handleFrameForTest(
-        _answer(_key(0x40 + i * 0x18), c.pendingDiscoverTag!),
-      );
+    for (var i = 0; i < max + 2; i++) {
+      c.handleFrameForTest(_answer(_key(seed(i)), c.pendingDiscoverTag!));
     }
-    expect(c.directRepeaters, hasLength(7));
+    expect(c.directRepeaters, hasLength(max + 2));
   });
 
   test('an answer replaces an overheard row when the list is full', () async {
-    for (var i = 0; i < 5; i++) {
-      c.handleFrameForTest(_advert(_key(0x40 + i * 0x20), 'R$i'));
+    for (var i = 0; i < max; i++) {
+      c.handleFrameForTest(_advert(_key(seed(i)), 'R$i'));
     }
     await c.sendRepeaterDiscovery();
     c.handleFrameForTest(_answer(_key(0x07), c.pendingDiscoverTag!));
 
-    expect(c.directRepeaters, hasLength(5));
+    expect(c.directRepeaters, hasLength(max));
     expect(row(_key(0x07)).answeredScan, c.discoverScan);
   });
 
@@ -178,17 +187,15 @@ void main() {
     expect(r.uplinkSnr, isNotNull);
   });
 
-  test('a long list from a busy Discover shrinks back to five', () async {
+  test('a long list from a busy Discover shrinks back to the cap', () async {
     await c.sendRepeaterDiscovery();
-    for (var i = 0; i < 7; i++) {
-      c.handleFrameForTest(
-        _answer(_key(0x40 + i * 0x18), c.pendingDiscoverTag!),
-      );
+    for (var i = 0; i < max + 2; i++) {
+      c.handleFrameForTest(_answer(_key(seed(i)), c.pendingDiscoverTag!));
     }
     await c.sendRepeaterDiscovery(); // the earlier answers are history now
     c.handleFrameForTest(_advert(_key(0x05), 'Loud', snrQ: 60));
 
-    expect(c.directRepeaters, hasLength(5));
+    expect(c.directRepeaters, hasLength(max));
     expect(row(_key(0x05)), isNotNull);
   });
 

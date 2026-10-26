@@ -59,6 +59,9 @@ import 'second_app_detector.dart';
 
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
+
+  /// Rows the Nearby repeaters list keeps; the dialog's table scrolls.
+  static const int maxTracked = 20;
   final Uint8List pubkeyPrefix; // leading bytes of the pub key (on-air hash)
   Uint8List? publicKey;
   String? name;
@@ -10869,19 +10872,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     notifyListeners();
   }
 
-  /// Room for one more nearby repeater: five at most, weakest out first —
-  /// but a repeater that answered the latest Discover is never pushed out
-  /// by one only overheard, and an answer to it is always kept. A list
-  /// left long by a busy Discover shrinks back once its answers are old.
+  /// Room for one more nearby repeater: [DirectRepeater.maxTracked] at
+  /// most, weakest out first — but a repeater that answered the latest
+  /// Discover is never pushed out by one only overheard, and an answer to
+  /// it is always kept. A list left long by a busy Discover shrinks back
+  /// once its answers are old.
   bool _makeRoomForDirectRepeater({required bool answer}) {
+    const max = DirectRepeater.maxTracked;
     final evictable = _directRepeaters
         .where((r) => r.answeredScan != _discoverScan)
         .toList()
       ..sort(DirectRepeater.compare);
-    while (_directRepeaters.length >= 5 && evictable.isNotEmpty) {
+    while (_directRepeaters.length >= max && evictable.isNotEmpty) {
       _directRepeaters.remove(evictable.removeLast());
     }
-    return _directRepeaters.length < 5 || answer;
+    return _directRepeaters.length < max || answer;
   }
 
   /// Nearby repeaters and their Discover answers belong to the radio that
