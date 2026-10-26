@@ -95,21 +95,23 @@ class PoiRegion {
             (r) => (r.placeId, r.featureId, r.norm),
           );
 
-    final best = <(int?, int?), double>{};
+    // Each place's best-matching name (main or alternate).
+    final best = <(int?, int?), (double, String)>{};
     for (final (placeId, featureId, candidate) in candidates) {
       final match = wordMatch(norm, candidate);
       if (match == 0) continue;
       final id = (placeId, featureId);
-      if (match > (best[id] ?? 0)) best[id] = match;
+      if (match > (best[id]?.$1 ?? 0)) best[id] = (match, candidate);
     }
     final top = best.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+      ..sort((a, b) => b.value.$1.compareTo(a.value.$1));
 
     final results = <SearchResult>[];
     final queryWords = norm.split(' ').length;
-    for (final MapEntry(key: (placeId, featureId), value: match) in top.take(
-      limit * 5,
-    )) {
+    for (final MapEntry(key: (placeId, featureId), value: (match, matched))
+        in top.take(limit * 5)) {
+      final nameWords = matched.split(' ').length;
+      final exact = matched == norm;
       if (placeId != null) {
         final p = await db.placeById(placeId).getSingle();
         final point = GeoPoint(p.lat, p.lon);
@@ -126,12 +128,10 @@ class PoiRegion {
             score: rankScore(
               match: match,
               queryWords: queryWords,
-              nameWords: normalizeName(
-                p.name,
-                NameRules.places,
-              ).split(' ').length,
+              nameWords: nameWords,
               km: km,
               notability: p.rank,
+              exact: exact,
             ),
             key:
                 p.osm ??
@@ -155,11 +155,10 @@ class PoiRegion {
             score: rankScore(
               match: match,
               queryWords: queryWords,
-              nameWords: normalizeName(
-                f.name,
-                NameRules.places,
-              ).split(' ').length,
+              nameWords: nameWords,
               km: km,
+              notability: _towns.contains(f.kind) ? 1 : 0,
+              exact: exact,
             ),
             key:
                 '${f.kind}:${f.name}@${f.lat.toStringAsFixed(2)},${f.lon.toStringAsFixed(2)}',
@@ -185,17 +184,17 @@ class PoiRegion {
       return const [];
     }
     final number = words.first;
-    final street = words.skip(1).join(' ');
-    final fts = trigramQuery(street);
+    final rest = words.skip(1).toList();
+    final fts = trigramQuery(rest.join(' '));
     if (fts == null) return const [];
     final results = <SearchResult>[];
     for (final s in await db.streetCandidates(fts, 500).get()) {
       final place = [
-        s.norm,
-        if (s.city != null) normalizeName(s.city!, NameRules.addresses),
-        ?s.zip,
-      ].join(' ');
-      final match = wordMatch(street, place);
+        if (s.city != null)
+          ...normalizeName(s.city!, NameRules.addresses).split(' '),
+        if (s.zip != null) s.zip!.split('-').first,
+      ];
+      final match = addressMatch(rest, s.norm, place);
       if (match == 0) continue;
       for (final a in await db.addressesOn(s.id, number).get()) {
         final point = GeoPoint(a.lat, a.lon);
@@ -211,7 +210,7 @@ class PoiRegion {
             km: km,
             score: rankScore(
               match: match,
-              queryWords: street.split(' ').length,
+              queryWords: rest.length,
               nameWords: s.norm.split(' ').length,
               km: km,
             ),
@@ -284,3 +283,6 @@ Future<List<SearchResult>> searchRegions(
     ..sort((a, b) => b.score.compareTo(a.score));
   return merged.take(limit).toList();
 }
+
+/// Search-only names that count as notable, like a place with an article.
+const _towns = {'place=city', 'place=town', 'place=village'};

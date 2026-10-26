@@ -58,16 +58,41 @@ double wordMatch(String query, String name) {
 }
 
 /// The order of results: good matches first, then nearer ones, with a lift
-/// for notable places (an article, a heritage listing) and a small cost for
-/// names much longer than what was typed.
+/// for the name typed exactly and for notable places (an article, a
+/// heritage listing, a town), and a small cost for each word the matched
+/// name has beyond what was typed.
 double rankScore({
   required double match,
   required int queryWords,
   required int nameWords,
   double? km,
   int notability = 0,
+  bool exact = false,
 }) =>
     match -
     (km == null ? 0 : math.min(km, 300) / 30) +
+    (exact ? 15 : 0) +
     notability * 1.5 -
     math.max(0, nameWords - queryWords) * 0.5;
+
+/// How well an address query's words (after the house number) match a
+/// street, 0–100: the leading words must match the street name, and words
+/// after them may name its town or ZIP. A town or ZIP that matches costs
+/// nothing; one that doesn't, or a street with no town recorded, costs a
+/// little, so the address is still found ("607 Main St Ouray" on a Main
+/// Street whose town wasn't mapped).
+double addressMatch(List<String> query, String street, List<String> place) {
+  for (var n = query.length; n > 0; n--) {
+    final streetMatch = wordMatch(query.take(n).join(' '), street);
+    if (streetMatch == 0) continue;
+    var cost = 0.0;
+    for (final w in query.skip(n)) {
+      final inPlace = place.any(
+        (p) => fuzz.ratio(w, p) >= 80 || (w.length >= 2 && p.startsWith(w)),
+      );
+      if (!inPlace) cost += 5;
+    }
+    return math.max(1, streetMatch - cost);
+  }
+  return 0;
+}

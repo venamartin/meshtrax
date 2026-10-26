@@ -21,6 +21,7 @@ File buildPoints(Directory dir, String name) {
     (6, 'waterway=waterfall', 'Bear Creek Falls', 38.0045, -107.6626, 0),
     (7, 'waterway=waterfall', 'Box Cañon Falls', 38.0179, -107.6727, 1),
     (8, 'natural=spring', '', 37.9800, -107.7100, 0),
+    (9, 'historic=yes', 'Beaumont Hotel', 38.0222, -107.6712, 2),
   ];
   for (final (id, kind, name, lat, lon, rank) in places) {
     db.execute(
@@ -65,6 +66,7 @@ File buildPoints(Directory dir, String name) {
     addName(null, f.$1, f.$3, 'main');
   }
   addName(2, null, 'Mount Sneffels (Colorado)', 'redirect');
+  addName(9, null, 'Beaumont Hotel (Ouray, CO)', 'redirect');
   db.execute("INSERT INTO name_search (name_search) VALUES ('rebuild')");
   db.execute(
     "INSERT INTO wiki VALUES (1, 'Camp Bird Mine', 'A gold mine near Ouray.')",
@@ -84,15 +86,18 @@ File buildAddresses(Directory dir) {
   final file = File('${dir.path}/addresses.sqlite');
   final db = sqlite3.open(file.path);
   db.execute(File('lib/src/db/addresses_schema.drift').readAsStringSync());
-  for (final (id, name, city) in [
-    (1, 'Main Street', 'Ouray'),
-    (2, 'Second Street', 'Ouray'),
+  for (final (id, name, city, zip) in [
+    (1, 'Main Street', 'Ouray', '81427'),
+    (2, 'Second Street', 'Ouray', '81427'),
+    (3, 'Fifth Street', null, null),
+    (4, 'Main Street', 'Telluride', '81435'),
   ]) {
-    db.execute("INSERT INTO street VALUES (?, ?, ?, ?, '81427')", [
+    db.execute('INSERT INTO street VALUES (?, ?, ?, ?, ?)', [
       id,
       name,
       normalizeName(name, NameRules.addresses),
       city,
+      zip,
     ]);
   }
   db.execute('INSERT INTO address VALUES (1, 1, ?, NULL, 38.0227, -107.6712)', [
@@ -100,6 +105,12 @@ File buildAddresses(Directory dir) {
   ]);
   db.execute('INSERT INTO address VALUES (2, 2, ?, NULL, 38.0240, -107.6720)', [
     '320',
+  ]);
+  db.execute('INSERT INTO address VALUES (3, 3, ?, NULL, 38.0250, -107.6700)', [
+    '607',
+  ]);
+  db.execute('INSERT INTO address VALUES (4, 4, ?, NULL, 37.9375, -107.8123)', [
+    '612',
   ]);
   db.execute("INSERT INTO street_search (street_search) VALUES ('rebuild')");
   db.execute('PRAGMA user_version = 1');
@@ -176,10 +187,30 @@ void main() {
     expect(r.where((x) => x.id == 8 && x.type == ResultType.place), isEmpty);
   });
 
+  test(
+    'the town typed exactly beats a notable place that mentions it',
+    () async {
+      final r = await region.searchNames('ouray', near: ouray);
+      expect(r.first.name, 'Ouray');
+      expect(r.map((x) => x.name), contains('Beaumont Hotel'));
+    },
+  );
+
+  test('addresses: a town typed after the street helps, never hides', () async {
+    final noTown = await region.searchAddresses('607 fifth st ouray');
+    expect(noTown.single.name, '607 Fifth Street');
+    final twoTowns = await region.searchAddresses('612 main st telluride');
+    expect(twoTowns.first.name, '612 Main Street, Telluride, 81435');
+    expect(twoTowns, hasLength(2));
+  });
+
   test('addresses: exact number, street with typos', () async {
     final r = await region.searchAddresses('612 Main St Ouray', near: ouray);
-    expect(r.single.name, '612 Main Street, Ouray, 81427');
-    expect((await region.searchAddresses('612 Mian Street')).single.id, 1);
+    expect(r.first.name, '612 Main Street, Ouray, 81427');
+    expect(
+      (await region.searchAddresses('612 Mian Street', near: ouray)).first.id,
+      1,
+    );
     expect(await region.searchAddresses('999 Main St'), isEmpty);
     expect(await region.searchAddresses('Main St'), isEmpty);
   });
@@ -191,7 +222,7 @@ void main() {
       east: -107.45,
       west: -107.95,
     );
-    expect(r.map((p) => p.id), containsAll([1, 2, 3, 4, 6, 7, 8]));
+    expect(r.map((p) => p.id), containsAll([1, 2, 3, 4, 6, 7, 8, 9]));
     expect(r.firstWhere((p) => p.id == 8).name, '', reason: 'unnamed: an icon');
     expect(r.map((p) => p.id), isNot(contains(5)));
   });
