@@ -4780,6 +4780,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get mapLayers_hillShading => 'Tieňovanie terénu';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Tmavá mapa';
 
   @override

@@ -18,22 +18,34 @@ import 'app_map.dart';
 /// to Offline and applies it.
 ///
 /// [extra] builds inside the sheet, so it rebuilds as settings change.
+/// [places]: the map draws Points of interest, so it offers their switch.
 Future<void> showMapLayersSheet(
   BuildContext context, {
   WidgetBuilder? extra,
   VoidCallback? onMoreFilters,
+  bool places = false,
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
-  builder: (_) => MapLayersSheet(extra: extra, onMoreFilters: onMoreFilters),
+  builder: (_) => MapLayersSheet(
+    extra: extra,
+    onMoreFilters: onMoreFilters,
+    places: places,
+  ),
 );
 
 class MapLayersSheet extends StatelessWidget {
   final WidgetBuilder? extra;
   final VoidCallback? onMoreFilters;
+  final bool places;
 
-  const MapLayersSheet({super.key, this.extra, this.onMoreFilters});
+  const MapLayersSheet({
+    super.key,
+    this.extra,
+    this.onMoreFilters,
+    this.places = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +145,14 @@ class MapLayersSheet extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (places)
+                  MapLayerTile(
+                    picture: _picture('places'),
+                    label: l10n.mapLayers_places,
+                    selected: settings.mapPlaces,
+                    onTap: () =>
+                        settingsService.setMapPlaces(!settings.mapPlaces),
+                  ),
                 MapLayerTile(
                   picture: _picture('dark'),
                   label: l10n.mapLayers_dark,

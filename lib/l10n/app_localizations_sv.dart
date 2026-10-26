@@ -4744,6 +4744,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get mapLayers_hillShading => 'Terrängskuggning';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Mörk karta';
 
   @override

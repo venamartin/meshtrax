@@ -175,6 +175,55 @@ void main() {
     expect(themeId(Units.metric), themeId(Units.metric), reason: 'reused');
   });
 
+  test('drops the icons of places the app draws itself', () {
+    final tagged = <String, Object?>{
+      'version': 8,
+      'sources': <String, Object?>{},
+      'layers': [
+        {
+          'id': 'poi-icon',
+          'type': 'symbol',
+          'metadata': {
+            'ovm:appPlaces': ['campsite', 'toilets'],
+          },
+          'layout': {
+            'icon-image': [
+              'concat',
+              'poi-',
+              ['get', 'class'],
+            ],
+            'text-field': ['get', 'name'],
+          },
+        },
+      ],
+    };
+    Map<Object?, Object?> layout(bool appPlaces) =>
+        ((StyleRegistry.resolve(
+                      tagged,
+                      StyleContext(appPlaces: appPlaces),
+                    )['layers']
+                    as List)
+                .single
+            as Map)['layout'];
+    expect(layout(false)['icon-image'], [
+      'concat',
+      'poi-',
+      ['get', 'class'],
+    ]);
+    expect(layout(true)['icon-image'], [
+      'match',
+      ['get', 'class'],
+      ['campsite', 'toilets'],
+      '',
+      [
+        'concat',
+        'poi-',
+        ['get', 'class'],
+      ],
+    ]);
+    expect(layout(true)['text-field'], ['get', 'name'], reason: 'name stays');
+  });
+
   test('does not modify the input', () {
     StyleRegistry.resolve(style, const StyleContext());
     expect((style['layers'] as List), hasLength(3));

@@ -12,7 +12,7 @@ import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
-import 'package:traxpoi/traxpoi.dart' show GeoPoint;
+import 'package:traxpoi/traxpoi.dart' show GeoPoint, PlaceDetail;
 import 'package:traxroute/traxroute.dart' as trax show PathType, RouteResult;
 
 import '../connector/meshcore_connector.dart';
@@ -22,6 +22,8 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import '../helpers/map_places.dart';
+import '../helpers/poi_kinds.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/position_text.dart';
 import '../services/map_marker_service.dart';
@@ -37,6 +39,7 @@ import '../widgets/app_map.dart';
 import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
+import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
 import '../widgets/route_panel.dart';
 import '../widgets/quick_switch_bar.dart';
@@ -111,6 +114,13 @@ class _MapScreenState extends State<MapScreen> {
   bool _routing = false;
   String? _routeError;
   int _routeGeneration = 0;
+
+  // Points of interest in view, and whether the region in view has them
+  // (the map then drops its own icons for the same kinds).
+  List<MapPlace> _places = const [];
+  bool _placesHere = false;
+  Timer? _placesTimer;
+  int _placesGeneration = 0;
   late final MeshCoreConnector _connector;
 
   @override
@@ -132,6 +142,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _saveCamera?.cancel();
+    _placesTimer?.cancel();
     _connector.removeSelfPositionViewer();
     unawaited(_channelLatest?.cancel());
     _mapController.dispose();
@@ -177,6 +188,33 @@ class _MapScreenState extends State<MapScreen> {
     _saveCamera?.cancel();
     _saveCamera = Timer(const Duration(seconds: 1), () {
       if (mounted) context.read<UiViewStateService>().setMapCamera(camera);
+    });
+    _placesTimer?.cancel();
+    _placesTimer = Timer(
+      const Duration(milliseconds: 300),
+      () => _loadPlaces(camera),
+    );
+  }
+
+  Future<void> _loadPlaces(MapCamera camera) async {
+    final poi = context.read<PoiService?>();
+    final bounds = _mapController.visibleBounds;
+    final generation = ++_placesGeneration;
+    if (poi == null || bounds == null || camera.zoom < 12) {
+      if (_places.isNotEmpty) setState(() => _places = const []);
+      return;
+    }
+    final region = context
+        .read<MapPacksService>()
+        .regions
+        ?.regionAt(camera.center)
+        ?.path;
+    final here = region != null && poi.isInstalled(region, PoiDownload.points);
+    final found = await placesIn(poi.regions, bounds);
+    if (!mounted || generation != _placesGeneration) return;
+    setState(() {
+      _places = placesToShow(found, camera);
+      _placesHere = here;
     });
   }
 
@@ -416,6 +454,8 @@ class _MapScreenState extends State<MapScreen> {
             : null;
         final isPoiLink = highlightPosition != null;
         final allowBack = !connector.isConnected || isPoiLink;
+        final showPlaces =
+            settings.mapPlaces && !widget.pickPosition && !_isBuildingPathTrace;
 
         return PopScope(
           canPop: allowBack,
@@ -560,7 +600,19 @@ class _MapScreenState extends State<MapScreen> {
                     );
                   },
                   onCameraChanged: _onCameraChanged,
+                  appPlaces: showPlaces && _placesHere,
                   overlays: [
+                    if (showPlaces)
+                      for (final p in _places)
+                        placeMarker(
+                          p,
+                          onTap: () => _openPlace(
+                            p,
+                            connector,
+                            selfPosition,
+                            settings.unitSystem,
+                          ),
+                        ),
                     ..._routeOverlays(),
                     if (_isBuildingPathTrace && _points.length > 1)
                       MapLine(
@@ -654,6 +706,7 @@ class _MapScreenState extends State<MapScreen> {
               gpsOff: !connector.gpsOn,
               onLayers: () => showMapLayersSheet(
                 context,
+                places: !widget.pickPosition,
                 extra: _nodeLayers,
                 onMoreFilters: () =>
                     _showFilterDialog(context, settingsService),
@@ -1816,6 +1869,31 @@ class _MapScreenState extends State<MapScreen> {
       );
       return;
     }
+    await _showPlaceSheet(detail, connector, selfPosition, units);
+  }
+
+  Future<void> _openPlace(
+    MapPlace p,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    final detail = await p.region.detail(p.place.id);
+    if (detail == null || !mounted) return;
+    await _showPlaceSheet(detail, connector, selfPosition, units);
+  }
+
+  Future<void> _showPlaceSheet(
+    PlaceDetail detail,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    final point = LatLng(detail.place.lat, detail.place.lon);
+    // An unnamed place goes by its kind ("Toilets").
+    final name = detail.place.name.isEmpty
+        ? poiKindLabel(context.l10n, detail.place.kind)
+        : detail.place.name;
     final canRoute = context.read<RoutingService?>()?.available ?? false;
     await showModalBottomSheet<void>(
       context: context,
@@ -1835,7 +1913,7 @@ class _MapScreenState extends State<MapScreen> {
           onRoute: canRoute
               ? () {
                   Navigator.pop(sheetContext);
-                  _routeHere(detail.place.name, point, selfPosition);
+                  _routeHere(name, point, selfPosition);
                 }
               : null,
           onShare: () {
@@ -1844,7 +1922,7 @@ class _MapScreenState extends State<MapScreen> {
               context: context,
               connector: connector,
               position: point,
-              defaultLabel: detail.place.name,
+              defaultLabel: name,
             );
           },
         ),

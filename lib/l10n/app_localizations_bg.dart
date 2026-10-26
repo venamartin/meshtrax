@@ -4783,6 +4783,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get mapLayers_hillShading => 'Засенчване на релефа';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Тъмна карта';
 
   @override

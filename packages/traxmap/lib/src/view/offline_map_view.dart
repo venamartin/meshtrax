@@ -100,6 +100,10 @@ class OfflineMapView extends StatefulWidget {
   /// Units for labels (contour heights, soundings, peaks).
   final Units units;
 
+  /// The app draws its own points of interest here: the style drops its
+  /// icons for them (see [StyleContext.appPlaces]).
+  final bool appPlaces;
+
   /// Device pixels per logical pixel for map tile bitmaps; null picks
   /// twice the screen density (capped at 4) so lines stay sharp between
   /// whole zoom levels. Lower it to save memory on constrained devices.
@@ -126,6 +130,7 @@ class OfflineMapView extends StatefulWidget {
     this.onStyleLoaded,
     this.styleRegistry,
     this.units = Units.imperial,
+    this.appPlaces = false,
     this.tileResolution,
   });
 
@@ -155,7 +160,8 @@ class _OfflineMapViewState extends State<OfflineMapView> {
     super.didUpdateWidget(old);
     if (old.styleId != widget.styleId ||
         !_samePacks(old.packs, widget.packs) ||
-        old.units != widget.units) {
+        old.units != widget.units ||
+        old.appPlaces != widget.appPlaces) {
       _loadStyle();
     }
   }
@@ -183,6 +189,7 @@ class _OfflineMapViewState extends State<OfflineMapView> {
         packs: packsByKind,
         units: widget.units,
         sprite: bundledSprites,
+        appPlaces: widget.appPlaces,
       );
       final style = await _registry.load(id, context);
       if (!mounted || id != widget.styleId) return;

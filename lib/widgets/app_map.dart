@@ -61,6 +61,10 @@ class AppMap extends StatefulWidget {
   /// Overrides the contours setting.
   final bool? contours;
 
+  /// The screen draws its own place icons here (Points of interest): the
+  /// map drops its icons for the same kinds and keeps their names.
+  final bool appPlaces;
+
   /// A small map (e.g. in a dialog): it follows the Online | Offline setting
   /// without showing the switch or the "Download a region" card.
   final bool compact;
@@ -88,6 +92,7 @@ class AppMap extends StatefulWidget {
     this.onCameraChanged,
     this.mapType,
     this.contours,
+    this.appPlaces = false,
     this.compact = false,
     this.controlsWidth = 0,
   });
@@ -241,6 +246,7 @@ class _AppMapState extends State<AppMap> {
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           onCameraChanged: _onCameraChanged,
+          appPlaces: widget.appPlaces,
           baseLayers: [
             if (online && coverage != null)
               _OnlineTiles(key: ObjectKey(coverage), coverage: coverage),

@@ -61,12 +61,18 @@ class StyleContext {
   /// untagged layers are always kept.
   final Units units;
 
+  /// The app draws its own icons for points of interest: layers tagged
+  /// with the `class` values the app covers (`metadata["ovm:appPlaces"]`)
+  /// drop their icon for those, keeping the name.
+  final bool appPlaces;
+
   const StyleContext({
     this.packs = const {},
     this.units = Units.imperial,
     this.glyphs,
     this.sprite,
     this.pmtilesUrl = defaultPmtilesUrl,
+    this.appPlaces = false,
   });
 
   static String defaultPmtilesUrl(Pack pack) =>
@@ -205,6 +211,21 @@ class StyleRegistry {
       final units = (l['metadata'] as Map?)?['ovm:units'];
       return units is String && units != context.units.name;
     });
+    if (context.appPlaces) {
+      for (final l in (out['layers'] as List<Object?>?) ?? const []) {
+        if (l is! Map) continue;
+        final classes = (l['metadata'] as Map?)?['ovm:appPlaces'];
+        final layout = l['layout'];
+        if (classes is! List || layout is! Map) continue;
+        layout['icon-image'] = [
+          'match',
+          ['get', 'class'],
+          classes,
+          '',
+          layout['icon-image'],
+        ];
+      }
+    }
 
     _replaceOrRemove(out, 'glyphs', '{glyphs}', context.glyphs);
     _replaceOrRemove(out, 'sprite', '{sprite}', context.sprite);

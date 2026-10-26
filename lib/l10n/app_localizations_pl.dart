@@ -4810,6 +4810,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get mapLayers_hillShading => 'Cieniowanie rzeźby';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Ciemna mapa';
 
   @override

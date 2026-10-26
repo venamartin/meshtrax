@@ -4807,6 +4807,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get mapLayers_hillShading => 'Domborzatárnyékolás';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Sötét térkép';
 
   @override

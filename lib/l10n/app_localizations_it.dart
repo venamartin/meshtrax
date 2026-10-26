@@ -4803,6 +4803,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get mapLayers_hillShading => 'Ombreggiatura del rilievo';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Mappa scura';
 
   @override

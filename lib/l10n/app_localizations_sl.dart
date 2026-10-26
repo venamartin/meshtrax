@@ -4780,6 +4780,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get mapLayers_hillShading => 'Senčenje reliefa';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Temni zemljevid';
 
   @override

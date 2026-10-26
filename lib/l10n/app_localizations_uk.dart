@@ -4802,6 +4802,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mapLayers_hillShading => 'Відмивка рельєфу';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Темна карта';
 
   @override

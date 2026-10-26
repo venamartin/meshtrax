@@ -4793,6 +4793,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get mapLayers_hillShading => 'Sombreamento de relevo';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Mapa escuro';
 
   @override

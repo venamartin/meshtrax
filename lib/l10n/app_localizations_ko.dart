@@ -4574,6 +4574,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mapLayers_hillShading => '음영 기복';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => '어두운 지도';
 
   @override

@@ -40,6 +40,9 @@ POI_ICON = ["match", ["get", "class"],
             ""]
 # Gates, phones and signs only from z16; the rest from z15.
 POI_MINOR = ["match", ["get", "class"], ["gate", "telephone", "information"], True, False]
+# Classes an app's own place icons cover: with StyleContext.appPlaces their
+# icon goes and the name stays (MeshTrax's Points of interest download).
+APP_PLACES = ["campsite", "picnic_site", "shelter", "toilets", "drinking_water", "attraction"]
 
 def O(id, type, sl, **kw): return {"id": id, "type": type, "source": "osm", "source-layer": sl, **kw}
 
@@ -139,7 +142,8 @@ def style(name, P, note):
                     "symbol-sort-key": ["get", "rank"],
                     "text-field": ["coalesce", ["get", "name"], ""], "text-font": REG, "text-size": 10,
                     "text-max-width": 8, "text-anchor": "top", "text-offset": [0, 0.9], "text-optional": True},
-            paint={"text-color": P["poi_label"], "text-halo-color": P["halo"], "text-halo-width": 1.5})
+            paint={"text-color": P["poi_label"], "text-halo-color": P["halo"], "text-halo-width": 1.5},
+            **({"metadata": {"ovm:appPlaces": APP_PLACES}} if id_ == "poi-icon" else {}))
           for id_, z, tier in [("poi-icon", 15, ["!", POI_MINOR]), ("poi-icon-minor", 16, POI_MINOR)]],
         O("poi", "symbol", "poi", minzoom=P["poi_minzoom"],
           filter=["all", ["<=", ["get", "rank"], P["poi_rank"]], ["==", POI_ICON, ""]],

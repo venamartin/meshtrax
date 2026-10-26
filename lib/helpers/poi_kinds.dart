@@ -47,6 +47,49 @@ IconData poiKindIcon(String kind) => switch (kind) {
   _ => Icons.place_outlined,
 };
 
+/// The colour of a kind's group on the map: water, land, camping, history,
+/// help, or anything else.
+Color poiKindColor(String kind) => switch (kind) {
+  'natural=spring' ||
+  'natural=hot_spring' ||
+  'waterway=waterfall' ||
+  'natural=water' ||
+  'amenity=drinking_water' ||
+  'amenity=water_point' => const Color(0xFF1E6FD9),
+  'natural=peak' ||
+  'natural=volcano' ||
+  'natural=saddle' ||
+  'mountain_pass=yes' ||
+  'natural=cave_entrance' ||
+  'natural=arch' ||
+  'natural=glacier' ||
+  'natural=rock' ||
+  'natural=stone' ||
+  'natural=cliff' ||
+  'natural=beach' => const Color(0xFF7A5230),
+  'highway=trailhead' ||
+  'tourism=camp_site' ||
+  'tourism=picnic_site' ||
+  'tourism=wilderness_hut' ||
+  'tourism=alpine_hut' ||
+  'amenity=shelter' ||
+  'amenity=toilets' ||
+  'leisure=park' ||
+  'boundary=protected_area' => const Color(0xFF2E7D32),
+  'historic=mine' ||
+  'man_made=mineshaft' ||
+  'man_made=adit' ||
+  'tourism=museum' => const Color(0xFF7B3FA0),
+  _ when kind.startsWith('historic=') => const Color(0xFF7B3FA0),
+  'amenity=ranger_station' ||
+  'tourism=visitor_centre' ||
+  'amenity=hospital' ||
+  'amenity=police' ||
+  'amenity=fire_station' ||
+  'emergency=phone' => const Color(0xFFC62828),
+  _ => const Color(0xFF00796B),
+};
+
 /// What a kind is called, in the app's language.
 String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'natural=peak' => l10n.poiKind_peak,

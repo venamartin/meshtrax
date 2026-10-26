@@ -1536,6 +1536,16 @@
         "text-color": "#9aa3ad",
         "text-halo-color": "#1c2026",
         "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:appPlaces": [
+          "campsite",
+          "picnic_site",
+          "shelter",
+          "toilets",
+          "drinking_water",
+          "attraction"
+        ]
       }
     },
     {

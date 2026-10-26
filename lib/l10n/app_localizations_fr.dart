@@ -4822,6 +4822,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mapLayers_hillShading => 'Ombrage du relief';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Carte sombre';
 
   @override

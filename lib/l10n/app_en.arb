@@ -2550,6 +2550,7 @@
   "mapLayers_details": "Map details",
   "mapLayers_contours": "Contours",
   "mapLayers_hillShading": "Hill shading",
+  "mapLayers_places": "Places",
   "mapLayers_dark": "Dark map",
   "mapLayers_downloadedAreas": "Downloaded areas",
   "mapLayers_nodes": "Nodes",

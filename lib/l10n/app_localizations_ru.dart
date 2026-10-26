@@ -4798,6 +4798,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mapLayers_hillShading => 'Отмывка рельефа';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Тёмная карта';
 
   @override

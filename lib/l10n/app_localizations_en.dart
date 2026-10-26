@@ -4710,6 +4710,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapLayers_hillShading => 'Hill shading';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Dark map';
 
   @override

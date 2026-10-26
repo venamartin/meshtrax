@@ -42,8 +42,9 @@ class PlaceSheet extends StatelessWidget {
     final muted = theme.textTheme.bodySmall!.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
+    // An unnamed place has its kind as the title already.
     final kind = [
-      poiKindLabel(l10n, p.kind),
+      if (p.name.isNotEmpty) poiKindLabel(l10n, p.kind),
       ?p.detail,
       if (p.heritage?.startsWith('nrhp:') ?? false) l10n.place_nrhp,
     ].join(' · ');
@@ -76,8 +77,10 @@ class PlaceSheet extends StatelessWidget {
                     p.name.isEmpty ? poiKindLabel(l10n, p.kind) : p.name,
                     style: theme.textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 4),
-                  Text(kind, style: theme.textTheme.bodyMedium),
+                  if (kind.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(kind, style: theme.textTheme.bodyMedium),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [

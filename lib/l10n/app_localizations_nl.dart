@@ -4771,6 +4771,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get mapLayers_hillShading => 'Reliëfschaduw';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Donkere kaart';
 
   @override

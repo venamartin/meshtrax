@@ -4464,6 +4464,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mapLayers_hillShading => '山体阴影';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => '深色地图';
 
   @override

@@ -4801,6 +4801,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get mapLayers_hillShading => 'Reliefschattierung';
 
   @override
+  String get mapLayers_places => 'Places';
+
+  @override
   String get mapLayers_dark => 'Dunkle Karte';
 
   @override
