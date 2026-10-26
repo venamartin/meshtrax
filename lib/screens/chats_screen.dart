@@ -12,6 +12,7 @@ import '../models/contact.dart';
 import '../models/message.dart';
 import '../services/app_settings_service.dart';
 import '../services/notification_service.dart';
+import '../services/ui_view_state_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/disconnect_navigation_mixin.dart';
 import '../utils/emoji_utils.dart';
@@ -57,6 +58,9 @@ class _ChatListItem {
   final Contact? contact;
   final Channel? channel;
 
+  /// The half-typed message left in this chat, shown in place of the last.
+  final String draft;
+
   _ChatListItem({
     required this.id,
     required this.title,
@@ -66,6 +70,7 @@ class _ChatListItem {
     required this.unreadCount,
     this.contact,
     this.channel,
+    this.draft = '',
   });
 }
 
@@ -231,6 +236,27 @@ class _ChatsScreenState extends State<ChatsScreen>
   }
 
   Widget _buildSubtitleText(BuildContext context, _ChatListItem item) {
+    if (item.draft.isNotEmpty) {
+      return Text.rich(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '${context.l10n.chats_draft}: ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            TextSpan(
+              text: NotificationService.formatNotificationText(item.draft),
+              style: const TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+      );
+    }
     final subtitle = item.subtitle;
     final colonIndex = subtitle.indexOf(': ');
 
@@ -652,6 +678,9 @@ class _ChatsScreenState extends State<ChatsScreen>
         final formatting = context.select<AppSettingsService, bool>(
           (s) => s.settings.showTextFormatting,
         );
+        final drafts = context.select<UiViewStateService, Map<String, String>>(
+          (s) => s.drafts,
+        );
 
         // Add Active Contacts (exclude repeaters) — "latest" comes from the
         // watched SQL query, so ordering can never disagree with the DB.
@@ -693,6 +722,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                 sortKeyUs: connector.latestContactArrivalUs(contact),
                 unreadCount: connector.getUnreadCountForContact(contact),
                 contact: contact,
+                draft: drafts[contact.publicKeyHex] ?? '',
               ),
             );
           }
@@ -721,6 +751,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                 sortKeyUs: connector.latestChannelArrivalUs(channel),
                 unreadCount: connector.getUnreadCountForChannel(channel),
                 channel: channel,
+                draft: drafts[channel.idKey] ?? '',
               ),
             );
           } else {
@@ -735,6 +766,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                 sortKeyUs: 0,
                 unreadCount: 0,
                 channel: channel,
+                draft: drafts[channel.idKey] ?? '',
               ),
             );
           }

@@ -9725,6 +9725,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No unread messages'**
   String get chats_nothingUnread;
+
+  /// No description provided for @chats_draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get chats_draft;
 }
 
 class _AppLocalizationsDelegate

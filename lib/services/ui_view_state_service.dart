@@ -23,6 +23,8 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyMapCamera = 'ui_map_camera';
   static const _keyDismissedPins = 'ui_dismissed_pins';
   static const _maxDismissedPerChat = 50;
+  static const _keyDrafts = 'ui_drafts';
+  static const _draftSaveDelay = Duration(seconds: 1);
 
   String _contactsSelectedGroupName = contactsAllGroupsValue;
   String _contactsSearchText = '';
@@ -42,6 +44,15 @@ class UiViewStateService extends ChangeNotifier {
 
   Set<String> dismissedPins(String chatId) =>
       (_dismissedPins[chatId] ?? const <String>[]).toSet();
+
+  /// Unsent composer text per chat, by the same chat ids as the pins.
+  /// Replaced, never changed in place, so a select sees a new draft.
+  Map<String, String> _drafts = const {};
+  Timer? _draftSave;
+
+  Map<String, String> get drafts => _drafts;
+
+  String draft(String chatId) => _drafts[chatId] ?? '';
 
   String get contactsSelectedGroupName => _contactsSelectedGroupName;
   String get contactsSearchText => _contactsSearchText;
@@ -104,6 +115,18 @@ class UiViewStateService extends ChangeNotifier {
         };
       } catch (_) {
         _dismissedPins = {};
+      }
+    }
+
+    final draftsJson = prefs.getString(_keyDrafts);
+    if (draftsJson != null) {
+      try {
+        _drafts = Map.unmodifiable(
+          (jsonDecode(draftsJson) as Map<String, dynamic>)
+              .map((k, v) => MapEntry(k, v as String)),
+        );
+      } catch (_) {
+        _drafts = const {};
       }
     }
 
@@ -218,6 +241,39 @@ class UiViewStateService extends ChangeNotifier {
         '${value.center.longitude}',
         '${value.zoom}',
       ]),
+    );
+  }
+
+  /// Keeps [text] as [chatId]'s draft; blank text clears it. Saved to the
+  /// device shortly after the last change, so an app killed mid-sentence
+  /// keeps it. Quiet while typing: bubbles watch this service, so the chats
+  /// list hears only from [leaveDraft].
+  void setDraft(String chatId, String text) {
+    final value = text.trim().isEmpty ? '' : text;
+    if (draft(chatId) == value) return;
+    _drafts = Map.unmodifiable(
+      value.isEmpty
+          ? ({..._drafts}..remove(chatId))
+          : {..._drafts, chatId: value},
+    );
+    _draftSave?.cancel();
+    _draftSave = Timer(_draftSaveDelay, _saveDrafts);
+  }
+
+  /// The chat is closing: save [text] now and let the chats list show it.
+  /// The notify waits a microtask, since a route's dispose runs while the
+  /// widget tree is locked.
+  void leaveDraft(String chatId, String text) {
+    setDraft(chatId, text);
+    _draftSave?.cancel();
+    _saveDrafts();
+    scheduleMicrotask(notifyListeners);
+  }
+
+  void _saveDrafts() {
+    _draftSave = null;
+    unawaited(
+      PrefsManager.instance.setString(_keyDrafts, jsonEncode(_drafts)),
     );
   }
 

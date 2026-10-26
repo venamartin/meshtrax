@@ -171,6 +171,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     });
   }
 
+  /// Where the half-typed message waits while the chat is closed.
+  late final UiViewStateService _drafts;
+
+  void _keepDraft() =>
+      _drafts.setDraft(widget.channel.idKey, _textController.text);
+
   @override
   void initState() {
     super.initState();
@@ -178,6 +184,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
+    // Before the mentions listener: a restored "@" must not open the list.
+    _drafts = context.read<UiViewStateService>();
+    _textController.text = _drafts.draft(widget.channel.idKey);
+    _textController.addListener(_keepDraft);
     _textController.addListener(_mentionsListener);
 
     final connector = context.read<MeshCoreConnector>();
@@ -740,6 +750,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
+    _textController.removeListener(_keepDraft);
+    _drafts.leaveDraft(widget.channel.idKey, _textController.text);
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
     ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();

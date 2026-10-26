@@ -179,6 +179,12 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  /// Where the half-typed message waits while the chat is closed.
+  late final UiViewStateService _drafts;
+
+  void _keepDraft() =>
+      _drafts.setDraft(widget.contact.publicKeyHex, _textController.text);
+
   @override
   void initState() {
     super.initState();
@@ -186,6 +192,10 @@ class _ChatScreenState extends State<ChatScreen> {
     ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
+
+    _drafts = context.read<UiViewStateService>();
+    _textController.text = _drafts.draft(widget.contact.publicKeyHex);
+    _textController.addListener(_keepDraft);
 
     final connector = context.read<MeshCoreConnector>();
     _unreadAtOpen = widget.unreadCount ??
@@ -557,6 +567,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
+    _textController.removeListener(_keepDraft);
+    _drafts.leaveDraft(widget.contact.publicKeyHex, _textController.text);
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
     ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();

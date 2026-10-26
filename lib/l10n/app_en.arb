@@ -2881,5 +2881,6 @@
     }
   },
   "chats_markRead": "Mark read",
-  "chats_nothingUnread": "No unread messages"
+  "chats_nothingUnread": "No unread messages",
+  "chats_draft": "Draft"
 }

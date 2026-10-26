@@ -5656,4 +5656,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get chats_nothingUnread => 'No unread messages';
+
+  @override
+  String get chats_draft => 'Draft';
 }
