@@ -236,6 +236,10 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
           backgroundColor: scheme.surface,
         ),
         categoryViewConfig: epf.CategoryViewConfig(
+          // The quick grid above is the recent reactions; the package's own
+          // Recent tab only repeated it, or said "No Recents" unreadably.
+          recentTabBehavior: epf.RecentTabBehavior.NONE,
+          initCategory: epf.Category.SMILEYS,
           backgroundColor: scheme.surface,
           indicatorColor: scheme.primary,
           iconColor: scheme.outline,
