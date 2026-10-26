@@ -88,9 +88,11 @@ class ChatsScreen extends StatefulWidget {
 
 class _ChatsScreenState extends State<ChatsScreen>
     with DisconnectNavigationMixin {
-  StreamSubscription<int>? _errorSubscription;
+  StreamSubscription<void>? _tableFullSubscription;
   late final VoidCallback _connectorListener;
   bool _versionWarningShown = false;
+  // Once per screen: a run of failed adds would stack one dialog each.
+  bool _tableFullAsked = false;
   late MeshCoreConnector _connector;
 
   @override
@@ -99,10 +101,15 @@ class _ChatsScreenState extends State<ChatsScreen>
     _connector = context.read<MeshCoreConnector>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _errorSubscription = _connector.errorStream.listen((errCode) {
-        if (errCode == errCodeTableFull && mounted) {
-          _showTableFullDialog(context, _connector);
+      _tableFullSubscription = _connector.contactTableFullEvents.listen((_) {
+        // With Overwrite Oldest on, the radio makes room by itself.
+        if (!mounted ||
+            _tableFullAsked ||
+            _connector.autoAddOverwriteOldest == true) {
+          return;
         }
+        _tableFullAsked = true;
+        _showTableFullDialog(context, _connector);
       });
 
       _connectorListener = () {
@@ -139,7 +146,7 @@ class _ChatsScreenState extends State<ChatsScreen>
   @override
   void dispose() {
     _connector.removeListener(_connectorListener);
-    _errorSubscription?.cancel();
+    _tableFullSubscription?.cancel();
     super.dispose();
   }
 

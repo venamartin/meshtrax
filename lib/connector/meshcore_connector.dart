@@ -645,6 +645,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       StreamController<Uint8List>.broadcast();
   final StreamController<int> _errorStreamController =
       StreamController<int>.broadcast();
+  final StreamController<void> _contactTableFullController =
+      StreamController<void>.broadcast();
 
   Uint8List? _selfPublicKey;
   String? _selfName;
@@ -895,6 +897,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get isLoadingChannels => _isLoadingChannels;
   Stream<Uint8List> get receivedFrames => _receivedFramesController.stream;
   Stream<int> get errorStream => _errorStreamController.stream;
+
+  /// The radio could not take another contact: PUSH_CODE_CONTACTS_FULL (an
+  /// advert found no free slot to be auto-added), or ERR_CODE_TABLE_FULL
+  /// while the table is at its limit. That code alone says nothing about
+  /// contacts: the firmware answers it to every send that finds none of its
+  /// 16 packet buffers free (DMs, logins, requests, Discover), and a radio
+  /// holding 13 contacts was told its list was full (user report,
+  /// 2026-10-26).
+  Stream<void> get contactTableFullEvents => _contactTableFullController.stream;
+
+  /// Whether the radio holds as many contacts as it can, give or take the
+  /// two the list may not have caught up with.
+  bool get contactTableFull => _contacts.length + 2 >= _maxContacts;
   Uint8List? get selfPublicKey => _selfPublicKey;
   // Hex of the key bytes currently held, computed once per key object.
   Uint8List? _selfHexSource;
@@ -6050,6 +6065,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case pushCodeMsgWaiting:
         unawaited(syncQueuedMessages(force: true));
         break;
+      case pushCodeContactsFull:
+        _contactTableFullController.add(null);
+        break;
       case pushCodeSendConfirmed:
         _handleSendConfirmed(frame);
         break;
@@ -6122,6 +6140,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       tag: 'Protocol',
     );
     _errorStreamController.add(errCode);
+    if (errCode == errCodeTableFull && contactTableFull) {
+      _contactTableFullController.add(null);
+    }
 
     if (_pendingGenericAckQueue.isEmpty) {
       return;
