@@ -1,0 +1,39 @@
+-- The "Addresses" download, schema version 1: one read-only SQLite file per
+-- region, built by traxmapmaker (FINDINGS §1.8) and opened by the app.
+-- Plain SQLite, so the build can run this file as it is, then sets
+-- PRAGMA user_version = 1 (the schema version). README.md has the
+-- name normalization and the meta keys.
+
+CREATE TABLE meta (
+  name TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- Each street once, so a million addresses don't repeat their street.
+-- norm is the street name normalized with the address rules.
+CREATE TABLE street (
+  id INTEGER NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  norm TEXT NOT NULL,
+  city TEXT,
+  zip TEXT
+);
+
+-- number is as written ("816", "12B", "4 1/2").
+CREATE TABLE address (
+  id INTEGER NOT NULL PRIMARY KEY,
+  street_id INTEGER NOT NULL REFERENCES street (id),
+  number TEXT NOT NULL,
+  unit TEXT,
+  lat REAL NOT NULL,
+  lon REAL NOT NULL
+);
+
+CREATE INDEX address_street ON address (street_id, number);
+
+CREATE VIRTUAL TABLE street_search USING fts5 (
+  norm,
+  content = 'street',
+  content_rowid = 'id',
+  tokenize = 'trigram'
+);

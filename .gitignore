@@ -105,6 +105,8 @@ MeshCore/
 notes.md
 !lib/storage/app_database.g.dart
 !packages/path_graph/lib/src/db/database.g.dart
+!packages/traxpoi/lib/src/db/points_database.g.dart
+!packages/traxpoi/lib/src/db/addresses_database.g.dart
 .claude/
 
 # Local bench artifacts (path_lab harness SQLite store)
@@ -119,4 +121,8 @@ path_lab_session.json
 # path_graph package test/build output
 packages/path_graph/build/
 packages/path_graph/.dart_tool/
+
+# traxpoi package test/build output
+packages/traxpoi/build/
+packages/traxpoi/.dart_tool/
 /backup_swap_*.json
