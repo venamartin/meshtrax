@@ -128,4 +128,18 @@ void main() {
     expect(route.egressProven, isTrue);
     expect(route.ingressProven, isTrue);
   });
+
+  // The screen says why it leads (owner, 2026-10-26: a lower % on top).
+  test('the live route says how long ago the flood took it', () {
+    deliverOnLonger();
+    learnFirmwareRoute();
+    nowMillis += const Duration(minutes: 4).inMilliseconds;
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.liveAgeMillis, const Duration(minutes: 4).inMilliseconds);
+    expect(graph.findAlternatives(bobPk).map((r) => r.liveAgeMillis),
+        everyElement(isNull));
+    nowMillis += const Duration(minutes: 7).inMilliseconds;
+    expect((graph.findPath(bobPk) as RouteResult).liveAgeMillis, isNull,
+        reason: 'no longer live: it ranks like any other route');
+  });
 }

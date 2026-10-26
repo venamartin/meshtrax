@@ -117,6 +117,40 @@ String movingReasonText(MovingStatus status) => switch (status.reason) {
           'so it seems to be in several places',
     };
 
+/// Why [first] leads although a later route in [shown] reads a higher %,
+/// or null when the order agrees with the %. A route a flood of mine just
+/// took leads for [liveRouteMinutes]; otherwise the search weighs the
+/// repeaters at each end three times their share of the % and charges a
+/// little per hop (field rule 2026-09-25), so the first has the stronger
+/// ends or the fewer hops.
+String? routeLeadReason(
+  RouteResult first,
+  List<PathResult> shown, {
+  required num liveRouteMinutes,
+}) {
+  final higher = shown
+      .skip(1)
+      .whereType<RouteResult>()
+      .where((r) => r.estDelivery > first.estDelivery)
+      .firstOrNull;
+  if (higher == null) return null;
+  final live = first.liveAgeMillis;
+  if (live != null) {
+    final minutes = live ~/ 60000;
+    return 'First because a flood of yours reached them this way '
+        '${minutes < 1 ? 'just now' : '$minutes min ago'}: that route leads '
+        'for ${liveRouteMinutes.round()} minutes';
+  }
+  // The % without its links: what the two end repeaters contribute.
+  double ends(RouteResult r) =>
+      r.estDelivery / r.hopProbabilities.fold(1.0, (a, p) => a * p);
+  return ends(first) > ends(higher)
+      ? 'First because its end repeaters hear better, which counts for more '
+          'than the % shows'
+      : 'First because it has fewer hops, and each hop counts for more than '
+          'the % shows';
+}
+
 /// Pathfinder: the repeaters around this radio, and how it would reach
 /// whoever is picked. Laid out like the room server screen. While the
 /// switch is on, the routes shown here are the ones DMs, logins and
@@ -411,7 +445,8 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           }(),
         ],
         const SizedBox(height: 24),
-        _sectionTitle('Routes to ${contact?.name ?? target.hash}'),
+        _sectionTitle('Routes to ${contact?.name ?? target.hash}',
+            subtitle: 'In the order Pathfinder ranks them'),
         const SizedBox(height: 8),
         _routeList(graph, _forwardRoutes(graph, target), back: false),
         if (throughDoorsteps) ...[
@@ -1039,36 +1074,52 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         ...graph.findReturnAlternativesFromRepeater(hash, count: 3),
       ];
 
-  /// Up to three distinct routes; a direct or flood answer appears once.
+  /// Up to three distinct routes, numbered in Pathfinder's order (the retry
+  /// ladder tries the routes in it the same way); a direct or flood answer
+  /// appears once. The order is Pathfinder's ranking, not
+  /// the % shown, and when a later route shows a higher % the first says
+  /// why it still leads (owner, 2026-10-26).
   Widget _routeList(PathGraph graph, List<PathResult> results,
       {required bool back, bool fromRepeater = false}) {
     final width = graph.hashWidthBytes;
     final seen = <String>{};
+    final shown = [
+      for (final r in results)
+        if (seen.add(switch (r) {
+          RouteResult(:final pathBytes) => PathHelper.hopHex(pathBytes),
+          DirectResult() => 'direct',
+          FloodResult() => 'flood',
+        }))
+          r,
+    ].take(3).toList();
     final rows = <Widget>[];
-    for (final r in results) {
-      if (rows.length == 3) break;
+    for (final (i, r) in shown.indexed) {
+      final number = Text('${i + 1}',
+          style: const TextStyle(fontWeight: FontWeight.bold));
       switch (r) {
         case RouteResult(:final pathBytes, :final estDelivery):
-          if (!seen.add(PathHelper.hopHex(pathBytes))) continue;
+          final why = i == 0
+              ? routeLeadReason(r, shown,
+                  liveRouteMinutes: graph.config.liveRouteMinutes)
+              : null;
           rows.add(ListTile(
             dense: true,
-            leading: const Icon(Icons.alt_route, size: 18),
+            leading: number,
             title: Text(_fmtPath(pathBytes, width),
                 style: const TextStyle(fontFamily: 'monospace')),
+            subtitle: why == null ? null : Text(why),
             trailing: Text('${_pct(estDelivery)} likely'),
           ));
         case DirectResult():
-          if (!seen.add('direct')) continue;
-          rows.add(const ListTile(
-            dense: true,
-            leading: Icon(Icons.arrow_forward, size: 18),
-            title: Text('Direct — no repeater needed'),
-          ));
-        case FloodResult(:final reason):
-          if (!seen.add('flood')) continue;
           rows.add(ListTile(
             dense: true,
-            leading: const Icon(Icons.waves, size: 18),
+            leading: number,
+            title: const Text('Direct — no repeater needed'),
+          ));
+        case FloodResult(:final reason):
+          rows.add(ListTile(
+            dense: true,
+            leading: number,
             title: Text('Flood — ${floodReasonText(reason, back: back, fromRepeater: fromRepeater)}'),
           ));
       }
