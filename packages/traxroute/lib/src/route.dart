@@ -50,9 +50,10 @@ class RouteResult {
   final double seconds;
   final List<Maneuver> maneuvers;
 
-  /// How far the route's end is from the requested destination. More than a
-  /// few hundred metres means the destination can't be reached with this
-  /// path type and the route stops at the nearest point it can reach.
+  /// How far the route's end is from the requested destination. More than
+  /// 100 m means the destination can't be reached with this path type and
+  /// the route stops at the nearest point it can reach (Martin, 2026-10-26:
+  /// say so past 100 m, even for a house far up an unmapped driveway).
   final double kmShortOfDestination;
 
   const RouteResult({
@@ -66,7 +67,7 @@ class RouteResult {
     required this.kmShortOfDestination,
   });
 
-  bool get reachesDestination => kmShortOfDestination <= 0.3;
+  bool get reachesDestination => kmShortOfDestination <= 0.1;
 
   /// This route, measured against [destination] instead.
   RouteResult withDestination(LatLon destination) => RouteResult(

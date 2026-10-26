@@ -63,7 +63,7 @@ void main() {
       expect(() => engine.route(request), throwsA(isA<RouteError>()));
       final r = await routeOrNearest(engine, request);
       expect(r.reachesDestination, isFalse);
-      expect(r.kmShortOfDestination, inInclusiveRange(0.3, 15));
+      expect(r.kmShortOfDestination, inInclusiveRange(0.1, 15));
       final jeep = await routeOrNearest(
         engine,
         const RouteRequest([ouray, sneffelsSummit], PathType.dirt),
