@@ -149,6 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isAtBottom = true;
   DateTime? _lastTextSendAt;
   int _previousMessageCount = 0;
+  String? _previousNewestId;
 
   /// The watched database query is the screen's only message source
   /// (Phase 3d) — ordering and paging belong to SQL.
@@ -944,11 +945,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Auto-scroll to bottom if user is already at bottom
     final currentMessageCount = messages.length;
-    final newestIsOutgoing = messages.isNotEmpty && messages.last.isOutgoing;
+    final newest = messages.isEmpty ? null : messages.last;
+    // A NEW newest row of ours: a room's held-back posts file in above our
+    // post, and must not pull a reader who scrolled up back down.
+    final justSent = newest != null &&
+        newest.isOutgoing &&
+        newest.messageId != _previousNewestId;
     if (currentMessageCount > _previousMessageCount) {
       // Auto-scroll if: the user is already at the bottom, OR they just sent
       // the newest message (so their own send always scrolls into view).
-      if ((_isAtBottom || newestIsOutgoing) && _itemScrollController.isAttached) {
+      if ((_isAtBottom || justSent) && _itemScrollController.isAttached) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_itemScrollController.isAttached) return;
           _itemScrollController.jumpTo(
@@ -959,6 +965,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
     _previousMessageCount = currentMessageCount;
+    _previousNewestId = newest?.messageId;
 
     return ExcludeSemantics(
       child: ChatZoomWrapper(
@@ -1104,7 +1111,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Text(
-                              "NEW MESSAGES",
+                              context.l10n.chat_newMessages,
                               style: TextStyle(
                                 color: Colors.red[400],
                                 fontSize: 12,

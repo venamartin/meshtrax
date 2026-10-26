@@ -8004,12 +8004,87 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   int latestContactArrivalUs(Contact contact) =>
       _contactLatestByKey[contact.publicKeyHex]?.arrivalUs ?? 0;
 
-  /// Live stream of a conversation — the UI's ONLY DM read path.
+  /// Live stream of a conversation — the UI's ONLY DM read path. A room's
+  /// rows come out in [roomPostOrder], every other conversation's in
+  /// arrival order.
   Stream<List<Message>> watchConversation(
     Contact contact, {
     int limit = 200,
-  }) =>
-      _messageStore.watchConversation(contact.publicKeyHex, limit: limit);
+  }) {
+    final byArrival =
+        _messageStore.watchConversation(contact.publicKeyHex, limit: limit);
+    if (contact.type != advTypeRoom) return byArrival;
+    return byArrival.map((rows) {
+      final login = _lastMeasuredRoomLogins[contact.publicKeyHex];
+      final clock = login?.serverClock;
+      return roomPostOrder(
+        rows,
+        skewSecs: clock?.difference(login!.at).inSeconds,
+      );
+    });
+  }
+
+  /// How much older than one of our posts a server stamp must be to move
+  /// above it while the room's clock is unmeasured: the clock-skew banner's
+  /// threshold, inside which a room clock passes for right.
+  static const int _roomUnmeasuredSlackSecs = 5 * 60;
+
+  /// A room conversation in the order its posts were made. Arrival order is
+  /// wrong here: a room server gives up on a member after three pushes go
+  /// unanswered, and starts again only when that member next posts, logs in
+  /// or sends it a request. The posts it held back then arrive AFTER our
+  /// own post, though they were made before it (field case 2026-10-26: a
+  /// 07:32 post sat above the previous evening's 16:30–20:36 posts).
+  ///
+  /// Posts from others keep their arrival order: the server pushes its
+  /// oldest unsent post first. Our own posts keep theirs. A post that
+  /// arrived after one of ours goes above it only when the server stamped
+  /// it before we sent ours, the stamp read on our clock by [skewSecs] (the
+  /// server's clock minus ours, from this session's LOGIN_OK; null when not
+  /// measured, which asks for [_roomUnmeasuredSlackSecs] of margin). A stamp
+  /// the ingest rewrote as broken never moves a post. Rows keep their
+  /// arrival stamps: unread counts and read marks still go by arrival.
+  @visibleForTesting
+  static List<Message> roomPostOrder(
+    List<Message> byArrival, {
+    int? skewSecs,
+  }) {
+    final theirs = <int>[];
+    final ours = <int>[];
+    for (var i = 0; i < byArrival.length; i++) {
+      (byArrival[i].isOutgoing ? ours : theirs).add(i);
+    }
+    if (theirs.isEmpty || ours.isEmpty) return byArrival;
+
+    final shift = skewSecs ?? 0;
+    final slack = skewSecs == null ? _roomUnmeasuredSlackSecs : 0;
+    bool goesFirst(int post, int own) {
+      if (post < own) return true; // here before we sent ours
+      final stamp = _messageWireSecs(byArrival[post]);
+      final believed =
+          byArrival[post].timestamp.millisecondsSinceEpoch ~/ 1000 == stamp;
+      final sentSecs = byArrival[own].timestamp.millisecondsSinceEpoch ~/ 1000;
+      return believed && stamp - shift < sentSecs - slack;
+    }
+
+    final ordered = <Message>[];
+    var i = 0;
+    var j = 0;
+    while (i < theirs.length && j < ours.length) {
+      if (goesFirst(theirs[i], ours[j])) {
+        ordered.add(byArrival[theirs[i++]]);
+      } else {
+        ordered.add(byArrival[ours[j++]]);
+      }
+    }
+    for (; i < theirs.length; i++) {
+      ordered.add(byArrival[theirs[i]]);
+    }
+    for (; j < ours.length; j++) {
+      ordered.add(byArrival[ours[j]]);
+    }
+    return ordered;
+  }
 
   /// One-shot conversation read (export, bench, sorting).
   Future<List<Message>> loadMessagesFor(Contact contact) =>
