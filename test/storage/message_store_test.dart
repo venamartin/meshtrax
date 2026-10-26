@@ -156,6 +156,31 @@ void main() {
     expect(await store.loadMessages(contactB), isEmpty);
   });
 
+  test('clearing older than a cutoff goes by arrival, one chat only',
+      () async {
+    await store.saveMessages(contactA, [
+      msg('old', id: 'old'),
+      msg('new', id: 'new'),
+    ]);
+    await store.saveMessages(contactB, [msg('other chat', id: 'b-old')]);
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    final longAgo = cutoff.subtract(const Duration(days: 1));
+    await AppDatabase.instance.customStatement(
+      'UPDATE contact_message_rows SET received_at_us = '
+      "${longAgo.microsecondsSinceEpoch} WHERE message_id IN ('old', 'b-old')",
+    );
+    await AppDatabase.instance.customStatement(
+      'UPDATE contact_message_rows SET received_at_us = '
+      "${DateTime.now().microsecondsSinceEpoch} WHERE message_id = 'new'",
+    );
+
+    await store.clearMessagesOlderThan(contactA, cutoff);
+
+    final kept = await store.loadMessages(contactA);
+    expect(kept.map((m) => m.messageId), ['new']);
+    expect(await store.loadMessages(contactB), hasLength(1));
+  });
+
   test('node scopes are isolated', () async {
     await store.saveMessages(contactA, [msg('node one')]);
 

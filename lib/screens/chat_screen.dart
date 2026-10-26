@@ -45,6 +45,7 @@ import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
+import '../widgets/clear_chat_dialog.dart';
 import '../widgets/room_login_dialog.dart';
 import '../helpers/structured_message.dart';
 import '../services/short_link_resolver.dart';
@@ -727,7 +728,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   }
                   if (value == 'clearChat') {
-                    connector.clearMessagesForContact(widget.contact);
+                    ClearChatDialog.show(context).then((choice) {
+                      if (choice == null) return;
+                      connector.clearMessagesForContact(
+                        widget.contact,
+                        olderThan: choice.olderThan,
+                      );
+                    });
                   }
                   if (value == 'reloadPosts') {
                     _reloadRoomPosts(connector);

@@ -11044,18 +11044,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await sendFrame(payload);
   }
 
-  void clearMessagesForContact(Contact contact) {
+  /// Deletes the chat's history on this device, or with [olderThan] only
+  /// what arrived longer ago than that; newer messages keep their unread
+  /// state.
+  void clearMessagesForContact(Contact contact, {Duration? olderThan}) {
     final contactKeyHex = contact.publicKeyHex;
+    if (olderThan != null) {
+      unawaited(_messageStore.clearMessagesOlderThan(
+        contactKeyHex,
+        DateTime.now().subtract(olderThan),
+      ));
+      return;
+    }
     unawaited(_messageStore.clearMessages(contactKeyHex));
     markContactRead(contactKeyHex);
     notifyListeners();
   }
 
-  void clearMessagesForChannel(int channelIndex) {
+  void clearMessagesForChannel(int channelIndex, {Duration? olderThan}) {
     // Explicit user clear — the only whole-history deletion besides
     // deleting the channel itself.
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) return;
+    if (olderThan != null) {
+      unawaited(_channelMessageStore.clearChannelMessagesOlderThan(
+        channel.idKey,
+        DateTime.now().subtract(olderThan),
+      ));
+      return;
+    }
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
     notifyListeners();

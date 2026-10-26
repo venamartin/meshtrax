@@ -5645,4 +5645,20 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get share_contactInstructions => 'Scan to add this contact.';
+
+  @override
+  String get clearChat_body =>
+      'Delete messages from this chat on this device. New messages still arrive here.';
+
+  @override
+  String get clearChat_olderThanDay => 'Older than 1 day';
+
+  @override
+  String get clearChat_olderThanWeek => 'Older than 1 week';
+
+  @override
+  String get clearChat_olderThanMonth => 'Older than 1 month';
+
+  @override
+  String get clearChat_everything => 'All messages';
 }

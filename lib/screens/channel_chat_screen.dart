@@ -28,6 +28,7 @@ import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
+import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
@@ -951,9 +952,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               if (value == 'clearChat') {
-                context.read<MeshCoreConnector>().clearMessagesForChannel(
-                  widget.channel.index,
-                );
+                final connector = context.read<MeshCoreConnector>();
+                ClearChatDialog.show(context).then((choice) {
+                  if (choice == null) return;
+                  connector.clearMessagesForChannel(
+                    widget.channel.index,
+                    olderThan: choice.olderThan,
+                  );
+                });
               }
             },
             itemBuilder: (context) => [

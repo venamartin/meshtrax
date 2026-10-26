@@ -710,6 +710,26 @@ class MessageStore {
         .go();
   }
 
+  /// Deletes the messages of this conversation that arrived before [cutoff].
+  Future<void> clearMessagesOlderThan(
+    String contactKeyHex,
+    DateTime cutoff,
+  ) async {
+    if (publicKeyHex.isEmpty) {
+      appLogger.warn('Public key hex is not set. Cannot clear messages.');
+      return;
+    }
+    // History still in an old blob would be imported later, past the cut.
+    await _importLegacyBlobs(contactKeyHex);
+    await (_db.delete(_db.contactMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) &
+              r.contactKey.equals(contactKeyHex) &
+              r.receivedAtUs.isSmallerThanValue(cutoff.microsecondsSinceEpoch),
+        ))
+        .go();
+  }
+
   Map<String, dynamic> _messageToJson(Message msg) {
     return {
       'senderKey': base64Encode(msg.senderKey),

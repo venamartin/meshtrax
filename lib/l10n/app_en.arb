@@ -2865,5 +2865,10 @@
   "share_roomTitle": "Share Room",
   "share_contactTitle": "Share Contact",
   "share_roomInstructions": "Scan to add this room. You'll need its password to log in.",
-  "share_contactInstructions": "Scan to add this contact."
+  "share_contactInstructions": "Scan to add this contact.",
+  "clearChat_body": "Delete messages from this chat on this device. New messages still arrive here.",
+  "clearChat_olderThanDay": "Older than 1 day",
+  "clearChat_olderThanWeek": "Older than 1 week",
+  "clearChat_olderThanMonth": "Older than 1 month",
+  "clearChat_everything": "All messages"
 }

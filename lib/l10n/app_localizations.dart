@@ -9671,6 +9671,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan to add this contact.'**
   String get share_contactInstructions;
+
+  /// No description provided for @clearChat_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete messages from this chat on this device. New messages still arrive here.'**
+  String get clearChat_body;
+
+  /// No description provided for @clearChat_olderThanDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 1 day'**
+  String get clearChat_olderThanDay;
+
+  /// No description provided for @clearChat_olderThanWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 1 week'**
+  String get clearChat_olderThanWeek;
+
+  /// No description provided for @clearChat_olderThanMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 1 month'**
+  String get clearChat_olderThanMonth;
+
+  /// No description provided for @clearChat_everything.
+  ///
+  /// In en, this message translates to:
+  /// **'All messages'**
+  String get clearChat_everything;
 }
 
 class _AppLocalizationsDelegate

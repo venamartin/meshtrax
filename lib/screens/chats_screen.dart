@@ -21,6 +21,7 @@ import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
+import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../widgets/routing_dialog.dart';
@@ -308,35 +309,12 @@ class _ChatsScreenState extends State<ChatsScreen>
                 ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirmed =
-                      await showDialog<bool>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(context.l10n.contact_clearChat),
-                          content: const Text(
-                            'Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, false),
-                              child: Text(context.l10n.common_cancel),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, true),
-                              child: Text(
-                                context.l10n.common_clear,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ) ??
-                      false;
-
-                  if (confirmed) {
-                    connector.clearMessagesForChannel(channel.index);
+                  final choice = await ClearChatDialog.show(context);
+                  if (choice != null) {
+                    connector.clearMessagesForChannel(
+                      channel.index,
+                      olderThan: choice.olderThan,
+                    );
                   }
                 },
               ),
@@ -537,35 +515,12 @@ class _ChatsScreenState extends State<ChatsScreen>
                 ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirmed =
-                      await showDialog<bool>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(context.l10n.contact_clearChat),
-                          content: const Text(
-                            'Remove this chat from your inbox? This will delete the local message history, but new messages will still appear here.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, false),
-                              child: Text(context.l10n.common_cancel),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, true),
-                              child: Text(
-                                context.l10n.common_clear,
-                                style: const TextStyle(color: Colors.orange),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ) ??
-                      false;
-
-                  if (confirmed) {
-                    connector.clearMessagesForContact(contact);
+                  final choice = await ClearChatDialog.show(context);
+                  if (choice != null) {
+                    connector.clearMessagesForContact(
+                      contact,
+                      olderThan: choice.olderThan,
+                    );
                   }
                 },
               ),
