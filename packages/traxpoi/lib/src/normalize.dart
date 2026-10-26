@@ -58,6 +58,8 @@ const _placeAbbreviations = {
   'trl': 'trail',
   'th': 'trailhead',
   'cg': 'campground',
+  // Spanish cañón: "Box Cañon" is Box Canyon.
+  'canon': 'canyon',
 };
 
 const _addressAbbreviations = {

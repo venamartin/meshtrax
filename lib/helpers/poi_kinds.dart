@@ -8,8 +8,7 @@ IconData poiKindIcon(String kind) => switch (kind) {
   'natural=peak' || 'natural=volcano' => Icons.terrain,
   'natural=saddle' || 'mountain_pass=yes' => Icons.landscape,
   'natural=spring' || 'natural=hot_spring' => Icons.water_drop,
-  'waterway=waterfall' || 'waterway=river' || 'waterway=stream' =>
-    Icons.waves,
+  'waterway=waterfall' || 'waterway=river' || 'waterway=stream' => Icons.waves,
   'natural=water' => Icons.water,
   'natural=cave_entrance' || 'natural=arch' => Icons.landscape,
   'natural=glacier' => Icons.ac_unit,
@@ -24,8 +23,7 @@ IconData poiKindIcon(String kind) => switch (kind) {
   'amenity=toilets' => Icons.wc,
   'tourism=viewpoint' => Icons.visibility,
   'tourism=attraction' => Icons.star_outline,
-  'historic=mine' || 'man_made=mineshaft' || 'man_made=adit' =>
-    Icons.hardware,
+  'historic=mine' || 'man_made=mineshaft' || 'man_made=adit' => Icons.hardware,
   'historic=ghost_town' => Icons.holiday_village,
   _ when kind.startsWith('historic=') => Icons.account_balance,
   'amenity=ranger_station' || 'tourism=visitor_centre' => Icons.info_outline,
@@ -40,6 +38,8 @@ IconData poiKindIcon(String kind) => switch (kind) {
   'natural=ridge' ||
   'natural=mountain_range' ||
   'natural=gorge' => Icons.landscape,
+  'leisure=park' => Icons.park,
+  'boundary=protected_area' => Icons.forest,
   'highway=path' => Icons.hiking,
   'highway=track' => Icons.landscape,
   'highway=road' => Icons.add_road,
@@ -67,8 +67,8 @@ String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'tourism=picnic_site' => l10n.poiKind_picnicSite,
   'tourism=wilderness_hut' || 'tourism=alpine_hut' => l10n.poiKind_hut,
   'amenity=shelter' => l10n.poiKind_shelter,
-  'amenity=drinking_water' || 'amenity=water_point' =>
-    l10n.poiKind_drinkingWater,
+  'amenity=drinking_water' ||
+  'amenity=water_point' => l10n.poiKind_drinkingWater,
   'amenity=toilets' => l10n.poiKind_toilets,
   'tourism=viewpoint' => l10n.poiKind_viewpoint,
   'tourism=attraction' => l10n.poiKind_attraction,
@@ -96,6 +96,8 @@ String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'waterway=river' || 'waterway=stream' => l10n.poiKind_river,
   'natural=valley' || 'natural=gorge' => l10n.poiKind_valley,
   'natural=ridge' || 'natural=mountain_range' => l10n.poiKind_range,
+  'leisure=park' => l10n.poiKind_park,
+  'boundary=protected_area' => l10n.poiKind_protectedArea,
   'highway=path' => l10n.poiKind_trail,
   'highway=track' => l10n.poiKind_dirtRoad,
   'highway=road' => l10n.poiKind_road,

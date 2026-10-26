@@ -10373,6 +10373,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy position'**
   String get map_copyPosition;
+
+  /// No description provided for @poiKind_park.
+  ///
+  /// In en, this message translates to:
+  /// **'Park'**
+  String get poiKind_park;
+
+  /// No description provided for @poiKind_protectedArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected area'**
+  String get poiKind_protectedArea;
 }
 
 class _AppLocalizationsDelegate

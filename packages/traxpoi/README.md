@@ -65,6 +65,7 @@ app.
 | `natural=water` | lakes and reservoirs |
 | `waterway=river` `waterway=stream` | rivers and creeks |
 | `natural=valley` `natural=ridge` `natural=mountain_range` `natural=gorge` | landforms |
+| `leisure=park` `boundary=protected_area` | parks and protected areas (Box Cañon Falls Park, a wilderness) |
 | `highway=path` `highway=track` `highway=road` | trails, dirt roads and other roads, one feature per name per area. `shape` holds the line. |
 
 ### name

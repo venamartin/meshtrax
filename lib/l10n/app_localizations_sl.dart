@@ -6007,4 +6007,10 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get map_copyPosition => 'Copy position';
+
+  @override
+  String get poiKind_park => 'Park';
+
+  @override
+  String get poiKind_protectedArea => 'Protected area';
 }

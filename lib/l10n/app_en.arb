@@ -3040,5 +3040,7 @@
   "route_noData": "Download Trail routing for this region in Offline maps to find routes here.",
   "route_pin": "Dropped pin",
   "appSettings_coordinateFormat": "Coordinate format",
-  "map_copyPosition": "Copy position"
+  "map_copyPosition": "Copy position",
+  "poiKind_park": "Park",
+  "poiKind_protectedArea": "Protected area"
 }
