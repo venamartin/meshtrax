@@ -29,6 +29,7 @@ import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/clear_chat_dialog.dart';
+import '../widgets/message_actions.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
@@ -1330,9 +1331,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     ? null
                     : () => _showMessagePathInfo(message),
                 onLongPress: () => _showMessageActions(message),
-                onSecondaryTapUp: PlatformInfo.isDesktop
-                    ? (_) => _showMessageActions(message)
-                    : null,
                 child: Container(
                   padding: structured != null
                       ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
@@ -1663,7 +1661,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     } else {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: messageBody,
+        // Desktop: a right-click anywhere on the message, text included.
+        child: ContextMenuRegion(
+          onContextMenu: PlatformInfo.isDesktop
+              ? (at) => _showMessageActions(message, at: at)
+              : null,
+          child: messageBody,
+        ),
       );
     }
   }
@@ -2475,120 +2479,56 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  void _showMessageActions(ChannelMessage message) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.reply),
-              title: Text(context.l10n.chat_reply),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _setReplyingTo(message);
-              },
-            ),
-            if (PlatformInfo.isDesktop)
-              ListTile(
-                leading: const Icon(Icons.route),
-                title: Text(context.l10n.chat_path),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showMessagePathInfo(message);
-                },
-              ),
-            // Can't react to (or mention) your own messages
-            if (!message.isOutgoing) ...[
-              ListTile(
-                leading: const Icon(Icons.add_reaction_outlined),
-                title: Text(context.l10n.chat_addReaction),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showEmojiPicker(message);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.alternate_email),
-                title: Text(context.l10n.chat_mention),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _insertMentionOf(message.senderName);
-                },
-              ),
-              // No DM for unparsed senders: 'Unknown' is the parse fallback,
-              // not a name anyone chose.
-              if (message.senderName != 'Unknown')
-                ListTile(
-                  leading: const Icon(Icons.chat_bubble_outline),
-                  title: Text(context.l10n.dmChannel_menuLabel),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _startDmTo(message.senderName);
-                  },
-                ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(context.l10n.common_copy),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                // Keep brackets in clipboard for clarity (especially with emoji names)
-                String textToCopy = message.text;
-                _copyMessageText(textToCopy);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text(context.l10n.common_delete),
-              onTap: () async {
-                Navigator.pop(sheetContext);
-                await _deleteMessage(message);
-              },
-            ),
-            if (!message.isOutgoing) ...[
-              ListTile(
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('Report'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  ReportHelper.reportMessage(
-                    context,
-                    sender: message.senderName,
-                    text: message.text,
-                    timestamp: message.timestamp,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: Text('Block ${message.senderName}'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await context
-                      .read<AppSettingsService>()
-                      .blockSender(message.senderName);
-                  if (mounted) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text('Blocked ${message.senderName}'),
-                    );
-                  }
-                },
-              ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: Text(context.l10n.common_cancel),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
+  /// The message's actions: a sheet after a long-press, a menu at [at]
+  /// after a right-click on desktop.
+  void _showMessageActions(ChannelMessage message, {Offset? at}) {
+    final l10n = context.l10n;
+    showMessageActions(context, position: at, [
+      MessageAction(Icons.reply, l10n.chat_reply, () => _setReplyingTo(message)),
+      if (PlatformInfo.isDesktop)
+        MessageAction(
+            Icons.route, l10n.chat_path, () => _showMessagePathInfo(message)),
+      // Can't react to (or mention) your own messages
+      if (!message.isOutgoing) ...[
+        MessageAction(Icons.add_reaction_outlined, l10n.chat_addReaction,
+            () => _showEmojiPicker(message)),
+        MessageAction(Icons.alternate_email, l10n.chat_mention,
+            () => _insertMentionOf(message.senderName)),
+        // No DM for unparsed senders: 'Unknown' is the parse fallback,
+        // not a name anyone chose.
+        if (message.senderName != 'Unknown')
+          MessageAction(Icons.chat_bubble_outline, l10n.dmChannel_menuLabel,
+              () => _startDmTo(message.senderName)),
+      ],
+      // Keep brackets in clipboard for clarity (especially with emoji names)
+      MessageAction(
+          Icons.copy, l10n.common_copy, () => _copyMessageText(message.text)),
+      MessageAction(Icons.delete_outline, l10n.common_delete,
+          () => _deleteMessage(message)),
+      if (!message.isOutgoing) ...[
+        MessageAction(
+          Icons.flag_outlined,
+          'Report',
+          () => ReportHelper.reportMessage(
+            context,
+            sender: message.senderName,
+            text: message.text,
+            timestamp: message.timestamp,
           ),
         ),
-      ),
-    );
+        MessageAction(Icons.block, 'Block ${message.senderName}', () async {
+          await context
+              .read<AppSettingsService>()
+              .blockSender(message.senderName);
+          if (mounted) {
+            showDismissibleSnackBar(
+              context,
+              content: Text('Blocked ${message.senderName}'),
+            );
+          }
+        }),
+      ],
+    ]);
   }
 
   void _showEmojiPicker(ChannelMessage message) {

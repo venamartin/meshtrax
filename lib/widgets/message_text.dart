@@ -69,7 +69,12 @@ class _MessageTextState extends State<MessageText> {
         _span(context, run),
     ];
     if (PlatformInfo.isDesktop) {
-      return SelectableText.rich(TextSpan(children: spans));
+      // No Copy / Select all menu of its own: a right-click opens the
+      // message's menu (ContextMenuRegion). Ctrl+C still copies a selection.
+      return SelectableText.rich(
+        TextSpan(children: spans),
+        contextMenuBuilder: null,
+      );
     }
     return Text.rich(TextSpan(children: spans));
   }
