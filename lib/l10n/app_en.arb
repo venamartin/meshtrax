@@ -2870,5 +2870,16 @@
   "clearChat_olderThanDay": "Older than 1 day",
   "clearChat_olderThanWeek": "Older than 1 week",
   "clearChat_olderThanMonth": "Older than 1 month",
-  "clearChat_everything": "All messages"
+  "clearChat_everything": "All messages",
+  "chats_markAllRead": "Mark all as read",
+  "chats_markAllReadBody": "{count, plural, =1{Mark 1 chat as read?} other{Mark {count} chats as read?}}",
+  "@chats_markAllReadBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chats_markRead": "Mark read",
+  "chats_nothingUnread": "No unread messages"
 }

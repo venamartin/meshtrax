@@ -5389,4 +5389,24 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get clearChat_everything => 'All messages';
+
+  @override
+  String get chats_markAllRead => 'Mark all as read';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mark $count chats as read?',
+      one: 'Mark 1 chat as read?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => 'Mark read';
+
+  @override
+  String get chats_nothingUnread => 'No unread messages';
 }

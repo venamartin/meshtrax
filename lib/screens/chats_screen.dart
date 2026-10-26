@@ -167,6 +167,33 @@ class _ChatsScreenState extends State<ChatsScreen>
     );
   }
 
+  Future<void> _confirmMarkAllRead(MeshCoreConnector connector) async {
+    final l10n = context.l10n;
+    final count = connector.unreadChatCount;
+    if (count == 0) {
+      showDismissibleSnackBar(context, content: Text(l10n.chats_nothingUnread));
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.chats_markAllRead),
+        content: Text(l10n.chats_markAllReadBody(count)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.chats_markRead),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) connector.markAllRead();
+  }
+
   Future<void> _disconnect(BuildContext context) async {
     final connector = context.read<MeshCoreConnector>();
     final disconnected = await showDisconnectDialog(context, connector);
@@ -866,6 +893,17 @@ class _ChatsScreenState extends State<ChatsScreen>
                       ),
                       onTap: () => _disconnect(context),
                     ),
+                    // The pull-down gesture's twin, for a mouse.
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.done_all),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.chats_markAllRead),
+                        ],
+                      ),
+                      onTap: () => _confirmMarkAllRead(connector),
+                    ),
                     PopupMenuItem(
                       child: Row(
                         children: [
@@ -948,165 +986,170 @@ class _ChatsScreenState extends State<ChatsScreen>
                             ],
                           ),
                         )
-                      : ListView.builder(
-                          itemExtent: 80.0,
-                          itemCount: chatItems.length,
-                          itemBuilder: (context, index) {
-                            final item = chatItems[index];
-                            final isChannel = item.channel != null;
-                            final isRoom = item.contact?.type == advTypeRoom;
-                            final iconColor = isChannel
-                                ? Colors.blue
-                                : isRoom
-                                ? Colors.purple
-                                : Colors.green;
-                            final bgColor = iconColor.withValues(alpha: 0.2);
-                            IconData iconData = Icons.person;
-                            String? emojiIcon;
-
-                            if (isChannel) {
-                              if (item.channel!.isPublicChannel) {
-                                iconData = Icons.public;
-                              } else if (item.channel!.name.startsWith('#')) {
-                                iconData = Icons.tag;
+                      // Pull down to mark every chat read.
+                      : RefreshIndicator(
+                          onRefresh: () => _confirmMarkAllRead(connector),
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemExtent: 80.0,
+                            itemCount: chatItems.length,
+                            itemBuilder: (context, index) {
+                              final item = chatItems[index];
+                              final isChannel = item.channel != null;
+                              final isRoom = item.contact?.type == advTypeRoom;
+                              final iconColor = isChannel
+                                  ? Colors.blue
+                                  : isRoom
+                                  ? Colors.purple
+                                  : Colors.green;
+                              final bgColor = iconColor.withValues(alpha: 0.2);
+                              IconData iconData = Icons.person;
+                              String? emojiIcon;
+  
+                              if (isChannel) {
+                                if (item.channel!.isPublicChannel) {
+                                  iconData = Icons.public;
+                                } else if (item.channel!.name.startsWith('#')) {
+                                  iconData = Icons.tag;
+                                } else {
+                                  iconData = Icons.lock;
+                                }
                               } else {
-                                iconData = Icons.lock;
+                                if (isRoom) {
+                                  iconData = Icons.meeting_room;
+                                } else if (item.contact != null) {
+                                  emojiIcon = firstEmoji(item.contact!.name);
+                                  iconData = Icons.person;
+                                }
                               }
-                            } else {
-                              if (isRoom) {
-                                iconData = Icons.meeting_room;
-                              } else if (item.contact != null) {
-                                emojiIcon = firstEmoji(item.contact!.name);
-                                iconData = Icons.person;
-                              }
-                            }
-
-                            return GestureDetector(
-                              onLongPress: () =>
-                                  _showChatActions(context, item, connector),
-                              child: Card(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: bgColor,
-                                    child: emojiIcon != null
-                                        ? Text(
-                                            emojiIcon,
+  
+                              return GestureDetector(
+                                onLongPress: () =>
+                                    _showChatActions(context, item, connector),
+                                child: Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: bgColor,
+                                      child: emojiIcon != null
+                                          ? Text(
+                                              emojiIcon,
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                              ),
+                                            )
+                                          : Icon(iconData, color: iconColor),
+                                    ),
+                                    title: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
-                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
                                             ),
-                                          )
-                                        : Icon(iconData, color: iconColor),
-                                  ),
-                                  title: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          item.title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _formatTimestamp(
-                                          context,
-                                          item.timestamp,
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.color,
-                                          fontWeight: item.unreadCount > 0
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildSubtitleText(
-                                          context,
-                                          item,
-                                        ),
-                                      ),
-                                      if (item.unreadCount > 0) ...[
                                         const SizedBox(width: 8),
-                                        UnreadBadge(count: item.unreadCount),
+                                        Text(
+                                          _formatTimestamp(
+                                            context,
+                                            item.timestamp,
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.color,
+                                            fontWeight: item.unreadCount > 0
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
                                       ],
-                                    ],
-                                  ),
-                                  onTap: () async {
-                                    if (item.contact != null) {
-                                      final unread = item.unreadCount;
-                                      connector.markContactRead(
-                                        item.contact!.publicKeyHex,
-                                      );
-
-                                      final settingsService = context
-                                          .read<AppSettingsService>();
-                                      if (settingsService
-                                              .settings
-                                              .autoFavoriteOnChat &&
-                                          !item.contact!.isFavorite) {
-                                        await connector.setContactFlags(
-                                          item.contact!,
-                                          isFavorite: true,
+                                    ),
+                                    subtitle: Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildSubtitleText(
+                                            context,
+                                            item,
+                                          ),
+                                        ),
+                                        if (item.unreadCount > 0) ...[
+                                          const SizedBox(width: 8),
+                                          UnreadBadge(count: item.unreadCount),
+                                        ],
+                                      ],
+                                    ),
+                                    onTap: () async {
+                                      if (item.contact != null) {
+                                        final unread = item.unreadCount;
+                                        connector.markContactRead(
+                                          item.contact!.publicKeyHex,
                                         );
-                                      }
-
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 50),
-                                      );
-                                      if (context.mounted) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ChatScreen(
-                                              contact: item.contact!,
-                                              unreadCount: unread,
+  
+                                        final settingsService = context
+                                            .read<AppSettingsService>();
+                                        if (settingsService
+                                                .settings
+                                                .autoFavoriteOnChat &&
+                                            !item.contact!.isFavorite) {
+                                          await connector.setContactFlags(
+                                            item.contact!,
+                                            isFavorite: true,
+                                          );
+                                        }
+  
+                                        await Future.delayed(
+                                          const Duration(milliseconds: 50),
+                                        );
+                                        if (context.mounted) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ChatScreen(
+                                                contact: item.contact!,
+                                                unreadCount: unread,
+                                              ),
                                             ),
-                                          ),
+                                          );
+                                        }
+                                      } else if (item.channel != null) {
+                                        final unread = item.unreadCount;
+                                        connector.markChannelRead(
+                                          item.channel!.index,
                                         );
-                                      }
-                                    } else if (item.channel != null) {
-                                      final unread = item.unreadCount;
-                                      connector.markChannelRead(
-                                        item.channel!.index,
-                                      );
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 50),
-                                      );
-                                      if (context.mounted) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                ChannelChatScreen(
-                                                  channel: item.channel!,
-                                                  unreadCount: unread,
-                                                ),
-                                          ),
+                                        await Future.delayed(
+                                          const Duration(milliseconds: 50),
                                         );
+                                        if (context.mounted) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ChannelChatScreen(
+                                                    channel: item.channel!,
+                                                    unreadCount: unread,
+                                                  ),
+                                            ),
+                                          );
+                                        }
                                       }
-                                    }
-                                  },
+                                    },
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                 ),
               ],

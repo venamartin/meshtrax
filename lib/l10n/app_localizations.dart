@@ -9701,6 +9701,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All messages'**
   String get clearChat_everything;
+
+  /// No description provided for @chats_markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get chats_markAllRead;
+
+  /// No description provided for @chats_markAllReadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Mark 1 chat as read?} other{Mark {count} chats as read?}}'**
+  String chats_markAllReadBody(int count);
+
+  /// No description provided for @chats_markRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark read'**
+  String get chats_markRead;
+
+  /// No description provided for @chats_nothingUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'No unread messages'**
+  String get chats_nothingUnread;
 }
 
 class _AppLocalizationsDelegate

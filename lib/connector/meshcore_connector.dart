@@ -1296,6 +1296,23 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return total;
   }
 
+  /// Chats (contacts and channels) with at least one unread message.
+  int get unreadChatCount =>
+      _contacts.where((c) => getUnreadCountForContact(c) > 0).length +
+      _channels.where((ch) => getUnreadCountForChannel(ch) > 0).length;
+
+  /// Marks every chat with unread messages read.
+  void markAllRead() {
+    for (final contact in _contacts) {
+      if (getUnreadCountForContact(contact) > 0) {
+        markContactRead(contact.publicKeyHex);
+      }
+    }
+    for (final channel in _channels) {
+      if (getUnreadCountForChannel(channel) > 0) markChannelRead(channel.index);
+    }
+  }
+
   bool isChannelSmazEnabled(int channelIndex) {
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) return false;
