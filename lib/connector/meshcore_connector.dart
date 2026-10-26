@@ -4094,19 +4094,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // write is in flight must already read as the app's route.
       final previousMark = _appWrittenPath[contact.publicKeyHex];
       _appWrittenPath[contact.publicKeyHex] = _writtenKey(width, customPath);
+      // Everything but the route comes from the live row: a caller's copy
+      // can predate a permission change, and writing its flags would undo it.
+      final live = _contacts
+              .where((c) => c.publicKeyHex == contact.publicKeyHex)
+              .firstOrNull ??
+          contact;
       try {
         await sendFrame(
           buildUpdateContactPathFrame(
-            contact.publicKey,
+            live.publicKey,
             customPath,
             hopCount,
             width,
-            type: contact.type,
-            flags: contact.flags,
-            name: contact.name,
-            lat: contact.latitude,
-            lon: contact.longitude,
-            lastModified: contact.lastSeen,
+            type: live.type,
+            flags: live.flags,
+            name: live.name,
+            lat: live.latitude,
+            lon: live.longitude,
+            lastModified: live.lastSeen,
+            lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
           ),
         );
       } catch (_) {
@@ -4252,6 +4259,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: latestContact.latitude,
         lon: latestContact.longitude,
         lastModified: latestContact.lastSeen,
+        lastAdvertEpochSeconds: latestContact.lastAdvertSecs ?? 0,
       ),
     );
 
@@ -4840,6 +4848,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: live.latitude,
         lon: live.longitude,
         lastModified: live.lastSeen,
+        lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
       ),
     );
     if (!readded) {
@@ -4851,8 +4860,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return readded;
   }
 
-  /// [lastAdvertEpochSeconds] is the advert time the radio records (default
-  /// now); it drops any later advert that is not newer.
+  /// [lastAdvertEpochSeconds] is the advert time the radio records (default:
+  /// the heard advert's own, else 0); it drops any later advert that is not
+  /// newer.
   Future<bool> importDiscoveredContact(
     Contact contact, {
     int? lastAdvertEpochSeconds,
@@ -4871,7 +4881,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: contact.latitude,
         lon: contact.longitude,
         lastModified: contact.lastSeen,
-        lastAdvertEpochSeconds: lastAdvertEpochSeconds,
+        lastAdvertEpochSeconds:
+            lastAdvertEpochSeconds ?? contact.lastAdvertSecs ?? 0,
       ),
     );
 
@@ -10283,6 +10294,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastModified: contact.lastSeen.millisecondsSinceEpoch > 0
             ? contact.lastSeen
             : null,
+        lastAdvertEpochSeconds: contact.lastAdvertSecs ?? 0,
       );
 
       appLogger.info('Restoring contact ${contact.name}: type=${contact.type}, flags=${contact.flags}, isFavorite=${contact.isFavorite}', tag: 'Connector');
