@@ -5514,4 +5514,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String structured_locationOf(String name) {
     return '$name\'s location';
   }
+
+  @override
+  String get reaction_searchHint => 'Search emoji';
+
+  @override
+  String get reaction_noResults => 'No emoji found';
 }

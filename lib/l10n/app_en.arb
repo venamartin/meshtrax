@@ -2858,5 +2858,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "reaction_searchHint": "Search emoji",
+  "reaction_noResults": "No emoji found"
 }

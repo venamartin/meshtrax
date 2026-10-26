@@ -107,6 +107,9 @@ class AppSettings {
   /// only a display name, not a verified key).
   final Set<String> blockedSenderNames;
 
+  /// Reactions this user sent, newest first (QuickReactions keeps twelve).
+  final List<String> recentReactions;
+
   AppSettings({
     this.mapShowRepeaters = true,
     this.mapShowChatNodes = true,
@@ -155,6 +158,7 @@ class AppSettings {
     this.chartsNoticeDismissed = false,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
+    this.recentReactions = const [],
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
        mutedChannels = mutedChannels ?? {},
@@ -211,6 +215,7 @@ class AppSettings {
       'charts_notice_dismissed': chartsNoticeDismissed,
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
+      'recent_reactions': recentReactions,
     };
   }
 
@@ -302,6 +307,9 @@ class AppSettings {
               ?.map((e) => e.toString())
               .toSet()) ??
           {},
+      recentReactions:
+          (json['recent_reactions'] as List?)?.whereType<String>().toList() ??
+          const [],
     );
   }
 
@@ -353,6 +361,7 @@ class AppSettings {
     bool? chartsNoticeDismissed,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
+    List<String>? recentReactions,
   }) {
     return AppSettings(
       mapShowRepeaters: mapShowRepeaters ?? this.mapShowRepeaters,
@@ -415,6 +424,7 @@ class AppSettings {
           chartsNoticeDismissed ?? this.chartsNoticeDismissed,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
+      recentReactions: recentReactions ?? this.recentReactions,
     );
   }
 }

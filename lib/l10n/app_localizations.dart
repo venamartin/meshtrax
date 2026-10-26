@@ -9629,6 +9629,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name}\'s location'**
   String structured_locationOf(String name);
+
+  /// No description provided for @reaction_searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search emoji'**
+  String get reaction_searchHint;
+
+  /// No description provided for @reaction_noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No emoji found'**
+  String get reaction_noResults;
 }
 
 class _AppLocalizationsDelegate

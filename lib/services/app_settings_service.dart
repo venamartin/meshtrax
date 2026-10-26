@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../helpers/quick_reactions.dart';
 import '../models/app_settings.dart';
 
 import '../storage/prefs_manager.dart';
@@ -273,6 +274,13 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setShowTextFormatting(bool value) async {
     await updateSettings(_settings.copyWith(showTextFormatting: value));
+  }
+
+  Future<void> rememberReaction(String emoji) async {
+    await updateSettings(_settings.copyWith(
+      recentReactions:
+          QuickReactions.remember(_settings.recentReactions, emoji),
+    ));
   }
 
   // --- Blocking (user-generated content moderation) -------------------------
