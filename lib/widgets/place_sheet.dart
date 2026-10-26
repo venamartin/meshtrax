@@ -100,21 +100,6 @@ class PlaceSheet extends StatelessWidget {
             ),
           ],
         ),
-        if (wiki != null) ...[
-          const SizedBox(height: 16),
-          Text(wiki.summary, style: theme.textTheme.bodyMedium),
-        ],
-        if (wiki != null || photo != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            [
-              if (wiki != null) l10n.place_textCredit,
-              if (photo != null)
-                l10n.place_photoCredit(photo.author, photo.licence),
-            ].join(' · '),
-            style: muted,
-          ),
-        ],
         const SizedBox(height: 16),
         Wrap(
           spacing: 8,
@@ -134,6 +119,21 @@ class PlaceSheet extends StatelessWidget {
               ),
           ],
         ),
+        if (wiki != null) ...[
+          const SizedBox(height: 16),
+          _Summary(wiki.summary),
+        ],
+        if (wiki != null || photo != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            [
+              if (wiki != null) l10n.place_textCredit,
+              if (photo != null)
+                l10n.place_photoCredit(photo.author, photo.licence),
+            ].join(' · '),
+            style: muted,
+          ),
+        ],
       ],
     );
   }
@@ -159,4 +159,52 @@ class CopyPositionButton extends StatelessWidget {
       }
     },
   );
+}
+
+/// A Wikipedia lead can run to many paragraphs: a few lines, then More.
+class _Summary extends StatefulWidget {
+  final String text;
+
+  const _Summary(this.text);
+
+  @override
+  State<_Summary> createState() => _SummaryState();
+}
+
+class _SummaryState extends State<_Summary> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodyMedium!;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: 6,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final long = painter.didExceedMaxLines;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              style: style,
+              maxLines: _open ? null : 6,
+              overflow: _open ? null : TextOverflow.ellipsis,
+            ),
+            if (long)
+              TextButton(
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                onPressed: () => setState(() => _open = !_open),
+                child: Text(
+                  _open ? context.l10n.common_less : context.l10n.common_more,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }

@@ -119,13 +119,15 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
         ),
         actions: [
           if (_query.text.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              tooltip: l10n.common_clear,
-              onPressed: () {
-                _query.clear();
-                _onChanged('');
-              },
+            TextFieldTapRegion(
+              child: IconButton(
+                icon: const Icon(Icons.clear),
+                tooltip: l10n.common_clear,
+                onPressed: () {
+                  _query.clear();
+                  _onChanged('');
+                },
+              ),
             ),
         ],
       ),

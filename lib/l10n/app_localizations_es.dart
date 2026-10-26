@@ -6029,4 +6029,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get poiKind_protectedArea => 'Protected area';
+
+  @override
+  String get common_more => 'More';
+
+  @override
+  String get common_less => 'Less';
 }

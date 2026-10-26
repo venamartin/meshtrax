@@ -3042,5 +3042,7 @@
   "appSettings_coordinateFormat": "Coordinate format",
   "map_copyPosition": "Copy position",
   "poiKind_park": "Park",
-  "poiKind_protectedArea": "Protected area"
+  "poiKind_protectedArea": "Protected area",
+  "common_more": "More",
+  "common_less": "Less"
 }

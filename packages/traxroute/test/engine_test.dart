@@ -30,7 +30,6 @@ void main() {
       engine = ValhallaServiceEngine(
         executable: service!,
         workDir: Directory('${tmp.path}/engine'),
-        port: 8772,
       );
       await engine.open(store.tileFile!);
     });
@@ -74,6 +73,20 @@ void main() {
         lessThan(r.kmShortOfDestination),
         reason: 'dirt roads get closer to the summit than pavement',
       );
+    });
+
+    test('closing the engine ends its service', () async {
+      final dir = Directory('${tmp.path}/engine2');
+      final second = ValhallaServiceEngine(executable: service!, workDir: dir);
+      await second.open(File('${tmp.path}/routing/test/tiles.tar'));
+      bool running() =>
+          (Process.runSync('ps', ['-eo', 'args']).stdout as String)
+              .split('\n')
+              .any((l) => l.contains('${dir.path}/valhalla.json'));
+      expect(running(), isTrue);
+      await second.close();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      expect(running(), isFalse);
     });
 
     test('routes are quick', () async {

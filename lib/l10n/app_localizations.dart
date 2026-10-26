@@ -10385,6 +10385,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Protected area'**
   String get poiKind_protectedArea;
+
+  /// No description provided for @common_more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get common_more;
+
+  /// No description provided for @common_less.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get common_less;
 }
 
 class _AppLocalizationsDelegate

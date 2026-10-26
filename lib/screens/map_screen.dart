@@ -13,9 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 import 'package:traxpoi/traxpoi.dart' show GeoPoint;
-import 'package:traxroute/traxroute.dart'
-    as trax
-    show PathType, RouteError, RouteResult;
+import 'package:traxroute/traxroute.dart' as trax show PathType, RouteResult;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -1574,9 +1572,9 @@ class _MapScreenState extends State<MapScreen> {
                 title ?? lines.first,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
-              subtitle: Text(
-                (title == null ? lines.skip(1) : lines).join('\n'),
-              ),
+              subtitle: title == null && lines.length == 1
+                  ? null
+                  : Text((title == null ? lines.skip(1) : lines).join('\n')),
               trailing: CopyPositionButton(text: lines.first),
             ),
             if (canRoute) ...[
@@ -1701,15 +1699,30 @@ class _MapScreenState extends State<MapScreen> {
           for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
           to.point.toOvm(),
         ],
-        padding: const EdgeInsets.fromLTRB(48, 48, 48 + MapControls.width, 48),
+        // Clear of the route panel, which covers the bottom of the map.
+        padding: const EdgeInsets.fromLTRB(48, 48, 48 + MapControls.width, 320),
       );
-    } on trax.RouteError {
+    } on Object catch (e) {
+      appLogger.warn('Route failed: $e', tag: 'Routing');
       if (!mounted || generation != _routeGeneration) return;
       setState(() {
         _route = null;
         _routing = false;
         _routeError = noRoute;
       });
+    }
+  }
+
+  /// Goes to [point] at [zoom]. Offline, the map caps the zoom where
+  /// nothing is downloaded, and it lifts the cap only once it sees it is
+  /// over a downloaded region, so a jump from far away tries again for a
+  /// moment.
+  Future<void> _moveTo(LatLng point, double zoom) async {
+    _mapController.move(point.toOvm(), zoom: zoom);
+    for (var i = 0; i < 20 && mounted; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      if ((_mapController.camera?.zoom ?? zoom) >= zoom - 0.01) return;
+      _mapController.move(point.toOvm(), zoom: zoom);
     }
   }
 
@@ -1787,7 +1800,7 @@ class _MapScreenState extends State<MapScreen> {
     );
     if (pick == null || !mounted) return;
     final point = LatLng(pick.point.lat, pick.point.lon);
-    _mapController.move(point.toOvm(), zoom: 15);
+    unawaited(_moveTo(point, 15));
     final region = pick.region;
     final detail = pick.placeId == null || region == null
         ? null
