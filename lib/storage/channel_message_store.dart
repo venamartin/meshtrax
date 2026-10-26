@@ -906,6 +906,23 @@ class ChannelMessageStore {
         .go();
   }
 
+  /// Deletes the channel's messages that arrived before [cutoff].
+  Future<void> clearChannelMessagesOlderThan(
+    String idKey,
+    DateTime cutoff,
+  ) async {
+    if (publicKeyHex.isEmpty) return;
+    // History still in an old blob would be imported later, past the cut.
+    await _importLegacyIdentityBlob(idKey);
+    await (_db.delete(_db.channelMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) &
+              r.channelIdKey.equals(idKey) &
+              r.receivedAtUs.isSmallerThanValue(cutoff.microsecondsSinceEpoch),
+        ))
+        .go();
+  }
+
   /// Clear all channel messages for the current node.
   Future<void> clearAllChannelMessages() async {
     final prefs = PrefsManager.instance;

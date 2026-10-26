@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:latlong2/latlong.dart';
+
 import '../connector/meshcore_protocol.dart';
 import '../models/contact.dart';
 import 'path_helper.dart';
@@ -169,6 +171,26 @@ class RepeaterIdentityHelper {
   /// rather than pick one.
   static String ambiguousLabel(List<Contact> candidates) =>
       candidates.map((c) => c.name).join(' | ');
+
+  /// The candidate with a known position nearest to [from], and how far it
+  /// is: the likeliest of several nodes sharing a short hash to be the one
+  /// heard directly. A guess, never an identity — show it as "possibly",
+  /// and never address, log into or learn routes from it.
+  static ({Contact contact, double meters})? nearestCandidate(
+    List<Contact> candidates,
+    LatLng from,
+  ) {
+    const distance = Distance();
+    ({Contact contact, double meters})? best;
+    for (final c in candidates) {
+      if (!c.hasLocation) continue;
+      final meters = distance(from, LatLng(c.latitude!, c.longitude!));
+      if (best == null || meters < best.meters) {
+        best = (contact: c, meters: meters);
+      }
+    }
+    return best;
+  }
 
   static String _nameOf(Contact contact, List<int> key) =>
       contact.name.isNotEmpty ? contact.name : unnamedLabel(key);

@@ -710,6 +710,26 @@ class MessageStore {
         .go();
   }
 
+  /// Deletes the messages of this conversation that arrived before [cutoff].
+  Future<void> clearMessagesOlderThan(
+    String contactKeyHex,
+    DateTime cutoff,
+  ) async {
+    if (publicKeyHex.isEmpty) {
+      appLogger.warn('Public key hex is not set. Cannot clear messages.');
+      return;
+    }
+    // History still in an old blob would be imported later, past the cut.
+    await _importLegacyBlobs(contactKeyHex);
+    await (_db.delete(_db.contactMessageRows)..where(
+          (r) =>
+              r.nodeScope.equals(publicKeyHex) &
+              r.contactKey.equals(contactKeyHex) &
+              r.receivedAtUs.isSmallerThanValue(cutoff.microsecondsSinceEpoch),
+        ))
+        .go();
+  }
+
   Map<String, dynamic> _messageToJson(Message msg) {
     return {
       'senderKey': base64Encode(msg.senderKey),
@@ -732,6 +752,7 @@ class MessageStore {
           ? base64Encode(msg.pathBytes)
           : null,
       'pathHashSize': msg.pathHashSize,
+      if (msg.pathFromPacket) 'pathFromPacket': true,
       'routeSource': msg.routeSource.name,
       'guessedHops': msg.guessedHops,
       'reactions': msg.reactions,
@@ -778,6 +799,7 @@ class MessageStore {
           ? Uint8List.fromList(base64Decode(json['pathBytes'] as String))
           : Uint8List(0),
       pathHashSize: json['pathHashSize'] as int?,
+      pathFromPacket: json['pathFromPacket'] as bool? ?? false,
       routeSource: RouteSource.values
               .asNameMap()[json['routeSource'] as String?] ??
           RouteSource.firmware,

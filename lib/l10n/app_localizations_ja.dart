@@ -3657,10 +3657,10 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'ホップ',
+      one: 'ホップ',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    return 'ルート（$count$_temp0、うち$guessedホップは推測）';
   }
 
   @override
@@ -3723,37 +3723,36 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_resendingByFlood => 'フラッドで再送信中';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Pathfinderのしくみ';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      '無線機は連絡先ごとにルートを1つだけ覚えていて、そのルートで届かないとメッシュ全体にフラッドします。Pathfinderは、リピーターのアドバート、チャンネルでの会話、ほかの人のメッセージなど、無線機が受信するものすべてに耳を傾けます。そこから、どのリピーター同士がつながっているか、どのリピーターにあなたの電波が届くか、そしてどのリピーターに各連絡先の電波が届くかを示す地図を作ります。';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      'メッセージを送るとき、Pathfinderはまず最良のルートを試し、届かなければ次に良いルートを試します。フラッドは最後の手段としてだけ使います。琥珀色の経路アイコンは、Pathfinderのルートで送信したメッセージを示します。';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      '学習には時間がかかります。まっさらな地図は何も知らないので、最初のうちはメッセージがこれまでとまったく同じように送られます。1か所で数時間聞き続けるとルートを提案し始め、届いても届かなくても、そのたびにさらに学習します。初日はあまり期待しないでください。新しい場所に移るたびに、しばらくはまた効果が下がります。';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      'ルートに足りない部分があると、推測で補うこともあります。推測とは、逆方向で使われるのを聞いただけのリンクのことです。その場合、メッセージの状態表示に推測したホップ数が示されます。届けば推測が正しかったことが確かめられ、届かなくても、むだになるのは1回の試行だけで、何も記録されません。';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      'この場所であなたの電波が届くリピーターがはっきりしないときは、Pathfinderが短いDiscoverを1回送信します（送信に失敗したあとだけで、多くても10分に1回）。GPS付きの無線機なら、約500m四方の区画ごとに、あなたの電波を受信したリピーターをこの端末に記録します。正確な位置は記録しません。';
 
   @override
-  String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+  String get pathfinderHelp_off => 'Pathfinderをオフにすれば、無線機は以前とまったく同じように経路を選びます。';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => '今後は表示しない';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => '了解';
 
   @override
   String get settings_pathGraph => 'Pathfinder（試験的）';
@@ -5313,4 +5312,96 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => '道標';
+
+  @override
+  String get dialog_noticeExpires => '有効期限';
+
+  @override
+  String get dialog_noticeNoExpiry => '無期限';
+
+  @override
+  String get dialog_noticeExpiryRequired => '日付を選択（ルームでは必須）';
+
+  @override
+  String get dialog_noticeExpiryTime => '時刻';
+
+  @override
+  String get dialog_noticeEndOfDay => 'その日の終わり';
+
+  @override
+  String structured_until(String when) {
+    return '$whenまで';
+  }
+
+  @override
+  String get structured_expired => '期限切れ';
+
+  @override
+  String get structured_announcement => 'アナウンス';
+
+  @override
+  String structured_locationOf(String name) {
+    return '$nameの位置情報';
+  }
+
+  @override
+  String get reaction_searchHint => '絵文字を検索';
+
+  @override
+  String get reaction_noResults => '絵文字が見つかりません';
+
+  @override
+  String get share_qrAndLink => 'QRコードとリンクを共有';
+
+  @override
+  String get share_roomTitle => 'ルームを共有';
+
+  @override
+  String get share_contactTitle => '連絡先を共有';
+
+  @override
+  String get share_roomInstructions =>
+      'QRコードをスキャンして、このルームを追加します。ログインにはルームのパスワードが必要です。';
+
+  @override
+  String get share_contactInstructions => 'QRコードをスキャンして、この連絡先を追加します。';
+
+  @override
+  String get clearChat_body =>
+      'このチャットのメッセージを、この端末から削除します。新しいメッセージは引き続きここに届きます。';
+
+  @override
+  String get clearChat_olderThanDay => '1日以上前のメッセージ';
+
+  @override
+  String get clearChat_olderThanWeek => '1週間以上前のメッセージ';
+
+  @override
+  String get clearChat_olderThanMonth => '1か月以上前のメッセージ';
+
+  @override
+  String get clearChat_everything => 'すべてのメッセージ';
+
+  @override
+  String get chats_markAllRead => 'すべて既読にする';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count件のチャットを既読にしますか？',
+      one: '1件のチャットを既読にしますか？',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => '既読にする';
+
+  @override
+  String get chats_nothingUnread => '未読メッセージはありません';
+
+  @override
+  String get chats_draft => '下書き';
 }

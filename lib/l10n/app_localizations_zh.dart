@@ -3567,10 +3567,10 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: '跳',
+      one: '跳',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    return '路由（$count $_temp0，其中 $guessed 跳为推测）';
   }
 
   @override
@@ -3632,37 +3632,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_resendingByFlood => '正在通过泛洪重新发送';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Pathfinder 的作用';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      '您的电台为每个联系人只记住一条路由，这条路由失败时就向整个网络泛洪。Pathfinder 会收听电台听到的一切：转发节点的广播、频道里的聊天、其他人的消息。据此，它会绘制一张地图，标出哪些转发节点能互相听到、哪些能听到您，以及哪些能听到您的每个联系人。';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      '发送消息时，Pathfinder 会先尝试最佳路由，再尝试次佳路由，万不得已时才泛洪。琥珀色路径图标表示该消息经 Pathfinder 路由发送。';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      '学习需要时间。全新的地图一无所知，所以起初您的消息会和以前完全一样地发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      '有时它会用猜测来填补路由中的空缺，也就是使用一条它只听到过反方向使用的链路。这时消息的状态行会显示有几跳是猜测的。送达即证明这几跳可用；失败只会多花一次尝试，也不会记住任何东西。';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      '当 Pathfinder 不确定此处哪些转发节点能听到您时，它会发送一次简短的 Discover（仅在发送失败后，且最多每 10 分钟一次）；如果您的电台带 GPS，它还会在这部手机上按约 500 米见方的区域记录哪些转发节点听到过您，但绝不会记录您的确切位置。';
 
   @override
-  String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+  String get pathfinderHelp_off => '关闭 Pathfinder 后，电台会完全按照以前的方式进行路由。';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => '不再显示';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => '确定';
 
   @override
   String get settings_pathGraph => 'Pathfinder（实验性）';
@@ -5208,4 +5207,94 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => '路标';
+
+  @override
+  String get dialog_noticeExpires => '到期日期';
+
+  @override
+  String get dialog_noticeNoExpiry => '永不过期';
+
+  @override
+  String get dialog_noticeExpiryRequired => '请选择日期（房间内必填）';
+
+  @override
+  String get dialog_noticeExpiryTime => '时间';
+
+  @override
+  String get dialog_noticeEndOfDay => '当天结束时';
+
+  @override
+  String structured_until(String when) {
+    return '有效至 $when';
+  }
+
+  @override
+  String get structured_expired => '已过期';
+
+  @override
+  String get structured_announcement => '房间公告';
+
+  @override
+  String structured_locationOf(String name) {
+    return '$name 的位置';
+  }
+
+  @override
+  String get reaction_searchHint => '搜索表情';
+
+  @override
+  String get reaction_noResults => '未找到表情';
+
+  @override
+  String get share_qrAndLink => '分享二维码和链接';
+
+  @override
+  String get share_roomTitle => '分享房间';
+
+  @override
+  String get share_contactTitle => '分享联系人';
+
+  @override
+  String get share_roomInstructions => '扫描二维码以添加此房间。登录时需要房间密码。';
+
+  @override
+  String get share_contactInstructions => '扫描二维码以添加此联系人。';
+
+  @override
+  String get clearChat_body => '在本机上删除此聊天中的消息。新消息仍会照常显示在这里。';
+
+  @override
+  String get clearChat_olderThanDay => '超过 1 天的消息';
+
+  @override
+  String get clearChat_olderThanWeek => '超过 1 周的消息';
+
+  @override
+  String get clearChat_olderThanMonth => '超过 1 个月的消息';
+
+  @override
+  String get clearChat_everything => '全部消息';
+
+  @override
+  String get chats_markAllRead => '全部标为已读';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '将 $count 个聊天标为已读？',
+      one: '将 1 个聊天标为已读？',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => '标为已读';
+
+  @override
+  String get chats_nothingUnread => '没有未读消息';
+
+  @override
+  String get chats_draft => '草稿';
 }

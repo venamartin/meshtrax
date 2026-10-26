@@ -2835,5 +2835,52 @@
   "parkLegend_gate": "Gate",
   "parkLegend_telephone": "Telephone",
   "parkLegend_information": "Information board",
-  "parkLegend_guidepost": "Guidepost"
+  "parkLegend_guidepost": "Guidepost",
+  "dialog_noticeExpires": "Expires",
+  "dialog_noticeNoExpiry": "Never",
+  "dialog_noticeExpiryRequired": "Pick a date (required in a room)",
+  "dialog_noticeExpiryTime": "Time",
+  "dialog_noticeEndOfDay": "End of day",
+  "structured_until": "Until {when}",
+  "@structured_until": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "structured_expired": "Expired",
+  "structured_announcement": "Announcement",
+  "structured_locationOf": "{name}'s location",
+  "@structured_locationOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reaction_searchHint": "Search emoji",
+  "reaction_noResults": "No emoji found",
+  "share_qrAndLink": "Share QR code and link",
+  "share_roomTitle": "Share Room",
+  "share_contactTitle": "Share Contact",
+  "share_roomInstructions": "Scan to add this room. You'll need its password to log in.",
+  "share_contactInstructions": "Scan to add this contact.",
+  "clearChat_body": "Delete messages from this chat on this device. New messages still arrive here.",
+  "clearChat_olderThanDay": "Older than 1 day",
+  "clearChat_olderThanWeek": "Older than 1 week",
+  "clearChat_olderThanMonth": "Older than 1 month",
+  "clearChat_everything": "All messages",
+  "chats_markAllRead": "Mark all as read",
+  "chats_markAllReadBody": "{count, plural, =1{Mark 1 chat as read?} other{Mark {count} chats as read?}}",
+  "@chats_markAllReadBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chats_markRead": "Mark read",
+  "chats_nothingUnread": "No unread messages",
+  "chats_draft": "Draft"
 }

@@ -67,7 +67,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get common_syncing_messages => 'Načítavajú sa správy...';
 
   @override
-  String get common_ok => 'OK\nDobre';
+  String get common_ok => 'OK';
 
   @override
   String get common_connect => 'Pripojiť';
@@ -3811,10 +3811,20 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'skokov',
+      many: 'skoku',
+      few: 'skoky',
+      one: 'skok',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    String _temp1 = intl.Intl.pluralLogic(
+      guessed,
+      locale: localeName,
+      other: 'odhadnutých',
+      many: 'odhadnutého',
+      few: 'odhadnuté',
+      one: 'odhadnutý',
+    );
+    return 'trasou ($count $_temp0, $guessed $_temp1)';
   }
 
   @override
@@ -3879,34 +3889,34 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_resendingByFlood => 'Opätovné odosielanie záplavou';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Čo robí Pathfinder';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      'Vaše rádio si pamätá jednu trasu ku každému kontaktu. Keď táto trasa zlyhá, pošle správu záplavou do celej siete. Pathfinder počúva všetko, čo rádio počuje: ohlásenia opakovačov, rozhovory v kanáloch, správy iných ľudí. Z toho si zostavuje mapu: ktoré opakovače sa navzájom počujú, ktoré počujú vás a ktoré počujú jednotlivé vaše kontakty.';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      'Keď odošlete správu, Pathfinder najprv skúsi svoju najlepšiu trasu, potom ďalšiu v poradí a záplavou ju pošle až v krajnom prípade. Jantárová ikona cesty označuje správu odoslanú trasou Pathfindera.';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú presne tak ako predtým. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      'Niekedy vyplní medzeru odhadom: spojením, ktoré zatiaľ počul len v opačnom smere. Riadok pod správou potom ukáže, koľko skokov bolo odhadnutých. Doručenie ich potvrdí; zlyhanie stojí jeden pokus a nič sa neuloží.';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      'Keď si Pathfinder nie je istý, ktoré opakovače vás tu počujú, pošle jednu krátku požiadavku Discover (najviac raz za 10 minút a len po neúspešnom odoslaní). Ak má rádio GPS, zapamätá si v tomto telefóne, ktoré opakovače vás počuli v každej oblasti s rozmerom asi 500 m, nikdy nie vašu presnú polohu.';
 
   @override
   String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+      'Keď Pathfinder vypnete, rádio bude smerovať správy presne tak ako predtým.';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => 'Už nezobrazovať';
 
   @override
   String get pathfinderHelp_ok => 'OK';
@@ -5550,4 +5560,100 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => 'Smerovník';
+
+  @override
+  String get dialog_noticeExpires => 'Vyprší';
+
+  @override
+  String get dialog_noticeNoExpiry => 'Nikdy';
+
+  @override
+  String get dialog_noticeExpiryRequired =>
+      'Vyberte dátum (v miestnosti je povinný)';
+
+  @override
+  String get dialog_noticeExpiryTime => 'Čas';
+
+  @override
+  String get dialog_noticeEndOfDay => 'Koniec dňa';
+
+  @override
+  String structured_until(String when) {
+    return 'Platí do $when';
+  }
+
+  @override
+  String get structured_expired => 'Platnosť vypršala';
+
+  @override
+  String get structured_announcement => 'Oznámenie';
+
+  @override
+  String structured_locationOf(String name) {
+    return 'Poloha: $name';
+  }
+
+  @override
+  String get reaction_searchHint => 'Hľadať emoji';
+
+  @override
+  String get reaction_noResults => 'Nenašli sa žiadne emoji';
+
+  @override
+  String get share_qrAndLink => 'Zdieľať QR kód a odkaz';
+
+  @override
+  String get share_roomTitle => 'Zdieľať miestnosť';
+
+  @override
+  String get share_contactTitle => 'Zdieľať kontakt';
+
+  @override
+  String get share_roomInstructions =>
+      'Naskenujte kód a pridajte si túto miestnosť. Na prihlásenie budete potrebovať jej heslo.';
+
+  @override
+  String get share_contactInstructions =>
+      'Naskenujte kód a pridajte si tento kontakt.';
+
+  @override
+  String get clearChat_body =>
+      'Vymaže správy z tohto chatu v tomto zariadení. Nové správy sem budú naďalej prichádzať.';
+
+  @override
+  String get clearChat_olderThanDay => 'Staršie ako 1 deň';
+
+  @override
+  String get clearChat_olderThanWeek => 'Staršie ako 1 týždeň';
+
+  @override
+  String get clearChat_olderThanMonth => 'Staršie ako 1 mesiac';
+
+  @override
+  String get clearChat_everything => 'Všetky správy';
+
+  @override
+  String get chats_markAllRead => 'Označiť všetko ako prečítané';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Označiť $count chatov ako prečítané?',
+      many: 'Označiť $count chatu ako prečítané?',
+      few: 'Označiť $count chaty ako prečítané?',
+      one: 'Označiť $count chat ako prečítaný?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => 'Označiť';
+
+  @override
+  String get chats_nothingUnread => 'Žiadne neprečítané správy';
+
+  @override
+  String get chats_draft => 'Koncept';
 }

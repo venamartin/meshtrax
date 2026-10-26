@@ -59,6 +59,9 @@ import 'second_app_detector.dart';
 
 class DirectRepeater {
   static const int maxAgeMinutes = 30; // Max age for direct repeater info
+
+  /// Rows the Nearby repeaters list keeps; the dialog's table scrolls.
+  static const int maxTracked = 20;
   final Uint8List pubkeyPrefix; // leading bytes of the pub key (on-air hash)
   Uint8List? publicKey;
   String? name;
@@ -1294,6 +1297,33 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       total += count;
     }
     return total;
+  }
+
+  /// Chats (contacts and channels) with at least one unread message. The
+  /// channels are the ones the chats list shows ([channels]): during a
+  /// resync the live table is half refilled.
+  int get unreadChatCount =>
+      _contacts.where((c) => getUnreadCountForContact(c) > 0).length +
+      channels.where((ch) => getUnreadCountForChannel(ch) > 0).length;
+
+  /// Marks every chat with unread messages read. Channels by identity:
+  /// a slot index may point elsewhere mid-resync.
+  void markAllRead() {
+    for (final contact in _contacts) {
+      if (getUnreadCountForContact(contact) > 0) {
+        markContactRead(contact.publicKeyHex);
+      }
+    }
+    for (final channel in channels) {
+      if (getUnreadCountForChannel(channel) == 0) continue;
+      channel.unreadCount = 0;
+      unawaited(_channelMessageStore.markRead(channel.idKey));
+      _notificationService.clearChannelNotification(
+        channel.index,
+        getTotalUnreadCount(),
+      );
+    }
+    notifyListeners();
   }
 
   bool isChannelSmazEnabled(int channelIndex) {
@@ -3427,6 +3457,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _pendingDiscoverTag = null;
     _traceTagTimer?.cancel();
     _pendingTraceTag = null;
+    _forgetFloodedTexts();
 
     final transportAtDisconnect = _activeTransport;
     final tcpSessionWasEstablished = _tcpSessionEstablished;
@@ -4820,7 +4851,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return readded;
   }
 
-  Future<bool> importDiscoveredContact(Contact contact) async {
+  /// [lastAdvertEpochSeconds] is the advert time the radio records (default
+  /// now); it drops any later advert that is not newer.
+  Future<bool> importDiscoveredContact(
+    Contact contact, {
+    int? lastAdvertEpochSeconds,
+  }) async {
     if (!isConnected) return false;
 
     final success = await _sendAndWaitForAck(
@@ -4835,6 +4871,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: contact.latitude,
         lon: contact.longitude,
         lastModified: contact.lastSeen,
+        lastAdvertEpochSeconds: lastAdvertEpochSeconds,
       ),
     );
 
@@ -6829,6 +6866,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // frame stream; storing them would render them as chat bubbles in room
       // conversations ("00|OK - clock set: ...").
       if (message.isCli) {
+        // Its logged copy is used up all the same, or it would stand in for
+        // the sender's next message (a room floods its reply, then the post).
+        final sender = _contacts
+            .where((c) => c.publicKeyHex == message!.senderKeyHex)
+            .firstOrNull;
+        final layout = parseContactMsgLayout(frame);
+        if (sender != null && layout != null) {
+          _takeFloodedTextPath(
+            sender,
+            layout.pathLen,
+            frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
+          );
+        }
         _handleQueuedMessageReceived();
         return;
       }
@@ -6838,30 +6888,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         orElse: () => null,
       );
       if (contact != null) {
-        // Before the route bytes below replace the packet's own width.
         final layout = parseContactMsgLayout(frame);
         if (layout != null) {
+          final snrByte =
+              frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null;
           onContactMessageHeard?.call(
             contact.publicKeyHex,
             layout.pathLen,
-            frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
+            snrByte,
           );
           if (_completedFirstQueueDrain) {
             onContactMessageCopy?.call(contact, layout.timestampRaw,
                 layout.txtType, layout.text, layout.pathLen == 0xFF);
           }
-        }
-        // The frame's path_len is the hops THIS packet traveled — keep it.
-        // Attach our known route's bytes only when its length agrees, so a
-        // repeater-names line never claims hops the packet didn't report.
-        final hops = message.pathLength ?? -1;
-        if (hops > 0 &&
-            contact.pathLength == hops &&
-            contact.path.isNotEmpty) {
-          message = message.copyWith(
-            pathBytes: contact.path,
-            pathHashSize: contact.pathHashSize,
-          );
+          // The frame says only how many hops the packet took; which
+          // repeaters is in the copy the radio logged. Never our route to
+          // the contact: that is a different way, the other way round.
+          final path = _takeFloodedTextPath(contact, layout.pathLen, snrByte);
+          if (path != null) {
+            message = message.copyWith(
+              pathBytes: path,
+              pathHashSize: PathHelper.pathLenWidth(layout.pathLen),
+              pathFromPacket: true,
+            );
+          }
         }
       }
       if (contact != null) {
@@ -7305,6 +7355,75 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
+  /// Raw copies of flooded DMs and room posts to me, for [_takeFloodedTextPath].
+  final List<_FloodedText> _floodedTexts = [];
+
+  /// Payloads whose decoded message already took its path. Every copy of
+  /// one flood carries the same payload (only the path differs), so later
+  /// copies, heard through other repeaters, are not kept for another message.
+  final List<({DateTime at, Uint8List payload})> _takenFloodedPayloads = [];
+  static const _floodedTextWindow = Duration(seconds: 60);
+  static const _floodedTextCap = 32;
+
+  void _forgetFloodedTexts() {
+    _floodedTexts.clear();
+    _takenFloodedPayloads.clear();
+  }
+
+  void _rememberFloodedText(_RawPacket packet, int snrByte) {
+    final now = DateTime.now();
+    _floodedTexts
+        .removeWhere((t) => now.difference(t.at) > _floodedTextWindow);
+    _takenFloodedPayloads
+        .removeWhere((t) => now.difference(t.at) > _floodedTextWindow);
+    if (_takenFloodedPayloads.any((t) => listEquals(t.payload, packet.payload))) {
+      return;
+    }
+    _floodedTexts.add(_FloodedText(
+      at: now,
+      srcByte: packet.payload[1],
+      snrByte: snrByte,
+      pathLenRaw: packet.pathLenRaw,
+      pathBytes: Uint8List.fromList(packet.pathBytes),
+      payload: Uint8List.fromList(packet.payload),
+    ));
+    if (_floodedTexts.length > _floodedTextCap) _floodedTexts.removeAt(0);
+  }
+
+  /// The repeaters the decoded message from [contact] passed, read from its
+  /// logged copy, or null. The radio decrypts DMs itself and reports only
+  /// the hop count, so the copy is found the way Pathfinder finds it: the
+  /// sender's first key byte, the same path_len (hops and width) and, on a
+  /// V3 frame, the same signal byte. Every matching copy must agree on the
+  /// whole path, or none is shown. For display only; Pathfinder reads its
+  /// own copies.
+  Uint8List? _takeFloodedTextPath(
+    Contact contact,
+    int pathLenRaw,
+    int? snrByte,
+  ) {
+    // Zero hops: no repeater to show. 0xFF: a direct route, no path kept.
+    if (PathHelper.pathLenHops(pathLenRaw) <= 0) return null;
+    if (contact.publicKey.isEmpty) return null;
+    final now = DateTime.now();
+    _floodedTexts.removeWhere((t) => now.difference(t.at) > _floodedTextWindow);
+    final matches = _floodedTexts
+        .where((t) =>
+            t.srcByte == contact.publicKey[0] &&
+            t.pathLenRaw == pathLenRaw &&
+            (snrByte == null || t.snrByte == snrByte))
+        .toList();
+    if (matches.isEmpty) return null;
+    // Every copy of the matched packets is used up, heard or still to come.
+    final payloads = [for (final m in matches) m.payload];
+    _takenFloodedPayloads.addAll([for (final p in payloads) (at: now, payload: p)]);
+    _floodedTexts.removeWhere(
+        (t) => payloads.any((p) => listEquals(p, t.payload)));
+    final path = matches.first.pathBytes;
+    if (matches.any((t) => !listEquals(t.pathBytes, path))) return null;
+    return path;
+  }
+
   void _handleLogRxData(Uint8List frame) {
     if (frame.length < 4) return;
     try {
@@ -7336,6 +7455,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             packet.payload[1] == me[0] &&
             packet.payload[0] != me[0]) {
           _retryService?.noteOwnFloodEcho(packet.payload[0]);
+        }
+        // A DM or room post to me ([my byte][their byte]): kept until the
+        // radio hands over the decoded message, for its path line.
+        if (packet.payloadType == _payloadTypeTxtMsg &&
+            packet.payload.length >= 2 &&
+            me != null &&
+            packet.payload[0] == me[0] &&
+            packet.payload[1] != me[0]) {
+          _rememberFloodedText(packet, frame[1].toSigned(8));
         }
       }
       if (packet.payloadType != _payloadTypeGroupText) return;
@@ -9763,6 +9891,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       'scheduling reconnect',
       tag: 'Connection',
     );
+    _forgetFloodedTexts();
     _stopBatteryPolling();
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
@@ -10846,19 +10975,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     notifyListeners();
   }
 
-  /// Room for one more nearby repeater: five at most, weakest out first —
-  /// but a repeater that answered the latest Discover is never pushed out
-  /// by one only overheard, and an answer to it is always kept. A list
-  /// left long by a busy Discover shrinks back once its answers are old.
+  /// Room for one more nearby repeater: [DirectRepeater.maxTracked] at
+  /// most, weakest out first — but a repeater that answered the latest
+  /// Discover is never pushed out by one only overheard, and an answer to
+  /// it is always kept. A list left long by a busy Discover shrinks back
+  /// once its answers are old.
   bool _makeRoomForDirectRepeater({required bool answer}) {
+    const max = DirectRepeater.maxTracked;
     final evictable = _directRepeaters
         .where((r) => r.answeredScan != _discoverScan)
         .toList()
       ..sort(DirectRepeater.compare);
-    while (_directRepeaters.length >= 5 && evictable.isNotEmpty) {
+    while (_directRepeaters.length >= max && evictable.isNotEmpty) {
       _directRepeaters.remove(evictable.removeLast());
     }
-    return _directRepeaters.length < 5 || answer;
+    return _directRepeaters.length < max || answer;
   }
 
   /// Nearby repeaters and their Discover answers belong to the radio that
@@ -11038,18 +11169,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await sendFrame(payload);
   }
 
-  void clearMessagesForContact(Contact contact) {
+  /// Deletes the chat's history on this device, or with [olderThan] only
+  /// what arrived longer ago than that; newer messages keep their unread
+  /// state.
+  void clearMessagesForContact(Contact contact, {Duration? olderThan}) {
     final contactKeyHex = contact.publicKeyHex;
+    if (olderThan != null) {
+      unawaited(_messageStore.clearMessagesOlderThan(
+        contactKeyHex,
+        DateTime.now().subtract(olderThan),
+      ));
+      return;
+    }
     unawaited(_messageStore.clearMessages(contactKeyHex));
     markContactRead(contactKeyHex);
     notifyListeners();
   }
 
-  void clearMessagesForChannel(int channelIndex) {
+  void clearMessagesForChannel(int channelIndex, {Duration? olderThan}) {
     // Explicit user clear — the only whole-history deletion besides
     // deleting the channel itself.
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) return;
+    if (olderThan != null) {
+      unawaited(_channelMessageStore.clearChannelMessagesOlderThan(
+        channel.idKey,
+        DateTime.now().subtract(olderThan),
+      ));
+      return;
+    }
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
     notifyListeners();
@@ -11110,6 +11258,32 @@ class _RawPacket {
   int get hopCount => PathHelper.pathLenHops(pathLenRaw);
 
   int get hashSize => PathHelper.pathLenWidth(pathLenRaw);
+}
+
+/// A flooded DM or room post to this radio, as its raw copy was logged.
+class _FloodedText {
+  final DateTime at;
+
+  /// The sender's first key byte (the payload's second byte).
+  final int srcByte;
+
+  /// The frame's signed SNR byte, which a V3 message frame repeats.
+  final int snrByte;
+  final int pathLenRaw;
+  final Uint8List pathBytes;
+
+  /// The same in every copy of one flood: tells copies of a packet apart
+  /// from another packet.
+  final Uint8List payload;
+
+  _FloodedText({
+    required this.at,
+    required this.srcByte,
+    required this.snrByte,
+    required this.pathLenRaw,
+    required this.pathBytes,
+    required this.payload,
+  });
 }
 
 class _ParsedText {

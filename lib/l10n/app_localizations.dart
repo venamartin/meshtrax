@@ -9575,6 +9575,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guidepost'**
   String get parkLegend_guidepost;
+
+  /// No description provided for @dialog_noticeExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get dialog_noticeExpires;
+
+  /// No description provided for @dialog_noticeNoExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get dialog_noticeNoExpiry;
+
+  /// No description provided for @dialog_noticeExpiryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date (required in a room)'**
+  String get dialog_noticeExpiryRequired;
+
+  /// No description provided for @dialog_noticeExpiryTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get dialog_noticeExpiryTime;
+
+  /// No description provided for @dialog_noticeEndOfDay.
+  ///
+  /// In en, this message translates to:
+  /// **'End of day'**
+  String get dialog_noticeEndOfDay;
+
+  /// No description provided for @structured_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until {when}'**
+  String structured_until(String when);
+
+  /// No description provided for @structured_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get structured_expired;
+
+  /// No description provided for @structured_announcement.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement'**
+  String get structured_announcement;
+
+  /// No description provided for @structured_locationOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s location'**
+  String structured_locationOf(String name);
+
+  /// No description provided for @reaction_searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search emoji'**
+  String get reaction_searchHint;
+
+  /// No description provided for @reaction_noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No emoji found'**
+  String get reaction_noResults;
+
+  /// No description provided for @share_qrAndLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Share QR code and link'**
+  String get share_qrAndLink;
+
+  /// No description provided for @share_roomTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Room'**
+  String get share_roomTitle;
+
+  /// No description provided for @share_contactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Contact'**
+  String get share_contactTitle;
+
+  /// No description provided for @share_roomInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to add this room. You\'ll need its password to log in.'**
+  String get share_roomInstructions;
+
+  /// No description provided for @share_contactInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to add this contact.'**
+  String get share_contactInstructions;
+
+  /// No description provided for @clearChat_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete messages from this chat on this device. New messages still arrive here.'**
+  String get clearChat_body;
+
+  /// No description provided for @clearChat_olderThanDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 1 day'**
+  String get clearChat_olderThanDay;
+
+  /// No description provided for @clearChat_olderThanWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 1 week'**
+  String get clearChat_olderThanWeek;
+
+  /// No description provided for @clearChat_olderThanMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 1 month'**
+  String get clearChat_olderThanMonth;
+
+  /// No description provided for @clearChat_everything.
+  ///
+  /// In en, this message translates to:
+  /// **'All messages'**
+  String get clearChat_everything;
+
+  /// No description provided for @chats_markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get chats_markAllRead;
+
+  /// No description provided for @chats_markAllReadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Mark 1 chat as read?} other{Mark {count} chats as read?}}'**
+  String chats_markAllReadBody(int count);
+
+  /// No description provided for @chats_markRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark read'**
+  String get chats_markRead;
+
+  /// No description provided for @chats_nothingUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'No unread messages'**
+  String get chats_nothingUnread;
+
+  /// No description provided for @chats_draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get chats_draft;
 }
 
 class _AppLocalizationsDelegate

@@ -3809,10 +3809,20 @@ class AppLocalizationsSl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'skokov',
+      few: 'skoki',
+      two: 'skoka',
+      one: 'skok',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    String _temp1 = intl.Intl.pluralLogic(
+      guessed,
+      locale: localeName,
+      other: 'predpostavljenih',
+      few: 'predpostavljeni',
+      two: 'predpostavljena',
+      one: 'predpostavljen',
+    );
+    return 'po poti ($count $_temp0, $guessed $_temp1)';
   }
 
   @override
@@ -3878,37 +3888,37 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_resendingByFlood => 'Ponovno pošiljanje poplavno';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Kaj počne Pathfinder';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      'Vaš radio si za vsak stik zapomni eno pot. Ko ta pot odpove, pošlje sporočilo poplavno v celotno omrežje. Pathfinder posluša vse, kar radio sliši: oglašanje ponoviteljev, klepet na kanalih, sporočila drugih ljudi. Iz tega sestavlja zemljevid: kateri ponovitelji slišijo drug drugega, kateri slišijo vas in kateri slišijo posamezne vaše stike.';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      'Ko pošljete sporočilo, Pathfinder najprej poskusi svojo najboljšo pot, nato naslednjo najboljšo, poplavno pa ga pošlje šele v skrajnem primeru. Jantarna ikona poti označuje sporočilo, poslano po poti Pathfinderja.';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      'Potrebuje čas. Nov zemljevid še ne ve ničesar, zato vaša sporočila sprva odhajajo natanko tako kot prej. Po nekaj urah poslušanja na enem mestu začne ponujati poti in se z vsako dostavo ali neuspehom nauči več. Prvi dan od njega ne pričakujte veliko, po vsakem premiku na novo mesto pa spet manj.';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      'Včasih vrzel zapolni s predpostavko: s povezavo, ki jo je doslej slišal le v nasprotni smeri. Vrstica pod sporočilom nato pove, koliko skokov je bilo predpostavljenih. Dostava jih potrdi; neuspeh stane en poskus in nič se ne shrani.';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      'Ko Pathfinder ni prepričan, kateri ponovitelji vas tukaj slišijo, pošlje eno kratko poizvedbo Discover (največ enkrat na 10 minut in le po neuspelem pošiljanju). Če ima radio GPS, si v tem telefonu zapomni, kateri ponovitelji so vas slišali na vsakem območju velikosti približno 500 m, nikoli pa vašega točnega položaja.';
 
   @override
   String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+      'Če Pathfinder izklopite, radio usmerja sporočila natanko tako kot prej.';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => 'Ne prikaži več';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => 'V redu';
 
   @override
   String get settings_pathGraph => 'Pathfinder (preizkusno)';
@@ -5552,4 +5562,99 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => 'Smerokaz';
+
+  @override
+  String get dialog_noticeExpires => 'Poteče';
+
+  @override
+  String get dialog_noticeNoExpiry => 'Nikoli';
+
+  @override
+  String get dialog_noticeExpiryRequired =>
+      'Izberite datum (v sobi je obvezen)';
+
+  @override
+  String get dialog_noticeExpiryTime => 'Ura';
+
+  @override
+  String get dialog_noticeEndOfDay => 'Konec dneva';
+
+  @override
+  String structured_until(String when) {
+    return 'Velja do $when';
+  }
+
+  @override
+  String get structured_expired => 'Poteklo';
+
+  @override
+  String get structured_announcement => 'Oznanilo';
+
+  @override
+  String structured_locationOf(String name) {
+    return 'Lokacija: $name';
+  }
+
+  @override
+  String get reaction_searchHint => 'Iskanje emojijev';
+
+  @override
+  String get reaction_noResults => 'Ni najdenih emojijev';
+
+  @override
+  String get share_qrAndLink => 'Deli QR kodo in povezavo';
+
+  @override
+  String get share_roomTitle => 'Deli sobo';
+
+  @override
+  String get share_contactTitle => 'Deli stik';
+
+  @override
+  String get share_roomInstructions =>
+      'Skenirajte kodo, da dodate to sobo. Za prijavo boste potrebovali njeno geslo.';
+
+  @override
+  String get share_contactInstructions => 'Skenirajte kodo, da dodate ta stik.';
+
+  @override
+  String get clearChat_body =>
+      'Izbriše sporočila iz tega klepeta v tej napravi. Nova sporočila bodo še naprej prihajala sem.';
+
+  @override
+  String get clearChat_olderThanDay => 'Starejša od 1 dneva';
+
+  @override
+  String get clearChat_olderThanWeek => 'Starejša od 1 tedna';
+
+  @override
+  String get clearChat_olderThanMonth => 'Starejša od 1 meseca';
+
+  @override
+  String get clearChat_everything => 'Vsa sporočila';
+
+  @override
+  String get chats_markAllRead => 'Označi vse kot prebrano';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Želite označiti $count klepetov kot prebrane?',
+      few: 'Želite označiti $count klepete kot prebrane?',
+      two: 'Želite označiti $count klepeta kot prebrana?',
+      one: 'Želite označiti $count klepet kot prebran?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => 'Označi';
+
+  @override
+  String get chats_nothingUnread => 'Ni neprebranih sporočil';
+
+  @override
+  String get chats_draft => 'Osnutek';
 }

@@ -3842,10 +3842,12 @@ class AppLocalizationsUk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'стрибків',
+      many: 'стрибків',
+      few: 'стрибки',
+      one: 'стрибок',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    return 'маршрут ($count $_temp0, припущених: $guessed)';
   }
 
   @override
@@ -3911,37 +3913,37 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_resendingByFlood => 'Повторне надсилання на всю мережу';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Що робить Pathfinder';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      'Ваше радіо пам\'ятає один маршрут до кожного контакту, а коли він не спрацьовує, надсилає повідомлення на всю мережу. Pathfinder слухає все, що чує радіо: оголошення ретрансляторів, розмови в каналах, чужі повідомлення. З цього він будує карту: які ретранслятори чують один одного, які чують вас і які — кожного з ваших контактів.';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      'Коли ви надсилаєте повідомлення, Pathfinder спершу пробує свій найкращий маршрут, потім наступний за якістю і лише в крайньому разі надсилає на всю мережу. Бурштиновий значок шляху позначає повідомлення, надіслане маршрутом Pathfinder.';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      'Йому потрібен час. Нова карта ще нічого не знає, тож спочатку ваші повідомлення надсилаються точно так само, як раніше. Після кількох годин прослуховування в одному місці він починає пропонувати маршрути, а кожна доставка чи невдача вчить його чогось нового. У перший день не чекайте від нього багато, а в кожному новому місці — знову менше.';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      'Іноді він заповнює прогалину припущенням: зв\'язком, який чув лише в зворотному напрямку. Тоді в рядку стану повідомлення видно, скільки стрибків припущено. Доставка їх підтверджує, а невдача коштує одну спробу, і нічого не запам\'ятовується.';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      'Якщо Pathfinder не впевнений, які ретранслятори чують вас тут, він надсилає один короткий запит Discover (не частіше ніж раз на 10 хвилин і лише після невдалого надсилання). З радіо, що має GPS, він також запам\'ятовує на цьому телефоні, які ретранслятори чули вас у кожній зоні розміром близько 500 м, але ваше точне розташування не зберігає.';
 
   @override
   String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+      'Якщо вимкнути Pathfinder, радіо прокладатиме маршрути точно так само, як раніше.';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => 'Більше не показувати';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => 'ОК';
 
   @override
   String get settings_pathGraph => 'Pathfinder (експериментально)';
@@ -5586,4 +5588,100 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => 'Вказівник';
+
+  @override
+  String get dialog_noticeExpires => 'Термін дії';
+
+  @override
+  String get dialog_noticeNoExpiry => 'Безстроково';
+
+  @override
+  String get dialog_noticeExpiryRequired =>
+      'Виберіть дату (у кімнаті обов\'язково)';
+
+  @override
+  String get dialog_noticeExpiryTime => 'Час';
+
+  @override
+  String get dialog_noticeEndOfDay => 'Кінець дня';
+
+  @override
+  String structured_until(String when) {
+    return 'До $when';
+  }
+
+  @override
+  String get structured_expired => 'Термін минув';
+
+  @override
+  String get structured_announcement => 'Оголошення';
+
+  @override
+  String structured_locationOf(String name) {
+    return 'Розташування: $name';
+  }
+
+  @override
+  String get reaction_searchHint => 'Пошук емодзі';
+
+  @override
+  String get reaction_noResults => 'Емодзі не знайдено';
+
+  @override
+  String get share_qrAndLink => 'Поділитися QR-кодом і посиланням';
+
+  @override
+  String get share_roomTitle => 'Поділитися кімнатою';
+
+  @override
+  String get share_contactTitle => 'Поділитися контактом';
+
+  @override
+  String get share_roomInstructions =>
+      'Відскануйте QR-код, щоб додати цю кімнату. Для входу знадобиться її пароль.';
+
+  @override
+  String get share_contactInstructions =>
+      'Відскануйте QR-код, щоб додати цей контакт.';
+
+  @override
+  String get clearChat_body =>
+      'Видалити повідомлення цього чату з цього пристрою. Нові повідомлення й надалі надходитимуть сюди.';
+
+  @override
+  String get clearChat_olderThanDay => 'Старіші за 1 день';
+
+  @override
+  String get clearChat_olderThanWeek => 'Старіші за 1 тиждень';
+
+  @override
+  String get clearChat_olderThanMonth => 'Старіші за 1 місяць';
+
+  @override
+  String get clearChat_everything => 'Усі повідомлення';
+
+  @override
+  String get chats_markAllRead => 'Позначити всі як прочитані';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Позначити $count чатів як прочитані?',
+      many: 'Позначити $count чатів як прочитані?',
+      few: 'Позначити $count чати як прочитані?',
+      one: 'Позначити $count чат як прочитаний?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => 'Позначити';
+
+  @override
+  String get chats_nothingUnread => 'Немає непрочитаних повідомлень';
+
+  @override
+  String get chats_draft => 'Чернетка';
 }

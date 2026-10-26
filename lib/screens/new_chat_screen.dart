@@ -19,6 +19,7 @@ import 'channel_chat_screen.dart';
 import 'channel_qr_scanner_screen.dart';
 import 'chat_screen.dart';
 import 'contact_qr_scanner_screen.dart';
+import 'contact_share_screen.dart';
 import '../widgets/room_login_dialog.dart';
 import '../helpers/meshcore_qr.dart';
 import 'package:flutter/services.dart';
@@ -170,6 +171,23 @@ class _NewChatScreenState extends State<NewChatScreen> {
               onTap: () {
                 Navigator.pop(sheetContext);
                 showTelemetryPermissionsDialog(context, contact);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code),
+              title: Text(context.l10n.share_qrAndLink),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ContactShareScreen(
+                      name: contact.name,
+                      pubKeyHex: contact.publicKeyHex,
+                      type: contact.type,
+                    ),
+                  ),
+                );
               },
             ),
             ListTile(

@@ -68,27 +68,40 @@ class StructuredMessageDialogs {
     );
   }
 
-  static Future<String?> event(BuildContext context) {
+  /// [initial]: an event to edit, filled in.
+  static Future<String?> event(BuildContext context, {EventMessage? initial}) {
     return showDialog<String>(
       context: context,
-      builder: (_) => const _EventDialog(),
+      builder: (_) => _EventDialog(initial: initial),
     );
   }
 
-  static Future<String?> notice(BuildContext context) async {
-    final text = await showDialog<String>(
+  /// [requireExpiry]: a room's notices must say when they stop applying.
+  /// [initial]: a notice to edit, filled in.
+  static Future<String?> notice(
+    BuildContext context, {
+    bool requireExpiry = false,
+    NoticeMessage? initial,
+  }) {
+    return showDialog<String>(
       context: context,
-      builder: (_) => const _NoticeDialog(),
+      builder: (_) =>
+          _NoticeDialog(requireExpiry: requireExpiry, initial: initial),
     );
-    if (text == null || text.trim().isEmpty) return null;
-    final lines = text
-        .split('\n')
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
-    if (lines.isEmpty) return null;
-    return NoticeMessage(lines: lines).toWire();
   }
+}
+
+Future<DateTime?> _pickDay(
+  BuildContext context, {
+  required DateTime initial,
+  required DateTime first,
+}) {
+  return showDatePicker(
+    context: context,
+    initialDate: initial,
+    firstDate: first,
+    lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+  );
 }
 
 class _LabelResult {
@@ -247,7 +260,9 @@ class _SosDialogState extends State<_SosDialog> {
 }
 
 class _NoticeDialog extends StatefulWidget {
-  const _NoticeDialog();
+  final bool requireExpiry;
+  final NoticeMessage? initial;
+  const _NoticeDialog({required this.requireExpiry, this.initial});
 
   @override
   State<_NoticeDialog> createState() => _NoticeDialogState();
@@ -255,6 +270,24 @@ class _NoticeDialog extends StatefulWidget {
 
 class _NoticeDialogState extends State<_NoticeDialog> {
   final _text = TextEditingController();
+  DateTime? _expiryDay;
+
+  /// Null = the end of [_expiryDay].
+  TimeOfDay? _expiryTime;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    if (initial == null) return;
+    _text.text = initial.lines.join('\n');
+    if (initial.expires != null) {
+      _expiryDay = DateUtils.dateOnly(initial.expiryDay);
+      if (!initial.expiresAtDayEnd) {
+        _expiryTime = TimeOfDay.fromDateTime(initial.expires!);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -262,9 +295,51 @@ class _NoticeDialogState extends State<_NoticeDialog> {
     super.dispose();
   }
 
+  DateTime? get _expires {
+    final d = _expiryDay;
+    if (d == null) return null;
+    final t = _expiryTime;
+    return t == null
+        ? DateTime(d.year, d.month, d.day + 1)
+        : DateTime(d.year, d.month, d.day, t.hour, t.minute);
+  }
+
+  List<String> get _lines => _text.text
+      .split('\n')
+      .map((l) => l.trim())
+      .where((l) => l.isNotEmpty)
+      .toList();
+
+  bool get _ready {
+    if (_lines.isEmpty) return false;
+    final expires = _expires;
+    if (expires == null) return !widget.requireExpiry;
+    return expires.isAfter(DateTime.now());
+  }
+
+  Future<void> _pickExpiryDay() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final picked = await _pickDay(
+      context,
+      initial: _expiryDay ?? today,
+      first: today,
+    );
+    if (picked != null) setState(() => _expiryDay = picked);
+  }
+
+  Future<void> _pickExpiryTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _expiryTime ?? const TimeOfDay(hour: 18, minute: 0),
+    );
+    if (picked != null) setState(() => _expiryTime = picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final locale = Localizations.localeOf(context).toString();
+    final day = _expiryDay;
     return AlertDialog(
       title: Row(
         children: [
@@ -273,17 +348,66 @@ class _NoticeDialogState extends State<_NoticeDialog> {
           Expanded(child: Text(l10n.dialog_noticeTitle)),
         ],
       ),
-      content: TextField(
-        controller: _text,
-        autofocus: true,
-        minLines: 1,
-        maxLines: 4,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          labelText: l10n.dialog_noticeText,
-          border: const OutlineInputBorder(),
+      content: SingleChildScrollView(
+        // Room for the field's floating label.
+        padding: const EdgeInsets.only(top: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _text,
+              autofocus: true,
+              minLines: 1,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: l10n.dialog_noticeText,
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event_busy),
+              title: Text(l10n.dialog_noticeExpires),
+              subtitle: Text(
+                day != null
+                    ? DateFormat.yMMMEd(locale).format(day)
+                    : widget.requireExpiry
+                        ? l10n.dialog_noticeExpiryRequired
+                        : l10n.dialog_noticeNoExpiry,
+              ),
+              trailing: day == null
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() {
+                        _expiryDay = null;
+                        _expiryTime = null;
+                      }),
+                    ),
+              onTap: _pickExpiryDay,
+            ),
+            if (day != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.schedule),
+                title: Text(l10n.dialog_noticeExpiryTime),
+                subtitle: Text(
+                  _expiryTime?.format(context) ?? l10n.dialog_noticeEndOfDay,
+                ),
+                trailing: _expiryTime == null
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => setState(() => _expiryTime = null),
+                      ),
+                onTap: _pickExpiryTime,
+              ),
+          ],
         ),
-        onChanged: (_) => setState(() {}),
       ),
       actions: [
         TextButton(
@@ -291,9 +415,12 @@ class _NoticeDialogState extends State<_NoticeDialog> {
           child: Text(l10n.common_cancel),
         ),
         FilledButton(
-          onPressed: _text.text.trim().isEmpty
+          onPressed: !_ready
               ? null
-              : () => Navigator.pop(context, _text.text),
+              : () => Navigator.pop(
+                    context,
+                    NoticeMessage(lines: _lines, expires: _expires).toWire(),
+                  ),
           child: Text(l10n.dialog_insert),
         ),
       ],
@@ -302,7 +429,8 @@ class _NoticeDialogState extends State<_NoticeDialog> {
 }
 
 class _EventDialog extends StatefulWidget {
-  const _EventDialog();
+  final EventMessage? initial;
+  const _EventDialog({this.initial});
 
   @override
   State<_EventDialog> createState() => _EventDialogState();
@@ -325,6 +453,29 @@ class _EventDialogState extends State<_EventDialog> {
     super.initState();
     final now = DateTime.now();
     _date = DateTime(now.year, now.month, now.day);
+    final initial = widget.initial;
+    if (initial == null) return;
+    final when = initial.when;
+    _title.text = initial.title;
+    _place.text = initial.place ?? '';
+    _position = initial.position;
+    _date = DateUtils.dateOnly(when.start);
+    _allDay = when.allDay;
+    final end = when.end;
+    if (when.allDay) {
+      if (end != null && DateUtils.dateOnly(end).isAfter(_date)) {
+        _endDate = DateUtils.dateOnly(end);
+      }
+      return;
+    }
+    _start = TimeOfDay.fromDateTime(when.start);
+    if (end == null) return;
+    _end = TimeOfDay.fromDateTime(end);
+    // Overnight but under a day is still "same day": the end rolls over
+    // midnight on its own.
+    if (end.difference(when.start) >= const Duration(days: 1)) {
+      _endDate = DateUtils.dateOnly(end);
+    }
   }
 
   @override
@@ -335,11 +486,10 @@ class _EventDialogState extends State<_EventDialog> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    final picked = await _pickDay(
+      context,
+      initial: _date,
+      first: DateTime.now().subtract(const Duration(days: 365)),
     );
     if (picked == null) return;
     setState(() {
@@ -349,12 +499,10 @@ class _EventDialogState extends State<_EventDialog> {
   }
 
   Future<void> _pickEndDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate:
-          _endDate ?? DateTime(_date.year, _date.month, _date.day + 1),
-      firstDate: _date,
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    final picked = await _pickDay(
+      context,
+      initial: _endDate ?? DateTime(_date.year, _date.month, _date.day + 1),
+      first: _date,
     );
     if (picked == null) return;
     setState(() {
@@ -410,6 +558,8 @@ class _EventDialogState extends State<_EventDialog> {
         ],
       ),
       content: SingleChildScrollView(
+        // Room for the title field's floating label, which was clipped.
+        padding: const EdgeInsets.only(top: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

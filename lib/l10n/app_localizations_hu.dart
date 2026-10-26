@@ -51,7 +51,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get nav_map => 'Térkép';
 
   @override
-  String get common_cancel => 'Át kell venni';
+  String get common_cancel => 'Mégse';
 
   @override
   String get common_syncing_device_info => 'Eszközadatok beolvasása...';
@@ -1105,7 +1105,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get contact_lastSeen => 'Utoljára, amikor látták';
 
   @override
-  String get contact_clearChat => 'Tiszta beszélgetés';
+  String get contact_clearChat => 'Csevegés törlése';
 
   @override
   String get contact_teleBase => 'Adatgyűjtő központ';
@@ -3849,10 +3849,10 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'ugrás',
+      one: 'ugrás',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    return 'útvonal ($count $_temp0, ebből $guessed tippelt)';
   }
 
   @override
@@ -3916,37 +3916,37 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_resendingByFlood => 'Újraküldés elárasztással';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Mit csinál a Pathfinder?';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      'A rádiója minden kapcsolatához egyetlen útvonalat jegyez meg, és ha ez az útvonal nem működik, az üzenetet az egész hálózatra kiküldi. A Pathfinder mindent figyel, amit a rádió hall: a repeaterek hirdetményeit, a csatornákon folyó csevegést, mások üzeneteit. Ebből térképet készít arról, mely repeaterek hallják egymást, melyek hallják Önt, és melyek hallják az egyes kapcsolatait.';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      'Üzenetküldéskor a Pathfinder először a legjobb útvonalát próbálja, aztán a következő legjobbat, és csak végső megoldásként küldi az üzenetet az egész hálózatra. A borostyánsárga útvonal-ikon a Pathfinder-útvonalon küldött üzenetet jelöli.';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei pontosan úgy mennek ki, mint korábban. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      'Néha egy hiányzó szakaszt tippeléssel pótol: olyan összeköttetéssel, amelynek eddig csak az ellenkező irányú forgalmát hallotta. Ilyenkor az üzenet alatti sor azt is mutatja, hány ugrást tippelt. A sikeres kézbesítés igazolja ezeket; a kudarc egy kísérletbe kerül, és semmit sem jegyez meg belőle.';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      'Ha nem biztos benne, mely repeaterek hallják Önt az adott helyen, a Pathfinder egyetlen rövid Discover-kérést küld (legfeljebb 10 percenként egyszer, és csak sikertelen küldés után), és ha a rádióban van GPS, ezen a telefonon megjegyzi, mely repeaterek hallották Önt az egyes, kb. 500 m-es területeken – a pontos helyét azonban soha.';
 
   @override
   String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+      'Ha kikapcsolja a Pathfindert, a rádió pontosan úgy választ útvonalat, mint korábban.';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => 'Ne jelenjen meg többé';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => 'Rendben';
 
   @override
   String get settings_pathGraph => 'Pathfinder (kísérleti)';
@@ -5589,4 +5589,98 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => 'Útjelző tábla';
+
+  @override
+  String get dialog_noticeExpires => 'Lejárat';
+
+  @override
+  String get dialog_noticeNoExpiry => 'Nincs lejárati dátum';
+
+  @override
+  String get dialog_noticeExpiryRequired =>
+      'Válasszon dátumot (szobában kötelező)';
+
+  @override
+  String get dialog_noticeExpiryTime => 'Időpont';
+
+  @override
+  String get dialog_noticeEndOfDay => 'A nap végén';
+
+  @override
+  String structured_until(String when) {
+    return 'Lejár: $when';
+  }
+
+  @override
+  String get structured_expired => 'Lejárt';
+
+  @override
+  String get structured_announcement => 'Bejelentés';
+
+  @override
+  String structured_locationOf(String name) {
+    return '$name helyzete';
+  }
+
+  @override
+  String get reaction_searchHint => 'Emoji keresése';
+
+  @override
+  String get reaction_noResults => 'Nincs találat';
+
+  @override
+  String get share_qrAndLink => 'QR-kód és link megosztása';
+
+  @override
+  String get share_roomTitle => 'Szoba megosztása';
+
+  @override
+  String get share_contactTitle => 'Kapcsolat megosztása';
+
+  @override
+  String get share_roomInstructions =>
+      'Olvassa be a kódot a szoba hozzáadásához. A bejelentkezéshez szüksége lesz a szoba jelszavára.';
+
+  @override
+  String get share_contactInstructions =>
+      'Olvassa be a kódot a kapcsolat hozzáadásához.';
+
+  @override
+  String get clearChat_body =>
+      'Üzenetek törlése ebből a csevegésből ezen az eszközön. Az új üzenetek továbbra is ide érkeznek.';
+
+  @override
+  String get clearChat_olderThanDay => '1 napnál régebbiek';
+
+  @override
+  String get clearChat_olderThanWeek => '1 hétnél régebbiek';
+
+  @override
+  String get clearChat_olderThanMonth => '1 hónapnál régebbiek';
+
+  @override
+  String get clearChat_everything => 'Az összes üzenet';
+
+  @override
+  String get chats_markAllRead => 'Összes megjelölése olvasottként';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count csevegés megjelölése olvasottként?',
+      one: '1 csevegés megjelölése olvasottként?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => 'Megjelölés';
+
+  @override
+  String get chats_nothingUnread => 'Nincs olvasatlan üzenet';
+
+  @override
+  String get chats_draft => 'Piszkozat';
 }

@@ -391,6 +391,17 @@ const int maxRoomPostTextBytes = 151;
 int maxRoomMessageBytes() =>
     _minPositive(maxContactMessageBytes(), maxRoomPostTextBytes);
 
+/// An announcement goes out as the CLI command `XX|room.post <text>` (the
+/// 3-byte reply prefix RepeaterCommandService adds), and the firmware
+/// refuses a command longer than MAX_TEXT_LEN = 160
+/// (MeshCore/src/helpers/BaseChatMesh.cpp sendCommandData).
+const String roomPostCommand = 'room.post ';
+
+int maxRoomAnnouncementBytes() => _minPositive(
+      maxTextPayloadBytes - 3 - roomPostCommand.length,
+      maxRoomPostTextBytes,
+    );
+
 int maxChannelMessageBytes(String? senderName) {
   final nameLength = _senderNameBytes(senderName);
   final prefixBytes = nameLength + 2; // "<name>: "

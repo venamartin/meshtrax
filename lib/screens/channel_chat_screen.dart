@@ -28,6 +28,8 @@ import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
+import '../widgets/clear_chat_dialog.dart';
+import '../widgets/message_actions.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/reaction_picker_sheet.dart';
@@ -170,6 +172,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     });
   }
 
+  /// Where the half-typed message waits while the chat is closed.
+  late final UiViewStateService _drafts;
+
+  void _keepDraft() =>
+      _drafts.setDraft(widget.channel.idKey, _textController.text);
+
   @override
   void initState() {
     super.initState();
@@ -177,6 +185,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
+    // Before the mentions listener: a restored "@" must not open the list.
+    _drafts = context.read<UiViewStateService>();
+    _textController.text = _drafts.draft(widget.channel.idKey);
+    _textController.addListener(_keepDraft);
     _textController.addListener(_mentionsListener);
 
     final connector = context.read<MeshCoreConnector>();
@@ -739,6 +751,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
+    _textController.removeListener(_keepDraft);
+    _drafts.flushDrafts();
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
     ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
@@ -951,9 +965,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               if (value == 'clearChat') {
-                context.read<MeshCoreConnector>().clearMessagesForChannel(
-                  widget.channel.index,
-                );
+                final connector = context.read<MeshCoreConnector>();
+                ClearChatDialog.show(context).then((choice) {
+                  if (choice == null) return;
+                  connector.clearMessagesForChannel(
+                    widget.channel.index,
+                    olderThan: choice.olderThan,
+                  );
+                });
               }
             },
             itemBuilder: (context) => [
@@ -1278,7 +1297,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               : "");
 
     final isJumboEmoji =
-        gifId == null && structured == null && _isOnlyEmojis(message.text);
+        gifId == null && structured == null && isEmojiOnly(message.text);
     final warmLight = ChatColors.isLight(context);
     final displayBubbleColor = isJumboEmoji
         ? Colors.transparent
@@ -1312,9 +1331,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     ? null
                     : () => _showMessagePathInfo(message),
                 onLongPress: () => _showMessageActions(message),
-                onSecondaryTapUp: PlatformInfo.isDesktop
-                    ? (_) => _showMessageActions(message)
-                    : null,
                 child: Container(
                   padding: structured != null
                       ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
@@ -1385,6 +1401,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         StructuredMessageCard(
                           message: structured,
                           textScale: textScale,
+                          isOutgoing: isOutgoing,
+                          senderName: message.senderName,
                         ),
                         if (enableTracing || isOutgoing)
                           StructuredCardFooter(
@@ -1413,12 +1431,26 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: MessageText(
-                                  text: cleanDisplayText,
-                                  style: TextStyle(
-                                    fontSize: bodyFontSize * textScale,
-                                  ),
-                                ),
+                                // Large emoji shrink only when they would
+                                // not fit the bubble.
+                                child: isJumboEmoji
+                                    ? FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          cleanDisplayText,
+                                          style: TextStyle(
+                                            fontSize: bodyFontSize * textScale,
+                                          ),
+                                        ),
+                                      )
+                                    : MessageText(
+                                        text: cleanDisplayText,
+                                        style: TextStyle(
+                                          fontSize: bodyFontSize * textScale,
+                                        ),
+                                      ),
                               ),
                             if (orphanReaction != null) ...[
                               const SizedBox(width: 5),
@@ -1629,7 +1661,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     } else {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: messageBody,
+        // Desktop: a right-click anywhere on the message, text included.
+        child: ContextMenuRegion(
+          onContextMenu: PlatformInfo.isDesktop
+              ? (at) => _showMessageActions(message, at: at)
+              : null,
+          child: messageBody,
+        ),
       );
     }
   }
@@ -1714,7 +1752,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              structured.summary,
+              MarkdownHelper.toPlainText(
+                structured.summary,
+                formatting: context.select<AppSettingsService, bool>(
+                  (s) => s.settings.showTextFormatting,
+                ),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12 * textScale, color: previewTextColor),
@@ -2135,7 +2178,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              structured.summary,
+              MarkdownHelper.toPlainText(
+                structured.summary,
+                formatting: context.select<AppSettingsService, bool>(
+                  (s) => s.settings.showTextFormatting,
+                ),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 11 * textScale, color: textColor),
@@ -2441,120 +2489,56 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  void _showMessageActions(ChannelMessage message) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.reply),
-              title: Text(context.l10n.chat_reply),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _setReplyingTo(message);
-              },
-            ),
-            if (PlatformInfo.isDesktop)
-              ListTile(
-                leading: const Icon(Icons.route),
-                title: Text(context.l10n.chat_path),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showMessagePathInfo(message);
-                },
-              ),
-            // Can't react to (or mention) your own messages
-            if (!message.isOutgoing) ...[
-              ListTile(
-                leading: const Icon(Icons.add_reaction_outlined),
-                title: Text(context.l10n.chat_addReaction),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showEmojiPicker(message);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.alternate_email),
-                title: Text(context.l10n.chat_mention),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _insertMentionOf(message.senderName);
-                },
-              ),
-              // No DM for unparsed senders: 'Unknown' is the parse fallback,
-              // not a name anyone chose.
-              if (message.senderName != 'Unknown')
-                ListTile(
-                  leading: const Icon(Icons.chat_bubble_outline),
-                  title: Text(context.l10n.dmChannel_menuLabel),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _startDmTo(message.senderName);
-                  },
-                ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(context.l10n.common_copy),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                // Keep brackets in clipboard for clarity (especially with emoji names)
-                String textToCopy = message.text;
-                _copyMessageText(textToCopy);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text(context.l10n.common_delete),
-              onTap: () async {
-                Navigator.pop(sheetContext);
-                await _deleteMessage(message);
-              },
-            ),
-            if (!message.isOutgoing) ...[
-              ListTile(
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('Report'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  ReportHelper.reportMessage(
-                    context,
-                    sender: message.senderName,
-                    text: message.text,
-                    timestamp: message.timestamp,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: Text('Block ${message.senderName}'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await context
-                      .read<AppSettingsService>()
-                      .blockSender(message.senderName);
-                  if (mounted) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text('Blocked ${message.senderName}'),
-                    );
-                  }
-                },
-              ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: Text(context.l10n.common_cancel),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
+  /// The message's actions: a sheet after a long-press, a menu at [at]
+  /// after a right-click on desktop.
+  void _showMessageActions(ChannelMessage message, {Offset? at}) {
+    final l10n = context.l10n;
+    showMessageActions(context, position: at, [
+      MessageAction(Icons.reply, l10n.chat_reply, () => _setReplyingTo(message)),
+      if (PlatformInfo.isDesktop)
+        MessageAction(
+            Icons.route, l10n.chat_path, () => _showMessagePathInfo(message)),
+      // Can't react to (or mention) your own messages
+      if (!message.isOutgoing) ...[
+        MessageAction(Icons.add_reaction_outlined, l10n.chat_addReaction,
+            () => _showEmojiPicker(message)),
+        MessageAction(Icons.alternate_email, l10n.chat_mention,
+            () => _insertMentionOf(message.senderName)),
+        // No DM for unparsed senders: 'Unknown' is the parse fallback,
+        // not a name anyone chose.
+        if (message.senderName != 'Unknown')
+          MessageAction(Icons.chat_bubble_outline, l10n.dmChannel_menuLabel,
+              () => _startDmTo(message.senderName)),
+      ],
+      // Keep brackets in clipboard for clarity (especially with emoji names)
+      MessageAction(
+          Icons.copy, l10n.common_copy, () => _copyMessageText(message.text)),
+      MessageAction(Icons.delete_outline, l10n.common_delete,
+          () => _deleteMessage(message)),
+      if (!message.isOutgoing) ...[
+        MessageAction(
+          Icons.flag_outlined,
+          'Report',
+          () => ReportHelper.reportMessage(
+            context,
+            sender: message.senderName,
+            text: message.text,
+            timestamp: message.timestamp,
           ),
         ),
-      ),
-    );
+        MessageAction(Icons.block, 'Block ${message.senderName}', () async {
+          await context
+              .read<AppSettingsService>()
+              .blockSender(message.senderName);
+          if (mounted) {
+            showDismissibleSnackBar(
+              context,
+              content: Text('Blocked ${message.senderName}'),
+            );
+          }
+        }),
+      ],
+    ]);
   }
 
   void _showEmojiPicker(ChannelMessage message) {
@@ -2607,23 +2591,4 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       content: Text(context.l10n.chat_messageDeleted),
     );
   }
-
-  bool _isOnlyEmojis(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return false;
-
-    final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
-    if (noSpaces.characters.length > 3) return false;
-
-    // The analyzer's regex validator does not understand the \p{Emoji} binary
-    // property, but Dart's engine does with unicode: true. An actually invalid
-    // pattern would throw on construction; emoji_only_regex_test.dart proves
-    // this one does not.
-    // ignore: valid_regexps
-    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
-    final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
-
-    return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
-  }
 }
-

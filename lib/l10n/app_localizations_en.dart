@@ -5483,4 +5483,96 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => 'Guidepost';
+
+  @override
+  String get dialog_noticeExpires => 'Expires';
+
+  @override
+  String get dialog_noticeNoExpiry => 'Never';
+
+  @override
+  String get dialog_noticeExpiryRequired => 'Pick a date (required in a room)';
+
+  @override
+  String get dialog_noticeExpiryTime => 'Time';
+
+  @override
+  String get dialog_noticeEndOfDay => 'End of day';
+
+  @override
+  String structured_until(String when) {
+    return 'Until $when';
+  }
+
+  @override
+  String get structured_expired => 'Expired';
+
+  @override
+  String get structured_announcement => 'Announcement';
+
+  @override
+  String structured_locationOf(String name) {
+    return '$name\'s location';
+  }
+
+  @override
+  String get reaction_searchHint => 'Search emoji';
+
+  @override
+  String get reaction_noResults => 'No emoji found';
+
+  @override
+  String get share_qrAndLink => 'Share QR code and link';
+
+  @override
+  String get share_roomTitle => 'Share Room';
+
+  @override
+  String get share_contactTitle => 'Share Contact';
+
+  @override
+  String get share_roomInstructions =>
+      'Scan to add this room. You\'ll need its password to log in.';
+
+  @override
+  String get share_contactInstructions => 'Scan to add this contact.';
+
+  @override
+  String get clearChat_body =>
+      'Delete messages from this chat on this device. New messages still arrive here.';
+
+  @override
+  String get clearChat_olderThanDay => 'Older than 1 day';
+
+  @override
+  String get clearChat_olderThanWeek => 'Older than 1 week';
+
+  @override
+  String get clearChat_olderThanMonth => 'Older than 1 month';
+
+  @override
+  String get clearChat_everything => 'All messages';
+
+  @override
+  String get chats_markAllRead => 'Mark all as read';
+
+  @override
+  String chats_markAllReadBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mark $count chats as read?',
+      one: 'Mark 1 chat as read?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chats_markRead => 'Mark read';
+
+  @override
+  String get chats_nothingUnread => 'No unread messages';
+
+  @override
+  String get chats_draft => 'Draft';
 }

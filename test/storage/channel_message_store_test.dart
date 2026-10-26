@@ -256,6 +256,31 @@ void main() {
     expect(await store.loadChannelMessages(idKeyB), isEmpty);
   });
 
+  test('clearing older than a cutoff goes by arrival, one channel only',
+      () async {
+    await store.saveChannelMessages(idKeyA, [
+      msg('old', id: 'old'),
+      msg('new', id: 'new'),
+    ]);
+    await store.saveChannelMessages(idKeyB, [msg('other', id: 'b-old')]);
+    final cutoff = DateTime.now().subtract(const Duration(days: 1));
+    final longAgo = cutoff.subtract(const Duration(hours: 1));
+    await AppDatabase.instance.customStatement(
+      'UPDATE channel_message_rows SET received_at_us = '
+      "${longAgo.microsecondsSinceEpoch} WHERE message_id IN ('old', 'b-old')",
+    );
+    await AppDatabase.instance.customStatement(
+      'UPDATE channel_message_rows SET received_at_us = '
+      "${DateTime.now().microsecondsSinceEpoch} WHERE message_id = 'new'",
+    );
+
+    await store.clearChannelMessagesOlderThan(idKeyA, cutoff);
+
+    final kept = await store.loadChannelMessages(idKeyA);
+    expect(kept.map((m) => m.messageId), ['new']);
+    expect(await store.loadChannelMessages(idKeyB), hasLength(1));
+  });
+
   test('node scopes are isolated', () async {
     await store.saveChannelMessages(idKeyA, [msg('node one')]);
 

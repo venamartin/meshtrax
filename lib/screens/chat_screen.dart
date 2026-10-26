@@ -37,6 +37,7 @@ import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
 import 'companion_cli_screen.dart';
+import 'contact_share_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
@@ -44,6 +45,8 @@ import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
+import '../widgets/clear_chat_dialog.dart';
+import '../widgets/message_actions.dart';
 import '../widgets/room_login_dialog.dart';
 import '../helpers/structured_message.dart';
 import '../services/short_link_resolver.dart';
@@ -66,6 +69,38 @@ class ChatScreen extends StatefulWidget {
   final int? unreadCount;
 
   const ChatScreen({super.key, required this.contact, this.unreadCount});
+
+  /// Opens the chat with [contact]. A room with no remembered password asks
+  /// for one first: its posts only arrive once logged in, and the screen
+  /// logs in by itself only with a password that worked before.
+  static Future<void> open(BuildContext context, Contact contact) async {
+    // Already in it, e.g. a room's own link tapped inside the room: a second
+    // copy of the screen would clear the active chat when it closed.
+    final here = context.findAncestorWidgetOfExactType<ChatScreen>();
+    if (here != null &&
+        here.contact.publicKeyHex.toLowerCase() ==
+            contact.publicKeyHex.toLowerCase()) {
+      return;
+    }
+    final navigator = Navigator.of(context);
+    void push() => navigator.push(
+          MaterialPageRoute(builder: (_) => ChatScreen(contact: contact)),
+        );
+    if (contact.type != advTypeRoom ||
+        await StorageService().getRepeaterPassword(contact.publicKeyHex) !=
+            null) {
+      push();
+      return;
+    }
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => RoomLoginDialog(
+        room: contact,
+        onLogin: (password, isAdmin) => push(),
+      ),
+    );
+  }
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -153,6 +188,12 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  /// Where the half-typed message waits while the chat is closed.
+  late final UiViewStateService _drafts;
+
+  void _keepDraft() =>
+      _drafts.setDraft(widget.contact.publicKeyHex, _textController.text);
+
   @override
   void initState() {
     super.initState();
@@ -160,6 +201,10 @@ class _ChatScreenState extends State<ChatScreen> {
     ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
+
+    _drafts = context.read<UiViewStateService>();
+    _textController.text = _drafts.draft(widget.contact.publicKeyHex);
+    _textController.addListener(_keepDraft);
 
     final connector = context.read<MeshCoreConnector>();
     _unreadAtOpen = widget.unreadCount ??
@@ -531,6 +576,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
+    _textController.removeListener(_keepDraft);
+    _drafts.flushDrafts();
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
     ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
@@ -666,6 +713,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (value == 'info') {
                     _showContactInfo(context);
                   }
+                  if (value == 'share') {
+                    final contact = _resolveContact(connector);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContactShareScreen(
+                          name: contact.name,
+                          pubKeyHex: contact.publicKeyHex,
+                          type: contact.type,
+                        ),
+                      ),
+                    );
+                  }
                   if (value == 'settings') {
                     _showContactSettings(context);
                   }
@@ -689,7 +749,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   }
                   if (value == 'clearChat') {
-                    connector.clearMessagesForContact(widget.contact);
+                    ClearChatDialog.show(context).then((choice) {
+                      if (choice == null) return;
+                      connector.clearMessagesForContact(
+                        widget.contact,
+                        olderThan: choice.olderThan,
+                      );
+                    });
                   }
                   if (value == 'reloadPosts') {
                     _reloadRoomPosts(connector);
@@ -703,6 +769,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         const Icon(Icons.info_outline, size: 20),
                         const SizedBox(width: 12),
                         Text(context.l10n.contact_info),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.qr_code, size: 20),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.common_share),
                       ],
                     ),
                   ),
@@ -938,9 +1014,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   roomAuthor != null &&
                   roomAuthor.publicKeyHex == resolvedContact.publicKeyHex;
               // Same format as the channel screen: raw hop prefixes, not
-              // resolved names ("via AA,3F").
+              // resolved names ("via AA,3F"). Incoming: only the packet's
+              // own path, never a copy of our route to the sender.
               String? viaLabel;
-              if (message.pathBytes.isNotEmpty) {
+              if (message.pathBytes.isNotEmpty &&
+                  (message.isOutgoing || message.pathFromPacket)) {
                 final hexPath = PathHelper.formatPathHex(
                   message.pathBytes,
                   stride: message.pathHashSize ?? resolvedContact.pathHashSize,
@@ -988,6 +1066,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       : () => _insertMentionOf(roomAuthor!.name),
                   hintBuilder: ({required mention}) =>
                       SwipeHint(mention: mention),
+                  child: bubble,
+                );
+              }
+              if (PlatformInfo.isDesktop) {
+                bubble = ContextMenuRegion(
+                  onContextMenu: (at) =>
+                      _showMessageActions(message, contact, at: at),
                   child: bubble,
                 );
               }
@@ -1545,15 +1630,12 @@ class _ChatScreenState extends State<ChatScreen> {
         else if (isAdmin)
           AttachTile(
             icon: Icons.campaign,
-            label: l10n.tray_notice,
+            label: l10n.structured_announcement,
             onTap: () {
               setState(() => _trayOpen = false);
               showDialog(
                 context: context,
-                builder: (_) => RoomAnnouncementDialog(
-                  room: widget.contact,
-                  textPrefix: 'Notice: ',
-                ),
+                builder: (_) => RoomAnnouncementDialog(room: widget.contact),
               );
             },
           ),
@@ -2135,149 +2217,93 @@ class _ChatScreenState extends State<ChatScreen> {
       status: ChannelMessageStatus.sent,
       repeatCount: 0,
       pathLength: message.pathLength,
-      pathBytes: message.pathBytes,
+      // An incoming row's bytes are its own path only when read from its
+      // packet; older rows hold a copy of our route to the sender.
+      pathBytes: message.isOutgoing || message.pathFromPacket
+          ? message.pathBytes
+          : Uint8List(0),
       pathHashSize:
           message.pathHashSize ?? _resolveContact(connector).pathHashSize,
     );
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChannelMessagePathScreen(message: pathMessage),
+        // An incoming row's bytes are its packet's path, sender first, as a
+        // channel packet's are; an outgoing row's are our route, ours first.
+        builder: (context) => ChannelMessagePathScreen(
+          message: pathMessage,
+          channelMessage: !message.isOutgoing,
+        ),
       ),
     );
   }
 
-  void _showMessageActions(Message message, Contact contact) {
+  /// The message's actions: a sheet after a long-press, a menu at [at]
+  /// after a right-click on desktop.
+  void _showMessageActions(Message message, Contact contact, {Offset? at}) {
+    final l10n = context.l10n;
     final chatContact = _resolveContact(context.read<MeshCoreConnector>());
     final isRoom = chatContact.type == advTypeRoom;
     // In a room, [contact] is the resolved post author; it falls back to the
     // room itself when the author is unknown or the room authored the post.
     final isRoomItself =
         isRoom && contact.publicKeyHex == chatContact.publicKeyHex;
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Can't react to your own messages
-            if (!message.isOutgoing)
-              ListTile(
-                leading: const Icon(Icons.add_reaction_outlined),
-                title: Text(context.l10n.chat_addReaction),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showEmojiPicker(message);
-                },
-              ),
-            if (isRoom)
-              ListTile(
-                leading: const Icon(Icons.reply),
-                title: Text(context.l10n.chat_reply),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _setReplyingTo(message);
-                  _textFieldFocusNode.requestFocus();
-                },
-              ),
-            if (isRoom && !message.isOutgoing && !isRoomItself)
-              ListTile(
-                leading: const Icon(Icons.alternate_email),
-                title: Text(context.l10n.chat_mention),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _insertMentionOf(contact.name);
-                },
-              ),
-            if (PlatformInfo.isDesktop)
-              ListTile(
-                leading: const Icon(Icons.route),
-                title: Text(context.l10n.chat_path),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openMessagePath(message);
-                },
-              ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(context.l10n.common_copy),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _copyMessageText(message.text);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text(context.l10n.common_delete),
-              onTap: () async {
-                Navigator.pop(sheetContext);
-                await _deleteMessage(message);
-              },
-            ),
-            if (message.isOutgoing && message.status == MessageStatus.failed)
-              ListTile(
-                leading: const Icon(Icons.refresh),
-                title: Text(context.l10n.common_retry),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _retryMessage(message);
-                },
-              ),
-            if (!message.isOutgoing &&
-                isRoom &&
-                !isRoomItself &&
-                contact.type == advTypeChat)
-              ListTile(
-                leading: const Icon(Icons.chat),
-                title: Text(context.l10n.contacts_openChat),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openChat(context, contact);
-                },
-              ),
-            if (!message.isOutgoing) ...[
-              ListTile(
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('Report'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  ReportHelper.reportMessage(
-                    context,
-                    sender: contact.name,
-                    text: message.text,
-                    timestamp: message.timestamp,
-                  );
-                },
-              ),
-              // Blocking a room post whose author is the room (or unknown)
-              // would block the room itself and silence every member.
-              if (!isRoomItself)
-                ListTile(
-                  leading: const Icon(Icons.block),
-                  title: Text('Block ${contact.name}'),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await context
-                        .read<AppSettingsService>()
-                        .blockContact(contact.publicKeyHex);
-                    if (mounted) {
-                      showDismissibleSnackBar(
-                        context,
-                        content: Text('Blocked ${contact.name}'),
-                      );
-                    }
-                  },
-                ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: Text(context.l10n.common_cancel),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
+    showMessageActions(context, position: at, [
+      // Can't react to your own messages
+      if (!message.isOutgoing)
+        MessageAction(Icons.add_reaction_outlined, l10n.chat_addReaction,
+            () => _showEmojiPicker(message)),
+      if (isRoom)
+        MessageAction(Icons.reply, l10n.chat_reply, () {
+          _setReplyingTo(message);
+          _textFieldFocusNode.requestFocus();
+        }),
+      if (isRoom && !message.isOutgoing && !isRoomItself)
+        MessageAction(Icons.alternate_email, l10n.chat_mention,
+            () => _insertMentionOf(contact.name)),
+      if (PlatformInfo.isDesktop)
+        MessageAction(
+            Icons.route, l10n.chat_path, () => _openMessagePath(message)),
+      MessageAction(
+          Icons.copy, l10n.common_copy, () => _copyMessageText(message.text)),
+      MessageAction(Icons.delete_outline, l10n.common_delete,
+          () => _deleteMessage(message)),
+      if (message.isOutgoing && message.status == MessageStatus.failed)
+        MessageAction(
+            Icons.refresh, l10n.common_retry, () => _retryMessage(message)),
+      if (!message.isOutgoing &&
+          isRoom &&
+          !isRoomItself &&
+          contact.type == advTypeChat)
+        MessageAction(Icons.chat, l10n.contacts_openChat,
+            () => _openChat(context, contact)),
+      if (!message.isOutgoing) ...[
+        MessageAction(
+          Icons.flag_outlined,
+          'Report',
+          () => ReportHelper.reportMessage(
+            context,
+            sender: contact.name,
+            text: message.text,
+            timestamp: message.timestamp,
+          ),
         ),
-      ),
-    );
+        // Blocking a room post whose author is the room (or unknown)
+        // would block the room itself and silence every member.
+        if (!isRoomItself)
+          MessageAction(Icons.block, 'Block ${contact.name}', () async {
+            await context
+                .read<AppSettingsService>()
+                .blockContact(contact.publicKeyHex);
+            if (mounted) {
+              showDismissibleSnackBar(
+                context,
+                content: Text('Blocked ${contact.name}'),
+              );
+            }
+          }),
+      ],
+    ]);
   }
 
   void _copyMessageText(String text) {
@@ -2360,12 +2386,12 @@ class _MessageBubble extends StatelessWidget {
 
   /// Hex hop prefixes for this message's path (channel-screen format),
   /// shown under the body when message tracing is on — outgoing: the route
-  /// the send used; incoming: our known route, only when its length matches
-  /// the hops the packet actually reported.
+  /// the send used; incoming: the repeaters its own packet passed, when the
+  /// radio's raw log held it.
   final String? viaLabel;
 
-  /// Post authored by the room server itself (room.post / system post) —
-  /// gets an announcement marker next to the sender name.
+  /// Post authored by the room server itself (room.post / system post),
+  /// shown as an announcement card.
   final bool isAnnouncement;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -2408,24 +2434,21 @@ class _MessageBubble extends StatelessWidget {
     final messageText = replyInfo?.actualMessage ?? message.text;
 
     final gifId = GifHelper.parseGif(messageText);
-    final parsed = StructuredMessage.parse(
-      messageText,
-      resolveShortLink: ShortLinkResolver.instance.cached,
-    );
-    if (parsed == null) ShortLinkResolver.instance.prefetchIn(messageText);
-    // A post the room server authored (room.post) is a notice even without
-    // the "Notice:" keyword.
-    final announcementLines = isAnnouncement
-        ? messageText
-            .split('\n')
-            .map((l) => l.trim())
-            .where((l) => l.isNotEmpty)
-            .toList()
-        : const <String>[];
-    final structured = parsed ??
-        (announcementLines.isEmpty
-            ? null
-            : NoticeMessage(lines: announcementLines));
+    // A post the room server authored (room.post) is an announcement card
+    // even without a type keyword.
+    final structured = isAnnouncement
+        ? StructuredMessage.parseAnnouncement(
+            messageText,
+            resolveShortLink: ShortLinkResolver.instance.cached,
+          )
+        : StructuredMessage.parse(
+            messageText,
+            resolveShortLink: ShortLinkResolver.instance.cached,
+          );
+    if (structured == null ||
+        (structured is NoticeMessage && structured.announcement)) {
+      ShortLinkResolver.instance.prefetchIn(messageText);
+    }
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
     // Same palette as the channel chat screen: warm ChatColors in light
@@ -2452,7 +2475,7 @@ class _MessageBubble extends StatelessWidget {
         : GifHelper.stripGif(messageText);
 
     final isJumboEmoji =
-        gifId == null && structured == null && _isOnlyEmojis(messageText);
+        gifId == null && structured == null && isEmojiOnly(messageText);
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
     final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
     final displayMetaColor = structured != null
@@ -2467,12 +2490,10 @@ class _MessageBubble extends StatelessWidget {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
+          // A right-click on desktop: ContextMenuRegion around the bubble.
           GestureDetector(
             onTap: PlatformInfo.isDesktop ? null : onTap,
             onLongPress: onLongPress,
-            onSecondaryTapUp: PlatformInfo.isDesktop
-                ? (_) => onLongPress?.call()
-                : null,
             child: Row(
               mainAxisAlignment: isOutgoing
                   ? MainAxisAlignment.end
@@ -2562,6 +2583,9 @@ class _MessageBubble extends StatelessWidget {
                           StructuredMessageCard(
                             message: structured,
                             textScale: textScale,
+                            isOutgoing: isOutgoing,
+                            // A room's own post is nobody's position.
+                            senderName: isAnnouncement ? null : senderName,
                           )
                         else if (gifId != null)
                           Stack(
@@ -2627,13 +2651,27 @@ class _MessageBubble extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: MessageText(
-                                  text: cleanDisplayText,
-                                  style: TextStyle(
-                                    color: isJumboEmoji ? null : displayTextColor,
-                                    fontSize: bodyFontSize * textScale,
-                                  ),
-                                ),
+                                // Large emoji shrink only when they would
+                                // not fit the bubble.
+                                child: isJumboEmoji
+                                    ? FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          cleanDisplayText,
+                                          style: TextStyle(
+                                            fontSize: bodyFontSize * textScale,
+                                          ),
+                                        ),
+                                      )
+                                    : MessageText(
+                                        text: cleanDisplayText,
+                                        style: TextStyle(
+                                          color: displayTextColor,
+                                          fontSize: bodyFontSize * textScale,
+                                        ),
+                                      ),
                               ),
                               if (orphanReaction != null) ...[
                                 const SizedBox(width: 5),
@@ -3004,7 +3042,10 @@ class _MessageBubble extends StatelessWidget {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              structured.summary,
+              MarkdownHelper.toPlainText(
+                structured.summary,
+                formatting: settings.showTextFormatting,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12 * textScale, color: snippetColor),
@@ -3213,24 +3254,6 @@ class _MessageBubble extends StatelessWidget {
     }
 
     return Icon(icon, size: 12, color: color);
-  }
-
-  bool _isOnlyEmojis(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return false;
-    
-    final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
-    if (noSpaces.characters.length > 3) return false;
-
-    // The analyzer's regex validator does not understand the \p{Emoji} binary
-    // property, but Dart's engine does with unicode: true. An actually invalid
-    // pattern would throw on construction; emoji_only_regex_test.dart proves
-    // this one does not.
-    // ignore: valid_regexps
-    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
-    final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
-
-    return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
   }
 
   String _formatTime(DateTime time) {

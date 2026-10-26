@@ -1,12 +1,17 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/geo_format.dart';
 import '../helpers/repeater_identity.dart';
 import '../l10n/l10n.dart';
+import '../models/app_settings.dart';
 import '../models/contact.dart';
+import '../services/app_settings_service.dart';
 import '../screens/repeater_hub_screen.dart';
 import '../utils/app_logger.dart';
 import 'repeater_login_dialog.dart';
@@ -82,6 +87,8 @@ class NearbyRepeatersDialog extends StatelessWidget {
         connector.directRepeaters.where((r) => !_answeredLatest(r)).toList()
           ..sort(DirectRepeater.compare);
     final rows = [...answered, ...others];
+    // Once per rebuild (every second), not once per row.
+    final contacts = connector.allContacts;
     final small = Theme.of(context).textTheme.bodySmall
         ?.copyWith(color: Colors.grey[600], fontWeight: FontWeight.w500);
 
@@ -113,7 +120,7 @@ class NearbyRepeatersDialog extends StatelessWidget {
             ),
           )
         else
-          for (final r in rows) _row(context, r),
+          for (final r in rows) _row(context, r, contacts),
         const Divider(height: 12),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
@@ -176,19 +183,28 @@ class NearbyRepeatersDialog extends StatelessWidget {
     return Text('$answered $plural answered $whose ($ago ago)$heard');
   }
 
-  Widget _row(BuildContext context, DirectRepeater repeater) {
+  Widget _row(
+    BuildContext context,
+    DirectRepeater repeater,
+    List<Contact> contacts,
+  ) {
     final sf = connector.currentSf;
     final identity = RepeaterIdentityHelper.resolve(
-      contacts: connector.allContacts,
+      contacts: contacts,
       publicKey: repeater.publicKey,
       hashPrefix: repeater.pubkeyPrefix,
     );
     final contact = identity.contact;
+    final onAir = contact == null && repeater.name?.isNotEmpty == true;
+    // A short code several contacts share: the nearest is the likeliest.
+    final guess = !onAir && identity.isAmbiguous ? _nearestGuess(identity) : null;
     // A name the node put on air beats a lookup, but only when the lookup
     // found nothing — a matched contact carries the name this user chose.
-    final displayName = contact == null && repeater.name?.isNotEmpty == true
+    final displayName = onAir
         ? repeater.name!
-        : identity.displayName;
+        : guess != null
+            ? 'possibly ${guess.contact.name}'
+            : identity.displayName;
     final latest = _answeredLatest(repeater);
     final answeredBefore = !latest && repeater.answeredAt != null;
     final small = Theme.of(context).textTheme.bodySmall
@@ -197,7 +213,10 @@ class NearbyRepeatersDialog extends StatelessWidget {
     final when = latest
         ? 'answered ${formatAgo(repeater.answeredAt!)} ago'
         : 'heard ${formatAgo(repeater.lastUpdated)} ago';
-    final problem = _identityProblem(repeater, identity);
+    final problem = guess != null
+        ? '${GeoFormat.distanceText(guess.meters, _units(context))} away · '
+            '${identity.candidates.length} contacts share this code'
+        : _identityProblem(repeater, identity);
     final up = repeater.uplinkSnr;
 
     return Material(
@@ -231,6 +250,9 @@ class NearbyRepeatersDialog extends StatelessWidget {
                             displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            style: guess == null
+                                ? null
+                                : const TextStyle(fontStyle: FontStyle.italic),
                           ),
                         ),
                         if (contact?.hasLocation ?? false)
@@ -254,6 +276,21 @@ class NearbyRepeatersDialog extends StatelessWidget {
       ),
     );
   }
+
+  /// Display only: a guess is never logged into, nor taught to Pathfinder.
+  ({Contact contact, double meters})? _nearestGuess(RepeaterIdentity identity) {
+    final lat = connector.selfLatitude;
+    final lon = connector.selfLongitude;
+    if (!GeoFormat.isValidPosition(lat, lon)) return null;
+    return RepeaterIdentityHelper.nearestCandidate(
+      identity.candidates,
+      LatLng(lat!, lon!),
+    );
+  }
+
+  static UnitSystem _units(BuildContext context) =>
+      context.read<AppSettingsService?>()?.settings.unitSystem ??
+      UnitSystem.metric;
 
   /// Why a row cannot be logged into, or null when it can and is known.
   String? _identityProblem(DirectRepeater repeater, RepeaterIdentity identity) {
