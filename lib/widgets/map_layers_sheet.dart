@@ -149,9 +149,14 @@ class MapLayersSheet extends StatelessWidget {
                   MapLayerTile(
                     picture: _picture('places'),
                     label: l10n.mapLayers_places,
-                    selected: settings.mapPlaces,
-                    onTap: () =>
-                        settingsService.setMapPlaces(!settings.mapPlaces),
+                    note: online ? l10n.mapLayers_offlineOnly : null,
+                    selected: !online && settings.mapPlaces,
+                    enabled: !online,
+                    onTap: () => offline(
+                      () => settingsService.setMapPlaces(
+                        online || !settings.mapPlaces,
+                      ),
+                    ),
                   ),
                 MapLayerTile(
                   picture: _picture('dark'),

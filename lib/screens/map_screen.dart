@@ -457,11 +457,14 @@ class _MapScreenState extends State<MapScreen> {
             : null;
         final isPoiLink = highlightPosition != null;
         final allowBack = !connector.isConnected || isPoiLink;
-        final mapDark =
-            settings.mapTheme == 'dark' &&
-            !mapIsOnline(settings, context.read<MapPacksService>());
+        // Places and parks are the offline map's (Martin, 2026-10-26).
+        final online = mapIsOnline(settings, context.watch<MapPacksService>());
+        final mapDark = settings.mapTheme == 'dark' && !online;
         final showPlaces =
-            settings.mapPlaces && !widget.pickPosition && !_isBuildingPathTrace;
+            settings.mapPlaces &&
+            !online &&
+            !widget.pickPosition &&
+            !_isBuildingPathTrace;
 
         return PopScope(
           canPop: allowBack,

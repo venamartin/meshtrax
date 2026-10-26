@@ -3,7 +3,7 @@
 This file says how traxmap's offline vector maps replace MeshTrax's online raster maps: the screens, the order of work, and how each step is tested. Agreed with Martin on 2026-10-17, 18 and 19. Companion files:
 
 - [`offline-maps.md`](offline-maps.md): decisions, pitfalls and open questions.
-- [`park-maps.md`](park-maps.md): park overlays on the app side.
+- [`park-maps.md`](park-maps.md): parks on the map (outline, tint, name), app side.
 - traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md) §1: the server contract. Everything the app downloads from `maps.meshtrax.io`, one module per data set (1.1 common, 1.2 regions, 1.3 map packs, 1.4 charts, 1.5 routing, 1.6 overlays).
 
 ## Status
@@ -604,9 +604,9 @@ Needs traxmapmaker 1.5.
     - its app size on both phones.
   - Switching changes traxmapmaker's routing module (FINDINGS 1.5, Valhalla tiles instead of `.rd5`) and its 2026-10-16 BRouter decision. A NorCal BRouter test build already exists.
 
-### Phase 8: Parks and overlays
+### Phase 8: Parks
 
-Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
+From the map packs and Points of interest, with no overlay download (Martin, 2026-10-26). Needs a `tint` tag on parks in the map build (FINDINGS 1.3) and parks as places (1.8). See [`park-maps.md`](park-maps.md).
 
 ### Later
 
