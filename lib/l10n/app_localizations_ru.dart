@@ -4801,6 +4801,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mapLayers_places => 'Places';
 
   @override
+  String get mapLayers_parks => 'Parks';
+
+  @override
   String get mapLayers_dark => 'Тёмная карта';
 
   @override

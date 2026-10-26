@@ -8148,6 +8148,12 @@ abstract class AppLocalizations {
   /// **'Places'**
   String get mapLayers_places;
 
+  /// No description provided for @mapLayers_parks.
+  ///
+  /// In en, this message translates to:
+  /// **'Parks'**
+  String get mapLayers_parks;
+
   /// No description provided for @mapLayers_dark.
   ///
   /// In en, this message translates to:

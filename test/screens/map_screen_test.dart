@@ -248,9 +248,10 @@ void main() {
     );
     expect(
       find.text('Offline only'),
-      findsNWidgets(4),
+      findsNWidgets(5),
       reason:
-          'nothing downloaded, so Online: contours, hill shading, places, dark',
+          'nothing downloaded, so Online: contours, hill shading, parks, '
+          'places, dark',
     );
     expect(find.text('Nodes'), findsOneWidget);
 

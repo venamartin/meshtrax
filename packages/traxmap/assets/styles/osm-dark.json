@@ -343,7 +343,14 @@
       "source": "osm",
       "source-layer": "park",
       "filter": [
-        "!",
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
         [
           "match",
           [
@@ -351,19 +358,33 @@
             "class"
           ],
           [
-            "national_marine_sanctuary",
-            "state_marine_conservation_area",
-            "state_marine_reserve",
-            "state_marine_park",
-            "marine_protected_area"
+            "national_park",
+            "national_monument",
+            "national_preserve",
+            "state_park"
           ],
           true,
           false
         ]
       ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
       "paint": {
-        "fill-color": "#203024",
-        "fill-opacity": 0.6
+        "fill-color": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "tint"
+            ],
+            "desert"
+          ],
+          "#4a3d2a",
+          "#2b4530"
+        ],
+        "fill-opacity": 0.47
       }
     },
     {
@@ -491,13 +512,20 @@
       }
     },
     {
-      "id": "park-outline",
+      "id": "park-outline-minor",
       "type": "line",
       "source": "osm",
       "source-layer": "park",
       "minzoom": 9,
       "filter": [
-        "!",
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
         [
           "match",
           [
@@ -505,24 +533,89 @@
             "class"
           ],
           [
-            "national_marine_sanctuary",
-            "state_marine_conservation_area",
-            "state_marine_reserve",
-            "state_marine_park",
-            "marine_protected_area"
+            "wilderness_area",
+            "national_forest"
           ],
           true,
           false
         ]
       ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
       "paint": {
         "line-color": "#3f6b4a",
-        "line-width": 1,
-        "line-opacity": 0.8,
+        "line-width": 0.8,
+        "line-opacity": 0.7,
         "line-dasharray": [
           3,
           2
         ]
+      }
+    },
+    {
+      "id": "park-outline",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "park",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "national_park",
+            "national_monument",
+            "national_preserve",
+            "state_park"
+          ],
+          true,
+          false
+        ]
+      ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
+      "paint": {
+        "line-color": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "tint"
+            ],
+            "desert"
+          ],
+          "#a8865a",
+          "#5f9a64"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          0.8,
+          12,
+          1.6,
+          16,
+          2.2
+        ],
+        "line-opacity": 0.9
       }
     },
     {
@@ -1923,6 +2016,87 @@
       },
       "metadata": {
         "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "park-label",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "park",
+      "minzoom": 6,
+      "maxzoom": 13,
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "national_park",
+            "national_monument",
+            "national_preserve",
+            "state_park"
+          ],
+          true,
+          false
+        ]
+      ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          11,
+          10,
+          14
+        ],
+        "text-max-width": 11,
+        "text-letter-spacing": 0.02,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ]
+      },
+      "paint": {
+        "text-color": [
+          "case",
+          [
+            "==",
+            [
+              "get",
+              "tint"
+            ],
+            "desert"
+          ],
+          "#d6b483",
+          "#9ccf94"
+        ],
+        "text-halo-color": "#1c2026",
+        "text-halo-width": 1.5
       }
     },
     {

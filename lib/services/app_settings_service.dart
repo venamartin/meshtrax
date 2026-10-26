@@ -112,6 +112,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mapPlaces: value));
   }
 
+  Future<void> setMapParks(bool value) async {
+    await updateSettings(_settings.copyWith(mapParks: value));
+  }
+
   Future<void> setMapDownloadedAreas(bool value) async {
     await updateSettings(_settings.copyWith(mapDownloadedAreas: value));
   }

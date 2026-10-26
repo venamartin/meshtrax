@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/widgets.dart';
 
 import '../packs/attribution.dart';
@@ -104,6 +105,9 @@ class OfflineMapView extends StatefulWidget {
   /// icons for them (see [StyleContext.appPlaces]).
   final bool appPlaces;
 
+  /// Style layer groups to leave out (see [StyleContext.hiddenGroups]).
+  final Set<String> hiddenGroups;
+
   /// Device pixels per logical pixel for map tile bitmaps; null picks
   /// twice the screen density (capped at 4) so lines stay sharp between
   /// whole zoom levels. Lower it to save memory on constrained devices.
@@ -131,6 +135,7 @@ class OfflineMapView extends StatefulWidget {
     this.styleRegistry,
     this.units = Units.imperial,
     this.appPlaces = false,
+    this.hiddenGroups = const {},
     this.tileResolution,
   });
 
@@ -161,7 +166,8 @@ class _OfflineMapViewState extends State<OfflineMapView> {
     if (old.styleId != widget.styleId ||
         !_samePacks(old.packs, widget.packs) ||
         old.units != widget.units ||
-        old.appPlaces != widget.appPlaces) {
+        old.appPlaces != widget.appPlaces ||
+        !setEquals(old.hiddenGroups, widget.hiddenGroups)) {
       _loadStyle();
     }
   }
@@ -190,6 +196,7 @@ class _OfflineMapViewState extends State<OfflineMapView> {
         units: widget.units,
         sprite: bundledSprites,
         appPlaces: widget.appPlaces,
+        hiddenGroups: widget.hiddenGroups,
       );
       final style = await _registry.load(id, context);
       if (!mounted || id != widget.styleId) return;

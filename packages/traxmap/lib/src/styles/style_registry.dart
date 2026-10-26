@@ -66,6 +66,10 @@ class StyleContext {
   /// drop their icon for those, keeping the name.
   final bool appPlaces;
 
+  /// Layer groups to leave out: layers tagged `metadata["ovm:group"]` with
+  /// one of these (a map switch, such as "parks").
+  final Set<String> hiddenGroups;
+
   const StyleContext({
     this.packs = const {},
     this.units = Units.imperial,
@@ -73,6 +77,7 @@ class StyleContext {
     this.sprite,
     this.pmtilesUrl = defaultPmtilesUrl,
     this.appPlaces = false,
+    this.hiddenGroups = const {},
   });
 
   static String defaultPmtilesUrl(Pack pack) =>
@@ -208,7 +213,9 @@ class StyleRegistry {
     (out['layers'] as List<Object?>?)?.removeWhere((l) {
       if (l is! Map) return false;
       if (dropped.contains(l['source'])) return true;
-      final units = (l['metadata'] as Map?)?['ovm:units'];
+      final metadata = l['metadata'] as Map?;
+      if (context.hiddenGroups.contains(metadata?['ovm:group'])) return true;
+      final units = metadata?['ovm:units'];
       return units is String && units != context.units.name;
     });
     if (context.appPlaces) {

@@ -224,6 +224,46 @@ void main() {
     expect(layout(true)['text-field'], ['get', 'name'], reason: 'name stays');
   });
 
+  test('leaves out hidden layer groups', () {
+    final grouped = <String, Object?>{
+      'version': 8,
+      'sources': <String, Object?>{},
+      'layers': [
+        {'id': 'bg', 'type': 'background'},
+        {
+          'id': 'park',
+          'type': 'fill',
+          'metadata': {'ovm:group': 'parks'},
+        },
+      ],
+    };
+    List<Object?> ids(Set<String> hidden) => [
+      for (final l
+          in StyleRegistry.resolve(
+                grouped,
+                StyleContext(hiddenGroups: hidden),
+              )['layers']
+              as List)
+        (l as Map)['id'],
+    ];
+    expect(ids(const {}), ['bg', 'park']);
+    expect(ids(const {'parks'}), ['bg']);
+  });
+
+  test('the standard map draws only parks, monuments and preserves', () async {
+    final layers = [
+      for (final l
+          in (await bundledStyles().loadRaw('osm-light'))['layers'] as List)
+        if ((l as Map)['metadata']?['ovm:group'] == 'parks') l['id'],
+    ];
+    expect(layers, [
+      'park',
+      'park-outline-minor',
+      'park-outline',
+      'park-label',
+    ]);
+  });
+
   test('does not modify the input', () {
     StyleRegistry.resolve(style, const StyleContext());
     expect((style['layers'] as List), hasLength(3));
