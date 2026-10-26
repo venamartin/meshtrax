@@ -88,7 +88,7 @@ void main() {
     expect((pins.single.message as NoticeMessage).headline, 'Repeater back up');
   });
 
-  test('order is SOS, Event, Notice', () {
+  test('order is SOS, the server posts, then a member event', () {
     final pins = compute(
       [
         c('n', 'Board meeting moved', server: true),
@@ -97,6 +97,83 @@ void main() {
       ],
       isRoom: true,
     );
-    expect(pins.map((p) => p.id), ['s', 'e', 'n']);
+    expect(pins.map((p) => p.id), ['s', 'n', 'e']);
+  });
+
+  test('server notices with an expiry stack until they expire', () {
+    final pins = compute(
+      [
+        c('n1', 'Notice: Road closed\nexpires=2026-10-22', minutesAgo: 30,
+            server: true),
+        c('n2', 'Notice: Net tonight\nexpires=2026-10-20 21:00', minutesAgo: 10,
+            server: true),
+        c('gone', 'Notice: Old\nexpires=2026-10-20 11:00', minutesAgo: 5,
+            server: true),
+        c('plain', 'Welcome to the room', minutesAgo: 20, server: true),
+      ],
+      isRoom: true,
+    );
+    expect(pins.map((p) => p.id), ['n2', 'plain', 'n1']);
+  });
+
+  test('only the newest plain announcement pins', () {
+    final pins = compute(
+      [
+        c('a1', 'First news', minutesAgo: 30, server: true),
+        c('a2', 'Notice: no expiry', minutesAgo: 20, server: true),
+        c('a3', 'Latest news', minutesAgo: 10, server: true),
+      ],
+      isRoom: true,
+    );
+    expect(pins.map((p) => p.id), ['a3']);
+    expect((pins.single.message as NoticeMessage).announcement, isTrue);
+  });
+
+  test('a server event takes one slot and stacks with others', () {
+    final pins = compute(
+      [
+        c('e1', 'Event: Meetup\n2026-10-21 18:00', minutesAgo: 30,
+            server: true),
+        c('e2', 'Event: Field day\n2026-10-25', minutesAgo: 10, server: true),
+        c('past', 'Event: Over\n2026-10-19 10:00', minutesAgo: 5,
+            server: true),
+      ],
+      isRoom: true,
+    );
+    expect(pins.map((p) => p.id), ['e2', 'e1']);
+    expect(pins.every((p) => p.message is EventMessage), isTrue);
+  });
+
+  test('at most five rows', () {
+    final pins = compute(
+      [
+        for (var i = 0; i < 8; i++)
+          c('n$i', 'Notice: item $i\nexpires=2026-10-30', minutesAgo: i,
+              server: true),
+      ],
+      isRoom: true,
+    );
+    expect(pins.map((p) => p.id), ['n0', 'n1', 'n2', 'n3', 'n4']);
+  });
+
+  test('entries run out at their expiry or end', () {
+    final pins = compute(
+      [
+        c('n', 'Notice: Net\nexpires=2026-10-20 15:00', server: true),
+        c('e', 'Event: Meetup\n2026-10-20 13:00-14:00'),
+      ],
+      isRoom: true,
+    );
+    expect(PinnedMessagesBar.nextChange(pins), DateTime(2026, 10, 20, 14));
+    final later = DateTime(2026, 10, 20, 14, 30);
+    expect(
+      pins.where((p) => PinnedMessagesBar.stillPinned(p, later)).map((p) => p.id),
+      ['n'],
+    );
+    expect(
+      pins.where((p) =>
+          PinnedMessagesBar.stillPinned(p, DateTime(2026, 10, 20, 15))),
+      isEmpty,
+    );
   });
 }

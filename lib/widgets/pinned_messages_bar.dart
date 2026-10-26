@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -38,9 +40,13 @@ class PinnedEntry {
 /// by [compute]; the screen only supplies candidates and dismissals.
 ///
 /// Rules: the newest SOS pins everywhere until dismissed or replaced; the
-/// next upcoming Event pins until it has passed; a room's newest
-/// server-authored post pins; a Location never pins.
-class PinnedMessagesBar extends StatelessWidget {
+/// next upcoming Event pins until it has passed. In a room, the server's own
+/// posts (room.post) stack, newest first: every notice until it expires,
+/// every event until it is over, and the newest of the rest (a plain
+/// announcement). A Location never pins, nor does a channel's or DM's
+/// notice. An entry that runs out while the chat is open drops off on its
+/// own.
+class PinnedMessagesBar extends StatefulWidget {
   final List<PinnedEntry> entries;
   final void Function(PinnedEntry entry) onTap;
   final void Function(PinnedEntry entry) onDismiss;
@@ -52,6 +58,8 @@ class PinnedMessagesBar extends StatelessWidget {
     required this.onDismiss,
   });
 
+  static const maxRows = 5;
+
   static List<PinnedEntry> compute({
     required Iterable<PinCandidate> candidates,
     required Set<String> dismissed,
@@ -61,46 +69,116 @@ class PinnedMessagesBar extends StatelessWidget {
   }) {
     final clock = now ?? DateTime.now();
     PinnedEntry? sos;
-    PinnedEntry? event;
-    PinnedEntry? notice;
     DateTime? sosAt;
-    DateTime? noticeAt;
+    PinnedEntry? event;
+    final serverPosts = <(DateTime, PinnedEntry)>[];
+    (DateTime, PinnedEntry)? announcement;
 
     for (final c in candidates) {
       if (dismissed.contains(c.id)) continue;
-      final parsed =
-          StructuredMessage.parse(c.text, resolveShortLink: resolveShortLink, now: clock);
+      final server = isRoom && c.serverAuthored;
+      final parsed = server
+          ? StructuredMessage.parseAnnouncement(c.text,
+              resolveShortLink: resolveShortLink, now: clock)
+          : StructuredMessage.parse(c.text,
+              resolveShortLink: resolveShortLink, now: clock);
+      if (parsed == null) continue;
+      final entry = PinnedEntry(id: c.id, message: parsed, index: c.index);
 
-      if (parsed is SosMessage) {
-        if (sosAt == null || c.timestamp.isAfter(sosAt)) {
-          sos = PinnedEntry(id: c.id, message: parsed, index: c.index);
-          sosAt = c.timestamp;
-        }
-      } else if (parsed is EventMessage) {
-        if (!parsed.when.effectiveEnd.isAfter(clock)) continue;
-        final current = event?.message as EventMessage?;
-        if (current == null || parsed.when.start.isBefore(current.when.start)) {
-          event = PinnedEntry(id: c.id, message: parsed, index: c.index);
-        }
-      }
-
-      if (isRoom && c.serverAuthored) {
-        if (noticeAt == null || c.timestamp.isAfter(noticeAt)) {
-          final NoticeMessage message = parsed is NoticeMessage
-              ? parsed
-              : NoticeMessage(lines: [c.text.trim()]);
-          if (message.lines.first.isNotEmpty) {
-            notice = PinnedEntry(id: c.id, message: message, index: c.index);
-            noticeAt = c.timestamp;
+      switch (parsed) {
+        case SosMessage():
+          if (sosAt == null || c.timestamp.isAfter(sosAt)) {
+            sos = entry;
+            sosAt = c.timestamp;
           }
-        }
+        case EventMessage(when: final span):
+          if (!span.effectiveEnd.isAfter(clock)) continue;
+          if (server) {
+            serverPosts.add((c.timestamp, entry));
+          } else {
+            final current = event?.message as EventMessage?;
+            if (current == null || span.start.isBefore(current.when.start)) {
+              event = entry;
+            }
+          }
+        case NoticeMessage(:final expires?) when server:
+          if (expires.isAfter(clock)) serverPosts.add((c.timestamp, entry));
+        default:
+          if (server &&
+              (announcement == null || c.timestamp.isAfter(announcement.$1))) {
+            announcement = (c.timestamp, entry);
+          }
       }
     }
-    return [?sos, ?event, ?notice];
+    if (announcement != null) serverPosts.add(announcement);
+    serverPosts.sort((a, b) => b.$1.compareTo(a.$1));
+    return [?sos, for (final (_, e) in serverPosts) e, ?event]
+        .take(maxRows)
+        .toList();
+  }
+
+  /// Whether [entry] still pins at [now]: an event until it is over, a
+  /// notice until it expires.
+  static bool stillPinned(PinnedEntry entry, DateTime now) =>
+      switch (entry.message) {
+        EventMessage(when: final span) => span.effectiveEnd.isAfter(now),
+        NoticeMessage m => !m.isExpired(now),
+        _ => true,
+      };
+
+  /// The soonest moment one of [entries] stops pinning, or null.
+  static DateTime? nextChange(Iterable<PinnedEntry> entries) {
+    DateTime? soonest;
+    for (final e in entries) {
+      final at = switch (e.message) {
+        EventMessage(when: final span) => span.effectiveEnd,
+        NoticeMessage(:final expires) => expires,
+        _ => null,
+      };
+      if (at != null && (soonest == null || at.isBefore(soonest))) {
+        soonest = at;
+      }
+    }
+    return soonest;
+  }
+
+  @override
+  State<PinnedMessagesBar> createState() => _PinnedMessagesBarState();
+}
+
+class _PinnedMessagesBarState extends State<PinnedMessagesBar> {
+  Timer? _timer;
+  DateTime? _timerAt;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  /// Rebuilds once [at] has passed, so an entry that runs out leaves.
+  void _wakeAt(DateTime? at) {
+    if (at == _timerAt) return;
+    _timer?.cancel();
+    _timerAt = at;
+    if (at == null) return;
+    final wait = at.difference(DateTime.now());
+    _timer = Timer(
+      wait.isNegative ? Duration.zero : wait + const Duration(seconds: 1),
+      () {
+        if (!mounted) return;
+        setState(() => _timerAt = null);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final entries = widget.entries
+        .where((e) => PinnedMessagesBar.stillPinned(e, now))
+        .toList();
+    _wakeAt(PinnedMessagesBar.nextChange(entries));
     if (entries.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     return Material(
@@ -117,7 +195,7 @@ class PinnedMessagesBar extends StatelessWidget {
 
   Widget _row(BuildContext context, PinnedEntry entry, ColorScheme scheme) {
     return InkWell(
-      onTap: () => onTap(entry),
+      onTap: () => widget.onTap(entry),
       child: Padding(
         padding: const EdgeInsets.only(left: 12, top: 2, bottom: 2),
         child: Row(
@@ -140,7 +218,7 @@ class PinnedMessagesBar extends StatelessWidget {
               icon: const Icon(Icons.close, size: 16),
               tooltip: context.l10n.pinned_dismiss,
               visualDensity: VisualDensity.compact,
-              onPressed: () => onDismiss(entry),
+              onPressed: () => widget.onDismiss(entry),
             ),
           ],
         ),
