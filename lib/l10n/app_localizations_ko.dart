@@ -5410,4 +5410,25 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chats_draft => '임시 저장';
+
+  @override
+  String get contact_teleBlockedTitle => '무전기 설정에서 차단됨';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return '무전기의 개인정보 설정이 이 정보를 아무와도 공유하지 않아 $name님은 받을 수 없어요. 허용한 연락처가 받을 수 있도록 바꿀까요?';
+  }
+
+  @override
+  String get contact_teleNotNow => '나중에';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return '내 무전기가 이 정보를 아무와도 공유하지 않아요 ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return '내 무전기가 이 정보를 모두와 공유해요 ($mode)';
+  }
 }

@@ -5644,4 +5644,25 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get chats_draft => 'Concept';
+
+  @override
+  String get contact_teleBlockedTitle => 'Geblokkeerd door je radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'De privacy-instellingen van je radio delen dit met niemand, dus $name krijgt het niet. Wijzigen zodat de contacten die je toestaat het krijgen?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Niet nu';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Je radio deelt dit met niemand ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Je radio deelt dit met iedereen ($mode)';
+  }
 }

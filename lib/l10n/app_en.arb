@@ -2882,5 +2882,31 @@
   },
   "chats_markRead": "Mark read",
   "chats_nothingUnread": "No unread messages",
-  "chats_draft": "Draft"
+  "chats_draft": "Draft",
+  "contact_teleBlockedTitle": "Blocked by your radio",
+  "contact_teleBlockedBody": "Your radio's privacy settings share this with nobody, so {name} won't get it. Change them so the contacts you allow get it?",
+  "@contact_teleBlockedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_teleNotNow": "Not now",
+  "contact_teleRadioDenies": "Your radio shares this with nobody ({mode})",
+  "@contact_teleRadioDenies": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "contact_teleRadioAllowsAll": "Your radio shares this with everyone ({mode})",
+  "@contact_teleRadioAllowsAll": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  }
 }

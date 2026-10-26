@@ -2520,5 +2520,10 @@
   "pathfinderHelp_discover": "Is het niet duidelijk welke repeaters je hier kunnen horen, dan stuurt Pathfinder één kort Discover-verzoek (hooguit eens per 10 minuten, en alleen nadat een bericht is mislukt). Heeft je radio GPS, dan onthoudt Pathfinder op deze telefoon per gebied van ongeveer 500 m welke repeaters je daar hebben gehoord, maar nooit je precieze locatie.",
   "pathfinderHelp_off": "Zet je Pathfinder uit, dan routeert de radio weer precies zoals voorheen.",
   "pathfinderHelp_dontShowAgain": "Niet meer tonen",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Geblokkeerd door je radio",
+  "contact_teleBlockedBody": "De privacy-instellingen van je radio delen dit met niemand, dus {name} krijgt het niet. Wijzigen zodat de contacten die je toestaat het krijgen?",
+  "contact_teleNotNow": "Niet nu",
+  "contact_teleRadioDenies": "Je radio deelt dit met niemand ({mode})",
+  "contact_teleRadioAllowsAll": "Je radio deelt dit met iedereen ({mode})"
 }

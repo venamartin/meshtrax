@@ -2520,5 +2520,10 @@
   "pathfinderHelp_discover": "Keď si Pathfinder nie je istý, ktoré opakovače vás tu počujú, pošle jednu krátku požiadavku Discover (najviac raz za 10 minút a len po neúspešnom odoslaní). Ak má rádio GPS, zapamätá si v tomto telefóne, ktoré opakovače vás počuli v každej oblasti s rozmerom asi 500 m, nikdy nie vašu presnú polohu.",
   "pathfinderHelp_off": "Keď Pathfinder vypnete, rádio bude smerovať správy presne tak ako predtým.",
   "pathfinderHelp_dontShowAgain": "Už nezobrazovať",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Zablokované vaším rádiom",
+  "contact_teleBlockedBody": "Nastavenia súkromia vášho rádia to nezdieľajú s nikým, takže {name} to nedostane. Zmeniť ich, aby to dostávali kontakty, ktorým to povolíte?",
+  "contact_teleNotNow": "Teraz nie",
+  "contact_teleRadioDenies": "Vaše rádio to nezdieľa s nikým ({mode})",
+  "contact_teleRadioAllowsAll": "Vaše rádio to zdieľa so všetkými ({mode})"
 }

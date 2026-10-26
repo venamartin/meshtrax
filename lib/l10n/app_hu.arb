@@ -2558,5 +2558,10 @@
   "pathfinderHelp_discover": "Ha nem biztos benne, mely repeaterek hallják Önt az adott helyen, a Pathfinder egyetlen rövid Discover-kérést küld (legfeljebb 10 percenként egyszer, és csak sikertelen küldés után), és ha a rádióban van GPS, ezen a telefonon megjegyzi, mely repeaterek hallották Önt az egyes, kb. 500 m-es területeken – a pontos helyét azonban soha.",
   "pathfinderHelp_off": "Ha kikapcsolja a Pathfindert, a rádió pontosan úgy választ útvonalat, mint korábban.",
   "pathfinderHelp_dontShowAgain": "Ne jelenjen meg többé",
-  "pathfinderHelp_ok": "Rendben"
+  "pathfinderHelp_ok": "Rendben",
+  "contact_teleBlockedTitle": "A rádiója letiltja",
+  "contact_teleBlockedBody": "A rádiója adatvédelmi beállításai ezt senkivel nem osztják meg, így {name} nem kapja meg. Módosítja őket, hogy az engedélyezett partnerei megkapják?",
+  "contact_teleNotNow": "Most nem",
+  "contact_teleRadioDenies": "A rádiója ezt senkivel nem osztja meg ({mode})",
+  "contact_teleRadioAllowsAll": "A rádiója ezt mindenkivel megosztja ({mode})"
 }

@@ -5684,4 +5684,25 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get chats_draft => 'Чернетка';
+
+  @override
+  String get contact_teleBlockedTitle => 'Заблоковано вашим радіо';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Налаштування конфіденційності вашого радіо ні з ким цим не діляться, тож $name цього не отримає. Змінити їх, щоб це отримували контакти, яким ви дозволите?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Не зараз';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Ваше радіо ні з ким цим не ділиться ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Ваше радіо ділиться цим з усіма ($mode)';
+  }
 }

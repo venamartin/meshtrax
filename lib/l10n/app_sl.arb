@@ -2520,5 +2520,10 @@
   "pathfinderHelp_discover": "Ko Pathfinder ni prepričan, kateri ponovitelji vas tukaj slišijo, pošlje eno kratko poizvedbo Discover (največ enkrat na 10 minut in le po neuspelem pošiljanju). Če ima radio GPS, si v tem telefonu zapomni, kateri ponovitelji so vas slišali na vsakem območju velikosti približno 500 m, nikoli pa vašega točnega položaja.",
   "pathfinderHelp_off": "Če Pathfinder izklopite, radio usmerja sporočila natanko tako kot prej.",
   "pathfinderHelp_dontShowAgain": "Ne prikaži več",
-  "pathfinderHelp_ok": "V redu"
+  "pathfinderHelp_ok": "V redu",
+  "contact_teleBlockedTitle": "Blokira vaš radio",
+  "contact_teleBlockedBody": "Nastavitve zasebnosti vašega radia tega ne delijo z nikomer, zato {name} tega ne dobi. Jih spremenite, da bodo to dobili stiki, ki jim to dovolite?",
+  "contact_teleNotNow": "Ne zdaj",
+  "contact_teleRadioDenies": "Vaš radio tega ne deli z nikomer ({mode})",
+  "contact_teleRadioAllowsAll": "Vaš radio to deli z vsemi ({mode})"
 }

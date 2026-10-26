@@ -5683,4 +5683,25 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chats_draft => 'Piszkozat';
+
+  @override
+  String get contact_teleBlockedTitle => 'A rádiója letiltja';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'A rádiója adatvédelmi beállításai ezt senkivel nem osztják meg, így $name nem kapja meg. Módosítja őket, hogy az engedélyezett partnerei megkapják?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Most nem';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'A rádiója ezt senkivel nem osztja meg ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'A rádiója ezt mindenkivel megosztja ($mode)';
+  }
 }

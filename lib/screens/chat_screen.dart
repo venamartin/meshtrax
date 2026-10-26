@@ -41,6 +41,7 @@ import 'contact_share_screen.dart';
 import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
+import '../utils/telemetry_dialog.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
@@ -2027,14 +2028,16 @@ class _ChatScreenState extends State<ChatScreen> {
   void _showContactSettings(BuildContext context) {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     connector.ensureContactSmazSettingLoaded(widget.contact.publicKeyHex);
-    final contact = widget.contact;
+    // The live row: widget.contact keeps the flags this chat opened with,
+    // so the switches came up stale and Close wrote them back (owner,
+    // 2026-10-26: permissions "not saving").
+    final contact = _resolveContact(connector);
     bool smazEnabled = connector.isContactSmazEnabled(contact.publicKeyHex);
-    bool teleBaseEnabled = contact.teleBaseEnabled;
-    bool teleLocEnabled = contact.teleLocEnabled;
-    bool teleEnvEnabled = contact.teleEnvEnabled;
+    final telemetryBefore = telemetryGrantsOf(contact);
+    var telemetry = telemetryBefore;
     final showRemoteCli =
         contact.type == advTypeChat && connector.supportsCompanionCli;
-    bool remoteCliAllowed = _resolveContact(connector).remoteCliAllowed;
+    bool remoteCliAllowed = contact.remoteCliAllowed;
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -2066,34 +2069,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 ),
                 const Divider(height: 8),
-                SwitchListTile(
+                ...telemetrySwitchTiles(
+                  context,
+                  connector: connector,
+                  contactName: contact.name,
+                  grants: telemetry,
+                  onChanged: (next) => setDialogState(() => telemetry = next),
                   contentPadding: EdgeInsets.zero,
-                  title: Text(context.l10n.contact_teleBase),
-                  subtitle: Text(context.l10n.contact_teleBaseSubtitle),
-                  value: teleBaseEnabled,
-                  onChanged: (value) {
-                    setDialogState(() => teleBaseEnabled = value);
-                  },
-                ),
-                const Divider(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.l10n.contact_teleLoc),
-                  subtitle: Text(context.l10n.contact_teleLocSubtitle),
-                  value: teleLocEnabled,
-                  onChanged: (value) {
-                    setDialogState(() => teleLocEnabled = value);
-                  },
-                ),
-                const Divider(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.l10n.contact_teleEnv),
-                  subtitle: Text(context.l10n.contact_teleEnvSubtitle),
-                  value: teleEnvEnabled,
-                  onChanged: (value) {
-                    setDialogState(() => teleEnvEnabled = value);
-                  },
                 ),
                 if (showRemoteCli) ...[
                   const Divider(height: 8),
@@ -2117,13 +2099,16 @@ class _ChatScreenState extends State<ChatScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                connector.setContactFlags(
+                unawaited(saveTelemetryGrants(
+                  connector,
                   contact,
-                  teleBase: teleBaseEnabled,
-                  teleLoc: teleLocEnabled,
-                  teleEnv: teleEnvEnabled,
-                  remoteCli: showRemoteCli ? remoteCliAllowed : null,
-                );
+                  before: telemetryBefore,
+                  after: telemetry,
+                  remoteCli: showRemoteCli &&
+                          remoteCliAllowed != contact.remoteCliAllowed
+                      ? remoteCliAllowed
+                      : null,
+                ));
                 Navigator.pop(context);
               },
               child: Text(context.l10n.common_close),

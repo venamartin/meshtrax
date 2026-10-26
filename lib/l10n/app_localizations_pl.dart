@@ -5689,4 +5689,25 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chats_draft => 'Szkic';
+
+  @override
+  String get contact_teleBlockedTitle => 'Zablokowane przez Twoje radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Ustawienia prywatności Twojego radia nie udostępniają tego nikomu, więc $name tego nie otrzyma. Zmienić je, aby otrzymywały to kontakty, którym pozwolisz?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Nie teraz';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Twoje radio nie udostępnia tego nikomu ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Twoje radio udostępnia to wszystkim ($mode)';
+  }
 }

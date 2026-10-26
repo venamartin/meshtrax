@@ -5681,4 +5681,25 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chats_draft => 'Bozza';
+
+  @override
+  String get contact_teleBlockedTitle => 'Bloccato dalla tua radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Le impostazioni di privacy della tua radio non lo condividono con nessuno, quindi $name non lo riceverà. Cambiarle perché lo ricevano i contatti che autorizzi?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Non ora';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'La tua radio non lo condivide con nessuno ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'La tua radio lo condivide con tutti ($mode)';
+  }
 }

@@ -9731,6 +9731,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Draft'**
   String get chats_draft;
+
+  /// No description provided for @contact_teleBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by your radio'**
+  String get contact_teleBlockedTitle;
+
+  /// No description provided for @contact_teleBlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio\'s privacy settings share this with nobody, so {name} won\'t get it. Change them so the contacts you allow get it?'**
+  String contact_teleBlockedBody(String name);
+
+  /// No description provided for @contact_teleNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get contact_teleNotNow;
+
+  /// No description provided for @contact_teleRadioDenies.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio shares this with nobody ({mode})'**
+  String contact_teleRadioDenies(String mode);
+
+  /// No description provided for @contact_teleRadioAllowsAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio shares this with everyone ({mode})'**
+  String contact_teleRadioAllowsAll(String mode);
 }
 
 class _AppLocalizationsDelegate

@@ -5678,4 +5678,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chats_draft => 'Черновик';
+
+  @override
+  String get contact_teleBlockedTitle => 'Заблокировано вашим радио';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Настройки конфиденциальности вашего радио ни с кем этим не делятся, поэтому $name это не получит. Изменить их, чтобы это получали контакты, которым вы разрешите?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Не сейчас';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Ваше радио ни с кем этим не делится ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Ваше радио делится этим со всеми ($mode)';
+  }
 }

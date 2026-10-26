@@ -5404,4 +5404,25 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chats_draft => '下書き';
+
+  @override
+  String get contact_teleBlockedTitle => '無線機の設定でブロックされています';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return '無線機のプライバシー設定では誰とも共有されないため、$nameには届きません。許可した連絡先に届くよう変更しますか？';
+  }
+
+  @override
+  String get contact_teleNotNow => '今はしない';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return '無線機はこれを誰とも共有しません（$mode）';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return '無線機はこれを全員と共有します（$mode）';
+  }
 }

@@ -2520,5 +2520,10 @@
   "pathfinderHelp_discover": "Quando não tem certeza de quais repetidores conseguem ouvir você aqui, o Pathfinder envia um Discover curto (no máximo um a cada 10 minutos, e só depois de um envio falhar) e, se o seu rádio tiver GPS, guarda neste celular quais repetidores ouviram você em cada área de cerca de 500 m, nunca a sua localização exata.",
   "pathfinderHelp_off": "Se você desligar o Pathfinder, o rádio volta a rotear exatamente como antes.",
   "pathfinderHelp_dontShowAgain": "Não mostrar novamente",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Bloqueado pelo seu rádio",
+  "contact_teleBlockedBody": "As configurações de privacidade do seu rádio não compartilham isso com ninguém, então {name} não vai receber. Alterar para que os contatos que você permitir recebam?",
+  "contact_teleNotNow": "Agora não",
+  "contact_teleRadioDenies": "Seu rádio não compartilha isso com ninguém ({mode})",
+  "contact_teleRadioAllowsAll": "Seu rádio compartilha isso com todos ({mode})"
 }

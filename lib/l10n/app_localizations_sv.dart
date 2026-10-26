@@ -5615,4 +5615,25 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chats_draft => 'Utkast';
+
+  @override
+  String get contact_teleBlockedTitle => 'Blockerat av din radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Din radios integritetsinställningar delar detta med ingen, så $name får det inte. Ändra dem så att kontakterna du tillåter får det?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Inte nu';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Din radio delar detta med ingen ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Din radio delar detta med alla ($mode)';
+  }
 }

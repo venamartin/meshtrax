@@ -5702,4 +5702,25 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chats_draft => 'Brouillon';
+
+  @override
+  String get contact_teleBlockedTitle => 'Bloqué par votre radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Les paramètres de confidentialité de votre radio ne le partagent avec personne, donc $name ne le recevra pas. Les modifier pour que les contacts que vous autorisez le reçoivent ?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Pas maintenant';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Votre radio ne le partage avec personne ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Votre radio le partage avec tout le monde ($mode)';
+  }
 }

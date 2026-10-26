@@ -5682,4 +5682,25 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chats_draft => 'Entwurf';
+
+  @override
+  String get contact_teleBlockedTitle => 'Von Ihrem Funkgerät gesperrt';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Die Datenschutzeinstellungen Ihres Funkgeräts teilen das mit niemandem, daher erhält $name es nicht. Ändern, damit die Kontakte, denen Sie es erlauben, es erhalten?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Nicht jetzt';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Ihr Funkgerät teilt das mit niemandem ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Ihr Funkgerät teilt das mit allen ($mode)';
+  }
 }

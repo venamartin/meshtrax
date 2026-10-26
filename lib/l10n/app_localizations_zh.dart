@@ -5297,4 +5297,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chats_draft => '草稿';
+
+  @override
+  String get contact_teleBlockedTitle => '已被您的电台阻止';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return '您电台的隐私设置不与任何人共享此信息，因此 $name 收不到。要更改设置，让您允许的联系人收到吗？';
+  }
+
+  @override
+  String get contact_teleNotNow => '暂不';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return '您的电台不与任何人共享此信息（$mode）';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return '您的电台与所有人共享此信息（$mode）';
+  }
 }

@@ -5656,4 +5656,25 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get chats_draft => 'Koncept';
+
+  @override
+  String get contact_teleBlockedTitle => 'Zablokované vaším rádiom';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Nastavenia súkromia vášho rádia to nezdieľajú s nikým, takže $name to nedostane. Zmeniť ich, aby to dostávali kontakty, ktorým to povolíte?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Teraz nie';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Vaše rádio to nezdieľa s nikým ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Vaše rádio to zdieľa so všetkými ($mode)';
+  }
 }

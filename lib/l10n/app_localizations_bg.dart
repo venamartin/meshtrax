@@ -5661,4 +5661,25 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get chats_draft => 'Чернова';
+
+  @override
+  String get contact_teleBlockedTitle => 'Блокирано от радиото ви';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Настройките за поверителност на радиото ви не споделят това с никого, така че $name няма да го получи. Да ги промените ли, за да го получават контактите, на които разрешите?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Не сега';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Радиото ви не споделя това с никого ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Радиото ви споделя това с всички ($mode)';
+  }
 }
