@@ -1965,7 +1965,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  /// SOS and the next upcoming Event, pinned above the list until dismissed.
+  /// SOS, events and notices, stacked above the list until dismissed or over.
   /// Only the newest 200 messages are read.
   Widget? _buildPinnedBar(List<ChannelMessage> messages) {
     final uiState = context.watch<UiViewStateService>();
