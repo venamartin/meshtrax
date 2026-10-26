@@ -65,6 +65,16 @@ class PoiService extends ChangeNotifier {
   bool isInstalled(String region, PoiDownload which) =>
       _manifest[region]?[which.name] != null;
 
+  /// Regions with either download on the device.
+  Set<String> get installedRegions => _manifest.keys.toSet();
+
+  int sizeOf(String region) => [
+    for (final w in PoiDownload.values)
+      File('${root.path}/${_slug(region)}/${_fileName(w)}'),
+  ].where((f) => f.existsSync()).fold(0, (sum, f) => sum + f.lengthSync());
+
+  int get totalBytes => installedRegions.fold(0, (sum, r) => sum + sizeOf(r));
+
   bool updateAvailable(String region, PoiDownload which) {
     final have = _manifest[region]?[which.name];
     final offered = fileFor(region, which)?.sha256;

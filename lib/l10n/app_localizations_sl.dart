@@ -5717,7 +5717,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get route_pathPaved => 'Paved';
 
   @override
-  String get route_pathDirt => 'Dirt road';
+  String get route_pathDirt => 'Dirt';
 
   @override
   String get route_pathHiking => 'Hiking';
@@ -6001,4 +6001,10 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get route_pin => 'Dropped pin';
+
+  @override
+  String get appSettings_coordinateFormat => 'Coordinate format';
+
+  @override
+  String get map_copyPosition => 'Copy position';
 }

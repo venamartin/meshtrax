@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:traxroute/traxroute.dart';
 
 import '../helpers/geo_format.dart';
@@ -13,14 +14,14 @@ Color routeColor(BuildContext context) =>
     : const Color(0xFFD84315);
 
 IconData pathTypeIcon(PathType type) => switch (type) {
-  PathType.paved => Icons.directions_car,
-  PathType.dirtRoad => Icons.landscape,
-  PathType.hiking => Icons.hiking,
+  PathType.paved => Symbols.road,
+  PathType.dirt => Symbols.unpaved_road,
+  PathType.hiking => Symbols.hiking,
 };
 
 String pathTypeLabel(BuildContext context, PathType type) => switch (type) {
   PathType.paved => context.l10n.route_pathPaved,
-  PathType.dirtRoad => context.l10n.route_pathDirt,
+  PathType.dirt => context.l10n.route_pathDirt,
   PathType.hiking => context.l10n.route_pathHiking,
 };
 
@@ -182,7 +183,7 @@ class _EndsShort extends StatelessWidget {
     );
     final text = switch (result.pathType) {
       PathType.paved => l10n.route_endsShortPaved(distance, destination),
-      PathType.dirtRoad => l10n.route_endsShortDirt(distance, destination),
+      PathType.dirt => l10n.route_endsShortDirt(distance, destination),
       PathType.hiking => l10n.route_endsShortHiking(distance, destination),
     };
     return Container(

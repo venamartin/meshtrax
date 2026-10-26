@@ -47,7 +47,7 @@ Future<RouteResult> routeOrNearest(
 }
 
 const _looser = {
-  PathType.paved: [PathType.dirtRoad, PathType.hiking],
-  PathType.dirtRoad: [PathType.hiking],
+  PathType.paved: [PathType.dirt, PathType.hiking],
+  PathType.dirt: [PathType.hiking],
   PathType.hiking: <PathType>[],
 };

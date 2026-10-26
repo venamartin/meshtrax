@@ -6,6 +6,7 @@ import 'package:traxpoi/traxpoi.dart';
 
 import '../helpers/geo_format.dart';
 import '../helpers/poi_kinds.dart';
+import '../helpers/position_text.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 
@@ -79,7 +80,11 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
     final found = <(SearchResult, PoiRegion)>[];
     if (text.trim().isNotEmpty) {
       for (final region in widget.regions) {
-        for (final r in await searchRegions([region], text, near: widget.near)) {
+        for (final r in await searchRegions(
+          [region],
+          text,
+          near: widget.near,
+        )) {
           found.add((r, region));
         }
       }
@@ -129,7 +134,10 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
           if (widget.regions.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(l10n.search_noPlaces, style: theme.textTheme.bodyMedium),
+              child: Text(
+                l10n.search_noPlaces,
+                style: theme.textTheme.bodyMedium,
+              ),
             ),
           for (final p in _positions)
             ListTile(
@@ -137,7 +145,7 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
               title: Text(
                 formatCoordinates(p.position, CoordFormat.decimalDegrees)!,
               ),
-              subtitle: Text(_formatName(context, p.format)),
+              subtitle: Text(coordFormatName(l10n, p.format)),
               onTap: () => Navigator.pop(
                 context,
                 MapSearchPick(
@@ -176,17 +184,4 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
       ),
     );
   }
-}
-
-String _formatName(BuildContext context, CoordFormat f) {
-  final l10n = context.l10n;
-  return switch (f) {
-    CoordFormat.decimalDegrees => l10n.coordFormat_decimalDegrees,
-    CoordFormat.degreesMinutes => l10n.coordFormat_degreesMinutes,
-    CoordFormat.degreesMinutesSeconds => l10n.coordFormat_dms,
-    CoordFormat.utm => l10n.coordFormat_utm,
-    CoordFormat.mgrs => l10n.coordFormat_mgrs,
-    CoordFormat.maidenhead => l10n.coordFormat_maidenhead,
-    CoordFormat.geohash => l10n.coordFormat_geohash,
-  };
 }

@@ -69,6 +69,16 @@ class RoutingService extends ChangeNotifier {
 
   bool get hasRoutingData => store.tileFile != null;
 
+  /// Regions with routing data on the device.
+  Set<String> get installedRegions => store.regions.keys.toSet();
+
+  /// What [region]'s routing data takes (tiles it shares count for each
+  /// region that uses them).
+  int sizeOf(String region) => store.sizeOf(region);
+
+  /// What all routing data takes: the one tile file.
+  int get totalBytes => store.tileFile?.lengthSync() ?? 0;
+
   /// 0–1 while [region]'s data is downloading, else null.
   double? progressOf(String region) => _progress[region];
 

@@ -65,6 +65,10 @@ class AppSettings {
   final Map<String, String> batteryChemistryByDeviceId;
   final Map<String, String> batteryChemistryByRepeaterId;
   final UnitSystem unitSystem;
+
+  /// How positions are written: a CoordFormat name (traxcoords), e.g.
+  /// `decimalDegrees`, `utm`, `mgrs`.
+  final String coordinateFormat;
   final Set<String> mutedChannels;
 
   /// Muted conversations keyed by contact pubkey hex (room servers today).
@@ -142,6 +146,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
+    this.coordinateFormat = 'decimalDegrees',
     Set<String>? mutedChannels,
     Set<String>? mutedContacts,
     this.mapShowDiscoveryContacts = true,
@@ -199,6 +204,7 @@ class AppSettings {
       'battery_chemistry_by_device_id': batteryChemistryByDeviceId,
       'battery_chemistry_by_repeater_id': batteryChemistryByRepeaterId,
       'unit_system': unitSystem.value,
+      'coordinate_format': coordinateFormat,
       'muted_channels': mutedChannels.toList(),
       'muted_contacts': mutedContacts.toList(),
       'map_show_discovery_contacts': mapShowDiscoveryContacts,
@@ -271,6 +277,8 @@ class AppSettings {
           ) ??
           {},
       unitSystem: parseUnitSystem(json['unit_system']),
+      coordinateFormat:
+          json['coordinate_format'] as String? ?? 'decimalDegrees',
       mutedChannels:
           ((json['muted_channels'] as List?)
               ?.map((e) => e.toString())
@@ -345,6 +353,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     UnitSystem? unitSystem,
+    String? coordinateFormat,
     Set<String>? mutedChannels,
     Set<String>? mutedContacts,
     bool? mapShowDiscoveryContacts,
@@ -402,6 +411,7 @@ class AppSettings {
       batteryChemistryByRepeaterId:
           batteryChemistryByRepeaterId ?? this.batteryChemistryByRepeaterId,
       unitSystem: unitSystem ?? this.unitSystem,
+      coordinateFormat: coordinateFormat ?? this.coordinateFormat,
       mutedChannels: mutedChannels ?? this.mutedChannels,
       mutedContacts: mutedContacts ?? this.mutedContacts,
       mapShowDiscoveryContacts:

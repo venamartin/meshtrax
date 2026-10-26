@@ -11,7 +11,6 @@ import 'package:path_graph/path_graph.dart'
 import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
-import 'package:traxcoords/traxcoords.dart' show CoordFormat, formatCoordinates;
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 import 'package:traxpoi/traxpoi.dart' show GeoPoint;
 import 'package:traxroute/traxroute.dart'
@@ -26,6 +25,7 @@ import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/position_text.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/poi_service.dart';
@@ -1557,25 +1557,28 @@ class _MapScreenState extends State<MapScreen> {
   }) {
     final routing = context.read<RoutingService?>();
     final canRoute = routing != null && routing.available;
-    final name =
-        title ??
-        formatCoordinates((
-          lat: position.latitude,
-          lon: position.longitude,
-        ), CoordFormat.decimalDegrees)!;
+    final lines = positionLines(
+      position.latitude,
+      position.longitude,
+      coordFormatOf(context.read<AppSettingsService>().settings),
+    );
+    final name = title ?? lines.first;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (title != null)
-              ListTile(
-                title: Text(
-                  title,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
-                ),
+            ListTile(
+              title: Text(
+                title ?? lines.first,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
+              subtitle: Text(
+                (title == null ? lines.skip(1) : lines).join('\n'),
+              ),
+              trailing: CopyPositionButton(text: lines.first),
+            ),
             if (canRoute) ...[
               ListTile(
                 leading: const Icon(Icons.directions),
@@ -1813,7 +1816,7 @@ class _MapScreenState extends State<MapScreen> {
         maxChildSize: 0.9,
         builder: (_, controller) => PlaceSheet(
           detail: detail,
-          format: CoordFormat.decimalDegrees,
+          format: coordFormatOf(context.read<AppSettingsService>().settings),
           units: units,
           controller: controller,
           onRoute: canRoute

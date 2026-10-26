@@ -9831,7 +9831,7 @@ abstract class AppLocalizations {
   /// No description provided for @route_pathDirt.
   ///
   /// In en, this message translates to:
-  /// **'Dirt road'**
+  /// **'Dirt'**
   String get route_pathDirt;
 
   /// No description provided for @route_pathHiking.
@@ -10361,6 +10361,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dropped pin'**
   String get route_pin;
+
+  /// No description provided for @appSettings_coordinateFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinate format'**
+  String get appSettings_coordinateFormat;
+
+  /// No description provided for @map_copyPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy position'**
+  String get map_copyPosition;
 }
 
 class _AppLocalizationsDelegate

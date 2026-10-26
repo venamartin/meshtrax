@@ -200,6 +200,10 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(unitSystem: value));
   }
 
+  Future<void> setCoordinateFormat(String value) async {
+    await updateSettings(_settings.copyWith(coordinateFormat: value));
+  }
+
   bool isChannelMuted(String channelName) {
     return _settings.mutedChannels.contains(channelName);
   }

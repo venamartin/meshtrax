@@ -4,7 +4,7 @@ import 'route.dart';
 /// MeshTrax and traxmapmaker agreed (FINDINGS §9).
 (String, Map<String, Object>) valhallaCosting(PathType type) => switch (type) {
   PathType.paved => ('auto', {'exclude_unpaved': true}),
-  PathType.dirtRoad => ('auto', {'use_tracks': 1.0}),
+  PathType.dirt => ('auto', {'use_tracks': 1.0}),
   PathType.hiking => (
     'pedestrian',
     {

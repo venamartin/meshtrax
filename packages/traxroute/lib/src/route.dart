@@ -8,8 +8,8 @@ enum PathType {
   /// Paved roads only.
   paved,
 
-  /// Dirt roads (jeep roads too) allowed, paved roads too.
-  dirtRoad,
+  /// Dirt and jeep roads allowed, paved roads too.
+  dirt,
 
   /// Trails and paths on foot, with tracks and roads where needed.
   hiking,

@@ -2943,7 +2943,7 @@
   "pathfinder_graphNameHint": "For example, Washington",
   "pathfinder_graphCreate": "Create",
   "route_pathPaved": "Paved",
-  "route_pathDirt": "Dirt road",
+  "route_pathDirt": "Dirt",
   "route_pathHiking": "Hiking",
   "route_minutes": "{minutes} min",
   "@route_minutes": {"placeholders": {"minutes": {"type": "int"}}},
@@ -3038,5 +3038,7 @@
   "route_startSet": "Route start set. Now choose where to go.",
   "route_noStart": "No starting position. Long-press the map and choose Route from here.",
   "route_noData": "Download Trail routing for this region in Offline maps to find routes here.",
-  "route_pin": "Dropped pin"
+  "route_pin": "Dropped pin",
+  "appSettings_coordinateFormat": "Coordinate format",
+  "map_copyPosition": "Copy position"
 }

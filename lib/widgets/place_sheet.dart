@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:traxcoords/traxcoords.dart';
 import 'package:traxpoi/traxpoi.dart';
 
 import '../helpers/geo_format.dart';
 import '../helpers/poi_kinds.dart';
+import '../helpers/position_text.dart';
+import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 
@@ -44,10 +47,7 @@ class PlaceSheet extends StatelessWidget {
       ?p.detail,
       if (p.heritage?.startsWith('nrhp:') ?? false) l10n.place_nrhp,
     ].join(' · ');
-    final position = [
-      formatCoordinates((lat: p.lat, lon: p.lon), format) ?? '',
-      if (p.ele != null) GeoFormat.heightText(p.ele!.toDouble(), units),
-    ].join(' · ');
+    final lines = positionLines(p.lat, p.lon, format);
 
     return ListView(
       controller: controller,
@@ -79,7 +79,22 @@ class PlaceSheet extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(kind, style: theme.textTheme.bodyMedium),
                   const SizedBox(height: 8),
-                  SelectableText(position, style: muted),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SelectableText(
+                          [
+                            lines.first,
+                            if (p.ele != null)
+                              GeoFormat.heightText(p.ele!.toDouble(), units),
+                          ].join(' · '),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                      CopyPositionButton(text: lines.first),
+                    ],
+                  ),
+                  if (lines.length > 1) SelectableText(lines[1], style: muted),
                 ],
               ),
             ),
@@ -122,4 +137,26 @@ class PlaceSheet extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Copies a position as written, and says so.
+class CopyPositionButton extends StatelessWidget {
+  final String text;
+
+  const CopyPositionButton({super.key, required this.text});
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    icon: const Icon(Icons.copy, size: 20),
+    tooltip: context.l10n.map_copyPosition,
+    onPressed: () async {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (context.mounted) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.common_copiedToClipboard),
+        );
+      }
+    },
+  );
 }

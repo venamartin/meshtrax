@@ -49,7 +49,7 @@ void main() {
   test('a reachable destination is a plain route', () async {
     final engine = FakeEngine({
       PathType.paved: 39,
-      PathType.dirtRoad: 39,
+      PathType.dirt: 39,
       PathType.hiking: 39,
     });
     final r = await routeOrNearest(
@@ -63,7 +63,7 @@ void main() {
   test('stops at the nearest point the chosen type reaches', () async {
     final engine = FakeEngine({
       PathType.paved: 38.04,
-      PathType.dirtRoad: 38.08,
+      PathType.dirt: 38.08,
       PathType.hiking: 39,
     });
     final paved = await routeOrNearest(
@@ -75,7 +75,7 @@ void main() {
     expect(engine.calls, lessThan(15));
     final jeep = await routeOrNearest(
       engine,
-      const RouteRequest([start, summit], PathType.dirtRoad),
+      const RouteRequest([start, summit], PathType.dirt),
     );
     expect(jeep.points.last.lat, closeTo(38.08, 0.002));
   });
@@ -83,7 +83,7 @@ void main() {
   test('no looser route either: the error stands', () async {
     final engine = FakeEngine({
       PathType.paved: 38.04,
-      PathType.dirtRoad: 38.04,
+      PathType.dirt: 38.04,
       PathType.hiking: 38.04,
     });
     expect(

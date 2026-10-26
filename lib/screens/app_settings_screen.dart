@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:traxcoords/traxcoords.dart' show CoordFormat;
 import 'package:traxmap/traxmap.dart' show PackKind;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
+import '../helpers/position_text.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
@@ -32,43 +34,33 @@ class AppSettingsScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child:
-            Consumer2<
-              AppSettingsService,
-              MeshCoreConnector
-            >(
-              builder:
-                  (
-                    context,
-                    settingsService,
-                    connector,
-                    child,
-                  ) {
-                    return ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        _buildConnectionCard(context, settingsService),
-                        const SizedBox(height: 16),
-                        _buildPrivacyCard(context, settingsService, connector),
-                        const SizedBox(height: 16),
-                        _buildAppearanceCard(context, settingsService),
-                        const SizedBox(height: 16),
-                        _buildNotificationsCard(context, settingsService),
-                        const SizedBox(height: 16),
-                        _buildMessagingCard(context, settingsService),
-                        const SizedBox(height: 16),
-                        _buildContactsCard(context, settingsService),
-                        const SizedBox(height: 16),
+        child: Consumer2<AppSettingsService, MeshCoreConnector>(
+          builder: (context, settingsService, connector, child) {
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildConnectionCard(context, settingsService),
+                const SizedBox(height: 16),
+                _buildPrivacyCard(context, settingsService, connector),
+                const SizedBox(height: 16),
+                _buildAppearanceCard(context, settingsService),
+                const SizedBox(height: 16),
+                _buildNotificationsCard(context, settingsService),
+                const SizedBox(height: 16),
+                _buildMessagingCard(context, settingsService),
+                const SizedBox(height: 16),
+                _buildContactsCard(context, settingsService),
+                const SizedBox(height: 16),
 
-                        _buildBatteryCard(context, settingsService, connector),
-                        const SizedBox(height: 16),
-                        _buildMapSettingsCard(context, settingsService),
-                        const SizedBox(height: 16),
-                        _buildDebugCard(context, settingsService),
-                      ],
-                    );
-                  },
-            ),
+                _buildBatteryCard(context, settingsService, connector),
+                const SizedBox(height: 16),
+                _buildMapSettingsCard(context, settingsService),
+                const SizedBox(height: 16),
+                _buildDebugCard(context, settingsService),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -247,9 +239,7 @@ class AppSettingsScreen extends StatelessWidget {
           SwitchListTile(
             secondary: const Icon(Icons.palette_outlined),
             title: Text(context.l10n.appSettings_senderNameColors),
-            subtitle: Text(
-              context.l10n.appSettings_senderNameColorsSubtitle,
-            ),
+            subtitle: Text(context.l10n.appSettings_senderNameColorsSubtitle),
             value: settingsService.settings.senderNameColors,
             onChanged: (value) {
               settingsService.setSenderNameColors(value);
@@ -483,9 +473,7 @@ class AppSettingsScreen extends StatelessWidget {
               showDismissibleSnackBar(
                 context,
                 content: Text(
-                  value
-                      ? 'Auto-favorite enabled'
-                      : 'Auto-favorite disabled',
+                  value ? 'Auto-favorite enabled' : 'Auto-favorite disabled',
                 ),
                 duration: const Duration(seconds: 2),
               );
@@ -528,7 +516,9 @@ class AppSettingsScreen extends StatelessWidget {
                   SwitchListTile(
                     secondary: const Icon(Icons.gif_box_outlined),
                     title: const Text("Inline GIFs"),
-                    subtitle: const Text("Render Giphy links as animated GIFs in chat"),
+                    subtitle: const Text(
+                      "Render Giphy links as animated GIFs in chat",
+                    ),
                     value: uiState.renderGifs,
                     onChanged: (value) => uiState.setRenderGifs(value),
                   ),
@@ -598,8 +588,8 @@ class AppSettingsScreen extends StatelessWidget {
                   divisions: 2,
                   label: settingsService.settings.maxChannelMessageRetries
                       .toString(),
-                  onChanged: (value) =>
-                      settingsService.setMaxChannelMessageRetries(value.toInt()),
+                  onChanged: (value) => settingsService
+                      .setMaxChannelMessageRetries(value.toInt()),
                 ),
               ],
             ),
@@ -690,6 +680,19 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showUnitsDialog(context, settingsService),
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.gps_fixed),
+            title: Text(context.l10n.appSettings_coordinateFormat),
+            subtitle: Text(
+              coordFormatName(
+                context.l10n,
+                coordFormatOf(settingsService.settings),
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showCoordinateFormatDialog(context, settingsService),
+          ),
           if (!PlatformInfo.isWeb) ...[
             const Divider(height: 1),
             const _OfflineMapsTile(),
@@ -712,7 +715,6 @@ class AppSettingsScreen extends StatelessWidget {
       ),
     );
   }
-
 
   // Fixed rendering issues
   Widget _buildBatteryCard(
@@ -1099,6 +1101,45 @@ class AppSettingsScreen extends StatelessWidget {
     );
   }
 
+  void _showCoordinateFormatDialog(
+    BuildContext context,
+    AppSettingsService settingsService,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.appSettings_coordinateFormat),
+        content: RadioGroup<CoordFormat>(
+          groupValue: coordFormatOf(settingsService.settings),
+          onChanged: (value) {
+            if (value != null) {
+              settingsService.setCoordinateFormat(value.name);
+              Navigator.pop(context);
+            }
+          },
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final f in CoordFormat.values)
+                  RadioListTile<CoordFormat>(
+                    title: Text(coordFormatName(context.l10n, f)),
+                    value: f,
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.common_close),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showUnitsDialog(
     BuildContext context,
     AppSettingsService settingsService,
@@ -1138,7 +1179,6 @@ class AppSettingsScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildDebugCard(
     BuildContext context,
