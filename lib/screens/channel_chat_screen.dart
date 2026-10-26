@@ -1278,7 +1278,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               : "");
 
     final isJumboEmoji =
-        gifId == null && structured == null && _isOnlyEmojis(message.text);
+        gifId == null && structured == null && isEmojiOnly(message.text);
     final warmLight = ChatColors.isLight(context);
     final displayBubbleColor = isJumboEmoji
         ? Colors.transparent
@@ -1385,6 +1385,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         StructuredMessageCard(
                           message: structured,
                           textScale: textScale,
+                          isOutgoing: isOutgoing,
+                          senderName: message.senderName,
                         ),
                         if (enableTracing || isOutgoing)
                           StructuredCardFooter(
@@ -1413,12 +1415,26 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Flexible(
-                                child: MessageText(
-                                  text: cleanDisplayText,
-                                  style: TextStyle(
-                                    fontSize: bodyFontSize * textScale,
-                                  ),
-                                ),
+                                // Large emoji shrink only when they would
+                                // not fit the bubble.
+                                child: isJumboEmoji
+                                    ? FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          cleanDisplayText,
+                                          style: TextStyle(
+                                            fontSize: bodyFontSize * textScale,
+                                          ),
+                                        ),
+                                      )
+                                    : MessageText(
+                                        text: cleanDisplayText,
+                                        style: TextStyle(
+                                          fontSize: bodyFontSize * textScale,
+                                        ),
+                                      ),
                               ),
                             if (orphanReaction != null) ...[
                               const SizedBox(width: 5),
@@ -2607,23 +2623,4 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
       content: Text(context.l10n.chat_messageDeleted),
     );
   }
-
-  bool _isOnlyEmojis(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return false;
-
-    final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
-    if (noSpaces.characters.length > 3) return false;
-
-    // The analyzer's regex validator does not understand the \p{Emoji} binary
-    // property, but Dart's engine does with unicode: true. An actually invalid
-    // pattern would throw on construction; emoji_only_regex_test.dart proves
-    // this one does not.
-    // ignore: valid_regexps
-    final RegExp emojiRegex = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
-    final RegExp hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
-
-    return emojiRegex.hasMatch(trimmed) && !hasLetter.hasMatch(trimmed);
-  }
 }
-

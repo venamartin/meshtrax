@@ -2850,5 +2850,13 @@
     }
   },
   "structured_expired": "Expired",
-  "structured_announcement": "Announcement"
+  "structured_announcement": "Announcement",
+  "structured_locationOf": "{name}'s location",
+  "@structured_locationOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

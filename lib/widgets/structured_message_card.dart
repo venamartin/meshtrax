@@ -158,11 +158,18 @@ class StructuredMessageCard extends StatelessWidget {
   /// The clock for an event's Today / Past chip; tests pin it.
   final DateTime? now;
 
+  /// Whose message this is. A Location without a label is the sender's
+  /// own position: "My location" on yours, "{name}'s location" on others.
+  final bool isOutgoing;
+  final String? senderName;
+
   const StructuredMessageCard({
     super.key,
     required this.message,
     required this.textScale,
     this.now,
+    this.isOutgoing = false,
+    this.senderName,
   });
 
   /// The icon that stands for a message type in previews and pinned rows.
@@ -210,7 +217,12 @@ class StructuredMessageCard extends StatelessWidget {
           p,
           lead: _badge(p, Icons.location_on),
           overline: m.label == null ? null : l10n.chat_location,
-          title: m.label ?? l10n.chat_location,
+          title: m.label ??
+              (isOutgoing
+                  ? l10n.tray_myLocation
+                  : senderName == null || senderName!.isEmpty
+                      ? l10n.chat_location
+                      : l10n.structured_locationOf(senderName!)),
           lines: [?m.note],
           position: m.position,
           positionLabel: m.label,

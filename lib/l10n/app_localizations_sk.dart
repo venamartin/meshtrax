@@ -5576,4 +5576,9 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get structured_announcement => 'Announcement';
+
+  @override
+  String structured_locationOf(String name) {
+    return '$name\'s location';
+  }
 }

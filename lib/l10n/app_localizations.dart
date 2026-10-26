@@ -9623,6 +9623,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Announcement'**
   String get structured_announcement;
+
+  /// No description provided for @structured_locationOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s location'**
+  String structured_locationOf(String name);
 }
 
 class _AppLocalizationsDelegate

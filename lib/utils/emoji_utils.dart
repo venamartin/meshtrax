@@ -1,5 +1,26 @@
 import 'package:characters/characters.dart';
 
+/// Most emoji a message can hold and still be drawn large.
+const int jumboEmojiMax = 5;
+
+// The analyzer's regex validator does not understand the \p{Emoji} binary
+// property, but Dart's engine does with unicode: true. An actually invalid
+// pattern would throw on construction; emoji_only_regex_test.dart proves
+// this one does not.
+// ignore: valid_regexps
+final _emojiOnly = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
+final _hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
+
+/// Whether [text] is nothing but emoji, at most [jumboEmojiMax] of them, so
+/// the bubble draws them large.
+bool isEmojiOnly(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return false;
+  final noSpaces = trimmed.replaceAll(RegExp(r'\s+'), '');
+  if (noSpaces.characters.length > jumboEmojiMax) return false;
+  return _emojiOnly.hasMatch(trimmed) && !_hasLetter.hasMatch(trimmed);
+}
+
 String? firstEmoji(String name) {
   if (name.isEmpty) return null;
   for (final cluster in name.characters) {
