@@ -16,6 +16,12 @@ void main() {
     expect(maxRoomMessageBytes(), lessThan(maxContactMessageBytes()));
   });
 
+  test('an announcement fits the 160-byte CLI command with its prefix', () {
+    expect(maxRoomAnnouncementBytes(), equals(147));
+    final longest = 'x' * maxRoomAnnouncementBytes();
+    expect(utf8.encode('AB|$roomPostCommand$longest').length, 160);
+  });
+
   test('reply round-trips through parseReply within the room budget', () {
     final built = ChannelMessage.buildReplyWireText(
       targetName: 'Trunks 🩳',

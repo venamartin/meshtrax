@@ -1545,15 +1545,12 @@ class _ChatScreenState extends State<ChatScreen> {
         else if (isAdmin)
           AttachTile(
             icon: Icons.campaign,
-            label: l10n.tray_notice,
+            label: l10n.structured_announcement,
             onTap: () {
               setState(() => _trayOpen = false);
               showDialog(
                 context: context,
-                builder: (_) => RoomAnnouncementDialog(
-                  room: widget.contact,
-                  textPrefix: 'Notice: ',
-                ),
+                builder: (_) => RoomAnnouncementDialog(room: widget.contact),
               );
             },
           ),
@@ -2364,8 +2361,8 @@ class _MessageBubble extends StatelessWidget {
   /// the hops the packet actually reported.
   final String? viaLabel;
 
-  /// Post authored by the room server itself (room.post / system post) —
-  /// gets an announcement marker next to the sender name.
+  /// Post authored by the room server itself (room.post / system post),
+  /// shown as an announcement card.
   final bool isAnnouncement;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -2408,24 +2405,21 @@ class _MessageBubble extends StatelessWidget {
     final messageText = replyInfo?.actualMessage ?? message.text;
 
     final gifId = GifHelper.parseGif(messageText);
-    final parsed = StructuredMessage.parse(
-      messageText,
-      resolveShortLink: ShortLinkResolver.instance.cached,
-    );
-    if (parsed == null) ShortLinkResolver.instance.prefetchIn(messageText);
-    // A post the room server authored (room.post) is a notice even without
-    // the "Notice:" keyword.
-    final announcementLines = isAnnouncement
-        ? messageText
-            .split('\n')
-            .map((l) => l.trim())
-            .where((l) => l.isNotEmpty)
-            .toList()
-        : const <String>[];
-    final structured = parsed ??
-        (announcementLines.isEmpty
-            ? null
-            : NoticeMessage(lines: announcementLines));
+    // A post the room server authored (room.post) is an announcement card
+    // even without a type keyword.
+    final structured = isAnnouncement
+        ? StructuredMessage.parseAnnouncement(
+            messageText,
+            resolveShortLink: ShortLinkResolver.instance.cached,
+          )
+        : StructuredMessage.parse(
+            messageText,
+            resolveShortLink: ShortLinkResolver.instance.cached,
+          );
+    if (structured == null ||
+        (structured is NoticeMessage && structured.announcement)) {
+      ShortLinkResolver.instance.prefetchIn(messageText);
+    }
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
     // Same palette as the channel chat screen: warm ChatColors in light
