@@ -3838,10 +3838,16 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: 'saltos',
+      one: 'salto',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    String _temp1 = intl.Intl.pluralLogic(
+      guessed,
+      locale: localeName,
+      other: 'supuestos',
+      one: 'supuesto',
+    );
+    return 'ruta ($count $_temp0, $guessed $_temp1)';
   }
 
   @override
@@ -3904,37 +3910,37 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chat_resendingByFlood => 'Reenviando por inundación';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Qué hace Pathfinder';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      'Tu radio recuerda una ruta hacia cada contacto y, cuando esa ruta falla, envía el mensaje por inundación a toda la red mesh. Pathfinder escucha todo lo que oye la radio: anuncios de repetidores, conversaciones en los canales, mensajes de otras personas. Con todo eso construye un mapa de qué repetidores se oyen entre sí, cuáles te oyen a ti y cuáles oyen a cada uno de tus contactos.';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      'Cuando envías un mensaje, Pathfinder prueba primero su mejor ruta, luego la siguiente mejor, y solo usa la inundación como último recurso. Un icono de ruta ámbar marca un mensaje que salió por una ruta de Pathfinder.';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      'Necesita tiempo. Un mapa recién creado no sabe nada, así que al principio tus mensajes salen exactamente igual que antes. Tras unas horas escuchando en un mismo lugar empieza a ofrecer rutas, y cada entrega o fallo le enseña algo más. El primer día no esperes mucho de él, y cada vez que te muevas a un sitio nuevo volverá a rendir menos.';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      'A veces rellena un hueco con una suposición: un enlace que solo ha oído funcionar en el sentido contrario. La línea del mensaje indica entonces cuántos saltos son supuestos. Una entrega los confirma; un fallo cuesta un intento y no se guarda nada.';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      'Cuando no está seguro de qué repetidores te oyen aquí, Pathfinder envía un breve Discover (como mucho uno cada 10 minutos, y solo después de un envío fallido) y, si tu radio tiene GPS, guarda en este teléfono qué repetidores te oyeron en cada zona de unos 500 m, nunca tu ubicación exacta.';
 
   @override
   String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+      'Si desactivas Pathfinder, la radio enruta exactamente como lo hacía antes.';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => 'No volver a mostrar';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => 'De acuerdo';
 
   @override
   String get settings_pathGraph => 'Pathfinder (experimental)';
@@ -5576,94 +5582,95 @@ class AppLocalizationsEs extends AppLocalizations {
   String get parkLegend_guidepost => 'Poste indicador';
 
   @override
-  String get dialog_noticeExpires => 'Expires';
+  String get dialog_noticeExpires => 'Caduca';
 
   @override
-  String get dialog_noticeNoExpiry => 'Never';
+  String get dialog_noticeNoExpiry => 'Nunca';
 
   @override
-  String get dialog_noticeExpiryRequired => 'Pick a date (required in a room)';
+  String get dialog_noticeExpiryRequired =>
+      'Elige una fecha (obligatoria en una sala)';
 
   @override
-  String get dialog_noticeExpiryTime => 'Time';
+  String get dialog_noticeExpiryTime => 'Hora';
 
   @override
-  String get dialog_noticeEndOfDay => 'End of day';
+  String get dialog_noticeEndOfDay => 'Al final del día';
 
   @override
   String structured_until(String when) {
-    return 'Until $when';
+    return 'Hasta $when';
   }
 
   @override
-  String get structured_expired => 'Expired';
+  String get structured_expired => 'Caducado';
 
   @override
-  String get structured_announcement => 'Announcement';
+  String get structured_announcement => 'Anuncio';
 
   @override
   String structured_locationOf(String name) {
-    return '$name\'s location';
+    return 'Ubicación de $name';
   }
 
   @override
-  String get reaction_searchHint => 'Search emoji';
+  String get reaction_searchHint => 'Buscar emojis';
 
   @override
-  String get reaction_noResults => 'No emoji found';
+  String get reaction_noResults => 'No se encontraron emojis';
 
   @override
-  String get share_qrAndLink => 'Share QR code and link';
+  String get share_qrAndLink => 'Compartir código QR y enlace';
 
   @override
-  String get share_roomTitle => 'Share Room';
+  String get share_roomTitle => 'Compartir sala';
 
   @override
-  String get share_contactTitle => 'Share Contact';
+  String get share_contactTitle => 'Compartir contacto';
 
   @override
   String get share_roomInstructions =>
-      'Scan to add this room. You\'ll need its password to log in.';
+      'Escanea para añadir esta sala. Necesitarás su contraseña para iniciar sesión.';
 
   @override
-  String get share_contactInstructions => 'Scan to add this contact.';
+  String get share_contactInstructions => 'Escanea para añadir este contacto.';
 
   @override
   String get clearChat_body =>
-      'Delete messages from this chat on this device. New messages still arrive here.';
+      'Borra mensajes de este chat solo en este dispositivo. Los mensajes nuevos seguirán llegando aquí.';
 
   @override
-  String get clearChat_olderThanDay => 'Older than 1 day';
+  String get clearChat_olderThanDay => 'De hace más de 1 día';
 
   @override
-  String get clearChat_olderThanWeek => 'Older than 1 week';
+  String get clearChat_olderThanWeek => 'De hace más de 1 semana';
 
   @override
-  String get clearChat_olderThanMonth => 'Older than 1 month';
+  String get clearChat_olderThanMonth => 'De hace más de 1 mes';
 
   @override
-  String get clearChat_everything => 'All messages';
+  String get clearChat_everything => 'Todos los mensajes';
 
   @override
-  String get chats_markAllRead => 'Mark all as read';
+  String get chats_markAllRead => 'Marcar todo como leído';
 
   @override
   String chats_markAllReadBody(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Mark $count chats as read?',
-      one: 'Mark 1 chat as read?',
+      other: '¿Marcar $count chats como leídos?',
+      one: '¿Marcar 1 chat como leído?',
     );
     return '$_temp0';
   }
 
   @override
-  String get chats_markRead => 'Mark read';
+  String get chats_markRead => 'Marcar como leído';
 
   @override
-  String get chats_nothingUnread => 'No unread messages';
+  String get chats_nothingUnread => 'No hay mensajes sin leer';
 
   @override
-  String get chats_draft => 'Draft';
+  String get chats_draft => 'Borrador';
 }

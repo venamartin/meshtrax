@@ -1049,7 +1049,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contact_lastSeen => '마지막으로 목격';
 
   @override
-  String get contact_clearChat => '명확한 대화';
+  String get contact_clearChat => '채팅 지우기';
 
   @override
   String get contact_teleBase => '텔레메트리 기반';
@@ -3657,10 +3657,10 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hops',
-      one: 'hop',
+      other: '홉',
+      one: '홉',
     );
-    return 'route ($count $_temp0, $guessed guessed)';
+    return '경로 ($count$_temp0, 그중 $guessed홉은 추측)';
   }
 
   @override
@@ -3723,37 +3723,36 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_resendingByFlood => '플러드로 다시 보내는 중';
 
   @override
-  String get pathfinderHelp_title => 'What Pathfinder does';
+  String get pathfinderHelp_title => 'Pathfinder가 하는 일';
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      '무전기는 연락처마다 경로를 하나만 기억하고, 그 경로가 실패하면 메시 전체에 플러드로 보냅니다. Pathfinder는 리피터 애드버트, 채널 대화, 다른 사람의 메시지 등 무전기가 듣는 모든 것에 귀를 기울입니다. 이를 바탕으로 어떤 리피터끼리 서로 듣는지, 어떤 리피터가 내 신호를 듣는지, 어떤 리피터가 각 연락처의 신호를 듣는지 보여 주는 지도를 만듭니다.';
 
   @override
   String get pathfinderHelp_how =>
-      'When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.';
+      '메시지를 보낼 때 Pathfinder는 가장 좋은 경로를 먼저 시도하고, 안 되면 그다음으로 좋은 경로를 시도하며, 플러드는 최후의 수단으로만 사용합니다. 호박색 경로 아이콘은 Pathfinder 경로로 보낸 메시지를 표시합니다.';
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      '학습에는 시간이 걸립니다. 새 지도는 아무것도 모르기 때문에 처음에는 메시지가 예전과 똑같이 전송됩니다. 한곳에서 몇 시간 동안 들은 뒤부터 경로를 제안하기 시작하며, 전달에 성공하든 실패하든 그때마다 더 많이 배웁니다. 첫날에는 큰 기대를 하지 마세요. 새로운 곳으로 이동할 때마다 한동안은 다시 효과가 떨어집니다.';
 
   @override
   String get pathfinderHelp_guessed =>
-      'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.';
+      '때로는 경로의 빈 곳을 추측으로 채우기도 합니다. 반대 방향으로 쓰이는 것만 들어 본 링크를 쓰는 것입니다. 그러면 메시지 상태 줄에 추측한 홉 수가 표시됩니다. 전달되면 그 홉이 맞다는 것이 확인되고, 실패하면 시도 한 번만 잃을 뿐 아무것도 기억하지 않습니다.';
 
   @override
   String get pathfinderHelp_discover =>
-      'When it isn\'t sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.';
+      '이곳에서 어떤 리피터가 내 신호를 들을 수 있는지 확실하지 않으면, Pathfinder는 짧은 Discover를 한 번 보냅니다(전송에 실패한 뒤에만, 최대 10분에 한 번). GPS가 있는 무전기라면 약 500m 크기의 구역마다 어떤 리피터가 내 신호를 들었는지 이 휴대폰에 기록합니다. 정확한 위치는 기록하지 않습니다.';
 
   @override
-  String get pathfinderHelp_off =>
-      'Turn Pathfinder off and the radio routes exactly as it did before.';
+  String get pathfinderHelp_off => 'Pathfinder를 끄면 무전기는 예전과 똑같은 방식으로 경로를 정합니다.';
 
   @override
-  String get pathfinderHelp_dontShowAgain => 'Don\'t show this again';
+  String get pathfinderHelp_dontShowAgain => '다시 보지 않기';
 
   @override
-  String get pathfinderHelp_ok => 'OK';
+  String get pathfinderHelp_ok => '알겠습니다';
 
   @override
   String get settings_pathGraph => 'Pathfinder (실험적)';
@@ -5322,94 +5321,93 @@ class AppLocalizationsKo extends AppLocalizations {
   String get parkLegend_guidepost => '이정표';
 
   @override
-  String get dialog_noticeExpires => 'Expires';
+  String get dialog_noticeExpires => '만료일';
 
   @override
-  String get dialog_noticeNoExpiry => 'Never';
+  String get dialog_noticeNoExpiry => '없음';
 
   @override
-  String get dialog_noticeExpiryRequired => 'Pick a date (required in a room)';
+  String get dialog_noticeExpiryRequired => '날짜를 선택하세요(룸에서는 필수)';
 
   @override
-  String get dialog_noticeExpiryTime => 'Time';
+  String get dialog_noticeExpiryTime => '시간';
 
   @override
-  String get dialog_noticeEndOfDay => 'End of day';
+  String get dialog_noticeEndOfDay => '하루가 끝날 때';
 
   @override
   String structured_until(String when) {
-    return 'Until $when';
+    return '$when까지';
   }
 
   @override
-  String get structured_expired => 'Expired';
+  String get structured_expired => '만료됨';
 
   @override
-  String get structured_announcement => 'Announcement';
+  String get structured_announcement => '룸 공지';
 
   @override
   String structured_locationOf(String name) {
-    return '$name\'s location';
+    return '$name님의 위치';
   }
 
   @override
-  String get reaction_searchHint => 'Search emoji';
+  String get reaction_searchHint => '이모지 검색';
 
   @override
-  String get reaction_noResults => 'No emoji found';
+  String get reaction_noResults => '이모지를 찾을 수 없습니다';
 
   @override
-  String get share_qrAndLink => 'Share QR code and link';
+  String get share_qrAndLink => 'QR 코드와 링크 공유';
 
   @override
-  String get share_roomTitle => 'Share Room';
+  String get share_roomTitle => '룸 공유';
 
   @override
-  String get share_contactTitle => 'Share Contact';
+  String get share_contactTitle => '연락처 공유';
 
   @override
   String get share_roomInstructions =>
-      'Scan to add this room. You\'ll need its password to log in.';
+      'QR 코드를 스캔해 이 룸을 추가하세요. 로그인하려면 룸 비밀번호가 필요합니다.';
 
   @override
-  String get share_contactInstructions => 'Scan to add this contact.';
+  String get share_contactInstructions => 'QR 코드를 스캔해 이 연락처를 추가하세요.';
 
   @override
-  String get clearChat_body =>
-      'Delete messages from this chat on this device. New messages still arrive here.';
+  String get clearChat_body => '이 기기에서 이 채팅의 메시지를 삭제합니다. 새 메시지는 계속 여기에 도착합니다.';
 
   @override
-  String get clearChat_olderThanDay => 'Older than 1 day';
+  String get clearChat_olderThanDay => '하루 이상 지난 메시지';
 
   @override
-  String get clearChat_olderThanWeek => 'Older than 1 week';
+  String get clearChat_olderThanWeek => '일주일 이상 지난 메시지';
 
   @override
-  String get clearChat_olderThanMonth => 'Older than 1 month';
+  String get clearChat_olderThanMonth => '한 달 이상 지난 메시지';
 
   @override
-  String get clearChat_everything => 'All messages';
+  String get clearChat_everything => '모든 메시지';
 
   @override
-  String get chats_markAllRead => 'Mark all as read';
+  String get chats_markAllRead => '모두 읽음으로 표시';
 
   @override
   String chats_markAllReadBody(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Mark $count chats as read?',
-      one: 'Mark 1 chat as read?',
+      other: '채팅 $count개를 읽음으로 표시할까요?',
+      one: '채팅 1개를 읽음으로 표시할까요?',
     );
     return '$_temp0';
   }
 
   @override
-  String get chats_markRead => 'Mark read';
+  String get chats_markRead => '읽음으로 표시';
 
   @override
-  String get chats_nothingUnread => 'No unread messages';
+  String get chats_nothingUnread => '읽지 않은 메시지가 없습니다';
 
   @override
-  String get chats_draft => 'Draft';
+  String get chats_draft => '임시 저장';
 }
