@@ -129,4 +129,8 @@ packages/traxpoi/.dart_tool/
 # traxcoords package test/build output
 packages/traxcoords/build/
 packages/traxcoords/.dart_tool/
+
+# traxroute package test/build output
+packages/traxroute/build/
+packages/traxroute/.dart_tool/
 /backup_swap_*.json
