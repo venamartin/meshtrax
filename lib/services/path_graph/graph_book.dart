@@ -71,8 +71,7 @@ class GraphBook {
 
   static List<GraphEntry> _all() => [
         if (_read(_graphsPref) case final List list)
-          for (final raw in list)
-            if (GraphEntry.fromJson(raw) case final entry?) entry,
+          for (final raw in list) ?GraphEntry.fromJson(raw),
       ];
 
   static Future<void> _save(List<GraphEntry> all) =>

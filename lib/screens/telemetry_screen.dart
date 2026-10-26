@@ -303,8 +303,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   static List<LatLng> _positions(List<Map<String, dynamic>> entries) => [
         for (final entry in entries)
           if (entry['values'] case final Map values)
-            if (values['gps'] case final Map gps)
-              if (_positionOf(gps) case final position?) position,
+            if (values['gps'] case final Map gps) ?_positionOf(gps),
       ];
 
   /// A GPS reading as the card a shared position gets in a chat: map,
