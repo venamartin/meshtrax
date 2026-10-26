@@ -27,7 +27,8 @@ CREATE TABLE place (
   rank INTEGER NOT NULL DEFAULT 0
 );
 
--- The English Wikipedia article about a place.
+-- The English Wikipedia article about a place: summary is its lead in a
+-- small Markdown subset (README.md).
 CREATE TABLE wiki (
   place_id INTEGER NOT NULL PRIMARY KEY REFERENCES place (id),
   title TEXT NOT NULL,

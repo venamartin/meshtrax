@@ -9924,6 +9924,12 @@ abstract class AppLocalizations {
   /// **'Text: Wikipedia, CC BY-SA 4.0'**
   String get place_textCredit;
 
+  /// No description provided for @place_readOnWikipedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Read on Wikipedia'**
+  String get place_readOnWikipedia;
+
   /// No description provided for @place_photoCredit.
   ///
   /// In en, this message translates to:

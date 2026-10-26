@@ -12,7 +12,8 @@ import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
-import 'package:traxpoi/traxpoi.dart' show GeoPoint, PlaceDetail;
+import 'package:traxpoi/traxpoi.dart'
+    show GeoPoint, PlaceDetail, PoiRegion, SummaryLink;
 import 'package:traxroute/traxroute.dart' as trax show PathType, RouteResult;
 
 import '../connector/meshcore_connector.dart';
@@ -1859,24 +1860,45 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
     if (pick == null || !mounted) return;
-    final point = LatLng(pick.point.lat, pick.point.lon);
-    unawaited(_moveTo(point, 15));
     final region = pick.region;
     final detail = pick.placeId == null || region == null
         ? null
         : await region.detail(pick.placeId!);
     if (!mounted) return;
-    if (detail == null) {
+    await _goTo(
+      pick.name,
+      LatLng(pick.point.lat, pick.point.lon),
+      region,
+      detail,
+      connector,
+      selfPosition,
+      units,
+    );
+  }
+
+  /// Moves to a search pick or a link in a place's text and opens its
+  /// sheet: a place's own, or the position's.
+  Future<void> _goTo(
+    String name,
+    LatLng point,
+    PoiRegion? region,
+    PlaceDetail? detail,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    unawaited(_moveTo(point, 15));
+    if (detail == null || region == null) {
       _showShareMarkerAtPositionSheet(
         context: context,
         connector: connector,
         position: point,
         selfPosition: selfPosition,
-        title: pick.name,
+        title: name,
       );
       return;
     }
-    await _showPlaceSheet(detail, connector, selfPosition, units);
+    await _showPlaceSheet(detail, region, connector, selfPosition, units);
   }
 
   Future<void> _openPlace(
@@ -1887,11 +1909,46 @@ class _MapScreenState extends State<MapScreen> {
   ) async {
     final detail = await p.region.detail(p.place.id);
     if (detail == null || !mounted) return;
-    await _showPlaceSheet(detail, connector, selfPosition, units);
+    await _showPlaceSheet(detail, p.region, connector, selfPosition, units);
+  }
+
+  Future<void> _openLink(
+    PoiRegion region,
+    SummaryLink link,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    if (link.feature) {
+      final f = await region.feature(link.id);
+      if (f == null || !mounted) return;
+      await _goTo(
+        f.name,
+        LatLng(f.lat, f.lon),
+        region,
+        null,
+        connector,
+        selfPosition,
+        units,
+      );
+      return;
+    }
+    final detail = await region.detail(link.id);
+    if (detail == null || !mounted) return;
+    await _goTo(
+      detail.place.name,
+      LatLng(detail.place.lat, detail.place.lon),
+      region,
+      detail,
+      connector,
+      selfPosition,
+      units,
+    );
   }
 
   Future<void> _showPlaceSheet(
     PlaceDetail detail,
+    PoiRegion region,
     MeshCoreConnector connector,
     LatLng? selfPosition,
     UnitSystem units,
@@ -1931,6 +1988,10 @@ class _MapScreenState extends State<MapScreen> {
               position: point,
               defaultLabel: name,
             );
+          },
+          onLink: (link) {
+            Navigator.pop(sheetContext);
+            _openLink(region, link, connector, selfPosition, units);
           },
         ),
       ),

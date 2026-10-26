@@ -250,6 +250,9 @@ class PoiRegion {
     );
   }
 
+  Future<FeatureData?> feature(int featureId) async =>
+      points?.featureById(featureId).getSingleOrNull();
+
   Future<String?> meta(String name) async =>
       await points?.metaValue(name).getSingleOrNull() ??
       await addresses?.metaValue(name).getSingleOrNull();

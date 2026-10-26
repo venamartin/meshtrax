@@ -5803,6 +5803,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
 
   @override
+  String get place_readOnWikipedia => 'Read on Wikipedia';
+
+  @override
   String place_photoCredit(String author, String licence) {
     return 'Photo: $author, $licence';
   }

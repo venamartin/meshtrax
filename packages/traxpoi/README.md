@@ -57,6 +57,15 @@ app.
 | Services | `amenity=ranger_station` `tourism=visitor_centre` `amenity=hospital` `amenity=police` `amenity=fire_station` `emergency=phone` `amenity=fuel` |
 | Museums | `tourism=museum` (public and park museums only) |
 
+### wiki
+
+- **`title`**: the English Wikipedia article's title. The app links to the full article from it.
+- **`summary`**: the article's lead (everything before the first `==` heading), in this small Markdown subset and nothing else:
+  - **Paragraphs:** one blank line (`\n\n`) between paragraphs, and no other newlines.
+  - **Emphasis:** `**bold**` and `*italic*`, which may nest.
+  - **Links:** `[text](place:<id>)` or `[text](feature:<id>)`, where the id is a place or feature in the same file. A link appears only where the article links to that place or feature; every other link is its plain text, since the app works offline. Link text has no emphasis.
+  - **Escapes:** a literal `\`, `*`, `[` or `]` is written with a backslash before it.
+
 ### feature (search only)
 
 | Kind | For |

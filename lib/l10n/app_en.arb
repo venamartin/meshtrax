@@ -2965,6 +2965,7 @@
   "route_here": "Route here",
   "place_nrhp": "National Register of Historic Places",
   "place_textCredit": "Text: Wikipedia, CC BY-SA 4.0",
+  "place_readOnWikipedia": "Read on Wikipedia",
   "place_photoCredit": "Photo: {author}, {licence}",
   "@place_photoCredit": {"placeholders": {"author": {"type": "String"}, "licence": {"type": "String"}}},
   "search_hint": "Search places, addresses or coordinates",

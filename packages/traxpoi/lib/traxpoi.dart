@@ -9,3 +9,4 @@ export 'src/db/points_database.dart'
 export 'src/normalize.dart';
 export 'src/poi_region.dart';
 export 'src/search.dart' show GeoPoint;
+export 'src/summary.dart';
