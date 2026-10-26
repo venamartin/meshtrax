@@ -118,6 +118,7 @@ class _MapScreenState extends State<MapScreen> {
   // Points of interest in view, and whether the region in view has them
   // (the map then drops its own icons for the same kinds).
   List<MapPlace> _places = const [];
+  Set<MapPlace> _namedPlaces = const {};
   bool _placesHere = false;
   Timer? _placesTimer;
   int _placesGeneration = 0;
@@ -214,6 +215,7 @@ class _MapScreenState extends State<MapScreen> {
     if (!mounted || generation != _placesGeneration) return;
     setState(() {
       _places = placesToShow(found, camera);
+      _namedPlaces = placesToName(_places, camera);
       _placesHere = here;
     });
   }
@@ -454,6 +456,9 @@ class _MapScreenState extends State<MapScreen> {
             : null;
         final isPoiLink = highlightPosition != null;
         final allowBack = !connector.isConnected || isPoiLink;
+        final mapDark =
+            settings.mapTheme == 'dark' &&
+            !mapIsOnline(settings, context.read<MapPacksService>());
         final showPlaces =
             settings.mapPlaces && !widget.pickPosition && !_isBuildingPathTrace;
 
@@ -606,6 +611,8 @@ class _MapScreenState extends State<MapScreen> {
                       for (final p in _places)
                         placeMarker(
                           p,
+                          named: _namedPlaces.contains(p),
+                          dark: mapDark,
                           onTap: () => _openPlace(
                             p,
                             connector,

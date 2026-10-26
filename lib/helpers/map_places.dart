@@ -15,6 +15,28 @@ const _namedByMap = {
   'natural=stone',
 };
 
+/// Kinds the standard map names itself, so no second name goes under their
+/// icons: its own place names, measured on the San Juans tiles
+/// (2026-10-26: all campgrounds, viewpoints, attractions and ruins; none
+/// of the mines, waterfalls, springs or trailheads).
+const _labelledByMap = {
+  ..._namedByMap,
+  'tourism=camp_site',
+  'tourism=picnic_site',
+  'tourism=viewpoint',
+  'tourism=attraction',
+  'tourism=visitor_centre',
+  'tourism=alpine_hut',
+  'historic=ruins',
+  'amenity=shelter',
+  'amenity=toilets',
+  'amenity=drinking_water',
+  'amenity=fuel',
+  'amenity=fire_station',
+  'amenity=hospital',
+  'amenity=police',
+};
+
 /// The zoom (package zoom) from which the map shows [place]: places with a
 /// Wikipedia article first, then named places, then unnamed ones. Null for
 /// a peak, pass or cliff without an article: the map already names it
@@ -68,6 +90,26 @@ List<MapPlace> placesToShow(
     for (final p in shown)
       if (taken.add(_cellOf(camera, p, cell))) p,
   ];
+}
+
+/// Which of [shown] get their name under the icon: close in (zoom 16,
+/// Martin 2026-10-26), only where the map doesn't name the place itself,
+/// and at most one in each [cell]-pixel square, so names never run into
+/// each other. [shown] comes most notable first ([placesToShow]).
+Set<MapPlace> placesToName(
+  List<MapPlace> shown,
+  MapCamera camera, {
+  double cell = 120,
+}) {
+  if (camera.zoom < 16) return const {};
+  final taken = <(int, int)>{};
+  return {
+    for (final p in shown)
+      if (p.place.name.isNotEmpty &&
+          !_labelledByMap.contains(p.place.kind) &&
+          taken.add(_cellOf(camera, p, cell)))
+        p,
+  };
 }
 
 (int, int) _cellOf(MapCamera camera, MapPlace p, double cell) {
