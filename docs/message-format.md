@@ -30,14 +30,18 @@ field
    - **When**: `YYYY-MM-DD`, optionally ` HH:MM`, optionally an end as
      `-HH:MM` (same day) or ` - YYYY-MM-DD HH:MM` (another day). A date
      alone means all day. Local time, no timezone.
-   - **Extension**: `key=value` with a lowercase key. Reserved for future
-     fields; readers keep and show unknown keys.
+   - **Extension**: `key=value` with a lowercase key. Readers keep and show
+     unknown keys. Defined keys:
+     - `expires=` on a `Notice`: when it stops applying, in the when shape
+       without an end (`YYYY-MM-DD` means the end of that day). MeshTrax
+       pins a room's notice until then and greys it out afterwards.
    - **Free text**: anything else. The first free-text field is the title or
      label, the second the detail (the place of an event, a note on a
      location), the rest are extra lines.
 4. **Required shapes.** `Location` and `SOS` need a position, `Event` needs a
    when, `Notice` needs text. Without them the line is ordinary text, so
-   "Event: see you at 5" stays a sentence.
+   "Event: see you at 5" stays a sentence. In a `Notice` a when-shaped line
+   is text; its date goes in `expires=`.
 5. **Compatibility.** Readers show every field they do not understand, so a
    newer sender never hides information from an older reader. Writers may
    add shapes and keys and may reorder fields. New types are added by
@@ -68,6 +72,9 @@ Event: Fieldday
 Schöckl
 
 Notice: Repeater F857 down for maintenance on Saturday
+
+Notice: Road to the summit closed
+expires=2026-10-19 18:00
 ```
 
 The same event typed by hand on one line:
@@ -96,6 +103,8 @@ Event: Mesh meetup | 2026-10-18 14:00-16:00 | Hauptplatz
 ## Byte budget
 
 A channel message has roughly 125 to 140 bytes for text, a direct message
-158 and a room post 151. The type header costs 5 to 9 bytes, a position 22
-plus a 1-byte separator, a when 10 to 30. An event with title, time, place
-and position needs about 60 bytes plus the title and the place.
+158, a room post 151 and a room announcement (the server's `room.post`
+command) 147. The type header costs 5 to 9 bytes, a position 22 plus a
+1-byte separator, a when 10 to 30, an `expires=` 19 to 25. An event with
+title, time, place and position needs about 60 bytes plus the title and the
+place.

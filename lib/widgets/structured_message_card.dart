@@ -17,6 +17,7 @@ import '../screens/channel_chat_screen.dart';
 import '../screens/chat_screen.dart';
 import '../services/app_settings_service.dart';
 import '../utils/calendar_export.dart';
+import 'message_text.dart';
 import 'mini_map.dart';
 
 /// Colours of one card kind. Each kind has one accent per brightness; every
@@ -230,6 +231,7 @@ class StructuredMessageCard extends StatelessWidget {
           lead: _badge(p, Icons.warning_rounded),
           overline: l10n.structured_sos,
           title: m.text.isEmpty ? l10n.structured_sos : m.text,
+          richTitle: m.text.isNotEmpty,
           lines: [?m.note],
           position: m.position,
           positionLabel: l10n.structured_sos,
@@ -250,29 +252,52 @@ class StructuredMessageCard extends StatelessWidget {
           ],
         ),
       EventMessage m => _event(context, p, m),
-      NoticeMessage m => _scaffold(
-          context,
-          p,
-          lead: _badge(p, Icons.campaign),
-          overline: l10n.structured_notice,
-          title: m.headline,
-          titleSize: 18,
-          lines: m.lines.skip(1).toList(),
-          position: m.position,
-          positionLabel: m.headline,
-          actions: [
-            if (m.position != null)
-              _Action(
-                Icons.map_outlined,
-                l10n.structured_map,
-                () => LinkHandler.openMapAt(context, m.position!,
-                    label: m.headline),
-                primary: false,
-              ),
-          ],
-        ),
+      NoticeMessage m => _notice(context, p, m),
       ShareMessage m => _share(context, p, m),
     };
+  }
+
+  Widget _notice(BuildContext context, StructuredPalette p, NoticeMessage m) {
+    final l10n = context.l10n;
+    final expired = m.isExpired(now ?? DateTime.now());
+    final card = _scaffold(
+      context,
+      p,
+      lead: _badge(p, Icons.campaign),
+      overline: m.announcement
+          ? l10n.structured_announcement
+          : l10n.structured_notice,
+      title: m.headline,
+      titleSize: 18,
+      richTitle: true,
+      chips: [
+        if (expired)
+          _chip(p, l10n.structured_expired)
+        else if (m.expires != null)
+          _chip(p, l10n.structured_until(_expiryText(context, m))),
+      ],
+      lines: m.lines.skip(1).toList(),
+      position: m.position,
+      positionLabel: m.headline,
+      actions: [
+        if (m.position != null)
+          _Action(
+            Icons.map_outlined,
+            l10n.structured_map,
+            () => LinkHandler.openMapAt(context, m.position!, label: m.headline),
+            primary: false,
+          ),
+      ],
+    );
+    return expired ? Opacity(opacity: 0.6, child: card) : card;
+  }
+
+  /// "Thu, Oct 30" for the end of a day, else "Thu, Oct 30, 6:00 PM".
+  static String _expiryText(BuildContext context, NoticeMessage m) {
+    final locale = Localizations.localeOf(context).toString();
+    final day = DateFormat.MMMEd(locale).format(m.expiryDay);
+    if (m.expiresAtDayEnd) return day;
+    return '$day, ${DateFormat.jm(locale).format(m.expires!)}';
   }
 
   Widget _event(BuildContext context, StructuredPalette p, EventMessage m) {
@@ -407,6 +432,9 @@ class StructuredMessageCard extends StatelessWidget {
     String? overline,
     required String title,
     double titleSize = 21,
+
+    /// Markdown and tappable links in the title: written text, not a name.
+    bool richTitle = false,
     List<Widget> chips = const [],
     String? venue,
     List<String> lines = const [],
@@ -426,6 +454,12 @@ class StructuredMessageCard extends StatelessWidget {
     ];
     final bodyStyle =
         TextStyle(color: p.body, fontSize: 14 * textScale, height: 1.3);
+    final titleStyle = TextStyle(
+      color: p.title,
+      fontSize: titleSize * textScale,
+      fontWeight: FontWeight.w500,
+      height: 1.2,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -449,15 +483,10 @@ class StructuredMessageCard extends StatelessWidget {
                         letterSpacing: 1.2,
                       ),
                     ),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: p.title,
-                      fontSize: titleSize * textScale,
-                      fontWeight: FontWeight.w500,
-                      height: 1.2,
-                    ),
-                  ),
+                  if (richTitle)
+                    MessageText(text: title, style: titleStyle)
+                  else
+                    Text(title, style: titleStyle),
                   if (chips.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Wrap(spacing: 6, runSpacing: 4, children: chips),
@@ -473,14 +502,14 @@ class StructuredMessageCard extends StatelessWidget {
             children: [
               Icon(Icons.place_outlined, size: 18 * textScale, color: p.ink),
               const SizedBox(width: 6),
-              Flexible(child: Text(venue, style: bodyStyle)),
+              Flexible(child: MessageText(text: venue, style: bodyStyle)),
             ],
           ),
         ],
         for (final line in lines)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(line, style: bodyStyle),
+            child: MessageText(text: line, style: bodyStyle),
           ),
         if (position != null) ...[
           const SizedBox(height: 12),
@@ -496,7 +525,7 @@ class StructuredMessageCard extends StatelessWidget {
         for (final line in message.extraText)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text(line, style: bodyStyle),
+            child: MessageText(text: line, style: bodyStyle),
           ),
         for (final e in message.extensions.entries)
           Padding(

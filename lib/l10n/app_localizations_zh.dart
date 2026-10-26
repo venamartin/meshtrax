@@ -5208,4 +5208,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get parkLegend_guidepost => '路标';
+
+  @override
+  String get dialog_noticeExpires => 'Expires';
+
+  @override
+  String get dialog_noticeNoExpiry => 'Never';
+
+  @override
+  String get dialog_noticeExpiryRequired => 'Pick a date (required in a room)';
+
+  @override
+  String get dialog_noticeExpiryTime => 'Time';
+
+  @override
+  String get dialog_noticeEndOfDay => 'End of day';
+
+  @override
+  String structured_until(String when) {
+    return 'Until $when';
+  }
+
+  @override
+  String get structured_expired => 'Expired';
+
+  @override
+  String get structured_announcement => 'Announcement';
 }

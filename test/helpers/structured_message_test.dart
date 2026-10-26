@@ -206,6 +206,71 @@ void main() {
     test('empty notice is plain', () {
       expect(StructuredMessage.parse('Notice:'), isNull);
     });
+
+    test('expires with a time round-trips', () {
+      final n = StructuredMessage.parse(
+        'Notice: Road closed\nexpires=2026-10-30 18:00',
+      ) as NoticeMessage;
+      expect(n.expires, DateTime(2026, 10, 30, 18));
+      expect(n.extensions, isEmpty);
+      expect(n.isExpired(DateTime(2026, 10, 30, 17, 59)), isFalse);
+      expect(n.isExpired(DateTime(2026, 10, 30, 18)), isTrue);
+      expect(n.toWire(), 'Notice: Road closed\nexpires=2026-10-30 18:00');
+    });
+
+    test('a date alone expires at the end of that day', () {
+      final n = StructuredMessage.parse('Notice: Net tonight\nexpires=2026-10-30')
+          as NoticeMessage;
+      expect(n.expires, DateTime(2026, 10, 31));
+      expect(n.expiresAtDayEnd, isTrue);
+      expect(n.expiryDay, DateTime(2026, 10, 30));
+      expect(n.toWire(), 'Notice: Net tonight\nexpires=2026-10-30');
+    });
+
+    test('a malformed expires is kept as an extension', () {
+      final n = StructuredMessage.parse('Notice: Hi\nexpires=soon')
+          as NoticeMessage;
+      expect(n.expires, isNull);
+      expect(n.extensions, {'expires': 'soon'});
+    });
+
+    test('a date line stays in the text', () {
+      final n = StructuredMessage.parse('Notice: Field day\n2026-10-30\nBring food')
+          as NoticeMessage;
+      expect(n.lines, ['Field day', '2026-10-30', 'Bring food']);
+      expect(n.expires, isNull);
+    });
+  });
+
+  group('room announcements', () {
+    test('a post in the format is its own type', () {
+      expect(
+        StructuredMessage.parseAnnouncement('Event: Meetup\n2026-10-30 18:00'),
+        isA<EventMessage>(),
+      );
+      final n = StructuredMessage.parseAnnouncement(
+        'Notice: Road closed\nexpires=2026-10-30',
+      ) as NoticeMessage;
+      expect(n.announcement, isFalse);
+      expect(n.expires, DateTime(2026, 10, 31));
+    });
+
+    test('anything else is an announcement with every line kept', () {
+      final n = StructuredMessage.parseAnnouncement(
+        'Welcome!\nRules: https://example.com/rules\nEvent: soon',
+      ) as NoticeMessage;
+      expect(n.announcement, isTrue);
+      expect(n.lines, [
+        'Welcome!',
+        'Rules: https://example.com/rules',
+        'Event: soon',
+      ]);
+      expect(n.summary, 'Welcome!');
+    });
+
+    test('an empty post is nothing', () {
+      expect(StructuredMessage.parseAnnouncement('  \n '), isNull);
+    });
   });
 
   group('markup and prefixes', () {

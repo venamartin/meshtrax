@@ -185,15 +185,39 @@ sealed class StructuredMessage {
           extensions: sorted.extensions,
         );
       case 'notice':
-        if (sorted.freeText.isEmpty) return null;
+        // A date line is text here: a notice's date is its `expires=`.
+        final lines = sorted.textAndDates;
+        if (lines.isEmpty) return null;
+        final extensions = Map.of(sorted.extensions);
+        final expires = NoticeMessage.parseExpiry(extensions['expires']);
+        if (expires != null) extensions.remove('expires');
         return NoticeMessage(
-          lines: sorted.freeText,
+          lines: lines,
           position: sorted.position,
           link: sorted.link,
-          extensions: sorted.extensions,
+          extensions: extensions,
+          expires: expires,
         );
     }
     return null;
+  }
+
+  /// A room server's own post (room.post): what [parse] makes of it, else
+  /// the whole post as an announcement.
+  static StructuredMessage? parseAnnouncement(
+    String text, {
+    LatLng? Function(String url)? resolveShortLink,
+    DateTime? now,
+  }) {
+    final parsed = parse(text, resolveShortLink: resolveShortLink, now: now);
+    if (parsed != null) return parsed;
+    final lines = text
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) return null;
+    return NoticeMessage(lines: lines, announcement: true);
   }
 
   /// Things other apps send without a keyword.
@@ -269,6 +293,9 @@ class _Fields {
   EventWhen? when;
   String? link;
   final freeText = <String>[];
+
+  /// [freeText] with every date-shaped field kept in its place.
+  final textAndDates = <String>[];
   final extensions = <String, String>{};
 
   static _Fields classify(
@@ -300,6 +327,7 @@ class _Fields {
       final when = EventWhen.parse(field);
       if (when != null) {
         out.when ??= when;
+        out.textAndDates.add(field);
         continue;
       }
       final ext = StructuredMessage._extension.firstMatch(field);
@@ -308,6 +336,7 @@ class _Fields {
         continue;
       }
       out.freeText.add(field);
+      out.textAndDates.add(field);
     }
     return out;
   }
@@ -544,20 +573,55 @@ class NoticeMessage extends StructuredMessage {
   @override
   final LatLng? position;
 
+  /// When the notice stops applying, from its `expires=` field. A date
+  /// alone means the end of that day, so it is held as the next midnight.
+  final DateTime? expires;
+
+  /// A room server's post that is not in this format: the whole post as
+  /// plain lines. Never on the wire.
+  final bool announcement;
+
   const NoticeMessage({
     required this.lines,
     this.position,
     super.link,
     super.extensions,
+    this.expires,
+    this.announcement = false,
   });
 
   String get headline => lines.first;
+
+  bool isExpired(DateTime now) => expires != null && !expires!.isAfter(now);
+
+  /// Whether [expires] came from a date with no time.
+  bool get expiresAtDayEnd =>
+      expires != null && expires!.hour == 0 && expires!.minute == 0;
+
+  /// The day an end-of-day expiry names: the day before [expires].
+  DateTime get expiryDay => expiresAtDayEnd
+      ? DateTime(expires!.year, expires!.month, expires!.day - 1)
+      : expires!;
+
+  static DateTime? parseExpiry(String? field) {
+    if (field == null) return null;
+    final when = EventWhen.parse(field);
+    if (when == null || when.end != null) return null;
+    final s = when.start;
+    return when.allDay ? DateTime(s.year, s.month, s.day + 1) : s;
+  }
+
+  String _expiryWire() {
+    final day = expiryDay;
+    if (expiresAtDayEnd) return EventWhen._dateText(day);
+    return '${EventWhen._dateText(day)} ${EventWhen._timeText(day)}';
+  }
 
   @override
   String get keyword => 'Notice';
 
   @override
-  String get summary => 'Notice: $headline';
+  String get summary => announcement ? headline : 'Notice: $headline';
 
   @override
   String toWire() {
@@ -567,7 +631,15 @@ class NoticeMessage extends StructuredMessage {
       if (s.isNotEmpty) out.add(s);
     }
     if (position != null) out.add(StructuredMessage.formatCoordinates(position!));
-    _appendCommon(out, link: link, extraText: const [], extensions: extensions);
+    _appendCommon(
+      out,
+      link: link,
+      extraText: const [],
+      extensions: {
+        if (expires != null) 'expires': _expiryWire(),
+        ...extensions,
+      },
+    );
     return out.join('\n');
   }
 }

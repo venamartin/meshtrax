@@ -9575,6 +9575,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guidepost'**
   String get parkLegend_guidepost;
+
+  /// No description provided for @dialog_noticeExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get dialog_noticeExpires;
+
+  /// No description provided for @dialog_noticeNoExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get dialog_noticeNoExpiry;
+
+  /// No description provided for @dialog_noticeExpiryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date (required in a room)'**
+  String get dialog_noticeExpiryRequired;
+
+  /// No description provided for @dialog_noticeExpiryTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get dialog_noticeExpiryTime;
+
+  /// No description provided for @dialog_noticeEndOfDay.
+  ///
+  /// In en, this message translates to:
+  /// **'End of day'**
+  String get dialog_noticeEndOfDay;
+
+  /// No description provided for @structured_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until {when}'**
+  String structured_until(String when);
+
+  /// No description provided for @structured_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get structured_expired;
+
+  /// No description provided for @structured_announcement.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement'**
+  String get structured_announcement;
 }
 
 class _AppLocalizationsDelegate
