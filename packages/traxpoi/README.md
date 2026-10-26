@@ -38,6 +38,7 @@ app.
 
 ### place
 
+- **`name`**: the display name, or `''` for an unnamed place (see name).
 - **`kind`**: one of the kinds below, OpenStreetMap-style. The app picks the icon and the translated type label from it.
 - **`detail`**: an optional English type that is more specific than the kind, e.g. "Aerial tramway". The sheet shows it next to the label.
 - **`lat`/`lon`**: the routing point.
@@ -71,6 +72,10 @@ app.
 Every searchable name: one row per name of a place or a feature. `role` is
 `main`, `alt`, `old`, `official`, `short` or `redirect` (a Wikipedia
 redirect). `norm` is the name normalized as below.
+
+A place with no name (an unnamed spring, toilet or trailhead) has
+`place.name` = `''` and no rows here: it's an icon on the map with its own
+sheet, but search never finds it by name. Features always have a name.
 
 ### photo
 

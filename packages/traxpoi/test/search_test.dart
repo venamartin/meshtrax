@@ -20,6 +20,7 @@ File buildPoints(Directory dir, String name) {
     (5, 'natural=peak', 'Castle Rock', 39.3722, -104.8561, 0),
     (6, 'waterway=waterfall', 'Bear Creek Falls', 38.0045, -107.6626, 0),
     (7, 'waterway=waterfall', 'Box Cañon Falls', 38.0179, -107.6727, 1),
+    (8, 'natural=spring', '', 37.9800, -107.7100, 0),
   ];
   for (final (id, kind, name, lat, lon, rank) in places) {
     db.execute(
@@ -58,7 +59,7 @@ File buildPoints(Directory dir, String name) {
         role,
       ]);
   for (final p in places) {
-    addName(p.$1, null, p.$3, 'main');
+    if (p.$3.isNotEmpty) addName(p.$1, null, p.$3, 'main');
   }
   for (final f in features) {
     addName(null, f.$1, f.$3, 'main');
@@ -170,6 +171,11 @@ void main() {
     expect(await region.searchNames('zzzz qqqq'), isEmpty);
   });
 
+  test('an unnamed place is never a search result', () async {
+    final r = await region.searchNames('spring');
+    expect(r.where((x) => x.id == 8 && x.type == ResultType.place), isEmpty);
+  });
+
   test('addresses: exact number, street with typos', () async {
     final r = await region.searchAddresses('612 Main St Ouray', near: ouray);
     expect(r.single.name, '612 Main Street, Ouray, 81427');
@@ -185,7 +191,8 @@ void main() {
       east: -107.45,
       west: -107.95,
     );
-    expect(r.map((p) => p.id), containsAll([1, 2, 3, 4, 6, 7]));
+    expect(r.map((p) => p.id), containsAll([1, 2, 3, 4, 6, 7, 8]));
+    expect(r.firstWhere((p) => p.id == 8).name, '', reason: 'unnamed: an icon');
     expect(r.map((p) => p.id), isNot(contains(5)));
   });
 

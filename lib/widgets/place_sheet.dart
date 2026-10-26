@@ -72,7 +72,10 @@ class PlaceSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(p.name, style: theme.textTheme.titleLarge),
+                  Text(
+                    p.name.isEmpty ? poiKindLabel(l10n, p.kind) : p.name,
+                    style: theme.textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 4),
                   Text(kind, style: theme.textTheme.bodyMedium),
                   const SizedBox(height: 8),
