@@ -5431,4 +5431,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return '내 무전기가 이 정보를 모두와 공유해요 ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => '내 위치를 받을 수 있어요';
 }

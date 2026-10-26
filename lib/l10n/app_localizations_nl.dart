@@ -5665,4 +5665,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Je radio deelt dit met iedereen ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Kan je locatie opvragen';
 }

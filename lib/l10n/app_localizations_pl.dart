@@ -5710,4 +5710,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Twoje radio udostępnia to wszystkim ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Może pobrać Twoją lokalizację';
 }

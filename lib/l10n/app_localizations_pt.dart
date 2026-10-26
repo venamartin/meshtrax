@@ -5689,4 +5689,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Seu rádio compartilha isso com todos ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Pode obter sua localização';
 }

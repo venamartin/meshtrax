@@ -2563,5 +2563,6 @@
   "contact_teleBlockedBody": "A rádiója adatvédelmi beállításai ezt senkivel nem osztják meg, így {name} nem kapja meg. Módosítja őket, hogy az engedélyezett partnerei megkapják?",
   "contact_teleNotNow": "Most nem",
   "contact_teleRadioDenies": "A rádiója ezt senkivel nem osztja meg ({mode})",
-  "contact_teleRadioAllowsAll": "A rádiója ezt mindenkivel megosztja ({mode})"
+  "contact_teleRadioAllowsAll": "A rádiója ezt mindenkivel megosztja ({mode})",
+  "contact_sharesPosition": "Lekérheti a helyzetét"
 }

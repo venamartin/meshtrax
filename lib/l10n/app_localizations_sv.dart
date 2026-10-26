@@ -5636,4 +5636,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Din radio delar detta med alla ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Kan hämta din plats';
 }

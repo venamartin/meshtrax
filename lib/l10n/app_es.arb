@@ -2553,5 +2553,6 @@
   "contact_teleBlockedBody": "La configuración de privacidad de tu radio no lo comparte con nadie, así que {name} no lo recibirá. ¿Cambiarla para que lo reciban los contactos que permitas?",
   "contact_teleNotNow": "Ahora no",
   "contact_teleRadioDenies": "Tu radio no lo comparte con nadie ({mode})",
-  "contact_teleRadioAllowsAll": "Tu radio lo comparte con todos ({mode})"
+  "contact_teleRadioAllowsAll": "Tu radio lo comparte con todos ({mode})",
+  "contact_sharesPosition": "Puede obtener tu ubicación"
 }

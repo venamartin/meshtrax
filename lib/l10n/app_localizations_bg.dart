@@ -5682,4 +5682,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Радиото ви споделя това с всички ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Може да получи местоположението ви';
 }

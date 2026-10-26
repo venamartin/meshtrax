@@ -2563,5 +2563,6 @@
   "contact_teleBlockedBody": "無線機のプライバシー設定では誰とも共有されないため、{name}には届きません。許可した連絡先に届くよう変更しますか？",
   "contact_teleNotNow": "今はしない",
   "contact_teleRadioDenies": "無線機はこれを誰とも共有しません（{mode}）",
-  "contact_teleRadioAllowsAll": "無線機はこれを全員と共有します（{mode}）"
+  "contact_teleRadioAllowsAll": "無線機はこれを全員と共有します（{mode}）",
+  "contact_sharesPosition": "あなたの位置情報を取得できます"
 }

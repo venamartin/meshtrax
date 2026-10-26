@@ -26,6 +26,7 @@ import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/quick_switch_bar.dart';
+import '../widgets/shares_position_icon.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/unread_badge.dart';
 
@@ -1102,13 +1103,28 @@ class _ChatsScreenState extends State<ChatsScreen>
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
-                                          child: Text(
-                                            item.title,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          child: Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  item.title,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (item.contact != null &&
+                                                  connector.sharesPositionWith(
+                                                    item.contact!,
+                                                  )) ...[
+                                                const SizedBox(width: 4),
+                                                const SharesPositionIcon(),
+                                              ],
+                                            ],
                                           ),
                                         ),
                                         const SizedBox(width: 8),

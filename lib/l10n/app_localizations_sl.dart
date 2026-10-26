@@ -5678,4 +5678,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Vaš radio to deli z vsemi ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Lahko pridobi vašo lokacijo';
 }

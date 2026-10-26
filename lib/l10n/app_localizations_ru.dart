@@ -5699,4 +5699,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Ваше радио делится этим со всеми ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Может получить ваше местоположение';
 }

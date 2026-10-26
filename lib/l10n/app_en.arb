@@ -2908,5 +2908,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "contact_sharesPosition": "Can get your position"
 }

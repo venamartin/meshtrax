@@ -2563,5 +2563,6 @@
   "contact_teleBlockedBody": "Ustawienia prywatności Twojego radia nie udostępniają tego nikomu, więc {name} tego nie otrzyma. Zmienić je, aby otrzymywały to kontakty, którym pozwolisz?",
   "contact_teleNotNow": "Nie teraz",
   "contact_teleRadioDenies": "Twoje radio nie udostępnia tego nikomu ({mode})",
-  "contact_teleRadioAllowsAll": "Twoje radio udostępnia to wszystkim ({mode})"
+  "contact_teleRadioAllowsAll": "Twoje radio udostępnia to wszystkim ({mode})",
+  "contact_sharesPosition": "Może pobrać Twoją lokalizację"
 }

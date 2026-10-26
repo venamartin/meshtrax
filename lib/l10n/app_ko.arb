@@ -2563,5 +2563,6 @@
   "contact_teleBlockedBody": "무전기의 개인정보 설정이 이 정보를 아무와도 공유하지 않아 {name}님은 받을 수 없어요. 허용한 연락처가 받을 수 있도록 바꿀까요?",
   "contact_teleNotNow": "나중에",
   "contact_teleRadioDenies": "내 무전기가 이 정보를 아무와도 공유하지 않아요 ({mode})",
-  "contact_teleRadioAllowsAll": "내 무전기가 이 정보를 모두와 공유해요 ({mode})"
+  "contact_teleRadioAllowsAll": "내 무전기가 이 정보를 모두와 공유해요 ({mode})",
+  "contact_sharesPosition": "내 위치를 받을 수 있어요"
 }

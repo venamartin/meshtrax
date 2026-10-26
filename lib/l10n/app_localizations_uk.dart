@@ -5705,4 +5705,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Ваше радіо ділиться цим з усіма ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Може отримати ваше розташування';
 }

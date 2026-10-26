@@ -5723,4 +5723,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Votre radio le partage avec tout le monde ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Peut obtenir votre position';
 }

@@ -5596,4 +5596,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Your radio shares this with everyone ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Can get your position';
 }

@@ -2530,5 +2530,6 @@
   "contact_teleBlockedBody": "您电台的隐私设置不与任何人共享此信息，因此 {name} 收不到。要更改设置，让您允许的联系人收到吗？",
   "contact_teleNotNow": "暂不",
   "contact_teleRadioDenies": "您的电台不与任何人共享此信息（{mode}）",
-  "contact_teleRadioAllowsAll": "您的电台与所有人共享此信息（{mode}）"
+  "contact_teleRadioAllowsAll": "您的电台与所有人共享此信息（{mode}）",
+  "contact_sharesPosition": "可以获取您的位置"
 }

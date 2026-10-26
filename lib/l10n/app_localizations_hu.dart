@@ -5704,4 +5704,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'A rádiója ezt mindenkivel megosztja ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Lekérheti a helyzetét';
 }

@@ -5703,4 +5703,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Ihr Funkgerät teilt das mit allen ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Kann Ihren Standort abrufen';
 }

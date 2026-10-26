@@ -3,6 +3,7 @@ import '../models/contact.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../utils/platform_info.dart';
+import 'shares_position_icon.dart';
 import 'unread_badge.dart';
 
 String? _firstEmoji(String text) {
@@ -30,6 +31,9 @@ class ContactTile extends StatelessWidget {
   final VoidCallback onLongPress;
   final bool isDiscovered;
 
+  /// They get this radio's position when they ask for telemetry.
+  final bool sharesPosition;
+
   const ContactTile({
     super.key,
     required this.contact,
@@ -39,6 +43,7 @@ class ContactTile extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.isDiscovered = false,
+    this.sharesPosition = false,
   });
 
   @override
@@ -67,11 +72,21 @@ class ContactTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  contact.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        contact.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (sharesPosition) ...[
+                      const SizedBox(width: 4),
+                      const SharesPositionIcon(),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(width: 8),

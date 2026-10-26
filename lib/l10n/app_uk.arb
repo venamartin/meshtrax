@@ -2525,5 +2525,6 @@
   "contact_teleBlockedBody": "Налаштування конфіденційності вашого радіо ні з ким цим не діляться, тож {name} цього не отримає. Змінити їх, щоб це отримували контакти, яким ви дозволите?",
   "contact_teleNotNow": "Не зараз",
   "contact_teleRadioDenies": "Ваше радіо ні з ким цим не ділиться ({mode})",
-  "contact_teleRadioAllowsAll": "Ваше радіо ділиться цим з усіма ({mode})"
+  "contact_teleRadioAllowsAll": "Ваше радіо ділиться цим з усіма ({mode})",
+  "contact_sharesPosition": "Може отримати ваше розташування"
 }

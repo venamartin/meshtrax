@@ -1068,6 +1068,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int get telemetryModeBase => _telemetryModeBase;
   int get telemetryModeLoc => _telemetryModeLoc;
   int get telemetryModeEnv => _telemetryModeEnv;
+
+  /// Whether [contact] gets this radio's position when it asks for
+  /// telemetry. The firmware answers only with base allowed and adds the
+  /// position only with location allowed, each by the radio's own setting
+  /// or, on "Allow by contact flags", by the contact's flag. Only chat
+  /// contacts ask, and only those the radio holds: it cannot read a
+  /// request from anyone else.
+  bool sharesPositionWith(Contact contact) {
+    if (contact.type != advTypeChat || !contact.isActive) return false;
+    bool allowed(int mode, bool flag) =>
+        mode == teleModeAllowAll || (mode == teleModeAllowFlags && flag);
+    return allowed(telemetryModeBase, contact.teleBaseEnabled) &&
+        allowed(telemetryModeLoc, contact.teleLocEnabled);
+  }
+
   int get advertLocationPolicy => _advertLocPolicy;
   int get multiAcks => _multiAcks;
   bool? get clientRepeat => _clientRepeat;

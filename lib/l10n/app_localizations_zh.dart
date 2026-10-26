@@ -5318,4 +5318,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return '您的电台与所有人共享此信息（$mode）';
   }
+
+  @override
+  String get contact_sharesPosition => '可以获取您的位置';
 }

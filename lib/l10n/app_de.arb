@@ -2553,5 +2553,6 @@
   "contact_teleBlockedBody": "Die Datenschutzeinstellungen Ihres Funkgeräts teilen das mit niemandem, daher erhält {name} es nicht. Ändern, damit die Kontakte, denen Sie es erlauben, es erhalten?",
   "contact_teleNotNow": "Nicht jetzt",
   "contact_teleRadioDenies": "Ihr Funkgerät teilt das mit niemandem ({mode})",
-  "contact_teleRadioAllowsAll": "Ihr Funkgerät teilt das mit allen ({mode})"
+  "contact_teleRadioAllowsAll": "Ihr Funkgerät teilt das mit allen ({mode})",
+  "contact_sharesPosition": "Kann Ihren Standort abrufen"
 }

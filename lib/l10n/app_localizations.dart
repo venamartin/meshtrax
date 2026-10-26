@@ -9761,6 +9761,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your radio shares this with everyone ({mode})'**
   String contact_teleRadioAllowsAll(String mode);
+
+  /// No description provided for @contact_sharesPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Can get your position'**
+  String get contact_sharesPosition;
 }
 
 class _AppLocalizationsDelegate

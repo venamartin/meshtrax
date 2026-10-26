@@ -2525,5 +2525,6 @@
   "contact_teleBlockedBody": "Din radios integritetsinställningar delar detta med ingen, så {name} får det inte. Ändra dem så att kontakterna du tillåter får det?",
   "contact_teleNotNow": "Inte nu",
   "contact_teleRadioDenies": "Din radio delar detta med ingen ({mode})",
-  "contact_teleRadioAllowsAll": "Din radio delar detta med alla ({mode})"
+  "contact_teleRadioAllowsAll": "Din radio delar detta med alla ({mode})",
+  "contact_sharesPosition": "Kan hämta din plats"
 }

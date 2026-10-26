@@ -2525,5 +2525,6 @@
   "contact_teleBlockedBody": "De privacy-instellingen van je radio delen dit met niemand, dus {name} krijgt het niet. Wijzigen zodat de contacten die je toestaat het krijgen?",
   "contact_teleNotNow": "Niet nu",
   "contact_teleRadioDenies": "Je radio deelt dit met niemand ({mode})",
-  "contact_teleRadioAllowsAll": "Je radio deelt dit met iedereen ({mode})"
+  "contact_teleRadioAllowsAll": "Je radio deelt dit met iedereen ({mode})",
+  "contact_sharesPosition": "Kan je locatie opvragen"
 }

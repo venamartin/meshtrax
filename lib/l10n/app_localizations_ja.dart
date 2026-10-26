@@ -5425,4 +5425,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return '無線機はこれを全員と共有します（$mode）';
   }
+
+  @override
+  String get contact_sharesPosition => 'あなたの位置情報を取得できます';
 }

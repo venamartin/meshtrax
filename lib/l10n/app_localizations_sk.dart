@@ -5677,4 +5677,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String contact_teleRadioAllowsAll(String mode) {
     return 'Vaše rádio to zdieľa so všetkými ($mode)';
   }
+
+  @override
+  String get contact_sharesPosition => 'Môže získať vašu polohu';
 }
