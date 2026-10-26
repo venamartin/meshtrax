@@ -12,8 +12,8 @@ void main() {
   test('each path type asks Valhalla for the agreed costing', () {
     expect(valhallaCosting(PathType.paved).$1, 'auto');
     expect(valhallaCosting(PathType.paved).$2, {'exclude_unpaved': true});
-    expect(valhallaCosting(PathType.dirtAndJeep).$1, 'auto');
-    expect(valhallaCosting(PathType.dirtAndJeep).$2, {'use_tracks': 1.0});
+    expect(valhallaCosting(PathType.dirtRoad).$1, 'auto');
+    expect(valhallaCosting(PathType.dirtRoad).$2, {'use_tracks': 1.0});
     final (costing, options) = valhallaCosting(PathType.hiking);
     expect(costing, 'pedestrian');
     expect(options, {
@@ -27,7 +27,7 @@ void main() {
 
   test('the request carries points, costing and heights', () {
     final req = valhallaRouteRequest(
-      const RouteRequest([ouray, campBird], PathType.dirtAndJeep),
+      const RouteRequest([ouray, campBird], PathType.dirtRoad),
     );
     expect(req['locations'], [
       {'lat': 38.0228, 'lon': -107.6714},
@@ -46,7 +46,7 @@ void main() {
             )
             as Map<String, dynamic>;
     final r = parseValhallaRoute(
-      const RouteRequest([ouray, campBird], PathType.dirtAndJeep),
+      const RouteRequest([ouray, campBird], PathType.dirtRoad),
       json,
     );
     expect(r.km, closeTo(9.492, 1e-9));

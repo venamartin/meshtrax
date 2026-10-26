@@ -44,7 +44,7 @@ void main() {
         const RouteRequest([ouray, silverton], PathType.paved),
       );
       final jeep = await engine.route(
-        const RouteRequest([ouray, campBird], PathType.dirtAndJeep),
+        const RouteRequest([ouray, campBird], PathType.dirtRoad),
       );
       final hike = await engine.route(
         const RouteRequest([ouray, boxCanyonFalls], PathType.hiking),
@@ -67,7 +67,7 @@ void main() {
       expect(r.kmShortOfDestination, inInclusiveRange(0.3, 15));
       final jeep = await routeOrNearest(
         engine,
-        const RouteRequest([ouray, sneffelsSummit], PathType.dirtAndJeep),
+        const RouteRequest([ouray, sneffelsSummit], PathType.dirtRoad),
       );
       expect(
         jeep.kmShortOfDestination,
@@ -79,7 +79,7 @@ void main() {
     test('routes are quick', () async {
       final s = Stopwatch()..start();
       await engine.route(
-        const RouteRequest([ouray, silverton], PathType.dirtAndJeep),
+        const RouteRequest([ouray, silverton], PathType.dirtRoad),
       );
       expect(s.elapsedMilliseconds, lessThan(2000));
     });
