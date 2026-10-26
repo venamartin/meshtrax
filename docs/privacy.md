@@ -28,7 +28,7 @@ All of the following is stored locally on your device using the operating system
 | Channels & communities | Channel names and their pre-shared keys (PSKs); community secret keys | Encrypt/decrypt mesh traffic on those channels |
 | Node identity | Your device's **public** key and display name | Identify your own messages |
 | App settings | Theme, language, notification preferences, map preferences, unit system, auto-connect preference, last connected device identifier, blocked-users list, etc. | Remember your preferences |
-| Message routing data | Path history and routing weights | Improve mesh message delivery |
+| Message routing data | Path history and routing weights, kept in one graph per mesh, with the names you give the graphs and the public keys of the repeaters each graph has heard | Improve mesh message delivery, and tell one mesh from another |
 | Where repeaters heard you (GPS radio only) | With a radio that has its GPS on, which repeaters heard it in each area of about 500 m over the last 30 days, with no finer position than that; carried in a Pathfinder backup only when you choose "Include" | Pick routes that work where you are |
 | Offline maps | Map packs you choose to download, and the list of available maps | Show maps without a connection |
 | Cached map tiles | Online map imagery you have viewed | Faster map display |

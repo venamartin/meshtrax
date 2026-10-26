@@ -528,6 +528,12 @@ class PathLabAdapter {
   final Map<String, String> discoveryStatus = {};
   void Function()? onPathDiscovery;
 
+  /// A repeater's key heard on the air (a verified advert, or a Discover
+  /// answer to anyone), just before the graph takes it in, and whether the
+  /// graph already knew that repeater: the service's "a different mesh?"
+  /// check.
+  void Function(String pubkey, bool known)? onRepeaterKeyHeard;
+
   /// The contact we probed: the 0x8D push carries only a 6-byte prefix,
   /// and ingress attribution needs the whole key.
   _PendingDiscovery? _pendingDiscovery;
@@ -1108,7 +1114,10 @@ class PathLabAdapter {
 
   void _attributeAdvert(ParsedAdvert advert, RawPacket packet) {
     if (advert.type == _advTypeRepeater || advert.type == _advTypeRoom) {
-      graph.ingestNode(advert.nodeHash(graph.hashWidthBytes),
+      final hash = advert.nodeHash(graph.hashWidthBytes);
+      onRepeaterKeyHeard?.call(advert.pubkeyHex,
+          graph.knowsRepeater(hash, pubkey: advert.pubkeyHex));
+      graph.ingestNode(hash,
           name: advert.name,
           pubkey: advert.pubkeyHex,
           lat: advert.lat,
@@ -1145,6 +1154,9 @@ class PathLabAdapter {
     if (pubkey.length < graph.hashWidthBytes) return;
     final hash = PathHelper.hopHex(
         PathHelper.pubKeyPrefix(pubkey, stride: graph.hashWidthBytes));
+    final keyHex = _hex(pubkey).toLowerCase();
+    onRepeaterKeyHeard?.call(
+        keyHex, graph.knowsRepeater(hash, pubkey: keyHex));
     // Replies are zero-hop, so every one a radio hears is pushed to the
     // app — including answers to OTHER people's requests. Only the tag
     // says whose request a repeater heard; without it a mountaintop

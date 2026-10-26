@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Не сега",
   "contact_teleRadioDenies": "Радиото ви не споделя това с никого ({mode})",
   "contact_teleRadioAllowsAll": "Радиото ви споделя това с всички ({mode})",
-  "contact_sharesPosition": "Може да получи местоположението ви"
+  "contact_sharesPosition": "Може да получи местоположението ви",
+  "pathfinder_meshTitle": "Друга мрежа?",
+  "pathfinder_meshNewBody": "{unknown} от {heard} повторителя, чути след свързването, са нови за картата на Pathfinder „{graph}“. Да започнете ли нова карта за този район? Старата остава и можете да се върнете към нея от екрана на Pathfinder.",
+  "pathfinder_meshSwitchBody": "Повечето повторители, чути след свързването, са в картата на Pathfinder „{other}“, а не в „{graph}“. Да превключите ли към нея?",
+  "pathfinder_meshNew": "Нова карта",
+  "pathfinder_meshSwitch": "Превключи",
+  "pathfinder_meshKeep": "Запази тази",
+  "pathfinder_graphNameTitle": "Име на новата карта",
+  "pathfinder_graphNameHint": "Например Вашингтон",
+  "pathfinder_graphCreate": "Създай"
 }

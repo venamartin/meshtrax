@@ -5428,4 +5428,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'あなたの位置情報を取得できます';
+
+  @override
+  String get pathfinder_meshTitle => '別のメッシュですか？';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '接続後に聞こえた$heard台のリピーターのうち$unknown台は、Pathfinderの地図「$graph」にないものです。この地域用に新しい地図を始めますか？元の地図は残り、Pathfinderの画面で戻せます。';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return '接続後に聞こえたリピーターの大半は、Pathfinderの地図「$graph」ではなく「$other」にあります。そちらに切り替えますか？';
+  }
+
+  @override
+  String get pathfinder_meshNew => '新しい地図';
+
+  @override
+  String get pathfinder_meshSwitch => '切り替える';
+
+  @override
+  String get pathfinder_meshKeep => 'このままにする';
+
+  @override
+  String get pathfinder_graphNameTitle => '新しい地図の名前';
+
+  @override
+  String get pathfinder_graphNameHint => '例：ワシントン';
+
+  @override
+  String get pathfinder_graphCreate => '作成';
 }

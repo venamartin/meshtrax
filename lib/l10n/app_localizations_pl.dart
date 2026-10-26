@@ -5713,4 +5713,35 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Może pobrać Twoją lokalizację';
+
+  @override
+  String get pathfinder_meshTitle => 'Inna sieć?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown z $heard przekaźników usłyszanych od połączenia jest nowych dla mapy Pathfindera „$graph”. Zacząć nową mapę dla tego obszaru? Stara zostaje i możesz do niej wrócić na ekranie Pathfindera.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Większość przekaźników usłyszanych od połączenia jest na mapie Pathfindera „$other”, a nie „$graph”. Przełączyć na nią?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Nowa mapa';
+
+  @override
+  String get pathfinder_meshSwitch => 'Przełącz';
+
+  @override
+  String get pathfinder_meshKeep => 'Zostaw tę';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Nazwa nowej mapy';
+
+  @override
+  String get pathfinder_graphNameHint => 'Na przykład Waszyngton';
+
+  @override
+  String get pathfinder_graphCreate => 'Utwórz';
 }

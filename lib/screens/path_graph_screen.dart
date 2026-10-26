@@ -14,10 +14,12 @@ import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/path_graph/frame_adapter.dart';
+import '../services/path_graph/graph_book.dart';
 import '../services/path_graph/path_graph_service.dart';
 import '../utils/contact_search.dart';
 import '../widgets/mention_composer.dart';
 import '../widgets/pathfinder_help_dialog.dart';
+import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/routing_dialog.dart';
 import 'path_graph_diagnostics_screen.dart';
 import 'path_trace_map.dart';
@@ -399,6 +401,10 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     final mine = _ranked(graph, graph.egressCandidates());
 
     return [
+      if (service.graphEntry case final entry?) ...[
+        _graphCard(context, service, entry),
+        const SizedBox(height: 16),
+      ],
       _headerCard(context, connector, snap, service, mine),
       const SizedBox(height: 24),
       _sectionTitle('Direct repeaters (${mine.length})',
@@ -580,6 +586,140 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       ),
     );
   }
+
+  /// Which graph is open, out of those this preset keeps, and the way to
+  /// another (owner, 2026-10-26: Washington runs the same preset as
+  /// Monterey Bay, so the preset alone cannot keep them apart).
+  Widget _graphCard(
+      BuildContext context, PathGraphService service, GraphEntry entry) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.hub_outlined),
+        title: Text('Graph: ${entry.label}'),
+        subtitle: Text(entry.name == null
+            ? 'One for each mesh; this preset can keep several'
+            : entry.mesh.label),
+        trailing: TextButton(
+          onPressed: () => _pickGraph(context, service, entry),
+          child: const Text('Change'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickGraph(
+      BuildContext context, PathGraphService service, GraphEntry open) async {
+    String size(int? bytes) => bytes == null
+        ? 'Nothing learned yet'
+        : bytes < 1024 * 1024
+            ? '${(bytes / 1024).ceil()} KB'
+            : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialog) => StatefulBuilder(
+        builder: (dialog, setDialogState) {
+          final graphs = GraphBook.graphsFor(open.mesh);
+          final current = service.graphEntry;
+          return AlertDialog(
+            title: const Text('Pathfinder graphs'),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('For ${open.mesh.label}. Keep one for each mesh on '
+                        'this preset: home, and where you travel. The one you '
+                        'pick stays until you change it.'),
+                    const SizedBox(height: 8),
+                    for (final g in graphs)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(g == current
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked),
+                        title: Text(g.label),
+                        subtitle: FutureBuilder<int?>(
+                          future: service.graphFileBytes(g),
+                          builder: (_, snap) => Text(size(snap.data)),
+                        ),
+                        onTap: g == current
+                            ? null
+                            : () async {
+                                Navigator.pop(dialog);
+                                await service.switchGraph(g);
+                              },
+                        trailing: PopupMenuButton<String>(
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                                value: 'rename', child: Text('Rename')),
+                            if (g != current && !g.isDefault)
+                              const PopupMenuItem(
+                                  value: 'delete', child: Text('Delete')),
+                          ],
+                          onSelected: (action) async {
+                            if (action == 'rename') {
+                              final name = await showGraphNameDialog(dialog,
+                                  title: 'Rename graph', initial: g.label);
+                              if (name == null) return;
+                              await service.renameGraph(g, name);
+                            } else {
+                              if (!await _confirmDeleteGraph(dialog, g)) {
+                                return;
+                              }
+                              await service.deleteGraph(g);
+                            }
+                            if (dialog.mounted) setDialogState(() {});
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  final name = await showGraphNameDialog(dialog);
+                  if (name == null || !dialog.mounted) return;
+                  Navigator.pop(dialog);
+                  await service.createGraph(name);
+                },
+                child: const Text('New graph'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialog),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<bool> _confirmDeleteGraph(BuildContext context, GraphEntry g) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text('Delete "${g.label}"?'),
+          content: const Text(
+              'Everything Pathfinder learned on that mesh is gone for good.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   Widget _sectionTitle(String title, {String? subtitle}) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,

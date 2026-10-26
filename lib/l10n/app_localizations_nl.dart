@@ -5668,4 +5668,35 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Kan je locatie opvragen';
+
+  @override
+  String get pathfinder_meshTitle => 'Een andere mesh?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown van de $heard repeaters die sinds het verbinden gehoord zijn, zijn nieuw voor de Pathfinder-kaart ‘$graph’. Een nieuwe kaart voor dit gebied beginnen? De oude blijft, en je kunt terugschakelen op het Pathfinder-scherm.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'De meeste repeaters die sinds het verbinden gehoord zijn, staan in de Pathfinder-kaart ‘$other’, niet in ‘$graph’. Daarnaar overschakelen?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Nieuwe kaart';
+
+  @override
+  String get pathfinder_meshSwitch => 'Overschakelen';
+
+  @override
+  String get pathfinder_meshKeep => 'Deze houden';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Naam van de nieuwe kaart';
+
+  @override
+  String get pathfinder_graphNameHint => 'Bijvoorbeeld Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Aanmaken';
 }

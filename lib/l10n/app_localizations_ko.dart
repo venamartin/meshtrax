@@ -5434,4 +5434,35 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => '내 위치를 받을 수 있어요';
+
+  @override
+  String get pathfinder_meshTitle => '다른 메시인가요?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '연결 후 들은 리피터 $heard개 중 $unknown개가 Pathfinder 지도 ‘$graph’에 없는 것이에요. 이 지역용 새 지도를 시작할까요? 기존 지도는 남아 있고 Pathfinder 화면에서 다시 바꿀 수 있어요.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return '연결 후 들은 리피터 대부분이 Pathfinder 지도 ‘$graph’가 아니라 ‘$other’에 있어요. 그 지도로 바꿀까요?';
+  }
+
+  @override
+  String get pathfinder_meshNew => '새 지도';
+
+  @override
+  String get pathfinder_meshSwitch => '바꾸기';
+
+  @override
+  String get pathfinder_meshKeep => '그대로 두기';
+
+  @override
+  String get pathfinder_graphNameTitle => '새 지도 이름';
+
+  @override
+  String get pathfinder_graphNameHint => '예: 워싱턴';
+
+  @override
+  String get pathfinder_graphCreate => '만들기';
 }

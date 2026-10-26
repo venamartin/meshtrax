@@ -5680,4 +5680,35 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Môže získať vašu polohu';
+
+  @override
+  String get pathfinder_meshTitle => 'Iná sieť?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown z $heard opakovačov počutých od pripojenia je pre mapu Pathfindera „$graph“ nových. Začať novú mapu pre túto oblasť? Stará zostane a na obrazovke Pathfindera sa k nej môžete vrátiť.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Väčšina opakovačov počutých od pripojenia je na mape Pathfindera „$other“, nie „$graph“. Prepnúť na ňu?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Nová mapa';
+
+  @override
+  String get pathfinder_meshSwitch => 'Prepnúť';
+
+  @override
+  String get pathfinder_meshKeep => 'Ponechať túto';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Názov novej mapy';
+
+  @override
+  String get pathfinder_graphNameHint => 'Napríklad Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Vytvoriť';
 }

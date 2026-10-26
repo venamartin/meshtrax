@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Non ora",
   "contact_teleRadioDenies": "La tua radio non lo condivide con nessuno ({mode})",
   "contact_teleRadioAllowsAll": "La tua radio lo condivide con tutti ({mode})",
-  "contact_sharesPosition": "Può ottenere la tua posizione"
+  "contact_sharesPosition": "Può ottenere la tua posizione",
+  "pathfinder_meshTitle": "Un'altra rete mesh?",
+  "pathfinder_meshNewBody": "{unknown} dei {heard} ripetitori sentiti dalla connessione sono nuovi per la mappa di Pathfinder «{graph}». Iniziare una nuova mappa per questa zona? Quella vecchia resta e puoi tornarci dalla schermata di Pathfinder.",
+  "pathfinder_meshSwitchBody": "La maggior parte dei ripetitori sentiti dalla connessione è nella mappa di Pathfinder «{other}», non in «{graph}». Passare a quella?",
+  "pathfinder_meshNew": "Nuova mappa",
+  "pathfinder_meshSwitch": "Cambia",
+  "pathfinder_meshKeep": "Tieni questa",
+  "pathfinder_graphNameTitle": "Nome della nuova mappa",
+  "pathfinder_graphNameHint": "Per esempio, Washington",
+  "pathfinder_graphCreate": "Crea"
 }

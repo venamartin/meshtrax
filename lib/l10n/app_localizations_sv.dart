@@ -5639,4 +5639,35 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Kan hämta din plats';
+
+  @override
+  String get pathfinder_meshTitle => 'Ett annat nät?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown av $heard repeatrar som hörts sedan anslutningen är nya för Pathfinder-kartan ”$graph”. Starta en ny karta för det här området? Den gamla finns kvar, och du kan byta tillbaka på Pathfinder-skärmen.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'De flesta repeatrar som hörts sedan anslutningen finns på Pathfinder-kartan ”$other”, inte ”$graph”. Byta till den?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Ny karta';
+
+  @override
+  String get pathfinder_meshSwitch => 'Byt';
+
+  @override
+  String get pathfinder_meshKeep => 'Behåll den här';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Namn på den nya kartan';
+
+  @override
+  String get pathfinder_graphNameHint => 'Till exempel Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Skapa';
 }

@@ -2531,5 +2531,14 @@
   "contact_teleNotNow": "暂不",
   "contact_teleRadioDenies": "您的电台不与任何人共享此信息（{mode}）",
   "contact_teleRadioAllowsAll": "您的电台与所有人共享此信息（{mode}）",
-  "contact_sharesPosition": "可以获取您的位置"
+  "contact_sharesPosition": "可以获取您的位置",
+  "pathfinder_meshTitle": "换了一个网络？",
+  "pathfinder_meshNewBody": "连接后听到的 {heard} 个转发节点中，有 {unknown} 个是 Pathfinder 地图“{graph}”里没有的。要为这个地区新建一张地图吗？原来的地图会保留，可以在 Pathfinder 页面切换回去。",
+  "pathfinder_meshSwitchBody": "连接后听到的转发节点大多在 Pathfinder 地图“{other}”里，而不是“{graph}”。要切换过去吗？",
+  "pathfinder_meshNew": "新建地图",
+  "pathfinder_meshSwitch": "切换",
+  "pathfinder_meshKeep": "保留当前地图",
+  "pathfinder_graphNameTitle": "新地图的名称",
+  "pathfinder_graphNameHint": "例如：华盛顿",
+  "pathfinder_graphCreate": "创建"
 }

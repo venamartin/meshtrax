@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Teraz nie",
   "contact_teleRadioDenies": "Vaše rádio to nezdieľa s nikým ({mode})",
   "contact_teleRadioAllowsAll": "Vaše rádio to zdieľa so všetkými ({mode})",
-  "contact_sharesPosition": "Môže získať vašu polohu"
+  "contact_sharesPosition": "Môže získať vašu polohu",
+  "pathfinder_meshTitle": "Iná sieť?",
+  "pathfinder_meshNewBody": "{unknown} z {heard} opakovačov počutých od pripojenia je pre mapu Pathfindera „{graph}“ nových. Začať novú mapu pre túto oblasť? Stará zostane a na obrazovke Pathfindera sa k nej môžete vrátiť.",
+  "pathfinder_meshSwitchBody": "Väčšina opakovačov počutých od pripojenia je na mape Pathfindera „{other}“, nie „{graph}“. Prepnúť na ňu?",
+  "pathfinder_meshNew": "Nová mapa",
+  "pathfinder_meshSwitch": "Prepnúť",
+  "pathfinder_meshKeep": "Ponechať túto",
+  "pathfinder_graphNameTitle": "Názov novej mapy",
+  "pathfinder_graphNameHint": "Napríklad Washington",
+  "pathfinder_graphCreate": "Vytvoriť"
 }

@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Ne zdaj",
   "contact_teleRadioDenies": "Vaš radio tega ne deli z nikomer ({mode})",
   "contact_teleRadioAllowsAll": "Vaš radio to deli z vsemi ({mode})",
-  "contact_sharesPosition": "Lahko pridobi vašo lokacijo"
+  "contact_sharesPosition": "Lahko pridobi vašo lokacijo",
+  "pathfinder_meshTitle": "Drugo omrežje?",
+  "pathfinder_meshNewBody": "{unknown} od {heard} ponoviteljev, slišanih od povezave, je za zemljevid Pathfinderja »{graph}« novih. Začnete nov zemljevid za to območje? Stari ostane in nanj se lahko vrnete na zaslonu Pathfinderja.",
+  "pathfinder_meshSwitchBody": "Večina ponoviteljev, slišanih od povezave, je na zemljevidu Pathfinderja »{other}«, ne »{graph}«. Preklopite nanj?",
+  "pathfinder_meshNew": "Nov zemljevid",
+  "pathfinder_meshSwitch": "Preklopi",
+  "pathfinder_meshKeep": "Obdrži tega",
+  "pathfinder_graphNameTitle": "Ime novega zemljevida",
+  "pathfinder_graphNameHint": "Na primer Washington",
+  "pathfinder_graphCreate": "Ustvari"
 }

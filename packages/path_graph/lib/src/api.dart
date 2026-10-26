@@ -1356,6 +1356,27 @@ class PathGraph {
   int get nodeCount => _store.nodes.length;
   int get edgeCount => _store.edges.length;
 
+  /// Whether the graph already holds repeater [hash] and, when it knows
+  /// that repeater's key, that the key is [pubkey] (or starts the same: a
+  /// Discover answer may carry only a prefix). A code a repeater on another
+  /// mesh shares is not this one.
+  bool knowsRepeater(String hash, {String? pubkey}) {
+    final node = _store.nodes[hash.toUpperCase()];
+    if (node == null) return false;
+    final known = node.pubkey?.toLowerCase();
+    final heard = pubkey?.toLowerCase();
+    return known == null ||
+        heard == null ||
+        known.startsWith(heard) ||
+        heard.startsWith(known);
+  }
+
+  /// The keys of every repeater the graph has heard advertise, lowercase.
+  List<String> repeaterKeys() => [
+        for (final node in _store.nodes.values)
+          if (node.pubkey case final key?) key.toLowerCase(),
+      ];
+
   /// Read-only view of the working set for UI/debug rendering.
   ({Map<String, NodeState> nodes, Map<(String, String), EdgeState> edges})
       snapshot() => (

@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Inte nu",
   "contact_teleRadioDenies": "Din radio delar detta med ingen ({mode})",
   "contact_teleRadioAllowsAll": "Din radio delar detta med alla ({mode})",
-  "contact_sharesPosition": "Kan hämta din plats"
+  "contact_sharesPosition": "Kan hämta din plats",
+  "pathfinder_meshTitle": "Ett annat nät?",
+  "pathfinder_meshNewBody": "{unknown} av {heard} repeatrar som hörts sedan anslutningen är nya för Pathfinder-kartan ”{graph}”. Starta en ny karta för det här området? Den gamla finns kvar, och du kan byta tillbaka på Pathfinder-skärmen.",
+  "pathfinder_meshSwitchBody": "De flesta repeatrar som hörts sedan anslutningen finns på Pathfinder-kartan ”{other}”, inte ”{graph}”. Byta till den?",
+  "pathfinder_meshNew": "Ny karta",
+  "pathfinder_meshSwitch": "Byt",
+  "pathfinder_meshKeep": "Behåll den här",
+  "pathfinder_graphNameTitle": "Namn på den nya kartan",
+  "pathfinder_graphNameHint": "Till exempel Washington",
+  "pathfinder_graphCreate": "Skapa"
 }

@@ -5599,4 +5599,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Can get your position';
+
+  @override
+  String get pathfinder_meshTitle => 'A different mesh?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown of $heard repeaters heard since connecting are new to the Pathfinder graph “$graph”. Start a new graph for this area? The old one stays, and you can switch back on the Pathfinder screen.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Most repeaters heard since connecting are in the Pathfinder graph “$other”, not “$graph”. Switch to it?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'New graph';
+
+  @override
+  String get pathfinder_meshSwitch => 'Switch';
+
+  @override
+  String get pathfinder_meshKeep => 'Keep this one';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Name the new graph';
+
+  @override
+  String get pathfinder_graphNameHint => 'For example, Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Create';
 }

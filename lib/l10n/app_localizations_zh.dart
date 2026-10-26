@@ -5321,4 +5321,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => '可以获取您的位置';
+
+  @override
+  String get pathfinder_meshTitle => '换了一个网络？';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '连接后听到的 $heard 个转发节点中，有 $unknown 个是 Pathfinder 地图“$graph”里没有的。要为这个地区新建一张地图吗？原来的地图会保留，可以在 Pathfinder 页面切换回去。';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return '连接后听到的转发节点大多在 Pathfinder 地图“$other”里，而不是“$graph”。要切换过去吗？';
+  }
+
+  @override
+  String get pathfinder_meshNew => '新建地图';
+
+  @override
+  String get pathfinder_meshSwitch => '切换';
+
+  @override
+  String get pathfinder_meshKeep => '保留当前地图';
+
+  @override
+  String get pathfinder_graphNameTitle => '新地图的名称';
+
+  @override
+  String get pathfinder_graphNameHint => '例如：华盛顿';
+
+  @override
+  String get pathfinder_graphCreate => '创建';
 }

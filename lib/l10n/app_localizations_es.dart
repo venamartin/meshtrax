@@ -5697,4 +5697,35 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Puede obtener tu ubicación';
+
+  @override
+  String get pathfinder_meshTitle => '¿Otra red mesh?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown de $heard repetidores oídos desde la conexión son nuevos para el mapa de Pathfinder «$graph». ¿Empezar un mapa nuevo para esta zona? El anterior se conserva y puedes volver a él en la pantalla de Pathfinder.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'La mayoría de los repetidores oídos desde la conexión están en el mapa de Pathfinder «$other», no en «$graph». ¿Cambiar a ese mapa?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Mapa nuevo';
+
+  @override
+  String get pathfinder_meshSwitch => 'Cambiar';
+
+  @override
+  String get pathfinder_meshKeep => 'Mantener este';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Nombre del mapa nuevo';
+
+  @override
+  String get pathfinder_graphNameHint => 'Por ejemplo, Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Crear';
 }

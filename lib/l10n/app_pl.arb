@@ -2564,5 +2564,14 @@
   "contact_teleNotNow": "Nie teraz",
   "contact_teleRadioDenies": "Twoje radio nie udostępnia tego nikomu ({mode})",
   "contact_teleRadioAllowsAll": "Twoje radio udostępnia to wszystkim ({mode})",
-  "contact_sharesPosition": "Może pobrać Twoją lokalizację"
+  "contact_sharesPosition": "Może pobrać Twoją lokalizację",
+  "pathfinder_meshTitle": "Inna sieć?",
+  "pathfinder_meshNewBody": "{unknown} z {heard} przekaźników usłyszanych od połączenia jest nowych dla mapy Pathfindera „{graph}”. Zacząć nową mapę dla tego obszaru? Stara zostaje i możesz do niej wrócić na ekranie Pathfindera.",
+  "pathfinder_meshSwitchBody": "Większość przekaźników usłyszanych od połączenia jest na mapie Pathfindera „{other}”, a nie „{graph}”. Przełączyć na nią?",
+  "pathfinder_meshNew": "Nowa mapa",
+  "pathfinder_meshSwitch": "Przełącz",
+  "pathfinder_meshKeep": "Zostaw tę",
+  "pathfinder_graphNameTitle": "Nazwa nowej mapy",
+  "pathfinder_graphNameHint": "Na przykład Waszyngton",
+  "pathfinder_graphCreate": "Utwórz"
 }

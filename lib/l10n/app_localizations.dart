@@ -9767,6 +9767,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Can get your position'**
   String get contact_sharesPosition;
+
+  /// No description provided for @pathfinder_meshTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A different mesh?'**
+  String get pathfinder_meshTitle;
+
+  /// No description provided for @pathfinder_meshNewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{unknown} of {heard} repeaters heard since connecting are new to the Pathfinder graph “{graph}”. Start a new graph for this area? The old one stays, and you can switch back on the Pathfinder screen.'**
+  String pathfinder_meshNewBody(int unknown, int heard, String graph);
+
+  /// No description provided for @pathfinder_meshSwitchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Most repeaters heard since connecting are in the Pathfinder graph “{other}”, not “{graph}”. Switch to it?'**
+  String pathfinder_meshSwitchBody(String other, String graph);
+
+  /// No description provided for @pathfinder_meshNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New graph'**
+  String get pathfinder_meshNew;
+
+  /// No description provided for @pathfinder_meshSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get pathfinder_meshSwitch;
+
+  /// No description provided for @pathfinder_meshKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this one'**
+  String get pathfinder_meshKeep;
+
+  /// No description provided for @pathfinder_graphNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the new graph'**
+  String get pathfinder_graphNameTitle;
+
+  /// No description provided for @pathfinder_graphNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, Washington'**
+  String get pathfinder_graphNameHint;
+
+  /// No description provided for @pathfinder_graphCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get pathfinder_graphCreate;
 }
 
 class _AppLocalizationsDelegate

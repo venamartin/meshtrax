@@ -2909,5 +2909,37 @@
       }
     }
   },
-  "contact_sharesPosition": "Can get your position"
+  "contact_sharesPosition": "Can get your position",
+  "pathfinder_meshTitle": "A different mesh?",
+  "pathfinder_meshNewBody": "{unknown} of {heard} repeaters heard since connecting are new to the Pathfinder graph “{graph}”. Start a new graph for this area? The old one stays, and you can switch back on the Pathfinder screen.",
+  "@pathfinder_meshNewBody": {
+    "placeholders": {
+      "unknown": {
+        "type": "int"
+      },
+      "heard": {
+        "type": "int"
+      },
+      "graph": {
+        "type": "String"
+      }
+    }
+  },
+  "pathfinder_meshSwitchBody": "Most repeaters heard since connecting are in the Pathfinder graph “{other}”, not “{graph}”. Switch to it?",
+  "@pathfinder_meshSwitchBody": {
+    "placeholders": {
+      "other": {
+        "type": "String"
+      },
+      "graph": {
+        "type": "String"
+      }
+    }
+  },
+  "pathfinder_meshNew": "New graph",
+  "pathfinder_meshSwitch": "Switch",
+  "pathfinder_meshKeep": "Keep this one",
+  "pathfinder_graphNameTitle": "Name the new graph",
+  "pathfinder_graphNameHint": "For example, Washington",
+  "pathfinder_graphCreate": "Create"
 }

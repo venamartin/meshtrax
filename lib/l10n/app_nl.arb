@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Niet nu",
   "contact_teleRadioDenies": "Je radio deelt dit met niemand ({mode})",
   "contact_teleRadioAllowsAll": "Je radio deelt dit met iedereen ({mode})",
-  "contact_sharesPosition": "Kan je locatie opvragen"
+  "contact_sharesPosition": "Kan je locatie opvragen",
+  "pathfinder_meshTitle": "Een andere mesh?",
+  "pathfinder_meshNewBody": "{unknown} van de {heard} repeaters die sinds het verbinden gehoord zijn, zijn nieuw voor de Pathfinder-kaart ‘{graph}’. Een nieuwe kaart voor dit gebied beginnen? De oude blijft, en je kunt terugschakelen op het Pathfinder-scherm.",
+  "pathfinder_meshSwitchBody": "De meeste repeaters die sinds het verbinden gehoord zijn, staan in de Pathfinder-kaart ‘{other}’, niet in ‘{graph}’. Daarnaar overschakelen?",
+  "pathfinder_meshNew": "Nieuwe kaart",
+  "pathfinder_meshSwitch": "Overschakelen",
+  "pathfinder_meshKeep": "Deze houden",
+  "pathfinder_graphNameTitle": "Naam van de nieuwe kaart",
+  "pathfinder_graphNameHint": "Bijvoorbeeld Washington",
+  "pathfinder_graphCreate": "Aanmaken"
 }

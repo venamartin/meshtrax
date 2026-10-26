@@ -2526,5 +2526,14 @@
   "contact_teleNotNow": "Pas maintenant",
   "contact_teleRadioDenies": "Votre radio ne le partage avec personne ({mode})",
   "contact_teleRadioAllowsAll": "Votre radio le partage avec tout le monde ({mode})",
-  "contact_sharesPosition": "Peut obtenir votre position"
+  "contact_sharesPosition": "Peut obtenir votre position",
+  "pathfinder_meshTitle": "Un autre réseau ?",
+  "pathfinder_meshNewBody": "{unknown} des {heard} répéteurs entendus depuis la connexion sont inconnus de la carte Pathfinder « {graph} ». Commencer une nouvelle carte pour cette zone ? L'ancienne est conservée et vous pourrez y revenir depuis l'écran Pathfinder.",
+  "pathfinder_meshSwitchBody": "La plupart des répéteurs entendus depuis la connexion figurent sur la carte Pathfinder « {other} », pas sur « {graph} ». Passer à celle-ci ?",
+  "pathfinder_meshNew": "Nouvelle carte",
+  "pathfinder_meshSwitch": "Changer",
+  "pathfinder_meshKeep": "Garder celle-ci",
+  "pathfinder_graphNameTitle": "Nom de la nouvelle carte",
+  "pathfinder_graphNameHint": "Par exemple, Washington",
+  "pathfinder_graphCreate": "Créer"
 }

@@ -5726,4 +5726,35 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Peut obtenir votre position';
+
+  @override
+  String get pathfinder_meshTitle => 'Un autre réseau ?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown des $heard répéteurs entendus depuis la connexion sont inconnus de la carte Pathfinder « $graph ». Commencer une nouvelle carte pour cette zone ? L\'ancienne est conservée et vous pourrez y revenir depuis l\'écran Pathfinder.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'La plupart des répéteurs entendus depuis la connexion figurent sur la carte Pathfinder « $other », pas sur « $graph ». Passer à celle-ci ?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Nouvelle carte';
+
+  @override
+  String get pathfinder_meshSwitch => 'Changer';
+
+  @override
+  String get pathfinder_meshKeep => 'Garder celle-ci';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Nom de la nouvelle carte';
+
+  @override
+  String get pathfinder_graphNameHint => 'Par exemple, Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Créer';
 }

@@ -2564,5 +2564,14 @@
   "contact_teleNotNow": "Most nem",
   "contact_teleRadioDenies": "A rádiója ezt senkivel nem osztja meg ({mode})",
   "contact_teleRadioAllowsAll": "A rádiója ezt mindenkivel megosztja ({mode})",
-  "contact_sharesPosition": "Lekérheti a helyzetét"
+  "contact_sharesPosition": "Lekérheti a helyzetét",
+  "pathfinder_meshTitle": "Másik hálózat?",
+  "pathfinder_meshNewBody": "A csatlakozás óta hallott {heard} repeaterből {unknown} új a(z) „{graph}” Pathfinder-térképnek. Indít egy új térképet ehhez a területhez? A régi megmarad, és a Pathfinder képernyőn visszaválthat rá.",
+  "pathfinder_meshSwitchBody": "A csatlakozás óta hallott repeaterek többsége a(z) „{other}” Pathfinder-térképen van, nem a(z) „{graph}” térképen. Átvált rá?",
+  "pathfinder_meshNew": "Új térkép",
+  "pathfinder_meshSwitch": "Átváltás",
+  "pathfinder_meshKeep": "Ez marad",
+  "pathfinder_graphNameTitle": "Az új térkép neve",
+  "pathfinder_graphNameHint": "Például Washington",
+  "pathfinder_graphCreate": "Létrehozás"
 }

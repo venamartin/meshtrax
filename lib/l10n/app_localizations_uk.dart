@@ -5708,4 +5708,35 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get contact_sharesPosition => 'Може отримати ваше розташування';
+
+  @override
+  String get pathfinder_meshTitle => 'Інша мережа?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown із $heard ретрансляторів, почутих після підключення, нові для карти Pathfinder «$graph». Почати нову карту для цієї місцевості? Стара залишиться, і до неї можна повернутися на екрані Pathfinder.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Більшість ретрансляторів, почутих після підключення, є на карті Pathfinder «$other», а не «$graph». Перемкнутися на неї?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Нова карта';
+
+  @override
+  String get pathfinder_meshSwitch => 'Перемкнути';
+
+  @override
+  String get pathfinder_meshKeep => 'Залишити цю';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Назва нової карти';
+
+  @override
+  String get pathfinder_graphNameHint => 'Наприклад, Вашингтон';
+
+  @override
+  String get pathfinder_graphCreate => 'Створити';
 }
