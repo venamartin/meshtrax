@@ -1299,21 +1299,31 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return total;
   }
 
-  /// Chats (contacts and channels) with at least one unread message.
+  /// Chats (contacts and channels) with at least one unread message. The
+  /// channels are the ones the chats list shows ([channels]): during a
+  /// resync the live table is half refilled.
   int get unreadChatCount =>
       _contacts.where((c) => getUnreadCountForContact(c) > 0).length +
-      _channels.where((ch) => getUnreadCountForChannel(ch) > 0).length;
+      channels.where((ch) => getUnreadCountForChannel(ch) > 0).length;
 
-  /// Marks every chat with unread messages read.
+  /// Marks every chat with unread messages read. Channels by identity:
+  /// a slot index may point elsewhere mid-resync.
   void markAllRead() {
     for (final contact in _contacts) {
       if (getUnreadCountForContact(contact) > 0) {
         markContactRead(contact.publicKeyHex);
       }
     }
-    for (final channel in _channels) {
-      if (getUnreadCountForChannel(channel) > 0) markChannelRead(channel.index);
+    for (final channel in channels) {
+      if (getUnreadCountForChannel(channel) == 0) continue;
+      channel.unreadCount = 0;
+      unawaited(_channelMessageStore.markRead(channel.idKey));
+      _notificationService.clearChannelNotification(
+        channel.index,
+        getTotalUnreadCount(),
+      );
     }
+    notifyListeners();
   }
 
   bool isChannelSmazEnabled(int channelIndex) {
@@ -3447,6 +3457,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _pendingDiscoverTag = null;
     _traceTagTimer?.cancel();
     _pendingTraceTag = null;
+    _forgetFloodedTexts();
 
     final transportAtDisconnect = _activeTransport;
     final tcpSessionWasEstablished = _tcpSessionEstablished;
@@ -6855,6 +6866,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // frame stream; storing them would render them as chat bubbles in room
       // conversations ("00|OK - clock set: ...").
       if (message.isCli) {
+        // Its logged copy is used up all the same, or it would stand in for
+        // the sender's next message (a room floods its reply, then the post).
+        final sender = _contacts
+            .where((c) => c.publicKeyHex == message!.senderKeyHex)
+            .firstOrNull;
+        final layout = parseContactMsgLayout(frame);
+        if (sender != null && layout != null) {
+          _takeFloodedTextPath(
+            sender,
+            layout.pathLen,
+            frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
+          );
+        }
         _handleQueuedMessageReceived();
         return;
       }
@@ -7333,20 +7357,36 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   /// Raw copies of flooded DMs and room posts to me, for [_takeFloodedTextPath].
   final List<_FloodedText> _floodedTexts = [];
+
+  /// Payloads whose decoded message already took its path. Every copy of
+  /// one flood carries the same payload (only the path differs), so later
+  /// copies, heard through other repeaters, are not kept for another message.
+  final List<({DateTime at, Uint8List payload})> _takenFloodedPayloads = [];
   static const _floodedTextWindow = Duration(seconds: 60);
   static const _floodedTextCap = 32;
+
+  void _forgetFloodedTexts() {
+    _floodedTexts.clear();
+    _takenFloodedPayloads.clear();
+  }
 
   void _rememberFloodedText(_RawPacket packet, int snrByte) {
     final now = DateTime.now();
     _floodedTexts
-      ..removeWhere((t) => now.difference(t.at) > _floodedTextWindow)
-      ..add(_FloodedText(
-        at: now,
-        srcByte: packet.payload[1],
-        snrByte: snrByte,
-        pathLenRaw: packet.pathLenRaw,
-        pathBytes: Uint8List.fromList(packet.pathBytes),
-      ));
+        .removeWhere((t) => now.difference(t.at) > _floodedTextWindow);
+    _takenFloodedPayloads
+        .removeWhere((t) => now.difference(t.at) > _floodedTextWindow);
+    if (_takenFloodedPayloads.any((t) => listEquals(t.payload, packet.payload))) {
+      return;
+    }
+    _floodedTexts.add(_FloodedText(
+      at: now,
+      srcByte: packet.payload[1],
+      snrByte: snrByte,
+      pathLenRaw: packet.pathLenRaw,
+      pathBytes: Uint8List.fromList(packet.pathBytes),
+      payload: Uint8List.fromList(packet.payload),
+    ));
     if (_floodedTexts.length > _floodedTextCap) _floodedTexts.removeAt(0);
   }
 
@@ -7374,8 +7414,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             (snrByte == null || t.snrByte == snrByte))
         .toList();
     if (matches.isEmpty) return null;
+    // Every copy of the matched packets is used up, heard or still to come.
+    final payloads = [for (final m in matches) m.payload];
+    _takenFloodedPayloads.addAll([for (final p in payloads) (at: now, payload: p)]);
+    _floodedTexts.removeWhere(
+        (t) => payloads.any((p) => listEquals(p, t.payload)));
     final path = matches.first.pathBytes;
-    _floodedTexts.removeWhere(matches.contains);
     if (matches.any((t) => !listEquals(t.pathBytes, path))) return null;
     return path;
   }
@@ -9847,6 +9891,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       'scheduling reconnect',
       tag: 'Connection',
     );
+    _forgetFloodedTexts();
     _stopBatteryPolling();
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
@@ -11227,12 +11272,17 @@ class _FloodedText {
   final int pathLenRaw;
   final Uint8List pathBytes;
 
+  /// The same in every copy of one flood: tells copies of a packet apart
+  /// from another packet.
+  final Uint8List payload;
+
   _FloodedText({
     required this.at,
     required this.srcByte,
     required this.snrByte,
     required this.pathLenRaw,
     required this.pathBytes,
+    required this.payload,
   });
 }
 

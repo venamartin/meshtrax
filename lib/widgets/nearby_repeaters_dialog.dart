@@ -87,6 +87,8 @@ class NearbyRepeatersDialog extends StatelessWidget {
         connector.directRepeaters.where((r) => !_answeredLatest(r)).toList()
           ..sort(DirectRepeater.compare);
     final rows = [...answered, ...others];
+    // Once per rebuild (every second), not once per row.
+    final contacts = connector.allContacts;
     final small = Theme.of(context).textTheme.bodySmall
         ?.copyWith(color: Colors.grey[600], fontWeight: FontWeight.w500);
 
@@ -118,7 +120,7 @@ class NearbyRepeatersDialog extends StatelessWidget {
             ),
           )
         else
-          for (final r in rows) _row(context, r),
+          for (final r in rows) _row(context, r, contacts),
         const Divider(height: 12),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
@@ -181,10 +183,14 @@ class NearbyRepeatersDialog extends StatelessWidget {
     return Text('$answered $plural answered $whose ($ago ago)$heard');
   }
 
-  Widget _row(BuildContext context, DirectRepeater repeater) {
+  Widget _row(
+    BuildContext context,
+    DirectRepeater repeater,
+    List<Contact> contacts,
+  ) {
     final sf = connector.currentSf;
     final identity = RepeaterIdentityHelper.resolve(
-      contacts: connector.allContacts,
+      contacts: contacts,
       publicKey: repeater.publicKey,
       hashPrefix: repeater.pubkeyPrefix,
     );

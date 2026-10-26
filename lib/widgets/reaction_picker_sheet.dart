@@ -28,10 +28,11 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
   String _query = '';
   List<epf.Emoji> _results = const [];
 
-  /// The app language's keywords plus English, so either finds an emoji.
-  /// The package caches the first set it searches, so one set serves the
-  /// whole session.
-  static List<epf.CategoryEmoji>? _searchSet;
+  /// Per app language: every emoji this device can draw, with that
+  /// language's keywords plus English, so either finds it. Built once per
+  /// language; the package's own search keeps the first set it is ever
+  /// given, so a language switch would not reach it.
+  static final _searchSets = <String, Future<List<epf.Emoji>>>{};
 
   @override
   void dispose() {
@@ -39,18 +40,21 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
     super.dispose();
   }
 
+  static Future<List<epf.Emoji>> _searchSet(Locale locale) =>
+      _searchSets.putIfAbsent(locale.languageCode, () async {
+        final sets =
+            await epf.EmojiPickerUtils().filterUnsupported(_keywords(locale));
+        return [for (final c in sets) ...c.emoji];
+      });
+
   static List<epf.CategoryEmoji> _keywords(Locale locale) {
-    final cached = _searchSet;
-    if (cached != null) return cached;
     final local = epf_locale.getDefaultEmojiLocale(locale);
-    if (identical(local, epf.emojiSetEnglish)) {
-      return _searchSet = epf.emojiSetEnglish;
-    }
+    if (identical(local, epf.emojiSetEnglish)) return local;
     final english = {
       for (final c in epf.emojiSetEnglish)
         for (final e in c.emoji) e.emoji: e.name,
     };
-    return _searchSet = [
+    return [
       for (final c in local)
         epf.CategoryEmoji(c.category, [
           for (final e in c.emoji)
@@ -65,6 +69,24 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
     ];
   }
 
+  /// The package's rule: every word of [query] starts one of the emoji's
+  /// keywords, or [query] is the emoji itself.
+  static List<epf.Emoji> _match(List<epf.Emoji> all, String query) {
+    final words = query
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return const [];
+    return [
+      for (final e in all)
+        if (e.emoji == query ||
+            words.every((w) =>
+                e.keywords.any((k) => k.trim().toLowerCase().startsWith(w))))
+          e,
+    ];
+  }
+
   void _select(String emoji) {
     context.read<AppSettingsService>().rememberReaction(emoji);
     widget.onEmojiSelected(emoji);
@@ -75,10 +97,9 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
     final query = text.trim();
     setState(() => _query = query);
     if (query.isEmpty) return;
-    final found = await epf.EmojiPickerUtils()
-        .searchEmoji(query, _keywords(Localizations.localeOf(context)));
+    final all = await _searchSet(Localizations.localeOf(context));
     if (!mounted || query != _query) return;
-    setState(() => _results = found);
+    setState(() => _results = _match(all, query));
   }
 
   @override
@@ -86,10 +107,13 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
     final scheme = Theme.of(context).colorScheme;
     final media = MediaQuery.of(context);
     final keyboard = media.viewInsets.bottom;
-    // Above the keyboard while searching, never under the status bar.
+    // The sheet's route strips the top inset, so ask the window.
+    final statusBar = MediaQueryData.fromView(View.of(context)).padding.top;
+    // Above the keyboard while searching, never under the status bar, and
+    // tall enough in a short window to keep a row of emoji below the tabs.
     final height = math.min(
-      media.size.height * 0.6,
-      media.size.height - keyboard - media.padding.top,
+      math.max(media.size.height * 0.6, 400.0),
+      media.size.height - keyboard - statusBar,
     );
     return Padding(
       padding: EdgeInsets.only(bottom: keyboard),
@@ -165,19 +189,23 @@ class _ReactionPickerSheetState extends State<ReactionPickerSheet> {
     );
   }
 
-  /// Two rows of six, as wide as the sheet.
+  /// Two rows of six across the sheet, a fixed height however wide it is
+  /// (a desktop sheet is 640 wide).
   Widget _quickGrid(BuildContext context, ColorScheme scheme) {
     final recent = context.select<AppSettingsService, List<String>>(
       (s) => s.settings.recentReactions,
     );
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: GridView.count(
-        crossAxisCount: 6,
+      child: GridView(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 6,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          mainAxisExtent: 56,
+        ),
         children: [
           for (final emoji in QuickReactions.of(recent))
             Material(

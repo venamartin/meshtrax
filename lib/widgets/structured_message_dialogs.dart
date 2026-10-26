@@ -68,21 +68,25 @@ class StructuredMessageDialogs {
     );
   }
 
-  static Future<String?> event(BuildContext context) {
+  /// [initial]: an event to edit, filled in.
+  static Future<String?> event(BuildContext context, {EventMessage? initial}) {
     return showDialog<String>(
       context: context,
-      builder: (_) => const _EventDialog(),
+      builder: (_) => _EventDialog(initial: initial),
     );
   }
 
   /// [requireExpiry]: a room's notices must say when they stop applying.
+  /// [initial]: a notice to edit, filled in.
   static Future<String?> notice(
     BuildContext context, {
     bool requireExpiry = false,
+    NoticeMessage? initial,
   }) {
     return showDialog<String>(
       context: context,
-      builder: (_) => _NoticeDialog(requireExpiry: requireExpiry),
+      builder: (_) =>
+          _NoticeDialog(requireExpiry: requireExpiry, initial: initial),
     );
   }
 }
@@ -257,7 +261,8 @@ class _SosDialogState extends State<_SosDialog> {
 
 class _NoticeDialog extends StatefulWidget {
   final bool requireExpiry;
-  const _NoticeDialog({required this.requireExpiry});
+  final NoticeMessage? initial;
+  const _NoticeDialog({required this.requireExpiry, this.initial});
 
   @override
   State<_NoticeDialog> createState() => _NoticeDialogState();
@@ -269,6 +274,20 @@ class _NoticeDialogState extends State<_NoticeDialog> {
 
   /// Null = the end of [_expiryDay].
   TimeOfDay? _expiryTime;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    if (initial == null) return;
+    _text.text = initial.lines.join('\n');
+    if (initial.expires != null) {
+      _expiryDay = DateUtils.dateOnly(initial.expiryDay);
+      if (!initial.expiresAtDayEnd) {
+        _expiryTime = TimeOfDay.fromDateTime(initial.expires!);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -410,7 +429,8 @@ class _NoticeDialogState extends State<_NoticeDialog> {
 }
 
 class _EventDialog extends StatefulWidget {
-  const _EventDialog();
+  final EventMessage? initial;
+  const _EventDialog({this.initial});
 
   @override
   State<_EventDialog> createState() => _EventDialogState();
@@ -433,6 +453,29 @@ class _EventDialogState extends State<_EventDialog> {
     super.initState();
     final now = DateTime.now();
     _date = DateTime(now.year, now.month, now.day);
+    final initial = widget.initial;
+    if (initial == null) return;
+    final when = initial.when;
+    _title.text = initial.title;
+    _place.text = initial.place ?? '';
+    _position = initial.position;
+    _date = DateUtils.dateOnly(when.start);
+    _allDay = when.allDay;
+    final end = when.end;
+    if (when.allDay) {
+      if (end != null && DateUtils.dateOnly(end).isAfter(_date)) {
+        _endDate = DateUtils.dateOnly(end);
+      }
+      return;
+    }
+    _start = TimeOfDay.fromDateTime(when.start);
+    if (end == null) return;
+    _end = TimeOfDay.fromDateTime(end);
+    // Overnight but under a day is still "same day": the end rolls over
+    // midnight on its own.
+    if (end.difference(when.start) >= const Duration(days: 1)) {
+      _endDate = DateUtils.dateOnly(end);
+    }
   }
 
   @override

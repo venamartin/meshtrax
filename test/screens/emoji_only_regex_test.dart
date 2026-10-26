@@ -30,8 +30,8 @@ void main() {
       expect(jumboEmojiMax, 5);
     });
 
-    test('letters or digits make it text', () {
-      for (final text in ['hi', 'ok 👍', '123', '']) {
+    test('letters, digits, # and * make it text', () {
+      for (final text in ['hi', 'ok 👍', '123', '', '*****', '####', '**']) {
         expect(isEmojiOnly(text), isFalse, reason: '"$text"');
       }
     });

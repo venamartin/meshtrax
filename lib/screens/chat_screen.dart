@@ -74,6 +74,14 @@ class ChatScreen extends StatefulWidget {
   /// for one first: its posts only arrive once logged in, and the screen
   /// logs in by itself only with a password that worked before.
   static Future<void> open(BuildContext context, Contact contact) async {
+    // Already in it, e.g. a room's own link tapped inside the room: a second
+    // copy of the screen would clear the active chat when it closed.
+    final here = context.findAncestorWidgetOfExactType<ChatScreen>();
+    if (here != null &&
+        here.contact.publicKeyHex.toLowerCase() ==
+            contact.publicKeyHex.toLowerCase()) {
+      return;
+    }
     final navigator = Navigator.of(context);
     void push() => navigator.push(
           MaterialPageRoute(builder: (_) => ChatScreen(contact: contact)),
@@ -569,7 +577,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
     _textController.removeListener(_keepDraft);
-    _drafts.leaveDraft(widget.contact.publicKeyHex, _textController.text);
+    _drafts.flushDrafts();
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
     ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
@@ -2220,7 +2228,12 @@ class _ChatScreenState extends State<ChatScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChannelMessagePathScreen(message: pathMessage),
+        // An incoming row's bytes are its packet's path, sender first, as a
+        // channel packet's are; an outgoing row's are our route, ours first.
+        builder: (context) => ChannelMessagePathScreen(
+          message: pathMessage,
+          channelMessage: !message.isOutgoing,
+        ),
       ),
     );
   }
@@ -3029,7 +3042,10 @@ class _MessageBubble extends StatelessWidget {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              structured.summary,
+              MarkdownHelper.toPlainText(
+                structured.summary,
+                formatting: settings.showTextFormatting,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12 * textScale, color: snippetColor),

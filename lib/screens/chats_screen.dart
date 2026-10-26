@@ -18,6 +18,7 @@ import '../utils/disconnect_navigation_mixin.dart';
 import '../utils/emoji_utils.dart';
 import '../utils/route_transitions.dart';
 import '../utils/telemetry_dialog.dart';
+import '../helpers/gif_helper.dart';
 import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
@@ -221,6 +222,9 @@ class _ChatsScreenState extends State<ChatsScreen>
   }
 
   String _formatTimestamp(BuildContext context, DateTime timestamp) {
+    // A row with no message yet (an empty channel, a chat with only a
+    // draft) has no time to show, not 12/31/1969.
+    if (timestamp.millisecondsSinceEpoch == 0) return '';
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
@@ -250,7 +254,10 @@ class _ChatsScreenState extends State<ChatsScreen>
               ),
             ),
             TextSpan(
-              text: NotificationService.formatNotificationText(item.draft),
+              // Not "Sent a GIF": a draft was not sent.
+              text: GifHelper.isGifOnly(item.draft.trim())
+                  ? context.l10n.tray_gif
+                  : NotificationService.formatNotificationText(item.draft),
               style: const TextStyle(fontStyle: FontStyle.italic),
             ),
           ],
@@ -723,6 +730,21 @@ class _ChatsScreenState extends State<ChatsScreen>
                 unreadCount: connector.getUnreadCountForContact(contact),
                 contact: contact,
                 draft: drafts[contact.publicKeyHex] ?? '',
+              ),
+            );
+          } else if (drafts[contact.publicKeyHex]?.isNotEmpty ?? false) {
+            // A chat started but nothing sent yet: its draft keeps it on the
+            // list, at the top, where a chat just used belongs.
+            chatItems.add(
+              _ChatListItem(
+                id: 'contact_${contact.publicKeyHex}',
+                title: contact.name.isEmpty ? 'Unknown' : contact.name,
+                subtitle: '',
+                timestamp: DateTime.fromMillisecondsSinceEpoch(0),
+                sortKeyUs: DateTime.now().microsecondsSinceEpoch,
+                unreadCount: 0,
+                contact: contact,
+                draft: drafts[contact.publicKeyHex]!,
               ),
             );
           }

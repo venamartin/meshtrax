@@ -19,7 +19,8 @@ void main() {
 
   test('a draft left in a chat is there after a restart', () async {
     final s = await fresh();
-    s.leaveDraft('chat-a', 'half a thou');
+    s.setDraft('chat-a', 'half a thou');
+    s.flushDrafts();
     await Future<void>.delayed(Duration.zero);
 
     final restarted = await fresh();
@@ -29,8 +30,9 @@ void main() {
 
   test('blank text clears the draft', () async {
     final s = await fresh();
-    s.leaveDraft('chat-a', 'something');
-    s.leaveDraft('chat-a', '   ');
+    s.setDraft('chat-a', 'something');
+    s.setDraft('chat-a', '   ');
+    s.flushDrafts();
     expect(s.draft('chat-a'), '');
     expect(s.drafts, isEmpty);
   });
@@ -50,9 +52,21 @@ void main() {
       expect(notified, 0, reason: 'bubbles watch this service');
       expect(PrefsManager.instance.getString('ui_drafts'), contains('hel'));
 
-      s.leaveDraft('chat-a', 'hello');
+      s.flushDrafts();
       async.flushMicrotasks();
       expect(notified, 1);
     });
+  });
+
+  test('a second screen sending the draft is not undone by the first closing',
+      () async {
+    final s = await fresh();
+    // Screen A, typing.
+    s.setDraft('bob', 'running late, b');
+    // Screen B on the same chat (a notification tap) finishes and sends.
+    s.setDraft('bob', '');
+    s.flushDrafts(); // B closes
+    s.flushDrafts(); // then A, which wrote nothing new
+    expect(s.draft('bob'), '');
   });
 }

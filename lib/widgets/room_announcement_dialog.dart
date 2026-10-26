@@ -82,6 +82,8 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
       : (_composed ?? '');
 
   Future<void> _choose(_Kind kind) async {
+    // The chip already chosen: keep what was composed.
+    if (kind == _kind) return;
     setState(() {
       _kind = kind;
       _composed = null;
@@ -89,14 +91,26 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
     await _composeFor(kind);
   }
 
+  /// Opens the kind's dialog, filled in with what was composed so far.
   Future<void> _composeFor(_Kind kind) async {
+    final composed = _composed;
+    final current = composed == null ? null : StructuredMessage.parse(composed);
     switch (kind) {
       case _Kind.notice:
         await _compose(
-          () => StructuredMessageDialogs.notice(context, requireExpiry: true),
+          () => StructuredMessageDialogs.notice(
+            context,
+            requireExpiry: true,
+            initial: current is NoticeMessage ? current : null,
+          ),
         );
       case _Kind.event:
-        await _compose(() => StructuredMessageDialogs.event(context));
+        await _compose(
+          () => StructuredMessageDialogs.event(
+            context,
+            initial: current is EventMessage ? current : null,
+          ),
+        );
       case _Kind.announcement:
       case _Kind.location:
         break;
@@ -166,33 +180,38 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
           Expanded(child: Text(l10n.room_postAnnouncement)),
         ],
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.room_postAnnouncementSubtitle,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                for (final (kind, icon, label) in kinds)
-                  ChoiceChip(
-                    avatar: Icon(icon, size: 18),
-                    label: Text(label),
-                    selected: _kind == kind,
-                    showCheckmark: false,
-                    onSelected: _isSending ? null : (_) => _choose(kind),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _body(context),
-          ],
+      // A set width: the dialog otherwise asks its content for an intrinsic
+      // width, which a preview's map cannot answer.
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.room_postAnnouncementSubtitle,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  for (final (kind, icon, label) in kinds)
+                    ChoiceChip(
+                      avatar: Icon(icon, size: 18),
+                      label: Text(label),
+                      selected: _kind == kind,
+                      showCheckmark: false,
+                      onSelected: _isSending ? null : (_) => _choose(kind),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _body(context),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -237,10 +256,15 @@ class _RoomAnnouncementDialogState extends State<RoomAnnouncementDialog> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: StructuredMessageCard.bubbleDecoration(context, message),
-            child: StructuredMessageCard(message: message, textScale: 1),
+          // Only a preview: its map, links and buttons stay inert, so nothing
+          // opens on top of the dialog while it waits for the room.
+          IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration:
+                  StructuredMessageCard.bubbleDecoration(context, message),
+              child: StructuredMessageCard(message: message, textScale: 1),
+            ),
           ),
           Align(
             alignment: Alignment.centerRight,

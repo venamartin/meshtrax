@@ -86,11 +86,12 @@ class ContactImportHelper {
         return;
       }
       // Already heard on air: its own advert's name, type and position
-      // beat what the link says.
+      // beat what the link says. Added now, though: the radio keeps this as
+      // the contact's lastmod, and a table that is full evicts the oldest.
       final heard = connector.discoveredContacts
           .where((c) => c.publicKeyHex.toLowerCase() == hexLower)
           .firstOrNull;
-      final contact = heard ??
+      final contact = heard?.copyWith(lastSeen: DateTime.now()) ??
           Contact(
             publicKey: pubKey,
             name: name,
@@ -107,7 +108,14 @@ class ContactImportHelper {
         contact,
         lastAdvertEpochSeconds: 0,
       );
-      if (!ok || !context.mounted) return;
+      if (!context.mounted) return;
+      if (!ok) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_contactImportFailed),
+        );
+        return;
+      }
       showDismissibleSnackBar(
         context,
         content: Text(context.l10n.contacts_contactImported),

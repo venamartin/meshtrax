@@ -1,3 +1,4 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' as epf;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -16,11 +17,21 @@ void main() {
     await PrefsManager.initialize();
   });
 
-  Future<(AppSettingsService, List<String>)> pump(WidgetTester tester) async {
-    // A phone with a navigation bar.
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 2.625;
-    tester.view.padding = const FakeViewPadding(top: 100, bottom: 126);
+  Future<(AppSettingsService, List<String>)> pump(
+    WidgetTester tester, {
+    Locale? locale,
+    bool desktop = false,
+  }) async {
+    if (desktop) {
+      // A Windows window at its default size, less the title bar.
+      tester.view.physicalSize = const Size(1280, 681);
+      tester.view.devicePixelRatio = 1;
+    } else {
+      // A phone with a navigation bar.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.625;
+      tester.view.padding = const FakeViewPadding(top: 100, bottom: 126);
+    }
     addTearDown(tester.view.reset);
     final settings = AppSettingsService();
     final picked = <String>[];
@@ -30,6 +41,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: locale,
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(
@@ -82,5 +94,27 @@ void main() {
     await tester.tap(find.text('🍕'));
     await tester.pumpAndSettle();
     expect(picked, ['🍕']);
+  });
+
+  testWidgets('search knows the app language, and English too',
+      (tester) async {
+    await pump(tester, locale: const Locale('de'));
+    await tester.enterText(find.byType(TextField), 'Herz');
+    await tester.pumpAndSettle();
+    expect(find.text('❤️'), findsWidgets);
+    await tester.enterText(find.byType(TextField), 'heart');
+    await tester.pumpAndSettle();
+    expect(find.text('❤️'), findsWidgets);
+  });
+
+  testWidgets('a desktop window keeps rows of emoji below the quick grid',
+      (tester) async {
+    await pump(tester, desktop: true);
+    expect(tester.takeException(), isNull);
+    // Fixed-height quick rows leave the category picker real room.
+    expect(
+      tester.getSize(find.byType(epf.EmojiPicker)).height,
+      greaterThan(140),
+    );
   });
 }

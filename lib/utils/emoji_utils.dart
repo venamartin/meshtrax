@@ -9,7 +9,9 @@ const int jumboEmojiMax = 5;
 // this one does not.
 // ignore: valid_regexps
 final _emojiOnly = RegExp(r'^[\p{Emoji}\u200D\uFE0F\uFE0E\u20E3\s]+$', unicode: true);
-final _hasLetter = RegExp(r'[\p{L}a-zA-Z0-9]', unicode: true);
+// Digits, '#' and '*' have the Emoji property too (they are keycap bases):
+// "*****" is a rating, not five emoji.
+final _hasLetter = RegExp(r'[\p{L}a-zA-Z0-9#*]', unicode: true);
 
 /// Whether [text] is nothing but emoji, at most [jumboEmojiMax] of them, so
 /// the bubble draws them large.

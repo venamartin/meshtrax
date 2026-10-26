@@ -63,12 +63,12 @@ Uint8List _contactFrame(Uint8List pubKey, String name, {int pathLen = 0xFF,
 
 /// The decoded message, as the companion hands it over (V3: SNR first).
 Uint8List _msgFrame(Uint8List sender, int pathLen, {int snr = 0x14,
-    String text = 'hello'}) {
+    String text = 'hello', int txtType = txtTypePlain}) {
   final w = BytesBuilder();
   w.add([respCodeContactMsgRecvV3, snr, 0, 0]);
   w.add(sender.sublist(0, 6));
   w.addByte(pathLen);
-  w.addByte(0);
+  w.addByte(txtType);
   w.add((ByteData(4)..setUint32(0, 1752854400, Endian.little))
       .buffer
       .asUint8List());
@@ -84,6 +84,9 @@ Uint8List _rawDm({
   required int pathLen,
   required List<int> path,
   int snr = 0x14,
+  // Stands for the ciphertext: one value per message, the same in every
+  // copy of that message.
+  int cipher = 0x33,
 }) {
   final w = BytesBuilder();
   w.add([pushCodeLogRxData, snr, 0xA0]);
@@ -91,7 +94,7 @@ Uint8List _rawDm({
   w.addByte(pathLen);
   w.add(path);
   w.add([dest, src, 0x11, 0x22]);
-  w.add(List.filled(16, 0x33));
+  w.add(List.filled(16, cipher));
   return w.toBytes();
 }
 
@@ -183,5 +186,53 @@ void main() {
     c.handleFrameForTest(_msgFrame(chatKey, twoByTwo, snr: 0x14));
 
     expect((await received()).pathBytes, isEmpty);
+  });
+
+  test('copies of a message already shown never stand in for another',
+      () async {
+    // Message one, heard through two repeaters at two levels; the radio
+    // decodes the first copy.
+    c.handleFrameForTest(_rawDm(
+        dest: selfKey[0], src: chatKey[0], pathLen: twoByTwo, path: viaPath,
+        snr: 0x14, cipher: 0x31));
+    c.handleFrameForTest(_rawDm(
+        dest: selfKey[0], src: chatKey[0], pathLen: twoByTwo,
+        path: const [0xBE, 0xEF, 0xA2, 0x77], snr: 0x0D, cipher: 0x31));
+    c.handleFrameForTest(_msgFrame(chatKey, twoByTwo, snr: 0x14, text: 'one'));
+    // The same way round again, heard after it was shown: the leftovers
+    // agree, which is what let them pass for message two's path.
+    c.handleFrameForTest(_rawDm(
+        dest: selfKey[0], src: chatKey[0], pathLen: twoByTwo,
+        path: const [0xBE, 0xEF, 0xA2, 0x77], snr: 0x0D, cipher: 0x31));
+    // Message two never reached the radio's log (too long for it), and
+    // arrives at the leftovers' level.
+    c.handleFrameForTest(_msgFrame(chatKey, twoByTwo, snr: 0x0D, text: 'two'));
+
+    List<Message> rows = [];
+    for (var i = 0; i < 50 && rows.length < 2; i++) {
+      rows = await c.loadMessagesFor(whale);
+      if (rows.length < 2) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+    final byText = {for (final m in rows) m.text: m};
+    expect(byText['one']!.pathBytes, viaPath);
+    expect(byText['two']!.pathBytes, isEmpty);
+    expect(byText['two']!.pathFromPacket, isFalse);
+  });
+
+  test('a CLI reply uses up its copy too', () async {
+    // A flooded command reply (never stored as a message)...
+    c.handleFrameForTest(_rawDm(
+        dest: selfKey[0], src: chatKey[0], pathLen: twoByTwo, path: viaPath,
+        cipher: 0x41));
+    c.handleFrameForTest(_msgFrame(chatKey, twoByTwo,
+        text: '0A|OK', txtType: txtTypeCliData));
+    // ...then a message whose own copy was never logged, at the same level.
+    c.handleFrameForTest(_msgFrame(chatKey, twoByTwo, text: 'the post'));
+
+    final m = await received();
+    expect(m.text, 'the post');
+    expect(m.pathBytes, isEmpty);
   });
 }

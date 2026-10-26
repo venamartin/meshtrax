@@ -247,7 +247,7 @@ class UiViewStateService extends ChangeNotifier {
   /// Keeps [text] as [chatId]'s draft; blank text clears it. Saved to the
   /// device shortly after the last change, so an app killed mid-sentence
   /// keeps it. Quiet while typing: bubbles watch this service, so the chats
-  /// list hears only from [leaveDraft].
+  /// list hears only from [flushDrafts].
   void setDraft(String chatId, String text) {
     final value = text.trim().isEmpty ? '' : text;
     if (draft(chatId) == value) return;
@@ -260,11 +260,12 @@ class UiViewStateService extends ChangeNotifier {
     _draftSave = Timer(_draftSaveDelay, _saveDrafts);
   }
 
-  /// The chat is closing: save [text] now and let the chats list show it.
-  /// The notify waits a microtask, since a route's dispose runs while the
-  /// widget tree is locked.
-  void leaveDraft(String chatId, String text) {
-    setDraft(chatId, text);
+  /// A chat is closing: save now and let the chats list show its draft.
+  /// It writes nothing itself: the screen wrote every change as it happened,
+  /// so with two screens open on one chat, the one closing last cannot bring
+  /// back a draft the other sent. The notify waits a microtask, since a
+  /// route's dispose runs while the widget tree is locked.
+  void flushDrafts() {
     _draftSave?.cancel();
     _saveDrafts();
     scheduleMicrotask(notifyListeners);

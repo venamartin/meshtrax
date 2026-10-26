@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
+import '../helpers/markdown_helper.dart';
 import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
+import '../services/app_settings_service.dart';
 import 'structured_message_card.dart';
 
 /// One message the pinned bar may pick from.
@@ -163,8 +166,12 @@ class _PinnedMessagesBarState extends State<PinnedMessagesBar> {
     _timerAt = at;
     if (at == null) return;
     final wait = at.difference(DateTime.now());
+    final delay =
+        wait.isNegative ? Duration.zero : wait + const Duration(seconds: 1);
+    // At most a day: a web timer past ~24.8 days overflows and fires at
+    // once. Waking early only rebuilds and waits again.
     _timer = Timer(
-      wait.isNegative ? Duration.zero : wait + const Duration(seconds: 1),
+      delay > const Duration(days: 1) ? const Duration(days: 1) : delay,
       () {
         if (!mounted) return;
         setState(() => _timerAt = null);
@@ -181,12 +188,27 @@ class _PinnedMessagesBarState extends State<PinnedMessagesBar> {
     _wakeAt(PinnedMessagesBar.nextChange(entries));
     if (entries.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
+    final media = MediaQuery.of(context);
     return Material(
       color: scheme.surfaceContainerHigh,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final entry in entries) _row(context, entry, scheme),
+          // A stack of pins never takes more than a quarter of the room
+          // above the keyboard (a phone on its side); past that it scrolls.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: (media.size.height - media.viewInsets.bottom) * 0.25,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final entry in entries) _row(context, entry, scheme),
+                ],
+              ),
+            ),
+          ),
           const Divider(height: 1),
         ],
       ),
@@ -207,8 +229,14 @@ class _PinnedMessagesBarState extends State<PinnedMessagesBar> {
             ),
             const SizedBox(width: 8),
             Expanded(
+              // Plain: a spoiler the card hides must not show here.
               child: Text(
-                entry.message.summary,
+                MarkdownHelper.toPlainText(
+                  entry.message.summary,
+                  formatting: context.select<AppSettingsService, bool>(
+                    (s) => s.settings.showTextFormatting,
+                  ),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: scheme.onSurface),

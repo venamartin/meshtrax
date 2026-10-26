@@ -752,7 +752,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
     _textController.removeListener(_keepDraft);
-    _drafts.leaveDraft(widget.channel.idKey, _textController.text);
+    _drafts.flushDrafts();
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
     ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
@@ -1752,7 +1752,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              structured.summary,
+              MarkdownHelper.toPlainText(
+                structured.summary,
+                formatting: context.select<AppSettingsService, bool>(
+                  (s) => s.settings.showTextFormatting,
+                ),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12 * textScale, color: previewTextColor),
@@ -2173,7 +2178,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              structured.summary,
+              MarkdownHelper.toPlainText(
+                structured.summary,
+                formatting: context.select<AppSettingsService, bool>(
+                  (s) => s.settings.showTextFormatting,
+                ),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 11 * textScale, color: textColor),
