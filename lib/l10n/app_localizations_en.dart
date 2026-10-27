@@ -5575,4 +5575,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chats_draft => 'Draft';
+
+  @override
+  String get contact_teleBlockedTitle => 'Blocked by your radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Your radio\'s privacy settings share this with nobody, so $name won\'t get it. Change them so the contacts you allow get it?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Not now';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Your radio shares this with nobody ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Your radio shares this with everyone ($mode)';
+  }
+
+  @override
+  String get contact_sharesPosition => 'Can get your position';
+
+  @override
+  String get pathfinder_meshTitle => 'A different mesh?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown of $heard repeaters heard since connecting are new to the Pathfinder graph “$graph”. Start a new graph for this area? The old one stays, and you can switch back on the Pathfinder screen.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Most repeaters heard since connecting are in the Pathfinder graph “$other”, not “$graph”. Switch to it?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'New graph';
+
+  @override
+  String get pathfinder_meshSwitch => 'Switch';
+
+  @override
+  String get pathfinder_meshKeep => 'Keep this one';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Name the new graph';
+
+  @override
+  String get pathfinder_graphNameHint => 'For example, Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Create';
 }

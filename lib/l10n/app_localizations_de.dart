@@ -5682,4 +5682,59 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chats_draft => 'Entwurf';
+
+  @override
+  String get contact_teleBlockedTitle => 'Von Ihrem Funkgerät gesperrt';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Die Datenschutzeinstellungen Ihres Funkgeräts teilen das mit niemandem, daher erhält $name es nicht. Ändern, damit die Kontakte, denen Sie es erlauben, es erhalten?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Nicht jetzt';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Ihr Funkgerät teilt das mit niemandem ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Ihr Funkgerät teilt das mit allen ($mode)';
+  }
+
+  @override
+  String get contact_sharesPosition => 'Kann Ihren Standort abrufen';
+
+  @override
+  String get pathfinder_meshTitle => 'Ein anderes Mesh?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown von $heard Repeatern, die seit dem Verbinden zu hören waren, sind der Pathfinder-Karte „$graph“ neu. Eine neue Karte für diese Gegend anlegen? Die alte bleibt, und Sie können im Pathfinder-Bildschirm zurückwechseln.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Die meisten Repeater, die seit dem Verbinden zu hören waren, stehen in der Pathfinder-Karte „$other“, nicht in „$graph“. Zu ihr wechseln?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Neue Karte';
+
+  @override
+  String get pathfinder_meshSwitch => 'Wechseln';
+
+  @override
+  String get pathfinder_meshKeep => 'Diese behalten';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Name der neuen Karte';
+
+  @override
+  String get pathfinder_graphNameHint => 'Zum Beispiel Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Anlegen';
 }

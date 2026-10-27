@@ -14,10 +14,12 @@ import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/path_graph/frame_adapter.dart';
+import '../services/path_graph/graph_book.dart';
 import '../services/path_graph/path_graph_service.dart';
 import '../utils/contact_search.dart';
 import '../widgets/mention_composer.dart';
 import '../widgets/pathfinder_help_dialog.dart';
+import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/routing_dialog.dart';
 import 'path_graph_diagnostics_screen.dart';
 import 'path_trace_map.dart';
@@ -116,6 +118,40 @@ String movingReasonText(MovingStatus status) => switch (status.reason) {
       MovingReason.sharedCode => '${status.sharedKeys} radios use this code, '
           'so it seems to be in several places',
     };
+
+/// Why [first] leads although a later route in [shown] reads a higher %,
+/// or null when the order agrees with the %. A route a flood of mine just
+/// took leads for [liveRouteMinutes]; otherwise the search weighs the
+/// repeaters at each end three times their share of the % and charges a
+/// little per hop (field rule 2026-09-25), so the first has the stronger
+/// ends or the fewer hops.
+String? routeLeadReason(
+  RouteResult first,
+  List<PathResult> shown, {
+  required num liveRouteMinutes,
+}) {
+  final higher = shown
+      .skip(1)
+      .whereType<RouteResult>()
+      .where((r) => r.estDelivery > first.estDelivery)
+      .firstOrNull;
+  if (higher == null) return null;
+  final live = first.liveAgeMillis;
+  if (live != null) {
+    final minutes = live ~/ 60000;
+    return 'First because a flood of yours reached them this way '
+        '${minutes < 1 ? 'just now' : '$minutes min ago'}: that route leads '
+        'for ${liveRouteMinutes.round()} minutes';
+  }
+  // The % without its links: what the two end repeaters contribute.
+  double ends(RouteResult r) =>
+      r.estDelivery / r.hopProbabilities.fold(1.0, (a, p) => a * p);
+  return ends(first) > ends(higher)
+      ? 'First because its end repeaters hear better, which counts for more '
+          'than the % shows'
+      : 'First because it has fewer hops, and each hop counts for more than '
+          'the % shows';
+}
 
 /// Pathfinder: the repeaters around this radio, and how it would reach
 /// whoever is picked. Laid out like the room server screen. While the
@@ -365,6 +401,10 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
     final mine = _ranked(graph, graph.egressCandidates());
 
     return [
+      if (service.graphEntry case final entry?) ...[
+        _graphCard(context, service, entry),
+        const SizedBox(height: 16),
+      ],
       _headerCard(context, connector, snap, service, mine),
       const SizedBox(height: 24),
       _sectionTitle('Direct repeaters (${mine.length})',
@@ -411,7 +451,8 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           }(),
         ],
         const SizedBox(height: 24),
-        _sectionTitle('Routes to ${contact?.name ?? target.hash}'),
+        _sectionTitle('Routes to ${contact?.name ?? target.hash}',
+            subtitle: 'In the order Pathfinder ranks them'),
         const SizedBox(height: 8),
         _routeList(graph, _forwardRoutes(graph, target), back: false),
         if (throughDoorsteps) ...[
@@ -545,6 +586,140 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       ),
     );
   }
+
+  /// Which graph is open, out of those this preset keeps, and the way to
+  /// another (owner, 2026-10-26: Washington runs the same preset as
+  /// Monterey Bay, so the preset alone cannot keep them apart).
+  Widget _graphCard(
+      BuildContext context, PathGraphService service, GraphEntry entry) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.hub_outlined),
+        title: Text('Graph: ${entry.label}'),
+        subtitle: Text(entry.name == null
+            ? 'One for each mesh; this preset can keep several'
+            : entry.mesh.label),
+        trailing: TextButton(
+          onPressed: () => _pickGraph(context, service, entry),
+          child: const Text('Change'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickGraph(
+      BuildContext context, PathGraphService service, GraphEntry open) async {
+    String size(int? bytes) => bytes == null
+        ? 'Nothing learned yet'
+        : bytes < 1024 * 1024
+            ? '${(bytes / 1024).ceil()} KB'
+            : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialog) => StatefulBuilder(
+        builder: (dialog, setDialogState) {
+          final graphs = GraphBook.graphsFor(open.mesh);
+          final current = service.graphEntry;
+          return AlertDialog(
+            title: const Text('Pathfinder graphs'),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('For ${open.mesh.label}. Keep one for each mesh on '
+                        'this preset: home, and where you travel. The one you '
+                        'pick stays until you change it.'),
+                    const SizedBox(height: 8),
+                    for (final g in graphs)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(g == current
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked),
+                        title: Text(g.label),
+                        subtitle: FutureBuilder<int?>(
+                          future: service.graphFileBytes(g),
+                          builder: (_, snap) => Text(size(snap.data)),
+                        ),
+                        onTap: g == current
+                            ? null
+                            : () async {
+                                Navigator.pop(dialog);
+                                await service.switchGraph(g);
+                              },
+                        trailing: PopupMenuButton<String>(
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                                value: 'rename', child: Text('Rename')),
+                            if (g != current && !g.isDefault)
+                              const PopupMenuItem(
+                                  value: 'delete', child: Text('Delete')),
+                          ],
+                          onSelected: (action) async {
+                            if (action == 'rename') {
+                              final name = await showGraphNameDialog(dialog,
+                                  title: 'Rename graph', initial: g.label);
+                              if (name == null) return;
+                              await service.renameGraph(g, name);
+                            } else {
+                              if (!await _confirmDeleteGraph(dialog, g)) {
+                                return;
+                              }
+                              await service.deleteGraph(g);
+                            }
+                            if (dialog.mounted) setDialogState(() {});
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  final name = await showGraphNameDialog(dialog);
+                  if (name == null || !dialog.mounted) return;
+                  Navigator.pop(dialog);
+                  await service.createGraph(name);
+                },
+                child: const Text('New graph'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialog),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<bool> _confirmDeleteGraph(BuildContext context, GraphEntry g) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text('Delete "${g.label}"?'),
+          content: const Text(
+              'Everything Pathfinder learned on that mesh is gone for good.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   Widget _sectionTitle(String title, {String? subtitle}) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1039,36 +1214,52 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         ...graph.findReturnAlternativesFromRepeater(hash, count: 3),
       ];
 
-  /// Up to three distinct routes; a direct or flood answer appears once.
+  /// Up to three distinct routes, numbered in Pathfinder's order (the retry
+  /// ladder tries the routes in it the same way); a direct or flood answer
+  /// appears once. The order is Pathfinder's ranking, not
+  /// the % shown, and when a later route shows a higher % the first says
+  /// why it still leads (owner, 2026-10-26).
   Widget _routeList(PathGraph graph, List<PathResult> results,
       {required bool back, bool fromRepeater = false}) {
     final width = graph.hashWidthBytes;
     final seen = <String>{};
+    final shown = [
+      for (final r in results)
+        if (seen.add(switch (r) {
+          RouteResult(:final pathBytes) => PathHelper.hopHex(pathBytes),
+          DirectResult() => 'direct',
+          FloodResult() => 'flood',
+        }))
+          r,
+    ].take(3).toList();
     final rows = <Widget>[];
-    for (final r in results) {
-      if (rows.length == 3) break;
+    for (final (i, r) in shown.indexed) {
+      final number = Text('${i + 1}',
+          style: const TextStyle(fontWeight: FontWeight.bold));
       switch (r) {
         case RouteResult(:final pathBytes, :final estDelivery):
-          if (!seen.add(PathHelper.hopHex(pathBytes))) continue;
+          final why = i == 0
+              ? routeLeadReason(r, shown,
+                  liveRouteMinutes: graph.config.liveRouteMinutes)
+              : null;
           rows.add(ListTile(
             dense: true,
-            leading: const Icon(Icons.alt_route, size: 18),
+            leading: number,
             title: Text(_fmtPath(pathBytes, width),
                 style: const TextStyle(fontFamily: 'monospace')),
+            subtitle: why == null ? null : Text(why),
             trailing: Text('${_pct(estDelivery)} likely'),
           ));
         case DirectResult():
-          if (!seen.add('direct')) continue;
-          rows.add(const ListTile(
-            dense: true,
-            leading: Icon(Icons.arrow_forward, size: 18),
-            title: Text('Direct — no repeater needed'),
-          ));
-        case FloodResult(:final reason):
-          if (!seen.add('flood')) continue;
           rows.add(ListTile(
             dense: true,
-            leading: const Icon(Icons.waves, size: 18),
+            leading: number,
+            title: const Text('Direct — no repeater needed'),
+          ));
+        case FloodResult(:final reason):
+          rows.add(ListTile(
+            dense: true,
+            leading: number,
             title: Text('Flood — ${floodReasonText(reason, back: back, fromRepeater: fromRepeater)}'),
           ));
       }

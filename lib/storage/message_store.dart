@@ -95,7 +95,10 @@ class MessageStore {
   // --- Phase 3d: the database is the only message state ------------------
 
   /// Watched, ordered view of a conversation's newest [limit] messages,
-  /// emitted oldest-first. The UI's ONLY read path.
+  /// emitted oldest-first. The UI's ONLY read path. It emits on every write
+  /// to the table, any chat's, with the same objects for unchanged rows:
+  /// the connector drops a window that [sameMessages] says is unchanged,
+  /// after a room's re-order, which can change with no row.
   Stream<List<Message>> watchConversation(
     String contactKeyHex, {
     int limit = 200,
@@ -118,16 +121,41 @@ class MessageStore {
     return query.watch().map((rows) {
       final messages = <Message>[];
       for (final row in rows.reversed) {
-        try {
-          messages.add(
-            _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>),
-          );
-        } catch (e) {
-          appLogger.warn('Skipping unreadable contact message row: $e');
-        }
+        final message = _watchedRow(row);
+        if (message != null) messages.add(message);
       }
       return messages;
     });
+  }
+
+  // Rows the watched conversations decoded, by row id, with the payload
+  // each came from. A watched query re-runs on every write to the table,
+  // and decoding the whole window again on the UI isolate is what a scroll
+  // stuttered on (owner, 2026-10-26). Kept across subscriptions, so the
+  // bigger window a scroll into history asks for decodes only its new rows.
+  final Map<int, ({String payload, Message message})> _decoded = {};
+  static const _decodedCap = 4000;
+
+  Message? _watchedRow(ContactMessageRow row) {
+    final hit = _decoded[row.id];
+    if (hit != null && hit.payload == row.payload) return hit.message;
+    final message = _decodeRow(row);
+    if (message == null) return null;
+    _decoded.remove(row.id);
+    _decoded[row.id] = (payload: row.payload, message: message);
+    if (_decoded.length > _decodedCap) _decoded.remove(_decoded.keys.first);
+    return message;
+  }
+
+  /// The same messages in the same order: the write changed nothing this
+  /// conversation shows (another chat's message, a read mark), so a screen
+  /// need not hear about it.
+  static bool sameMessages(List<Object> a, List<Object> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i])) return false;
+    }
+    return true;
   }
 
   /// Atomic ingest: true ONLY when no row with this id exists — the unique

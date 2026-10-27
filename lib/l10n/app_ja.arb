@@ -2558,5 +2558,20 @@
   "pathfinderHelp_discover": "この場所であなたの電波が届くリピーターがはっきりしないときは、Pathfinderが短いDiscoverを1回送信します（送信に失敗したあとだけで、多くても10分に1回）。GPS付きの無線機なら、約500m四方の区画ごとに、あなたの電波を受信したリピーターをこの端末に記録します。正確な位置は記録しません。",
   "pathfinderHelp_off": "Pathfinderをオフにすれば、無線機は以前とまったく同じように経路を選びます。",
   "pathfinderHelp_dontShowAgain": "今後は表示しない",
-  "pathfinderHelp_ok": "了解"
+  "pathfinderHelp_ok": "了解",
+  "contact_teleBlockedTitle": "無線機の設定でブロックされています",
+  "contact_teleBlockedBody": "無線機のプライバシー設定では誰とも共有されないため、{name}には届きません。許可した連絡先に届くよう変更しますか？",
+  "contact_teleNotNow": "今はしない",
+  "contact_teleRadioDenies": "無線機はこれを誰とも共有しません（{mode}）",
+  "contact_teleRadioAllowsAll": "無線機はこれを全員と共有します（{mode}）",
+  "contact_sharesPosition": "あなたの位置情報を取得できます",
+  "pathfinder_meshTitle": "別のメッシュですか？",
+  "pathfinder_meshNewBody": "接続後に聞こえた{heard}台のリピーターのうち{unknown}台は、Pathfinderの地図「{graph}」にないものです。この地域用に新しい地図を始めますか？元の地図は残り、Pathfinderの画面で戻せます。",
+  "pathfinder_meshSwitchBody": "接続後に聞こえたリピーターの大半は、Pathfinderの地図「{graph}」ではなく「{other}」にあります。そちらに切り替えますか？",
+  "pathfinder_meshNew": "新しい地図",
+  "pathfinder_meshSwitch": "切り替える",
+  "pathfinder_meshKeep": "このままにする",
+  "pathfinder_graphNameTitle": "新しい地図の名前",
+  "pathfinder_graphNameHint": "例：ワシントン",
+  "pathfinder_graphCreate": "作成"
 }

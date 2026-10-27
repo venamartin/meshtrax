@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
@@ -9,7 +10,10 @@ import '../connector/meshcore_connector.dart';
 import '../services/app_settings_service.dart';
 import '../services/repeater_command_service.dart';
 import '../widgets/routing_dialog.dart';
+import '../widgets/structured_message_card.dart';
 import '../helpers/cayenne_lpp.dart';
+import '../helpers/geo_format.dart';
+import '../helpers/structured_message.dart';
 import '../utils/battery_utils.dart';
 import '../helpers/snack_bar_builder.dart';
 
@@ -28,6 +32,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   bool _hasData = false;
   RepeaterCommandService? _commandService;
   List<Map<String, dynamic>>? _parsedTelemetry;
+  DateTime? _receivedAt;
 
   int _resolveContactIndex = -1;
 
@@ -70,6 +75,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
     if (!mounted) return;
     setState(() {
       _parsedTelemetry = parsedTelemetry;
+      _receivedAt = DateTime.now();
     });
 
     showDismissibleSnackBar(
@@ -202,7 +208,9 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                 ),
               if ((_isLoaded || _hasData) &&
                   _parsedTelemetry != null &&
-                  _parsedTelemetry!.isNotEmpty)
+                  _parsedTelemetry!.isNotEmpty) ...[
+                for (final position in _positions(_parsedTelemetry!))
+                  _buildPositionCard(position),
                 for (final entry in _parsedTelemetry ?? [])
                   _buildChannelInfoCard(
                     entry['values'],
@@ -210,6 +218,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                     entry['channel'],
                     isImperialUnits,
                   ),
+              ],
             ],
           ),
         ),
@@ -273,10 +282,83 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                   l10n.telemetry_currentLabel,
                   l10n.telemetry_currentValue(entry.value.toString()),
                 )
+              else if (entry.key == 'gps' && entry.value is Map)
+                _gpsRow(entry.value, isImperialUnits)
               else
                 _buildInfoRow(entry.key, entry.value.toString()),
           ],
         ),
+      ),
+    );
+  }
+
+  /// A GPS reading's position, or null for 0,0: a radio without a fix.
+  static LatLng? _positionOf(Map gps) {
+    final lat = (gps['latitude'] as num?)?.toDouble();
+    final lon = (gps['longitude'] as num?)?.toDouble();
+    if (!GeoFormat.isValidPosition(lat, lon)) return null;
+    return LatLng(lat!, lon!);
+  }
+
+  static List<LatLng> _positions(List<Map<String, dynamic>> entries) => [
+        for (final entry in entries)
+          if (entry['values'] case final Map values)
+            if (values['gps'] case final Map gps) ?_positionOf(gps),
+      ];
+
+  /// A GPS reading as the card a shared position gets in a chat: map,
+  /// coordinates, Open map and Navigate (owner, 2026-10-26).
+  Widget _buildPositionCard(LatLng position) {
+    final message = LocationMessage(position: position);
+    final received = _receivedAt;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          decoration: StructuredMessageCard.bubbleDecoration(context, message),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              StructuredMessageCard(
+                message: message,
+                textScale: 1.0,
+                senderName: widget.contact.name,
+              ),
+              if (received != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  TimeOfDay.fromDateTime(received).format(context),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The position is its own card above; this row keeps its height, or a
+  /// dash for a radio without a fix.
+  Widget _gpsRow(Map gps, bool isImperialUnits) {
+    final l10n = context.l10n;
+    if (_positionOf(gps) == null) {
+      return _buildInfoRow(l10n.gps_position, l10n.common_notAvailable);
+    }
+    final altitude = (gps['altitude'] as num?)?.toDouble();
+    if (altitude == null) return const SizedBox.shrink();
+    return _buildInfoRow(
+      l10n.gps_altitude,
+      GeoFormat.heightText(
+        altitude,
+        isImperialUnits ? UnitSystem.imperial : UnitSystem.metric,
       ),
     );
   }

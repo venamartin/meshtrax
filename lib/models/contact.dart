@@ -31,6 +31,9 @@ class Contact {
   final bool isActive;
   final bool wasPulled;
   final bool clockCorrected; // lastSeen is receive time; sender's clock was implausible
+  // The radio's last_advert_timestamp, in seconds. A contact write must send
+  // it back unchanged: the firmware drops any advert not newer than it.
+  final int? lastAdvertSecs;
   final Uint8List? rawPacket;
 
   Contact({
@@ -54,6 +57,7 @@ class Contact {
     this.isActive = true,
     this.wasPulled = false,
     this.clockCorrected = false,
+    this.lastAdvertSecs,
     this.rawPacket,
   }) : inboundPath = inboundPath ?? Uint8List(0),
        lastMessageAt = lastMessageAt ?? lastSeen;
@@ -133,6 +137,7 @@ class Contact {
     bool? isActive,
     int? pathHashSize,
     bool? clockCorrected,
+    int? lastAdvertSecs,
     Uint8List? rawPacket,
   }) {
     return Contact(
@@ -161,6 +166,7 @@ class Contact {
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       isActive: isActive ?? this.isActive,
       clockCorrected: clockCorrected ?? this.clockCorrected,
+      lastAdvertSecs: lastAdvertSecs ?? this.lastAdvertSecs,
       rawPacket: rawPacket ?? this.rawPacket,
     );
   }
@@ -267,6 +273,7 @@ class Contact {
         longitude: lon,
         lastSeen: parsedLastSeen,
         isActive: true,
+        lastAdvertSecs: lastAdvertTimestamp,
         rawPacket: null,
       );
     } catch (e) {
@@ -302,6 +309,7 @@ class Contact {
       'isActive': isActive,
       'wasPulled': wasPulled,
       'clockCorrected': clockCorrected,
+      'lastAdvertSecs': lastAdvertSecs,
     };
   }
 
@@ -336,6 +344,7 @@ class Contact {
       isActive: json['isActive'] as bool? ?? true,
       wasPulled: json['wasPulled'] as bool? ?? false,
       clockCorrected: json['clockCorrected'] as bool? ?? false,
+      lastAdvertSecs: (json['lastAdvertSecs'] as num?)?.toInt(),
     );
   }
 

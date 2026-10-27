@@ -5683,4 +5683,59 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chats_draft => 'Piszkozat';
+
+  @override
+  String get contact_teleBlockedTitle => 'A rádiója letiltja';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'A rádiója adatvédelmi beállításai ezt senkivel nem osztják meg, így $name nem kapja meg. Módosítja őket, hogy az engedélyezett partnerei megkapják?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Most nem';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'A rádiója ezt senkivel nem osztja meg ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'A rádiója ezt mindenkivel megosztja ($mode)';
+  }
+
+  @override
+  String get contact_sharesPosition => 'Lekérheti a helyzetét';
+
+  @override
+  String get pathfinder_meshTitle => 'Másik hálózat?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return 'A csatlakozás óta hallott $heard repeaterből $unknown új a(z) „$graph” Pathfinder-térképnek. Indít egy új térképet ehhez a területhez? A régi megmarad, és a Pathfinder képernyőn visszaválthat rá.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'A csatlakozás óta hallott repeaterek többsége a(z) „$other” Pathfinder-térképen van, nem a(z) „$graph” térképen. Átvált rá?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Új térkép';
+
+  @override
+  String get pathfinder_meshSwitch => 'Átváltás';
+
+  @override
+  String get pathfinder_meshKeep => 'Ez marad';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Az új térkép neve';
+
+  @override
+  String get pathfinder_graphNameHint => 'Például Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Létrehozás';
 }

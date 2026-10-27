@@ -5689,4 +5689,59 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chats_draft => 'Szkic';
+
+  @override
+  String get contact_teleBlockedTitle => 'Zablokowane przez Twoje radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Ustawienia prywatności Twojego radia nie udostępniają tego nikomu, więc $name tego nie otrzyma. Zmienić je, aby otrzymywały to kontakty, którym pozwolisz?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Nie teraz';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Twoje radio nie udostępnia tego nikomu ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Twoje radio udostępnia to wszystkim ($mode)';
+  }
+
+  @override
+  String get contact_sharesPosition => 'Może pobrać Twoją lokalizację';
+
+  @override
+  String get pathfinder_meshTitle => 'Inna sieć?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown z $heard przekaźników usłyszanych od połączenia jest nowych dla mapy Pathfindera „$graph”. Zacząć nową mapę dla tego obszaru? Stara zostaje i możesz do niej wrócić na ekranie Pathfindera.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Większość przekaźników usłyszanych od połączenia jest na mapie Pathfindera „$other”, a nie „$graph”. Przełączyć na nią?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Nowa mapa';
+
+  @override
+  String get pathfinder_meshSwitch => 'Przełącz';
+
+  @override
+  String get pathfinder_meshKeep => 'Zostaw tę';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Nazwa nowej mapy';
+
+  @override
+  String get pathfinder_graphNameHint => 'Na przykład Waszyngton';
+
+  @override
+  String get pathfinder_graphCreate => 'Utwórz';
 }

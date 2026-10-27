@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import '../helpers/reaction_helper.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/markdown_helper.dart';
+import '../helpers/message_facts.dart';
 import '../widgets/message_text.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
@@ -86,7 +88,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   int _cachedMentionMessageCount = -1;
 
   ChannelMessage? _replyingToMessage;
-  bool _isLoadingOlder = false;
 
   MeshCoreConnector? _connector;
 
@@ -100,9 +101,25 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   ChannelMessage? _firstUnreadMessage;
   int _initialScrollIndex = 0;
-  bool _isAtBottom = true;
+
+  /// Whether the newest message is on screen. Not state: the list reports
+  /// it on every frame of a scroll, and only the jump-down button shows it.
+  final _atBottom = ValueNotifier(true);
   DateTime? _lastChannelSendAt;
   int _previousMessageCount = 0;
+  String? _previousNewestId;
+  int _shortLinkRevision = 0;
+
+  // The list as shown, and the built list and pins with what each was made
+  // from (see ChatScreen): a notify that changed none of it reuses them.
+  List<ChannelMessage>? _visibleFrom;
+  Set<String>? _visibleBlocked;
+  List<ChannelMessage> _visible = const [];
+  Object? _listKey;
+  Widget? _list;
+  Object? _pinsKey;
+  Set<String> _pinsDismissed = const {};
+  Widget _pins = const SizedBox.shrink();
 
   /// The watched database query is the screen's only message source
   /// (Phase 3d) — ordering and paging belong to SQL.
@@ -110,6 +127,72 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   StreamSubscription<List<ChannelMessage>>? _messagesSub;
   int _watchLimit = 200;
   bool _didInitialAnchor = false;
+
+  // What rows show by the clock (an event's day or end, a notice's expiry,
+  // a short link to look up again, a tracing time a day old) changes with
+  // no write and no notify. The soonest such moment among the rows built
+  // rebuilds the list.
+  Timer? _clockTimer;
+  DateTime? _clockAt;
+  int _clockTick = 0;
+  Timer? _resizeTimer;
+  int _positionReports = 0;
+
+  void _rebuildAt(DateTime? at) {
+    _catchUpSoon();
+    if (at == null || !at.isAfter(DateTime.now())) return;
+    final pending = _clockAt;
+    if (pending != null && !at.isBefore(pending)) return;
+    _clockTimer?.cancel();
+    _clockAt = at;
+    // A second late, so the moment has surely passed; at most a day, since
+    // a web timer past ~24.8 days fires at once.
+    var wait = at.difference(DateTime.now()) + const Duration(seconds: 1);
+    if (wait > const Duration(days: 1)) wait = const Duration(days: 1);
+    _clockTimer = Timer(wait, () {
+      _clockAt = null;
+      if (mounted) setState(() => _clockTick++);
+    });
+  }
+
+  /// A moment [_rebuildAt] waits for that has already passed: timers stop
+  /// while the device sleeps, so the first build after waking catches up.
+  void _catchUpClock() {
+    final at = _clockAt;
+    if (at == null || DateTime.now().isBefore(at)) return;
+    _clockTimer?.cancel();
+    _clockAt = null;
+    _clockTick++;
+  }
+
+  /// [_catchUpClock] from where the list is not being built (a row, the
+  /// pins): the screen is built anew after this frame, and its rows then
+  /// ask again for what comes next.
+  bool _catchUpQueued = false;
+  void _catchUpSoon() {
+    final at = _clockAt;
+    if (_catchUpQueued || at == null || DateTime.now().isBefore(at)) return;
+    _catchUpQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _catchUpQueued = false;
+      if (mounted) setState(_catchUpClock);
+    });
+  }
+
+  /// A row grew or shrank (a GIF loaded, the text was zoomed). The list
+  /// reports where its rows are only on a scroll or as a new list, and the
+  /// jump-down button and following new messages go by that report. Once
+  /// sizes settle, a list with no report since is built anew.
+  bool _onRowResized(SizeChangedLayoutNotification _) {
+    final reports = _positionReports;
+    _resizeTimer?.cancel();
+    _resizeTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted && _positionReports == reports) {
+        setState(() => _listKey = null);
+      }
+    });
+    return false;
+  }
 
   // In-channel search. Matches come from the FULL stored history (the
   // watched window only pages the visible list); jumping to a match
@@ -154,7 +237,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     .indexWhere((m) => m.messageId == mentionTarget);
           if (mentionIdx != -1) {
             _initialScrollIndex = mentionIdx;
-            _isAtBottom = false;
+            _atBottom.value = false;
           } else if (settings.jumpToOldestUnread && unread > 0) {
             _firstUnreadMessage =
                 _findOldestUnreadChannelAnchor(messages, unread);
@@ -163,7 +246,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (msgIdx != -1) {
                 _initialScrollIndex = msgIdx;
-                _isAtBottom = false;
+                _atBottom.value = false;
               }
             }
           }
@@ -218,6 +301,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   }
 
   void _scrollListener() {
+    _positionReports++;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
@@ -231,19 +315,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
     // With reverse:true, index 0 is the newest message at the visual bottom.
     // If item 0 is in the visible positions, the user is at the bottom.
-    final isAtBottom = positions.any((p) => p.index == 0);
-    if (_isAtBottom != isAtBottom) {
-      setState(() => _isAtBottom = isAtBottom);
-    }
+    _atBottom.value = positions.any((p) => p.index == 0);
 
     final itemCount = _messages.length;
-    if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
+    if (maxIndex >= itemCount - 5) {
       _loadOlderMessages();
     }
   }
 
   void _onTextFieldFocusChange() {
-    if (_textFieldFocusNode.hasFocus && mounted && _isAtBottom && _itemScrollController.isAttached) {
+    if (_textFieldFocusNode.hasFocus && mounted && _atBottom.value && _itemScrollController.isAttached) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted && _itemScrollController.isAttached) {
           _itemScrollController.scrollTo(
@@ -726,18 +807,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     return firstEmoji(name.characters.first) != null;
   }
 
-  Future<void> _loadOlderMessages() async {
-    if (_isLoadingOlder) return;
-    // Paging is a bigger LIMIT on the watched query — SQL does the rest.
+  /// Paging is a bigger LIMIT on the watched query — SQL does the rest.
+  /// Until the bigger window arrives the list is shorter than the limit,
+  /// so a scroll that keeps asking starts nothing new.
+  void _loadOlderMessages() {
     if (_messages.length < _watchLimit) return;
-    setState(() => _isLoadingOlder = true);
-
     _watchLimit += 200;
     _subscribeMessages(context.read<MeshCoreConnector>());
-
-    if (mounted) {
-      setState(() => _isLoadingOlder = false);
-    }
   }
 
   @override
@@ -747,7 +823,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _searchDebounce?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _clockTimer?.cancel();
+    _resizeTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
+    _atBottom.dispose();
     _connector?.setActiveChannel(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
@@ -856,7 +935,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   Future<void> _scrollToMessage(String messageId) async {
     if (!_itemScrollController.isAttached) return;
 
-    final reversedMessages = _messages.reversed.toList();
+    // The list's own order: a blocked sender's rows are not in it.
+    final reversedMessages =
+        _visibleMessages(context.read<AppSettingsService>()).reversed.toList();
     final index = reversedMessages.indexWhere((m) => m.messageId == messageId);
     
     if (index != -1) {
@@ -1006,12 +1087,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             Expanded(
               child: Consumer<MeshCoreConnector>(
                 builder: (context, connector, child) {
-                  final settingsService = context.watch<AppSettingsService>();
-                  final messages = _messages
-                      .where((m) =>
-                          m.isOutgoing ||
-                          !settingsService.isSenderBlocked(m.senderName))
-                      .toList();
+                  final messages =
+                      _visibleMessages(context.watch<AppSettingsService>());
 
                   if (messages.isEmpty) {
                     return Center(
@@ -1046,193 +1123,46 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     );
                   }
 
-                  // Reverse messages so newest appear at bottom with reverse: true
-                  final reversedMessages = messages.reversed.toList();
-                  final itemCount =
-                      reversedMessages.length + (_isLoadingOlder ? 1 : 0);
-
-                  // Auto-scroll to bottom if user is already at bottom
-                  final currentMessageCount = messages.length;
-                  final newestIsOutgoing = messages.isNotEmpty && messages.last.isOutgoing;
-                  if (currentMessageCount > _previousMessageCount) {
-                    // Auto-scroll if: the user is already at the bottom, OR they
-                    // just sent the newest message.
-                    if ((_isAtBottom || newestIsOutgoing) && _itemScrollController.isAttached) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted || !_itemScrollController.isAttached) return;
-                        _itemScrollController.jumpTo(
-                          index: 0,
-                          alignment: 0.0,
-                        );
-                      });
-                    }
-                  }
-                  // Defer count update to avoid mutating state during build
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) _previousMessageCount = currentMessageCount;
-                  });
-
-                  final pinnedBar = _buildPinnedBar(messages);
                   return Column(
                     children: [
-                      ?pinnedBar,
+                      _buildPinnedBar(messages),
                       Expanded(
                         child: Stack(
-                    children: [
-                      ExcludeSemantics(
-                        child: ChatZoomWrapper(
-                          child: ScrollablePositionedList.builder(
-                            reverse: true, // List grows from bottom up
-                            itemScrollController: _itemScrollController,
-                            itemPositionsListener: _itemPositionsListener,
-                            initialScrollIndex: _initialScrollIndex,
-                            initialAlignment: _initialScrollIndex > 0 ? 0.05 : 0.0,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                            itemCount: itemCount,
-                            itemBuilder: (context, index) {
-                              // Loading indicator now appears at end (bottom) of reversed list
-                              if (_isLoadingOlder && index == itemCount - 1) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                              final messageIndex = index;
-                              final message = reversedMessages[messageIndex];
-                              
-                              final bubble = Builder(
-                                builder: (context) {
-                                  final textScale = context
-                                      .select<ChatTextScaleService, double>(
-                                        (service) => service.scale,
+                          children: [
+                            _messageList(messages, connector),
+                            Positioned(
+                              bottom: 16,
+                              right: 16,
+                              child: ValueListenableBuilder<bool>(
+                                valueListenable: _atBottom,
+                                builder: (context, atBottom, button) =>
+                                    AnimatedScale(
+                                  scale: atBottom ? 0.0 : 1.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOutBack,
+                                  child: button,
+                                ),
+                                child: FloatingActionButton(
+                                  mini: true,
+                                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                  onPressed: () {
+                                    if (_itemScrollController.isAttached) {
+                                      _itemScrollController.scrollTo(
+                                        index: 0,
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeOut,
                                       );
-                                  return _buildMessageBubble(
-                                    message,
-                                    textScale,
-                                  );
-                                },
-                              );
-                              bool showDayMarker = false;
-                              if (messageIndex == reversedMessages.length - 1) {
-                                showDayMarker = true;
-                              } else {
-                                final olderMessage = reversedMessages[messageIndex + 1];
-                                final currentDate = DateTime(message.timestamp.year, message.timestamp.month, message.timestamp.day);
-                                final olderDate = DateTime(olderMessage.timestamp.year, olderMessage.timestamp.month, olderMessage.timestamp.day);
-                                if (currentDate != olderDate) {
-                                  showDayMarker = true;
-                                }
-                              }
-
-                              Widget currentWidget = bubble;
-
-                              final focusedMatchId =
-                                  _searchActive && _searchPos >= 0
-                                      ? _searchMatches[_searchPos]
-                                          .message
-                                          .messageId
-                                      : null;
-                              if (message.messageId == focusedMatchId) {
-                                currentWidget = Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(12),
+                                    }
+                                  },
+                                  child: Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                                   ),
-                                  child: currentWidget,
-                                );
-                              }
-
-                              if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
-                                currentWidget = Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      child: Row(
-                                        children: [
-                                          Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                                            child: Text(context.l10n.chat_newMessages, style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
-                                          ),
-                                          Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
-                                        ],
-                                      ),
-                                    ),
-                                    currentWidget,
-                                  ],
-                                );
-                              }
-
-                              if (showDayMarker) {
-                                currentWidget = Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      child: Row(
-                                        children: [
-                                          Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                                            child: Text(
-                                              DateFormat('E, d MMMM').format(message.timestamp), 
-                                              style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
-                                            ),
-                                          ),
-                                          Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
-                                        ],
-                                      ),
-                                    ),
-                                    currentWidget,
-                                  ],
-                                );
-                              }
-
-                              return currentWidget;
-                            },
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 16,
-                        right: 16,
-                        child: AnimatedScale(
-                          scale: _isAtBottom ? 0.0 : 1.0,
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutBack,
-                          child: FloatingActionButton(
-                            mini: true,
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                            onPressed: () {
-                              if (_itemScrollController.isAttached) {
-                                _itemScrollController.scrollTo(
-                                  index: 0,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeOut,
-                                );
-                              }
-                            },
-                            child: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                       ),
                     ],
                   );
@@ -1244,7 +1174,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 contacts: _filteredMentionContacts,
                 onSelect: _insertMention,
               ),
-            _buildMessageComposer(),
+            Consumer<MeshCoreConnector>(
+              builder: (context, connector, _) =>
+                  _buildMessageComposer(connector),
+            ),
           ],
         ),
       ),
@@ -1252,7 +1185,198 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(ChannelMessage message, double textScale) {
+  List<ChannelMessage> _visibleMessages(AppSettingsService settingsService) {
+    final blocked = settingsService.settings.blockedSenderNames;
+    if (!identical(_visibleFrom, _messages) ||
+        !identical(_visibleBlocked, blocked)) {
+      _visibleFrom = _messages;
+      _visibleBlocked = blocked;
+      _visible = _messages
+          .where((m) =>
+              m.isOutgoing || !settingsService.isSenderBlocked(m.senderName))
+          .toList();
+    }
+    return _visible;
+  }
+
+  /// The list, built again only when something its rows show has changed.
+  /// The rows hear about settings, text size, theme and retries by
+  /// themselves.
+  Widget _messageList(
+    List<ChannelMessage> messages,
+    MeshCoreConnector connector,
+  ) {
+    _catchUpClock();
+    final focusedMatchId = _searchActive && _searchPos >= 0
+        ? _searchMatches[_searchPos].message.messageId
+        : null;
+    final key = (
+      messages,
+      connector.selfName,
+      _firstUnreadMessage,
+      focusedMatchId,
+      _shortLinkRevision,
+      _clockTick,
+      DateUtils.dateOnly(DateTime.now()),
+      Localizations.localeOf(context),
+    );
+    if (key != _listKey) {
+      _listKey = key;
+      _list = _buildMessageList(messages, focusedMatchId);
+    }
+    return _list!;
+  }
+
+  Widget _buildMessageList(
+    List<ChannelMessage> messages,
+    String? focusedMatchId,
+  ) {
+    // Reverse messages so newest appear at bottom with reverse: true
+    final reversedMessages = messages.reversed.toList();
+    final itemCount = reversedMessages.length;
+
+    // Auto-scroll to bottom if user is already at bottom
+    final currentMessageCount = messages.length;
+    final newest = messages.last;
+    // A NEW newest row of ours. Paging in older history grows the list
+    // too, and while our own post was the newest that pulled a reader who
+    // had scrolled up back down to the bottom.
+    final justSent =
+        newest.isOutgoing && newest.messageId != _previousNewestId;
+    if (currentMessageCount > _previousMessageCount) {
+      // Auto-scroll if: the user is already at the bottom, OR they just
+      // sent the newest message.
+      if ((_atBottom.value || justSent) && _itemScrollController.isAttached) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_itemScrollController.isAttached) return;
+          _itemScrollController.jumpTo(
+            index: 0,
+            alignment: 0.0,
+          );
+        });
+      }
+    }
+    _previousMessageCount = currentMessageCount;
+    _previousNewestId = newest.messageId;
+
+    return ExcludeSemantics(
+      child: ChatZoomWrapper(
+        child: NotificationListener<SizeChangedLayoutNotification>(
+          onNotification: _onRowResized,
+          child: ScrollablePositionedList.builder(
+          reverse: true, // List grows from bottom up
+          itemScrollController: _itemScrollController,
+          itemPositionsListener: _itemPositionsListener,
+          initialScrollIndex: _initialScrollIndex,
+          initialAlignment: _initialScrollIndex > 0 ? 0.05 : 0.0,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            final messageIndex = index;
+            final message = reversedMessages[messageIndex];
+
+            final bubble = Builder(
+              builder: (context) {
+                final textScale = context
+                    .select<ChatTextScaleService, double>(
+                      (service) => service.scale,
+                    );
+                return _buildMessageBubble(
+                  context,
+                  message,
+                  textScale,
+                );
+              },
+            );
+            bool showDayMarker = false;
+            if (messageIndex == reversedMessages.length - 1) {
+              showDayMarker = true;
+            } else {
+              final olderMessage = reversedMessages[messageIndex + 1];
+              final currentDate = DateTime(message.timestamp.year, message.timestamp.month, message.timestamp.day);
+              final olderDate = DateTime(olderMessage.timestamp.year, olderMessage.timestamp.month, olderMessage.timestamp.day);
+              if (currentDate != olderDate) {
+                showDayMarker = true;
+              }
+            }
+
+            Widget currentWidget = bubble;
+
+            if (message.messageId == focusedMatchId) {
+              currentWidget = Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: currentWidget,
+              );
+            }
+
+            if (_firstUnreadMessage != null && message.messageId == _firstUnreadMessage!.messageId) {
+              currentWidget = Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(context.l10n.chat_newMessages, style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
+                      ],
+                    ),
+                  ),
+                  currentWidget,
+                ],
+              );
+            }
+
+            if (showDayMarker) {
+              currentWidget = Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            DateFormat('E, d MMMM').format(message.timestamp), 
+                            style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
+                      ],
+                    ),
+                  ),
+                  currentWidget,
+                ],
+              );
+            }
+
+            return SizeChangedLayoutNotifier(child: currentWidget);
+          },
+        ),
+        ),
+      ),
+    );
+  }
+
+  /// A row, built with its row's [context]: what it reads (theme, size,
+  /// settings, retries) then rebuilds the row, not the screen.
+  Widget _buildMessageBubble(
+    BuildContext context,
+    ChannelMessage message,
+    double textScale,
+  ) {
     // A stored MeshCore One reaction is one whose target message we don't
     // hold. It stays an ordinary bubble — same sender header, avatar and
     // timestamp as any message — but shows "{emoji}@[{target}]" instead of
@@ -1260,28 +1384,34 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     // target arrives later the connector lands the reaction on it and
     // deletes this row.
     return _buildRegularMessageBubble(
+      context,
       message,
       textScale,
-      orphanReaction: ReactionHelper.parseMeshCoreOneReaction(message.text),
+      orphanReaction: MessageFacts.of(message.text).reaction,
     );
   }
 
   Widget _buildRegularMessageBubble(
+    BuildContext context,
     ChannelMessage message,
     double textScale, {
     ReactionInfo? orphanReaction,
   }) {
-    final settingsService = context.read<AppSettingsService>();
-    final uiState = context.read<UiViewStateService>();
+    final settingsService = context.watch<AppSettingsService>();
+    final renderGifs =
+        context.select<UiViewStateService, bool>((s) => s.renderGifs);
     final enableTracing = settingsService.settings.enableMessageTracing;
     final senderNameColors = settingsService.settings.senderNameColors;
     final isOutgoing = message.isOutgoing;
-    final gifId = GifHelper.parseGif(message.text);
-    final structured = StructuredMessage.parse(
-      message.text,
-      resolveShortLink: ShortLinkResolver.instance.cached,
-    );
-    if (structured == null) ShortLinkResolver.instance.prefetchIn(message.text);
+    final facts = MessageFacts.of(message.text);
+    _rebuildAt(facts.changesAt);
+    _rebuildAt(facts.prefetchShortLinks());
+    // With tracing on, a time reads with its date once it is a day old.
+    if (enableTracing) {
+      _rebuildAt(message.timestamp.add(const Duration(days: 1)));
+    }
+    final gifId = facts.gifId;
+    final structured = facts.structured;
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1289,15 +1419,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                 ? '@[${orphanReaction.targetSender}]'
                 : '') +
             orphanReaction.emoji
-        : GifHelper.stripGif(message.text);
+        : facts.withoutGif;
     final displayPathString = message.pathBytes.isNotEmpty
         ? message.displayPathString
         : (message.pathVariants.isNotEmpty
               ? message.displayPathVariants.first
               : "");
 
-    final isJumboEmoji =
-        gifId == null && structured == null && isEmojiOnly(message.text);
+    final isJumboEmoji = facts.emojiOnly;
     final warmLight = ChatColors.isLight(context);
     final displayBubbleColor = isJumboEmoji
         ? Colors.transparent
@@ -1322,7 +1451,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!isOutgoing) ...[
-              _buildAvatar(message.senderName),
+              _buildAvatar(context, message.senderName),
               const SizedBox(width: 8),
             ],
             Flexible(
@@ -1342,7 +1471,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                   constraints: BoxConstraints(
                     maxWidth: structured != null
                         ? StructuredMessageCard.maxBubbleWidth(context)
-                        : MediaQuery.of(context).size.width * 0.65,
+                        : MediaQuery.sizeOf(context).width * 0.65,
                   ),
                   decoration: structured != null
                       ? StructuredMessageCard.bubbleDecoration(context, structured)
@@ -1372,7 +1501,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: senderNameColors
-                                        ? _getColorForName(message.senderName)
+                                        ? _getColorForName(context, message.senderName)
                                         : Theme.of(context)
                                             .colorScheme
                                             .primary,
@@ -1386,7 +1515,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               // that adopt the longest path for display.
                               if (message.heardDirect) ...[
                                 const SizedBox(width: 6),
-                                _buildDirectPill(),
+                                _buildDirectPill(context),
                               ],
                             ],
                           ),
@@ -1394,7 +1523,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                         if (gifId == null) const SizedBox(height: 4),
                       ],
                       if (message.replyToSenderName != null) ...[
-                        _buildReplyPreview(message, textScale),
+                        _buildReplyPreview(context, message, textScale),
                         const SizedBox(height: 8),
                       ],
                       if (structured != null) ...[
@@ -1415,7 +1544,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             extra: [
                               if (enableTracing &&
                                   isOutgoing &&
-                                  _isRetrying(message))
+                                  _isRetrying(context, message))
                                 'Retrying (${message.sendRetryCount}/${settingsService.settings.maxChannelMessageRetries})',
                             ],
                             status: !isOutgoing
@@ -1490,7 +1619,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: uiState.renderGifs ? GifMessage(
+                                child: renderGifs ? GifMessage(
                                   url:
                                       'https://media.giphy.com/media/$gifId/giphy.gif',
                                   backgroundColor: Colors.transparent,
@@ -1613,7 +1742,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                               ],
                               if (isOutgoing) ...[
                                 const SizedBox(width: 4),
-                                if (_isRetrying(message)) ...[
+                                if (_isRetrying(context, message)) ...[
                                   Text(
                                     'Retrying (${message.sendRetryCount}/${settingsService.settings.maxChannelMessageRetries})',
                                     style: TextStyle(
@@ -1643,7 +1772,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             offset: const Offset(0, -kReactionOverlap),
             child: Padding(
               padding: EdgeInsets.only(left: isOutgoing ? 0 : 48),
-              child: _buildReactionsDisplay(message),
+              child: _buildReactionsDisplay(context, message),
             ),
           ),
       ],
@@ -1672,10 +1801,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     }
   }
 
-  bool _isRetrying(ChannelMessage message) =>
+  /// Selected, not read: the list is no longer rebuilt on every notify,
+  /// and a retry can end without the row changing.
+  bool _isRetrying(BuildContext context, ChannelMessage message) =>
       message.sendRetryCount > 0 &&
-      context.read<MeshCoreConnector>().isChannelMessageRetrying(message.messageId) &&
-      message.status != ChannelMessageStatus.delivered;
+      message.status != ChannelMessageStatus.delivered &&
+      context.select<MeshCoreConnector, bool>(
+        (c) => c.isChannelMessageRetrying(message.messageId),
+      );
 
   Widget _statusIcon(ChannelMessage message, String displayPathString) =>
       MessageStatusIcon(
@@ -1702,22 +1835,28 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             : Colors.grey[600],
       );
 
-  Widget _buildReplyPreview(ChannelMessage message, double textScale) {
+  Widget _buildReplyPreview(
+    BuildContext context,
+    ChannelMessage message,
+    double textScale,
+  ) {
     final connector = context.read<MeshCoreConnector>();
-    final uiState = context.watch<UiViewStateService>();
+    final renderGifs =
+        context.select<UiViewStateService, bool>((s) => s.renderGifs);
     final isOwnNode = message.replyToSenderName == connector.selfName;
     final replyText = message.replyToText ?? '';
     final colorScheme = Theme.of(context).colorScheme;
     final previewTextColor = colorScheme.onSurface.withValues(alpha: 0.7);
 
-    final gifId = GifHelper.parseGif(replyText);
-    final structured = StructuredMessage.parse(replyText);
+    final quoted = MessageFacts.of(replyText);
+    final gifId = quoted.gifId;
+    final structured = quoted.quoteCard;
 
     Widget contentPreview;
     if (gifId != null) {
       contentPreview = ClipRRect(
         borderRadius: BorderRadius.circular(4),
-        child: uiState.renderGifs ? GifMessage(
+        child: renderGifs ? GifMessage(
           url: 'https://media.giphy.com/media/$gifId/giphy.gif',
           backgroundColor: colorScheme.surfaceContainerHighest,
           fallbackTextColor: previewTextColor,
@@ -1826,7 +1965,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                             .read<AppSettingsService>()
                             .settings
                             .senderNameColors
-                        ? _getColorForName(message.replyToSenderName ?? '')
+                        ? _getColorForName(context, message.replyToSenderName ?? '')
                         : Theme.of(context).colorScheme.onSecondaryContainer),
               ),
             ),
@@ -1838,7 +1977,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Widget _buildReactionsDisplay(ChannelMessage message) {
+  Widget _buildReactionsDisplay(BuildContext context, ChannelMessage message) {
     return Wrap(
       spacing: 6,
       runSpacing: 6,
@@ -1888,8 +2027,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
+  /// A short link landed: a plain row may now be a location card.
   void _onShortLinkResolved() {
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _shortLinkRevision++);
   }
 
   void _toggleTray() {
@@ -1965,40 +2105,62 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  /// SOS and the next upcoming Event, pinned above the list until dismissed.
-  /// Only the newest 200 messages are read.
-  Widget? _buildPinnedBar(List<ChannelMessage> messages) {
-    final uiState = context.watch<UiViewStateService>();
-    final chatId = widget.channel.idKey;
-    final total = messages.length;
-    final start = total > 200 ? total - 200 : 0;
-    final candidates = <PinCandidate>[
-      for (var i = start; i < total; i++)
-        PinCandidate(
-          id: messages[i].messageId,
-          text: messages[i].text,
-          timestamp: messages[i].timestamp,
-          index: total - 1 - i,
-        ),
-    ];
-    final entries = PinnedMessagesBar.compute(
-      candidates: candidates,
-      dismissed: uiState.dismissedPins(chatId),
-      isRoom: false,
-      resolveShortLink: ShortLinkResolver.instance.cached,
-    );
-    if (entries.isEmpty) return null;
-    return PinnedMessagesBar(
-      entries: entries,
-      onTap: (e) {
-        if (!_itemScrollController.isAttached) return;
-        _itemScrollController.scrollTo(
-          index: e.index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+  /// SOS, events and notices, stacked above the list until dismissed or
+  /// over. Only the newest 200 messages are read, and only again when they
+  /// or the dismissals change; the bar drops an entry that runs out by
+  /// itself.
+  Widget _buildPinnedBar(List<ChannelMessage> messages) {
+    return Consumer<UiViewStateService>(
+      builder: (context, uiState, _) {
+        final chatId = widget.channel.idKey;
+        final dismissed = uiState.dismissedPins(chatId);
+        _catchUpSoon();
+        final key = (
+          messages,
+          _shortLinkRevision,
+          _clockTick,
+          DateUtils.dateOnly(DateTime.now()),
         );
+        if (key == _pinsKey && setEquals(dismissed, _pinsDismissed)) {
+          return _pins;
+        }
+        _pinsKey = key;
+        _pinsDismissed = dismissed;
+        final total = messages.length;
+        final start = total > 200 ? total - 200 : 0;
+        final candidates = <PinCandidate>[
+          for (var i = start; i < total; i++)
+            PinCandidate(
+              id: messages[i].messageId,
+              text: messages[i].text,
+              timestamp: messages[i].timestamp,
+              index: total - 1 - i,
+            ),
+        ];
+        final entries = PinnedMessagesBar.compute(
+          candidates: candidates,
+          dismissed: dismissed,
+          isRoom: false,
+          resolveShortLink: ShortLinkResolver.instance.cached,
+        );
+        // The bar drops an entry that runs out; the next one in line comes
+        // in only when the pins are worked out again.
+        _rebuildAt(PinnedMessagesBar.nextChange(entries));
+        return _pins = entries.isEmpty
+            ? const SizedBox.shrink()
+            : PinnedMessagesBar(
+                entries: entries,
+                onTap: (e) {
+                  if (!_itemScrollController.isAttached) return;
+                  _itemScrollController.scrollTo(
+                    index: e.index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                },
+                onDismiss: (e) => uiState.dismissPin(chatId, e.id),
+              );
       },
-      onDismiss: (e) => uiState.dismissPin(chatId, e.id),
     );
   }
 
@@ -2017,9 +2179,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Widget _buildAvatar(String senderName) {
+  Widget _buildAvatar(BuildContext context, String senderName) {
     final initial = _getFirstCharacterOrEmoji(senderName);
-    final color = _getColorForName(senderName);
+    final color = _getColorForName(context, senderName);
 
     return CircleAvatar(
       radius: 18,
@@ -2046,7 +2208,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     return String.fromCharCode(runes[0]).toUpperCase();
   }
 
-  Color _getColorForName(String name) {
+  Color _getColorForName(BuildContext context, String name) {
     // Hue from the name hash — stable across sessions and devices. Shared
     // by the avatar, the sender name, and reply quotes so one person is one
     // color everywhere. Hand-curated, perceptually spaced hues: the
@@ -2081,7 +2243,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   /// so the RF we demodulated came straight from the sender's transmitter.
   /// Echo copies heard later merge into repeatCount/pathVariants and never
   /// overwrite the kept copy, so this stays honest alongside the ↻ counter.
-  Widget _buildDirectPill() {
+  Widget _buildDirectPill(BuildContext context) {
     final green = ChatColors.isLight(context)
         ? Colors.green.shade700
         : Colors.green.shade300;
@@ -2104,7 +2266,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Widget _buildReplyBanner(double textScale) {
+  Widget _buildReplyBanner(BuildContext context, double textScale) {
     final message = _replyingToMessage!;
     return Container(
       width: double.infinity,
@@ -2135,7 +2297,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
-                _buildReplyBannerPreviewText(message, textScale),
+                _buildReplyBannerPreviewText(context, message, textScale),
               ],
             ),
           ),
@@ -2153,7 +2315,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
 
   /// Shows a human-readable preview of the reply target text in the composer
   /// banner, handling GIF tokens and POI messages instead of raw strings.
-  Widget _buildReplyBannerPreviewText(ChannelMessage message, double textScale) {
+  Widget _buildReplyBannerPreviewText(
+    BuildContext context,
+    ChannelMessage message,
+    double textScale,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final textColor = colorScheme.onPrimaryContainer.withValues(alpha: 0.8);
 
@@ -2205,8 +2371,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     );
   }
 
-  Widget _buildMessageComposer() {
-    final connector = context.watch<MeshCoreConnector>();
+  Widget _buildMessageComposer(MeshCoreConnector connector) {
     // Reserve room for the reply prefix ("@[Name]\n><snippet>..\n") while a
     // reply is active, so the byte counter and typing limit account for it.
     final baseMaxBytes = maxChannelMessageBytes(connector.selfName);
@@ -2229,7 +2394,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               final textScale = context.select<ChatTextScaleService, double>(
                 (service) => service.scale,
               );
-              return _buildReplyBanner(textScale);
+              return _buildReplyBanner(context, textScale);
             },
           ),
         PasteConversionBar(

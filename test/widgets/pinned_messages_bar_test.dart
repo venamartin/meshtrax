@@ -37,26 +37,22 @@ void main() {
     expect(compute([c('a', 'Location: $pos'), c('b', 'hello')]), isEmpty);
   });
 
-  test('newest SOS wins, and a dismissed one stays hidden', () {
-    final pins = compute([
+  test('every SOS pins, newest first, until dismissed', () {
+    final both = [
       c('old', 'SOS: first\n$pos', minutesAgo: 30),
       c('new', 'SOS: second\n$pos', minutesAgo: 5),
-    ]);
-    expect(pins.map((p) => p.id), ['new']);
-    final afterDismiss = compute(
-      [c('old', 'SOS: first\n$pos', minutesAgo: 30), c('new', 'SOS: second\n$pos', minutesAgo: 5)],
-      dismissed: {'new'},
-    );
-    expect(afterDismiss.map((p) => p.id), ['old']);
+    ];
+    expect(compute(both).map((p) => p.id), ['new', 'old']);
+    expect(compute(both, dismissed: {'new'}).map((p) => p.id), ['old']);
   });
 
-  test('the next upcoming event pins, past events do not', () {
+  test('every upcoming event pins, soonest first; past events do not', () {
     final pins = compute([
       c('past', 'Event: Done\n2026-10-19 10:00-11:00'),
-      c('later', 'Event: Later\n2026-10-25 10:00'),
-      c('soon', 'Event: Soon\n2026-10-21 18:00'),
+      c('later', 'Event: Later\n2026-10-25 10:00', minutesAgo: 30),
+      c('soon', 'Event: Soon\n2026-10-21 18:00', minutesAgo: 40),
     ]);
-    expect(pins.map((p) => p.id), ['soon']);
+    expect(pins.map((p) => p.id), ['soon', 'later']);
   });
 
   test('an event still running pins; one without an end lasts an hour', () {
@@ -71,8 +67,27 @@ void main() {
     );
   });
 
-  test('channel notices do not pin', () {
-    expect(compute([c('n', 'Notice: hello')]), isEmpty);
+  test('channel and DM notices pin until they expire or are dismissed', () {
+    final pins = compute([
+      c('old', 'Notice: hello', minutesAgo: 30),
+      c('new', 'Notice: Net tonight\nexpires=2026-10-20 21:00', minutesAgo: 10),
+      c('gone', 'Notice: Old\nexpires=2026-10-20 11:00', minutesAgo: 5),
+    ]);
+    expect(pins.map((p) => p.id), ['new', 'old']);
+    expect(
+      compute([c('n', 'Notice: hello')], dismissed: {'n'}),
+      isEmpty,
+    );
+  });
+
+  test('a channel stacks SOS, then events, then notices', () {
+    final pins = compute([
+      c('notice', 'Notice: Road closed', minutesAgo: 1),
+      c('later', 'Event: Picnic\n2026-10-27 14:00', minutesAgo: 2),
+      c('sos', 'SOS: need a ride\n$pos', minutesAgo: 50),
+      c('soon', 'Event: Net check-in\n2026-10-26 09:00', minutesAgo: 3),
+    ]);
+    expect(pins.map((p) => p.id), ['sos', 'soon', 'later', 'notice']);
   });
 
   test('rooms pin the newest server-authored post, prefixed or not', () {
@@ -88,16 +103,29 @@ void main() {
     expect((pins.single.message as NoticeMessage).headline, 'Repeater back up');
   });
 
-  test('order is SOS, the server posts, then a member event', () {
+  test('a room orders SOS, events, notices, then the announcement', () {
     final pins = compute(
       [
-        c('n', 'Board meeting moved', server: true),
+        c('a', 'Board meeting moved', server: true),
+        c('n', 'Notice: Net\nexpires=2026-10-22', minutesAgo: 1, server: true),
         c('e', 'Event: Meetup\n2026-10-21 18:00'),
         c('s', 'SOS: help\n$pos'),
       ],
       isRoom: true,
     );
-    expect(pins.map((p) => p.id), ['s', 'n', 'e']);
+    expect(pins.map((p) => p.id), ['s', 'e', 'n', 'a']);
+  });
+
+  test("members' events in a room stack with the server's, by start", () {
+    final pins = compute(
+      [
+        c('server', 'Event: Field day\n2026-10-25', minutesAgo: 1, server: true),
+        c('m2', 'Event: Coffee\n2026-10-22 08:00', minutesAgo: 2),
+        c('m1', 'Event: Meetup\n2026-10-21 18:00', minutesAgo: 3),
+      ],
+      isRoom: true,
+    );
+    expect(pins.map((p) => p.id), ['m1', 'm2', 'server']);
   });
 
   test('server notices with an expiry stack until they expire', () {
@@ -113,7 +141,7 @@ void main() {
       ],
       isRoom: true,
     );
-    expect(pins.map((p) => p.id), ['n2', 'plain', 'n1']);
+    expect(pins.map((p) => p.id), ['n2', 'n1', 'plain']);
   });
 
   test('only the newest plain announcement pins', () {
@@ -140,7 +168,7 @@ void main() {
       ],
       isRoom: true,
     );
-    expect(pins.map((p) => p.id), ['e2', 'e1']);
+    expect(pins.map((p) => p.id), ['e1', 'e2']);
     expect(pins.every((p) => p.message is EventMessage), isTrue);
   });
 

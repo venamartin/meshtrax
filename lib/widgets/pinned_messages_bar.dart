@@ -42,13 +42,13 @@ class PinnedEntry {
 /// The bar above a chat's message list. Which messages it shows is decided
 /// by [compute]; the screen only supplies candidates and dismissals.
 ///
-/// Rules: the newest SOS pins everywhere until dismissed or replaced; the
-/// next upcoming Event pins until it has passed. In a room, the server's own
-/// posts (room.post) stack, newest first: every notice until it expires,
-/// every event until it is over, and the newest of the rest (a plain
-/// announcement). A Location never pins, nor does a channel's or DM's
-/// notice. An entry that runs out while the chat is open drops off on its
-/// own.
+/// Rules: everything stacks, one row per message, each until dismissed
+/// (owner, 2026-10-26: "if three came in, you should see them all"). Every
+/// SOS, newest first; then every Event until it is over, soonest first;
+/// then every notice until it expires, newest first; in a room only the
+/// server's own notices (room.post), with the newest of the server's other
+/// posts (a plain announcement) last. A Location never pins. An entry that
+/// runs out while the chat is open drops off on its own.
 class PinnedMessagesBar extends StatefulWidget {
   final List<PinnedEntry> entries;
   final void Function(PinnedEntry entry) onTap;
@@ -71,10 +71,10 @@ class PinnedMessagesBar extends StatefulWidget {
     LatLng? Function(String url)? resolveShortLink,
   }) {
     final clock = now ?? DateTime.now();
-    PinnedEntry? sos;
-    DateTime? sosAt;
-    PinnedEntry? event;
-    final serverPosts = <(DateTime, PinnedEntry)>[];
+    final sos = <(DateTime, PinnedEntry)>[];
+    // Keyed by start, not by when it was posted.
+    final events = <(DateTime, PinnedEntry)>[];
+    final notices = <(DateTime, PinnedEntry)>[];
     (DateTime, PinnedEntry)? announcement;
 
     for (final c in candidates) {
@@ -90,22 +90,14 @@ class PinnedMessagesBar extends StatefulWidget {
 
       switch (parsed) {
         case SosMessage():
-          if (sosAt == null || c.timestamp.isAfter(sosAt)) {
-            sos = entry;
-            sosAt = c.timestamp;
-          }
+          sos.add((c.timestamp, entry));
         case EventMessage(when: final span):
-          if (!span.effectiveEnd.isAfter(clock)) continue;
-          if (server) {
-            serverPosts.add((c.timestamp, entry));
-          } else {
-            final current = event?.message as EventMessage?;
-            if (current == null || span.start.isBefore(current.when.start)) {
-              event = entry;
-            }
-          }
+          if (span.effectiveEnd.isAfter(clock)) events.add((span.start, entry));
         case NoticeMessage(:final expires?) when server:
-          if (expires.isAfter(clock)) serverPosts.add((c.timestamp, entry));
+          if (expires.isAfter(clock)) notices.add((c.timestamp, entry));
+        // In a room a member's notice is just a post.
+        case NoticeMessage notice when !isRoom:
+          if (!notice.isExpired(clock)) notices.add((c.timestamp, entry));
         default:
           if (server &&
               (announcement == null || c.timestamp.isAfter(announcement.$1))) {
@@ -113,11 +105,17 @@ class PinnedMessagesBar extends StatefulWidget {
           }
       }
     }
-    if (announcement != null) serverPosts.add(announcement);
-    serverPosts.sort((a, b) => b.$1.compareTo(a.$1));
-    return [?sos, for (final (_, e) in serverPosts) e, ?event]
-        .take(maxRows)
-        .toList();
+    int newestFirst((DateTime, PinnedEntry) a, (DateTime, PinnedEntry) b) =>
+        b.$1.compareTo(a.$1);
+    sos.sort(newestFirst);
+    events.sort((a, b) => a.$1.compareTo(b.$1));
+    notices.sort(newestFirst);
+    return [
+      for (final (_, e) in sos) e,
+      for (final (_, e) in events) e,
+      for (final (_, e) in notices) e,
+      ?announcement?.$2,
+    ].take(maxRows).toList();
   }
 
   /// Whether [entry] still pins at [now]: an event until it is over, a

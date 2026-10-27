@@ -38,13 +38,15 @@ class ShortLinkResolver extends ChangeNotifier {
 
   bool isPending(String url) => _pending.containsKey(_key(url));
 
-  /// Starts lookups for short links in a short message (at most three lines,
-  /// the shape a shared location has), so its card can appear once online.
-  void prefetchIn(String text) {
-    if ('\n'.allMatches(text.trim()).length > 2) return;
-    for (final url in MapsLink.findAll(text)) {
-      if (MapsLink.isShortLink(url)) prefetch(url);
-    }
+  /// The short links in a short message (at most three lines, the shape a
+  /// shared location has), whose card can appear once one is looked up;
+  /// none in anything longer.
+  static List<String> shortLinksIn(String text) {
+    if ('\n'.allMatches(text.trim()).length > 2) return const [];
+    return [
+      for (final url in MapsLink.findAll(text))
+        if (MapsLink.isShortLink(url)) url,
+    ];
   }
 
   /// Starts a lookup if none is cached or running; listeners are notified
@@ -57,6 +59,10 @@ class ShortLinkResolver extends ChangeNotifier {
     }
     unawaited(resolve(url));
   }
+
+  /// When [prefetch] would look [url] up again after a failed lookup; null
+  /// when none failed. Nothing retries by itself: a row asks again then.
+  DateTime? retryAt(String url) => _failedAt[_key(url)]?.add(_retryFailedAfter);
 
   Future<LatLng?> resolve(String url) {
     _loadOnce();

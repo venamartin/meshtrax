@@ -991,6 +991,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: isDiscovered,
+                            sharesPosition:
+                                connector.sharesPositionWith(contact),
                             onTap: () async {
                               if (!isDiscovered) {
                                 _openChat(contact);

@@ -175,9 +175,15 @@ class RouteResult extends PathResult {
     this.guessedLinks = const [],
     this.egressProven = true,
     this.ingressProven = true,
+    this.liveAgeMillis,
   });
   final Uint8List pathBytes;
   final double estDelivery;
+
+  /// How long ago a flood of mine took this route to them, when it leads
+  /// for that reason ([PathGraphConfig.liveRouteMinutes]); null otherwise.
+  /// Such a route leads whatever its [estDelivery].
+  final int? liveAgeMillis;
 
   /// Calibrated p of each between-hop link, in path order.
   final List<double> hopProbabilities;
@@ -1350,6 +1356,27 @@ class PathGraph {
   int get nodeCount => _store.nodes.length;
   int get edgeCount => _store.edges.length;
 
+  /// Whether the graph already holds repeater [hash] and, when it knows
+  /// that repeater's key, that the key is [pubkey] (or starts the same: a
+  /// Discover answer may carry only a prefix). A code a repeater on another
+  /// mesh shares is not this one.
+  bool knowsRepeater(String hash, {String? pubkey}) {
+    final node = _store.nodes[hash.toUpperCase()];
+    if (node == null) return false;
+    final known = node.pubkey?.toLowerCase();
+    final heard = pubkey?.toLowerCase();
+    return known == null ||
+        heard == null ||
+        known.startsWith(heard) ||
+        heard.startsWith(known);
+  }
+
+  /// The keys of every repeater the graph has heard advertise, lowercase.
+  List<String> repeaterKeys() => [
+        for (final node in _store.nodes.values)
+          if (node.pubkey case final key?) key.toLowerCase(),
+      ];
+
   /// Read-only view of the working set for UI/debug rendering.
   ({Map<String, NodeState> nodes, Map<(String, String), EdgeState> edges})
       snapshot() => (
@@ -1662,13 +1689,14 @@ class PathGraph {
   List<Candidate> _freshRows(List<Candidate> rows, int now) =>
       rows.where((c) => !_staleMoving(c, now)).toList();
 
-  RouteResult _toResult(RouteFound route) => RouteResult(
+  RouteResult _toResult(RouteFound route, {int? liveAgeMillis}) => RouteResult(
         _hopsToBytes(route.hops),
         route.estDelivery,
         hopProbabilities: route.hopProbabilities,
         guessedLinks: route.guessedLinks,
         egressProven: route.egressProven,
         ingressProven: route.ingressProven,
+        liveAgeMillis: liveAgeMillis,
       );
 
   static Candidate _selfTarget(String repeaterHash) =>
@@ -2236,15 +2264,18 @@ class PathGraph {
         .any((c) => c.repeaterHash == live.hops.last && doorstepFailsThem(c))) {
       return null;
     }
-    return _toResult(PathFinder(estimator.config, estimator).score(
-      live.hops,
-      egress: self == null
-          ? const []
-          : _evidence.candidatesFor(self, now, isSelf: true),
-      ingress: _evidence.candidatesFor(contactPubkey, now, isSelf: false),
-      edges: _store.edges,
-      nowMillis: now,
-    ));
+    return _toResult(
+      PathFinder(estimator.config, estimator).score(
+        live.hops,
+        egress: self == null
+            ? const []
+            : _evidence.candidatesFor(self, now, isSelf: true),
+        ingress: _evidence.candidatesFor(contactPubkey, now, isSelf: false),
+        edges: _store.edges,
+        nowMillis: now,
+      ),
+      liveAgeMillis: now - live.at,
+    );
   }
 
   PathGraphCounters get counters => PathGraphCounters(

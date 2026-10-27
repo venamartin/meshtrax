@@ -2520,5 +2520,20 @@
   "pathfinderHelp_discover": "Quando non è sicuro di quali ripetitori possano sentirti qui, Pathfinder invia un breve Discover (al massimo uno ogni 10 minuti, e solo dopo un invio fallito) e, se la tua radio ha il GPS, ricorda su questo telefono quali ripetitori ti hanno sentito in ogni zona di circa 500 m, mai la tua posizione esatta.",
   "pathfinderHelp_off": "Se disattivi Pathfinder, la radio instrada i messaggi esattamente come prima.",
   "pathfinderHelp_dontShowAgain": "Non mostrare più",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Bloccato dalla tua radio",
+  "contact_teleBlockedBody": "Le impostazioni di privacy della tua radio non lo condividono con nessuno, quindi {name} non lo riceverà. Cambiarle perché lo ricevano i contatti che autorizzi?",
+  "contact_teleNotNow": "Non ora",
+  "contact_teleRadioDenies": "La tua radio non lo condivide con nessuno ({mode})",
+  "contact_teleRadioAllowsAll": "La tua radio lo condivide con tutti ({mode})",
+  "contact_sharesPosition": "Può ottenere la tua posizione",
+  "pathfinder_meshTitle": "Un'altra rete mesh?",
+  "pathfinder_meshNewBody": "{unknown} dei {heard} ripetitori sentiti dalla connessione sono nuovi per la mappa di Pathfinder «{graph}». Iniziare una nuova mappa per questa zona? Quella vecchia resta e puoi tornarci dalla schermata di Pathfinder.",
+  "pathfinder_meshSwitchBody": "La maggior parte dei ripetitori sentiti dalla connessione è nella mappa di Pathfinder «{other}», non in «{graph}». Passare a quella?",
+  "pathfinder_meshNew": "Nuova mappa",
+  "pathfinder_meshSwitch": "Cambia",
+  "pathfinder_meshKeep": "Tieni questa",
+  "pathfinder_graphNameTitle": "Nome della nuova mappa",
+  "pathfinder_graphNameHint": "Per esempio, Washington",
+  "pathfinder_graphCreate": "Crea"
 }

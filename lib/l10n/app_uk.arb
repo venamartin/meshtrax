@@ -2520,5 +2520,20 @@
   "pathfinderHelp_discover": "Якщо Pathfinder не впевнений, які ретранслятори чують вас тут, він надсилає один короткий запит Discover (не частіше ніж раз на 10 хвилин і лише після невдалого надсилання). З радіо, що має GPS, він також запам'ятовує на цьому телефоні, які ретранслятори чули вас у кожній зоні розміром близько 500 м, але ваше точне розташування не зберігає.",
   "pathfinderHelp_off": "Якщо вимкнути Pathfinder, радіо прокладатиме маршрути точно так само, як раніше.",
   "pathfinderHelp_dontShowAgain": "Більше не показувати",
-  "pathfinderHelp_ok": "ОК"
+  "pathfinderHelp_ok": "ОК",
+  "contact_teleBlockedTitle": "Заблоковано вашим радіо",
+  "contact_teleBlockedBody": "Налаштування конфіденційності вашого радіо ні з ким цим не діляться, тож {name} цього не отримає. Змінити їх, щоб це отримували контакти, яким ви дозволите?",
+  "contact_teleNotNow": "Не зараз",
+  "contact_teleRadioDenies": "Ваше радіо ні з ким цим не ділиться ({mode})",
+  "contact_teleRadioAllowsAll": "Ваше радіо ділиться цим з усіма ({mode})",
+  "contact_sharesPosition": "Може отримати ваше розташування",
+  "pathfinder_meshTitle": "Інша мережа?",
+  "pathfinder_meshNewBody": "{unknown} із {heard} ретрансляторів, почутих після підключення, нові для карти Pathfinder «{graph}». Почати нову карту для цієї місцевості? Стара залишиться, і до неї можна повернутися на екрані Pathfinder.",
+  "pathfinder_meshSwitchBody": "Більшість ретрансляторів, почутих після підключення, є на карті Pathfinder «{other}», а не «{graph}». Перемкнутися на неї?",
+  "pathfinder_meshNew": "Нова карта",
+  "pathfinder_meshSwitch": "Перемкнути",
+  "pathfinder_meshKeep": "Залишити цю",
+  "pathfinder_graphNameTitle": "Назва нової карти",
+  "pathfinder_graphNameHint": "Наприклад, Вашингтон",
+  "pathfinder_graphCreate": "Створити"
 }

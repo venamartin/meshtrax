@@ -2520,5 +2520,20 @@
   "pathfinderHelp_discover": "När Pathfinder inte är säker på vilka repeatrar som kan höra dig här, skickar den en kort Discover-förfrågan (högst en gång per 10 minuter, och bara efter att ett meddelande inte har gått fram). Har din radio GPS, sparar Pathfinder på den här telefonen vilka repeatrar som hörde dig inom varje område på cirka 500 m, men aldrig din exakta plats.",
   "pathfinderHelp_off": "Stäng av Pathfinder, så fungerar radions routning precis som förut.",
   "pathfinderHelp_dontShowAgain": "Visa inte igen",
-  "pathfinderHelp_ok": "Okej"
+  "pathfinderHelp_ok": "Okej",
+  "contact_teleBlockedTitle": "Blockerat av din radio",
+  "contact_teleBlockedBody": "Din radios integritetsinställningar delar detta med ingen, så {name} får det inte. Ändra dem så att kontakterna du tillåter får det?",
+  "contact_teleNotNow": "Inte nu",
+  "contact_teleRadioDenies": "Din radio delar detta med ingen ({mode})",
+  "contact_teleRadioAllowsAll": "Din radio delar detta med alla ({mode})",
+  "contact_sharesPosition": "Kan hämta din plats",
+  "pathfinder_meshTitle": "Ett annat nät?",
+  "pathfinder_meshNewBody": "{unknown} av {heard} repeatrar som hörts sedan anslutningen är nya för Pathfinder-kartan ”{graph}”. Starta en ny karta för det här området? Den gamla finns kvar, och du kan byta tillbaka på Pathfinder-skärmen.",
+  "pathfinder_meshSwitchBody": "De flesta repeatrar som hörts sedan anslutningen finns på Pathfinder-kartan ”{other}”, inte ”{graph}”. Byta till den?",
+  "pathfinder_meshNew": "Ny karta",
+  "pathfinder_meshSwitch": "Byt",
+  "pathfinder_meshKeep": "Behåll den här",
+  "pathfinder_graphNameTitle": "Namn på den nya kartan",
+  "pathfinder_graphNameHint": "Till exempel Washington",
+  "pathfinder_graphCreate": "Skapa"
 }

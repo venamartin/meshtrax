@@ -53,6 +53,7 @@ import '../storage/prefs_manager.dart';
 import '../utils/app_logger.dart';
 import '../utils/battery_utils.dart';
 import '../utils/platform_info.dart';
+import '../utils/tracked_list.dart';
 import 'meshcore_uuids.dart';
 import 'meshcore_protocol.dart';
 import 'second_app_detector.dart';
@@ -332,8 +333,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   final List<ScanResult> _scanResults = [];
   final List<ScanResult> _linuxSystemScanResults = [];
-  final List<Contact> _contacts = [];
-  final List<Contact> _discoveredContacts = [];
+  // Tracked: the copies and the author index below are kept until these
+  // change, not rebuilt on every read.
+  final TrackedList<Contact> _contacts = TrackedList();
+  final TrackedList<Contact> _discoveredContacts = TrackedList();
   final List<Channel> _channels = [];
   /// Mirror of the watched per-channel unread COUNT query — lets legacy
   /// synchronous callers (badges, notification totals) read DB-authoritative
@@ -645,6 +648,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       StreamController<Uint8List>.broadcast();
   final StreamController<int> _errorStreamController =
       StreamController<int>.broadcast();
+  final StreamController<void> _contactTableFullController =
+      StreamController<void>.broadcast();
 
   Uint8List? _selfPublicKey;
   String? _selfName;
@@ -854,29 +859,94 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   List<ScanResult> get scanResults => List.unmodifiable(_scanResults);
+
+  /// Changes whenever a saved or a discovered contact, or the radio's own
+  /// key, does: what a screen keeps built from contacts can key on it.
+  Object get contactsStamp =>
+      (_contacts.revision, _discoveredContacts.revision, _selfPublicKey);
+
+  // Message rows read these many times a frame; each copy is kept until
+  // its lists change (owner, 2026-10-26: glitches scrolling messages).
+  List<Contact>? _contactsView;
+  Object? _contactsViewStamp;
+  List<Contact>? _allContactsView;
+  Object? _allContactsViewStamp;
+  List<Contact>? _unfilteredView;
+  Object? _unfilteredViewStamp;
+  List<Contact>? _discoveredView;
+  Object? _discoveredViewStamp;
+
   List<Contact> get contacts {
-    final selfKey = _selfPublicKey;
-    if (selfKey == null) {
-      return List.unmodifiable(_contacts);
+    final stamp = (_contacts.revision, _selfPublicKey);
+    if (_contactsViewStamp != stamp) {
+      final selfKey = _selfPublicKey;
+      _contactsView = List.unmodifiable(selfKey == null
+          ? _contacts
+          : _contacts
+              .where((contact) => !listEquals(contact.publicKey, selfKey)));
+      _contactsViewStamp = stamp;
     }
-    return List.unmodifiable(
-      _contacts.where((contact) => !listEquals(contact.publicKey, selfKey)),
-    );
+    return _contactsView!;
   }
 
-  List<Contact> get allContacts => List.unmodifiable([
-    ..._contacts,
-    ..._discoveredContacts.where(
-      (c) => !c.isActive && c.publicKeyHex != selfPublicKeyHex,
-    ),
-  ]);
+  List<Contact> get allContacts {
+    final stamp = contactsStamp;
+    if (_allContactsViewStamp != stamp) {
+      _allContactsView = List.unmodifiable([
+        ..._contacts,
+        ..._discoveredContacts.where(
+          (c) => !c.isActive && c.publicKeyHex != selfPublicKeyHex,
+        ),
+      ]);
+      _allContactsViewStamp = stamp;
+    }
+    return _allContactsView!;
+  }
 
-  List<Contact> get allContactsUnfiltered =>
-      List.unmodifiable([..._contacts, ..._discoveredContacts]);
+  List<Contact> get allContactsUnfiltered {
+    final stamp = (_contacts.revision, _discoveredContacts.revision);
+    if (_unfilteredViewStamp != stamp) {
+      _unfilteredView =
+          List.unmodifiable([..._contacts, ..._discoveredContacts]);
+      _unfilteredViewStamp = stamp;
+    }
+    return _unfilteredView!;
+  }
 
   List<Contact> get discoveredContacts {
-    return List.unmodifiable(_discoveredContacts);
+    if (_discoveredViewStamp != _discoveredContacts.revision) {
+      _discoveredView = List.unmodifiable(_discoveredContacts);
+      _discoveredViewStamp = _discoveredContacts.revision;
+    }
+    return _discoveredView!;
   }
+
+  Map<int, Contact>? _byKeyPrefix4;
+  Object? _byKeyPrefix4Stamp;
+
+  /// The contact whose key starts with these four bytes, saved ones before
+  /// discovered ones: a room post names its author that way. One map read
+  /// instead of a scan that copied every contact, for each room row built.
+  Contact? contactByKeyPrefix4(Uint8List prefix) {
+    if (prefix.length < 4) return null;
+    final stamp = (_contacts.revision, _discoveredContacts.revision);
+    var index = _byKeyPrefix4;
+    if (index == null || _byKeyPrefix4Stamp != stamp) {
+      index = <int, Contact>{};
+      for (final list in [_contacts, _discoveredContacts]) {
+        for (final contact in list) {
+          if (contact.publicKey.length < 4) continue;
+          index.putIfAbsent(_keyPrefix4(contact.publicKey), () => contact);
+        }
+      }
+      _byKeyPrefix4 = index;
+      _byKeyPrefix4Stamp = stamp;
+    }
+    return index[_keyPrefix4(prefix)];
+  }
+
+  static int _keyPrefix4(Uint8List key) =>
+      key[0] << 24 | key[1] << 16 | key[2] << 8 | key[3];
 
   /// During a slot resync `_channels` is rebuilt from empty over several
   /// seconds (slow on BLE) — serving it raw made Public vanish from the UI
@@ -895,6 +965,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get isLoadingChannels => _isLoadingChannels;
   Stream<Uint8List> get receivedFrames => _receivedFramesController.stream;
   Stream<int> get errorStream => _errorStreamController.stream;
+
+  /// The radio could not take another contact: PUSH_CODE_CONTACTS_FULL (an
+  /// advert found no free slot to be auto-added), or ERR_CODE_TABLE_FULL
+  /// while the table is at its limit. That code alone says nothing about
+  /// contacts: the firmware answers it to every send that finds none of its
+  /// 16 packet buffers free (DMs, logins, requests, Discover), and a radio
+  /// holding 13 contacts was told its list was full (user report,
+  /// 2026-10-26).
+  Stream<void> get contactTableFullEvents => _contactTableFullController.stream;
+
+  /// Whether the radio holds as many contacts as it can, give or take the
+  /// two the list may not have caught up with.
+  bool get contactTableFull => _contacts.length + 2 >= _maxContacts;
   Uint8List? get selfPublicKey => _selfPublicKey;
   // Hex of the key bytes currently held, computed once per key object.
   Uint8List? _selfHexSource;
@@ -1068,6 +1151,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int get telemetryModeBase => _telemetryModeBase;
   int get telemetryModeLoc => _telemetryModeLoc;
   int get telemetryModeEnv => _telemetryModeEnv;
+
+  /// Whether [contact] gets this radio's position when it asks for
+  /// telemetry. The firmware answers only with base allowed and adds the
+  /// position only with location allowed, each by the radio's own setting
+  /// or, on "Allow by contact flags", by the contact's flag. Only chat
+  /// contacts ask, and only those the radio holds: it cannot read a
+  /// request from anyone else.
+  bool sharesPositionWith(Contact contact) {
+    if (contact.type != advTypeChat || !contact.isActive) return false;
+    bool allowed(int mode, bool flag) =>
+        mode == teleModeAllowAll || (mode == teleModeAllowFlags && flag);
+    return allowed(telemetryModeBase, contact.teleBaseEnabled) &&
+        allowed(telemetryModeLoc, contact.teleLocEnabled);
+  }
+
   int get advertLocationPolicy => _advertLocPolicy;
   int get multiAcks => _multiAcks;
   bool? get clientRepeat => _clientRepeat;
@@ -4094,19 +4192,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // write is in flight must already read as the app's route.
       final previousMark = _appWrittenPath[contact.publicKeyHex];
       _appWrittenPath[contact.publicKeyHex] = _writtenKey(width, customPath);
+      // Everything but the route comes from the live row: a caller's copy
+      // can predate a permission change, and writing its flags would undo it.
+      final live = _contacts
+              .where((c) => c.publicKeyHex == contact.publicKeyHex)
+              .firstOrNull ??
+          contact;
       try {
         await sendFrame(
           buildUpdateContactPathFrame(
-            contact.publicKey,
+            live.publicKey,
             customPath,
             hopCount,
             width,
-            type: contact.type,
-            flags: contact.flags,
-            name: contact.name,
-            lat: contact.latitude,
-            lon: contact.longitude,
-            lastModified: contact.lastSeen,
+            type: live.type,
+            flags: live.flags,
+            name: live.name,
+            lat: live.latitude,
+            lon: live.longitude,
+            lastModified: live.lastSeen,
+            lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
           ),
         );
       } catch (_) {
@@ -4252,6 +4357,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: latestContact.latitude,
         lon: latestContact.longitude,
         lastModified: latestContact.lastSeen,
+        lastAdvertEpochSeconds: latestContact.lastAdvertSecs ?? 0,
       ),
     );
 
@@ -4840,6 +4946,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: live.latitude,
         lon: live.longitude,
         lastModified: live.lastSeen,
+        lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
       ),
     );
     if (!readded) {
@@ -4851,8 +4958,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return readded;
   }
 
-  /// [lastAdvertEpochSeconds] is the advert time the radio records (default
-  /// now); it drops any later advert that is not newer.
+  /// [lastAdvertEpochSeconds] is the advert time the radio records (default:
+  /// the heard advert's own, else 0); it drops any later advert that is not
+  /// newer.
   Future<bool> importDiscoveredContact(
     Contact contact, {
     int? lastAdvertEpochSeconds,
@@ -4871,7 +4979,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         lat: contact.latitude,
         lon: contact.longitude,
         lastModified: contact.lastSeen,
-        lastAdvertEpochSeconds: lastAdvertEpochSeconds,
+        lastAdvertEpochSeconds:
+            lastAdvertEpochSeconds ?? contact.lastAdvertSecs ?? 0,
       ),
     );
 
@@ -6024,6 +6133,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case pushCodeMsgWaiting:
         unawaited(syncQueuedMessages(force: true));
         break;
+      case pushCodeContactsFull:
+        _contactTableFullController.add(null);
+        break;
       case pushCodeSendConfirmed:
         _handleSendConfirmed(frame);
         break;
@@ -6096,6 +6208,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       tag: 'Protocol',
     );
     _errorStreamController.add(errCode);
+    if (errCode == errCodeTableFull && contactTableFull) {
+      _contactTableFullController.add(null);
+    }
 
     if (_pendingGenericAckQueue.isEmpty) {
       return;
@@ -8004,12 +8119,91 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   int latestContactArrivalUs(Contact contact) =>
       _contactLatestByKey[contact.publicKeyHex]?.arrivalUs ?? 0;
 
-  /// Live stream of a conversation — the UI's ONLY DM read path.
+  /// Live stream of a conversation — the UI's ONLY DM read path. A room's
+  /// rows come out in [roomPostOrder], every other conversation's in
+  /// arrival order. A window that did not change is not passed on (any
+  /// chat's write re-runs the query); a room is re-ordered first, since a
+  /// login that measures its clock moves posts without changing a row.
   Stream<List<Message>> watchConversation(
     Contact contact, {
     int limit = 200,
-  }) =>
-      _messageStore.watchConversation(contact.publicKeyHex, limit: limit);
+  }) {
+    final byArrival =
+        _messageStore.watchConversation(contact.publicKeyHex, limit: limit);
+    if (contact.type != advTypeRoom) {
+      return byArrival.distinct(MessageStore.sameMessages);
+    }
+    return byArrival.map((rows) {
+      final login = _lastMeasuredRoomLogins[contact.publicKeyHex];
+      final clock = login?.serverClock;
+      return roomPostOrder(
+        rows,
+        skewSecs: clock?.difference(login!.at).inSeconds,
+      );
+    }).distinct(MessageStore.sameMessages);
+  }
+
+  /// How much older than one of our posts a server stamp must be to move
+  /// above it while the room's clock is unmeasured: the clock-skew banner's
+  /// threshold, inside which a room clock passes for right.
+  static const int _roomUnmeasuredSlackSecs = 5 * 60;
+
+  /// A room conversation in the order its posts were made. Arrival order is
+  /// wrong here: a room server gives up on a member after three pushes go
+  /// unanswered, and starts again only when that member next posts, logs in
+  /// or sends it a request. The posts it held back then arrive AFTER our
+  /// own post, though they were made before it (field case 2026-10-26: a
+  /// 07:32 post sat above the previous evening's 16:30–20:36 posts).
+  ///
+  /// Posts from others keep their arrival order: the server pushes its
+  /// oldest unsent post first. Our own posts keep theirs. A post that
+  /// arrived after one of ours goes above it only when the server stamped
+  /// it before we sent ours, the stamp read on our clock by [skewSecs] (the
+  /// server's clock minus ours, from this session's LOGIN_OK; null when not
+  /// measured, which asks for [_roomUnmeasuredSlackSecs] of margin). A stamp
+  /// the ingest rewrote as broken never moves a post. Rows keep their
+  /// arrival stamps: unread counts and read marks still go by arrival.
+  @visibleForTesting
+  static List<Message> roomPostOrder(
+    List<Message> byArrival, {
+    int? skewSecs,
+  }) {
+    final theirs = <int>[];
+    final ours = <int>[];
+    for (var i = 0; i < byArrival.length; i++) {
+      (byArrival[i].isOutgoing ? ours : theirs).add(i);
+    }
+    if (theirs.isEmpty || ours.isEmpty) return byArrival;
+
+    final shift = skewSecs ?? 0;
+    final slack = skewSecs == null ? _roomUnmeasuredSlackSecs : 0;
+    bool goesFirst(int post, int own) {
+      if (post < own) return true; // here before we sent ours
+      final stamp = _messageWireSecs(byArrival[post]);
+      final believed =
+          byArrival[post].timestamp.millisecondsSinceEpoch ~/ 1000 == stamp;
+      final sentSecs = byArrival[own].timestamp.millisecondsSinceEpoch ~/ 1000;
+      return believed && stamp - shift < sentSecs - slack;
+    }
+
+    final ordered = <Message>[];
+    var i = 0;
+    var j = 0;
+    while (i < theirs.length && j < ours.length) {
+      if (goesFirst(theirs[i], ours[j])) {
+        ordered.add(byArrival[theirs[i++]]);
+      } else {
+        ordered.add(byArrival[ours[j++]]);
+      }
+    }
+    for (; i < theirs.length; i++) {
+      ordered.add(byArrival[theirs[i]]);
+    }
+    for (; j < ours.length; j++) {
+      ordered.add(byArrival[ours[j]]);
+    }
+    return ordered;
+  }
 
   /// One-shot conversation read (export, bench, sorting).
   Future<List<Message>> loadMessagesFor(Contact contact) =>
@@ -10208,6 +10402,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastModified: contact.lastSeen.millisecondsSinceEpoch > 0
             ? contact.lastSeen
             : null,
+        lastAdvertEpochSeconds: contact.lastAdvertSecs ?? 0,
       );
 
       appLogger.info('Restoring contact ${contact.name}: type=${contact.type}, flags=${contact.flags}, isFavorite=${contact.isFavorite}', tag: 'Connector');

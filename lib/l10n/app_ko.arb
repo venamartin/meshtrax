@@ -2558,5 +2558,20 @@
   "pathfinderHelp_discover": "이곳에서 어떤 리피터가 내 신호를 들을 수 있는지 확실하지 않으면, Pathfinder는 짧은 Discover를 한 번 보냅니다(전송에 실패한 뒤에만, 최대 10분에 한 번). GPS가 있는 무전기라면 약 500m 크기의 구역마다 어떤 리피터가 내 신호를 들었는지 이 휴대폰에 기록합니다. 정확한 위치는 기록하지 않습니다.",
   "pathfinderHelp_off": "Pathfinder를 끄면 무전기는 예전과 똑같은 방식으로 경로를 정합니다.",
   "pathfinderHelp_dontShowAgain": "다시 보지 않기",
-  "pathfinderHelp_ok": "알겠습니다"
+  "pathfinderHelp_ok": "알겠습니다",
+  "contact_teleBlockedTitle": "무전기 설정에서 차단됨",
+  "contact_teleBlockedBody": "무전기의 개인정보 설정이 이 정보를 아무와도 공유하지 않아 {name}님은 받을 수 없어요. 허용한 연락처가 받을 수 있도록 바꿀까요?",
+  "contact_teleNotNow": "나중에",
+  "contact_teleRadioDenies": "내 무전기가 이 정보를 아무와도 공유하지 않아요 ({mode})",
+  "contact_teleRadioAllowsAll": "내 무전기가 이 정보를 모두와 공유해요 ({mode})",
+  "contact_sharesPosition": "내 위치를 받을 수 있어요",
+  "pathfinder_meshTitle": "다른 메시인가요?",
+  "pathfinder_meshNewBody": "연결 후 들은 리피터 {heard}개 중 {unknown}개가 Pathfinder 지도 ‘{graph}’에 없는 것이에요. 이 지역용 새 지도를 시작할까요? 기존 지도는 남아 있고 Pathfinder 화면에서 다시 바꿀 수 있어요.",
+  "pathfinder_meshSwitchBody": "연결 후 들은 리피터 대부분이 Pathfinder 지도 ‘{graph}’가 아니라 ‘{other}’에 있어요. 그 지도로 바꿀까요?",
+  "pathfinder_meshNew": "새 지도",
+  "pathfinder_meshSwitch": "바꾸기",
+  "pathfinder_meshKeep": "그대로 두기",
+  "pathfinder_graphNameTitle": "새 지도 이름",
+  "pathfinder_graphNameHint": "예: 워싱턴",
+  "pathfinder_graphCreate": "만들기"
 }

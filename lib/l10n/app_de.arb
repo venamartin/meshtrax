@@ -2548,5 +2548,20 @@
   "pathfinderHelp_discover": "Ist Pathfinder nicht sicher, von welchen Repeatern Sie hier gehört werden, sendet er eine kurze Discover-Anfrage (höchstens alle 10 Minuten und nur nach einem fehlgeschlagenen Sendeversuch). Hat Ihr Funkgerät GPS, merkt sich Pathfinder auf diesem Handy für jedes Gebiet von etwa 500 m, von welchen Repeatern Sie dort gehört wurden – aber nie Ihren genauen Standort.",
   "pathfinderHelp_off": "Schalten Sie Pathfinder aus, routet das Funkgerät wieder genau wie vorher.",
   "pathfinderHelp_dontShowAgain": "Nicht mehr anzeigen",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Von Ihrem Funkgerät gesperrt",
+  "contact_teleBlockedBody": "Die Datenschutzeinstellungen Ihres Funkgeräts teilen das mit niemandem, daher erhält {name} es nicht. Ändern, damit die Kontakte, denen Sie es erlauben, es erhalten?",
+  "contact_teleNotNow": "Nicht jetzt",
+  "contact_teleRadioDenies": "Ihr Funkgerät teilt das mit niemandem ({mode})",
+  "contact_teleRadioAllowsAll": "Ihr Funkgerät teilt das mit allen ({mode})",
+  "contact_sharesPosition": "Kann Ihren Standort abrufen",
+  "pathfinder_meshTitle": "Ein anderes Mesh?",
+  "pathfinder_meshNewBody": "{unknown} von {heard} Repeatern, die seit dem Verbinden zu hören waren, sind der Pathfinder-Karte „{graph}“ neu. Eine neue Karte für diese Gegend anlegen? Die alte bleibt, und Sie können im Pathfinder-Bildschirm zurückwechseln.",
+  "pathfinder_meshSwitchBody": "Die meisten Repeater, die seit dem Verbinden zu hören waren, stehen in der Pathfinder-Karte „{other}“, nicht in „{graph}“. Zu ihr wechseln?",
+  "pathfinder_meshNew": "Neue Karte",
+  "pathfinder_meshSwitch": "Wechseln",
+  "pathfinder_meshKeep": "Diese behalten",
+  "pathfinder_graphNameTitle": "Name der neuen Karte",
+  "pathfinder_graphNameHint": "Zum Beispiel Washington",
+  "pathfinder_graphCreate": "Anlegen"
 }

@@ -5678,4 +5678,59 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chats_draft => 'Черновик';
+
+  @override
+  String get contact_teleBlockedTitle => 'Заблокировано вашим радио';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Настройки конфиденциальности вашего радио ни с кем этим не делятся, поэтому $name это не получит. Изменить их, чтобы это получали контакты, которым вы разрешите?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Не сейчас';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Ваше радио ни с кем этим не делится ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Ваше радио делится этим со всеми ($mode)';
+  }
+
+  @override
+  String get contact_sharesPosition => 'Может получить ваше местоположение';
+
+  @override
+  String get pathfinder_meshTitle => 'Другая сеть?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown из $heard репитеров, услышанных после подключения, новые для карты Pathfinder «$graph». Начать новую карту для этого района? Старая сохранится, и на неё можно вернуться на экране Pathfinder.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Большинство репитеров, услышанных после подключения, есть на карте Pathfinder «$other», а не «$graph». Переключиться на неё?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Новая карта';
+
+  @override
+  String get pathfinder_meshSwitch => 'Переключить';
+
+  @override
+  String get pathfinder_meshKeep => 'Оставить эту';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Название новой карты';
+
+  @override
+  String get pathfinder_graphNameHint => 'Например, Вашингтон';
+
+  @override
+  String get pathfinder_graphCreate => 'Создать';
 }

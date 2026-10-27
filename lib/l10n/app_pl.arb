@@ -2558,5 +2558,20 @@
   "pathfinderHelp_discover": "Gdy Pathfinder nie jest pewien, które przekaźniki słyszą Cię tutaj, wysyła jedno krótkie zapytanie Discover (nie częściej niż co 10 minut i tylko po nieudanej wysyłce). Jeśli radio ma GPS, zapamiętuje też na tym telefonie, które przekaźniki słyszały Cię w każdym obszarze o rozmiarze około 500 m, ale nigdy nie zapisuje Twojej dokładnej lokalizacji.",
   "pathfinderHelp_off": "Po wyłączeniu Pathfindera radio wyznacza trasy dokładnie tak samo jak wcześniej.",
   "pathfinderHelp_dontShowAgain": "Nie pokazuj ponownie",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Zablokowane przez Twoje radio",
+  "contact_teleBlockedBody": "Ustawienia prywatności Twojego radia nie udostępniają tego nikomu, więc {name} tego nie otrzyma. Zmienić je, aby otrzymywały to kontakty, którym pozwolisz?",
+  "contact_teleNotNow": "Nie teraz",
+  "contact_teleRadioDenies": "Twoje radio nie udostępnia tego nikomu ({mode})",
+  "contact_teleRadioAllowsAll": "Twoje radio udostępnia to wszystkim ({mode})",
+  "contact_sharesPosition": "Może pobrać Twoją lokalizację",
+  "pathfinder_meshTitle": "Inna sieć?",
+  "pathfinder_meshNewBody": "{unknown} z {heard} przekaźników usłyszanych od połączenia jest nowych dla mapy Pathfindera „{graph}”. Zacząć nową mapę dla tego obszaru? Stara zostaje i możesz do niej wrócić na ekranie Pathfindera.",
+  "pathfinder_meshSwitchBody": "Większość przekaźników usłyszanych od połączenia jest na mapie Pathfindera „{other}”, a nie „{graph}”. Przełączyć na nią?",
+  "pathfinder_meshNew": "Nowa mapa",
+  "pathfinder_meshSwitch": "Przełącz",
+  "pathfinder_meshKeep": "Zostaw tę",
+  "pathfinder_graphNameTitle": "Nazwa nowej mapy",
+  "pathfinder_graphNameHint": "Na przykład Waszyngton",
+  "pathfinder_graphCreate": "Utwórz"
 }

@@ -19,8 +19,26 @@ import '../../storage/prefs_manager.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_info.dart';
 import 'frame_adapter.dart';
+import 'graph_book.dart';
 import 'place_cell.dart';
 import 'radio_route_keeper.dart';
+
+/// Most repeaters heard since connecting are new to the open graph: another
+/// mesh on the same preset. Offers a new graph, or [other], a graph that
+/// knows them (the way back home).
+class MeshSuggestion {
+  const MeshSuggestion({
+    required this.current,
+    required this.heard,
+    required this.unknown,
+    this.other,
+  });
+
+  final GraphEntry current;
+  final GraphEntry? other;
+  final int heard;
+  final int unknown;
+}
 
 /// Pathfinder: the path graph's hook into the app.
 ///
@@ -59,6 +77,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   // last mesh used; before any mesh was ever seen, the file from the days
   // of one shared graph (adopted by the first mesh that connects).
   MeshId? _mesh;
+  GraphEntry? _entry;
   String? _databaseName;
   bool _ownsDatabase = false;
   QueryExecutor Function(String name)? _openDatabase;
@@ -95,6 +114,29 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// The mesh the open graph is for; null until a radio has ever connected.
   MeshId? get mesh => _mesh;
   String? get databaseName => _databaseName;
+
+  /// The open graph, among the graphs kept for its preset ([GraphBook]);
+  /// null with no mesh yet, or with a database the caller handed in.
+  GraphEntry? get graphEntry => _entry;
+
+  // The "a different mesh?" check: repeater keys heard since connecting
+  // (8-byte prefixes) and whether the open graph knew each.
+  final Map<String, bool> _heardKeys = {};
+  bool _meshChecked = false;
+  MeshSuggestion? _suggestion;
+
+  /// Repeaters heard before the check looks, and how many of them must be
+  /// new to an established graph, of at least [meshCheckMinNodes] nodes.
+  static const meshCheckSample = 6;
+  static const meshCheckUnknownShare = 0.75;
+  static const meshCheckMinNodes = 20;
+
+  /// How long "keep this one" quiets the check for that graph.
+  static const meshCheckQuiet = Duration(days: 7);
+
+  /// Another mesh on the same preset, by the repeaters heard; null when
+  /// there is nothing to suggest.
+  MeshSuggestion? get meshSuggestion => _suggestion;
 
   static MeshId? meshOf(MeshCoreConnector c) {
     final f = c.currentFreqHz, b = c.currentBwHz, sf = c.currentSf, cr = c.currentCr;
@@ -146,10 +188,20 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _open(MeshCoreConnector connector, QueryExecutor? database) async {
     if (!_wantRunning || _graph != null) return;
     final mesh = meshOf(connector) ?? (database == null ? _lastMesh() : null);
-    final name = database == null ? databaseNameFor(mesh) : null;
+    // The graph this preset uses: the one last picked, else its default.
+    final entry =
+        database == null && mesh != null ? GraphBook.activeFor(mesh) : null;
+    final name = database == null
+        ? entry?.databaseName ?? databaseNameFor(mesh)
+        : null;
     PathGraph? graph;
     try {
-      if (name != null && _openDatabase == null) await _adoptLegacyFile(name, mesh);
+      // Only a preset's default graph takes over the old shared file.
+      if (name != null &&
+          _openDatabase == null &&
+          (entry == null || entry.isDefault)) {
+        await _adoptLegacyFile(name, mesh);
+      }
       graph = PathGraph(
           database ?? _openDatabase?.call(name!) ?? driftDatabase(name: name!),
           mesh: mesh);
@@ -170,6 +222,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     }
     _lastError = null;
     _mesh = mesh;
+    _entry = entry;
+    _heardKeys.clear();
+    _meshChecked = false;
+    _suggestion = null;
     _databaseName = name;
     _ownsDatabase = database == null;
     if (mesh != null && database == null) {
@@ -200,7 +256,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
                       : 'Pathfinder thinks $who moves: it $counts$watching',
           tag: 'PathGraph');
     };
-    _adapter = PathLabAdapter(graph)..onPathDiscovery = notifyListeners;
+    _adapter = PathLabAdapter(graph)
+      ..onPathDiscovery = notifyListeners
+      ..onRepeaterKeyHeard = _onRepeaterKeyHeard;
     _connector = connector;
     _frames = connector.receivedFrames.listen(_onFrame);
     connector.addListener(_onConnectorChanged);
@@ -240,6 +298,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         mesh == null
             ? 'path graph started; the mesh is unknown until a radio connects'
             : 'path graph started for $mesh'
+                '${entry == null || entry.isDefault ? "" : ', graph "${entry.label}"'}'
                 '${name == null ? "" : " (file $name)"}',
         tag: 'PathGraph');
     _sweep();
@@ -272,6 +331,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   void _reopenFor(MeshCoreConnector connector, MeshId mesh) {
     appLogger.info('radio is on $mesh; switching to the graph of that mesh',
         tag: 'PathGraph');
+    _reopen(connector);
+  }
+
+  void _reopen(MeshCoreConnector connector) {
     _op = _op.then((_) async {
       if (!_wantRunning) return;
       await _close();
@@ -279,18 +342,166 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
+  /// A repeater key heard on the air, and whether the open graph knew that
+  /// repeater. Once [meshCheckSample] distinct repeaters are in, it looks
+  /// once: most of them new to an established graph means another mesh on
+  /// the same preset (Washington on the US preset), and a graph of this
+  /// preset that knows most of them is the way back.
+  void _onRepeaterKeyHeard(String pubkey, bool known) {
+    if (_meshChecked) return;
+    _heardKeys.putIfAbsent(GraphBook.keyPrefix(pubkey), () => known);
+    if (_heardKeys.length < meshCheckSample) return;
+    _meshChecked = true;
+    final graph = _graph;
+    final entry = _entry;
+    if (graph == null || entry == null) return;
+    final heard = _heardKeys.length;
+    final unknown = _heardKeys.values.where((k) => !k).length;
+    if (unknown < heard * meshCheckUnknownShare ||
+        graph.nodeCount < meshCheckMinNodes ||
+        GraphBook.isQuiet(entry, DateTime.now())) {
+      return;
+    }
+    GraphEntry? other;
+    var best = 0;
+    for (final g in GraphBook.graphsFor(entry.mesh)) {
+      if (g == entry) continue;
+      final keys = GraphBook.keysOf(g);
+      final count = _heardKeys.keys.where(keys.contains).length;
+      if (count > best) {
+        other = g;
+        best = count;
+      }
+    }
+    if (best * 2 < heard) other = null;
+    _suggestion = MeshSuggestion(
+        current: entry, heard: heard, unknown: unknown, other: other);
+    appLogger.info(
+        '$unknown of $heard repeaters heard since connecting are new to the '
+        'graph "${entry.label}"'
+        '${other == null ? '' : '; "${other.label}" knows $best of them'}',
+        tag: 'PathGraph');
+    notifyListeners();
+  }
+
+  /// Opens [entry], which then stays the graph of its preset. A graph for
+  /// another preset is only picked: it opens when the radio is on it.
+  Future<void> switchGraph(GraphEntry entry) async {
+    await GraphBook.setActive(entry);
+    _suggestion = null;
+    final connector = _connector;
+    if (connector == null || !_ownsDatabase || entry.mesh != _mesh) {
+      notifyListeners();
+      return;
+    }
+    appLogger.info('switching to the graph "${entry.label}"', tag: 'PathGraph');
+    _reopen(connector);
+    await _op;
+  }
+
+  /// A new, empty graph called [name] for the radio's preset, opened at
+  /// once. The graph it replaces stays on the device.
+  Future<GraphEntry?> createGraph(String name) async {
+    final mesh = _mesh;
+    if (mesh == null || name.trim().isEmpty) return null;
+    final entry = await GraphBook.add(mesh, name.trim());
+    await switchGraph(entry);
+    return entry;
+  }
+
+  Future<void> renameGraph(GraphEntry entry, String name) async {
+    if (name.trim().isEmpty) return;
+    final renamed = await GraphBook.rename(entry, name.trim());
+    if (_entry == entry) _entry = renamed;
+    notifyListeners();
+  }
+
+  /// Deletes [entry] and its file. Neither the open graph nor a preset's
+  /// default can go; the default is cleared from the Pathfinder screen.
+  Future<bool> deleteGraph(GraphEntry entry) async {
+    if (entry == _entry || entry.isDefault) return false;
+    await GraphBook.remove(entry);
+    try {
+      if (!PlatformInfo.isWeb) {
+        final base = await _filePathOf(entry);
+        for (final suffix in const ['', '-journal', '-wal', '-shm']) {
+          final f = File('$base$suffix');
+          if (await f.exists()) await f.delete();
+        }
+      }
+    } catch (e) {
+      appLogger.warn('the file of graph "${entry.label}" stays: $e',
+          tag: 'PathGraph');
+    }
+    appLogger.info('deleted the graph "${entry.label}"', tag: 'PathGraph');
+    notifyListeners();
+    return true;
+  }
+
+  /// The size of [entry]'s file; null before it has one, and on the web.
+  Future<int?> graphFileBytes(GraphEntry entry) async {
+    if (PlatformInfo.isWeb) return null;
+    try {
+      final f = File(await _filePathOf(entry));
+      return await f.exists() ? await f.length() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<String> _filePathOf(GraphEntry entry) async =>
+      '${(await getApplicationDocumentsDirectory()).path}'
+      '${Platform.pathSeparator}${entry.databaseName}.sqlite';
+
+  /// The answer to [meshSuggestion]: switch to the graph that knows these
+  /// repeaters, or start one called [name].
+  Future<void> acceptMeshSuggestion({String? name}) async {
+    final suggestion = _suggestion;
+    if (suggestion == null) return;
+    _suggestion = null;
+    final other = suggestion.other;
+    if (other != null) {
+      await switchGraph(other);
+    } else if (name != null) {
+      await createGraph(name);
+    }
+    notifyListeners();
+  }
+
+  /// "Keep this one": not asked about this graph again for a week.
+  Future<void> dismissMeshSuggestion() async {
+    final suggestion = _suggestion;
+    if (suggestion == null) return;
+    _suggestion = null;
+    notifyListeners();
+    await GraphBook.quiet(suggestion.current, DateTime.now().add(meshCheckQuiet));
+  }
+
   /// Forget idle hearsay and enforce the growth caps: on every open and
   /// once a day after.
   void _sweep() {
+    _saveKnownKeys();
     final report = _graph?.sweepStale();
     if (report == null || report.isEmpty) return;
     appLogger.info('path graph sweep: removed ${report.totalRemoved}',
         tag: 'PathGraph');
   }
 
+  /// The open graph's repeater keys, for the "a different mesh?" check
+  /// while another graph is open.
+  void _saveKnownKeys() {
+    final graph = _graph;
+    final entry = _entry;
+    if (graph == null || entry == null) return;
+    unawaited(GraphBook.saveKeys(entry, graph.repeaterKeys()));
+  }
+
   Future<void> _close() async {
     final graph = _graph;
     if (graph == null) return;
+    _saveKnownKeys();
+    _entry = null;
+    _suggestion = null;
     WidgetsBinding.instance.removeObserver(this);
     _sweepTimer?.cancel();
     _sweepTimer = null;
@@ -380,7 +591,14 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       _adapter!.cancelDiscovery('link lost — ask again');
     }
     final ready = connector.isConnected && !connector.isLoadingContacts;
-    if (ready && !_radioReady) _keeper?.onConnected();
+    if (ready && !_radioReady) {
+      _keeper?.onConnected();
+      // A new connection, maybe somewhere else: listen afresh.
+      if (_suggestion == null) {
+        _heardKeys.clear();
+        _meshChecked = false;
+      }
+    }
     _radioReady = ready;
 
     final mesh = meshOf(connector);

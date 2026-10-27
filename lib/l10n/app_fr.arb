@@ -2520,5 +2520,20 @@
   "pathfinderHelp_discover": "Quand il ne sait pas bien quels répéteurs vous entendent ici, Pathfinder envoie une courte requête Discover (au plus une toutes les 10 minutes, et seulement après l'échec d'un envoi) et, si la radio a un GPS, retient sur ce téléphone quels répéteurs vous ont entendu dans chaque zone d'environ 500 m, jamais votre position exacte.",
   "pathfinderHelp_off": "Si vous désactivez Pathfinder, la radio achemine les messages exactement comme avant.",
   "pathfinderHelp_dontShowAgain": "Ne plus afficher",
-  "pathfinderHelp_ok": "OK"
+  "pathfinderHelp_ok": "OK",
+  "contact_teleBlockedTitle": "Bloqué par votre radio",
+  "contact_teleBlockedBody": "Les paramètres de confidentialité de votre radio ne le partagent avec personne, donc {name} ne le recevra pas. Les modifier pour que les contacts que vous autorisez le reçoivent ?",
+  "contact_teleNotNow": "Pas maintenant",
+  "contact_teleRadioDenies": "Votre radio ne le partage avec personne ({mode})",
+  "contact_teleRadioAllowsAll": "Votre radio le partage avec tout le monde ({mode})",
+  "contact_sharesPosition": "Peut obtenir votre position",
+  "pathfinder_meshTitle": "Un autre réseau ?",
+  "pathfinder_meshNewBody": "{unknown} des {heard} répéteurs entendus depuis la connexion sont inconnus de la carte Pathfinder « {graph} ». Commencer une nouvelle carte pour cette zone ? L'ancienne est conservée et vous pourrez y revenir depuis l'écran Pathfinder.",
+  "pathfinder_meshSwitchBody": "La plupart des répéteurs entendus depuis la connexion figurent sur la carte Pathfinder « {other} », pas sur « {graph} ». Passer à celle-ci ?",
+  "pathfinder_meshNew": "Nouvelle carte",
+  "pathfinder_meshSwitch": "Changer",
+  "pathfinder_meshKeep": "Garder celle-ci",
+  "pathfinder_graphNameTitle": "Nom de la nouvelle carte",
+  "pathfinder_graphNameHint": "Par exemple, Washington",
+  "pathfinder_graphCreate": "Créer"
 }

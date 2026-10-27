@@ -5657,4 +5657,59 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get chats_draft => 'Osnutek';
+
+  @override
+  String get contact_teleBlockedTitle => 'Blokira vaš radio';
+
+  @override
+  String contact_teleBlockedBody(String name) {
+    return 'Nastavitve zasebnosti vašega radia tega ne delijo z nikomer, zato $name tega ne dobi. Jih spremenite, da bodo to dobili stiki, ki jim to dovolite?';
+  }
+
+  @override
+  String get contact_teleNotNow => 'Ne zdaj';
+
+  @override
+  String contact_teleRadioDenies(String mode) {
+    return 'Vaš radio tega ne deli z nikomer ($mode)';
+  }
+
+  @override
+  String contact_teleRadioAllowsAll(String mode) {
+    return 'Vaš radio to deli z vsemi ($mode)';
+  }
+
+  @override
+  String get contact_sharesPosition => 'Lahko pridobi vašo lokacijo';
+
+  @override
+  String get pathfinder_meshTitle => 'Drugo omrežje?';
+
+  @override
+  String pathfinder_meshNewBody(int unknown, int heard, String graph) {
+    return '$unknown od $heard ponoviteljev, slišanih od povezave, je za zemljevid Pathfinderja »$graph« novih. Začnete nov zemljevid za to območje? Stari ostane in nanj se lahko vrnete na zaslonu Pathfinderja.';
+  }
+
+  @override
+  String pathfinder_meshSwitchBody(String other, String graph) {
+    return 'Večina ponoviteljev, slišanih od povezave, je na zemljevidu Pathfinderja »$other«, ne »$graph«. Preklopite nanj?';
+  }
+
+  @override
+  String get pathfinder_meshNew => 'Nov zemljevid';
+
+  @override
+  String get pathfinder_meshSwitch => 'Preklopi';
+
+  @override
+  String get pathfinder_meshKeep => 'Obdrži tega';
+
+  @override
+  String get pathfinder_graphNameTitle => 'Ime novega zemljevida';
+
+  @override
+  String get pathfinder_graphNameHint => 'Na primer Washington';
+
+  @override
+  String get pathfinder_graphCreate => 'Ustvari';
 }
