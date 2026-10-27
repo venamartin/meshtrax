@@ -102,4 +102,26 @@ void main() {
     ];
     expect(ids(places, 15), [1, 3]);
   });
+
+  test('icons keep a gap: 64 px zoomed out, 40 px from zoom 14', () {
+    const center = LatLng(38.0228, -107.6714);
+    List<int> drawn(double zoom, double apart) {
+      final camera = MapCamera(center: center, zoom: zoom);
+      final y = camera.project(center).dy + apart;
+      final lat = camera.unproject(Offset(camera.project(center).dx, y));
+      return [
+        for (final p in placesToShow([
+          place(1, 'historic=mine', 'Camp Bird Mine', rank: 1),
+          place(2, 'highway=trailhead', 'Cascade Falls', lat: lat.latitude),
+        ], camera))
+          p.place.id,
+      ];
+    }
+
+    expect(drawn(13, 50), [1]);
+    expect(drawn(13, 70), [1, 2]);
+    // Side by side, as one per grid square allowed across a square's edge.
+    expect(drawn(14, 30), [1]);
+    expect(drawn(14, 45), [1, 2]);
+  });
 }

@@ -1,3 +1,5 @@
+import 'dart:ui' show Offset;
+
 import 'package:traxmap/traxmap.dart' show LatLng, LatLngBounds, MapCamera;
 import 'package:traxpoi/traxpoi.dart' show PlaceData, PoiRegion;
 
@@ -74,22 +76,21 @@ Future<List<MapPlace>> placesIn(
 }
 
 /// The places to draw at [camera]: those its zoom shows, the most notable
-/// first, and at most one in each [cell]-pixel square, so icons never pile
-/// up.
-List<MapPlace> placesToShow(
-  Iterable<MapPlace> places,
-  MapCamera camera, {
-  double cell = 40,
-}) {
+/// first, and none closer to one already drawn than 64 pixels zoomed out
+/// (below 14, where cities would crowd) or 40 pixels closer in, so icons
+/// never touch (Martin, 2026-10-27).
+List<MapPlace> placesToShow(Iterable<MapPlace> places, MapCamera camera) {
+  final gap = camera.zoom < 14 ? 64.0 : 40.0;
   final shown = [
     for (final p in places)
       if (placeMinZoom(p.place) case final z? when camera.zoom >= z) p,
   ]..sort((a, b) => placeMinZoom(a.place)!.compareTo(placeMinZoom(b.place)!));
-  final taken = <(int, int)>{};
-  return [
-    for (final p in shown)
-      if (taken.add(_cellOf(camera, p, cell))) p,
-  ];
+  final drawn = <(MapPlace, Offset)>[];
+  for (final p in shown) {
+    final at = camera.project(LatLng(p.place.lat, p.place.lon));
+    if (drawn.every((d) => (d.$2 - at).distance >= gap)) drawn.add((p, at));
+  }
+  return [for (final (p, _) in drawn) p];
 }
 
 /// Which of [shown] get their name under the icon: close in (zoom 16,
