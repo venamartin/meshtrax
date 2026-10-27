@@ -55,7 +55,7 @@ class _AppDebugLogScreenState extends State<AppDebugLogScreen> {
                 onPressed: hasEntries
                     ? () async {
                         final text =
-                            AppDebugLogService.buildExportText(filtered);
+                            await AppDebugLogService.buildExport(filtered);
                         await Clipboard.setData(ClipboardData(text: text));
                         if (!context.mounted) return;
                         showDismissibleSnackBar(
