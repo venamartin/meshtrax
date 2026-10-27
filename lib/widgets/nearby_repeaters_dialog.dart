@@ -21,10 +21,20 @@ import 'snr_indicator.dart';
 /// Discover. Only an answer carrying my request's tag marks a row as
 /// answered; an advert overheard during the scan refreshes the level I
 /// hear it at and nothing else, so it can never pass for an answer.
-class NearbyRepeatersDialog extends StatelessWidget {
+class NearbyRepeatersDialog extends StatefulWidget {
   const NearbyRepeatersDialog({super.key, required this.connector});
 
   final MeshCoreConnector connector;
+
+  @override
+  State<NearbyRepeatersDialog> createState() => _NearbyRepeatersDialogState();
+}
+
+class _NearbyRepeatersDialogState extends State<NearbyRepeatersDialog> {
+  /// Rows opened to list every contact their shared code could be.
+  final _expanded = <DirectRepeater>{};
+
+  MeshCoreConnector get connector => widget.connector;
 
   @override
   Widget build(BuildContext context) {
@@ -122,22 +132,39 @@ class NearbyRepeatersDialog extends StatelessWidget {
         else
           for (final r in rows) _row(context, r, contacts),
         const Divider(height: 12),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            const Icon(Icons.verified, size: 14, color: Colors.green),
-            Text(' answered your Discover · ', style: small),
-            const Icon(Icons.verified, size: 14, color: Colors.grey),
-            Text(' answered before · ', style: small),
-            const Icon(Icons.hearing, size: 14, color: Colors.grey),
-            Text(' heard only', style: small),
-          ],
+        _legend(small),
+      ],
+    );
+  }
+
+  /// One key per line, each icon in the rows' icon column (owner,
+  /// 2026-10-26: the wrapped legend broke a key onto a line of its own).
+  Widget _legend(TextStyle? small) {
+    Widget line(Widget? icon, String text) => Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 28, child: icon),
+              Expanded(child: Text(text, style: small)),
+            ],
+          ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        line(const Icon(Icons.verified, size: 14, color: Colors.green),
+            'answered your Discover'),
+        line(const Icon(Icons.verified, size: 14, color: Colors.grey),
+            'answered before'),
+        line(const Icon(Icons.hearing, size: 14, color: Colors.grey),
+            'heard only'),
+        line(
+          _guessIcon(14),
+          'heard by a code several contacts share: the name in italics is '
+          'the nearest of them; tap the row for all',
         ),
-        const SizedBox(height: 2),
-        Text(
-          '↑ how it heard you · ↓ how you heard it · SNR in dB',
-          style: small,
-        ),
+        line(null, '↑ how it heard you · ↓ how you heard it · SNR in dB'),
       ],
     );
   }
@@ -197,79 +224,118 @@ class NearbyRepeatersDialog extends StatelessWidget {
     final contact = identity.contact;
     final onAir = contact == null && repeater.name?.isNotEmpty == true;
     // A short code several contacts share: the nearest is the likeliest.
-    final guess = !onAir && identity.isAmbiguous ? _nearestGuess(identity) : null;
+    final shared = !onAir && identity.isAmbiguous;
+    final guess = shared ? _nearestGuess(identity) : null;
     // A name the node put on air beats a lookup, but only when the lookup
     // found nothing — a matched contact carries the name this user chose.
-    final displayName = onAir
-        ? repeater.name!
-        : guess != null
-            ? 'possibly ${guess.contact.name}'
-            : identity.displayName;
+    final displayName =
+        onAir ? repeater.name! : guess?.contact.name ?? identity.displayName;
     final latest = _answeredLatest(repeater);
     final answeredBefore = !latest && repeater.answeredAt != null;
+    final expanded = shared && _expanded.contains(repeater);
     final small = Theme.of(context).textTheme.bodySmall
         ?.copyWith(color: Colors.grey[600]);
 
+    final code = repeater.prefixHex;
     final when = latest
         ? 'answered ${formatAgo(repeater.answeredAt!)} ago'
         : 'heard ${formatAgo(repeater.lastUpdated)} ago';
-    final problem = guess != null
-        ? '${GeoFormat.distanceText(guess.meters, _units(context))} away · '
-            '${identity.candidates.length} contacts share this code'
+    final problem = shared
+        ? [
+            '${identity.candidates.length} share $code',
+            if (guess != null)
+              'nearest '
+                  '${GeoFormat.distanceText(guess.meters, _units(context))}',
+          ].join(' · ')
         : _identityProblem(repeater, identity);
     final up = repeater.uplinkSnr;
 
     return Material(
+      // Keeps a press on the row pressed when the list re-sorts under it.
+      key: ObjectKey(repeater),
       color: latest ? Colors.green.withValues(alpha: 0.12) : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: identity.addressableKey == null
-            ? null
-            : () => _login(context, repeater, identity, displayName),
+        // A shared code opens to show the contacts it could be; a guess is
+        // never logged into.
+        onTap: shared
+            ? () => setState(() => expanded
+                ? _expanded.remove(repeater)
+                : _expanded.add(repeater))
+            : identity.addressableKey == null
+                ? null
+                : () => _login(context, repeater, identity, displayName),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 28,
-                child: Icon(
-                  latest || answeredBefore ? Icons.verified : Icons.hearing,
-                  size: 18,
-                  color: latest ? Colors.green : Colors.grey,
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: guess == null
-                                ? null
-                                : const TextStyle(fontStyle: FontStyle.italic),
-                          ),
-                        ),
-                        if (contact?.hasLocation ?? false)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Icon(Icons.location_on, size: 14),
-                          ),
-                      ],
+              // The name has the row's whole width, the levels sit on the
+              // line below (owner, 2026-10-26: names were cut off).
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 28,
+                    child: latest || answeredBefore
+                        ? Icon(
+                            Icons.verified,
+                            size: 18,
+                            color: latest ? Colors.green : Colors.grey,
+                          )
+                        : shared
+                            ? _guessIcon(18)
+                            : const Icon(
+                                Icons.hearing,
+                                size: 18,
+                                color: Colors.grey,
+                              ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      displayName,
+                      // A name shows whole at any text size; only the list
+                      // of candidates (the row opens to show them) is cut.
+                      maxLines: shared && guess == null ? 2 : null,
+                      overflow: shared && guess == null
+                          ? TextOverflow.ellipsis
+                          : null,
+                      style: guess == null
+                          ? null
+                          : const TextStyle(fontStyle: FontStyle.italic),
                     ),
-                    Text('${repeater.prefixHex} · $when', style: small),
-                    if (problem != null) Text(problem, style: small),
+                  ),
+                  if (contact?.hasLocation ?? false)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, top: 2),
+                      child: Icon(Icons.location_on, size: 14),
+                    ),
+                ],
+              ),
+              Row(
+                children: [
+                  const SizedBox(width: 28),
+                  Expanded(child: Text('$code · $when', style: small)),
+                  // An earlier answer's level is history, shown greyed.
+                  _snrCell(up, sf, dim: !latest),
+                  _snrCell(repeater.snr, sf),
+                ],
+              ),
+              if (problem != null)
+                Row(
+                  children: [
+                    const SizedBox(width: 28),
+                    Expanded(child: Text(problem, style: small)),
+                    if (shared)
+                      Icon(
+                        expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
                   ],
                 ),
-              ),
-              // An earlier answer's level is history, shown greyed.
-              _snrCell(up, sf, dim: !latest),
-              _snrCell(repeater.snr, sf),
+              if (expanded) _candidates(context, identity.candidates, small),
             ],
           ),
         ),
@@ -277,15 +343,85 @@ class NearbyRepeatersDialog extends StatelessWidget {
     );
   }
 
-  /// Display only: a guess is never logged into, nor taught to Pathfinder.
-  ({Contact contact, double meters})? _nearestGuess(RepeaterIdentity identity) {
+  /// Every contact a shared code could be, nearest first. Display only,
+  /// like the guess: none of them is logged into from here.
+  Widget _candidates(
+    BuildContext context,
+    List<Contact> candidates,
+    TextStyle? small,
+  ) {
+    final from = _selfPosition();
+    final units = _units(context);
+    return Padding(
+      padding: const EdgeInsets.only(left: 28, top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final c in RepeaterIdentityHelper.byDistance(candidates, from))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: Text(c.contact.name, style: small)),
+                  // Without our own position there is no distance to give.
+                  if (from != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      c.meters == null
+                          ? 'no position'
+                          : GeoFormat.distanceText(c.meters!, units),
+                      style: small,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// The ear with a small "?": heard only, by a code several contacts
+  /// share, so the name is a guess (owner, 2026-10-26).
+  static Widget _guessIcon(double size) => Center(
+        child: SizedBox.square(
+          dimension: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(Icons.hearing, size: size, color: Colors.grey),
+              Positioned(
+                top: -size / 3,
+                right: -size / 3,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade700,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.question_mark,
+                    size: size * 0.55,
+                    color: Colors.grey.shade200,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  LatLng? _selfPosition() {
     final lat = connector.selfLatitude;
     final lon = connector.selfLongitude;
-    if (!GeoFormat.isValidPosition(lat, lon)) return null;
-    return RepeaterIdentityHelper.nearestCandidate(
-      identity.candidates,
-      LatLng(lat!, lon!),
-    );
+    return GeoFormat.isValidPosition(lat, lon) ? LatLng(lat!, lon!) : null;
+  }
+
+  /// Display only: a guess is never logged into, nor taught to Pathfinder.
+  ({Contact contact, double meters})? _nearestGuess(RepeaterIdentity identity) {
+    final from = _selfPosition();
+    if (from == null) return null;
+    return RepeaterIdentityHelper.nearestCandidate(identity.candidates, from);
   }
 
   static UnitSystem _units(BuildContext context) =>

@@ -179,6 +179,18 @@ void main() {
     test('an empty hash matches nothing', () {
       expect(RepeaterIdentityHelper.contactsMatchingHash([farAway], []), isEmpty);
     });
+
+    test('a contact both saved and discovered counts once', () {
+      // Auto-add keeps a repeater in both lists; twice, its own code looked
+      // shared and its relays never carried its key.
+      final saved = repeater('KN6NCG HILL', key([0x5B, 0x01]));
+      final discovered = repeater('KN6NCG HILL', key([0x5B, 0x01]));
+      expect(
+        RepeaterIdentityHelper.contactsMatchingHash(
+            [saved, discovered], [0x5B, 0x01]),
+        [same(saved)],
+      );
+    });
   });
 
   group('unnamedLabel', () {

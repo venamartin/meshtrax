@@ -90,16 +90,83 @@ void main() {
           same(hashOnly));
     });
 
-    test('refreshes nothing when the hash is shared', () {
+    test('the row heard by that code before, never the keyed one beside it',
+        () {
+      final keyed = entry(publicKey: farKey, prefix: [0xA2, 0x77]);
+      final heard = entry(prefix: [0xA2, 0x77]);
+      expect(
+        DirectRepeater.findTracked([keyed, heard], hashPrefix: [0xA2, 0x77]),
+        same(heard),
+      );
+    });
+
+    test('refreshes neither of two keyed rows sharing the code', () {
       expect(
         DirectRepeater.findTracked(
           [
             entry(publicKey: farKey, prefix: [0xA2, 0x77]),
-            entry(prefix: [0xA2, 0x77]),
+            entry(publicKey: nearKey, prefix: [0xA2, 0x77]),
           ],
           hashPrefix: [0xA2, 0x77],
         ),
         isNull,
+      );
+    });
+
+    // Field case 2026-10-26: one repeater, heard as A3 and as A377 (paths of
+    // either width), filled the list with copies of both.
+    test('a short and a long code each refresh their own row', () {
+      final short = entry(prefix: [0xA3]);
+      final long = entry(prefix: [0xA3, 0x77]);
+      expect(DirectRepeater.findTracked([short, long], hashPrefix: [0xA3]),
+          same(short));
+      expect(
+          DirectRepeater.findTracked([short, long], hashPrefix: [0xA3, 0x77]),
+          same(long));
+      expect(DirectRepeater.findTracked([long], hashPrefix: [0xA3]), isNull,
+          reason: 'a code of another width starts its own row');
+    });
+
+    test('a key adopts the row heard by its code, not a shorter one', () {
+      final short = entry(prefix: [0xA2]);
+      final long = entry(prefix: [0xA2, 0x77]);
+      expect(
+        DirectRepeater.findTracked(
+          [short, long],
+          fullKey: nearKey,
+          hashPrefix: [0xA2, 0x77],
+        ),
+        same(long),
+      );
+    });
+
+    // A repeater's own zero-hop advert comes with path_len 0, so a 1-byte
+    // code, even on a 2-byte mesh; a Discover answer comes at the radio's
+    // width. Either way its key still names the row heard on longer paths.
+    test('a key heard at one byte adopts the longer row it starts with', () {
+      final short = entry(prefix: [0xA2]);
+      final long = entry(prefix: [0xA2, 0x77]);
+      expect(
+        DirectRepeater.findTracked([long], fullKey: nearKey, hashPrefix: [0xA2]),
+        same(long),
+      );
+      expect(
+        DirectRepeater.findTracked(
+          [short, long],
+          fullKey: nearKey,
+          hashPrefix: [0xA2],
+        ),
+        same(long),
+        reason: 'the most specific code; A2 alone could be anyone',
+      );
+      expect(
+        DirectRepeater.findTracked(
+          [entry(prefix: [0xA2, 0x78])],
+          fullKey: nearKey,
+          hashPrefix: [0xA2],
+        ),
+        isNull,
+        reason: 'a code the key does not start with',
       );
     });
 
@@ -121,13 +188,16 @@ void main() {
     );
   });
 
-  test('matchesHash compares only the bytes both sides carry', () {
+  test('a code is the same bytes at the same width; a key only starts with it',
+      () {
     final oneByte = entry(prefix: [0xA2]);
-    expect(oneByte.matchesHash(nearKey), isTrue);
-    expect(oneByte.matchesHash(key([0xA3])), isFalse);
+    expect(oneByte.hasCode([0xA2]), isTrue);
+    expect(oneByte.hasCode([0xA2, 0x77]), isFalse);
+    expect(oneByte.hasCode([0xA3]), isFalse);
 
-    final twoByte = entry(prefix: [0xA2, 0x77]);
-    expect(twoByte.matchesHash(nearKey), isTrue);
-    expect(twoByte.matchesHash(key([0xA2, 0x78])), isFalse);
+    final keyed = entry(publicKey: nearKey, prefix: [0xA2]);
+    expect(keyed.keyStartsWith([0xA2, 0x77]), isTrue);
+    expect(keyed.keyStartsWith([0xA2, 0x78]), isFalse);
+    expect(oneByte.keyStartsWith([0xA2]), isFalse, reason: 'no key');
   });
 }
