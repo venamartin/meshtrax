@@ -39,6 +39,10 @@
 	<string>This app uses the camera to scan QR codes for joining communities.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app uses the photo library to scan QR codes from saved images.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app adds events you choose from event messages to your calendar. It never reads your calendar.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>The add-event screen can suggest locations from your contacts. This app never reads your contacts.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

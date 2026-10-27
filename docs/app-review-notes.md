@@ -21,7 +21,10 @@ This is correct behaviour, not a crash or an incomplete feature. Bluetooth
 permission is requested on first launch so the app can scan for these devices.
 
 Camera and photo library permissions are used only to scan QR codes for
-joining communities and channels.
+joining communities and channels. The calendar is used only when the user taps
+"Add to calendar" on an event message; the app never reads the calendar or
+contacts (the contacts string covers Apple's add-event screen on iOS 16 and
+earlier).
 
 There is no account system, no login, and no server component — all
 communication is directly between the phone and the LoRa device over
