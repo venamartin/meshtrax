@@ -317,5 +317,43 @@ void main() {
       await hear(_dm(_chatKey, nowSecs() - 3600, 'sent an hour ago'));
       expect(await shown(alice), ['hi', 'sent an hour ago']);
     });
+
+    // A window that did not change is not passed on, so an open chat has
+    // nothing to rebuild when another chat's message lands (owner,
+    // 2026-10-26: glitches scrolling).
+    test('another chat\'s message passes nothing on', () async {
+      final alice = byName('ALICE');
+      await send(alice, 'hi');
+      final seen = <List<Message>>[];
+      final sub = c.watchConversation(alice).listen(seen.add);
+      await settle();
+      expect(seen, hasLength(1));
+
+      await hear(_roomPost(nowSecs(), 'room chatter'));
+      expect(seen, hasLength(1));
+      await hear(_dm(_chatKey, nowSecs(), 'for me'));
+      expect(seen.last.map((m) => m.text), ['hi', 'for me']);
+      await sub.cancel();
+    });
+
+    test('a login that measures the room clock re-orders on the next write',
+        () async {
+      final room = byName('ROOM');
+      await send(room, 'mine');
+      await hear(_roomPost(nowSecs() - 120, 'two minutes before'));
+      final seen = <List<String>>[];
+      final sub = c
+          .watchConversation(room)
+          .listen((rows) => seen.add([for (final m in rows) m.text]));
+      await settle();
+      expect(seen.last, ['mine', 'two minutes before']);
+
+      // The login changes no row of the room; another chat's message runs
+      // the query again, and the order the measured clock gives goes on.
+      await hear(_loginOk(nowSecs()));
+      await hear(_dm(_chatKey, nowSecs(), 'unrelated'));
+      expect(seen.last, ['two minutes before', 'mine']);
+      await sub.cancel();
+    });
   });
 }

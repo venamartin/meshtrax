@@ -53,6 +53,7 @@ import '../storage/prefs_manager.dart';
 import '../utils/app_logger.dart';
 import '../utils/battery_utils.dart';
 import '../utils/platform_info.dart';
+import '../utils/tracked_list.dart';
 import 'meshcore_uuids.dart';
 import 'meshcore_protocol.dart';
 import 'second_app_detector.dart';
@@ -332,8 +333,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   final List<ScanResult> _scanResults = [];
   final List<ScanResult> _linuxSystemScanResults = [];
-  final List<Contact> _contacts = [];
-  final List<Contact> _discoveredContacts = [];
+  // Tracked: the copies and the author index below are kept until these
+  // change, not rebuilt on every read.
+  final TrackedList<Contact> _contacts = TrackedList();
+  final TrackedList<Contact> _discoveredContacts = TrackedList();
   final List<Channel> _channels = [];
   /// Mirror of the watched per-channel unread COUNT query — lets legacy
   /// synchronous callers (badges, notification totals) read DB-authoritative
@@ -856,29 +859,94 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   List<ScanResult> get scanResults => List.unmodifiable(_scanResults);
+
+  /// Changes whenever a saved or a discovered contact, or the radio's own
+  /// key, does: what a screen keeps built from contacts can key on it.
+  Object get contactsStamp =>
+      (_contacts.revision, _discoveredContacts.revision, _selfPublicKey);
+
+  // Message rows read these many times a frame; each copy is kept until
+  // its lists change (owner, 2026-10-26: glitches scrolling messages).
+  List<Contact>? _contactsView;
+  Object? _contactsViewStamp;
+  List<Contact>? _allContactsView;
+  Object? _allContactsViewStamp;
+  List<Contact>? _unfilteredView;
+  Object? _unfilteredViewStamp;
+  List<Contact>? _discoveredView;
+  Object? _discoveredViewStamp;
+
   List<Contact> get contacts {
-    final selfKey = _selfPublicKey;
-    if (selfKey == null) {
-      return List.unmodifiable(_contacts);
+    final stamp = (_contacts.revision, _selfPublicKey);
+    if (_contactsViewStamp != stamp) {
+      final selfKey = _selfPublicKey;
+      _contactsView = List.unmodifiable(selfKey == null
+          ? _contacts
+          : _contacts
+              .where((contact) => !listEquals(contact.publicKey, selfKey)));
+      _contactsViewStamp = stamp;
     }
-    return List.unmodifiable(
-      _contacts.where((contact) => !listEquals(contact.publicKey, selfKey)),
-    );
+    return _contactsView!;
   }
 
-  List<Contact> get allContacts => List.unmodifiable([
-    ..._contacts,
-    ..._discoveredContacts.where(
-      (c) => !c.isActive && c.publicKeyHex != selfPublicKeyHex,
-    ),
-  ]);
+  List<Contact> get allContacts {
+    final stamp = contactsStamp;
+    if (_allContactsViewStamp != stamp) {
+      _allContactsView = List.unmodifiable([
+        ..._contacts,
+        ..._discoveredContacts.where(
+          (c) => !c.isActive && c.publicKeyHex != selfPublicKeyHex,
+        ),
+      ]);
+      _allContactsViewStamp = stamp;
+    }
+    return _allContactsView!;
+  }
 
-  List<Contact> get allContactsUnfiltered =>
-      List.unmodifiable([..._contacts, ..._discoveredContacts]);
+  List<Contact> get allContactsUnfiltered {
+    final stamp = (_contacts.revision, _discoveredContacts.revision);
+    if (_unfilteredViewStamp != stamp) {
+      _unfilteredView =
+          List.unmodifiable([..._contacts, ..._discoveredContacts]);
+      _unfilteredViewStamp = stamp;
+    }
+    return _unfilteredView!;
+  }
 
   List<Contact> get discoveredContacts {
-    return List.unmodifiable(_discoveredContacts);
+    if (_discoveredViewStamp != _discoveredContacts.revision) {
+      _discoveredView = List.unmodifiable(_discoveredContacts);
+      _discoveredViewStamp = _discoveredContacts.revision;
+    }
+    return _discoveredView!;
   }
+
+  Map<int, Contact>? _byKeyPrefix4;
+  Object? _byKeyPrefix4Stamp;
+
+  /// The contact whose key starts with these four bytes, saved ones before
+  /// discovered ones: a room post names its author that way. One map read
+  /// instead of a scan that copied every contact, for each room row built.
+  Contact? contactByKeyPrefix4(Uint8List prefix) {
+    if (prefix.length < 4) return null;
+    final stamp = (_contacts.revision, _discoveredContacts.revision);
+    var index = _byKeyPrefix4;
+    if (index == null || _byKeyPrefix4Stamp != stamp) {
+      index = <int, Contact>{};
+      for (final list in [_contacts, _discoveredContacts]) {
+        for (final contact in list) {
+          if (contact.publicKey.length < 4) continue;
+          index.putIfAbsent(_keyPrefix4(contact.publicKey), () => contact);
+        }
+      }
+      _byKeyPrefix4 = index;
+      _byKeyPrefix4Stamp = stamp;
+    }
+    return index[_keyPrefix4(prefix)];
+  }
+
+  static int _keyPrefix4(Uint8List key) =>
+      key[0] << 24 | key[1] << 16 | key[2] << 8 | key[3];
 
   /// During a slot resync `_channels` is rebuilt from empty over several
   /// seconds (slow on BLE) — serving it raw made Public vanish from the UI
@@ -8053,14 +8121,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   /// Live stream of a conversation — the UI's ONLY DM read path. A room's
   /// rows come out in [roomPostOrder], every other conversation's in
-  /// arrival order.
+  /// arrival order. A window that did not change is not passed on (any
+  /// chat's write re-runs the query); a room is re-ordered first, since a
+  /// login that measures its clock moves posts without changing a row.
   Stream<List<Message>> watchConversation(
     Contact contact, {
     int limit = 200,
   }) {
     final byArrival =
         _messageStore.watchConversation(contact.publicKeyHex, limit: limit);
-    if (contact.type != advTypeRoom) return byArrival;
+    if (contact.type != advTypeRoom) {
+      return byArrival.distinct(MessageStore.sameMessages);
+    }
     return byArrival.map((rows) {
       final login = _lastMeasuredRoomLogins[contact.publicKeyHex];
       final clock = login?.serverClock;
@@ -8068,7 +8140,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         rows,
         skewSecs: clock?.difference(login!.at).inSeconds,
       );
-    });
+    }).distinct(MessageStore.sameMessages);
   }
 
   /// How much older than one of our posts a server stamp must be to move

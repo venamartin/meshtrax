@@ -188,9 +188,10 @@ class StructuredMessageCard extends StatelessWidget {
       };
 
   /// Cards need room for a map and a row of buttons, more than a text
-  /// bubble's 65%.
+  /// bubble's 65%. The size only: a row that read all of MediaQuery was
+  /// built again on every frame of the keyboard sliding.
   static double maxBubbleWidth(BuildContext context) =>
-      math.min(MediaQuery.of(context).size.width * 0.85, 420);
+      math.min(MediaQuery.sizeOf(context).width * 0.85, 420);
 
   static BoxDecoration bubbleDecoration(
     BuildContext context,

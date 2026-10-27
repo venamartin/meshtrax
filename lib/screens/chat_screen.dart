@@ -14,7 +14,7 @@ import '../utils/platform_info.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
-import '../helpers/reaction_helper.dart';
+import '../helpers/message_facts.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/path_helper.dart';
@@ -49,7 +49,6 @@ import '../widgets/mention_composer.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/message_actions.dart';
 import '../widgets/room_login_dialog.dart';
-import '../helpers/structured_message.dart';
 import '../services/short_link_resolver.dart';
 import '../widgets/composer_attach_tray.dart';
 import '../widgets/paste_conversion_bar.dart';
@@ -124,10 +123,10 @@ class _ChatScreenState extends State<ChatScreen> {
   int _cachedAuthorMapMessageCount = -1;
 
   /// Reply row id → index of the quoted post in the displayed (reversed)
-  /// list, -1 when it isn't loaded. Rebuilt when the message list changes.
+  /// list, -1 when it isn't loaded. Rebuilt when the message list, the
+  /// contacts (a quoted author's advert) or our name change.
   final Map<String, int> _replyTargetCache = {};
-  List<Message>? _replyTargetCacheSource;
-  int _replyTargetCacheLength = -1;
+  Object? _replyTargetCacheKey;
 
   bool get _isRoom => widget.contact.type == advTypeRoom;
 
@@ -136,7 +135,6 @@ class _ChatScreenState extends State<ChatScreen> {
   int? _storedRoomPerms;
   bool _clockBannerDismissed = false;
 
-  bool _isLoadingOlder = false;
   MeshCoreConnector? _connector;
   Message? _firstUnreadMessage;
 
@@ -147,10 +145,28 @@ class _ChatScreenState extends State<ChatScreen> {
   /// don't pass an unread count (room login flow, open-chat-with-author).
   int _unreadAtOpen = 0;
   int _initialScrollIndex = 0;
-  bool _isAtBottom = true;
+
+  /// Whether the newest message is on screen. Not state: the list reports
+  /// it on every frame of a scroll, and only the jump-down button shows it.
+  final _atBottom = ValueNotifier(true);
   DateTime? _lastTextSendAt;
   int _previousMessageCount = 0;
   String? _previousNewestId;
+  int _shortLinkRevision = 0;
+
+  // The list as shown, and the built list and pins with what each was made
+  // from. Most connector notifies change none of it; building every row
+  // again on each one was much of what a scroll stuttered on (owner,
+  // 2026-10-26).
+  List<Message>? _visibleFrom;
+  bool _visibleBlocked = false;
+  List<Message> _visible = const [];
+  Object? _listKey;
+  Contact? _listContact;
+  Widget? _list;
+  Object? _pinsKey;
+  Set<String> _pinsDismissed = const {};
+  Widget _pins = const SizedBox.shrink();
 
   /// The watched database query is the screen's only message source
   /// (Phase 3d) — ordering and paging belong to SQL.
@@ -158,6 +174,71 @@ class _ChatScreenState extends State<ChatScreen> {
   StreamSubscription<List<Message>>? _messagesSub;
   int _watchLimit = 200;
   bool _didInitialAnchor = false;
+
+  // What rows show by the clock (an event's day or end, a notice's expiry,
+  // a short link to look up again) changes with no write and no notify.
+  // The soonest such moment among the rows built rebuilds the list.
+  Timer? _clockTimer;
+  DateTime? _clockAt;
+  int _clockTick = 0;
+  Timer? _resizeTimer;
+  int _positionReports = 0;
+
+  void _rebuildAt(DateTime? at) {
+    _catchUpSoon();
+    if (at == null || !at.isAfter(DateTime.now())) return;
+    final pending = _clockAt;
+    if (pending != null && !at.isBefore(pending)) return;
+    _clockTimer?.cancel();
+    _clockAt = at;
+    // A second late, so the moment has surely passed; at most a day, since
+    // a web timer past ~24.8 days fires at once.
+    var wait = at.difference(DateTime.now()) + const Duration(seconds: 1);
+    if (wait > const Duration(days: 1)) wait = const Duration(days: 1);
+    _clockTimer = Timer(wait, () {
+      _clockAt = null;
+      if (mounted) setState(() => _clockTick++);
+    });
+  }
+
+  /// A moment [_rebuildAt] waits for that has already passed: timers stop
+  /// while the device sleeps, so the first build after waking catches up.
+  void _catchUpClock() {
+    final at = _clockAt;
+    if (at == null || DateTime.now().isBefore(at)) return;
+    _clockTimer?.cancel();
+    _clockAt = null;
+    _clockTick++;
+  }
+
+  /// [_catchUpClock] from where the list is not being built (a row, the
+  /// pins): the screen is built anew after this frame, and its rows then
+  /// ask again for what comes next.
+  bool _catchUpQueued = false;
+  void _catchUpSoon() {
+    final at = _clockAt;
+    if (_catchUpQueued || at == null || DateTime.now().isBefore(at)) return;
+    _catchUpQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _catchUpQueued = false;
+      if (mounted) setState(_catchUpClock);
+    });
+  }
+
+  /// A row grew or shrank (a GIF loaded, the text was zoomed). The list
+  /// reports where its rows are only on a scroll or as a new list, and the
+  /// jump-down button and following new messages go by that report. Once
+  /// sizes settle, a list with no report since is built anew.
+  bool _onRowResized(SizeChangedLayoutNotification _) {
+    final reports = _positionReports;
+    _resizeTimer?.cancel();
+    _resizeTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted && _positionReports == reports) {
+        setState(() => _listKey = null);
+      }
+    });
+    return false;
+  }
 
   void _subscribeMessages(MeshCoreConnector connector) {
     _messagesSub?.cancel();
@@ -181,7 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (idx != -1) {
                 _initialScrollIndex = idx;
-                _isAtBottom = false;
+                _atBottom.value = false;
               }
             }
           }
@@ -313,6 +394,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollListener() {
+    _positionReports++;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
@@ -326,19 +408,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // With reverse:true, index 0 is the newest message at the visual bottom.
     // If item 0 is in the visible positions, the user is at the bottom.
-    final isAtBottom = positions.any((p) => p.index == 0);
-    if (_isAtBottom != isAtBottom) {
-      setState(() => _isAtBottom = isAtBottom);
-    }
+    _atBottom.value = positions.any((p) => p.index == 0);
 
     final itemCount = _messages.length;
-    if (maxIndex >= itemCount - 5 && !_isLoadingOlder) {
+    if (maxIndex >= itemCount - 5) {
       _loadOlderMessages();
     }
   }
 
   void _onTextFieldFocusChange() {
-    if (_textFieldFocusNode.hasFocus && mounted && _isAtBottom && _itemScrollController.isAttached) {
+    if (_textFieldFocusNode.hasFocus && mounted && _atBottom.value && _itemScrollController.isAttached) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted && _itemScrollController.isAttached) {
           _itemScrollController.scrollTo(
@@ -386,11 +465,15 @@ class _ChatScreenState extends State<ChatScreen> {
     ReplyInfo reply,
     MeshCoreConnector connector,
   ) {
-    if (!identical(_replyTargetCacheSource, _messages) ||
-        _replyTargetCacheLength != reversed.length) {
+    final cacheKey = (
+      _messages,
+      reversed.length,
+      connector.contactsStamp,
+      connector.selfName,
+    );
+    if (cacheKey != _replyTargetCacheKey) {
       _replyTargetCache.clear();
-      _replyTargetCacheSource = _messages;
-      _replyTargetCacheLength = reversed.length;
+      _replyTargetCacheKey = cacheKey;
     }
     final cached = _replyTargetCache[reversed[index].messageId];
     if (cached != null) return cached;
@@ -398,7 +481,7 @@ class _ChatScreenState extends State<ChatScreen> {
     var found = -1;
     for (var j = index + 1; j < reversed.length; j++) {
       final m = reversed[j];
-      final body = ChannelMessage.parseReply(m.text)?.actualMessage ?? m.text;
+      final body = MessageFacts.of(m.text).reply?.actualMessage ?? m.text;
       if (!ChannelMessage.snippetMatches(body, reply.snippet)) continue;
       if (_replyTargetName(m, connector) == reply.mentionedNode ||
           (_isOwnPost(m, connector) &&
@@ -557,24 +640,22 @@ class _ChatScreenState extends State<ChatScreen> {
     _textFieldFocusNode.requestFocus();
   }
 
-  Future<void> _loadOlderMessages() async {
-    if (_isLoadingOlder) return;
-    // Paging is a bigger LIMIT on the watched query — SQL does the rest.
+  /// Paging is a bigger LIMIT on the watched query — SQL does the rest.
+  /// Until the bigger window arrives the list is shorter than the limit,
+  /// so a scroll that keeps asking starts nothing new.
+  void _loadOlderMessages() {
     if (_messages.length < _watchLimit) return;
-    setState(() => _isLoadingOlder = true);
-
     _watchLimit += 200;
     _subscribeMessages(context.read<MeshCoreConnector>());
-
-    if (mounted) {
-      setState(() => _isLoadingOlder = false);
-    }
   }
 
   @override
   void dispose() {
     _messagesSub?.cancel();
+    _clockTimer?.cancel();
+    _resizeTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
+    _atBottom.dispose();
     _connector?.setActiveContact(null);
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
@@ -849,33 +930,33 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Consumer<MeshCoreConnector>(
         builder: (context, connector, child) {
           final settingsService = context.watch<AppSettingsService>();
-          final contactBlocked =
-              settingsService.isContactBlocked(widget.contact.publicKeyHex);
-          // Hide CLI plumbing that older versions stored as chat messages.
-          final visibleMessages = _messages.where((m) => !m.isCli);
-          final messages = contactBlocked
-              ? visibleMessages.where((m) => m.isOutgoing).toList()
-              : visibleMessages.toList();
+          final messages = _visibleMessages(
+            settingsService.isContactBlocked(widget.contact.publicKeyHex),
+          );
           return Column(
             children: [
               ?ConnectionStatusBanner.ifDisconnected(context, connector) ??
                   ConnectionStatusBanner.ifSecondApp(context, connector),
               if (_isRoom) ?_buildClockSkewBanner(connector),
-              ?_buildNarrowHashNotice(),
-              ?_buildPinnedBar(messages, connector),
+              _buildNarrowHashNotice(),
+              _buildPinnedBar(messages, connector),
               Expanded(
                 child: Stack(
                   children: [
                     messages.isEmpty
                         ? _buildEmptyState()
-                        : _buildMessageList(messages, connector),
+                        : _messageList(messages, connector),
                     Positioned(
                       bottom: 16,
                       right: 16,
-                      child: AnimatedScale(
-                        scale: _isAtBottom ? 0.0 : 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutBack,
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: _atBottom,
+                        builder: (context, atBottom, button) => AnimatedScale(
+                          scale: atBottom ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutBack,
+                          child: button,
+                        ),
                         child: FloatingActionButton(
                           mini: true,
                           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
@@ -936,13 +1017,53 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  List<Message> _visibleMessages(bool contactBlocked) {
+    if (!identical(_visibleFrom, _messages) ||
+        _visibleBlocked != contactBlocked) {
+      _visibleFrom = _messages;
+      _visibleBlocked = contactBlocked;
+      // Hide CLI plumbing that older versions stored as chat messages.
+      final visible = _messages.where((m) => !m.isCli);
+      _visible = contactBlocked
+          ? visible.where((m) => m.isOutgoing).toList()
+          : visible.toList();
+    }
+    return _visible;
+  }
+
+  /// The list, built again only when something its rows show has changed.
+  /// The rows hear about settings, text size and theme by themselves.
+  Widget _messageList(List<Message> messages, MeshCoreConnector connector) {
+    _catchUpClock();
+    // A room names its authors from every contact heard, and each advert
+    // changes one; a 1:1 chat's rows read only the chat's own contact. That
+    // is compared by identity: a Contact equals any other with its key.
+    final contact = _resolveContact(connector);
+    final key = (
+      messages,
+      _isRoom ? connector.contactsStamp : null,
+      connector.selfName,
+      _firstUnreadMessage,
+      _shortLinkRevision,
+      _clockTick,
+      DateUtils.dateOnly(DateTime.now()),
+      Localizations.localeOf(context),
+    );
+    if (key != _listKey || !identical(contact, _listContact)) {
+      _listKey = key;
+      _listContact = contact;
+      _list = _buildMessageList(messages, connector);
+    }
+    return _list!;
+  }
+
   Widget _buildMessageList(
     List<Message> messages,
     MeshCoreConnector connector,
   ) {
     // Reverse messages so newest appear at bottom with reverse: true
     final reversedMessages = messages.reversed.toList();
-    final itemCount = reversedMessages.length + (_isLoadingOlder ? 1 : 0);
+    final itemCount = reversedMessages.length;
 
     // Auto-scroll to bottom if user is already at bottom
     final currentMessageCount = messages.length;
@@ -955,7 +1076,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (currentMessageCount > _previousMessageCount) {
       // Auto-scroll if: the user is already at the bottom, OR they just sent
       // the newest message (so their own send always scrolls into view).
-      if ((_isAtBottom || justSent) && _itemScrollController.isAttached) {
+      if ((_atBottom.value || justSent) && _itemScrollController.isAttached) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_itemScrollController.isAttached) return;
           _itemScrollController.jumpTo(
@@ -970,6 +1091,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return ExcludeSemantics(
       child: ChatZoomWrapper(
+      child: NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: _onRowResized,
       child: ScrollablePositionedList.builder(
         reverse: true, // List grows from bottom up
         itemScrollController: _itemScrollController,
@@ -979,19 +1102,6 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         itemCount: itemCount,
         itemBuilder: (context, index) {
-          // Loading indicator now appears at end (bottom) of reversed list
-          if (_isLoadingOlder && index == itemCount - 1) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            );
-          }
           final messageIndex = index;
           Contact contact = _resolveContact(connector);
           final message = reversedMessages[messageIndex];
@@ -1008,7 +1118,8 @@ class _ChatScreenState extends State<ChatScreen> {
             contact = roomAuthor ?? contact;
           }
 
-          return Builder(
+          return SizeChangedLayoutNotifier(
+            child: Builder(
             builder: (context) {
               final textScale = context.select<ChatTextScaleService, double>(
                 (service) => service.scale,
@@ -1034,7 +1145,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (hexPath.isNotEmpty) viaLabel = hexPath;
               }
               final replyInfo =
-                  isRoom ? ChannelMessage.parseReply(message.text) : null;
+                  isRoom ? MessageFacts.of(message.text).reply : null;
+              // A post the room server authored (room.post) is an
+              // announcement card even without a type keyword.
+              final facts = MessageFacts.of(
+                replyInfo?.actualMessage ?? message.text,
+                announcement: isAnnouncement,
+              );
+              _rebuildAt(facts.changesAt);
+              _rebuildAt(facts.prefetchShortLinks());
               final replyTargetIndex = replyInfo == null
                   ? -1
                   : _findReplyTargetIndex(
@@ -1044,6 +1163,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   : reversedMessages[replyTargetIndex];
               Widget bubble = _MessageBubble(
                 message: message,
+                facts: facts,
                 senderName: senderName,
                 isRoomServer: isRoom,
                 replyInfo: replyInfo,
@@ -1156,9 +1276,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
               return currentWidget;
             },
+            ),
           );
         },
       ),
+    ),
     ),
     );
   }
@@ -1209,45 +1331,52 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// Amber strip when the room server's clock disagrees with ours by more
-  /// than five minutes (its clock stamps every post). Admins get a one-tap
-  /// fix; anyone can dismiss it for this visit.
   /// Once per contact: their radio sends 1-byte repeater codes, which
-  /// Pathfinder drops, so it can never learn routes to them.
-  Widget? _buildNarrowHashNotice() {
-    final pathfinder = context.watch<PathGraphService>();
+  /// Pathfinder drops, so it can never learn routes to them. Listens on its
+  /// own: Pathfinder notifies every few seconds, and this notice is all the
+  /// screen shows of it.
+  Widget _buildNarrowHashNotice() {
     final key = widget.contact.publicKeyHex;
-    if (!pathfinder.showNarrowNotice(key)) return null;
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(left: 12, top: 2, bottom: 2),
-      color: colorScheme.secondaryContainer,
-      child: Row(
-        children: [
-          Icon(Icons.info_outline,
-              size: 18, color: colorScheme.onSecondaryContainer),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              context.l10n.chat_narrowHashNotice(widget.contact.name),
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSecondaryContainer,
+    return Selector<PathGraphService, bool>(
+      selector: (_, pathfinder) => pathfinder.showNarrowNotice(key),
+      builder: (context, show, _) {
+        if (!show) return const SizedBox.shrink();
+        final colorScheme = Theme.of(context).colorScheme;
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(left: 12, top: 2, bottom: 2),
+          color: colorScheme.secondaryContainer,
+          child: Row(
+            children: [
+              Icon(Icons.info_outline,
+                  size: 18, color: colorScheme.onSecondaryContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  context.l10n.chat_narrowHashNotice(widget.contact.name),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSecondaryContainer,
+                  ),
+                ),
               ),
-            ),
+              IconButton(
+                icon: Icon(Icons.close,
+                    size: 18, color: colorScheme.onSecondaryContainer),
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                onPressed: () =>
+                    context.read<PathGraphService>().dismissNarrowNotice(key),
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(Icons.close,
-                size: 18, color: colorScheme.onSecondaryContainer),
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: () => pathfinder.dismissNarrowNotice(key),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
+  /// Amber strip when the room server's clock disagrees with ours by more
+  /// than five minutes (its clock stamps every post). Admins get a one-tap
+  /// fix; anyone can dismiss it for this visit.
   Widget? _buildClockSkewBanner(MeshCoreConnector connector) {
     if (_clockBannerDismissed) return null;
     final event =
@@ -1559,8 +1688,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// A short link landed: a plain row may now be a location card.
   void _onShortLinkResolved() {
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _shortLinkRevision++);
   }
 
   void _toggleTray() {
@@ -1651,41 +1781,65 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// SOS, the next upcoming Event and (rooms) the newest server post, pinned
-  /// above the list until dismissed. Only the newest 200 messages are read.
-  Widget? _buildPinnedBar(List<Message> messages, MeshCoreConnector connector) {
-    final uiState = context.watch<UiViewStateService>();
-    final chatId = widget.contact.publicKeyHex;
-    final total = messages.length;
-    final start = total > 200 ? total - 200 : 0;
-    final resolved = _resolveContact(connector);
-    final candidates = <PinCandidate>[
-      for (var i = start; i < total; i++)
-        PinCandidate(
-          id: messages[i].messageId,
-          text: messages[i].text,
-          timestamp: messages[i].timestamp,
-          index: total - 1 - i,
-          serverAuthored: _isRoom &&
-              !messages[i].isOutgoing &&
-              _resolveContactFrom4Bytes(
-                    connector,
-                    messages[i].fourByteRoomContactKey,
-                  )?.publicKeyHex ==
-                  resolved.publicKeyHex,
-        ),
-    ];
-    final entries = PinnedMessagesBar.compute(
-      candidates: candidates,
-      dismissed: uiState.dismissedPins(chatId),
-      isRoom: _isRoom,
-      resolveShortLink: ShortLinkResolver.instance.cached,
-    );
-    if (entries.isEmpty) return null;
-    return PinnedMessagesBar(
-      entries: entries,
-      onTap: (e) => _scrollToIndex(e.index),
-      onDismiss: (e) => uiState.dismissPin(chatId, e.id),
+  /// SOS, events, notices and (rooms) the newest server post, pinned above
+  /// the list until dismissed or over. Only the newest 200 messages are
+  /// read, and only again when they, the contacts or the dismissals change;
+  /// the bar drops an entry that runs out by itself.
+  Widget _buildPinnedBar(List<Message> messages, MeshCoreConnector connector) {
+    return Consumer<UiViewStateService>(
+      builder: (context, uiState, _) {
+        final chatId = widget.contact.publicKeyHex;
+        final dismissed = uiState.dismissedPins(chatId);
+        _catchUpSoon();
+        final key = (
+          messages,
+          // Only a room's pins read contacts (which posts the server made).
+          _isRoom ? connector.contactsStamp : null,
+          _shortLinkRevision,
+          _clockTick,
+          DateUtils.dateOnly(DateTime.now()),
+        );
+        if (key == _pinsKey && setEquals(dismissed, _pinsDismissed)) {
+          return _pins;
+        }
+        _pinsKey = key;
+        _pinsDismissed = dismissed;
+        final total = messages.length;
+        final start = total > 200 ? total - 200 : 0;
+        final resolved = _resolveContact(connector);
+        final candidates = <PinCandidate>[
+          for (var i = start; i < total; i++)
+            PinCandidate(
+              id: messages[i].messageId,
+              text: messages[i].text,
+              timestamp: messages[i].timestamp,
+              index: total - 1 - i,
+              serverAuthored: _isRoom &&
+                  !messages[i].isOutgoing &&
+                  _resolveContactFrom4Bytes(
+                        connector,
+                        messages[i].fourByteRoomContactKey,
+                      )?.publicKeyHex ==
+                      resolved.publicKeyHex,
+            ),
+        ];
+        final entries = PinnedMessagesBar.compute(
+          candidates: candidates,
+          dismissed: dismissed,
+          isRoom: _isRoom,
+          resolveShortLink: ShortLinkResolver.instance.cached,
+        );
+        // The bar drops an entry that runs out; the next one in line comes
+        // in only when the pins are worked out again.
+        _rebuildAt(PinnedMessagesBar.nextChange(entries));
+        return _pins = entries.isEmpty
+            ? const SizedBox.shrink()
+            : PinnedMessagesBar(
+                entries: entries,
+                onTap: (e) => _scrollToIndex(e.index),
+                onDismiss: (e) => uiState.dismissPin(chatId, e.id),
+              );
+      },
     );
   }
 
@@ -1938,22 +2092,13 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Resolves a room post's 4-byte author prefix to a contact, or null when
   /// no advert from the author has been heard. A match on the room's own key
   /// is genuine — the room server authors its system posts.
+  /// Discovered contacts count too: the post author doesn't have to be an
+  /// active device contact for us to know their name.
   Contact? _resolveContactFrom4Bytes(
     MeshCoreConnector connector,
     Uint8List key4Bytes,
-  ) {
-    if (key4Bytes.length < 4) return null;
-    // Search discovered contacts too — the post author doesn't have to be an
-    // active device contact for us to know their name.
-    return connector.allContactsUnfiltered
-        .cast<Contact?>()
-        .firstWhere(
-          (c) =>
-              c!.publicKey.length >= 4 &&
-              listEquals(c.publicKey.sublist(0, 4), key4Bytes.sublist(0, 4)),
-          orElse: () => null,
-        );
-  }
+  ) =>
+      connector.contactByKeyPrefix4(key4Bytes);
 
   String _currentPathLabel(Contact contact, MeshCoreConnector connector) {
     // Check if user has set a path override
@@ -2364,6 +2509,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
 class _MessageBubble extends StatelessWidget {
   final Message message;
+
+  /// What the shown body says: the reply's own text in a reply.
+  final MessageFacts facts;
   final String senderName;
   final bool isRoomServer;
   /// Parsed reply markup (rooms only): the bubble shows a quote box and the
@@ -2392,6 +2540,7 @@ class _MessageBubble extends StatelessWidget {
 
   const _MessageBubble({
     required this.message,
+    required this.facts,
     required this.senderName,
     required this.isRoomServer,
     required this.textScale,
@@ -2414,33 +2563,16 @@ class _MessageBubble extends StatelessWidget {
     // the raw hash line, with a reaction icon marking what it is. If the
     // target arrives later the connector lands the reaction on it and
     // deletes this row.
-    final orphanReaction = ReactionHelper.parseMeshCoreOneReaction(
-      message.text,
-    );
+    final orphanReaction = MessageFacts.of(message.text).reaction;
     final settingsService = context.watch<AppSettingsService>();
-    final uiState = context.watch<UiViewStateService>();
+    final renderGifs =
+        context.select<UiViewStateService, bool>((s) => s.renderGifs);
     final enableTracing = settingsService.settings.enableMessageTracing;
     final isOutgoing = message.isOutgoing;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final messageText = replyInfo?.actualMessage ?? message.text;
-
-    final gifId = GifHelper.parseGif(messageText);
-    // A post the room server authored (room.post) is an announcement card
-    // even without a type keyword.
-    final structured = isAnnouncement
-        ? StructuredMessage.parseAnnouncement(
-            messageText,
-            resolveShortLink: ShortLinkResolver.instance.cached,
-          )
-        : StructuredMessage.parse(
-            messageText,
-            resolveShortLink: ShortLinkResolver.instance.cached,
-          );
-    if (structured == null ||
-        (structured is NoticeMessage && structured.announcement)) {
-      ShortLinkResolver.instance.prefetchIn(messageText);
-    }
+    final gifId = facts.gifId;
+    final structured = facts.structured;
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
     // Same palette as the channel chat screen: warm ChatColors in light
@@ -2464,10 +2596,9 @@ class _MessageBubble extends StatelessWidget {
                 ? '@[${orphanReaction.targetSender}]'
                 : '') +
             orphanReaction.emoji
-        : GifHelper.stripGif(messageText);
+        : facts.withoutGif;
 
-    final isJumboEmoji =
-        gifId == null && structured == null && isEmojiOnly(messageText);
+    final isJumboEmoji = facts.emojiOnly;
     final displayBubbleColor = isJumboEmoji ? Colors.transparent : bubbleColor;
     final displayTextColor = isJumboEmoji ? colorScheme.onSurface : textColor;
     final displayMetaColor = structured != null
@@ -2511,7 +2642,7 @@ class _MessageBubble extends StatelessWidget {
                     constraints: BoxConstraints(
                       maxWidth: structured != null
                           ? StructuredMessageCard.maxBubbleWidth(context)
-                          : MediaQuery.of(context).size.width * 0.65,
+                          : MediaQuery.sizeOf(context).width * 0.65,
                     ),
                     decoration: structured != null
                         ? StructuredMessageCard.bubbleDecoration(
@@ -2567,7 +2698,7 @@ class _MessageBubble extends StatelessWidget {
                             context,
                             replyInfo!,
                             colorScheme,
-                            uiState,
+                            renderGifs,
                           ),
                           const SizedBox(height: 4),
                         ],
@@ -2584,7 +2715,7 @@ class _MessageBubble extends StatelessWidget {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: uiState.renderGifs ? GifMessage(
+                                child: renderGifs ? GifMessage(
                                   url:
                                       'https://media.giphy.com/media/$gifId/giphy.gif',
                                   backgroundColor: Colors.transparent,
@@ -2968,7 +3099,7 @@ class _MessageBubble extends StatelessWidget {
     BuildContext context,
     ReplyInfo reply,
     ColorScheme colorScheme,
-    UiViewStateService uiState,
+    bool renderGifs,
   ) {
     final warmLight = ChatColors.isLight(context);
     final connector = context.read<MeshCoreConnector>();
@@ -2991,17 +3122,16 @@ class _MessageBubble extends StatelessWidget {
     final target = replyTarget;
     final quoteText = target == null
         ? (reply.snippet.isEmpty ? '' : '${reply.snippet}..')
-        : (ChannelMessage.parseReply(target.text)?.actualMessage ??
-            target.text);
-    final gifId = target == null ? null : GifHelper.parseGif(quoteText);
-    final structured =
-        target == null ? null : StructuredMessage.parse(quoteText);
+        : (MessageFacts.of(target.text).reply?.actualMessage ?? target.text);
+    final quoted = target == null ? null : MessageFacts.of(quoteText);
+    final gifId = quoted?.gifId;
+    final structured = quoted?.quoteCard;
 
     Widget? preview;
     if (gifId != null) {
       preview = ClipRRect(
         borderRadius: BorderRadius.circular(4),
-        child: uiState.renderGifs
+        child: renderGifs
             ? GifMessage(
                 url: 'https://media.giphy.com/media/$gifId/giphy.gif',
                 backgroundColor: colorScheme.surfaceContainerHighest,
@@ -3217,7 +3347,11 @@ class _MessageBubble extends StatelessWidget {
       case MessageStatus.sent:
         if (m.waitingForRepeater) return l10n.chat_statusNoRepeaterHeard;
         if (!detailed) return null;
-        if (context.read<MessageRetryService>().isQueued(m.messageId)) {
+        // Selected, not read: the list is no longer rebuilt on every
+        // notify, and the queue moves without the row changing.
+        if (context.select<MessageRetryService, bool>(
+          (s) => s.isQueued(m.messageId),
+        )) {
           return l10n.chat_statusQueued;
         }
         if (m.retryCount > 0) {

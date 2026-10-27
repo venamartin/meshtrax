@@ -12,6 +12,7 @@ import '../helpers/path_helper.dart';
 import '../helpers/reaction_helper.dart';
 import 'app_database.dart';
 import 'arrival_clock.dart';
+import 'message_store.dart' show MessageStore;
 import 'prefs_manager.dart';
 
 /// Channel message persistence: one database row per message, keyed by
@@ -117,16 +118,33 @@ class ChannelMessageStore {
     return query.watch().map((rows) {
       final messages = <ChannelMessage>[];
       for (final row in rows.reversed) {
-        try {
-          messages.add(
-            _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>),
-          );
-        } catch (e) {
-          appLogger.warn('Skipping unreadable channel message row: $e');
-        }
+        final message = _watchedRow(row);
+        if (message != null) messages.add(message);
       }
       return messages;
-    });
+    }).distinct(MessageStore.sameMessages);
+  }
+
+  // Decoded rows by row id, with the payload each came from: the watched
+  // query re-runs on every write to the table, any channel's included, and
+  // only rows whose payload changed are decoded again (see MessageStore).
+  final Map<int, ({String payload, ChannelMessage message})> _decoded = {};
+  static const _decodedCap = 4000;
+
+  ChannelMessage? _watchedRow(ChannelMessageRow row) {
+    final hit = _decoded[row.id];
+    if (hit != null && hit.payload == row.payload) return hit.message;
+    try {
+      final message =
+          _messageFromJson(jsonDecode(row.payload) as Map<String, dynamic>);
+      _decoded.remove(row.id);
+      _decoded[row.id] = (payload: row.payload, message: message);
+      if (_decoded.length > _decodedCap) _decoded.remove(_decoded.keys.first);
+      return message;
+    } catch (e) {
+      appLogger.warn('Skipping unreadable channel message row: $e');
+      return null;
+    }
   }
 
   /// Full-history search, SQL-side: ranks every row of the channel by

@@ -58,6 +58,22 @@ class _MessageTextState extends State<MessageText> {
     return r;
   }
 
+  // Parsed runs by text and setting, shared by every row: a row is built
+  // again each time it scrolls into view, and a parse is markdown plus six
+  // linkifiers (owner, 2026-10-26: glitches scrolling through messages).
+  static final _runs = <(String, bool), List<MdRun>>{};
+  static const _runsCap = 800;
+
+  static List<MdRun> _parsed(String text, bool formatting) {
+    final key = (text, formatting);
+    final hit = _runs[key];
+    if (hit != null) return hit;
+    final runs = MarkdownHelper.parse(text, formatting: formatting);
+    _runs[key] = runs;
+    if (_runs.length > _runsCap) _runs.remove(_runs.keys.first);
+    return runs;
+  }
+
   @override
   Widget build(BuildContext context) {
     _disposeRecognizers();
@@ -65,8 +81,7 @@ class _MessageTextState extends State<MessageText> {
       (s) => s.settings.showTextFormatting,
     );
     final spans = [
-      for (final run in MarkdownHelper.parse(widget.text, formatting: formatting))
-        _span(context, run),
+      for (final run in _parsed(widget.text, formatting)) _span(context, run),
     ];
     if (PlatformInfo.isDesktop) {
       // No Copy / Select all menu of its own: a right-click opens the
