@@ -18,7 +18,7 @@ class DebugLogExport {
         return null;
       }
 
-      final text = AppDebugLogService.buildExportText(entries);
+      final text = await AppDebugLogService.buildExport(entries);
       final data = Uint8List.fromList(utf8.encode(text));
 
       final resultPath = await FileSaver.instance.saveAs(

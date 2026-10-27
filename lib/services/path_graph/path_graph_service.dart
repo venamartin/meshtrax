@@ -286,7 +286,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
               hashSize: route.hashSize),
     );
     connector.onContactMessageCopy = keeper.onCopy;
-    connector.onSendLadderEnded = keeper.reassert;
+    connector.onSendLadderEnded = keeper.onLadderEnded;
     connector.onSendOutcome = _onSendOutcome;
     connector.onFloodAttemptEnded = _onFloodAttempt;
     connector.graphRoomNeedsRelearn = roomNeedsRelearnAfterMove;

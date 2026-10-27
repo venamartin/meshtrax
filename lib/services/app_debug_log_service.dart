@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 enum AppDebugLogLevel { info, warning, error }
 
@@ -68,6 +69,20 @@ class AppDebugLogService extends ChangeNotifier {
   /// The export text for [entries], oldest first.
   static String buildExportText(Iterable<AppDebugLogEntry> entries) =>
       entries.map((e) => e.formattedLine).join('\n');
+
+  /// [buildExportText] under a line naming the build the log came from.
+  static Future<String> buildExport(Iterable<AppDebugLogEntry> entries) async {
+    var build = 'unknown build';
+    try {
+      final info = await PackageInfo.fromPlatform();
+      build = '${info.version}+${info.buildNumber}';
+    } catch (_) {
+      // No package info here (tests, a bare desktop binary): the header
+      // still names the platform and the time.
+    }
+    return 'MeshTrax $build ${defaultTargetPlatform.name} debug log, '
+        'exported ${DateTime.now()}\n${buildExportText(entries)}';
+  }
 
   void setEnabled(bool value) {
     _enabled = value;
