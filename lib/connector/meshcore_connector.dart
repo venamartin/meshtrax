@@ -79,13 +79,24 @@ class DirectRepeater {
 
   String get prefixHex => PathHelper.hopHex(pubkeyPrefix);
 
-  /// True when [hash] (a hop hash or public key) agrees with this repeater's
-  /// prefix on their common leading bytes.
-  bool matchesHash(List<int> hash) {
-    if (pubkeyPrefix.isEmpty || hash.isEmpty) return false;
-    final n = math.min(pubkeyPrefix.length, hash.length);
-    for (var i = 0; i < n; i++) {
-      if (pubkeyPrefix[i] != hash[i]) return false;
+  /// Heard by exactly this code before: the same bytes, the same width.
+  bool hasCode(List<int> hash) =>
+      hash.isNotEmpty &&
+      pubkeyPrefix.length == hash.length &&
+      _startsWith(pubkeyPrefix, hash);
+
+  /// Known by a full key that [hash] is the start of.
+  bool keyStartsWith(List<int> hash) {
+    final key = publicKey;
+    return key != null &&
+        hash.isNotEmpty &&
+        key.length >= hash.length &&
+        _startsWith(key, hash);
+  }
+
+  static bool _startsWith(List<int> bytes, List<int> prefix) {
+    for (var i = 0; i < prefix.length; i++) {
+      if (bytes[i] != prefix[i]) return false;
     }
     return true;
   }
@@ -113,20 +124,22 @@ class DirectRepeater {
   }
 
   /// The entry in [tracked] that a newly heard node refers to, or null when a
-  /// new one should be started.
+  /// new one should be started. One row per code: a code used to match every
+  /// row it agreed with on their shared bytes, so a 1-byte A3 fitted both an
+  /// A3 row and an A377 row, refreshed neither and started another, until
+  /// the list was the same repeater twenty times (owner, 2026-10-26).
   ///
-  /// A node heard by its full key matches on that key alone. It may still adopt
-  /// an entry we had only ever heard by hash — that is how a neighbour learns
-  /// its own identity — but never when two such entries answer to the same
-  /// hash, because then the hash names neither of them.
+  /// A node heard by its full key matches on that key alone. It may still
+  /// adopt the one entry heard only by this same code — that is how a
+  /// neighbour learns its own identity — but never when two such entries
+  /// hold it, because then the code names neither of them.
   ///
-  /// A node heard by hash alone may refresh any single entry that answers to
-  /// it. That only moves an SNR and a timestamp; identity is never written
-  /// from a hash, and requiring a collision *within the handful of
-  /// neighbours we can hear directly* is a far stronger test than requiring
-  /// one across a whole contact book. A keyed entry needs a hash of at least
-  /// two bytes: one byte names a quarter of the band, and refreshing a keyed
-  /// row from it put another repeater's level next to its own answer.
+  /// A node heard by its code alone refreshes the entry heard by that code
+  /// before. Failing that it may refresh the one keyed entry whose key starts
+  /// with the code, if the code is at least two bytes: one byte names a
+  /// quarter of the band, and refreshing a keyed row from it put another
+  /// repeater's level next to its own answer. That only moves an SNR and a
+  /// timestamp; identity is never written from a code.
   static DirectRepeater? findTracked(
     List<DirectRepeater> tracked, {
     Uint8List? fullKey,
@@ -137,17 +150,32 @@ class DirectRepeater {
       for (final r in tracked) {
         if (r.publicKey != null && pubKeyToHex(r.publicKey!) == hex) return r;
       }
+      // Rows the key starts with: its own code, or a code of 2+ bytes
+      // heard on longer paths (a zero-hop advert arrives with a 1-byte
+      // code on a 2-byte mesh). The longest is the most specific.
       final adoptable = tracked
-          .where((r) => r.publicKey == null && r.matchesHash(hashPrefix))
+          .where((r) =>
+              r.publicKey == null &&
+              (r.hasCode(hashPrefix) ||
+                  (r.pubkeyPrefix.length >= 2 &&
+                      r.pubkeyPrefix.length <= fullKey.length &&
+                      _startsWith(fullKey, r.pubkeyPrefix))))
           .toList();
-      return adoptable.length == 1 ? adoptable.first : null;
+      if (adoptable.isEmpty) return null;
+      final longest = adoptable
+          .map((r) => r.pubkeyPrefix.length)
+          .reduce(math.max);
+      final best =
+          adoptable.where((r) => r.pubkeyPrefix.length == longest).toList();
+      return best.length == 1 ? best.first : null;
     }
-    final matches = tracked
-        .where((r) =>
-            r.matchesHash(hashPrefix) &&
-            (r.publicKey == null || hashPrefix.length >= 2))
-        .toList();
-    return matches.length == 1 ? matches.first : null;
+    for (final r in tracked) {
+      if (r.publicKey == null && r.hasCode(hashPrefix)) return r;
+    }
+    if (hashPrefix.length < 2) return null;
+    final keyed =
+        tracked.where((r) => r.keyStartsWith(hashPrefix)).toList();
+    return keyed.length == 1 ? keyed.first : null;
   }
 
   static int compare(DirectRepeater a, DirectRepeater b) {
@@ -1565,7 +1593,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         onAttemptStarted: (contact, selection, attempt) =>
             onSendAttemptStarted?.call(contact, selection, attempt),
         onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
-        onLadderEnded: (contactKey) => onSendLadderEnded?.call(contactKey),
+        onLadderEnded: (contactKey, {required delivered}) =>
+            onSendLadderEnded?.call(contactKey, delivered: delivered),
         onSendOutcome: (contactKey, {required delivered, required echoHeard}) =>
             onSendOutcome?.call(contactKey,
                 delivered: delivered, echoHeard: echoHeard),
@@ -1739,8 +1768,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// has nothing recent (see [estimatedHopsTo]).
   int? Function(Contact contact)? graphDistanceTo;
 
-  /// The last DM ladder to this contact (pubkey hex) ended.
-  void Function(String contactKey)? onSendLadderEnded;
+  /// The last DM ladder to this contact (pubkey hex) ended, [delivered] or
+  /// out of attempts.
+  void Function(String contactKey, {required bool delivered})?
+      onSendLadderEnded;
 
   /// One message's ladder to this contact (pubkey hex) is over: whether it
   /// was delivered, and whether a repeater was heard echoing a flood of it
