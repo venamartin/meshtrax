@@ -1,6 +1,6 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** September 29, 2026
+**Last updated:** October 27, 2026
 **Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
@@ -19,7 +19,7 @@ The App is developed by an independent, open-source developer. You can review th
 
 ## Data the App collects and stores on your device
 
-All of the following is stored locally on your device using the operating system's standard app storage (`SharedPreferences` on Android, `UserDefaults` on iOS, the app's own local application-data folder on Windows). None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
+All of the following is stored locally in the App's private storage on your device: a local database and the operating system's preferences store (`SharedPreferences` on Android, `UserDefaults` on iOS), or the app's own local application-data folder on Windows. None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
 
 | Category | What it includes | Purpose |
 |---|---|---|
@@ -33,8 +33,13 @@ All of the following is stored locally on your device using the operating system
 | Offline maps | Map packs you choose to download, and the list of available maps | Show maps without a connection |
 | Cached map tiles | Online map imagery you have viewed | Faster map display |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
+| Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
 
-**Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App.
+**Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App; it leaves the device only inside a backup file you ask for (see "Files you export").
+
+**Files you export:** The App can write a backup file, a debug log, or a copy of the message database, but only when you ask for one. You choose where each file goes through the system share sheet or file picker. A full device backup holds your contacts, channels and their keys, the companion device's settings and position, and, where the firmware allows it, the companion device's **private** identity key, so you can restore the same identity onto a radio later. Keep backup files somewhere safe; anyone holding one can read your channels and act as your node.
+
+**Device backups:** The App itself does not back up or sync your data anywhere. Your phone's own backup (Android backup to your Google account, or an iCloud or computer backup on iOS) can include the App's data, under your account and your backup settings. Downloaded offline maps are kept out of these backups.
 
 ## Data shared with third parties
 
@@ -56,12 +61,12 @@ The App contacts the MeshTrax map server and three third-party services, and onl
 - **What is sent:** Latitude/longitude coordinates of the map/node points involved in the calculation, so terrain elevation can be returned. These are the points you are analyzing on the map, not your phone's GPS position.
 - **Their policy:** https://open-meteo.com/en/terms
 
-### 4. Giphy (optional inline GIFs)
-- **When:** A GIF shared in a chat is displayed. GIF display can be turned off in Settings ("Inline GIFs").
-- **What is sent:** Only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. The App has no GIF search feature and sends no search terms.
+### 4. Giphy (optional GIFs)
+- **When:** You open the GIF picker to send a GIF, or a GIF shared in a chat is displayed. GIF display can be turned off in Settings ("Inline GIFs").
+- **What is sent:** When you open the picker, a request for trending GIFs. When you search in the picker, the **search words you type**. When a GIF is displayed, only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. No message text, contacts, or location is sent.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
 
-The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share) and the system browser (to open a web link contained in a received message, after you confirm). In both cases you choose the destination; the App does not upload anything on its own.
+The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share) the system browser (to open a web link contained in a received message, after you confirm), your maps app (when you tap **Directions** on a shared location, the App opens Apple Maps or Google Maps with that destination), and your calendar (when you tap **Add to calendar** on an event message, the event's details are passed to the calendar app, where you choose to save it). In each case it happens only when you tap, and you choose what to do with it; the App does not upload anything on its own.
 
 ## Content reporting
 
@@ -73,7 +78,8 @@ You can also **block** a sender from any message; blocked senders and their mess
 
 - No personal accounts, names, emails, or phone numbers are collected by the App.
 - No analytics, advertising identifiers, crash reporting, or behavioral tracking.
-- No Google Sign-In, Google Drive, or other cloud-sync services (unused Google API libraries may appear as transitive build dependencies but are not invoked by the App).
+- No Google Sign-In, Google Drive, or other cloud-sync services (unused Google API libraries may appear as transitive build dependencies but are not invoked by the App). Your operating system's own device backup is separate; see "Device backups" above.
+- The App does not read your calendar or your contacts list.
 - The App does **not** read your phone's GPS/location sensor. It contains no location-provider code. **My location** on the map shows your companion device's own position, as the device reports it.
 - No data is sold or shared for advertising.
 
@@ -89,6 +95,8 @@ The App requests only the permissions needed for its stated functions.
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | Photo Library | Pick an existing image to scan a QR code from it. Images are analyzed on your device and never uploaded |
 | Notifications | Show notifications for incoming mesh messages |
+| Calendar | Add an event from an event message to your calendar, only when you tap **Add to calendar**. On iOS 17 and later no permission is asked; on earlier versions iOS asks once. The App never reads your calendar |
+| Contacts | Not used by the App. Declared because Apple's own add-event screen can suggest locations from your contacts on iOS 16 and earlier |
 | Background mode: `bluetooth-central` | Keep the connection to your companion device alive while the App runs in the background |
 
 iOS does not require location permission for BLE scanning; the App never requests it.
@@ -104,6 +112,7 @@ iOS does not require location permission for BLE scanning; the App never request
 | `CAMERA` | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | `POST_NOTIFICATIONS` (Android 13+) | Show notifications for incoming mesh messages |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `WAKE_LOCK` | Keep the connection to your companion device alive while the App runs in the background |
+| `CHANGE_NETWORK_STATE` | Required by Android 14+ to keep that background connection running when your companion device is reached over the local network (TCP) only. The App does not change your network settings |
 | USB host feature (optional) | Connect to a companion device over a USB serial cable, where supported |
 
 ### Windows
@@ -125,6 +134,8 @@ The camera is used **only** to scan QR codes (for importing contacts and configu
 ## Mesh network communications
 
 Messages and contact information are exchanged with your MeshCore companion device over Bluetooth LE, USB serial, or local-network TCP, and are then relayed over the LoRa radio mesh to other devices. This radio communication is a function of the MeshCore hardware and network, not of any MeshTrax server. Message contents on encrypted channels are protected by the channel/community keys described above.
+
+When you send a **Location** or **SOS** message, the position in it is either your companion device's position (from its GPS or the position set on it) or a point you pick on the map, never your phone's GPS, and it goes over the mesh to the people in that conversation, like any other message. It is never sent to a server.
 
 ## Data security
 
