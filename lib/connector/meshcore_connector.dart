@@ -6738,11 +6738,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             ? existing.lastMessageAt
             : contact.lastMessageAt;
 
-        appLogger.info(
-          'Refreshing contact ${contact.name}: devicePath=${contact.pathLength}, existingOverride=${existing.pathOverride}',
-          tag: 'Connector',
-        );
-
         // Preserve user-selected path settings and previously known GPS when
         // refreshed frames omit coordinates (lat/lon encoded as 0,0).
         _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
@@ -6760,11 +6755,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           inboundHopCount: existing.inboundHopCount,
           inboundPathHashSize: existing.inboundPathHashSize,
         ));
-
-        appLogger.info(
-          'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
-          tag: 'Connector',
-        );
       } else {
         if ((_autoAddUsers && contact.type == advTypeChat) ||
             (_autoAddRepeaters && contact.type == advTypeRepeater) ||
@@ -6827,11 +6817,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ? existing.lastMessageAt
           : contact.lastMessageAt;
 
-      appLogger.info(
-        'Refreshing contact ${contact.name}: devicePath=${contact.pathLength}, existingOverride=${existing.pathOverride}',
-        tag: 'Connector',
-      );
-
       // CRITICAL: Preserve user's path override when contact is refreshed from device
       _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
         lastMessageAt: mergedLastMessageAt,
@@ -6845,11 +6830,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         inboundPathHashSize:
             contact.inboundPathHashSize ?? existing.inboundPathHashSize,
       ));
-
-      appLogger.info(
-        'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
-        tag: 'Connector',
-      );
     } else {
       _contacts.add(_restoreKeptOverride(contact));
       appLogger.info(
@@ -11141,11 +11121,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ? DateTime.now()
           : existing.lastMessageAt;
 
-      appLogger.info(
-        'Refreshing contact ${existing.name}: devicePath=${existing.pathLength}, existingOverride=${existing.pathOverride}',
-        tag: 'Connector',
-      );
-
       // The firmware's route (path/pathLength) is untouched: an advert only
       // tells us how the contact reaches us.
       _contacts[existingIndex] = existing.copyWith(
@@ -11164,11 +11139,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
-
-      appLogger.info(
-        'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
-        tag: 'Connector',
-      );
     }
   }
 
@@ -11207,12 +11177,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
       if (matches.length == 1) {
         lastHopPublicKey = matches.first.publicKey;
-      } else if (matches.length > 1) {
-        appLogger.info(
-          'Advert last hop 0x${PathHelper.hopHex(pubkeyPrefix)} matches '
-          '${matches.length} contacts — left unidentified',
-          tag: 'Connector',
-        );
       }
     }
 
@@ -11298,8 +11262,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     bool noNotify = false,
     bool addActive = false,
   }) {
-    appLogger.info('Discovered new contact: ${contact.name}', tag: 'Connector');
-
     final existingIndex = _discoveredContacts.indexWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
@@ -11330,6 +11292,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    appLogger.info('Discovered new contact: ${contact.name}', tag: 'Connector');
     final disContact = Contact(
       rawPacket: rawPacket,
       publicKey: contact.publicKey,
