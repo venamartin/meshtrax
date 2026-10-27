@@ -37,7 +37,8 @@ class _Radio extends MeshCoreConnector {
 
 void main() {
   /// The Chats bar: the radio's name, the readouts, three action buttons.
-  Future<void> pump(WidgetTester tester, double width) async {
+  Future<void> pump(WidgetTester tester, double width,
+      {String title = 'GWQ'}) async {
     tester.view
       ..physicalSize = Size(width, 640)
       ..devicePixelRatio = 1;
@@ -49,7 +50,7 @@ void main() {
           home: Scaffold(
             appBar: AppBar(
               automaticallyImplyLeading: false,
-              title: const AppBarTitle('GWQ', subtitle: false),
+              title: AppBarTitle(title, subtitle: false),
               centerTitle: true,
               actions: [
                 for (var i = 0; i < 3; i++)
@@ -86,6 +87,15 @@ void main() {
     await pump(tester, 360);
     expect(titleClipped(tester), isFalse);
     expect(find.text('92%'), findsNothing);
+    expect(find.text('12.0 dB'), findsOneWidget);
+    expect(find.textContaining('A277'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a long name shortens; the battery and dB stay',
+      (tester) async {
+    await pump(tester, 470, title: 'biglongnametestradio');
+    expect(find.text('92%'), findsOneWidget);
     expect(find.text('12.0 dB'), findsOneWidget);
     expect(find.textContaining('A277'), findsNothing);
     expect(tester.takeException(), isNull);

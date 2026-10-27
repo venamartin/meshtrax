@@ -71,8 +71,9 @@ class AppBarTitle extends StatelessWidget {
             ? signalShort
             : math.max(signalShort, SNRIndicator.width(width(signal.repeaters!, SNRIndicator.repeatersStyle)));
 
-        // The title's claim: what its lines need, leaving the signal its
-        // icon and dB at least, and never less than half the bar.
+        // The title's claim: what its lines need, leaving the battery and
+        // the signal's dB in full; a long name shortens instead (owner,
+        // 2026-10-27). Only a bar too narrow for that gives the title 40%.
         final wanted = math.max(
               width(title, titleStyle),
               showSubtitle ? width(selfName, _subtitleStyle) : 0,
@@ -80,7 +81,10 @@ class AppBarTitle extends StatelessWidget {
             4;
         final claim = math.min(
           wanted,
-          math.max(availableWidth / 2, availableWidth - signalShort - _gap),
+          math.max(
+            availableWidth * 0.4,
+            availableWidth - batteryFull - signalShort - _gap,
+          ),
         );
         final room = availableWidth - claim - _gap;
 
