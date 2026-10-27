@@ -6,7 +6,8 @@ void main() {
     final hints = MapHints.parse('''
 {"schema_version": 1, "build": "2026102701",
  "parks": {"desert": ["Anza-Borrego Desert State Park", "Joshua Tree National Park"],
-           "include": ["Palomar Mountain State Park"]},
+           "include": ["Palomar Mountain State Park"],
+           "attribution": ["ESA WorldCover 2021", "CEC Ecological Regions"]},
  "closures": [{"name": "Tioga Road"}]}
 ''')!;
     expect(hints.desertParks, [
@@ -14,6 +15,10 @@ void main() {
       'Joshua Tree National Park',
     ]);
     expect(hints.extraParks, ['Palomar Mountain State Park']);
+    expect(hints.parkCredits, [
+      'ESA WorldCover 2021',
+      'CEC Ecological Regions',
+    ]);
     expect(hints.styleLists['desert-parks'], hints.desertParks);
     expect(hints.styleLists['extra-parks'], hints.extraParks);
   });

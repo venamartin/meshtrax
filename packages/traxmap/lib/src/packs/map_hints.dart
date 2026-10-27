@@ -15,7 +15,15 @@ class MapHints {
   /// as a protected area), by name: the standard map draws them as parks.
   final List<String> extraParks;
 
-  const MapHints({this.desertParks = const [], this.extraParks = const []});
+  /// Credits for the data the park lists come from, one per source, shown
+  /// wherever the map draws parks.
+  final List<String> parkCredits;
+
+  const MapHints({
+    this.desertParks = const [],
+    this.extraParks = const [],
+    this.parkCredits = const [],
+  });
 
   /// Null for a schema this version doesn't read. Unknown keys are ignored.
   static MapHints? parse(String json) {
@@ -25,7 +33,11 @@ class MapHints {
     List<String> names(String key) => [
       for (final name in (parks?[key] as List?) ?? const []) name as String,
     ];
-    return MapHints(desertParks: names('desert'), extraParks: names('include'));
+    return MapHints(
+      desertParks: names('desert'),
+      extraParks: names('include'),
+      parkCredits: names('attribution'),
+    );
   }
 
   /// The named lists styles take, for their `{list:<name>}` placeholders.

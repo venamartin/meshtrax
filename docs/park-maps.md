@@ -11,7 +11,8 @@ Parks come from data users already download. There's no separate parks download.
 | Part | Where it comes from |
 | --- | --- |
 | Outline and tint | The `park` layer already in the `osm` map packs: every protected area's outline and protection type (`class`), with a center point carrying its name and rank. |
-| Green or desert tan | The desert parks list in the map hints (`hints.json`, see [`offline-maps.md`](offline-maps.md)): traxmapmaker picks the parks whose land is mostly sand, rock or scrub. The style fills in `{list:desert-parks}`; every other park is green. No pack is rebuilt. |
+| Green or desert tan | The desert parks list in the map hints (`hints.json`, see [`offline-maps.md`](offline-maps.md)): traxmapmaker marks a park desert when it lies mostly in the CEC "North American Deserts" ecoregion and has under 0.3 tree cover (ESA WorldCover). The style fills in `{list:desert-parks}`; every other park is green. No pack is rebuilt. |
+| Missed state parks | State parks OSM tags only as protected areas (Palomar Mountain, Malibu Creek): the hints' `parks.include` list, which the style fills in as `{list:extra-parks}`. Their names come from the packs, which carry them only from zoom 12. |
 | Name and tap | Parks as places in the Points of interest download, at the park's center, with their Wikipedia text and photo. A tap opens the place sheet. |
 
 **Which areas:**
@@ -42,3 +43,4 @@ What the NPS print look would have added (palette, shields, font) isn't planned.
 - **A park split across regions:** its center point is in only one region's pack. Death Valley's outline is in the Southern California pack, but its center isn't. traxmapmaker to propose a fix (for example, a center point per region part).
 - **Zooms** for the tint, outline and names, and the name style: settled with a preview, light and dark.
 - **Wording:** "Parks", never "NPS style", so nothing implies NPS endorsement.
+- **Credits for the desert list:** ESA WorldCover 2021 (CC BY 4.0) and CEC Ecological Regions of North America (2010) must be credited wherever the hints are used. The app doesn't show them yet.

@@ -212,6 +212,9 @@ class _AppMapState extends State<AppMap> {
     final credits = [
       if (online) '© OpenStreetMap contributors',
       ...?style?.credits,
+      // The hints' park lists color the street map's parks.
+      if (!online && type == MapType.osm && settings.mapParks)
+        ...?maps.hints?.parkCredits,
       ...?style?.notices,
     ];
     final coverage = _coverage;
