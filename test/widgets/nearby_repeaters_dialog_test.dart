@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -174,7 +175,39 @@ void main() {
   testWidgets('before any Discover it says what Discover does', (tester) async {
     await _open(tester, _Connector([_repeater(0x10, 3.0)]));
     expect(find.textContaining('Tap Discover'), findsOneWidget);
-    expect(find.byIcon(Icons.hearing), findsNWidgets(2)); // row + legend
+    // The row, and the legend's "heard only" and shared-code keys.
+    expect(find.byIcon(Icons.hearing), findsNWidgets(3));
+    expect(find.byIcon(Icons.question_mark), findsOneWidget,
+        reason: 'only the legend: this row is known by its key');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a long name shows whole on a phone', (tester) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    // The test font draws every letter a full em wide: this needs two
+    // lines here, where the old layout cut it off after one.
+    const name = 'A377 Magnolia Hill Repeater SC';
+    final key = Uint8List.fromList(List.generate(32, (i) => 0xA3 + i));
+    final c = _Connector(
+      [DirectRepeater(pubkeyPrefix: key.sublist(0, 2), publicKey: key, snr: 4)],
+      book: [
+        Contact(
+          publicKey: key,
+          name: name,
+          type: advTypeRepeater,
+          pathLength: -1,
+          path: Uint8List(0),
+          pathHashSize: 2,
+          lastSeen: DateTime(2026, 10, 26),
+        ),
+      ],
+    );
+    await _open(tester, c);
+    final paragraph = tester.renderObject<RenderParagraph>(find.text(name));
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -214,7 +247,7 @@ void main() {
     DirectRepeater heard() =>
         DirectRepeater(pubkeyPrefix: Uint8List.fromList([0xA2]), snr: 4.0);
 
-    testWidgets('names the nearest as possible, with its distance',
+    testWidgets('names the nearest, in italics, with a "?" on the ear',
         (tester) async {
       await _open(
         tester,
@@ -225,19 +258,58 @@ void main() {
           selfLon: -121.96,
         ),
       );
-      expect(find.text('possibly Near Hill'), findsOneWidget);
-      expect(
-        find.textContaining('away · 2 contacts share this code'),
-        findsOneWidget,
+      final name = tester.widget<Text>(find.text('Near Hill'));
+      expect(name.style?.fontStyle, FontStyle.italic);
+      expect(find.textContaining('possibly'), findsNothing);
+      expect(find.textContaining('2 share A2 · nearest '), findsOneWidget);
+      // The row's and the legend's.
+      expect(find.byIcon(Icons.question_mark), findsNWidgets(2));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a tap lists every contact the code could be, nearest first',
+        (tester) async {
+      await _open(
+        tester,
+        _Connector(
+          [heard()],
+          book: [far, near],
+          selfLat: 36.96,
+          selfLon: -121.96,
+        ),
       );
+      expect(find.text('Far Peak'), findsNothing);
+
+      await tester.tap(find.text('Near Hill'));
+      await tester.pump();
+      // The row's name and the list's first line.
+      expect(find.text('Near Hill'), findsNWidgets(2));
+      expect(find.text('Far Peak'), findsOneWidget);
+      final nearLine = tester.getTopLeft(find.text('Near Hill').last).dy;
+      expect(nearLine, lessThan(tester.getTopLeft(find.text('Far Peak')).dy));
+      expect(find.textContaining(' km'), findsWidgets);
+
+      await tester.tap(find.text('Near Hill').first);
+      await tester.pump();
+      expect(find.text('Far Peak'), findsNothing, reason: 'closed again');
       await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('without the radio position it guesses nothing',
         (tester) async {
       await _open(tester, _Connector([heard()], book: [far, near]));
-      expect(find.textContaining('possibly'), findsNothing);
       expect(find.text('Far Peak | Near Hill'), findsOneWidget);
+      expect(find.textContaining('· nearest'), findsNothing);
+      expect(find.text('2 share A2'), findsOneWidget);
+
+      await tester.tap(find.text('Far Peak | Near Hill'));
+      await tester.pump();
+      // Listed by name, with no distance to give.
+      expect(
+        tester.getTopLeft(find.text('Far Peak')).dy,
+        lessThan(tester.getTopLeft(find.text('Near Hill')).dy),
+      );
+      expect(find.textContaining(' km'), findsNothing);
       await tester.pumpWidget(const SizedBox());
     });
   });
