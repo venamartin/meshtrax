@@ -175,6 +175,137 @@ void main() {
     expect(themeId(Units.metric), themeId(Units.metric), reason: 'reused');
   });
 
+  test('drops the icons of places the app draws itself', () {
+    final tagged = <String, Object?>{
+      'version': 8,
+      'sources': <String, Object?>{},
+      'layers': [
+        {
+          'id': 'poi-icon',
+          'type': 'symbol',
+          'metadata': {
+            'ovm:appPlaces': ['campsite', 'toilets'],
+          },
+          'layout': {
+            'icon-image': [
+              'concat',
+              'poi-',
+              ['get', 'class'],
+            ],
+            'text-field': ['get', 'name'],
+          },
+        },
+      ],
+    };
+    Map<Object?, Object?> layout(bool appPlaces) =>
+        ((StyleRegistry.resolve(
+                      tagged,
+                      StyleContext(appPlaces: appPlaces),
+                    )['layers']
+                    as List)
+                .single
+            as Map)['layout'];
+    expect(layout(false)['icon-image'], [
+      'concat',
+      'poi-',
+      ['get', 'class'],
+    ]);
+    expect(layout(true)['icon-image'], [
+      'match',
+      ['get', 'class'],
+      ['campsite', 'toilets'],
+      '',
+      [
+        'concat',
+        'poi-',
+        ['get', 'class'],
+      ],
+    ]);
+    expect(layout(true)['text-field'], ['get', 'name'], reason: 'name stays');
+  });
+
+  test('leaves out hidden layer groups', () {
+    final grouped = <String, Object?>{
+      'version': 8,
+      'sources': <String, Object?>{},
+      'layers': [
+        {'id': 'bg', 'type': 'background'},
+        {
+          'id': 'park',
+          'type': 'fill',
+          'metadata': {'ovm:group': 'parks'},
+        },
+      ],
+    };
+    List<Object?> ids(Set<String> hidden) => [
+      for (final l
+          in StyleRegistry.resolve(
+                grouped,
+                StyleContext(hiddenGroups: hidden),
+              )['layers']
+              as List)
+        (l as Map)['id'],
+    ];
+    expect(ids(const {}), ['bg', 'park']);
+    expect(ids(const {'parks'}), ['bg']);
+  });
+
+  test('the standard map draws only parks, monuments and preserves', () async {
+    final layers = [
+      for (final l
+          in (await bundledStyles().loadRaw('osm-light'))['layers'] as List)
+        if ((l as Map)['metadata']?['ovm:group'] == 'parks') l['id'],
+    ];
+    expect(layers, [
+      'park',
+      'park-outline-minor',
+      'park-outline',
+      'park-label',
+    ]);
+  });
+
+  test('fills list placeholders, and leaves one with no list', () {
+    final style = <String, Object?>{
+      'version': 8,
+      'sources': <String, Object?>{},
+      'layers': [
+        {
+          'id': 'park',
+          'type': 'fill',
+          'paint': {
+            'fill-color': [
+              'case',
+              [
+                'match',
+                ['get', 'name'],
+                ['{list:desert-parks}'],
+                true,
+                false,
+              ],
+              'tan',
+              'green',
+            ],
+          },
+        },
+      ],
+    };
+    Object? labels(Map<String, List<String>> lists) =>
+        (((((StyleRegistry.resolve(style, StyleContext(lists: lists))['layers']
+                                as List)
+                            .single
+                        as Map)['paint']
+                    as Map)['fill-color']
+                as List)[1]
+            as List)[2];
+    expect(
+      labels({
+        'desert-parks': ['Joshua Tree National Park'],
+      }),
+      ['Joshua Tree National Park'],
+    );
+    expect(labels(const {}), ['{list:desert-parks}']);
+  });
+
   test('does not modify the input', () {
     StyleRegistry.resolve(style, const StyleContext());
     expect((style['layers'] as List), hasLength(3));

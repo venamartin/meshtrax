@@ -1,103 +1,46 @@
-# Park maps (overlays)
+# Parks on the map
 
-This file covers the app side of park maps: how MeshTrax shows NPS-style park maps, and later state parks, BLM land and open space, as vector overlays on the offline map. Planned for Phase 8 of [`offline-maps-roadmap.md`](offline-maps-roadmap.md). Nothing is built yet.
+This file covers the app side of parks: national parks, monuments, preserves and state parks shown on the offline map with an outline, a light tint and their name, and a tap that opens the park's sheet. Built so far: the style, the desert parks from the map hints and the Parks switch (2026-10-26). Parks as places, for the tap, are still to come.
 
-**Data side** (sources, pipeline, the Death Valley pilot): traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md).
-- **§1.6:** the overlay files, index entries and catalog the app reads.
-- **§10:** the design and the pilot.
+**Data side:** traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md): §1.9 (map hints) for the desert parks and §1.8 (Points of interest) for parks as places.
 
-**Layer schema:** traxmapmaker's `SCHEMA.md`, "Overlay packs".
+## Direction (Martin, 2026-10-26)
 
-**Origin:** Martin's "NPS-Style Park Maps (Vector)" plan (2026-10-18), adapted to traxmap. The corrections are at the end.
+Parks come from data users already download. There's no separate parks download.
 
-## The idea
-
-| Part | What it provides |
+| Part | Where it comes from |
 | --- | --- |
-| OSM (the `osm` packs) | The geography. A **Park** style family (`park`) restyles it in the NPS palette, in light and dark: cream land, taupe roads, yellow town dots, green park labels. |
-| The `nps` overlay | The park layer from NPS GIS: boundaries, official trails, and visitor POIs (ranger stations, restrooms, campgrounds, trailheads, overlooks, visitor centers), with NPS-like symbols. |
-| Contours | The existing contours packs. |
-| Relief | The vector hillshade. |
+| Outline and tint | The `park` layer already in the `osm` map packs: every protected area's outline and protection type (`class`), with a center point carrying its name and rank. |
+| Green or desert tan | The desert parks list in the map hints (`hints.json`, see [`offline-maps.md`](offline-maps.md)): traxmapmaker marks a park desert when it lies mostly in the CEC "North American Deserts" ecoregion and has under 0.3 tree cover (ESA WorldCover). The style fills in `{list:desert-parks}`; every other park is green. No pack is rebuilt. |
+| Missed state parks | State parks OSM tags only as protected areas (Palomar Mountain, Malibu Creek): the hints' `parks.include` list, which the style fills in as `{list:extra-parks}`. Their names come from the packs, which carry them only from zoom 12. |
+| Name and tap | Parks as places in the Points of interest download, at the park's center, with their Wikipedia text and photo. A tap opens the place sheet. |
 
-**Trade-off** (accepted by Martin): we lose hand-placed callouts and curated label emphasis. We gain:
-- correct rendering at every zoom;
-- GPS accuracy;
-- every park covered automatically;
-- small packs.
+**Which areas:**
 
-## Level model
-
-| Level | Role | Today |
-| --- | --- | --- |
-| 0 | Base map. Exactly one is active. | The bundled styles: OSM, USGS or NOAA Charts, each light or dark; OSM also in `park` |
-| 1+ | Overlays, drawn above the base in level order. Any number can be active. | `nps` first; later `state-parks`, `blm`, `open-space`, … |
-
-- **An overlay knows nothing about the base beneath it.** It only assumes that a level 0 exists.
-- **Overlays are data-driven,** with no NPS-specific code in the app:
-  - an overlay pack has `kind: "overlay"`, an `overlay` id, and a `level`;
-  - the index's `overlays` catalog supplies its name, description, US-only flag, default, and tap-sheet fields;
-  - a style fragment, `overlays/<id>.layers.json`, supplies the layers.
-- **Packs are cut per region, like contours.** A park that spans two regions (Death Valley: Southern California and Nevada) comes with both.
-
-## In the app
-
-| Where | What |
+| Class | Shown as |
 | --- | --- |
-| Layers sheet (S2) | A Style row for OSM (Standard / Park). One switch per installed overlay id ("National parks"), with an opacity slider. |
-| Region detail (S3b) | An "Overlays" group, with one row per overlay id from the catalog (e.g. "National parks · NPS trails, sites and boundaries", US only, on by default). |
-| Downloaded (S3c) | Overlay packs listed under their region. |
-| Map | Tapping a park POI opens S7. Credits ("National Park Service") come from the pack metadata, like any pack. |
-| Settings | `map_family` (`standard`, `park`), and `map_overlays` (`{id: {on, opacity}}`). |
+| `national_park`, `national_monument`, `national_preserve`, `state_park` | Tint, outline and centered name |
+| `wilderness_area`, `national_forest` | A thin outline only |
+| Everything else (BLM land, `protected_area`, study areas, refuges and so on) | Nothing. Today's style tints all of these, which colors much of the West. |
 
-### S7. Overlay feature sheet
+**Offline mode only** (Martin, 2026-10-26). In Online mode the map is raster tiles and parks aren't drawn.
 
-```
-│ [▲ icon] Furnace Creek Visitor Center        │  popup.title: label, falling back to name
-│ Visitor center · Death Valley National Park  │  popup.subtitle: type · unit name
-│ Seasonal: open October–May                   │  popup.note: seasonal description
-│ 36.4617, -116.8656                           │
-│ [Share marker]        [Route here]           │  Share needs a radio; Route needs Android + routing
-```
+**Switch:** a Parks tile in the layers sheet (Map details), on by default, beside Places. It drops the park layers from the style, as the contours switch does. In Online mode it reads "Offline only" and is greyed out, like Contours.
 
-**Share marker** reuses the main map's marker flow (`m:<lat>,<lon>|<label>|<flags>`), so a park POI can be sent over the mesh.
+**Names:** where the Points of interest download covers the view, the app draws park names as tappable labels, and the style's own park names step aside (the `appPlaces` mechanism the place icons already use). Elsewhere the style draws the names from the map packs.
 
-## traxmap work
+## Replaces the NPS overlay design
 
-| Task | Change |
-| --- | --- |
-| T8 | **Overlay compositor.**<br>• `StyleRegistry` builds the final style: the base, then each active overlay's fragment in level order.<br>• Layers tagged `ovm:slot: below-labels` go before the base's `labels` slot; `top` layers go at the end.<br>• The source `pmtiles://{overlay:<id>}` uses the combined source over that overlay's packs.<br>• Per-overlay opacity scales the `*-opacity` paint properties.<br>• A generic `hideBelow` capability, only if the pilot shows it's needed.<br>• API names `overlayPacks:` / `OverlayFragment`, because `MapOverlay` already means app markers and lines. |
-| T9 | **Sprites.** One bundled, merged sprite sheet (park symbols, road shields, nav aids), passed as flutter_map_vector_tiles' `SpriteAtlas`. The renderer takes one atlas per layer. |
-| T10 | **Feature query.** `onFeatureTap` for layers marked `ovm:interactive`: decode the tile at the tap and pick the nearest point. The renderer has no query API of its own. |
-| T11 | **Park family.** `osm-park-light` and `osm-park-dark`, generated by `tool/make_styles.py`. |
-| T12 | **Font hook** (optional). The renderer sets only weight and italic from `text-font`, and no font family. Source Sans 3 or Fira Sans needs a small renderer change and a bundled OFL font. No glyph PBFs are needed. |
+The design of 2026-10-18 planned an `nps` overlay pack per region: official NPS trails and visitor points, NPS symbols and road shields, a Park style family and a font change (traxmap tasks T8–T12). Martin dropped it on 2026-10-26:
+- Points of interest now covers the visitor points, with Wikipedia text.
+- OpenStreetMap trails cover the trails and are routable.
+- The park boundaries are already in the map packs.
 
-## Renderer limits that shape the design
-
-These come from flutter_map_vector_tiles 2.9.1, checked 2026-10-18:
-- **No `within` expression.** OSM features can't be hidden inside a park boundary at render time. The Death Valley pilot runs without hiding them: NPS layers on top, OSM trails and POIs subdued in the Park style. If duplicates look bad, traxmapmaker flags OSM features at build time and the overlay adds a filter.
-- **Sprites, `icon-image`, `line-pattern` and every `*-opacity` work.**
-- **Labels are Flutter text.** `text-font` only picks weight and italic.
+What the NPS print look would have added (palette, shields, font) isn't planned. NPS's public visitor points may still come in later as a source for Points of interest positions.
 
 ## Open
 
-- Label emphasis for major parks (a small overrides file).
-- Per-park on/off switches (for now, one switch per overlay id).
-- The font.
-- The UI wording: "Park" and "National parks", never "NPS style", so nothing implies NPS endorsement.
-- **Later: brochure extraction** for flagship parks and non-NPS maps (FINDINGS §10).
-
-## Corrections to the original plan
-
-| # | The plan said | Actually |
-| --- | --- | --- |
-| 1 | App id `com.venamartin.meshtrax` | `com.vena.meshtrax` |
-| 2 | An existing `manifest.json` region system on external storage | traxmap's `index.json` (`PackIndex`), `PackManager` and the app's `MapPacksService`. `level`, `overlay` and the catalog live in the index. The plan's `MapPack`, `MapPackRegistry` and `MapLayerCompositor` map onto `Pack`/`PackIndexEntry`, `PackManager` + `MapPacksService`, and `StyleRegistry`'s compositor (T8). |
-| 3 | Contours inside each park pack | The contours packs serve parks too (variants, units, one copy per region). |
-| 4 | Hillshade: none, or a small raster | Vector hillshade already exists; everything shipped stays vector. |
-| 5 | Build glyph PBFs for fonts | Not used by the app; a font family needs T12. |
-| 6 | Hide OSM duplicates inside the boundary at render time | No `within` in the renderer; pilot first. |
-| 7 | One pack per park | One pack per region and overlay id. |
-| 8 | POIs down to z16 | z14 tiles with overzoom, plus a `min_zoom` attribute for types shown from z15–16. |
-| 9 | "Fully offline, no Internet" | True wherever packs are installed. Elsewhere the app shows online OSM raster tiles (decided 2026-10-17). |
-| 10 | A minimal Flutter prototype for the pilot | traxmapmaker's browser viewer first, then MeshTrax on the Pi. |
-| 11 | NPS as a data source | Approved: public domain, credited "National Park Service". No NPS seal or arrowhead. |
+- **A park split across regions:** its center point is in only one region's pack. Death Valley's outline is in the Southern California pack, but its center isn't. traxmapmaker to propose a fix (for example, a center point per region part).
+- **Zooms** for the tint, outline and names, and the name style: settled with a preview, light and dark.
+- **Wording:** "Parks", never "NPS style", so nothing implies NPS endorsement.
+- **Credits for the desert list:** ESA WorldCover 2021 (CC BY 4.0) and CEC Ecological Regions of North America (2010) must be credited wherever the hints are used. The app doesn't show them yet.

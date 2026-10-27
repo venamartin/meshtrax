@@ -459,4 +459,27 @@ void main() {
     await tester.pump();
     expect(styleId(), 'osm-light', reason: 'online is the standard look');
   });
+
+  testWidgets('the park hints are credited while the street map draws parks', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      File('${tmp.path}/hints.json').writeAsStringSync(
+        '{"schema_version": 1, "parks": {"attribution": ["ESA WorldCover"]}}',
+      );
+      await maps.start();
+    });
+    await settings.setMapSource('offline');
+    await pumpMap(tester);
+    expect(find.textContaining('ESA WorldCover'), findsOneWidget);
+
+    await settings.setMapParks(false);
+    await tester.pump();
+    expect(find.textContaining('ESA WorldCover'), findsNothing);
+
+    await settings.setMapParks(true);
+    await settings.setMapSource('online');
+    await tester.pump();
+    expect(find.textContaining('ESA WorldCover'), findsNothing);
+  });
 }

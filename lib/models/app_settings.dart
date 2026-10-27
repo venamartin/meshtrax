@@ -37,6 +37,8 @@ class AppSettings {
 
   /// Draw hill shading when a terrain pack is installed.
   final bool mapHillShading;
+  final bool mapPlaces;
+  final bool mapParks;
 
   /// Outline the downloaded areas of the map that's showing.
   final bool mapDownloadedAreas;
@@ -65,6 +67,10 @@ class AppSettings {
   final Map<String, String> batteryChemistryByDeviceId;
   final Map<String, String> batteryChemistryByRepeaterId;
   final UnitSystem unitSystem;
+
+  /// How positions are written: a CoordFormat name (traxcoords), e.g.
+  /// `decimalDegrees`, `utm`, `mgrs`.
+  final String coordinateFormat;
   final Set<String> mutedChannels;
 
   /// Muted conversations keyed by contact pubkey hex (room servers today).
@@ -125,6 +131,8 @@ class AppSettings {
     this.mapType = 'osm',
     this.mapContours = true,
     this.mapHillShading = true,
+    this.mapPlaces = true,
+    this.mapParks = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
     this.mapSource = 'auto',
@@ -142,6 +150,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
+    this.coordinateFormat = 'decimalDegrees',
     Set<String>? mutedChannels,
     Set<String>? mutedContacts,
     this.mapShowDiscoveryContacts = true,
@@ -182,6 +191,8 @@ class AppSettings {
       'map_type': mapType,
       'map_contours': mapContours,
       'map_hill_shading': mapHillShading,
+      'map_places': mapPlaces,
+      'map_parks': mapParks,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
       'map_source': mapSource,
@@ -199,6 +210,7 @@ class AppSettings {
       'battery_chemistry_by_device_id': batteryChemistryByDeviceId,
       'battery_chemistry_by_repeater_id': batteryChemistryByRepeaterId,
       'unit_system': unitSystem.value,
+      'coordinate_format': coordinateFormat,
       'muted_channels': mutedChannels.toList(),
       'muted_contacts': mutedContacts.toList(),
       'map_show_discovery_contacts': mapShowDiscoveryContacts,
@@ -244,6 +256,8 @@ class AppSettings {
       mapType: json['map_type'] as String? ?? 'osm',
       mapContours: json['map_contours'] as bool? ?? true,
       mapHillShading: json['map_hill_shading'] as bool? ?? true,
+      mapPlaces: json['map_places'] as bool? ?? true,
+      mapParks: json['map_parks'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
       mapSource: json['map_source'] as String? ?? 'auto',
@@ -271,6 +285,8 @@ class AppSettings {
           ) ??
           {},
       unitSystem: parseUnitSystem(json['unit_system']),
+      coordinateFormat:
+          json['coordinate_format'] as String? ?? 'decimalDegrees',
       mutedChannels:
           ((json['muted_channels'] as List?)
               ?.map((e) => e.toString())
@@ -328,6 +344,8 @@ class AppSettings {
     String? mapType,
     bool? mapContours,
     bool? mapHillShading,
+    bool? mapPlaces,
+    bool? mapParks,
     bool? mapDownloadedAreas,
     String? mapTheme,
     String? mapSource,
@@ -345,6 +363,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     UnitSystem? unitSystem,
+    String? coordinateFormat,
     Set<String>? mutedChannels,
     Set<String>? mutedContacts,
     bool? mapShowDiscoveryContacts,
@@ -379,6 +398,8 @@ class AppSettings {
       mapType: mapType ?? this.mapType,
       mapContours: mapContours ?? this.mapContours,
       mapHillShading: mapHillShading ?? this.mapHillShading,
+      mapPlaces: mapPlaces ?? this.mapPlaces,
+      mapParks: mapParks ?? this.mapParks,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
       mapSource: mapSource ?? this.mapSource,
@@ -402,6 +423,7 @@ class AppSettings {
       batteryChemistryByRepeaterId:
           batteryChemistryByRepeaterId ?? this.batteryChemistryByRepeaterId,
       unitSystem: unitSystem ?? this.unitSystem,
+      coordinateFormat: coordinateFormat ?? this.coordinateFormat,
       mutedChannels: mutedChannels ?? this.mutedChannels,
       mutedContacts: mutedContacts ?? this.mutedContacts,
       mapShowDiscoveryContacts:

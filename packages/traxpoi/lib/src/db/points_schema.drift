@@ -1,0 +1,88 @@
+-- The "Points of interest" download, schema version 1: one read-only SQLite
+-- file per region, built by traxmapmaker (FINDINGS §1.8) and opened by the
+-- app. Plain SQLite, so the build can run this file as it is, then sets
+-- PRAGMA user_version = 1 (the schema version). README.md
+-- has the kinds, the name normalization and the meta keys.
+
+CREATE TABLE meta (
+  name TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- A point of interest: a map icon, a search result and a routing target.
+-- lat/lon is the routing point.
+CREATE TABLE place (
+  id INTEGER NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL,
+  name TEXT NOT NULL,
+  detail TEXT,
+  lat REAL NOT NULL,
+  lon REAL NOT NULL,
+  ele INTEGER,
+  heritage TEXT,
+  wikidata TEXT,
+  osm TEXT,
+  gnis INTEGER,
+  sources TEXT NOT NULL,
+  rank INTEGER NOT NULL DEFAULT 0
+);
+
+-- The English Wikipedia article about a place: summary is its lead in a
+-- small Markdown subset (README.md).
+CREATE TABLE wiki (
+  place_id INTEGER NOT NULL PRIMARY KEY REFERENCES place (id),
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL
+);
+
+-- The place's photo: WebP, at most 320 px on the long side.
+CREATE TABLE photo (
+  place_id INTEGER NOT NULL PRIMARY KEY REFERENCES place (id),
+  webp BLOB NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  file TEXT NOT NULL,
+  author TEXT NOT NULL,
+  licence TEXT NOT NULL,
+  licence_url TEXT
+);
+
+-- Search-only names: towns, water, landforms, trails and roads. lat/lon is
+-- the routing point; shape, for lines, is an encoded polyline (precision 5)
+-- the app picks the nearest point from.
+CREATE TABLE feature (
+  id INTEGER NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL,
+  name TEXT NOT NULL,
+  lat REAL NOT NULL,
+  lon REAL NOT NULL,
+  shape TEXT
+);
+
+-- Every searchable name: each place's and feature's main name plus its
+-- alternates. norm is the name normalized as README.md describes.
+CREATE TABLE name (
+  id INTEGER NOT NULL PRIMARY KEY,
+  place_id INTEGER REFERENCES place (id),
+  feature_id INTEGER REFERENCES feature (id),
+  name TEXT NOT NULL,
+  norm TEXT NOT NULL,
+  role TEXT NOT NULL,
+  CHECK ((place_id IS NULL) <> (feature_id IS NULL))
+);
+
+CREATE VIRTUAL TABLE name_search USING fts5 (
+  norm,
+  content = 'name',
+  content_rowid = 'id',
+  tokenize = 'trigram'
+);
+
+-- Places by area, for the icons around you; id is place.id.
+CREATE VIRTUAL TABLE place_area USING rtree (
+  id,
+  min_lat,
+  max_lat,
+  min_lon,
+  max_lon
+);

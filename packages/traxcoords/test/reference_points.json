@@ -1,0 +1,156 @@
+[
+ {
+  "name": "Mt Diablo summit",
+  "lat": 37.8816,
+  "lon": -121.9142,
+  "utm": {
+   "zone": 10,
+   "band": "S",
+   "easting": 595484.82,
+   "northing": 4193234.01
+  },
+  "mgrs": "10SEG9548493234",
+  "geohash": "9q9r9b0u3",
+  "maidenhead": "CM97bv"
+ },
+ {
+  "name": "Ouray",
+  "lat": 38.0228,
+  "lon": -107.6714,
+  "utm": {
+   "zone": 13,
+   "band": "S",
+   "easting": 265510.17,
+   "northing": 4211713.35
+  },
+  "mgrs": "13SBC6551011713",
+  "geohash": "9wg2mcu4f",
+  "maidenhead": "DM68da"
+ },
+ {
+  "name": "Sydney",
+  "lat": -33.8688,
+  "lon": 151.2093,
+  "utm": {
+   "zone": 56,
+   "band": "H",
+   "easting": 334368.63,
+   "northing": 6250948.35
+  },
+  "mgrs": "56HLH3436850948",
+  "geohash": "r3gx2f77b",
+  "maidenhead": "QF56od"
+ },
+ {
+  "name": "Rio de Janeiro",
+  "lat": -22.9068,
+  "lon": -43.1729,
+  "utm": {
+   "zone": 23,
+   "band": "K",
+   "easting": 687394.59,
+   "northing": 7465634.13
+  },
+  "mgrs": "23KPQ8739465634",
+  "geohash": "75cm9tfqn",
+  "maidenhead": "GG87jc"
+ },
+ {
+  "name": "Bergen (zone 32V)",
+  "lat": 60.3913,
+  "lon": 5.3221,
+  "utm": {
+   "zone": 32,
+   "band": "V",
+   "easting": 297353.93,
+   "northing": 6700648.35
+  },
+  "mgrs": "32VKN9735300648",
+  "geohash": "u4ez91gkv",
+  "maidenhead": "JP20pj"
+ },
+ {
+  "name": "Longyearbyen (zone 33X)",
+  "lat": 78.2232,
+  "lon": 15.6267,
+  "utm": {
+   "zone": 33,
+   "band": "X",
+   "easting": 514278.72,
+   "northing": 8683355.47
+  },
+  "mgrs": "33XWG1427883355",
+  "geohash": "umgj58550",
+  "maidenhead": "JQ78tf"
+ },
+ {
+  "name": "Near the equator",
+  "lat": 0.1,
+  "lon": 0.1,
+  "utm": {
+   "zone": 31,
+   "band": "N",
+   "easting": 177164.3,
+   "northing": 11067.27
+  },
+  "mgrs": "31NAA7716411067",
+  "geohash": "s000d60yd",
+  "maidenhead": "JJ00bc"
+ },
+ {
+  "name": "Just west of 120W",
+  "lat": 45.0,
+  "lon": -120.0001,
+  "utm": {
+   "zone": 10,
+   "band": "T",
+   "easting": 736438.14,
+   "northing": 4987329.21
+  },
+  "mgrs": "10TGQ3643887329",
+  "geohash": "c248j2485",
+  "maidenhead": "CN95xa"
+ },
+ {
+  "name": "Anchorage",
+  "lat": 61.2181,
+  "lon": -149.9003,
+  "utm": {
+   "zone": 6,
+   "band": "V",
+   "easting": 344247.21,
+   "northing": 6790536.87
+  },
+  "mgrs": "06VUN4424790536",
+  "geohash": "bdvkkbmvm",
+  "maidenhead": "BP51bf"
+ },
+ {
+  "name": "Honolulu",
+  "lat": 21.3069,
+  "lon": -157.8583,
+  "utm": {
+   "zone": 4,
+   "band": "Q",
+   "easting": 618417.09,
+   "northing": 2356542.46
+  },
+  "mgrs": "04QFJ1841756542",
+  "geohash": "87z9pyg1e",
+  "maidenhead": "BL11bh"
+ },
+ {
+  "name": "Cape Town",
+  "lat": -33.9249,
+  "lon": 18.4241,
+  "utm": {
+   "zone": 34,
+   "band": "H",
+   "easting": 261881.6,
+   "northing": 6243182.35
+  },
+  "mgrs": "34HBH6188143182",
+  "geohash": "k3vp520j0",
+  "maidenhead": "JF96fb"
+ }
+]

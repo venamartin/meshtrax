@@ -331,6 +331,58 @@ void main() {
     },
   );
 
+  group('map hints', () {
+    const hints =
+        '{"schema_version": 1, "parks": {"desert": ["Joshua Tree National Park"]}}';
+    const hintsPath = '/dev/hints/v1/2026102701/hints.json';
+    String indexWithHints(String sha) => jsonEncode({
+      ...jsonDecode(_index) as Map<String, dynamic>,
+      'hints': {
+        'schema_version': 1,
+        'build': '2026102701',
+        'url': 'hints/v1/2026102701/hints.json',
+        'bytes': hints.length,
+        'sha256': sha,
+      },
+    });
+
+    setUp(() {
+      routes[hintsPath] = (_) => http.Response(hints, 200);
+    });
+
+    test('come with the catalogue, checked, and stay for offline', () async {
+      final sha = sha256.convert(utf8.encode(hints)).toString();
+      routes['/dev/index.json'] = (_) =>
+          http.Response.bytes(utf8.encode(indexWithHints(sha)), 200);
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.hints!.desertParks, ['Joshua Tree National Park']);
+
+      requests.clear();
+      await maps.refresh();
+      expect(
+        requests.map((r) => r.url.path),
+        isNot(contains(hintsPath)),
+        reason: 'same sha256: the cached copy is used',
+      );
+
+      final offline = service();
+      await offline.start();
+      expect(offline.hints!.desertParks, ['Joshua Tree National Park']);
+    });
+
+    test('a wrong sha256 is refused, and the catalogue still loads', () async {
+      routes['/dev/index.json'] = (_) =>
+          http.Response.bytes(utf8.encode(indexWithHints('0' * 64)), 200);
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.hints, isNull);
+      expect(maps.status, CatalogueStatus.ready);
+    });
+  });
+
   test('the maps folder stays out of iOS and macOS backups', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
     const channel = MethodChannel('meshtrax/storage');

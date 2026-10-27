@@ -1,0 +1,21 @@
+name: traxroute_ios
+description: >
+  The iOS side of traxroute's phone engine: Valhalla (valhalla-mobile) on
+  the app's `meshtrax/routing` channel. No Dart API; the Android side is
+  the app's MeshTraxRouting.kt.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: TraxrouteIosPlugin

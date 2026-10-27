@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -75,6 +76,7 @@ class MapPacksService extends ChangeNotifier {
   RegionIndex? _regions;
   DateTime? _fetchedAt;
   ChartAreaIndex? _chartAreas;
+  MapHints? _hints;
   String? _chartAreasError;
   DateTime? _chartAreasFetchedAt;
   CatalogueStatus _status = CatalogueStatus.unknown;
@@ -194,6 +196,10 @@ class MapPacksService extends ChangeNotifier {
   /// and while the server has none.
   ChartAreaIndex? get chartAreas => _chartAreas;
 
+  /// Small map facts the styles need (desert parks, …), fetched with the
+  /// catalogue and kept for offline use.
+  MapHints? get hints => _hints;
+
   /// Why the last fetch of the chart areas failed. Kept apart from [error]
   /// so a charts problem never puts the Maps tab in an error state.
   String? get chartAreasError => _chartAreasError;
@@ -253,6 +259,7 @@ class MapPacksService extends ChangeNotifier {
         return;
       }
       _index = _parseIndex(indexBody);
+      await _refreshHints((jsonDecode(indexBody) as Map)['hints']);
       final pickerBody = await _fetch(
         indexUrl.resolve('picker.geojson'),
         'picker.geojson',
@@ -268,6 +275,34 @@ class MapPacksService extends ChangeNotifier {
       _status = CatalogueStatus.error;
     }
     notifyListeners();
+  }
+
+  /// Fetches the hints the catalogue lists (`hints`: url, sha256), unless the
+  /// cached copy already has that sha256. A failure keeps what was cached.
+  Future<void> _refreshHints(Object? entry) async {
+    if (entry is! Map) return;
+    try {
+      final file = File('${cacheDir.path}/hints.json');
+      final sha = entry['sha256'] as String;
+      if (!await file.exists() ||
+          sha256.convert(await file.readAsBytes()).toString() != sha) {
+        final url = indexUrl.resolve(entry['url'] as String);
+        final response = await _client
+            .get(url)
+            .timeout(const Duration(seconds: 30));
+        if (response.statusCode != 200) {
+          throw HttpException('HTTP ${response.statusCode}', uri: url);
+        }
+        if (sha256.convert(response.bodyBytes).toString() != sha) {
+          throw HttpException('sha256 mismatch', uri: url);
+        }
+        await cacheDir.create(recursive: true);
+        await file.writeAsBytes(response.bodyBytes);
+      }
+      _hints = MapHints.parse(await file.readAsString());
+    } on Object catch (e) {
+      appLogger.warn('Map hints refresh failed: $e', tag: 'Maps');
+    }
   }
 
   /// Fetches `chart_areas.geojson`. Its own failure is recorded in
@@ -340,6 +375,9 @@ class MapPacksService extends ChangeNotifier {
     });
     await read('picker.geojson', (file) async {
       _regions = RegionIndex.parse(await file.readAsString());
+    });
+    await read('hints.json', (file) async {
+      _hints = MapHints.parse(await file.readAsString());
     });
     await read('chart_areas.geojson', (file) async {
       _chartAreas = _parseChartAreas(await file.readAsString());

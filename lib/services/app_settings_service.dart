@@ -108,6 +108,14 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mapHillShading: value));
   }
 
+  Future<void> setMapPlaces(bool value) async {
+    await updateSettings(_settings.copyWith(mapPlaces: value));
+  }
+
+  Future<void> setMapParks(bool value) async {
+    await updateSettings(_settings.copyWith(mapParks: value));
+  }
+
   Future<void> setMapDownloadedAreas(bool value) async {
     await updateSettings(_settings.copyWith(mapDownloadedAreas: value));
   }
@@ -198,6 +206,10 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setUnitSystem(UnitSystem value) async {
     await updateSettings(_settings.copyWith(unitSystem: value));
+  }
+
+  Future<void> setCoordinateFormat(String value) async {
+    await updateSettings(_settings.copyWith(coordinateFormat: value));
   }
 
   bool isChannelMuted(String channelName) {

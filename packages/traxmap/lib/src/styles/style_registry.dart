@@ -61,12 +61,29 @@ class StyleContext {
   /// untagged layers are always kept.
   final Units units;
 
+  /// The app draws its own icons for points of interest: layers tagged
+  /// with the `class` values the app covers (`metadata["ovm:appPlaces"]`)
+  /// drop their icon for those, keeping the name.
+  final bool appPlaces;
+
+  /// Layer groups to leave out: layers tagged `metadata["ovm:group"]` with
+  /// one of these (a map switch, such as "parks").
+  final Set<String> hiddenGroups;
+
+  /// Named lists for the style's `["{list:<name>}"]` placeholders, such as
+  /// the desert parks from the map hints. A placeholder with no list stays
+  /// as it is and matches nothing.
+  final Map<String, List<String>> lists;
+
   const StyleContext({
     this.packs = const {},
     this.units = Units.imperial,
     this.glyphs,
     this.sprite,
     this.pmtilesUrl = defaultPmtilesUrl,
+    this.appPlaces = false,
+    this.hiddenGroups = const {},
+    this.lists = const {},
   });
 
   static String defaultPmtilesUrl(Pack pack) =>
@@ -202,13 +219,52 @@ class StyleRegistry {
     (out['layers'] as List<Object?>?)?.removeWhere((l) {
       if (l is! Map) return false;
       if (dropped.contains(l['source'])) return true;
-      final units = (l['metadata'] as Map?)?['ovm:units'];
+      final metadata = l['metadata'] as Map?;
+      if (context.hiddenGroups.contains(metadata?['ovm:group'])) return true;
+      final units = metadata?['ovm:units'];
       return units is String && units != context.units.name;
     });
+    if (context.appPlaces) {
+      for (final l in (out['layers'] as List<Object?>?) ?? const []) {
+        if (l is! Map) continue;
+        final classes = (l['metadata'] as Map?)?['ovm:appPlaces'];
+        final layout = l['layout'];
+        if (classes is! List || layout is! Map) continue;
+        layout['icon-image'] = [
+          'match',
+          ['get', 'class'],
+          classes,
+          '',
+          layout['icon-image'],
+        ];
+      }
+    }
+
+    if (context.lists.isNotEmpty) {
+      out['layers'] = _fillLists(out['layers'], context.lists);
+    }
 
     _replaceOrRemove(out, 'glyphs', '{glyphs}', context.glyphs);
     _replaceOrRemove(out, 'sprite', '{sprite}', context.sprite);
     return out;
+  }
+
+  static final _listPlaceholder = RegExp(r'^\{list:([\w-]+)\}$');
+
+  /// [value] with each `["{list:<name>}"]` replaced by that list.
+  static Object? _fillLists(Object? value, Map<String, List<String>> lists) {
+    if (value is List) {
+      if (value case [final String only]) {
+        final name = _listPlaceholder.firstMatch(only)?.group(1);
+        final list = lists[name];
+        if (list != null && list.isNotEmpty) return [...list];
+      }
+      return [for (final v in value) _fillLists(v, lists)];
+    }
+    if (value is Map) {
+      return {for (final e in value.entries) e.key: _fillLists(e.value, lists)};
+    }
+    return value;
   }
 
   /// Replaces [placeholder] at the start of [key]'s value with [value], or

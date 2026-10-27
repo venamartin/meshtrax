@@ -7,6 +7,8 @@ import '../../helpers/snack_bar_builder.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
+import '../../services/poi_service.dart';
+import '../../services/routing_service.dart';
 import '../../utils/format_bytes.dart';
 
 /// What a pack is, in the user's words: "Map", "Contours 20 ft", "Hill
@@ -129,7 +131,12 @@ Future<void> confirmDeleteRegion(
     ),
   );
   if (ok != true) return;
+  if (!context.mounted) return;
+  final routing = context.read<RoutingService?>();
+  final poi = context.read<PoiService?>();
   await maps.deleteRegion(path);
+  await routing?.remove(path);
+  await poi?.remove(path);
   if (context.mounted) {
     showDismissibleSnackBar(
       context,

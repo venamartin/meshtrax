@@ -12,6 +12,9 @@ import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
+import 'package:traxpoi/traxpoi.dart'
+    show GeoPoint, PlaceDetail, PoiRegion, SummaryLink;
+import 'package:traxroute/traxroute.dart' as trax show PathType, RouteResult;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -20,9 +23,14 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import '../helpers/map_places.dart';
+import '../helpers/poi_kinds.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/position_text.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
+import '../services/poi_service.dart';
+import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/contact_search.dart';
@@ -32,6 +40,9 @@ import '../widgets/app_map.dart';
 import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
+import '../widgets/place_marker.dart';
+import '../widgets/place_sheet.dart';
+import '../widgets/route_panel.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 import 'chat_screen.dart';
@@ -47,6 +58,7 @@ import '../services/short_link_resolver.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
+import 'map_search_screen.dart';
 import 'offline_maps_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -93,6 +105,24 @@ class _MapScreenState extends State<MapScreen> {
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
+
+  // Offline routing: where to and from (null: your position), the path
+  // type, and the route found.
+  ({String name, LatLng point})? _routeTo;
+  LatLng? _routeFrom;
+  trax.PathType _pathType = trax.PathType.hiking;
+  trax.RouteResult? _route;
+  bool _routing = false;
+  String? _routeError;
+  int _routeGeneration = 0;
+
+  // Points of interest in view, and whether the region in view has them
+  // (the map then drops its own icons for the same kinds).
+  List<MapPlace> _places = const [];
+  Set<MapPlace> _namedPlaces = const {};
+  bool _placesHere = false;
+  Timer? _placesTimer;
+  int _placesGeneration = 0;
   late final MeshCoreConnector _connector;
 
   @override
@@ -114,6 +144,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _saveCamera?.cancel();
+    _placesTimer?.cancel();
     _connector.removeSelfPositionViewer();
     unawaited(_channelLatest?.cancel());
     _mapController.dispose();
@@ -159,6 +190,34 @@ class _MapScreenState extends State<MapScreen> {
     _saveCamera?.cancel();
     _saveCamera = Timer(const Duration(seconds: 1), () {
       if (mounted) context.read<UiViewStateService>().setMapCamera(camera);
+    });
+    _placesTimer?.cancel();
+    _placesTimer = Timer(
+      const Duration(milliseconds: 300),
+      () => _loadPlaces(camera),
+    );
+  }
+
+  Future<void> _loadPlaces(MapCamera camera) async {
+    final poi = context.read<PoiService?>();
+    final bounds = _mapController.visibleBounds;
+    final generation = ++_placesGeneration;
+    if (poi == null || bounds == null || camera.zoom < 12) {
+      if (_places.isNotEmpty) setState(() => _places = const []);
+      return;
+    }
+    final region = context
+        .read<MapPacksService>()
+        .regions
+        ?.regionAt(camera.center)
+        ?.path;
+    final here = region != null && poi.isInstalled(region, PoiDownload.points);
+    final found = await placesIn(poi.regions, bounds);
+    if (!mounted || generation != _placesGeneration) return;
+    setState(() {
+      _places = placesToShow(found, camera);
+      _namedPlaces = placesToName(_places, camera);
+      _placesHere = here;
     });
   }
 
@@ -398,6 +457,14 @@ class _MapScreenState extends State<MapScreen> {
             : null;
         final isPoiLink = highlightPosition != null;
         final allowBack = !connector.isConnected || isPoiLink;
+        // Places and parks are the offline map's (Martin, 2026-10-26).
+        final online = mapIsOnline(settings, context.watch<MapPacksService>());
+        final mapDark = settings.mapTheme == 'dark' && !online;
+        final showPlaces =
+            settings.mapPlaces &&
+            !online &&
+            !widget.pickPosition &&
+            !_isBuildingPathTrace;
 
         return PopScope(
           canPop: allowBack,
@@ -412,6 +479,16 @@ class _MapScreenState extends State<MapScreen> {
               centerTitle: true,
               automaticallyImplyLeading: isPoiLink,
               actions: [
+                if (!_isBuildingPathTrace && !widget.pickPosition)
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: context.l10n.map_search,
+                    onPressed: () => _openSearch(
+                      connector,
+                      selfPosition,
+                      settings.unitSystem,
+                    ),
+                  ),
                 if (!_isBuildingPathTrace)
                   IconButton(
                     icon: const Icon(Icons.radar),
@@ -528,10 +605,26 @@ class _MapScreenState extends State<MapScreen> {
                       context: context,
                       connector: connector,
                       position: position.toLatLong2(),
+                      selfPosition: selfPosition,
                     );
                   },
                   onCameraChanged: _onCameraChanged,
+                  appPlaces: showPlaces && _placesHere,
                   overlays: [
+                    if (showPlaces)
+                      for (final p in _places)
+                        placeMarker(
+                          p,
+                          named: _namedPlaces.contains(p),
+                          dark: mapDark,
+                          onTap: () => _openPlace(
+                            p,
+                            connector,
+                            selfPosition,
+                            settings.unitSystem,
+                          ),
+                        ),
+                    ..._routeOverlays(),
                     if (_isBuildingPathTrace && _points.length > 1)
                       MapLine(
                         id: 'path-trace',
@@ -594,6 +687,21 @@ class _MapScreenState extends State<MapScreen> {
                 if (_isBuildingPathTrace) _buildPathTraceOverlay(),
               ],
             ),
+            bottomSheet: _routeTo == null
+                ? null
+                : RoutePanel(
+                    destination: _routeTo!.name,
+                    pathType: _pathType,
+                    onPathType: (type) {
+                      setState(() => _pathType = type);
+                      unawaited(_findRoute(selfPosition));
+                    },
+                    result: _route,
+                    loading: _routing,
+                    error: _routeError,
+                    units: settings.unitSystem,
+                    onClose: _clearRoute,
+                  ),
             bottomNavigationBar: isPoiLink
                 ? null
                 : QuickSwitchBar(
@@ -609,6 +717,7 @@ class _MapScreenState extends State<MapScreen> {
               gpsOff: !connector.gpsOn,
               onLayers: () => showMapLayersSheet(
                 context,
+                places: !widget.pickPosition,
                 extra: _nodeLayers,
                 onMoreFilters: () =>
                     _showFilterDialog(context, settingsService),
@@ -1505,13 +1614,51 @@ class _MapScreenState extends State<MapScreen> {
     required BuildContext context,
     required MeshCoreConnector connector,
     required LatLng position,
+    LatLng? selfPosition,
+    String? title,
   }) {
+    final routing = context.read<RoutingService?>();
+    final canRoute = routing != null && routing.available;
+    final lines = positionLines(
+      position.latitude,
+      position.longitude,
+      coordFormatOf(context.read<AppSettingsService>().settings),
+    );
+    final name = title ?? lines.first;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              title: Text(
+                title ?? lines.first,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+              subtitle: title == null && lines.length == 1
+                  ? null
+                  : Text((title == null ? lines.skip(1) : lines).join('\n')),
+              trailing: CopyPositionButton(text: lines.first),
+            ),
+            if (canRoute) ...[
+              ListTile(
+                leading: const Icon(Icons.directions),
+                title: Text(context.l10n.route_here),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _routeHere(name, position, selfPosition);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.trip_origin),
+                title: Text(context.l10n.route_fromHere),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _routeFromHere(position, selfPosition);
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.place),
               title: Text(context.l10n.map_shareMarkerHere),
@@ -1551,6 +1698,304 @@ class _MapScreenState extends State<MapScreen> {
               onTap: () => Navigator.pop(sheetContext),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _routeHere(String name, LatLng to, LatLng? selfPosition) {
+    final routing = context.read<RoutingService?>();
+    if (routing == null || !routing.hasRoutingData) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.route_noData),
+      );
+      return;
+    }
+    setState(() => _routeTo = (name: name, point: to));
+    unawaited(_findRoute(selfPosition));
+  }
+
+  void _routeFromHere(LatLng from, LatLng? selfPosition) {
+    setState(() => _routeFrom = from);
+    if (_routeTo != null) {
+      unawaited(_findRoute(selfPosition));
+    } else {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.route_startSet),
+      );
+    }
+  }
+
+  Future<void> _findRoute(LatLng? selfPosition) async {
+    final to = _routeTo;
+    final routing = context.read<RoutingService?>();
+    if (to == null || routing == null) return;
+    final from = _routeFrom ?? selfPosition;
+    final generation = ++_routeGeneration;
+    if (from == null) {
+      setState(() {
+        _route = null;
+        _routing = false;
+        _routeError = context.l10n.route_noStart;
+      });
+      return;
+    }
+    setState(() {
+      _routing = true;
+      _routeError = null;
+    });
+    final noRoute = context.l10n.route_none;
+    try {
+      final r = await routing.route(
+        (lat: from.latitude, lon: from.longitude),
+        (lat: to.point.latitude, lon: to.point.longitude),
+        _pathType,
+      );
+      if (!mounted || generation != _routeGeneration) return;
+      setState(() {
+        _route = r;
+        _routing = false;
+      });
+      _mapController.fitPoints(
+        [
+          for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
+          to.point.toOvm(),
+        ],
+        // Clear of the route panel, which covers the bottom of the map.
+        padding: const EdgeInsets.fromLTRB(48, 48, 48 + MapControls.width, 320),
+      );
+    } on Object catch (e) {
+      appLogger.warn('Route failed: $e', tag: 'Routing');
+      if (!mounted || generation != _routeGeneration) return;
+      setState(() {
+        _route = null;
+        _routing = false;
+        _routeError = noRoute;
+      });
+    }
+  }
+
+  /// Goes to [point] at [zoom]. Offline, the map caps the zoom where
+  /// nothing is downloaded, and it lifts the cap only once it sees it is
+  /// over a downloaded region, so a jump from far away tries again for a
+  /// moment.
+  Future<void> _moveTo(LatLng point, double zoom) async {
+    _mapController.move(point.toOvm(), zoom: zoom);
+    for (var i = 0; i < 20 && mounted; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      if ((_mapController.camera?.zoom ?? zoom) >= zoom - 0.01) return;
+      _mapController.move(point.toOvm(), zoom: zoom);
+    }
+  }
+
+  void _clearRoute() => setState(() {
+    _routeGeneration++;
+    _routeTo = null;
+    _routeFrom = null;
+    _route = null;
+    _routing = false;
+    _routeError = null;
+  });
+
+  List<MapOverlay> _routeOverlays() {
+    final to = _routeTo;
+    if (to == null) return const [];
+    final r = _route;
+    final color = routeColor(context);
+    return [
+      if (r != null) ...[
+        if (!r.reachesDestination)
+          MapLine(
+            id: 'route-rest',
+            points: [
+              LatLng(r.points.last.lat, r.points.last.lon).toOvm(),
+              to.point.toOvm(),
+            ],
+            color: color,
+            width: 2,
+            pattern: MapLinePattern.dotted,
+          ),
+        MapLine(
+          id: 'route',
+          points: [for (final p in r.points) LatLng(p.lat, p.lon).toOvm()],
+          color: color.withValues(alpha: 0.85),
+          width: 5,
+        ),
+        MapMarker(
+          id: 'route-start',
+          position: LatLng(r.points.first.lat, r.points.first.lon).toOvm(),
+          color: const Color(0xFF2E7D32),
+          radius: 7,
+          interactive: false,
+        ),
+      ],
+      MapMarker(
+        id: 'route-end',
+        position: to.point.toOvm(),
+        color: const Color(0xFFC62828),
+        radius: 7,
+        interactive: false,
+      ),
+    ];
+  }
+
+  Future<void> _openSearch(
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    final camera = _mapController.camera;
+    final near = selfPosition != null
+        ? GeoPoint(selfPosition.latitude, selfPosition.longitude)
+        : camera == null
+        ? null
+        : GeoPoint(camera.center.latitude, camera.center.longitude);
+    final pick = await Navigator.push<MapSearchPick>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapSearchScreen(
+          regions: context.read<PoiService?>()?.regions ?? const [],
+          near: near,
+          units: units,
+        ),
+      ),
+    );
+    if (pick == null || !mounted) return;
+    final region = pick.region;
+    final detail = pick.placeId == null || region == null
+        ? null
+        : await region.detail(pick.placeId!);
+    if (!mounted) return;
+    await _goTo(
+      pick.name,
+      LatLng(pick.point.lat, pick.point.lon),
+      region,
+      detail,
+      connector,
+      selfPosition,
+      units,
+    );
+  }
+
+  /// Moves to a search pick or a link in a place's text and opens its
+  /// sheet: a place's own, or the position's.
+  Future<void> _goTo(
+    String name,
+    LatLng point,
+    PoiRegion? region,
+    PlaceDetail? detail,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    unawaited(_moveTo(point, 15));
+    if (detail == null || region == null) {
+      _showShareMarkerAtPositionSheet(
+        context: context,
+        connector: connector,
+        position: point,
+        selfPosition: selfPosition,
+        title: name,
+      );
+      return;
+    }
+    await _showPlaceSheet(detail, region, connector, selfPosition, units);
+  }
+
+  Future<void> _openPlace(
+    MapPlace p,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    final detail = await p.region.detail(p.place.id);
+    if (detail == null || !mounted) return;
+    await _showPlaceSheet(detail, p.region, connector, selfPosition, units);
+  }
+
+  Future<void> _openLink(
+    PoiRegion region,
+    SummaryLink link,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    if (link.feature) {
+      final f = await region.feature(link.id);
+      if (f == null || !mounted) return;
+      await _goTo(
+        f.name,
+        LatLng(f.lat, f.lon),
+        region,
+        null,
+        connector,
+        selfPosition,
+        units,
+      );
+      return;
+    }
+    final detail = await region.detail(link.id);
+    if (detail == null || !mounted) return;
+    await _goTo(
+      detail.place.name,
+      LatLng(detail.place.lat, detail.place.lon),
+      region,
+      detail,
+      connector,
+      selfPosition,
+      units,
+    );
+  }
+
+  Future<void> _showPlaceSheet(
+    PlaceDetail detail,
+    PoiRegion region,
+    MeshCoreConnector connector,
+    LatLng? selfPosition,
+    UnitSystem units,
+  ) async {
+    final point = LatLng(detail.place.lat, detail.place.lon);
+    // An unnamed place goes by its kind ("Toilets").
+    final name = detail.place.name.isEmpty
+        ? poiKindLabel(context.l10n, detail.place.kind)
+        : detail.place.name;
+    final canRoute = context.read<RoutingService?>()?.available ?? false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        minChildSize: 0.25,
+        maxChildSize: 0.9,
+        builder: (_, controller) => PlaceSheet(
+          detail: detail,
+          format: coordFormatOf(context.read<AppSettingsService>().settings),
+          units: units,
+          controller: controller,
+          onRoute: canRoute
+              ? () {
+                  Navigator.pop(sheetContext);
+                  _routeHere(name, point, selfPosition);
+                }
+              : null,
+          onShare: () {
+            Navigator.pop(sheetContext);
+            _shareMarker(
+              context: context,
+              connector: connector,
+              position: point,
+              defaultLabel: name,
+            );
+          },
+          onLink: (link) {
+            Navigator.pop(sheetContext);
+            _openLink(region, link, connector, selfPosition, units);
+          },
         ),
       ),
     );

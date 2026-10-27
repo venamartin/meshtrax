@@ -86,6 +86,16 @@ dependencies:
   # Offline vector maps: renders and downloads map packs (docs/offline-maps.md)
   traxmap:
     path: packages/traxmap
+  # Offline routing, points of interest and positions for the map
+  traxcoords:
+    path: packages/traxcoords
+  traxpoi:
+    path: packages/traxpoi
+  traxroute:
+    path: packages/traxroute
+  # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
+  traxroute_ios:
+    path: packages/traxroute_ios
   emoji_picker_flutter: ^4.4.0
 
 
