@@ -2535,5 +2535,22 @@
   "pathfinder_meshKeep": "Ponechať túto",
   "pathfinder_graphNameTitle": "Názov novej mapy",
   "pathfinder_graphNameHint": "Napríklad Washington",
-  "pathfinder_graphCreate": "Vytvoriť"
+  "pathfinder_graphCreate": "Vytvoriť",
+  "locationSharing_title": "Kto vidí moju polohu",
+  "locationSharing_someone": "Niekto môže vidieť vašu polohu",
+  "locationSharing_nobody": "Nikto nevidí vašu polohu",
+  "locationSharing_noPosition": "Vaše rádio ešte nemá polohu, takže ju nikto nevidí",
+  "locationSharing_everyone": "Každý, kto počuje vaše rádio, vidí vašu polohu",
+  "locationSharing_allContacts": "Všetky vaše kontakty vidia vašu polohu",
+  "locationSharing_someContacts": "Kontakty, ktorým ste to povolili, vidia vašu polohu",
+  "locationSharing_adverts": "Poloha v oznámeniach",
+  "locationSharing_advertsHint": "Vaše oznámenia obsahujú vašu polohu, takže ju vidí každý, kto počuje vaše rádio.",
+  "locationSharing_contactsHeader": "Kontakty, ktoré sa môžu pýtať vášho rádia",
+  "locationSharing_noTelemetry": "Žiadne. Vaše rádio neodpovedá na žiadosti o telemetriu.",
+  "locationSharing_noContacts": "Žiadny kontakt nemá povolenie.",
+  "locationSharing_allContactsRow": "Všetky vaše kontakty ({count})",
+  "locationSharing_partLocation": "Poloha",
+  "locationSharing_partBattery": "Batéria",
+  "locationSharing_partSensors": "Senzory",
+  "locationSharing_hide": "Skryť moju polohu pred všetkými"
 }

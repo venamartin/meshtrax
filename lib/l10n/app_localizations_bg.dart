@@ -5716,4 +5716,65 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Създай';
+
+  @override
+  String get locationSharing_title => 'Кой вижда местоположението ми';
+
+  @override
+  String get locationSharing_someone =>
+      'Някой може да вижда местоположението ви';
+
+  @override
+  String get locationSharing_nobody => 'Никой не вижда местоположението ви';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Радиото ви още няма местоположение, затова никой не го вижда';
+
+  @override
+  String get locationSharing_everyone =>
+      'Всеки, който чува радиото ви, вижда местоположението ви';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Всичките ви контакти виждат местоположението ви';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Контактите, на които сте разрешили, виждат местоположението ви';
+
+  @override
+  String get locationSharing_adverts => 'Местоположение в анонсите';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Анонсите ви съдържат местоположението ви, затова го вижда всеки, който чува радиото ви.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Контакти, които могат да питат радиото ви';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Никой. Радиото ви не отговаря на заявки за телеметрия.';
+
+  @override
+  String get locationSharing_noContacts => 'Нито един контакт няма разрешение.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Всичките ви контакти ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Местоположение';
+
+  @override
+  String get locationSharing_partBattery => 'Батерия';
+
+  @override
+  String get locationSharing_partSensors => 'Сензори';
+
+  @override
+  String get locationSharing_hide => 'Скрий местоположението ми от всички';
 }

@@ -5711,4 +5711,64 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Vytvoriť';
+
+  @override
+  String get locationSharing_title => 'Kto vidí moju polohu';
+
+  @override
+  String get locationSharing_someone => 'Niekto môže vidieť vašu polohu';
+
+  @override
+  String get locationSharing_nobody => 'Nikto nevidí vašu polohu';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Vaše rádio ešte nemá polohu, takže ju nikto nevidí';
+
+  @override
+  String get locationSharing_everyone =>
+      'Každý, kto počuje vaše rádio, vidí vašu polohu';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Všetky vaše kontakty vidia vašu polohu';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Kontakty, ktorým ste to povolili, vidia vašu polohu';
+
+  @override
+  String get locationSharing_adverts => 'Poloha v oznámeniach';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Vaše oznámenia obsahujú vašu polohu, takže ju vidí každý, kto počuje vaše rádio.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Kontakty, ktoré sa môžu pýtať vášho rádia';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Žiadne. Vaše rádio neodpovedá na žiadosti o telemetriu.';
+
+  @override
+  String get locationSharing_noContacts => 'Žiadny kontakt nemá povolenie.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Všetky vaše kontakty ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Poloha';
+
+  @override
+  String get locationSharing_partBattery => 'Batéria';
+
+  @override
+  String get locationSharing_partSensors => 'Senzory';
+
+  @override
+  String get locationSharing_hide => 'Skryť moju polohu pred všetkými';
 }

@@ -31,7 +31,7 @@ class ContactTile extends StatelessWidget {
   final VoidCallback onLongPress;
   final bool isDiscovered;
 
-  /// They get this radio's position when they ask for telemetry.
+  /// They see this radio's position when they ask for telemetry.
   final bool sharesPosition;
 
   const ContactTile({
@@ -72,21 +72,11 @@ class ContactTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        contact.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    if (sharesPosition) ...[
-                      const SizedBox(width: 4),
-                      const SharesPositionIcon(),
-                    ],
-                  ],
+                child: Text(
+                  contact.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 8),
@@ -133,7 +123,10 @@ class ContactTile extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isFavorite || contact.hasLocation || unreadCount > 0)
+              if (isFavorite ||
+                  contact.hasLocation ||
+                  sharesPosition ||
+                  unreadCount > 0)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -143,6 +136,11 @@ class ContactTile extends StatelessWidget {
                       const SizedBox(width: 2),
                     if (contact.hasLocation)
                       Icon(Icons.location_on, size: 16, color: Colors.grey[400]),
+                    if (sharesPosition) ...[
+                      if (isFavorite || contact.hasLocation)
+                        const SizedBox(width: 2),
+                      const SharesPositionIcon(),
+                    ],
                     if (unreadCount > 0) ...[
                       const SizedBox(width: 8),
                       UnreadBadge(count: unreadCount),

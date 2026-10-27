@@ -57,6 +57,7 @@ import '../widgets/room_announcement_dialog.dart';
 import '../widgets/structured_message_card.dart';
 import '../widgets/structured_message_dialogs.dart';
 import '../widgets/gps_status_button.dart';
+import '../widgets/location_sharing_button.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../l10n/l10n.dart';
 import '../helpers/report_helper.dart';
@@ -788,6 +789,7 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           const GpsStatusButton(),
+          const LocationSharingButton(),
           Consumer<MeshCoreConnector>(
             builder: (context, connector, _) {
               return PopupMenuButton<String>(

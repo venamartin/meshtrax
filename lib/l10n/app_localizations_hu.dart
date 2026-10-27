@@ -5738,4 +5738,64 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Létrehozás';
+
+  @override
+  String get locationSharing_title => 'Ki láthatja a helyzetemet';
+
+  @override
+  String get locationSharing_someone => 'Valaki láthatja a helyzetét';
+
+  @override
+  String get locationSharing_nobody => 'Senki sem láthatja a helyzetét';
+
+  @override
+  String get locationSharing_noPosition =>
+      'A rádiójának még nincs helyzete, így senki sem láthatja';
+
+  @override
+  String get locationSharing_everyone =>
+      'Mindenki, aki hallja a rádióját, láthatja a helyzetét';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Minden partnere láthatja a helyzetét';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Az Ön által engedélyezett partnerek láthatják a helyzetét';
+
+  @override
+  String get locationSharing_adverts => 'Helyzet a bejelentésekben';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'A bejelentései tartalmazzák a helyzetét, így bárki láthatja, aki hallja a rádióját.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Partnerek, akik lekérdezhetik a rádióját';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Senki. A rádiója nem válaszol telemetriai kérésekre.';
+
+  @override
+  String get locationSharing_noContacts => 'Egy partnernek sincs engedélye.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Minden partnere ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Helyzet';
+
+  @override
+  String get locationSharing_partBattery => 'Akku';
+
+  @override
+  String get locationSharing_partSensors => 'Érzékelők';
+
+  @override
+  String get locationSharing_hide => 'Helyzetem elrejtése mindenki elől';
 }

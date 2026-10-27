@@ -1112,28 +1112,13 @@ class _ChatsScreenState extends State<ChatsScreen>
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
-                                          child: Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  item.title,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              if (item.contact != null &&
-                                                  connector.sharesPositionWith(
-                                                    item.contact!,
-                                                  )) ...[
-                                                const SizedBox(width: 4),
-                                                const SharesPositionIcon(),
-                                              ],
-                                            ],
+                                          child: Text(
+                                            item.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -1163,6 +1148,13 @@ class _ChatsScreenState extends State<ChatsScreen>
                                             item,
                                           ),
                                         ),
+                                        if (item.contact != null &&
+                                            connector.positionVisibleTo(
+                                              item.contact!,
+                                            )) ...[
+                                          const SizedBox(width: 8),
+                                          const SharesPositionIcon(),
+                                        ],
                                         if (item.unreadCount > 0) ...[
                                           const SizedBox(width: 8),
                                           UnreadBadge(count: item.unreadCount),

@@ -2563,5 +2563,22 @@
   "pathfinder_meshKeep": "Mantener este",
   "pathfinder_graphNameTitle": "Nombre del mapa nuevo",
   "pathfinder_graphNameHint": "Por ejemplo, Washington",
-  "pathfinder_graphCreate": "Crear"
+  "pathfinder_graphCreate": "Crear",
+  "locationSharing_title": "Quién puede ver mi ubicación",
+  "locationSharing_someone": "Alguien puede ver tu ubicación",
+  "locationSharing_nobody": "Nadie puede ver tu ubicación",
+  "locationSharing_noPosition": "Tu radio aún no tiene ubicación, así que nadie puede verla",
+  "locationSharing_everyone": "Cualquiera que oiga tu radio puede ver tu ubicación",
+  "locationSharing_allContacts": "Todos tus contactos pueden ver tu ubicación",
+  "locationSharing_someContacts": "Los contactos que permitiste pueden ver tu ubicación",
+  "locationSharing_adverts": "Ubicación en los anuncios",
+  "locationSharing_advertsHint": "Tus anuncios llevan tu ubicación, así que cualquiera que oiga tu radio la ve.",
+  "locationSharing_contactsHeader": "Contactos que pueden consultar tu radio",
+  "locationSharing_noTelemetry": "Ninguno. Tu radio no responde a solicitudes de telemetría.",
+  "locationSharing_noContacts": "Ningún contacto tiene permiso.",
+  "locationSharing_allContactsRow": "Todos tus contactos ({count})",
+  "locationSharing_partLocation": "Ubicación",
+  "locationSharing_partBattery": "Batería",
+  "locationSharing_partSensors": "Sensores",
+  "locationSharing_hide": "Ocultar mi ubicación a todos"
 }

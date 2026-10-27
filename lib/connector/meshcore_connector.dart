@@ -1180,18 +1180,56 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int get telemetryModeLoc => _telemetryModeLoc;
   int get telemetryModeEnv => _telemetryModeEnv;
 
-  /// Whether [contact] gets this radio's position when it asks for
-  /// telemetry. The firmware answers only with base allowed and adds the
-  /// position only with location allowed, each by the radio's own setting
-  /// or, on "Allow by contact flags", by the contact's flag. Only chat
-  /// contacts ask, and only those the radio holds: it cannot read a
-  /// request from anyone else.
-  bool sharesPositionWith(Contact contact) {
-    if (contact.type != advTypeChat || !contact.isActive) return false;
+  /// What [contact] gets when it asks this radio for telemetry. The
+  /// firmware answers only with base allowed and adds location and
+  /// environment on top, each by the radio's own setting or, on "Allow by
+  /// contact flags", by the contact's flag. Only chat contacts ask, and
+  /// only those the radio holds: it cannot read a request from anyone else.
+  ({bool base, bool location, bool environment}) telemetryGrantedTo(
+    Contact contact,
+  ) {
+    if (contact.type != advTypeChat || !contact.isActive) {
+      return (base: false, location: false, environment: false);
+    }
     bool allowed(int mode, bool flag) =>
         mode == teleModeAllowAll || (mode == teleModeAllowFlags && flag);
-    return allowed(telemetryModeBase, contact.teleBaseEnabled) &&
-        allowed(telemetryModeLoc, contact.teleLocEnabled);
+    final base = allowed(telemetryModeBase, contact.teleBaseEnabled);
+    return (
+      base: base,
+      location: base && allowed(telemetryModeLoc, contact.teleLocEnabled),
+      environment: base && allowed(telemetryModeEnv, contact.teleEnvEnabled),
+    );
+  }
+
+  /// Whether [contact] is allowed this radio's position when it asks for
+  /// telemetry.
+  bool sharesPositionWith(Contact contact) =>
+      telemetryGrantedTo(contact).location;
+
+  /// The radio has a position to give away: typed in, or from its GPS.
+  bool get hasSelfPosition => hasValidLocation(selfLatitude, selfLongitude);
+
+  /// Everyone who hears this radio's adverts sees its position.
+  bool get advertsSharePosition =>
+      advertLocationPolicy != 0 && hasSelfPosition;
+
+  /// [contact] sees this radio's position if it asks now. Counted with the
+  /// GPS on or off: boards with their own GPS code (T1000-E, Wireless
+  /// Tracker, ...) answer with the last fix or the typed position, the rest
+  /// only while the GPS runs, and the app cannot tell them apart.
+  bool positionVisibleTo(Contact contact) =>
+      hasSelfPosition && sharesPositionWith(contact);
+
+  /// Someone can see this radio's position now: everyone who hears its
+  /// adverts, or a contact that may ask for it.
+  bool get positionVisible {
+    if (!hasSelfPosition) return false;
+    if (advertLocationPolicy != 0) return true;
+    if (telemetryModeBase == teleModeDeny ||
+        telemetryModeLoc == teleModeDeny) {
+      return false;
+    }
+    return contacts.any(sharesPositionWith);
   }
 
   int get advertLocationPolicy => _advertLocPolicy;

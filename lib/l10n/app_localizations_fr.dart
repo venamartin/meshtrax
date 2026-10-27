@@ -5757,4 +5757,64 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Créer';
+
+  @override
+  String get locationSharing_title => 'Qui peut voir ma position';
+
+  @override
+  String get locationSharing_someone => 'Quelqu\'un peut voir votre position';
+
+  @override
+  String get locationSharing_nobody => 'Personne ne peut voir votre position';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Votre radio n\'a pas encore de position, donc personne ne peut la voir';
+
+  @override
+  String get locationSharing_everyone =>
+      'Tous ceux qui captent votre radio peuvent voir votre position';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Tous vos contacts peuvent voir votre position';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Les contacts que vous avez autorisés peuvent voir votre position';
+
+  @override
+  String get locationSharing_adverts => 'Position dans les annonces';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Vos annonces contiennent votre position, donc quiconque capte votre radio la voit.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Contacts autorisés à interroger votre radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Aucun. Votre radio ne répond à aucune demande de télémétrie.';
+
+  @override
+  String get locationSharing_noContacts => 'Aucun contact n\'est autorisé.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Tous vos contacts ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Position';
+
+  @override
+  String get locationSharing_partBattery => 'Batterie';
+
+  @override
+  String get locationSharing_partSensors => 'Capteurs';
+
+  @override
+  String get locationSharing_hide => 'Masquer ma position à tout le monde';
 }

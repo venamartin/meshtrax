@@ -5630,4 +5630,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Create';
+
+  @override
+  String get locationSharing_title => 'Who can see my location';
+
+  @override
+  String get locationSharing_someone => 'Someone can see your location';
+
+  @override
+  String get locationSharing_nobody => 'Nobody can see your location';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Your radio has no location yet, so nobody can see it';
+
+  @override
+  String get locationSharing_everyone =>
+      'Everyone who hears your radio can see your location';
+
+  @override
+  String get locationSharing_allContacts =>
+      'All your contacts can see your location';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Contacts you allowed can see your location';
+
+  @override
+  String get locationSharing_adverts => 'Location in adverts';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Your adverts carry your location, so anyone who hears your radio sees it.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Contacts who can ask your radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'None. Your radio answers no telemetry requests.';
+
+  @override
+  String get locationSharing_noContacts => 'No contact is allowed to ask.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'All your contacts ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Location';
+
+  @override
+  String get locationSharing_partBattery => 'Battery';
+
+  @override
+  String get locationSharing_partSensors => 'Sensors';
+
+  @override
+  String get locationSharing_hide => 'Hide my location from everyone';
 }

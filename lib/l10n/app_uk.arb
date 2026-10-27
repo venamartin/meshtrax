@@ -2535,5 +2535,22 @@
   "pathfinder_meshKeep": "Залишити цю",
   "pathfinder_graphNameTitle": "Назва нової карти",
   "pathfinder_graphNameHint": "Наприклад, Вашингтон",
-  "pathfinder_graphCreate": "Створити"
+  "pathfinder_graphCreate": "Створити",
+  "locationSharing_title": "Хто бачить моє розташування",
+  "locationSharing_someone": "Хтось може бачити ваше розташування",
+  "locationSharing_nobody": "Ніхто не бачить ваше розташування",
+  "locationSharing_noPosition": "Ваше радіо ще не має розташування, тому його ніхто не бачить",
+  "locationSharing_everyone": "Кожен, хто чує ваше радіо, бачить ваше розташування",
+  "locationSharing_allContacts": "Усі ваші контакти бачать ваше розташування",
+  "locationSharing_someContacts": "Контакти, яким ви дозволили, бачать ваше розташування",
+  "locationSharing_adverts": "Розташування в анонсах",
+  "locationSharing_advertsHint": "Ваші анонси містять ваше розташування, тому його бачить кожен, хто чує ваше радіо.",
+  "locationSharing_contactsHeader": "Контакти, які можуть запитувати ваше радіо",
+  "locationSharing_noTelemetry": "Ніхто. Ваше радіо не відповідає на запити телеметрії.",
+  "locationSharing_noContacts": "Жодному контакту не дозволено.",
+  "locationSharing_allContactsRow": "Усі ваші контакти ({count})",
+  "locationSharing_partLocation": "Розташування",
+  "locationSharing_partBattery": "Батарея",
+  "locationSharing_partSensors": "Датчики",
+  "locationSharing_hide": "Приховати моє розташування від усіх"
 }

@@ -2563,5 +2563,22 @@
   "pathfinder_meshKeep": "Diese behalten",
   "pathfinder_graphNameTitle": "Name der neuen Karte",
   "pathfinder_graphNameHint": "Zum Beispiel Washington",
-  "pathfinder_graphCreate": "Anlegen"
+  "pathfinder_graphCreate": "Anlegen",
+  "locationSharing_title": "Wer meinen Standort sehen kann",
+  "locationSharing_someone": "Jemand kann Ihren Standort sehen",
+  "locationSharing_nobody": "Niemand kann Ihren Standort sehen",
+  "locationSharing_noPosition": "Ihr Funkgerät hat noch keinen Standort, also kann ihn niemand sehen",
+  "locationSharing_everyone": "Jeder, der Ihr Funkgerät hört, kann Ihren Standort sehen",
+  "locationSharing_allContacts": "Alle Ihre Kontakte können Ihren Standort sehen",
+  "locationSharing_someContacts": "Kontakte, denen Sie es erlaubt haben, können Ihren Standort sehen",
+  "locationSharing_adverts": "Standort in Ankündigungen",
+  "locationSharing_advertsHint": "Ihre Ankündigungen enthalten Ihren Standort, also sieht ihn jeder, der Ihr Funkgerät hört.",
+  "locationSharing_contactsHeader": "Kontakte, die Ihr Funkgerät abfragen dürfen",
+  "locationSharing_noTelemetry": "Keine. Ihr Funkgerät beantwortet keine Telemetrieanfragen.",
+  "locationSharing_noContacts": "Kein Kontakt darf abfragen.",
+  "locationSharing_allContactsRow": "Alle Ihre Kontakte ({count})",
+  "locationSharing_partLocation": "Standort",
+  "locationSharing_partBattery": "Akku",
+  "locationSharing_partSensors": "Sensoren",
+  "locationSharing_hide": "Meinen Standort vor allen verbergen"
 }

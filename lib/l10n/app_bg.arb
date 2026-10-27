@@ -2535,5 +2535,22 @@
   "pathfinder_meshKeep": "Запази тази",
   "pathfinder_graphNameTitle": "Име на новата карта",
   "pathfinder_graphNameHint": "Например Вашингтон",
-  "pathfinder_graphCreate": "Създай"
+  "pathfinder_graphCreate": "Създай",
+  "locationSharing_title": "Кой вижда местоположението ми",
+  "locationSharing_someone": "Някой може да вижда местоположението ви",
+  "locationSharing_nobody": "Никой не вижда местоположението ви",
+  "locationSharing_noPosition": "Радиото ви още няма местоположение, затова никой не го вижда",
+  "locationSharing_everyone": "Всеки, който чува радиото ви, вижда местоположението ви",
+  "locationSharing_allContacts": "Всичките ви контакти виждат местоположението ви",
+  "locationSharing_someContacts": "Контактите, на които сте разрешили, виждат местоположението ви",
+  "locationSharing_adverts": "Местоположение в анонсите",
+  "locationSharing_advertsHint": "Анонсите ви съдържат местоположението ви, затова го вижда всеки, който чува радиото ви.",
+  "locationSharing_contactsHeader": "Контакти, които могат да питат радиото ви",
+  "locationSharing_noTelemetry": "Никой. Радиото ви не отговаря на заявки за телеметрия.",
+  "locationSharing_noContacts": "Нито един контакт няма разрешение.",
+  "locationSharing_allContactsRow": "Всичките ви контакти ({count})",
+  "locationSharing_partLocation": "Местоположение",
+  "locationSharing_partBattery": "Батерия",
+  "locationSharing_partSensors": "Сензори",
+  "locationSharing_hide": "Скрий местоположението ми от всички"
 }

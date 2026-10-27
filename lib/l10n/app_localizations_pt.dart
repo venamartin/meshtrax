@@ -5723,4 +5723,64 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Criar';
+
+  @override
+  String get locationSharing_title => 'Quem pode ver minha localização';
+
+  @override
+  String get locationSharing_someone => 'Alguém pode ver sua localização';
+
+  @override
+  String get locationSharing_nobody => 'Ninguém pode ver sua localização';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Seu rádio ainda não tem localização, então ninguém pode vê-la';
+
+  @override
+  String get locationSharing_everyone =>
+      'Qualquer pessoa que ouça seu rádio pode ver sua localização';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Todos os seus contatos podem ver sua localização';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Os contatos que você permitiu podem ver sua localização';
+
+  @override
+  String get locationSharing_adverts => 'Localização nos anúncios';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Seus anúncios levam sua localização, então qualquer pessoa que ouça seu rádio a vê.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Contatos que podem consultar seu rádio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Nenhum. Seu rádio não responde a pedidos de telemetria.';
+
+  @override
+  String get locationSharing_noContacts => 'Nenhum contato tem permissão.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Todos os seus contatos ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Localização';
+
+  @override
+  String get locationSharing_partBattery => 'Bateria';
+
+  @override
+  String get locationSharing_partSensors => 'Sensores';
+
+  @override
+  String get locationSharing_hide => 'Ocultar minha localização de todos';
 }

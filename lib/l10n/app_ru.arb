@@ -1883,5 +1883,22 @@
   "pathfinder_meshKeep": "Оставить эту",
   "pathfinder_graphNameTitle": "Название новой карты",
   "pathfinder_graphNameHint": "Например, Вашингтон",
-  "pathfinder_graphCreate": "Создать"
+  "pathfinder_graphCreate": "Создать",
+  "locationSharing_title": "Кто видит моё местоположение",
+  "locationSharing_someone": "Кто-то может видеть ваше местоположение",
+  "locationSharing_nobody": "Никто не видит ваше местоположение",
+  "locationSharing_noPosition": "У вашего радио ещё нет местоположения, поэтому его никто не видит",
+  "locationSharing_everyone": "Любой, кто слышит ваше радио, видит ваше местоположение",
+  "locationSharing_allContacts": "Все ваши контакты видят ваше местоположение",
+  "locationSharing_someContacts": "Контакты, которым вы разрешили, видят ваше местоположение",
+  "locationSharing_adverts": "Местоположение в анонсах",
+  "locationSharing_advertsHint": "Ваши анонсы содержат ваше местоположение, поэтому его видит любой, кто слышит ваше радио.",
+  "locationSharing_contactsHeader": "Контакты, которые могут запрашивать ваше радио",
+  "locationSharing_noTelemetry": "Никто. Ваше радио не отвечает на запросы телеметрии.",
+  "locationSharing_noContacts": "Ни одному контакту не разрешено.",
+  "locationSharing_allContactsRow": "Все ваши контакты ({count})",
+  "locationSharing_partLocation": "Местоположение",
+  "locationSharing_partBattery": "Батарея",
+  "locationSharing_partSensors": "Датчики",
+  "locationSharing_hide": "Скрыть моё местоположение от всех"
 }

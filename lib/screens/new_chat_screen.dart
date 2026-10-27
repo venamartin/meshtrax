@@ -992,7 +992,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
                             isFavorite: contact.isFavorite,
                             isDiscovered: isDiscovered,
                             sharesPosition:
-                                connector.sharesPositionWith(contact),
+                                connector.positionVisibleTo(contact),
                             onTap: () async {
                               if (!isDiscovered) {
                                 _openChat(contact);

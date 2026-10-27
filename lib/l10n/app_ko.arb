@@ -2573,5 +2573,22 @@
   "pathfinder_meshKeep": "그대로 두기",
   "pathfinder_graphNameTitle": "새 지도 이름",
   "pathfinder_graphNameHint": "예: 워싱턴",
-  "pathfinder_graphCreate": "만들기"
+  "pathfinder_graphCreate": "만들기",
+  "locationSharing_title": "내 위치를 볼 수 있는 사람",
+  "locationSharing_someone": "누군가 내 위치를 볼 수 있어요",
+  "locationSharing_nobody": "아무도 내 위치를 볼 수 없어요",
+  "locationSharing_noPosition": "무전기에 아직 위치가 없어서 아무도 볼 수 없어요",
+  "locationSharing_everyone": "내 무전기를 수신하는 누구나 내 위치를 볼 수 있어요",
+  "locationSharing_allContacts": "모든 연락처가 내 위치를 볼 수 있어요",
+  "locationSharing_someContacts": "허용한 연락처가 내 위치를 볼 수 있어요",
+  "locationSharing_adverts": "광고에 위치 포함",
+  "locationSharing_advertsHint": "광고에 내 위치가 담겨서 내 무전기를 수신하는 누구나 볼 수 있어요.",
+  "locationSharing_contactsHeader": "내 무전기에 요청할 수 있는 연락처",
+  "locationSharing_noTelemetry": "없음. 무전기가 텔레메트리 요청에 응답하지 않아요.",
+  "locationSharing_noContacts": "허용된 연락처가 없어요.",
+  "locationSharing_allContactsRow": "모든 연락처 ({count})",
+  "locationSharing_partLocation": "위치",
+  "locationSharing_partBattery": "배터리",
+  "locationSharing_partSensors": "센서",
+  "locationSharing_hide": "모두에게 내 위치 숨기기"
 }

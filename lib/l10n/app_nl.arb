@@ -2535,5 +2535,22 @@
   "pathfinder_meshKeep": "Deze houden",
   "pathfinder_graphNameTitle": "Naam van de nieuwe kaart",
   "pathfinder_graphNameHint": "Bijvoorbeeld Washington",
-  "pathfinder_graphCreate": "Aanmaken"
+  "pathfinder_graphCreate": "Aanmaken",
+  "locationSharing_title": "Wie mijn locatie kan zien",
+  "locationSharing_someone": "Iemand kan je locatie zien",
+  "locationSharing_nobody": "Niemand kan je locatie zien",
+  "locationSharing_noPosition": "Je radio heeft nog geen locatie, dus niemand kan die zien",
+  "locationSharing_everyone": "Iedereen die je radio hoort, kan je locatie zien",
+  "locationSharing_allContacts": "Al je contacten kunnen je locatie zien",
+  "locationSharing_someContacts": "Contacten die je toestemming gaf, kunnen je locatie zien",
+  "locationSharing_adverts": "Locatie in aankondigingen",
+  "locationSharing_advertsHint": "Je aankondigingen bevatten je locatie, dus iedereen die je radio hoort, ziet die.",
+  "locationSharing_contactsHeader": "Contacten die je radio mogen bevragen",
+  "locationSharing_noTelemetry": "Geen. Je radio beantwoordt geen telemetrieverzoeken.",
+  "locationSharing_noContacts": "Geen enkel contact heeft toestemming.",
+  "locationSharing_allContactsRow": "Al je contacten ({count})",
+  "locationSharing_partLocation": "Locatie",
+  "locationSharing_partBattery": "Batterij",
+  "locationSharing_partSensors": "Sensoren",
+  "locationSharing_hide": "Mijn locatie voor iedereen verbergen"
 }

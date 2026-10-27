@@ -2540,5 +2540,22 @@
   "pathfinder_meshKeep": "保留当前地图",
   "pathfinder_graphNameTitle": "新地图的名称",
   "pathfinder_graphNameHint": "例如：华盛顿",
-  "pathfinder_graphCreate": "创建"
+  "pathfinder_graphCreate": "创建",
+  "locationSharing_title": "谁能看到我的位置",
+  "locationSharing_someone": "有人能看到您的位置",
+  "locationSharing_nobody": "没有人能看到您的位置",
+  "locationSharing_noPosition": "您的电台还没有位置，所以没有人能看到",
+  "locationSharing_everyone": "所有能收到您电台信号的人都能看到您的位置",
+  "locationSharing_allContacts": "您的所有联系人都能看到您的位置",
+  "locationSharing_someContacts": "您允许的联系人能看到您的位置",
+  "locationSharing_adverts": "在广播中包含位置",
+  "locationSharing_advertsHint": "您的广播带有您的位置，所以任何收到您电台信号的人都能看到。",
+  "locationSharing_contactsHeader": "可以查询您电台的联系人",
+  "locationSharing_noTelemetry": "无。您的电台不响应遥测请求。",
+  "locationSharing_noContacts": "没有联系人获得允许。",
+  "locationSharing_allContactsRow": "您的所有联系人（{count}）",
+  "locationSharing_partLocation": "位置",
+  "locationSharing_partBattery": "电池",
+  "locationSharing_partSensors": "传感器",
+  "locationSharing_hide": "对所有人隐藏我的位置"
 }
