@@ -5,7 +5,7 @@ import 'dart:io';
 import '../engine.dart';
 import '../route.dart';
 import '../valhalla.dart';
-import 'valhalla_defaults.dart';
+import '../valhalla_defaults.dart';
 
 /// Linux: runs Valhalla's service program (`valhalla_service`, 3.9.x) on
 /// the loopback interface and asks it for routes over HTTP. The program
@@ -44,12 +44,7 @@ kill -9 $service 2>/dev/null
     final free = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     final port = free.port;
     await free.close();
-    final config = jsonDecode(valhallaDefaults) as Map<String, dynamic>;
-    (config['mjolnir'] as Map<String, dynamic>)
-      ..['tile_extract'] = tiles.absolute.path
-      ..['tile_dir'] = '${workDir.path}/none';
-    (config['additional_data'] as Map<String, dynamic>)['elevation'] =
-        '${workDir.path}/none/';
+    final config = valhallaConfig(tiles, workDir);
     (config['httpd'] as Map<String, dynamic>)['service'] = {
       ...(config['httpd'] as Map<String, dynamic>)['service'] as Map,
       'listen': 'tcp://127.0.0.1:$port',

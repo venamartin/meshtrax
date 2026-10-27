@@ -45,6 +45,14 @@ jobs:
         working-directory: packages/path_graph
         run: dart test -r github
 
+      # Offline routing, points of interest and coordinates: pure Dart, each
+      # with its own pubspec. Tests that need local routing data skip here.
+      - name: Analyze and test traxroute, traxpoi and traxcoords
+        run: |
+          for p in traxroute traxpoi traxcoords; do
+            (cd packages/$p && dart pub get && dart analyze --fatal-infos --fatal-warnings && dart test -r github) || exit 1
+          done
+
       # The traxmap package (offline vector maps) is a Flutter package with
       # its own pubspec. Its real-pack tests skip here: the test packs aren't
       # in git (see packages/traxmap/README.md).

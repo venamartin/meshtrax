@@ -1,3 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
+
+/// Valhalla's config for [tiles], the combined tile file the routing store
+/// writes. There are no elevation tiles: heights are baked into the tiles.
+/// [workDir] is the engine's own folder.
+Map<String, dynamic> valhallaConfig(File tiles, Directory workDir) {
+  final config = jsonDecode(valhallaDefaults) as Map<String, dynamic>;
+  (config['mjolnir'] as Map<String, dynamic>)
+    ..['tile_extract'] = tiles.absolute.path
+    ..['tile_dir'] = '${workDir.path}/none';
+  (config['additional_data'] as Map<String, dynamic>)['elevation'] =
+      '${workDir.path}/none/';
+  return config;
+}
+
 // Valhalla 3.9.1's default service config (valhalla_build_config), less
 // the paths: the engine fills in the tile file and its own sockets.
 const valhallaDefaults = r'''

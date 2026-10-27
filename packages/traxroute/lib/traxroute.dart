@@ -5,6 +5,7 @@ library;
 
 export 'src/engine.dart';
 export 'src/linux/valhalla_service_engine.dart';
+export 'src/mobile/valhalla_mobile_engine.dart';
 export 'src/nearest.dart';
 // LatLon is the same record traxcoords names; the app uses that name.
 export 'src/route.dart' hide LatLon;

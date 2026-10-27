@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:traxcoords/traxcoords.dart';
 import 'package:traxroute/traxroute.dart';
@@ -13,9 +14,11 @@ import 'verified_download.dart';
 /// Offline routing: the routing data per region (from the catalogue's
 /// `routing` entry) and routes on it. One build on the device at a time.
 ///
-/// The engine is Valhalla. On Linux it's Valhalla's own service program,
-/// found through `--dart-define=VALHALLA_SERVICE=<path>`; phones will use
-/// valhalla-mobile. Without an engine, routing is not offered.
+/// The engine is Valhalla. On Android it's valhalla-mobile inside the app
+/// (`MeshTraxRouting.kt`, channel `meshtrax/routing`). On Linux it's
+/// Valhalla's own service program, found through
+/// `--dart-define=VALHALLA_SERVICE=<path>`. Without an engine, routing is
+/// not offered.
 class RoutingService extends ChangeNotifier {
   final MapPacksService maps;
   final RoutingStore store;
@@ -38,16 +41,19 @@ class RoutingService extends ChangeNotifier {
 
   static Future<RoutingService> create(MapPacksService maps) async {
     final root = Directory('${maps.cacheDir.path}/routing');
+    final workDir = Directory('${maps.cacheDir.path}/routing-engine');
     const executable = String.fromEnvironment('VALHALLA_SERVICE');
     final service = RoutingService(
       maps: maps,
       store: RoutingStore(root),
-      engine: executable.isEmpty
+      engine: Platform.isAndroid
+          ? ValhallaMobileEngine(
+              invoke: const MethodChannel('meshtrax/routing').invokeMethod,
+              workDir: workDir,
+            )
+          : executable.isEmpty
           ? null
-          : ValhallaServiceEngine(
-              executable: executable,
-              workDir: Directory('${maps.cacheDir.path}/routing-engine'),
-            ),
+          : ValhallaServiceEngine(executable: executable, workDir: workDir),
     );
     maps.addListener(service._readCatalog);
     service._readCatalog();
