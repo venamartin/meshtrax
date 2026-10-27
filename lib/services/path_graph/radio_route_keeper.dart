@@ -129,10 +129,11 @@ class RadioRouteKeeper {
         'the radio ACKed it '
         '${!direct ? "inside its flooded path reply" : contact.pathLength < 0 ? "by flood (no stored route)" : "on ${_describeStored(contact)}"}',
         tag: 'PathGraph');
-    final routes = routesFor(contact);
+    List<PathSelection>? routes;
     var episode = _episodes[key];
     if (episode == null || episode.message != id) {
       episode?.expiry?.cancel();
+      routes = routesFor(contact);
       if (routes == null) {
         _episodes.remove(key);
         return;
@@ -156,9 +157,11 @@ class RadioRouteKeeper {
     // The route that ACK rode, as Pathfinder lists it — read before this
     // copy's own write below can move the stored route. Null: a route
     // Pathfinder does not list (the radio's own), so nothing of its to blame.
-    episode.ackRoute = episode.newestAckOnRoute
-        ? routes?.where((r) => holds(contact, r)).firstOrNull
-        : null;
+    episode.ackRoute = !episode.newestAckOnRoute
+        ? null
+        : (routes ?? routesFor(contact))
+            ?.where((r) => holds(contact, r))
+            .firstOrNull;
     episode.held ??= episode.ackRoute;
     episode.expiry?.cancel();
     episode.expiry = Timer(episodeWindow, () {
