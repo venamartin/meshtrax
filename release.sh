@@ -15,6 +15,7 @@ BUILD_WINDOWS=false
 BUILD_LINUX=false
 BUILD_MSIX=false
 PUBLISH_PLAY=false
+PUBLISH_MSSTORE=false
 APPEND_ONLY=false
 
 # 1. Parse Command Line Arguments
@@ -26,6 +27,7 @@ while [[ "$#" -gt 0 ]]; do
         --linux) BUILD_LINUX=true ;;
         --msix) BUILD_WINDOWS=true; BUILD_MSIX=true ;;
         --play) PUBLISH_PLAY=true ;;
+        --msstore) BUILD_MSIX=true; PUBLISH_MSSTORE=true ;;
         --append) APPEND_ONLY=true ;;
         *) echo "ERROR: Unknown parameter: $1"; exit 1 ;;
     esac
@@ -33,13 +35,13 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if at least one platform was selected
-if [ "$BUILD_APK" = false ] && [ "$BUILD_IOS" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ] && [ "$PUBLISH_PLAY" = false ]; then
-    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux, ./release.sh --play)"
+if [ "$BUILD_APK" = false ] && [ "$BUILD_IOS" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ] && [ "$PUBLISH_PLAY" = false ] && [ "$PUBLISH_MSSTORE" = false ]; then
+    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux, ./release.sh --play, ./release.sh --msstore)"
     exit 1
 fi
 
-# Store-only runs (e.g. ./release.sh --play to retry a failed upload) build and
-# publish to the stores without touching GitHub releases or tags.
+# Store-only runs (e.g. ./release.sh --play or --msstore to retry a failed
+# upload) build and publish to the stores without touching GitHub releases or tags.
 GITHUB_RELEASE=false
 if [ "$BUILD_APK" = true ] || [ "$BUILD_IOS" = true ] || [ "$BUILD_WINDOWS" = true ] || [ "$BUILD_LINUX" = true ]; then
     GITHUB_RELEASE=true
@@ -224,18 +226,30 @@ collect_release_notes() {
     done
 }
 
+# Each store is tried even when another failed, so a retry names only the
+# store that failed.
 publish_stores() {
+    local failed=0
     if [ "$PUBLISH_PLAY" = true ]; then
         echo "PUBLISH: Uploading v$VERSION to Google Play (production)..."
         uv run tool/play_upload.py upload --aab "$AAB_DEST" --notes-file "$NOTES_FILE"
         if [ $? -ne 0 ]; then
-            echo "ERROR: Google Play upload failed."
-            if [ "$GITHUB_RELEASE" = true ]; then
-                echo "       The GitHub release is done; retry Play alone with: ./release.sh --play"
-            fi
-            return 1
+            echo "ERROR: Google Play upload failed. Retry Play alone with: ./release.sh --play"
+            failed=1
         fi
     fi
+    if [ "$PUBLISH_MSSTORE" = true ]; then
+        echo "PUBLISH: Submitting v$VERSION to the Microsoft Store..."
+        uv run tool/msstore_upload.py upload --msix "$MSIX_DEST" --notes-file "$NOTES_FILE"
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Microsoft Store submission failed. Retry the Store alone with: ./release.sh --msstore"
+            failed=1
+        fi
+    fi
+    if [ "$failed" -ne 0 ] && [ "$GITHUB_RELEASE" = true ]; then
+        echo "       The GitHub release is done; retry only the failed store."
+    fi
+    return $failed
 }
 
 # 2. Safety Checks: Uncommitted Changes
@@ -281,11 +295,13 @@ DIST_DIR="dist"
 
 # 4b. Store preflight: fail on missing credentials or a reused build number
 # now, not after a ten-minute build.
-if [ "$PUBLISH_PLAY" = true ]; then
+if [ "$PUBLISH_PLAY" = true ] || [ "$PUBLISH_MSSTORE" = true ]; then
     if ! command -v uv &> /dev/null; then
-        echo "ERROR: 'uv' is not on PATH; it runs tool/play_upload.py."
+        echo "ERROR: 'uv' is not on PATH; it runs the store upload tools in tool/."
         exit 1
     fi
+fi
+if [ "$PUBLISH_PLAY" = true ]; then
     if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
         echo "ERROR: pubspec.yaml version has no +build number (Play versionCode)."
         exit 1
@@ -295,6 +311,15 @@ if [ "$PUBLISH_PLAY" = true ]; then
         echo "ERROR: Google Play preflight failed. See docs/store/google-play-notes.md."
         exit 1
     fi
+fi
+if [ "$PUBLISH_MSSTORE" = true ]; then
+    uv run tool/msstore_upload.py check --version "$VERSION"
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Microsoft Store preflight failed. See docs/store/microsoft-store-notes.md."
+        exit 1
+    fi
+fi
+if [ "$PUBLISH_PLAY" = true ] || [ "$PUBLISH_MSSTORE" = true ]; then
     collect_release_notes
 fi
 
@@ -370,7 +395,7 @@ if [ "$BUILD_APK" = true ]; then
         echo "FILE: $DEST_APK"
         echo "--------------------------------------------------"
         
-        if [ "$APPEND_ONLY" = false ] && [ "$BUILD_WINDOWS" = false ]; then
+        if [ "$APPEND_ONLY" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_MSIX" = false ]; then
             echo "PROMPT: Do you want to proceed to the GitHub Draft phase? (y/n)"
             read -r TEST_CONFIRM
             
@@ -385,7 +410,7 @@ if [ "$BUILD_APK" = true ]; then
     fi
 fi
 
-if [ "$BUILD_WINDOWS" = true ]; then
+if [ "$BUILD_WINDOWS" = true ] || [ "$BUILD_MSIX" = true ]; then
     echo "BUILD: Starting Windows Production Build..."
     flutter build windows --release "${GIPHY_DEFINE[@]}"
 
@@ -420,42 +445,51 @@ if [ "$BUILD_WINDOWS" = true ]; then
             exit 1
         fi
 
-        zip_directory "$SOURCE_PATH" "$WIN_DEST_ZIP"
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Zip file creation failed for Windows."
-            exit 1
+        if [ "$BUILD_WINDOWS" = true ]; then
+            zip_directory "$SOURCE_PATH" "$WIN_DEST_ZIP"
+            if [ $? -ne 0 ]; then
+                echo "ERROR: Zip file creation failed for Windows."
+                exit 1
+            fi
+
+            if [ -f "$WIN_DEST_ZIP" ]; then
+                echo "INFO: Generating SHA1 checksum..."
+                sha1sum "$WIN_DEST_ZIP" | cut -d' ' -f1 > "$WIN_DEST_SHA1"
+            else
+                echo "ERROR: Zip file missing after creation attempt."
+                exit 1
+            fi
         fi
-        
-        if [ -f "$WIN_DEST_ZIP" ]; then
-            echo "INFO: Generating SHA1 checksum..."
-            sha1sum "$WIN_DEST_ZIP" | cut -d' ' -f1 > "$WIN_DEST_SHA1"
-        else
-            echo "ERROR: Zip file missing after creation attempt."
-            exit 1
-        fi
-        
+
         echo "SUCCESS: Windows build complete."
         echo "LOCATION: Artifacts are in '$DIST_DIR/'"
-        echo "FILE: $WIN_DEST_ZIP"
+        if [ "$BUILD_WINDOWS" = true ]; then
+            echo "FILE: $WIN_DEST_ZIP"
+        fi
 
         if [ "$BUILD_MSIX" = true ]; then
-            # Store package: unsigned (the Store signs it), so it is uploaded to
-            # Partner Center by hand and never attached to the GitHub release.
+            # Store package: unsigned (the Store signs it), so it goes to the
+            # Store (--msstore, or by hand) and is never attached to the GitHub release.
             if grep -q "PLACEHOLDER" pubspec.yaml; then
                 echo "ERROR: msix_config in pubspec.yaml still has PLACEHOLDER identity values."
                 echo "       Copy them from Partner Center > MeshTrax > Product identity."
                 exit 1
             fi
             MSIX_NAME="meshtrax-v$VERSION"
+            MSIX_DEST="$DIST_DIR/$MSIX_NAME.msix"
             "$DART_BIN" run msix:create --store --output-path "$DIST_DIR" --output-name "$MSIX_NAME"
-            if [ $? -ne 0 ] || [ ! -f "$DIST_DIR/$MSIX_NAME.msix" ]; then
+            if [ $? -ne 0 ] || [ ! -f "$MSIX_DEST" ]; then
                 echo "ERROR: MSIX packaging failed."
                 exit 1
             fi
-            echo "FILE: $DIST_DIR/$MSIX_NAME.msix (upload to Partner Center, not GitHub)"
+            if [ "$PUBLISH_MSSTORE" = true ]; then
+                echo "FILE: $MSIX_DEST (Microsoft Store only, not GitHub)"
+            else
+                echo "FILE: $MSIX_DEST (upload to Partner Center, not GitHub)"
+            fi
         fi
-        
-        if [ "$APPEND_ONLY" = false ] && [ "$BUILD_LINUX" = false ]; then
+
+        if [ "$GITHUB_RELEASE" = true ] && [ "$APPEND_ONLY" = false ] && [ "$BUILD_LINUX" = false ]; then
             echo "PROMPT: Do you want to proceed to the GitHub Draft phase? (y/n)"
             read -r TEST_CONFIRM
             

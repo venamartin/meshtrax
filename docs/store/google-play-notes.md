@@ -44,7 +44,7 @@ Package: `com.vena.meshtrax`. Upload tool: `tool/play_upload.py` (run with `uv`)
    the commit subjects since the last tag as `#` comments. Write the
    "What's new" text (max 500 characters; `#` lines are ignored), save, exit.
    A file left from an aborted run can be reused. `$VISUAL`/`$EDITOR`
-   override nano. The same file will feed the Microsoft Store.
+   override nano. The same file feeds the Microsoft Store (`--msstore`).
 3. The app bundle is built and copied to `dist/meshtrax-v<version>.aab`. It
    is never attached to GitHub.
 4. Play upload happens **last**, only after the GitHub release goes live. If
