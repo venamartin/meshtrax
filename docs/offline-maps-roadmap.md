@@ -587,22 +587,16 @@ Needs traxmapmaker 1.4.
 - Chart symbols (T9). **Done** (2026-10-22): sprite sheets from `tool/make_sprites.py`. Buoys, beacons, daymarks, topmarks, light flares, rocks, wrecks, obstructions, anchorages, caution areas, lane and stream arrows, landmarks; the T-tick limit and the cable wave. Martin chose magenta flares and leaning buoys.
   - Area limits without the shore (2026-10-22): regulated, route and hazard areas draw traxmapmaker's `area_limit` lines (charts_revision 3, extractor enc5), which leave out the shore and the cell edges that split areas. Older packs keep drawing outlines; `limit_lines` flags the areas that have lines, so mixed packs work. Checked on the Rhode Island pilot; live with the next charts rebuild.
 
-### Phase 7: trail routing (Android only)
+### Phase 7: trail routing and points of interest
 
-Needs traxmapmaker 1.5.
-- Generic downloads with a pluggable installer for `.rd5` files.
-- A `packages/traxroute` plugin (BRouter).
-- **Gate:** route time, memory and APK size on a phone.
-- The routing store, the "Trail routing" row, and the planner (S6).
-- **To evaluate: [Valhalla](https://github.com/valhalla/valhalla) instead of BRouter** (Martin, 2026-10-23), because it also runs on iOS. From a first look:
-  - It is an MIT-licensed C++ routing engine for OSM. It routes on its own tiled graph, which its tools build from OSM, with pedestrian, bicycle and car costing, and elevation from separate tiles.
-  - On phones, [Rallista/valhalla-mobile](https://github.com/Rallista/valhalla-mobile) (MIT, Valhalla 3.9) builds it for Android (Maven) and iOS (Swift package). It offers routing, map matching, heights and matrices.
-  - There is no Flutter plugin. `packages/traxroute` would wrap valhalla-mobile on both phones, and the Pi (Linux desktop) needs its own build. The pub.dev `routing_engine` package only calls servers over HTTP.
-  - Open questions:
-    - whether its pedestrian and mountain-bike costing can route trails and dirt roads as well as BRouter's profiles, which weigh `sac_scale`, `tracktype` and `surface`;
-    - its tile size per region;
-    - its app size on both phones.
-  - Switching changes traxmapmaker's routing module (FINDINGS 1.5, Valhalla tiles instead of `.rd5`) and its 2026-10-16 BRouter decision. A NorCal BRouter test build already exists.
+Valhalla (Martin, 2026-10-25: it runs on iOS too, unlike BRouter) with traxmapmaker's routing module (FINDINGS 1.5), and Points of interest (1.8) shipped with it. On the branch `feat/routing-poi-linux`; nothing in a release yet.
+- **Engines** (`packages/traxroute`), all Valhalla 3.9.1 like the tiles, with one config and one request format:
+  - Linux: Valhalla's own `valhalla_service`, through `--dart-define=VALHALLA_SERVICE=<path>`.
+  - Android: valhalla-mobile 0.6.4 from Maven, in `MeshTraxRouting.kt` on the `meshtrax/routing` channel.
+  - iOS: valhalla-mobile 0.6.4 as a Swift package, in the local plugin `packages/traxroute_ios` on the same channel. It needs iOS 16.4, so the app's minimum went from 15.5 to 16.4.
+- **Data:** one routing build for every region (builds can't be mixed), a plain tar on the device; points of interest per region.
+- **Checked on the Pi:** the San Juans test region, routing and places, from the local catalogue.
+- **Gate, next:** route time, memory and app size on a phone, from the test catalogue `https://maps.meshtrax.io/test/index.json` (San Juans first, then San Juans plus Southern California in one build for memory). A phone build for it: `flutter build apk --dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/test/index.json`.
 
 ### Phase 8: Parks
 

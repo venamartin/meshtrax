@@ -93,6 +93,9 @@ dependencies:
     path: packages/traxpoi
   traxroute:
     path: packages/traxroute
+  # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
+  traxroute_ios:
+    path: packages/traxroute_ios
   emoji_picker_flutter: ^4.4.0
 
 

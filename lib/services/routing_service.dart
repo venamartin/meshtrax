@@ -14,11 +14,11 @@ import 'verified_download.dart';
 /// Offline routing: the routing data per region (from the catalogue's
 /// `routing` entry) and routes on it. One build on the device at a time.
 ///
-/// The engine is Valhalla. On Android it's valhalla-mobile inside the app
-/// (`MeshTraxRouting.kt`, channel `meshtrax/routing`). On Linux it's
-/// Valhalla's own service program, found through
-/// `--dart-define=VALHALLA_SERVICE=<path>`. Without an engine, routing is
-/// not offered.
+/// The engine is Valhalla. On phones it's valhalla-mobile inside the app,
+/// on the channel `meshtrax/routing`: `MeshTraxRouting.kt` on Android, the
+/// `traxroute_ios` plugin on iOS. On Linux it's Valhalla's own service
+/// program, found through `--dart-define=VALHALLA_SERVICE=<path>`. Without
+/// an engine, routing is not offered.
 class RoutingService extends ChangeNotifier {
   final MapPacksService maps;
   final RoutingStore store;
@@ -46,7 +46,7 @@ class RoutingService extends ChangeNotifier {
     final service = RoutingService(
       maps: maps,
       store: RoutingStore(root),
-      engine: Platform.isAndroid
+      engine: Platform.isAndroid || Platform.isIOS
           ? ValhallaMobileEngine(
               invoke: const MethodChannel('meshtrax/routing').invokeMethod,
               workDir: workDir,
