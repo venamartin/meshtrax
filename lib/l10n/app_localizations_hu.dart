@@ -5911,6 +5911,15 @@ class AppLocalizationsHu extends AppLocalizations {
   String get poiKind_attraction => 'Attraction';
 
   @override
+  String get poiKind_observatory => 'Observatory';
+
+  @override
+  String get poiKind_zoo => 'Zoo';
+
+  @override
+  String get poiKind_themePark => 'Theme park';
+
+  @override
   String get poiKind_mine => 'Mine';
 
   @override
@@ -5957,6 +5966,12 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get poiKind_fuel => 'Fuel';
+
+  @override
+  String get poiKind_restArea => 'Rest area';
+
+  @override
+  String get poiKind_travelCenter => 'Travel center';
 
   @override
   String get poiKind_museum => 'Museum';

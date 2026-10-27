@@ -52,10 +52,10 @@ app.
 | --- | --- |
 | Nature | `natural=peak` `natural=volcano` `natural=saddle` `mountain_pass=yes` `natural=spring` `natural=hot_spring` `waterway=waterfall` `natural=cave_entrance` `natural=arch` `natural=glacier` `natural=rock` `natural=stone` `natural=cliff` `natural=beach` |
 | Trails and camping | `highway=trailhead` `tourism=camp_site` `tourism=picnic_site` `tourism=wilderness_hut` `tourism=alpine_hut` `amenity=shelter` `amenity=drinking_water` `amenity=water_point` `amenity=toilets` |
-| Views | `tourism=viewpoint` `tourism=attraction` |
+| Views | `tourism=viewpoint` `tourism=attraction` `man_made=observatory` `tourism=zoo` `tourism=theme_park` (no attractions inside a zoo or theme park) |
 | History | `historic=ruins` `historic=monument` `historic=memorial` `historic=fort` `historic=castle` `historic=ghost_town` `historic=mine` `man_made=mineshaft` `man_made=adit` `historic=yes` (any other named historic place, with `detail`) |
-| Services | `amenity=ranger_station` `tourism=visitor_centre` `amenity=hospital` `amenity=police` `amenity=fire_station` `emergency=phone` `amenity=fuel` |
-| Museums | `tourism=museum` (public and park museums only) |
+| Services | `amenity=ranger_station` `tourism=visitor_centre` `amenity=hospital` `amenity=police` `amenity=fire_station` `emergency=phone` `amenity=fuel` `highway=rest_area` `highway=services` (a travel center). Rest areas and travel centers without a name get one from the road beside them ("I-15 rest area, northbound"); `detail` lists their toilets and drinking water. |
+| Museums | `tourism=museum`: public and park museums, and others with a Wikipedia article |
 
 ### wiki
 

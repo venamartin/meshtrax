@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../l10n/app_localizations.dart';
 
@@ -23,6 +24,9 @@ IconData poiKindIcon(String kind) => switch (kind) {
   'amenity=toilets' => Icons.wc,
   'tourism=viewpoint' => Icons.visibility,
   'tourism=attraction' => Icons.star_outline,
+  'man_made=observatory' => Symbols.planet,
+  'tourism=zoo' => Icons.pets,
+  'tourism=theme_park' => Icons.attractions,
   'historic=mine' || 'man_made=mineshaft' || 'man_made=adit' => Icons.hardware,
   'historic=ghost_town' => Icons.holiday_village,
   _ when kind.startsWith('historic=') => Icons.account_balance,
@@ -32,6 +36,8 @@ IconData poiKindIcon(String kind) => switch (kind) {
   'amenity=fire_station' => Icons.local_fire_department,
   'emergency=phone' => Icons.phone,
   'amenity=fuel' => Icons.local_gas_station,
+  'highway=rest_area' => Symbols.rest_area,
+  'highway=services' => Icons.emoji_transportation,
   'tourism=museum' => Icons.museum,
   _ when kind.startsWith('place=') => Icons.location_city,
   'natural=valley' ||
@@ -115,6 +121,9 @@ String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'amenity=toilets' => l10n.poiKind_toilets,
   'tourism=viewpoint' => l10n.poiKind_viewpoint,
   'tourism=attraction' => l10n.poiKind_attraction,
+  'man_made=observatory' => l10n.poiKind_observatory,
+  'tourism=zoo' => l10n.poiKind_zoo,
+  'tourism=theme_park' => l10n.poiKind_themePark,
   'historic=mine' => l10n.poiKind_mine,
   'man_made=mineshaft' => l10n.poiKind_mineShaft,
   'man_made=adit' => l10n.poiKind_adit,
@@ -131,6 +140,8 @@ String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'amenity=fire_station' => l10n.poiKind_fireStation,
   'emergency=phone' => l10n.poiKind_emergencyPhone,
   'amenity=fuel' => l10n.poiKind_fuel,
+  'highway=rest_area' => l10n.poiKind_restArea,
+  'highway=services' => l10n.poiKind_travelCenter,
   'tourism=museum' => l10n.poiKind_museum,
   'place=city' => l10n.poiKind_city,
   'place=town' || 'place=village' => l10n.poiKind_town,

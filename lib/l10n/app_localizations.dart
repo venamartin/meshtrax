@@ -10134,6 +10134,24 @@ abstract class AppLocalizations {
   /// **'Attraction'**
   String get poiKind_attraction;
 
+  /// No description provided for @poiKind_observatory.
+  ///
+  /// In en, this message translates to:
+  /// **'Observatory'**
+  String get poiKind_observatory;
+
+  /// No description provided for @poiKind_zoo.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoo'**
+  String get poiKind_zoo;
+
+  /// No description provided for @poiKind_themePark.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme park'**
+  String get poiKind_themePark;
+
   /// No description provided for @poiKind_mine.
   ///
   /// In en, this message translates to:
@@ -10229,6 +10247,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fuel'**
   String get poiKind_fuel;
+
+  /// No description provided for @poiKind_restArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest area'**
+  String get poiKind_restArea;
+
+  /// No description provided for @poiKind_travelCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel center'**
+  String get poiKind_travelCenter;
 
   /// No description provided for @poiKind_museum.
   ///
