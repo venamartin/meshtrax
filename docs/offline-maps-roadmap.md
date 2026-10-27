@@ -606,7 +606,7 @@ Needs traxmapmaker 1.5.
 
 ### Phase 8: Parks
 
-From the map packs and Points of interest, with no overlay download (Martin, 2026-10-26). Needs a `tint` tag on parks in the map build (FINDINGS 1.3) and parks as places (1.8). See [`park-maps.md`](park-maps.md).
+From the map packs and Points of interest, with no overlay download (Martin, 2026-10-26). **Done:** outline, tint and names from the packs' park layer, desert tan and missed state parks from the map hints (FINDINGS 1.9), the Parks switch, and the hints' credits. **Left:** parks as places (1.8) for the tap, and parks split across regions. See [`park-maps.md`](park-maps.md).
 
 ### Later
 
