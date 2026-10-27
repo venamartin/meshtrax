@@ -31,8 +31,10 @@ TRAIL = ["all", ["==", ["get", "class"], "path"],
 # nothing. Desert parks are tan: their names come from the map hints
 # (MapHints, filled in as {list:desert-parks}); the rest are green. The
 # Parks switch drops the "parks" group.
-PARKS = ["match", ["get", "class"], ["national_park", "national_monument", "national_preserve", "state_park"],
-         True, False]
+PARKS = ["any", ["match", ["get", "class"], ["national_park", "national_monument", "national_preserve", "state_park"],
+                  True, False],
+         # Parks the packs class as something else, from the map hints.
+         ["match", ["get", "name"], ["{list:extra-parks}"], True, False]]
 OUTLINED = ["match", ["get", "class"], ["wilderness_area", "national_forest"], True, False]
 DESERT = ["match", ["get", "name"], ["{list:desert-parks}"], True, False]
 AREA, CENTER = ["==", ["geometry-type"], "Polygon"], ["==", ["geometry-type"], "Point"]

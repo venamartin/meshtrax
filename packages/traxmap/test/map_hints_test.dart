@@ -5,14 +5,17 @@ void main() {
   test('reads desert parks and ignores what it does not know', () {
     final hints = MapHints.parse('''
 {"schema_version": 1, "build": "2026102701",
- "parks": {"desert": ["Anza-Borrego Desert State Park", "Joshua Tree National Park"]},
+ "parks": {"desert": ["Anza-Borrego Desert State Park", "Joshua Tree National Park"],
+           "include": ["Palomar Mountain State Park"]},
  "closures": [{"name": "Tioga Road"}]}
 ''')!;
     expect(hints.desertParks, [
       'Anza-Borrego Desert State Park',
       'Joshua Tree National Park',
     ]);
+    expect(hints.extraParks, ['Palomar Mountain State Park']);
     expect(hints.styleLists['desert-parks'], hints.desertParks);
+    expect(hints.styleLists['extra-parks'], hints.extraParks);
   });
 
   test('a newer schema is not read', () {

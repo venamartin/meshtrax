@@ -352,19 +352,34 @@
           "Polygon"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "class"
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "national_park",
+              "national_monument",
+              "national_preserve",
+              "state_park"
+            ],
+            true,
+            false
           ],
           [
-            "national_park",
-            "national_monument",
-            "national_preserve",
-            "state_park"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:extra-parks}"
+            ],
+            true,
+            false
+          ]
         ]
       ],
       "metadata": {
@@ -572,19 +587,34 @@
           "Polygon"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "class"
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "national_park",
+              "national_monument",
+              "national_preserve",
+              "state_park"
+            ],
+            true,
+            false
           ],
           [
-            "national_park",
-            "national_monument",
-            "national_preserve",
-            "state_park"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:extra-parks}"
+            ],
+            true,
+            false
+          ]
         ]
       ],
       "metadata": {
@@ -2043,19 +2073,34 @@
           "Point"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "class"
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "national_park",
+              "national_monument",
+              "national_preserve",
+              "state_park"
+            ],
+            true,
+            false
           ],
           [
-            "national_park",
-            "national_monument",
-            "national_preserve",
-            "state_park"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:extra-parks}"
+            ],
+            true,
+            false
+          ]
         ]
       ],
       "metadata": {
