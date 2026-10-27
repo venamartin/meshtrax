@@ -5782,5 +5782,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get locationSharing_partSensors => 'Sensores';
 
   @override
-  String get locationSharing_hide => 'Ocultar minha localização de todos';
+  String get dialog_positionHint => 'Cole coordenadas ou um link de mapa';
+
+  @override
+  String get dialog_positionUnreadable =>
+      'Não foi possível ler uma posição aqui';
+
+  @override
+  String get dialog_positionLookingUp => 'Consultando o link…';
+
+  @override
+  String get locationSharing_share => 'Compartilhar minha localização';
+
+  @override
+  String get locationSharing_shareOnHint => 'Desligue para ocultá-la de todos';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Ligue para que os contatos com permissão a vejam';
 }

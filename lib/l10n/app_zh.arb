@@ -2557,5 +2557,10 @@
   "locationSharing_partLocation": "位置",
   "locationSharing_partBattery": "电池",
   "locationSharing_partSensors": "传感器",
-  "locationSharing_hide": "对所有人隐藏我的位置"
+  "dialog_positionHint": "粘贴坐标或地图链接",
+  "dialog_positionUnreadable": "无法从这里读取位置",
+  "dialog_positionLookingUp": "正在查询链接…",
+  "locationSharing_share": "共享我的位置",
+  "locationSharing_shareOnHint": "关闭后对所有人隐藏",
+  "locationSharing_shareOffHint": "开启后获准的联系人可以看到"
 }

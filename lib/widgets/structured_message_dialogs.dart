@@ -3,18 +3,26 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../connector/meshcore_connector.dart';
-import '../helpers/snack_bar_builder.dart';
+import '../helpers/maps_link.dart';
 import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
 import '../screens/map_screen.dart';
+import '../services/short_link_resolver.dart';
 
 /// The dialogs behind the composer tray tiles. Each returns the wire text to
 /// insert into the composer, or null when cancelled.
 class StructuredMessageDialogs {
-  static Future<LatLng?> pickPositionOnMap(BuildContext context) {
+  /// [around]: the position to start from, pinned on the map.
+  static Future<LatLng?> pickPositionOnMap(
+    BuildContext context, {
+    LatLng? around,
+  }) {
     return Navigator.push<LatLng>(
       context,
-      MaterialPageRoute(builder: (_) => const MapScreen(pickPosition: true)),
+      MaterialPageRoute(
+        builder: (_) =>
+            MapScreen(pickPosition: true, highlightPosition: around),
+      ),
     );
   }
 
@@ -25,37 +33,59 @@ class StructuredMessageDialogs {
     return LatLng(lat, lon);
   }
 
-  /// "My location": the radio's position, else a pick on the map.
+  /// A position as people paste it: `lat, lon` with any number of
+  /// decimals, a maps link that carries coordinates, or a geo: URI.
+  static LatLng? readPosition(String text) {
+    final pair = _pair.firstMatch(text.trim());
+    if (pair == null) return MapsLink.parse(text)?.position;
+    final lat = double.parse(pair.group(1)!);
+    final lon = double.parse(pair.group(2)!);
+    // 0,0 is how a radio says it has no position.
+    if (lat.abs() > 90 || lon.abs() > 180 || (lat == 0 && lon == 0)) {
+      return null;
+    }
+    return LatLng(lat, lon);
+  }
+
+  static final _pair = RegExp(
+    r'^(-?\d{1,2}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)$',
+  );
+
+  /// "My location": the radio's position, which can be corrected, and a
+  /// note. Titled "My location" on the air, so readers know whose it is.
   static Future<String?> myLocation(
     BuildContext context,
     MeshCoreConnector connector,
   ) async {
-    var position = _radioPosition(connector);
-    if (position == null) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(context.l10n.tray_noRadioPosition),
-      );
-      position = await pickPositionOnMap(context);
-      if (position == null) return null;
-    }
-    return LocationMessage(position: position).toWire();
+    final message = await showDialog<LocationMessage>(
+      context: context,
+      builder: (_) => _LocationDialog(
+        mine: true,
+        initialPosition: _radioPosition(connector),
+      ),
+    );
+    return message?.toWire();
   }
 
-  /// "Point on map": pick, then label and note.
-  static Future<String?> pointOnMap(BuildContext context) async {
-    final position = await pickPositionOnMap(context);
-    if (position == null || !context.mounted) return null;
-    final result = await showDialog<_LabelResult>(
+  /// "Point on map": a position pasted or picked, a title and a note.
+  static Future<String?> pointOnMap(BuildContext context) async =>
+      (await location(context))?.toWire();
+
+  /// A place to share, [position] filled in when there is one (the map's
+  /// "Share marker here"). [action] names the button that finishes it.
+  static Future<LocationMessage?> location(
+    BuildContext context, {
+    LatLng? position,
+    String? action,
+  }) {
+    return showDialog<LocationMessage>(
       context: context,
-      builder: (_) => const _LabelDialog(),
+      builder: (_) => _LocationDialog(
+        mine: false,
+        initialPosition: position,
+        action: action,
+      ),
     );
-    if (result == null) return null;
-    return LocationMessage(
-      position: position,
-      label: result.label.isEmpty ? null : result.label,
-      note: result.note.isEmpty ? null : result.note,
-    ).toWire();
   }
 
   static Future<String?> sos(
@@ -104,22 +134,87 @@ Future<DateTime?> _pickDay(
   );
 }
 
-class _LabelResult {
-  final String label;
-  final String note;
-  const _LabelResult(this.label, this.note);
+/// The tray dialogs, tighter than stock so more of each fits above the
+/// keyboard (owner, 2026-10-27): smaller margins, dense fields and rows.
+AlertDialog _trayDialog(
+  BuildContext context, {
+  required IconData icon,
+  Color? iconColor,
+  required String title,
+  required List<Widget> children,
+  required List<Widget> actions,
+}) {
+  return AlertDialog(
+    insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+    contentPadding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+    actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+    titleTextStyle: Theme.of(context).textTheme.titleLarge,
+    title: Row(
+      children: [
+        Icon(icon, color: iconColor),
+        const SizedBox(width: 8),
+        Expanded(child: Text(title)),
+      ],
+    ),
+    content: SingleChildScrollView(
+      // Room for the first field's floating label, which was clipped.
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    ),
+    actions: actions,
+  );
 }
 
-class _LabelDialog extends StatefulWidget {
-  const _LabelDialog();
+InputDecoration _field(
+  String label, {
+  String? hint,
+  String? helper,
+  String? error,
+  Widget? suffix,
+}) {
+  return InputDecoration(
+    labelText: label,
+    hintText: hint,
+    helperText: helper,
+    helperMaxLines: 2,
+    errorText: error,
+    isDense: true,
+    border: const OutlineInputBorder(),
+    suffixIcon: suffix,
+  );
+}
+
+const _gap = SizedBox(height: 10);
+const _rowDensity = VisualDensity(vertical: -3);
+
+/// The Location dialog behind "My location", "Point on map" and the map's
+/// "Share marker here": where, an optional title and an optional note.
+/// [mine]: the radio's own position, titled "My location" on the air, so
+/// it has no title field.
+class _LocationDialog extends StatefulWidget {
+  final bool mine;
+  final LatLng? initialPosition;
+  final String? action;
+
+  const _LocationDialog({
+    required this.mine,
+    this.initialPosition,
+    this.action,
+  });
 
   @override
-  State<_LabelDialog> createState() => _LabelDialogState();
+  State<_LocationDialog> createState() => _LocationDialogState();
 }
 
-class _LabelDialogState extends State<_LabelDialog> {
+class _LocationDialogState extends State<_LocationDialog> {
   final _label = TextEditingController();
   final _note = TextEditingController();
+  late LatLng? _position = widget.initialPosition;
 
   @override
   void dispose() {
@@ -128,47 +223,194 @@ class _LabelDialogState extends State<_LabelDialog> {
     super.dispose();
   }
 
+  LocationMessage _message() {
+    final label = widget.mine
+        ? LocationMessage.myLocationLabel
+        : _label.text.trim();
+    final note = _note.text.trim();
+    // Without a title, readers take the first text for one, so a lone
+    // note goes out as the title.
+    return LocationMessage(
+      position: _position!,
+      label: label.isNotEmpty ? label : (note.isEmpty ? null : note),
+      note: label.isNotEmpty && note.isNotEmpty ? note : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return AlertDialog(
-      title: Text(l10n.dialog_labelTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return _trayDialog(
+      context,
+      icon: widget.mine ? Icons.my_location : Icons.place,
+      iconColor: Theme.of(context).colorScheme.primary,
+      title: widget.mine ? l10n.tray_myLocation : l10n.chat_location,
+      children: [
+        _PositionField(
+          initial: widget.initialPosition,
+          // Pasting a position is what this dialog is for.
+          autofocus: !widget.mine && widget.initialPosition == null,
+          emptyHelper: widget.mine ? l10n.tray_noRadioPosition : null,
+          onChanged: (position, _) => setState(() => _position = position),
+        ),
+        if (!widget.mine) ...[
+          _gap,
           TextField(
             controller: _label,
-            autofocus: true,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: l10n.map_label,
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _note,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: l10n.dialog_note,
-              border: const OutlineInputBorder(),
-            ),
+            decoration: _field(l10n.map_label),
           ),
         ],
-      ),
+        _gap,
+        TextField(
+          controller: _note,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: _field(l10n.dialog_note),
+        ),
+      ],
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.common_cancel),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(
-            context,
-            _LabelResult(_label.text.trim(), _note.text.trim()),
-          ),
-          child: Text(l10n.dialog_insert),
+          onPressed: _position == null
+              ? null
+              : () => Navigator.pop(context, _message()),
+          child: Text(widget.action ?? l10n.dialog_insert),
         ),
       ],
+    );
+  }
+}
+
+/// A position typed or pasted as `lat, lon`, a maps link or a geo: URI,
+/// or picked on the map with the button at its end. [onChanged] gets the
+/// position, or null, and whether the field is settled: empty or read.
+class _PositionField extends StatefulWidget {
+  final LatLng? initial;
+  final void Function(LatLng? position, bool settled) onChanged;
+  final bool autofocus;
+
+  /// Under the field while it is empty.
+  final String? emptyHelper;
+
+  const _PositionField({
+    required this.initial,
+    required this.onChanged,
+    this.autofocus = false,
+    this.emptyHelper,
+  });
+
+  @override
+  State<_PositionField> createState() => _PositionFieldState();
+}
+
+class _PositionFieldState extends State<_PositionField> {
+  late final _controller = TextEditingController(
+    text: widget.initial == null
+        ? ''
+        : StructuredMessage.formatCoordinates(widget.initial!),
+  );
+  late LatLng? _position = widget.initial;
+  bool _unreadable = false;
+  bool _lookingUp = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _report(LatLng? position, {bool unreadable = false, bool lookingUp = false}) {
+    setState(() {
+      _position = position;
+      _unreadable = unreadable;
+      _lookingUp = lookingUp;
+    });
+    widget.onChanged(position, !unreadable && !lookingUp);
+  }
+
+  void _onText(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty) return _report(null);
+    final position = StructuredMessageDialogs.readPosition(text);
+    if (position != null) return _report(position);
+    if (MapsLink.isShortLink(text)) {
+      _lookUp(text);
+      return;
+    }
+    _report(null, unreadable: true);
+  }
+
+  /// A Google short link carries no coordinates: ask where it leads.
+  Future<void> _lookUp(String url) async {
+    _report(null, lookingUp: true);
+    final position = await ShortLinkResolver.instance.resolve(url);
+    if (!mounted || _controller.text.trim() != url) return;
+    _report(position, unreadable: position == null);
+  }
+
+  Future<void> _pick() async {
+    final picked = await StructuredMessageDialogs.pickPositionOnMap(
+      context,
+      around: _position,
+    );
+    if (picked == null || !mounted) return;
+    _controller.text = StructuredMessage.formatCoordinates(picked);
+    _report(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final text = _controller.text.trim();
+    final position = _position;
+    // A link or a short pair: show the coordinates that will be sent.
+    final sent = position == null
+        ? null
+        : StructuredMessage.formatCoordinates(position);
+    final String? helper;
+    if (_lookingUp) {
+      helper = l10n.dialog_positionLookingUp;
+    } else if (sent != null && sent != text) {
+      helper = sent;
+    } else if (text.isEmpty) {
+      helper = widget.emptyHelper;
+    } else {
+      helper = null;
+    }
+    return TextField(
+      controller: _controller,
+      autofocus: widget.autofocus,
+      autocorrect: false,
+      enableSuggestions: false,
+      decoration: _field(
+        l10n.gps_position,
+        hint: l10n.dialog_positionHint,
+        helper: helper,
+        error: _unreadable ? l10n.dialog_positionUnreadable : null,
+        suffix: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (text.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.clear),
+                tooltip: l10n.common_clear,
+                onPressed: () {
+                  _controller.clear();
+                  _report(null);
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.map_outlined),
+              tooltip: l10n.dialog_pickOnMap,
+              onPressed: _pick,
+            ),
+          ],
+        ),
+      ),
+      onChanged: _onText,
     );
   }
 }
@@ -183,13 +425,7 @@ class _SosDialog extends StatefulWidget {
 
 class _SosDialogState extends State<_SosDialog> {
   final _text = TextEditingController();
-  LatLng? _position;
-
-  @override
-  void initState() {
-    super.initState();
-    _position = widget.initialPosition;
-  }
+  late LatLng? _position = widget.initialPosition;
 
   @override
   void dispose() {
@@ -201,40 +437,27 @@ class _SosDialogState extends State<_SosDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.warning_rounded, color: scheme.error),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.dialog_sosTitle)),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _text,
-            autofocus: true,
-            maxLines: 2,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: l10n.dialog_sosText,
-              border: const OutlineInputBorder(),
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 12),
-          _PositionRow(
-            position: _position,
-            onPick: () async {
-              final picked =
-                  await StructuredMessageDialogs.pickPositionOnMap(context);
-              if (picked != null && mounted) setState(() => _position = picked);
-            },
-          ),
-        ],
-      ),
+    return _trayDialog(
+      context,
+      icon: Icons.warning_rounded,
+      iconColor: scheme.error,
+      title: l10n.dialog_sosTitle,
+      children: [
+        TextField(
+          controller: _text,
+          autofocus: true,
+          maxLines: 2,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: _field(l10n.dialog_sosText),
+          onChanged: (_) => setState(() {}),
+        ),
+        _gap,
+        _PositionField(
+          initial: widget.initialPosition,
+          emptyHelper: l10n.tray_noRadioPosition,
+          onChanged: (position, _) => setState(() => _position = position),
+        ),
+      ],
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -340,75 +563,65 @@ class _NoticeDialogState extends State<_NoticeDialog> {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
     final day = _expiryDay;
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.campaign, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.dialog_noticeTitle)),
-        ],
-      ),
-      content: SingleChildScrollView(
-        // Room for the field's floating label.
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _text,
-              autofocus: true,
-              minLines: 1,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: l10n.dialog_noticeText,
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event_busy),
-              title: Text(l10n.dialog_noticeExpires),
-              subtitle: Text(
-                day != null
-                    ? DateFormat.yMMMEd(locale).format(day)
-                    : widget.requireExpiry
-                        ? l10n.dialog_noticeExpiryRequired
-                        : l10n.dialog_noticeNoExpiry,
-              ),
-              trailing: day == null
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => setState(() {
-                        _expiryDay = null;
-                        _expiryTime = null;
-                      }),
-                    ),
-              onTap: _pickExpiryDay,
-            ),
-            if (day != null)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.schedule),
-                title: Text(l10n.dialog_noticeExpiryTime),
-                subtitle: Text(
-                  _expiryTime?.format(context) ?? l10n.dialog_noticeEndOfDay,
-                ),
-                trailing: _expiryTime == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _expiryTime = null),
-                      ),
-                onTap: _pickExpiryTime,
-              ),
-          ],
+    return _trayDialog(
+      context,
+      icon: Icons.campaign,
+      iconColor: Theme.of(context).colorScheme.primary,
+      title: l10n.dialog_noticeTitle,
+      children: [
+        TextField(
+          controller: _text,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 4,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: _field(l10n.dialog_noticeText),
+          onChanged: (_) => setState(() {}),
         ),
-      ),
+        const SizedBox(height: 4),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          visualDensity: _rowDensity,
+          leading: const Icon(Icons.event_busy),
+          title: Text(l10n.dialog_noticeExpires),
+          subtitle: Text(
+            day != null
+                ? DateFormat.yMMMEd(locale).format(day)
+                : widget.requireExpiry
+                    ? l10n.dialog_noticeExpiryRequired
+                    : l10n.dialog_noticeNoExpiry,
+          ),
+          trailing: day == null
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () => setState(() {
+                    _expiryDay = null;
+                    _expiryTime = null;
+                  }),
+                ),
+          onTap: _pickExpiryDay,
+        ),
+        if (day != null)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            visualDensity: _rowDensity,
+            leading: const Icon(Icons.schedule),
+            title: Text(l10n.dialog_noticeExpiryTime),
+            subtitle: Text(
+              _expiryTime?.format(context) ?? l10n.dialog_noticeEndOfDay,
+            ),
+            trailing: _expiryTime == null
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () => setState(() => _expiryTime = null),
+                  ),
+            onTap: _pickExpiryTime,
+          ),
+      ],
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -447,6 +660,10 @@ class _EventDialogState extends State<_EventDialog> {
   TimeOfDay _start = const TimeOfDay(hour: 18, minute: 0);
   TimeOfDay? _end;
   LatLng? _position;
+
+  /// The position field is empty or read; not while it holds text that is
+  /// no position.
+  bool _positionSettled = true;
 
   @override
   void initState() {
@@ -545,166 +762,118 @@ class _EventDialogState extends State<_EventDialog> {
     ).toWire();
   }
 
+  ListTile _row({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    VoidCallback? onClear,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      visualDensity: _rowDensity,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: onClear == null
+          ? null
+          : IconButton(icon: const Icon(Icons.clear), onPressed: onClear),
+      onTap: onTap,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.event),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.structured_event)),
-        ],
-      ),
-      content: SingleChildScrollView(
-        // Room for the title field's floating label, which was clipped.
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _title,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: l10n.dialog_eventTitle,
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calendar_today),
-              title: Text(l10n.dialog_eventDate),
-              subtitle: Text(DateFormat.yMMMEd(locale).format(_date)),
-              onTap: _pickDate,
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.date_range),
-              title: Text(l10n.dialog_eventEndDate),
-              subtitle: Text(_endDate == null
-                  ? l10n.dialog_eventSameDay
-                  : DateFormat.yMMMEd(locale).format(_endDate!)),
-              trailing: _endDate == null
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => setState(() => _endDate = null),
-                    ),
-              onTap: _pickEndDate,
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.structured_allDay),
-              value: _allDay,
-              onChanged: (v) => setState(() {
-                _allDay = v;
-                if (!v && _endDate != null) _end ??= _start;
-              }),
-            ),
-            if (!_allDay) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.schedule),
-                title: Text(l10n.dialog_eventStart),
-                subtitle: Text(_start.format(context)),
-                onTap: _pickStart,
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.schedule_outlined),
-                title: Text(l10n.dialog_eventEnd),
-                subtitle: Text(_end?.format(context) ?? l10n.dialog_eventNoEnd),
-                trailing: _end == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        // No end time means it ends the day it starts.
-                        onPressed: () => setState(() {
-                          _end = null;
-                          _endDate = null;
-                        }),
-                      ),
-                onTap: _pickEnd,
-              ),
-            ],
-            const SizedBox(height: 8),
-            TextField(
-              controller: _place,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: l10n.dialog_eventPlace,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _PositionRow(
-              position: _position,
-              onPick: () async {
-                final picked =
-                    await StructuredMessageDialogs.pickPositionOnMap(context);
-                if (picked != null && mounted) {
-                  setState(() => _position = picked);
-                }
-              },
-              onClear: _position == null
-                  ? null
-                  : () => setState(() => _position = null),
-            ),
-          ],
+    return _trayDialog(
+      context,
+      icon: Icons.event,
+      title: l10n.structured_event,
+      children: [
+        TextField(
+          controller: _title,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: _field(l10n.dialog_eventTitle),
+          onChanged: (_) => setState(() {}),
         ),
-      ),
+        const SizedBox(height: 4),
+        _row(
+          icon: Icons.calendar_today,
+          title: l10n.dialog_eventDate,
+          subtitle: DateFormat.yMMMEd(locale).format(_date),
+          onTap: _pickDate,
+        ),
+        _row(
+          icon: Icons.date_range,
+          title: l10n.dialog_eventEndDate,
+          subtitle: _endDate == null
+              ? l10n.dialog_eventSameDay
+              : DateFormat.yMMMEd(locale).format(_endDate!),
+          onTap: _pickEndDate,
+          onClear: _endDate == null
+              ? null
+              : () => setState(() => _endDate = null),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          visualDensity: _rowDensity,
+          title: Text(l10n.structured_allDay),
+          value: _allDay,
+          onChanged: (v) => setState(() {
+            _allDay = v;
+            if (!v && _endDate != null) _end ??= _start;
+          }),
+        ),
+        if (!_allDay) ...[
+          _row(
+            icon: Icons.schedule,
+            title: l10n.dialog_eventStart,
+            subtitle: _start.format(context),
+            onTap: _pickStart,
+          ),
+          _row(
+            icon: Icons.schedule_outlined,
+            title: l10n.dialog_eventEnd,
+            subtitle: _end?.format(context) ?? l10n.dialog_eventNoEnd,
+            onTap: _pickEnd,
+            // No end time means it ends the day it starts.
+            onClear: _end == null
+                ? null
+                : () => setState(() {
+                      _end = null;
+                      _endDate = null;
+                    }),
+          ),
+        ],
+        const SizedBox(height: 4),
+        TextField(
+          controller: _place,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: _field(l10n.dialog_eventPlace),
+        ),
+        _gap,
+        _PositionField(
+          initial: _position,
+          onChanged: (position, settled) => setState(() {
+            _position = position;
+            _positionSettled = settled;
+          }),
+        ),
+      ],
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.common_cancel),
         ),
         FilledButton(
-          onPressed: _title.text.trim().isEmpty
+          onPressed: _title.text.trim().isEmpty || !_positionSettled
               ? null
               : () => Navigator.pop(context, _wire()),
           child: Text(l10n.dialog_insert),
-        ),
-      ],
-    );
-  }
-}
-
-class _PositionRow extends StatelessWidget {
-  final LatLng? position;
-  final VoidCallback onPick;
-  final VoidCallback? onClear;
-
-  const _PositionRow({required this.position, required this.onPick, this.onClear});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Row(
-      children: [
-        Icon(
-          position == null ? Icons.location_off : Icons.location_on,
-          size: 20,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            position == null
-                ? l10n.dialog_pickOnMap
-                : StructuredMessage.formatCoordinates(position!),
-            style: const TextStyle(fontSize: 13),
-          ),
-        ),
-        if (onClear != null)
-          IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: onClear),
-        TextButton(
-          onPressed: onPick,
-          child: Text(position == null ? l10n.dialog_pickOnMap : l10n.common_edit),
         ),
       ],
     );

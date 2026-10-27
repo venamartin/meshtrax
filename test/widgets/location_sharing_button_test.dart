@@ -109,8 +109,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  const hide = 'Hide my location from everyone';
+  const share = 'Share my location';
+  const adverts = 'Location in adverts';
   const nobody = 'Nobody can see your location';
+
+  bool switchOn(WidgetTester tester, String title) => tester
+      .widget<SwitchListTile>(find.widgetWithText(SwitchListTile, title))
+      .value;
 
   testWidgets('grey while nobody can see it, blue once the radio has a '
       'position its adverts carry', (tester) async {
@@ -139,8 +144,9 @@ void main() {
     expect(find.byType(IconButton), findsNothing);
   });
 
-  testWidgets('the dialog names who can see it, and one tap hides it from '
-      'everyone', (tester) async {
+  testWidgets('the dialog names who can see it; the switch hides it from '
+      'everyone and brings it back for contacts with permission',
+      (tester) async {
     final radio = _Radio(
       base: teleModeAllowFlags,
       loc: teleModeAllowFlags,
@@ -158,12 +164,35 @@ void main() {
         lessThan(tester.getTopLeft(find.text('Dave')).dy),
         reason: 'who gets the location comes first');
 
-    await tapText(tester, hide);
+    expect(switchOn(tester, share), isTrue);
+    await tapText(tester, share);
     expect(radio.writes, [(teleModeAllowFlags, teleModeDeny, teleModeDeny, 0)],
         reason: 'battery stays; location and adverts off');
     expect(find.text(nobody), findsOneWidget);
-    expect(find.text(hide), findsNothing);
+    expect(switchOn(tester, share), isFalse);
+    expect(find.text('Turn on to let contacts with permission see it'),
+        findsOneWidget);
     expect(find.text('Battery'), findsNWidgets(2));
+
+    await tapText(tester, share);
+    expect(radio.writes.last,
+        (teleModeAllowFlags, teleModeAllowFlags, teleModeDeny, 0),
+        reason: 'contacts with permission again, adverts left off');
+    expect(find.text('Contacts you allowed can see your location'),
+        findsOneWidget);
+  });
+
+  testWidgets('turning sharing on from Deny all brings base back too',
+      (tester) async {
+    final radio = _Radio(lat: 36.6, lon: -121.9, saved: [_carol]);
+    await open(tester, radio);
+    expect(switchOn(tester, share), isFalse);
+    await tapText(tester, share);
+    expect(radio.writes,
+        [(teleModeAllowFlags, teleModeAllowFlags, teleModeDeny, 0)],
+        reason: 'location rides on base; adverts stay off');
+    expect(find.text('Contacts you allowed can see your location'),
+        findsOneWidget);
   });
 
   testWidgets('a contact row opens their permissions', (tester) async {
@@ -208,10 +237,10 @@ void main() {
         findsOneWidget);
     expect(find.text('None. Your radio answers no telemetry requests.'),
         findsOneWidget);
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
+    await tapText(tester, adverts);
     expect(radio.writes, [(teleModeDeny, teleModeDeny, teleModeDeny, 0)]);
     expect(find.text(nobody), findsOneWidget);
+    expect(switchOn(tester, share), isFalse);
   });
 
   testWidgets('fits a small phone in German', (tester) async {
@@ -239,7 +268,7 @@ void main() {
     );
     await tester.tap(find.byType(IconButton));
     await tester.pumpAndSettle();
-    expect(find.text('Meinen Standort vor allen verbergen'), findsOneWidget);
+    expect(find.text('Meinen Standort teilen'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -248,6 +277,6 @@ void main() {
     await open(tester, _Radio(advert: 1));
     expect(find.text('Your radio has no location yet, so nobody can see it'),
         findsOneWidget);
-    expect(find.text(hide), findsOneWidget);
+    expect(switchOn(tester, share), isTrue);
   });
 }

@@ -2580,5 +2580,10 @@
   "locationSharing_partLocation": "Standort",
   "locationSharing_partBattery": "Akku",
   "locationSharing_partSensors": "Sensoren",
-  "locationSharing_hide": "Meinen Standort vor allen verbergen"
+  "dialog_positionHint": "Koordinaten oder einen Kartenlink einfügen",
+  "dialog_positionUnreadable": "Hier ist keine Position lesbar",
+  "dialog_positionLookingUp": "Link wird aufgelöst…",
+  "locationSharing_share": "Meinen Standort teilen",
+  "locationSharing_shareOnHint": "Ausschalten, um ihn vor allen zu verbergen",
+  "locationSharing_shareOffHint": "Einschalten, damit Kontakte mit Erlaubnis ihn sehen"
 }

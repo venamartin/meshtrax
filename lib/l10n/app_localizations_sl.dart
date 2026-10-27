@@ -5771,5 +5771,23 @@ class AppLocalizationsSl extends AppLocalizations {
   String get locationSharing_partSensors => 'Senzorji';
 
   @override
-  String get locationSharing_hide => 'Skrij mojo lokacijo pred vsemi';
+  String get dialog_positionHint =>
+      'Prilepite koordinate ali povezavo do zemljevida';
+
+  @override
+  String get dialog_positionUnreadable => 'Tukaj ni mogoče prebrati položaja';
+
+  @override
+  String get dialog_positionLookingUp => 'Preverjanje povezave…';
+
+  @override
+  String get locationSharing_share => 'Deli mojo lokacijo';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Izklopite, da jo skrijete pred vsemi';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Vklopite, da jo vidijo stiki z dovoljenjem';
 }

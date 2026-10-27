@@ -42,6 +42,10 @@ field
    when, `Notice` needs text. Without them the line is ordinary text, so
    "Event: see you at 5" stays a sentence. In a `Notice` a when-shaped line
    is text; its date goes in `expires=`.
+   **The sender's own position.** A `Location` titled `My location` (any
+   case, always English on the air) is where the sender is. Readers may
+   show it as the sender's location, e.g. "GWQ's location". A `Location`
+   with any other title, or none, is just a place.
 5. **Compatibility.** Readers show every field they do not understand, so a
    newer sender never hides information from an older reader. Writers may
    add shapes and keys and may reorder fields. New types are added by
@@ -51,6 +55,10 @@ field
 
 ```
 Location: 47.070123, 15.440123
+
+Location: My location
+47.070123, 15.440123
+at the trailhead
 
 Location: SCCARC Picnic
 47.070123, 15.440123

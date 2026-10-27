@@ -5759,5 +5759,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get locationSharing_partSensors => 'Sensoren';
 
   @override
-  String get locationSharing_hide => 'Mijn locatie voor iedereen verbergen';
+  String get dialog_positionHint => 'Plak coördinaten of een kaartlink';
+
+  @override
+  String get dialog_positionUnreadable => 'Hier is geen positie te lezen';
+
+  @override
+  String get dialog_positionLookingUp => 'Link opzoeken…';
+
+  @override
+  String get locationSharing_share => 'Mijn locatie delen';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Zet uit om hem voor iedereen te verbergen';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Zet aan zodat contacten met toestemming hem zien';
 }

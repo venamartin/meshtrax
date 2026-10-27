@@ -5729,5 +5729,22 @@ class AppLocalizationsSv extends AppLocalizations {
   String get locationSharing_partSensors => 'Sensorer';
 
   @override
-  String get locationSharing_hide => 'Dölj min plats för alla';
+  String get dialog_positionHint => 'Klistra in koordinater eller en kartlänk';
+
+  @override
+  String get dialog_positionUnreadable => 'Kan inte läsa en position här';
+
+  @override
+  String get dialog_positionLookingUp => 'Slår upp länken…';
+
+  @override
+  String get locationSharing_share => 'Dela min plats';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Stäng av för att dölja den för alla';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Slå på så att kontakter med tillåtelse ser den';
 }

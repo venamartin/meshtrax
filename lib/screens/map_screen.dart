@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,8 @@ import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:path_graph/path_graph.dart'
     show PathGraph, RouteResult, FloodResult;
 import 'package:meshtrax/widgets/app_bar.dart';
+import 'package:meshtrax/widgets/gps_status_button.dart';
+import 'package:meshtrax/widgets/location_sharing_button.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
@@ -40,6 +43,8 @@ import '../widgets/path_selection_dialog.dart';
 import '../widgets/repeater_login_dialog.dart';
 import '../widgets/room_login_dialog.dart';
 import '../widgets/routing_dialog.dart';
+import '../widgets/structured_message_card.dart';
+import '../widgets/structured_message_dialogs.dart';
 import 'path_graph_screen.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
@@ -396,7 +401,9 @@ class _MapScreenState extends State<MapScreen> {
             )
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
-        final isPoiLink = highlightPosition != null;
+        // A pushed map (a shared point, or picking one) goes back where it
+        // came from; picking without a point to start from is no exception.
+        final isPoiLink = highlightPosition != null || widget.pickPosition;
         final allowBack = !connector.isConnected || isPoiLink;
 
         return PopScope(
@@ -412,6 +419,10 @@ class _MapScreenState extends State<MapScreen> {
               centerTitle: true,
               automaticallyImplyLeading: isPoiLink,
               actions: [
+                if (!widget.pickPosition) ...[
+                  const GpsStatusButton(),
+                  const LocationSharingButton(),
+                ],
                 if (!_isBuildingPathTrace)
                   IconButton(
                     icon: const Icon(Icons.radar),
@@ -1075,9 +1086,13 @@ class _MapScreenState extends State<MapScreen> {
       final messages = candidates[contact.publicKeyHex] ?? const [];
       scanned += messages.length;
       for (final message in messages) {
-        final payload = _parseMarkerText(message.text);
-        if (payload == null) continue;
         final fromName = message.isOutgoing ? selfName : contact.name;
+        final payload = _parseMarkerText(
+          message.text,
+          outgoing: message.isOutgoing,
+          fromName: fromName,
+        );
+        if (payload == null) continue;
         final id = _buildMarkerId(
           sourceId: contact.publicKeyHex,
           timestamp: message.timestamp,
@@ -1123,7 +1138,11 @@ class _MapScreenState extends State<MapScreen> {
         final messages = candidates[channel.idKey] ?? const [];
         scanned += messages.length;
         for (final message in messages) {
-          final payload = _parseMarkerText(message.text);
+          final payload = _parseMarkerText(
+            message.text,
+            outgoing: message.isOutgoing,
+            fromName: message.senderName,
+          );
           if (payload == null) continue;
           final id = _buildMarkerId(
             sourceId: 'channel:${channel.index}',
@@ -1163,13 +1182,28 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Location and SOS messages become shared markers. Events and notices
-  /// carry no pin of their own.
-  _MarkerPayload? _parseMarkerText(String text) {
+  /// carry no pin of their own. A sender's own position is named as the
+  /// chat card names it: "My location" or "{fromName}'s location".
+  _MarkerPayload? _parseMarkerText(
+    String text, {
+    required bool outgoing,
+    required String fromName,
+  }) {
     final parsed = StructuredMessage.parse(
       text,
       resolveShortLink: ShortLinkResolver.instance.cached,
     );
     final (LatLng position, String label, String flags) = switch (parsed) {
+      LocationMessage m when m.isSendersOwn => (
+          m.position,
+          StructuredMessageCard.locationTitle(
+            context.l10n,
+            m,
+            isOutgoing: outgoing,
+            senderName: fromName,
+          ),
+          'poi',
+        ),
       LocationMessage m => (m.position, m.label ?? '', 'poi'),
       SosMessage m => (m.position, m.text, 'sos'),
       _ => (const LatLng(0, 0), '', ''),
@@ -1521,7 +1555,6 @@ class _MapScreenState extends State<MapScreen> {
                   context: context,
                   connector: connector,
                   position: position,
-                  defaultLabel: context.l10n.map_pointOfInterest,
                 );
               },
             ),
@@ -1556,11 +1589,12 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// The same Location dialog as the composer's tray (position, title,
+  /// note), then who gets it.
   Future<void> _shareMarker({
     required BuildContext context,
     required MeshCoreConnector connector,
     required LatLng position,
-    required String defaultLabel,
   }) async {
     if (!connector.isConnected) {
       showDismissibleSnackBar(
@@ -1569,60 +1603,23 @@ class _MapScreenState extends State<MapScreen> {
       );
       return;
     }
-
-    final label = await _promptForLabel(context, defaultLabel);
-    if (label == null || !mounted) return;
-
-    final markerText = LocationMessage(
+    final message = await StructuredMessageDialogs.location(
+      context,
       position: position,
-      label: label,
-    ).toWire();
-    if (!mounted) return;
-
+      action: context.l10n.common_continue,
+    );
+    if (message == null || !mounted) return;
     await _showRecipientSheet(
       // ignore: use_build_context_synchronously
       context: context,
       connector: connector,
-      markerText: markerText,
+      markerText: message.toWire(),
     );
   }
 
-  Future<String?> _promptForLabel(
-    BuildContext context,
-    String defaultLabel,
-  ) async {
-    final controller = TextEditingController(text: defaultLabel);
-    return showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.map_pinLabel),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: context.l10n.map_label,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.l10n.common_cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final label = StructuredMessage.sanitizeField(controller.text);
-              Navigator.pop(
-                dialogContext,
-                label.isEmpty ? defaultLabel : label,
-              );
-            },
-            child: Text(context.l10n.common_continue),
-          ),
-        ],
-      ),
-    );
-  }
-
+  /// Who a shared marker can go to: the chats the Chats screen lists,
+  /// newest first, then the favourites it leaves out (owner, 2026-10-27).
+  /// A tap sends it at once; the Public channel asks first.
   Future<void> _showRecipientSheet({
     required BuildContext context,
     required MeshCoreConnector connector,
@@ -1631,7 +1628,8 @@ class _MapScreenState extends State<MapScreen> {
     if (!connector.isLoadingChannels && connector.channels.isEmpty) {
       connector.getChannels();
     }
-    String query = '';
+    final drafts = context.read<UiViewStateService>().drafts;
+    var query = '';
 
     await showModalBottomSheet(
       context: context,
@@ -1639,13 +1637,41 @@ class _MapScreenState extends State<MapScreen> {
         builder: (sheetContext, setSheetState) {
           return Consumer<MeshCoreConnector>(
             builder: (consumerContext, liveConnector, child) {
-              final allContacts = liveConnector.contacts
-                  .where(
-                    (contact) =>
-                        contact.type != advTypeRepeater &&
-                        contact.type != advTypeRoom,
-                  )
-                  .toList();
+              final (chats, favorites) = _shareTargets(liveConnector, drafts);
+              bool shown(_ShareTarget target) {
+                if (query.isEmpty) return true;
+                final contact = target.contact;
+                return contact != null
+                    ? matchesContactQuery(contact, query)
+                    : target.name.toLowerCase().contains(query);
+              }
+
+              Widget header(String text) => Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      text,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  );
+              Widget tile(_ShareTarget target) => ListTile(
+                    leading: Icon(target.icon, color: target.color),
+                    title: Text(
+                      target.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: target.channel?.isPublicChannel ?? false
+                        ? Text(context.l10n.channels_publicChannel)
+                        : null,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(
+                        _sendMarker(context, liveConnector, target, markerText),
+                      );
+                    },
+                  );
+              final shownChats = chats.where(shown).toList();
+              final shownFavorites = favorites.where(shown).toList();
               return SafeArea(
                 child: SingleChildScrollView(
                   child: Column(
@@ -1654,13 +1680,6 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Text(
-                          context.l10n.map_sendToContact,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                         child: TextField(
                           decoration: InputDecoration(
                             hintText:
@@ -1681,29 +1700,6 @@ class _MapScreenState extends State<MapScreen> {
                           },
                         ),
                       ),
-                      ...allContacts
-                          .where(
-                            (contact) =>
-                                query.isEmpty ||
-                                matchesContactQuery(contact, query),
-                          )
-                          .map((contact) {
-                            return ListTile(
-                              leading: const Icon(Icons.person),
-                              title: Text(contact.name),
-                              onTap: () {
-                                Navigator.pop(sheetContext);
-                                liveConnector.sendMessage(contact, markerText);
-                              },
-                            );
-                          }),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Text(
-                          context.l10n.map_sendToChannel,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
                       if (liveConnector.isLoadingChannels)
                         const Padding(
                           padding: EdgeInsets.symmetric(
@@ -1711,48 +1707,20 @@ class _MapScreenState extends State<MapScreen> {
                             vertical: 8,
                           ),
                           child: LinearProgressIndicator(),
-                        )
-                      else if (liveConnector.channels
-                          .where((c) => !c.isEmpty)
-                          .isEmpty)
+                        ),
+                      if (shownChats.isNotEmpty) ...[
+                        header(context.l10n.chats_title),
+                        ...shownChats.map(tile),
+                      ],
+                      if (shownFavorites.isNotEmpty) ...[
+                        header(context.l10n.listFilter_favorites),
+                        ...shownFavorites.map(tile),
+                      ],
+                      if (shownChats.isEmpty && shownFavorites.isEmpty)
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Text(context.l10n.map_noChannelsAvailable),
-                        )
-                      else
-                        ...liveConnector.channels.where((c) => !c.isEmpty).map((
-                          channel,
-                        ) {
-                          final isPublic = _isPublicChannel(channel);
-                          final label = channel.name.isEmpty
-                              ? 'Channel ${channel.index}'
-                              : channel.name;
-                          return ListTile(
-                            leading: Icon(
-                              isPublic ? Icons.public : Icons.tag,
-                              color: isPublic ? Colors.orange : Colors.blue,
-                            ),
-                            title: Text(label),
-                            subtitle: isPublic
-                                ? Text(context.l10n.channels_publicChannel)
-                                : null,
-                            onTap: () async {
-                              Navigator.pop(sheetContext);
-                              final canSend = isPublic
-                                  ? await _confirmPublicShare(context, label)
-                                  : true;
-                              if (canSend) {
-                                liveConnector.sendChannelMessage(
-                                  channel,
-                                  markerText,
-                                );
-                              }
-                            },
-                          );
-                        }),
+                          padding: const EdgeInsets.all(16),
+                          child: Text(context.l10n.chat_searchNoMatches),
+                        ),
                     ],
                   ),
                 ),
@@ -1762,6 +1730,84 @@ class _MapScreenState extends State<MapScreen> {
         },
       ),
     );
+  }
+
+  /// The Chats screen's list, newest first (its rule: a contact or room
+  /// with a message or a draft, and every channel), then the favourites it
+  /// leaves out, by name. Repeaters and sensors take no text.
+  static (List<_ShareTarget>, List<_ShareTarget>) _shareTargets(
+    MeshCoreConnector connector,
+    Map<String, String> drafts,
+  ) {
+    bool takesText(Contact c) =>
+        c.type == advTypeChat || c.type == advTypeRoom;
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final chats = <(int, _ShareTarget)>[];
+    final listed = <String>{};
+    for (final contact in connector.contacts) {
+      if (!takesText(contact)) continue;
+      final hasMessage = connector.latestContactMessage(contact) != null;
+      final hasDraft = drafts[contact.publicKeyHex]?.isNotEmpty ?? false;
+      if (!hasMessage && !hasDraft) continue;
+      listed.add(contact.publicKeyHex);
+      // A chat with only a draft sits on top, as on the Chats screen.
+      final sortKey = hasMessage ? connector.latestContactArrivalUs(contact) : now;
+      chats.add((sortKey, _ShareTarget.contact(contact)));
+    }
+    for (final channel in connector.channels) {
+      if (channel.isEmpty) continue;
+      final sortKey = connector.latestChannelMessage(channel) == null
+          ? 0
+          : connector.latestChannelArrivalUs(channel);
+      chats.add((sortKey, _ShareTarget.channel(channel)));
+    }
+    chats.sort((a, b) => b.$1.compareTo(a.$1));
+    final favorites = [
+      for (final contact in connector.contacts)
+        if (contact.isFavorite &&
+            takesText(contact) &&
+            !listed.contains(contact.publicKeyHex))
+          _ShareTarget.contact(contact),
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return ([for (final (_, target) in chats) target], favorites);
+  }
+
+  /// Sends a shared marker to [target], unless it is too long for it.
+  Future<void> _sendMarker(
+    BuildContext context,
+    MeshCoreConnector connector,
+    _ShareTarget target,
+    String text,
+  ) async {
+    final channel = target.channel;
+    final contact = target.contact;
+    final int maxBytes;
+    final String outbound;
+    if (channel != null) {
+      maxBytes = maxChannelMessageBytes(connector.selfName);
+      outbound = connector.prepareChannelOutboundText(channel.index, text);
+    } else {
+      maxBytes = contact!.type == advTypeRoom
+          ? maxRoomMessageBytes()
+          : maxContactMessageBytes();
+      outbound = connector.prepareContactOutboundText(contact, text);
+    }
+    if (utf8.encode(outbound).length > maxBytes) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.chat_messageTooLong(maxBytes)),
+      );
+      return;
+    }
+    if (channel == null) {
+      unawaited(connector.sendMessage(contact!, text));
+      return;
+    }
+    if (channel.isPublicChannel &&
+        !await _confirmPublicShare(context, target.name)) {
+      return;
+    }
+    unawaited(connector.sendChannelMessage(channel, text));
   }
 
   bool _isPublicChannel(Channel channel) {
@@ -2414,6 +2460,39 @@ class _MarkerPayload {
     required this.label,
     required this.flags,
   });
+}
+
+/// A chat a shared marker can go to: a contact or room, or a channel. It
+/// looks as it does on the Chats screen.
+class _ShareTarget {
+  final Contact? contact;
+  final Channel? channel;
+
+  const _ShareTarget.contact(Contact this.contact) : channel = null;
+  const _ShareTarget.channel(Channel this.channel) : contact = null;
+
+  String get name {
+    final channel = this.channel;
+    if (channel != null) {
+      return channel.name.isEmpty ? 'Channel ${channel.index}' : channel.name;
+    }
+    return contact!.name.isEmpty ? 'Unknown' : contact!.name;
+  }
+
+  IconData get icon {
+    final channel = this.channel;
+    if (channel == null) {
+      return contact!.type == advTypeRoom ? Icons.meeting_room : Icons.person;
+    }
+    if (channel.isPublicChannel) return Icons.public;
+    return channel.name.startsWith('#') ? Icons.tag : Icons.lock;
+  }
+
+  Color get color => channel != null
+      ? Colors.blue
+      : contact!.type == advTypeRoom
+      ? Colors.purple
+      : Colors.green;
 }
 
 class _SharedMarker {

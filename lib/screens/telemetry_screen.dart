@@ -309,7 +309,11 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   /// A GPS reading as the card a shared position gets in a chat: map,
   /// coordinates, Open map and Navigate (owner, 2026-10-26).
   Widget _buildPositionCard(LatLng position) {
-    final message = LocationMessage(position: position);
+    // Their radio's own position: the card says whose it is.
+    final message = LocationMessage(
+      position: position,
+      label: LocationMessage.myLocationLabel,
+    );
     final received = _receivedAt;
     return Align(
       alignment: Alignment.topCenter,

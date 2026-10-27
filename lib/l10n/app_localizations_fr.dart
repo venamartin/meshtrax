@@ -5816,5 +5816,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get locationSharing_partSensors => 'Capteurs';
 
   @override
-  String get locationSharing_hide => 'Masquer ma position à tout le monde';
+  String get dialog_positionHint =>
+      'Collez des coordonnées ou un lien de carte';
+
+  @override
+  String get dialog_positionUnreadable => 'Impossible de lire une position ici';
+
+  @override
+  String get dialog_positionLookingUp => 'Recherche du lien…';
+
+  @override
+  String get locationSharing_share => 'Partager ma position';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Désactivez pour la masquer à tout le monde';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Activez pour que les contacts autorisés la voient';
 }

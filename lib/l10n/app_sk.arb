@@ -2552,5 +2552,10 @@
   "locationSharing_partLocation": "Poloha",
   "locationSharing_partBattery": "Batéria",
   "locationSharing_partSensors": "Senzory",
-  "locationSharing_hide": "Skryť moju polohu pred všetkými"
+  "dialog_positionHint": "Vložte súradnice alebo odkaz na mapu",
+  "dialog_positionUnreadable": "Tu sa nedá prečítať poloha",
+  "dialog_positionLookingUp": "Overuje sa odkaz…",
+  "locationSharing_share": "Zdieľať moju polohu",
+  "locationSharing_shareOnHint": "Vypnite, aby ste ju skryli pred všetkými",
+  "locationSharing_shareOffHint": "Zapnite, aby ju videli kontakty s povolením"
 }

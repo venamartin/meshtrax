@@ -2552,5 +2552,10 @@
   "locationSharing_partLocation": "Localização",
   "locationSharing_partBattery": "Bateria",
   "locationSharing_partSensors": "Sensores",
-  "locationSharing_hide": "Ocultar minha localização de todos"
+  "dialog_positionHint": "Cole coordenadas ou um link de mapa",
+  "dialog_positionUnreadable": "Não foi possível ler uma posição aqui",
+  "dialog_positionLookingUp": "Consultando o link…",
+  "locationSharing_share": "Compartilhar minha localização",
+  "locationSharing_shareOnHint": "Desligue para ocultá-la de todos",
+  "locationSharing_shareOffHint": "Ligue para que os contatos com permissão a vejam"
 }

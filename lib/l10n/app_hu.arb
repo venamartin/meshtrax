@@ -2590,5 +2590,10 @@
   "locationSharing_partLocation": "Helyzet",
   "locationSharing_partBattery": "Akku",
   "locationSharing_partSensors": "Érzékelők",
-  "locationSharing_hide": "Helyzetem elrejtése mindenki elől"
+  "dialog_positionHint": "Illesszen be koordinátákat vagy térképlinket",
+  "dialog_positionUnreadable": "Itt nem olvasható ki pozíció",
+  "dialog_positionLookingUp": "A link ellenőrzése…",
+  "locationSharing_share": "Helyzetem megosztása",
+  "locationSharing_shareOnHint": "Kapcsolja ki, hogy mindenki elől elrejtse",
+  "locationSharing_shareOffHint": "Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák"
 }

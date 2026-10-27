@@ -5404,5 +5404,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get locationSharing_partSensors => '传感器';
 
   @override
-  String get locationSharing_hide => '对所有人隐藏我的位置';
+  String get dialog_positionHint => '粘贴坐标或地图链接';
+
+  @override
+  String get dialog_positionUnreadable => '无法从这里读取位置';
+
+  @override
+  String get dialog_positionLookingUp => '正在查询链接…';
+
+  @override
+  String get locationSharing_share => '共享我的位置';
+
+  @override
+  String get locationSharing_shareOnHint => '关闭后对所有人隐藏';
+
+  @override
+  String get locationSharing_shareOffHint => '开启后获准的联系人可以看到';
 }

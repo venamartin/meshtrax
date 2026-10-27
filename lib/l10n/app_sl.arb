@@ -2552,5 +2552,10 @@
   "locationSharing_partLocation": "Lokacija",
   "locationSharing_partBattery": "Baterija",
   "locationSharing_partSensors": "Senzorji",
-  "locationSharing_hide": "Skrij mojo lokacijo pred vsemi"
+  "dialog_positionHint": "Prilepite koordinate ali povezavo do zemljevida",
+  "dialog_positionUnreadable": "Tukaj ni mogoče prebrati položaja",
+  "dialog_positionLookingUp": "Preverjanje povezave…",
+  "locationSharing_share": "Deli mojo lokacijo",
+  "locationSharing_shareOnHint": "Izklopite, da jo skrijete pred vsemi",
+  "locationSharing_shareOffHint": "Vklopite, da jo vidijo stiki z dovoljenjem"
 }

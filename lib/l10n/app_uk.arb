@@ -2552,5 +2552,10 @@
   "locationSharing_partLocation": "Розташування",
   "locationSharing_partBattery": "Батарея",
   "locationSharing_partSensors": "Датчики",
-  "locationSharing_hide": "Приховати моє розташування від усіх"
+  "dialog_positionHint": "Вставте координати або посилання на карту",
+  "dialog_positionUnreadable": "Тут не вдається прочитати позицію",
+  "dialog_positionLookingUp": "Перевірка посилання…",
+  "locationSharing_share": "Ділитися моїм розташуванням",
+  "locationSharing_shareOnHint": "Вимкніть, щоб приховати його від усіх",
+  "locationSharing_shareOffHint": "Увімкніть, щоб його бачили контакти з дозволом"
 }

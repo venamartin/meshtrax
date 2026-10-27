@@ -2965,5 +2965,10 @@
   "locationSharing_partLocation": "Location",
   "locationSharing_partBattery": "Battery",
   "locationSharing_partSensors": "Sensors",
-  "locationSharing_hide": "Hide my location from everyone"
+  "dialog_positionHint": "Paste coordinates or a maps link",
+  "dialog_positionUnreadable": "Can't read a position here",
+  "dialog_positionLookingUp": "Looking up the link…",
+  "locationSharing_share": "Share my location",
+  "locationSharing_shareOnHint": "Turn off to hide it from everyone",
+  "locationSharing_shareOffHint": "Turn on to let contacts with permission see it"
 }

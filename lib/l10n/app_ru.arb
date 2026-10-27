@@ -1900,5 +1900,10 @@
   "locationSharing_partLocation": "Местоположение",
   "locationSharing_partBattery": "Батарея",
   "locationSharing_partSensors": "Датчики",
-  "locationSharing_hide": "Скрыть моё местоположение от всех"
+  "dialog_positionHint": "Вставьте координаты или ссылку на карту",
+  "dialog_positionUnreadable": "Здесь не удаётся прочитать позицию",
+  "dialog_positionLookingUp": "Проверка ссылки…",
+  "locationSharing_share": "Делиться моим местоположением",
+  "locationSharing_shareOnHint": "Выключите, чтобы скрыть его от всех",
+  "locationSharing_shareOffHint": "Включите, чтобы его видели контакты с разрешением"
 }

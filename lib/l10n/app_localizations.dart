@@ -9918,11 +9918,41 @@ abstract class AppLocalizations {
   /// **'Sensors'**
   String get locationSharing_partSensors;
 
-  /// No description provided for @locationSharing_hide.
+  /// No description provided for @dialog_positionHint.
   ///
   /// In en, this message translates to:
-  /// **'Hide my location from everyone'**
-  String get locationSharing_hide;
+  /// **'Paste coordinates or a maps link'**
+  String get dialog_positionHint;
+
+  /// No description provided for @dialog_positionUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read a position here'**
+  String get dialog_positionUnreadable;
+
+  /// No description provided for @dialog_positionLookingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking up the link…'**
+  String get dialog_positionLookingUp;
+
+  /// No description provided for @locationSharing_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location'**
+  String get locationSharing_share;
+
+  /// No description provided for @locationSharing_shareOnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to hide it from everyone'**
+  String get locationSharing_shareOnHint;
+
+  /// No description provided for @locationSharing_shareOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on to let contacts with permission see it'**
+  String get locationSharing_shareOffHint;
 }
 
 class _AppLocalizationsDelegate

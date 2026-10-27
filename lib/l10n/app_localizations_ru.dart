@@ -5793,5 +5793,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get locationSharing_partSensors => 'Датчики';
 
   @override
-  String get locationSharing_hide => 'Скрыть моё местоположение от всех';
+  String get dialog_positionHint => 'Вставьте координаты или ссылку на карту';
+
+  @override
+  String get dialog_positionUnreadable => 'Здесь не удаётся прочитать позицию';
+
+  @override
+  String get dialog_positionLookingUp => 'Проверка ссылки…';
+
+  @override
+  String get locationSharing_share => 'Делиться моим местоположением';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Выключите, чтобы скрыть его от всех';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Включите, чтобы его видели контакты с разрешением';
 }

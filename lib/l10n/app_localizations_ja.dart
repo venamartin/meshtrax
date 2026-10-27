@@ -5512,5 +5512,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locationSharing_partSensors => 'センサー';
 
   @override
-  String get locationSharing_hide => '位置情報を全員から隠す';
+  String get dialog_positionHint => '座標または地図のリンクを貼り付け';
+
+  @override
+  String get dialog_positionUnreadable => '位置を読み取れません';
+
+  @override
+  String get dialog_positionLookingUp => 'リンクを確認しています…';
+
+  @override
+  String get locationSharing_share => '位置情報を共有';
+
+  @override
+  String get locationSharing_shareOnHint => 'オフにすると全員に非表示になります';
+
+  @override
+  String get locationSharing_shareOffHint => 'オンにすると許可した連絡先が見られます';
 }

@@ -3,8 +3,6 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/widgets/battery_indicator.dart';
 import 'package:provider/provider.dart';
 
-import 'gps_status_button.dart';
-import 'location_sharing_button.dart';
 import 'snr_indicator.dart';
 
 class AppBarTitle extends StatelessWidget {
@@ -69,8 +67,6 @@ class AppBarTitle extends StatelessWidget {
                 children: [
                   if (showBattery) BatteryIndicator(connector: connector),
                   if (showSnr) SNRIndicator(connector: connector),
-                  const GpsStatusButton(),
-                  const LocationSharingButton(),
                 ],
               ),
             trailing ?? const SizedBox.shrink(),

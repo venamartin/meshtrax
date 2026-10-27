@@ -25,6 +25,8 @@ import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
+import '../widgets/gps_status_button.dart';
+import '../widgets/location_sharing_button.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../widgets/shares_position_icon.dart';
@@ -856,6 +858,8 @@ class _ChatsScreenState extends State<ChatsScreen>
               title: AppBarTitle(context.l10n.chats_title),
               centerTitle: true,
               actions: [
+                const GpsStatusButton(),
+                const LocationSharingButton(),
                 PopupMenuButton(
                   itemBuilder: (context) => [
                     PopupMenuItem(

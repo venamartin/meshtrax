@@ -5797,5 +5797,23 @@ class AppLocalizationsHu extends AppLocalizations {
   String get locationSharing_partSensors => 'Érzékelők';
 
   @override
-  String get locationSharing_hide => 'Helyzetem elrejtése mindenki elől';
+  String get dialog_positionHint =>
+      'Illesszen be koordinátákat vagy térképlinket';
+
+  @override
+  String get dialog_positionUnreadable => 'Itt nem olvasható ki pozíció';
+
+  @override
+  String get dialog_positionLookingUp => 'A link ellenőrzése…';
+
+  @override
+  String get locationSharing_share => 'Helyzetem megosztása';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Kapcsolja ki, hogy mindenki elől elrejtse';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák';
 }

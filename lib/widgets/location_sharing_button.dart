@@ -29,7 +29,6 @@ class LocationSharingButton extends StatelessWidget {
       tooltip: visible
           ? l10n.locationSharing_someone
           : l10n.locationSharing_nobody,
-      visualDensity: VisualDensity.compact,
       onPressed: () => showLocationSharingDialog(context),
       icon: Icon(
         Icons.share_location,
@@ -48,9 +47,9 @@ Future<void> showLocationSharingDialog(BuildContext context) =>
 
 typedef _Grants = ({bool base, bool location, bool environment});
 
-/// Who can see the radio's position and read its telemetry: the advert
-/// switch, the contacts that may ask (each opens its permissions), and one
-/// button that hides the position from everyone.
+/// Who can see the radio's position and read its telemetry: one switch for
+/// sharing at all, the advert switch, and the contacts that may ask (each
+/// opens its permissions).
 class _LocationSharingDialog extends StatelessWidget {
   const _LocationSharingDialog();
 
@@ -83,6 +82,12 @@ class _LocationSharingDialog extends StatelessWidget {
         return a.$1.name.toLowerCase().compareTo(b.$1.name.toLowerCase());
       });
     final sharedWithContacts = saved.any(connector.sharesPositionWith);
+    final base = connector.telemetryModeBase;
+    final loc = connector.telemetryModeLoc;
+    // On while anything could carry the position: the adverts, or the
+    // radio answering location requests from the contacts it allows.
+    final sharing = connector.advertLocationPolicy != 0 ||
+        (base != teleModeDeny && loc != teleModeDeny);
 
     final String headline;
     if (!connector.hasSelfPosition) {
@@ -106,6 +111,28 @@ class _LocationSharingDialog extends StatelessWidget {
           children: [
             Text(headline, style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.locationSharing_share),
+              subtitle: Text(
+                sharing
+                    ? l10n.locationSharing_shareOnHint
+                    : l10n.locationSharing_shareOffHint,
+              ),
+              value: sharing,
+              // Off: the adverts and every location answer. On: the contacts
+              // with permission again, never everyone (owner, 2026-10-27);
+              // location rides on base, so base comes back with it.
+              onChanged: (on) => unawaited(
+                on
+                    ? _write(
+                        connector,
+                        base: base == teleModeDeny ? teleModeAllowFlags : base,
+                        location: loc == teleModeDeny ? teleModeAllowFlags : loc,
+                      )
+                    : _write(connector, advert: 0, location: teleModeDeny),
+              ),
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.locationSharing_adverts),
@@ -153,22 +180,6 @@ class _LocationSharingDialog extends StatelessWidget {
               if (!everyone && rows.isEmpty)
                 _note(l10n.locationSharing_noContacts),
             ],
-            if (connector.advertLocationPolicy != 0 || sharedWithContacts) ...[
-              const SizedBox(height: 16),
-              Center(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Theme.of(context).colorScheme.onError,
-                  ),
-                  icon: const Icon(Icons.location_off),
-                  label: Text(l10n.locationSharing_hide),
-                  onPressed: () => unawaited(
-                    _write(connector, advert: 0, location: teleModeDeny),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -196,18 +207,19 @@ class _LocationSharingDialog extends StatelessWidget {
     if (grants.environment) l10n.locationSharing_partSensors,
   ].join(' · ');
 
-  /// The radio's privacy settings with the advert policy and, when given,
-  /// the location mode changed; the rest as they are.
+  /// The radio's privacy settings with what is given changed and the rest
+  /// as they are.
   Future<void> _write(
     MeshCoreConnector connector, {
-    required int advert,
+    int? base,
     int? location,
+    int? advert,
   }) async {
     await connector.setTelemetryModeBase(
-      connector.telemetryModeBase,
+      base ?? connector.telemetryModeBase,
       location ?? connector.telemetryModeLoc,
       connector.telemetryModeEnv,
-      advert,
+      advert ?? connector.advertLocationPolicy,
       connector.multiAcks,
     );
     await connector.refreshDeviceInfo();

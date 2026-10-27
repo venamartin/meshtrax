@@ -5776,5 +5776,22 @@ class AppLocalizationsBg extends AppLocalizations {
   String get locationSharing_partSensors => 'Сензори';
 
   @override
-  String get locationSharing_hide => 'Скрий местоположението ми от всички';
+  String get dialog_positionHint => 'Поставете координати или линк към карта';
+
+  @override
+  String get dialog_positionUnreadable => 'Тук не може да се разчете позиция';
+
+  @override
+  String get dialog_positionLookingUp => 'Проверка на линка…';
+
+  @override
+  String get locationSharing_share => 'Споделяй местоположението ми';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Изключете, за да го скриете от всички';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Включете, за да го виждат контактите с разрешение';
 }

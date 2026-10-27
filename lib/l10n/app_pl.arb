@@ -2590,5 +2590,10 @@
   "locationSharing_partLocation": "Lokalizacja",
   "locationSharing_partBattery": "Bateria",
   "locationSharing_partSensors": "Czujniki",
-  "locationSharing_hide": "Ukryj moją lokalizację przed wszystkimi"
+  "dialog_positionHint": "Wklej współrzędne lub link do mapy",
+  "dialog_positionUnreadable": "Nie można tu odczytać pozycji",
+  "dialog_positionLookingUp": "Sprawdzanie linku…",
+  "locationSharing_share": "Udostępniaj moją lokalizację",
+  "locationSharing_shareOnHint": "Wyłącz, aby ukryć ją przed wszystkimi",
+  "locationSharing_shareOffHint": "Włącz, aby widziały ją kontakty z pozwoleniem"
 }

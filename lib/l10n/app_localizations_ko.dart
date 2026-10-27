@@ -5518,5 +5518,20 @@ class AppLocalizationsKo extends AppLocalizations {
   String get locationSharing_partSensors => '센서';
 
   @override
-  String get locationSharing_hide => '모두에게 내 위치 숨기기';
+  String get dialog_positionHint => '좌표나 지도 링크를 붙여 넣으세요';
+
+  @override
+  String get dialog_positionUnreadable => '여기서 위치를 읽을 수 없어요';
+
+  @override
+  String get dialog_positionLookingUp => '링크를 확인하는 중…';
+
+  @override
+  String get locationSharing_share => '내 위치 공유';
+
+  @override
+  String get locationSharing_shareOnHint => '끄면 모두에게 숨겨져요';
+
+  @override
+  String get locationSharing_shareOffHint => '켜면 허용한 연락처가 볼 수 있어요';
 }

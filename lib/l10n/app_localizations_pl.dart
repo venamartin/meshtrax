@@ -5803,5 +5803,22 @@ class AppLocalizationsPl extends AppLocalizations {
   String get locationSharing_partSensors => 'Czujniki';
 
   @override
-  String get locationSharing_hide => 'Ukryj moją lokalizację przed wszystkimi';
+  String get dialog_positionHint => 'Wklej współrzędne lub link do mapy';
+
+  @override
+  String get dialog_positionUnreadable => 'Nie można tu odczytać pozycji';
+
+  @override
+  String get dialog_positionLookingUp => 'Sprawdzanie linku…';
+
+  @override
+  String get locationSharing_share => 'Udostępniaj moją lokalizację';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Wyłącz, aby ukryć ją przed wszystkimi';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Włącz, aby widziały ją kontakty z pozwoleniem';
 }

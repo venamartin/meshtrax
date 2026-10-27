@@ -11,7 +11,8 @@ import '../services/app_settings_service.dart';
 import 'snr_indicator.dart';
 
 /// The top bar's GPS icon: on or off, shown only when the radio has a GPS.
-/// Tapping it opens [showGpsDialog].
+/// Tapping it opens [showGpsDialog]. It sits in the bar's actions, first,
+/// so every icon there is spaced alike (owner, 2026-10-27).
 class GpsStatusButton extends StatelessWidget {
   const GpsStatusButton({super.key});
 
@@ -25,7 +26,6 @@ class GpsStatusButton extends StatelessWidget {
     final l10n = context.l10n;
     return IconButton(
       tooltip: on ? l10n.gps_on : l10n.gps_off,
-      visualDensity: VisualDensity.compact,
       onPressed: () => showGpsDialog(context),
       icon: Icon(
         on ? Icons.gps_fixed : Icons.gps_off,

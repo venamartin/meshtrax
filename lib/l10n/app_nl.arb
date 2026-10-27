@@ -2552,5 +2552,10 @@
   "locationSharing_partLocation": "Locatie",
   "locationSharing_partBattery": "Batterij",
   "locationSharing_partSensors": "Sensoren",
-  "locationSharing_hide": "Mijn locatie voor iedereen verbergen"
+  "dialog_positionHint": "Plak coördinaten of een kaartlink",
+  "dialog_positionUnreadable": "Hier is geen positie te lezen",
+  "dialog_positionLookingUp": "Link opzoeken…",
+  "locationSharing_share": "Mijn locatie delen",
+  "locationSharing_shareOnHint": "Zet uit om hem voor iedereen te verbergen",
+  "locationSharing_shareOffHint": "Zet aan zodat contacten met toestemming hem zien"
 }

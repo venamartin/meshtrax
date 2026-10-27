@@ -462,6 +462,12 @@ class EventWhen {
 }
 
 class LocationMessage extends StructuredMessage {
+  /// The title that makes a location the sender's own position. Always
+  /// English on the air; readers show it in their language ("My location",
+  /// "GWQ's location"). A location with any other title, or none, is just
+  /// a place (owner, 2026-10-27).
+  static const myLocationLabel = 'My location';
+
   @override
   final LatLng position;
   final String? label;
@@ -475,6 +481,10 @@ class LocationMessage extends StructuredMessage {
     super.extraText,
     super.extensions,
   });
+
+  /// The sender's own position: titled [myLocationLabel], in any case.
+  bool get isSendersOwn =>
+      label?.trim().toLowerCase() == myLocationLabel.toLowerCase();
 
   @override
   String get keyword => 'Location';

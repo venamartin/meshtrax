@@ -5798,5 +5798,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get locationSharing_partSensors => 'Датчики';
 
   @override
-  String get locationSharing_hide => 'Приховати моє розташування від усіх';
+  String get dialog_positionHint => 'Вставте координати або посилання на карту';
+
+  @override
+  String get dialog_positionUnreadable => 'Тут не вдається прочитати позицію';
+
+  @override
+  String get dialog_positionLookingUp => 'Перевірка посилання…';
+
+  @override
+  String get locationSharing_share => 'Ділитися моїм розташуванням';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Вимкніть, щоб приховати його від усіх';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Увімкніть, щоб його бачили контакти з дозволом';
 }

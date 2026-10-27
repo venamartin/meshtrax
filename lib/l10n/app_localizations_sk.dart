@@ -5770,5 +5770,22 @@ class AppLocalizationsSk extends AppLocalizations {
   String get locationSharing_partSensors => 'Senzory';
 
   @override
-  String get locationSharing_hide => 'Skryť moju polohu pred všetkými';
+  String get dialog_positionHint => 'Vložte súradnice alebo odkaz na mapu';
+
+  @override
+  String get dialog_positionUnreadable => 'Tu sa nedá prečítať poloha';
+
+  @override
+  String get dialog_positionLookingUp => 'Overuje sa odkaz…';
+
+  @override
+  String get locationSharing_share => 'Zdieľať moju polohu';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Vypnite, aby ste ju skryli pred všetkými';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Zapnite, aby ju videli kontakty s povolením';
 }
