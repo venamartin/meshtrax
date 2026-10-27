@@ -5459,4 +5459,76 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => '作成';
+
+  @override
+  String get locationSharing_title => '位置情報を見られる人';
+
+  @override
+  String get locationSharing_someone => '誰かがあなたの位置情報を見られます';
+
+  @override
+  String get locationSharing_nobody => '誰もあなたの位置情報を見られません';
+
+  @override
+  String get locationSharing_noPosition => '無線機にまだ位置情報がないため、誰にも見られません';
+
+  @override
+  String get locationSharing_everyone => 'あなたの無線機を受信できる人は誰でも位置情報を見られます';
+
+  @override
+  String get locationSharing_allContacts => 'すべての連絡先があなたの位置情報を見られます';
+
+  @override
+  String get locationSharing_someContacts => '許可した連絡先があなたの位置情報を見られます';
+
+  @override
+  String get locationSharing_adverts => 'アドバートに位置情報を含める';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'アドバートに位置情報が含まれるため、あなたの無線機を受信した人は誰でも見られます。';
+
+  @override
+  String get locationSharing_contactsHeader => '無線機に問い合わせできる連絡先';
+
+  @override
+  String get locationSharing_noTelemetry => 'なし。無線機はテレメトリー要求に応答しません。';
+
+  @override
+  String get locationSharing_noContacts => '許可されている連絡先はありません。';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'すべての連絡先（$count）';
+  }
+
+  @override
+  String get locationSharing_partLocation => '位置情報';
+
+  @override
+  String get locationSharing_partBattery => 'バッテリー';
+
+  @override
+  String get locationSharing_partSensors => 'センサー';
+
+  @override
+  String get dialog_positionHint => '座標または地図のリンクを貼り付け';
+
+  @override
+  String get dialog_positionUnreadable => '位置を読み取れません';
+
+  @override
+  String get dialog_positionLookingUp => 'リンクを確認しています…';
+
+  @override
+  String get locationSharing_share => '位置情報を共有';
+
+  @override
+  String get locationSharing_shareOnHint => 'オフにすると全員に非表示になります';
+
+  @override
+  String get locationSharing_shareOffHint => 'オンにすると許可した連絡先が見られます';
+
+  @override
+  String get chats_advertise => 'アドバート';
 }

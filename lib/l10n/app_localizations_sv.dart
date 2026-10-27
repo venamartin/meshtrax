@@ -5670,4 +5670,84 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Skapa';
+
+  @override
+  String get locationSharing_title => 'Vem kan se min plats';
+
+  @override
+  String get locationSharing_someone => 'Någon kan se din plats';
+
+  @override
+  String get locationSharing_nobody => 'Ingen kan se din plats';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Din radio har ingen plats än, så ingen kan se den';
+
+  @override
+  String get locationSharing_everyone =>
+      'Alla som hör din radio kan se din plats';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Alla dina kontakter kan se din plats';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Kontakter du har tillåtit kan se din plats';
+
+  @override
+  String get locationSharing_adverts => 'Plats i annonseringar';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Dina annonseringar innehåller din plats, så alla som hör din radio ser den.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Kontakter som får fråga din radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Inga. Din radio svarar inte på telemetriförfrågningar.';
+
+  @override
+  String get locationSharing_noContacts => 'Ingen kontakt har tillåtelse.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Alla dina kontakter ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Plats';
+
+  @override
+  String get locationSharing_partBattery => 'Batteri';
+
+  @override
+  String get locationSharing_partSensors => 'Sensorer';
+
+  @override
+  String get dialog_positionHint => 'Klistra in koordinater eller en kartlänk';
+
+  @override
+  String get dialog_positionUnreadable => 'Kan inte läsa en position här';
+
+  @override
+  String get dialog_positionLookingUp => 'Slår upp länken…';
+
+  @override
+  String get locationSharing_share => 'Dela min plats';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Stäng av för att dölja den för alla';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Slå på så att kontakter med tillåtelse ser den';
+
+  @override
+  String get chats_advertise => 'Annonsera';
 }

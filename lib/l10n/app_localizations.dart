@@ -9821,6 +9821,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create'**
   String get pathfinder_graphCreate;
+
+  /// No description provided for @locationSharing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my location'**
+  String get locationSharing_title;
+
+  /// No description provided for @locationSharing_someone.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone can see your location'**
+  String get locationSharing_someone;
+
+  /// No description provided for @locationSharing_nobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody can see your location'**
+  String get locationSharing_nobody;
+
+  /// No description provided for @locationSharing_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio has no location yet, so nobody can see it'**
+  String get locationSharing_noPosition;
+
+  /// No description provided for @locationSharing_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone who hears your radio can see your location'**
+  String get locationSharing_everyone;
+
+  /// No description provided for @locationSharing_allContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'All your contacts can see your location'**
+  String get locationSharing_allContacts;
+
+  /// No description provided for @locationSharing_someContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts you allowed can see your location'**
+  String get locationSharing_someContacts;
+
+  /// No description provided for @locationSharing_adverts.
+  ///
+  /// In en, this message translates to:
+  /// **'Location in adverts'**
+  String get locationSharing_adverts;
+
+  /// No description provided for @locationSharing_advertsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your adverts carry your location, so anyone who hears your radio sees it.'**
+  String get locationSharing_advertsHint;
+
+  /// No description provided for @locationSharing_contactsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts who can ask your radio'**
+  String get locationSharing_contactsHeader;
+
+  /// No description provided for @locationSharing_noTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'None. Your radio answers no telemetry requests.'**
+  String get locationSharing_noTelemetry;
+
+  /// No description provided for @locationSharing_noContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contact is allowed to ask.'**
+  String get locationSharing_noContacts;
+
+  /// No description provided for @locationSharing_allContactsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'All your contacts ({count})'**
+  String locationSharing_allContactsRow(int count);
+
+  /// No description provided for @locationSharing_partLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get locationSharing_partLocation;
+
+  /// No description provided for @locationSharing_partBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery'**
+  String get locationSharing_partBattery;
+
+  /// No description provided for @locationSharing_partSensors.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensors'**
+  String get locationSharing_partSensors;
+
+  /// No description provided for @dialog_positionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste coordinates or a maps link'**
+  String get dialog_positionHint;
+
+  /// No description provided for @dialog_positionUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read a position here'**
+  String get dialog_positionUnreadable;
+
+  /// No description provided for @dialog_positionLookingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking up the link…'**
+  String get dialog_positionLookingUp;
+
+  /// No description provided for @locationSharing_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location'**
+  String get locationSharing_share;
+
+  /// No description provided for @locationSharing_shareOnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to hide it from everyone'**
+  String get locationSharing_shareOnHint;
+
+  /// No description provided for @locationSharing_shareOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on to let contacts with permission see it'**
+  String get locationSharing_shareOffHint;
+
+  /// No description provided for @chats_advertise.
+  ///
+  /// In en, this message translates to:
+  /// **'Advertise'**
+  String get chats_advertise;
 }
 
 class _AppLocalizationsDelegate

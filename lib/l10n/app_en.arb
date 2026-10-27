@@ -2941,5 +2941,35 @@
   "pathfinder_meshKeep": "Keep this one",
   "pathfinder_graphNameTitle": "Name the new graph",
   "pathfinder_graphNameHint": "For example, Washington",
-  "pathfinder_graphCreate": "Create"
+  "pathfinder_graphCreate": "Create",
+  "locationSharing_title": "Who can see my location",
+  "locationSharing_someone": "Someone can see your location",
+  "locationSharing_nobody": "Nobody can see your location",
+  "locationSharing_noPosition": "Your radio has no location yet, so nobody can see it",
+  "locationSharing_everyone": "Everyone who hears your radio can see your location",
+  "locationSharing_allContacts": "All your contacts can see your location",
+  "locationSharing_someContacts": "Contacts you allowed can see your location",
+  "locationSharing_adverts": "Location in adverts",
+  "locationSharing_advertsHint": "Your adverts carry your location, so anyone who hears your radio sees it.",
+  "locationSharing_contactsHeader": "Contacts who can ask your radio",
+  "locationSharing_noTelemetry": "None. Your radio answers no telemetry requests.",
+  "locationSharing_noContacts": "No contact is allowed to ask.",
+  "locationSharing_allContactsRow": "All your contacts ({count})",
+  "@locationSharing_allContactsRow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "locationSharing_partLocation": "Location",
+  "locationSharing_partBattery": "Battery",
+  "locationSharing_partSensors": "Sensors",
+  "dialog_positionHint": "Paste coordinates or a maps link",
+  "dialog_positionUnreadable": "Can't read a position here",
+  "dialog_positionLookingUp": "Looking up the link…",
+  "locationSharing_share": "Share my location",
+  "locationSharing_shareOnHint": "Turn off to hide it from everyone",
+  "locationSharing_shareOffHint": "Turn on to let contacts with permission see it",
+  "chats_advertise": "Advertise"
 }

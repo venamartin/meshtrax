@@ -5712,4 +5712,85 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Ustvari';
+
+  @override
+  String get locationSharing_title => 'Kdo vidi mojo lokacijo';
+
+  @override
+  String get locationSharing_someone => 'Nekdo lahko vidi vašo lokacijo';
+
+  @override
+  String get locationSharing_nobody => 'Nihče ne vidi vaše lokacije';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Vaš radio še nima lokacije, zato je nihče ne vidi';
+
+  @override
+  String get locationSharing_everyone =>
+      'Vsakdo, ki sliši vaš radio, vidi vašo lokacijo';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Vsi vaši stiki vidijo vašo lokacijo';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Stiki, ki ste jim to dovolili, vidijo vašo lokacijo';
+
+  @override
+  String get locationSharing_adverts => 'Lokacija v objavah';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Vaše objave vsebujejo vašo lokacijo, zato jo vidi vsakdo, ki sliši vaš radio.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Stiki, ki lahko povprašajo vaš radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Nobeden. Vaš radio ne odgovarja na zahteve za telemetrijo.';
+
+  @override
+  String get locationSharing_noContacts => 'Noben stik nima dovoljenja.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Vsi vaši stiki ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Lokacija';
+
+  @override
+  String get locationSharing_partBattery => 'Baterija';
+
+  @override
+  String get locationSharing_partSensors => 'Senzorji';
+
+  @override
+  String get dialog_positionHint =>
+      'Prilepite koordinate ali povezavo do zemljevida';
+
+  @override
+  String get dialog_positionUnreadable => 'Tukaj ni mogoče prebrati položaja';
+
+  @override
+  String get dialog_positionLookingUp => 'Preverjanje povezave…';
+
+  @override
+  String get locationSharing_share => 'Deli mojo lokacijo';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Izklopite, da jo skrijete pred vsemi';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Vklopite, da jo vidijo stiki z dovoljenjem';
+
+  @override
+  String get chats_advertise => 'Objavi';
 }

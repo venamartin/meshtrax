@@ -5728,4 +5728,84 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Crear';
+
+  @override
+  String get locationSharing_title => 'Quién puede ver mi ubicación';
+
+  @override
+  String get locationSharing_someone => 'Alguien puede ver tu ubicación';
+
+  @override
+  String get locationSharing_nobody => 'Nadie puede ver tu ubicación';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Tu radio aún no tiene ubicación, así que nadie puede verla';
+
+  @override
+  String get locationSharing_everyone =>
+      'Cualquiera que oiga tu radio puede ver tu ubicación';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Todos tus contactos pueden ver tu ubicación';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Los contactos que permitiste pueden ver tu ubicación';
+
+  @override
+  String get locationSharing_adverts => 'Ubicación en los anuncios';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Tus anuncios llevan tu ubicación, así que cualquiera que oiga tu radio la ve.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Contactos que pueden consultar tu radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Ninguno. Tu radio no responde a solicitudes de telemetría.';
+
+  @override
+  String get locationSharing_noContacts => 'Ningún contacto tiene permiso.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Todos tus contactos ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Ubicación';
+
+  @override
+  String get locationSharing_partBattery => 'Batería';
+
+  @override
+  String get locationSharing_partSensors => 'Sensores';
+
+  @override
+  String get dialog_positionHint => 'Pega coordenadas o un enlace de mapas';
+
+  @override
+  String get dialog_positionUnreadable => 'No se puede leer una posición aquí';
+
+  @override
+  String get dialog_positionLookingUp => 'Consultando el enlace…';
+
+  @override
+  String get locationSharing_share => 'Compartir mi ubicación';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Desactívalo para ocultarla a todos';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Actívalo para que la vean los contactos con permiso';
+
+  @override
+  String get chats_advertise => 'Anunciar';
 }

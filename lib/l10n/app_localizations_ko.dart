@@ -5465,4 +5465,76 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => '만들기';
+
+  @override
+  String get locationSharing_title => '내 위치를 볼 수 있는 사람';
+
+  @override
+  String get locationSharing_someone => '누군가 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_nobody => '아무도 내 위치를 볼 수 없어요';
+
+  @override
+  String get locationSharing_noPosition => '무전기에 아직 위치가 없어서 아무도 볼 수 없어요';
+
+  @override
+  String get locationSharing_everyone => '내 무전기를 수신하는 누구나 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_allContacts => '모든 연락처가 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_someContacts => '허용한 연락처가 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_adverts => '광고에 위치 포함';
+
+  @override
+  String get locationSharing_advertsHint =>
+      '광고에 내 위치가 담겨서 내 무전기를 수신하는 누구나 볼 수 있어요.';
+
+  @override
+  String get locationSharing_contactsHeader => '내 무전기에 요청할 수 있는 연락처';
+
+  @override
+  String get locationSharing_noTelemetry => '없음. 무전기가 텔레메트리 요청에 응답하지 않아요.';
+
+  @override
+  String get locationSharing_noContacts => '허용된 연락처가 없어요.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return '모든 연락처 ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => '위치';
+
+  @override
+  String get locationSharing_partBattery => '배터리';
+
+  @override
+  String get locationSharing_partSensors => '센서';
+
+  @override
+  String get dialog_positionHint => '좌표나 지도 링크를 붙여 넣으세요';
+
+  @override
+  String get dialog_positionUnreadable => '여기서 위치를 읽을 수 없어요';
+
+  @override
+  String get dialog_positionLookingUp => '링크를 확인하는 중…';
+
+  @override
+  String get locationSharing_share => '내 위치 공유';
+
+  @override
+  String get locationSharing_shareOnHint => '끄면 모두에게 숨겨져요';
+
+  @override
+  String get locationSharing_shareOffHint => '켜면 허용한 연락처가 볼 수 있어요';
+
+  @override
+  String get chats_advertise => '광고';
 }

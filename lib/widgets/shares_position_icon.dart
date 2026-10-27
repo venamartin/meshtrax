@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 
-/// After a contact's name: they get this radio's position when they ask
-/// for telemetry (the connector's sharesPositionWith). Not to be read as
-/// their own position, which contact rows mark with a plain pin.
+/// Left of a contact row's unread count: they see this radio's position
+/// when they ask for telemetry (the connector's positionVisibleTo). Not to
+/// be read as their own position, which contact rows mark with a plain pin.
 class SharesPositionIcon extends StatelessWidget {
   const SharesPositionIcon({super.key});
 

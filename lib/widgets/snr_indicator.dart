@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -76,28 +78,59 @@ String formatAgo(DateTime lastSeen) {
   return "${days}d";
 }
 
+/// The top bar's signal readout: the icon, the best direct repeater's SNR
+/// and, under it, how many repeaters hear this radio, the best one's code
+/// and how long ago ("1: A277: 22s"). Tapping opens the nearby repeaters.
+/// [showRepeaterLine]: a narrow bar drops that last line first.
 class SNRIndicator extends StatelessWidget {
   final MeshCoreConnector connector;
+  final bool showRepeaterLine;
 
-  const SNRIndicator({super.key, required this.connector});
+  const SNRIndicator({
+    super.key,
+    required this.connector,
+    this.showRepeaterLine = true,
+  });
+
+  static const textStyle = TextStyle(fontSize: 12);
+  static const repeatersStyle = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: Colors.grey,
+  );
+  static const _iconSize = 18.0;
+  static const _padding = 8.0;
+  static const _minWidth = 40.0;
+
+  /// What the readout shows for [connector]: the icon and colour, the
+  /// signal line, and the repeater line when a repeater has been heard.
+  static ({SNRUi ui, String text, String? repeaters}) textsFor(
+    MeshCoreConnector connector,
+  ) {
+    final directRepeaters = connector.directRepeaters;
+    final best = List.of(directRepeaters)..sort(DirectRepeater.compare);
+    final directRepeater = best.isEmpty ? null : best.first;
+    final ui = snrUiFromSNR(directRepeater?.snr, connector.currentSf);
+    return (
+      ui: ui,
+      text: connector.isDiscovering ? 'Wait' : ui.text,
+      repeaters: directRepeater == null
+          ? null
+          : '${directRepeaters.length}: ${directRepeater.prefixHex}: '
+              '${formatAgo(directRepeater.lastUpdated)}',
+    );
+  }
+
+  /// The readout's width when its widest line measures [textWidth].
+  static double width(double textWidth) =>
+      math.max(_minWidth, math.max(_iconSize, textWidth) + _padding);
 
   @override
   Widget build(BuildContext context) {
-    final directRepeaters = connector.directRepeaters;
-    final directBestRepeaters = List.of(directRepeaters)
-      ..sort(DirectRepeater.compare);
-    final directRepeater = directBestRepeaters.isEmpty
-        ? null
-        : directBestRepeaters.first;
-
-    final snrUi = snrUiFromSNR(
-      directBestRepeaters.isNotEmpty ? directRepeater!.snr : null,
-      connector.currentSf,
-    );
+    final (:ui, :text, :repeaters) = textsFor(connector);
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-
+      constraints: const BoxConstraints(minWidth: _minWidth, minHeight: 40),
       child: InkWell(
         onTap: () => showDialog(
           context: context,
@@ -105,29 +138,25 @@ class SNRIndicator extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _padding / 2,
+            vertical: 8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               connector.isDiscovering
                   ? const SizedBox(
-                      width: 18,
-                      height: 18,
+                      width: _iconSize,
+                      height: _iconSize,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(snrUi.icon, size: 18, color: snrUi.color),
-              Text(
-                connector.isDiscovering ? 'Wait' : snrUi.text,
-                style: TextStyle(fontSize: 12, color: snrUi.color),
-              ),
-              if (directRepeater != null)
+                  : Icon(ui.icon, size: _iconSize, color: ui.color),
+              Text(text, style: textStyle.copyWith(color: ui.color)),
+              if (showRepeaterLine && repeaters != null)
                 Text(
-                  '${directRepeaters.length}: ${directRepeater.prefixHex}: ${formatAgo(directRepeater.lastUpdated)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey,
-                  ),
+                  repeaters,
+                  style: repeatersStyle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

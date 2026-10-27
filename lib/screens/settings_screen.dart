@@ -425,7 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text(l10n.settings_privacy),
             subtitle: Text(l10n.settings_privacySubtitle),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _privacySettings(context, connector),
+            onTap: () => showPrivacySettings(context, connector),
           ),
         ],
       ),
@@ -1678,7 +1678,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-void _privacySettings(BuildContext context, MeshCoreConnector connector) {
+void showPrivacySettings(BuildContext context, MeshCoreConnector connector) {
   final l10n = context.l10n;
 
   int telemetryMode = connector.telemetryModeBase;

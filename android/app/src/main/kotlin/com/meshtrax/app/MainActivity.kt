@@ -27,7 +27,6 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "manufacturer" -> result.success(Build.MANUFACTURER.lowercase())
                     "isBackgroundRestricted" -> result.success(isBackgroundRestricted())
-                    "imeState" -> result.success(imeState())
                     else -> result.notImplemented()
                 }
             }
@@ -56,15 +55,6 @@ class MainActivity : FlutterActivity() {
                     }
                 }
             },
-        )
-    }
-
-    private fun imeState(): Map<String, Any>? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
-        val insets = window.decorView.rootWindowInsets ?: return null
-        return mapOf(
-            "visible" to insets.isVisible(WindowInsets.Type.ime()),
-            "bottomPx" to insets.getInsets(WindowInsets.Type.ime()).bottom,
         )
     }
 

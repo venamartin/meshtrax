@@ -5737,4 +5737,85 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Anlegen';
+
+  @override
+  String get locationSharing_title => 'Wer meinen Standort sehen kann';
+
+  @override
+  String get locationSharing_someone => 'Jemand kann Ihren Standort sehen';
+
+  @override
+  String get locationSharing_nobody => 'Niemand kann Ihren Standort sehen';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Ihr Funkgerät hat noch keinen Standort, also kann ihn niemand sehen';
+
+  @override
+  String get locationSharing_everyone =>
+      'Jeder, der Ihr Funkgerät hört, kann Ihren Standort sehen';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Alle Ihre Kontakte können Ihren Standort sehen';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Kontakte, denen Sie es erlaubt haben, können Ihren Standort sehen';
+
+  @override
+  String get locationSharing_adverts => 'Standort in Ankündigungen';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Ihre Ankündigungen enthalten Ihren Standort, also sieht ihn jeder, der Ihr Funkgerät hört.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Kontakte, die Ihr Funkgerät abfragen dürfen';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Keine. Ihr Funkgerät beantwortet keine Telemetrieanfragen.';
+
+  @override
+  String get locationSharing_noContacts => 'Kein Kontakt darf abfragen.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Alle Ihre Kontakte ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Standort';
+
+  @override
+  String get locationSharing_partBattery => 'Akku';
+
+  @override
+  String get locationSharing_partSensors => 'Sensoren';
+
+  @override
+  String get dialog_positionHint =>
+      'Koordinaten oder einen Kartenlink einfügen';
+
+  @override
+  String get dialog_positionUnreadable => 'Hier ist keine Position lesbar';
+
+  @override
+  String get dialog_positionLookingUp => 'Link wird aufgelöst…';
+
+  @override
+  String get locationSharing_share => 'Meinen Standort teilen';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Ausschalten, um ihn vor allen zu verbergen';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Einschalten, damit Kontakte mit Erlaubnis ihn sehen';
+
+  @override
+  String get chats_advertise => 'Ankündigen';
 }

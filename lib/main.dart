@@ -32,7 +32,6 @@ import 'services/map_tile_cache_service.dart';
 import 'services/map_packs_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
-import 'services/keyboard_inset_logger.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 import 'utils/scroll_jank_reporter.dart';
@@ -92,7 +91,6 @@ void main() async {
     SchedulerBinding.instance
         .addTimingsCallback(ScrollJankReporter.instance.onTimings);
   }
-  KeyboardInsetLogger().start();
 
   // Initialize notification service
   final notificationService = NotificationService();

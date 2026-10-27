@@ -5352,4 +5352,75 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => '创建';
+
+  @override
+  String get locationSharing_title => '谁能看到我的位置';
+
+  @override
+  String get locationSharing_someone => '有人能看到您的位置';
+
+  @override
+  String get locationSharing_nobody => '没有人能看到您的位置';
+
+  @override
+  String get locationSharing_noPosition => '您的电台还没有位置，所以没有人能看到';
+
+  @override
+  String get locationSharing_everyone => '所有能收到您电台信号的人都能看到您的位置';
+
+  @override
+  String get locationSharing_allContacts => '您的所有联系人都能看到您的位置';
+
+  @override
+  String get locationSharing_someContacts => '您允许的联系人能看到您的位置';
+
+  @override
+  String get locationSharing_adverts => '在广播中包含位置';
+
+  @override
+  String get locationSharing_advertsHint => '您的广播带有您的位置，所以任何收到您电台信号的人都能看到。';
+
+  @override
+  String get locationSharing_contactsHeader => '可以查询您电台的联系人';
+
+  @override
+  String get locationSharing_noTelemetry => '无。您的电台不响应遥测请求。';
+
+  @override
+  String get locationSharing_noContacts => '没有联系人获得允许。';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return '您的所有联系人（$count）';
+  }
+
+  @override
+  String get locationSharing_partLocation => '位置';
+
+  @override
+  String get locationSharing_partBattery => '电池';
+
+  @override
+  String get locationSharing_partSensors => '传感器';
+
+  @override
+  String get dialog_positionHint => '粘贴坐标或地图链接';
+
+  @override
+  String get dialog_positionUnreadable => '无法从这里读取位置';
+
+  @override
+  String get dialog_positionLookingUp => '正在查询链接…';
+
+  @override
+  String get locationSharing_share => '共享我的位置';
+
+  @override
+  String get locationSharing_shareOnHint => '关闭后对所有人隐藏';
+
+  @override
+  String get locationSharing_shareOffHint => '开启后获准的联系人可以看到';
+
+  @override
+  String get chats_advertise => '广播';
 }

@@ -5739,4 +5739,84 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get pathfinder_graphCreate => 'Створити';
+
+  @override
+  String get locationSharing_title => 'Хто бачить моє розташування';
+
+  @override
+  String get locationSharing_someone => 'Хтось може бачити ваше розташування';
+
+  @override
+  String get locationSharing_nobody => 'Ніхто не бачить ваше розташування';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Ваше радіо ще не має розташування, тому його ніхто не бачить';
+
+  @override
+  String get locationSharing_everyone =>
+      'Кожен, хто чує ваше радіо, бачить ваше розташування';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Усі ваші контакти бачать ваше розташування';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Контакти, яким ви дозволили, бачать ваше розташування';
+
+  @override
+  String get locationSharing_adverts => 'Розташування в анонсах';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Ваші анонси містять ваше розташування, тому його бачить кожен, хто чує ваше радіо.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Контакти, які можуть запитувати ваше радіо';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Ніхто. Ваше радіо не відповідає на запити телеметрії.';
+
+  @override
+  String get locationSharing_noContacts => 'Жодному контакту не дозволено.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Усі ваші контакти ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Розташування';
+
+  @override
+  String get locationSharing_partBattery => 'Батарея';
+
+  @override
+  String get locationSharing_partSensors => 'Датчики';
+
+  @override
+  String get dialog_positionHint => 'Вставте координати або посилання на карту';
+
+  @override
+  String get dialog_positionUnreadable => 'Тут не вдається прочитати позицію';
+
+  @override
+  String get dialog_positionLookingUp => 'Перевірка посилання…';
+
+  @override
+  String get locationSharing_share => 'Ділитися моїм розташуванням';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Вимкніть, щоб приховати його від усіх';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Увімкніть, щоб його бачили контакти з дозволом';
+
+  @override
+  String get chats_advertise => 'Анонсувати';
 }
