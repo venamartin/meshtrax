@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -26,10 +28,39 @@ BatteryUi batteryUiForPercent(int? percent) {
   };
 }
 
+/// The top bar's battery readout: the icon over the percentage, or the
+/// voltage after a tap. [showText]: a narrow bar keeps the icon alone.
 class BatteryIndicator extends StatefulWidget {
   final MeshCoreConnector connector;
+  final bool showText;
 
-  const BatteryIndicator({super.key, required this.connector});
+  const BatteryIndicator({
+    super.key,
+    required this.connector,
+    this.showText = true,
+  });
+
+  static const textStyle = TextStyle(fontSize: 12, fontWeight: FontWeight.w500);
+  static const _iconSize = 18.0;
+  static const _padding = 8.0;
+
+  /// The texts the readout can show, both to be measured: the percentage
+  /// and the voltage it toggles to. Empty while the radio has reported no
+  /// battery, when the readout shows nothing at all.
+  static List<String> textsFor(MeshCoreConnector connector) {
+    final millivolts = connector.batteryMillivolts;
+    if (millivolts == null) return const [];
+    final percent = connector.batteryPercent;
+    return [
+      percent != null ? '$percent%' : '—',
+      '${(millivolts / 1000.0).toStringAsFixed(2)}V',
+    ];
+  }
+
+  /// The readout's width for a text that measures [textWidth] (0: the
+  /// icon alone).
+  static double width(double textWidth) =>
+      math.max(_iconSize, textWidth) + _padding;
 
   @override
   State<BatteryIndicator> createState() => _BatteryIndicatorState();
@@ -64,29 +95,27 @@ class _BatteryIndicatorState extends State<BatteryIndicator> {
       },
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        child: Row(
+        padding: const EdgeInsets.symmetric(
+          horizontal: BatteryIndicator._padding / 2,
+          vertical: 8,
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(batteryUi.icon, size: 18, color: batteryUi.color),
-                const SizedBox(height: 2),
-                Flexible(
-                  child: Text(
-                    displayText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: batteryUi.color,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            Icon(
+              batteryUi.icon,
+              size: BatteryIndicator._iconSize,
+              color: batteryUi.color,
             ),
+            if (widget.showText) ...[
+              const SizedBox(height: 2),
+              Text(
+                displayText,
+                style: BatteryIndicator.textStyle.copyWith(color: batteryUi.color),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ],
         ),
       ),

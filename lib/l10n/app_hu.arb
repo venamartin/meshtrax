@@ -2595,5 +2595,6 @@
   "dialog_positionLookingUp": "A link ellenőrzése…",
   "locationSharing_share": "Helyzetem megosztása",
   "locationSharing_shareOnHint": "Kapcsolja ki, hogy mindenki elől elrejtse",
-  "locationSharing_shareOffHint": "Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák"
+  "locationSharing_shareOffHint": "Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák",
+  "chats_advertise": "Bejelentés"
 }

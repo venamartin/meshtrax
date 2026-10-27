@@ -39,8 +39,6 @@ import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
 import '../widgets/message_status_icon.dart';
-import '../widgets/gps_status_button.dart';
-import '../widgets/location_sharing_button.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../helpers/structured_message.dart';
 import '../services/short_link_resolver.dart';
@@ -1042,8 +1040,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
               );
             },
           ),
-          const GpsStatusButton(),
-          const LocationSharingButton(),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {

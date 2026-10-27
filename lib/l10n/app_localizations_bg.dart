@@ -5794,4 +5794,7 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Включете, за да го виждат контактите с разрешение';
+
+  @override
+  String get chats_advertise => 'Обявяване';
 }

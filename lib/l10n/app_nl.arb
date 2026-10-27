@@ -2557,5 +2557,6 @@
   "dialog_positionLookingUp": "Link opzoeken…",
   "locationSharing_share": "Mijn locatie delen",
   "locationSharing_shareOnHint": "Zet uit om hem voor iedereen te verbergen",
-  "locationSharing_shareOffHint": "Zet aan zodat contacten met toestemming hem zien"
+  "locationSharing_shareOffHint": "Zet aan zodat contacten met toestemming hem zien",
+  "chats_advertise": "Aankondigen"
 }

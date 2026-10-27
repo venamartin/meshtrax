@@ -5534,4 +5534,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get locationSharing_shareOffHint => '켜면 허용한 연락처가 볼 수 있어요';
+
+  @override
+  String get chats_advertise => '광고';
 }

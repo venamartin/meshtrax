@@ -2595,5 +2595,6 @@
   "dialog_positionLookingUp": "링크를 확인하는 중…",
   "locationSharing_share": "내 위치 공유",
   "locationSharing_shareOnHint": "끄면 모두에게 숨겨져요",
-  "locationSharing_shareOffHint": "켜면 허용한 연락처가 볼 수 있어요"
+  "locationSharing_shareOffHint": "켜면 허용한 연락처가 볼 수 있어요",
+  "chats_advertise": "광고"
 }

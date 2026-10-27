@@ -5528,4 +5528,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get locationSharing_shareOffHint => 'オンにすると許可した連絡先が見られます';
+
+  @override
+  String get chats_advertise => 'アドバート';
 }

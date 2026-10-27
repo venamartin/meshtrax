@@ -5812,4 +5812,7 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Attiva perché la vedano i contatti autorizzati';
+
+  @override
+  String get chats_advertise => 'Annuncia';
 }

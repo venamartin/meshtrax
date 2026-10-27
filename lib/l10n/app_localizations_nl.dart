@@ -5777,4 +5777,7 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Zet aan zodat contacten met toestemming hem zien';
+
+  @override
+  String get chats_advertise => 'Aankondigen';
 }

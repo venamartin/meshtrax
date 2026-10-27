@@ -5790,4 +5790,7 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Vklopite, da jo vidijo stiki z dovoljenjem';
+
+  @override
+  String get chats_advertise => 'Objavi';
 }

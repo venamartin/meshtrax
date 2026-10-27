@@ -5835,4 +5835,7 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Activez pour que les contacts autorisés la voient';
+
+  @override
+  String get chats_advertise => 'Annoncer';
 }

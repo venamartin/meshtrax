@@ -5816,4 +5816,7 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Увімкніть, щоб його бачили контакти з дозволом';
+
+  @override
+  String get chats_advertise => 'Анонсувати';
 }

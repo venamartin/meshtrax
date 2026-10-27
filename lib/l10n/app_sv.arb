@@ -2557,5 +2557,6 @@
   "dialog_positionLookingUp": "Slår upp länken…",
   "locationSharing_share": "Dela min plats",
   "locationSharing_shareOnHint": "Stäng av för att dölja den för alla",
-  "locationSharing_shareOffHint": "Slå på så att kontakter med tillåtelse ser den"
+  "locationSharing_shareOffHint": "Slå på så att kontakter med tillåtelse ser den",
+  "chats_advertise": "Annonsera"
 }

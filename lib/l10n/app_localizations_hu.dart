@@ -5816,4 +5816,7 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák';
+
+  @override
+  String get chats_advertise => 'Bejelentés';
 }

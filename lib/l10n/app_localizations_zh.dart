@@ -5420,4 +5420,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get locationSharing_shareOffHint => '开启后获准的联系人可以看到';
+
+  @override
+  String get chats_advertise => '广播';
 }

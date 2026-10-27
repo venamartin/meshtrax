@@ -2970,5 +2970,6 @@
   "dialog_positionLookingUp": "Looking up the link…",
   "locationSharing_share": "Share my location",
   "locationSharing_shareOnHint": "Turn off to hide it from everyone",
-  "locationSharing_shareOffHint": "Turn on to let contacts with permission see it"
+  "locationSharing_shareOffHint": "Turn on to let contacts with permission see it",
+  "chats_advertise": "Advertise"
 }

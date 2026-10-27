@@ -2557,5 +2557,6 @@
   "dialog_positionLookingUp": "Перевірка посилання…",
   "locationSharing_share": "Ділитися моїм розташуванням",
   "locationSharing_shareOnHint": "Вимкніть, щоб приховати його від усіх",
-  "locationSharing_shareOffHint": "Увімкніть, щоб його бачили контакти з дозволом"
+  "locationSharing_shareOffHint": "Увімкніть, щоб його бачили контакти з дозволом",
+  "chats_advertise": "Анонсувати"
 }

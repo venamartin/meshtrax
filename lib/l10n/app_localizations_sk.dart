@@ -5788,4 +5788,7 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Zapnite, aby ju videli kontakty s povolením';
+
+  @override
+  String get chats_advertise => 'Oznámiť';
 }

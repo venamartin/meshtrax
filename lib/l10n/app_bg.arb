@@ -2557,5 +2557,6 @@
   "dialog_positionLookingUp": "Проверка на линка…",
   "locationSharing_share": "Споделяй местоположението ми",
   "locationSharing_shareOnHint": "Изключете, за да го скриете от всички",
-  "locationSharing_shareOffHint": "Включете, за да го виждат контактите с разрешение"
+  "locationSharing_shareOffHint": "Включете, за да го виждат контактите с разрешение",
+  "chats_advertise": "Обявяване"
 }

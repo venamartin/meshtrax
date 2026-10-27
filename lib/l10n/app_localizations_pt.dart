@@ -5800,4 +5800,7 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Ligue para que os contatos com permissão a vejam';
+
+  @override
+  String get chats_advertise => 'Anunciar';
 }

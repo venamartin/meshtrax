@@ -2595,5 +2595,6 @@
   "dialog_positionLookingUp": "リンクを確認しています…",
   "locationSharing_share": "位置情報を共有",
   "locationSharing_shareOnHint": "オフにすると全員に非表示になります",
-  "locationSharing_shareOffHint": "オンにすると許可した連絡先が見られます"
+  "locationSharing_shareOffHint": "オンにすると許可した連絡先が見られます",
+  "chats_advertise": "アドバート"
 }

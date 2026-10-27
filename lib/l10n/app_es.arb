@@ -2585,5 +2585,6 @@
   "dialog_positionLookingUp": "Consultando el enlace…",
   "locationSharing_share": "Compartir mi ubicación",
   "locationSharing_shareOnHint": "Desactívalo para ocultarla a todos",
-  "locationSharing_shareOffHint": "Actívalo para que la vean los contactos con permiso"
+  "locationSharing_shareOffHint": "Actívalo para que la vean los contactos con permiso",
+  "chats_advertise": "Anunciar"
 }

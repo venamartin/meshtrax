@@ -9953,6 +9953,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn on to let contacts with permission see it'**
   String get locationSharing_shareOffHint;
+
+  /// No description provided for @chats_advertise.
+  ///
+  /// In en, this message translates to:
+  /// **'Advertise'**
+  String get chats_advertise;
 }
 
 class _AppLocalizationsDelegate

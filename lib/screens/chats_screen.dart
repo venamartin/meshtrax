@@ -855,101 +855,31 @@ class _ChatsScreenState extends State<ChatsScreen>
           child: Scaffold(
             appBar: AppBar(
               automaticallyImplyLeading: false,
-              title: AppBarTitle(context.l10n.chats_title),
+              // The radio's name is the title: the bar below says Chats
+              // (owner, 2026-10-27, as the Map tab has no title).
+              title: AppBarTitle(
+                connector.isConnected && connector.selfName != null
+                    ? connector.selfName!
+                    : context.l10n.chats_title,
+                subtitle: false,
+              ),
               centerTitle: true,
               actions: [
                 const GpsStatusButton(),
                 const LocationSharingButton(),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
+                PopupMenuButton<void>(
+                  itemBuilder: (context) => <PopupMenuEntry<void>>[
                     PopupMenuItem(
                       child: Row(
                         children: [
                           const Icon(Icons.connect_without_contact),
                           const SizedBox(width: 8),
-                          Text(context.l10n.contacts_zeroHopAdvert),
+                          Text(context.l10n.chats_advertise),
                         ],
                       ),
-                      onTap: () => {
-                        connector.sendSelfAdvert(flood: false),
-                        showDismissibleSnackBar(
-                          context,
-                          content: Text(
-                            context.l10n.settings_advertisementSent,
-                          ),
-                        ),
-                      },
+                      onTap: () => _showAdvertiseDialog(context, connector),
                     ),
-                    PopupMenuItem(
-                      child: Row(
-                        children: [
-                          const Icon(Icons.cell_tower),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.contacts_floodAdvert),
-                        ],
-                      ),
-                      onTap: () => {
-                        connector.sendSelfAdvert(flood: true),
-                        showDismissibleSnackBar(
-                          context,
-                          content: Text(
-                            context.l10n.settings_advertisementSent,
-                          ),
-                        ),
-                      },
-                    ),
-                    PopupMenuItem(
-                      child: Row(
-                        children: [
-                          const Icon(Icons.qr_code_2),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.contacts_shareMyQrCode),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ContactShareScreen(
-                              name: (connector.selfName?.isEmpty ?? true)
-                                  ? 'Unknown'
-                                  : connector.selfName!,
-                              pubKeyHex: connector.selfPublicKeyHex,
-                              type: advTypeChat,
-                              isSelf: true,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    PopupMenuItem(
-                      child: Row(
-                        children: [
-                          const Icon(Icons.copy),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.contacts_copyContactToClipboard),
-                        ],
-                      ),
-                      onTap: () {
-                        final data = MeshCoreQr.encodeContact(
-                          (connector.selfName?.isEmpty ?? true)
-                              ? 'Unknown'
-                              : connector.selfName!,
-                          connector.selfPublicKeyHex,
-                          advTypeChat,
-                        );
-                        Clipboard.setData(ClipboardData(text: data));
-                        showDismissibleSnackBar(
-                          context,
-                          content: Text(context.l10n.common_copiedToClipboard),
-                        );
-                      },
-                    ),
-                  ],
-                  icon: const Icon(Icons.connect_without_contact),
-                ),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
+                    const PopupMenuDivider(),
                     PopupMenuItem(
                       child: Row(
                         children: [
@@ -1250,4 +1180,82 @@ class _ChatsScreenState extends State<ChatsScreen>
       },
     );
   }
+}
+
+/// The actions behind the Chats bar's Advertise entry: the two adverts, and
+/// this radio's contact as a QR code or on the clipboard.
+void _showAdvertiseDialog(BuildContext context, MeshCoreConnector connector) {
+  final l10n = context.l10n;
+  String selfName() =>
+      (connector.selfName?.isEmpty ?? true) ? 'Unknown' : connector.selfName!;
+  void advert({required bool flood}) {
+    connector.sendSelfAdvert(flood: flood);
+    showDismissibleSnackBar(
+      context,
+      content: Text(l10n.settings_advertisementSent),
+    );
+  }
+
+  showDialog<void>(
+    context: context,
+    builder: (dialog) => SimpleDialog(
+      title: Text(l10n.chats_advertise),
+      children: [
+        ListTile(
+          leading: const Icon(Icons.connect_without_contact),
+          title: Text(l10n.contacts_zeroHopAdvert),
+          onTap: () {
+            Navigator.pop(dialog);
+            advert(flood: false);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.cell_tower),
+          title: Text(l10n.contacts_floodAdvert),
+          onTap: () {
+            Navigator.pop(dialog);
+            advert(flood: true);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.qr_code_2),
+          title: Text(l10n.contacts_shareMyQrCode),
+          onTap: () {
+            Navigator.pop(dialog);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ContactShareScreen(
+                  name: selfName(),
+                  pubKeyHex: connector.selfPublicKeyHex,
+                  type: advTypeChat,
+                  isSelf: true,
+                ),
+              ),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.copy),
+          title: Text(l10n.contacts_copyContactToClipboard),
+          onTap: () {
+            Navigator.pop(dialog);
+            Clipboard.setData(
+              ClipboardData(
+                text: MeshCoreQr.encodeContact(
+                  selfName(),
+                  connector.selfPublicKeyHex,
+                  advTypeChat,
+                ),
+              ),
+            );
+            showDismissibleSnackBar(
+              context,
+              content: Text(l10n.common_copiedToClipboard),
+            );
+          },
+        ),
+      ],
+    ),
+  );
 }

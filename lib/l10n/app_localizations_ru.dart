@@ -5811,4 +5811,7 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Включите, чтобы его видели контакты с разрешением';
+
+  @override
+  String get chats_advertise => 'Анонсировать';
 }

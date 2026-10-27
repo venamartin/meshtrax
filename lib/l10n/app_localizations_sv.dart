@@ -5747,4 +5747,7 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get locationSharing_shareOffHint =>
       'Slå på så att kontakter med tillåtelse ser den';
+
+  @override
+  String get chats_advertise => 'Annonsera';
 }

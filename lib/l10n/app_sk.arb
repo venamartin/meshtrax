@@ -2557,5 +2557,6 @@
   "dialog_positionLookingUp": "Overuje sa odkaz…",
   "locationSharing_share": "Zdieľať moju polohu",
   "locationSharing_shareOnHint": "Vypnite, aby ste ju skryli pred všetkými",
-  "locationSharing_shareOffHint": "Zapnite, aby ju videli kontakty s povolením"
+  "locationSharing_shareOffHint": "Zapnite, aby ju videli kontakty s povolením",
+  "chats_advertise": "Oznámiť"
 }

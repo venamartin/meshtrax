@@ -2585,5 +2585,6 @@
   "dialog_positionLookingUp": "Link wird aufgelöst…",
   "locationSharing_share": "Meinen Standort teilen",
   "locationSharing_shareOnHint": "Ausschalten, um ihn vor allen zu verbergen",
-  "locationSharing_shareOffHint": "Einschalten, damit Kontakte mit Erlaubnis ihn sehen"
+  "locationSharing_shareOffHint": "Einschalten, damit Kontakte mit Erlaubnis ihn sehen",
+  "chats_advertise": "Ankündigen"
 }

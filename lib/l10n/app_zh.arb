@@ -2562,5 +2562,6 @@
   "dialog_positionLookingUp": "正在查询链接…",
   "locationSharing_share": "共享我的位置",
   "locationSharing_shareOnHint": "关闭后对所有人隐藏",
-  "locationSharing_shareOffHint": "开启后获准的联系人可以看到"
+  "locationSharing_shareOffHint": "开启后获准的联系人可以看到",
+  "chats_advertise": "广播"
 }

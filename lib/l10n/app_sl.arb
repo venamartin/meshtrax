@@ -2557,5 +2557,6 @@
   "dialog_positionLookingUp": "Preverjanje povezave…",
   "locationSharing_share": "Deli mojo lokacijo",
   "locationSharing_shareOnHint": "Izklopite, da jo skrijete pred vsemi",
-  "locationSharing_shareOffHint": "Vklopite, da jo vidijo stiki z dovoljenjem"
+  "locationSharing_shareOffHint": "Vklopite, da jo vidijo stiki z dovoljenjem",
+  "chats_advertise": "Objavi"
 }

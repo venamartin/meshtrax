@@ -16,8 +16,6 @@ import '../utils/route_transitions.dart';
 import '../connector/meshcore_connector.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/app_map.dart';
-import '../widgets/gps_status_button.dart';
-import '../widgets/location_sharing_button.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 
@@ -317,8 +315,6 @@ class _LineOfSightMapScreenState extends State<LineOfSightMapScreen> {
         title: AppBarTitle(widget.title),
         centerTitle: true,
         actions: [
-          const GpsStatusButton(),
-          const LocationSharingButton(),
           IconButton(
             icon: _loading
                 ? const SizedBox(
