@@ -1565,7 +1565,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         onAttemptStarted: (contact, selection, attempt) =>
             onSendAttemptStarted?.call(contact, selection, attempt),
         onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
-        onLadderEnded: (contactKey) => onSendLadderEnded?.call(contactKey),
+        onLadderEnded: (contactKey, {required delivered}) =>
+            onSendLadderEnded?.call(contactKey, delivered: delivered),
         onSendOutcome: (contactKey, {required delivered, required echoHeard}) =>
             onSendOutcome?.call(contactKey,
                 delivered: delivered, echoHeard: echoHeard),
@@ -1739,8 +1740,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// has nothing recent (see [estimatedHopsTo]).
   int? Function(Contact contact)? graphDistanceTo;
 
-  /// The last DM ladder to this contact (pubkey hex) ended.
-  void Function(String contactKey)? onSendLadderEnded;
+  /// The last DM ladder to this contact (pubkey hex) ended, [delivered] or
+  /// out of attempts.
+  void Function(String contactKey, {required bool delivered})?
+      onSendLadderEnded;
 
   /// One message's ladder to this contact (pubkey hex) is over: whether it
   /// was delivered, and whether a repeater was heard echoing a flood of it
