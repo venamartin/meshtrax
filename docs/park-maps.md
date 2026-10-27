@@ -1,8 +1,8 @@
 # Parks on the map
 
-This file covers the app side of parks: national parks, monuments, preserves and state parks shown on the offline map with an outline, a light tint and their name, and a tap that opens the park's sheet. Nothing is built yet.
+This file covers the app side of parks: national parks, monuments, preserves and state parks shown on the offline map with an outline, a light tint and their name, and a tap that opens the park's sheet. Built so far: the style, the desert parks from the map hints and the Parks switch (2026-10-26). Parks as places, for the tap, are still to come.
 
-**Data side:** traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md): §1.3 (map packs) for the park tint and §1.8 (Points of interest) for parks as places.
+**Data side:** traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md): §1.9 (map hints) for the desert parks and §1.8 (Points of interest) for parks as places.
 
 ## Direction (Martin, 2026-10-26)
 
@@ -11,7 +11,7 @@ Parks come from data users already download. There's no separate parks download.
 | Part | Where it comes from |
 | --- | --- |
 | Outline and tint | The `park` layer already in the `osm` map packs: every protected area's outline and protection type (`class`), with a center point carrying its name and rank. |
-| Green or desert tan | A `tint` tag on each park in the map build, from what mostly covers the land inside it (forest or grass versus sand, rock and scrub). |
+| Green or desert tan | The desert parks list in the map hints (`hints.json`, see [`offline-maps.md`](offline-maps.md)): traxmapmaker picks the parks whose land is mostly sand, rock or scrub. The style fills in `{list:desert-parks}`; every other park is green. No pack is rebuilt. |
 | Name and tap | Parks as places in the Points of interest download, at the park's center, with their Wikipedia text and photo. A tap opens the place sheet. |
 
 **Which areas:**

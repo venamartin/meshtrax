@@ -264,6 +264,48 @@ void main() {
     ]);
   });
 
+  test('fills list placeholders, and leaves one with no list', () {
+    final style = <String, Object?>{
+      'version': 8,
+      'sources': <String, Object?>{},
+      'layers': [
+        {
+          'id': 'park',
+          'type': 'fill',
+          'paint': {
+            'fill-color': [
+              'case',
+              [
+                'match',
+                ['get', 'name'],
+                ['{list:desert-parks}'],
+                true,
+                false,
+              ],
+              'tan',
+              'green',
+            ],
+          },
+        },
+      ],
+    };
+    Object? labels(Map<String, List<String>> lists) =>
+        (((((StyleRegistry.resolve(style, StyleContext(lists: lists))['layers']
+                                as List)
+                            .single
+                        as Map)['paint']
+                    as Map)['fill-color']
+                as List)[1]
+            as List)[2];
+    expect(
+      labels({
+        'desert-parks': ['Joshua Tree National Park'],
+      }),
+      ['Joshua Tree National Park'],
+    );
+    expect(labels(const {}), ['{list:desert-parks}']);
+  });
+
   test('does not modify the input', () {
     StyleRegistry.resolve(style, const StyleContext());
     expect((style['layers'] as List), hasLength(3));

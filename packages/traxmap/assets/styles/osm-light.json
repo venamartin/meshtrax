@@ -373,12 +373,16 @@
         "fill-color": [
           "case",
           [
-            "==",
+            "match",
             [
               "get",
-              "tint"
+              "name"
             ],
-            "desert"
+            [
+              "{list:desert-parks}"
+            ],
+            true,
+            false
           ],
           "#e6cf9f",
           "#b5d99c"
@@ -589,12 +593,16 @@
         "line-color": [
           "case",
           [
-            "==",
+            "match",
             [
               "get",
-              "tint"
+              "name"
             ],
-            "desert"
+            [
+              "{list:desert-parks}"
+            ],
+            true,
+            false
           ],
           "#b98c4e",
           "#6aa457"
@@ -2084,12 +2092,16 @@
         "text-color": [
           "case",
           [
-            "==",
+            "match",
             [
               "get",
-              "tint"
+              "name"
             ],
-            "desert"
+            [
+              "{list:desert-parks}"
+            ],
+            true,
+            false
           ],
           "#8b5e2b",
           "#3f7d34"

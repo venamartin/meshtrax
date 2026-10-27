@@ -248,6 +248,7 @@ class _AppMapState extends State<AppMap> {
           onCameraChanged: _onCameraChanged,
           appPlaces: widget.appPlaces,
           hiddenGroups: {if (!settings.mapParks) 'parks'},
+          lists: maps.hints?.styleLists ?? const {},
           baseLayers: [
             if (online && coverage != null)
               _OnlineTiles(key: ObjectKey(coverage), coverage: coverage),

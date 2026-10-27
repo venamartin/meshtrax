@@ -70,6 +70,11 @@ class StyleContext {
   /// one of these (a map switch, such as "parks").
   final Set<String> hiddenGroups;
 
+  /// Named lists for the style's `["{list:<name>}"]` placeholders, such as
+  /// the desert parks from the map hints. A placeholder with no list stays
+  /// as it is and matches nothing.
+  final Map<String, List<String>> lists;
+
   const StyleContext({
     this.packs = const {},
     this.units = Units.imperial,
@@ -78,6 +83,7 @@ class StyleContext {
     this.pmtilesUrl = defaultPmtilesUrl,
     this.appPlaces = false,
     this.hiddenGroups = const {},
+    this.lists = const {},
   });
 
   static String defaultPmtilesUrl(Pack pack) =>
@@ -234,9 +240,31 @@ class StyleRegistry {
       }
     }
 
+    if (context.lists.isNotEmpty) {
+      out['layers'] = _fillLists(out['layers'], context.lists);
+    }
+
     _replaceOrRemove(out, 'glyphs', '{glyphs}', context.glyphs);
     _replaceOrRemove(out, 'sprite', '{sprite}', context.sprite);
     return out;
+  }
+
+  static final _listPlaceholder = RegExp(r'^\{list:([\w-]+)\}$');
+
+  /// [value] with each `["{list:<name>}"]` replaced by that list.
+  static Object? _fillLists(Object? value, Map<String, List<String>> lists) {
+    if (value is List) {
+      if (value case [final String only]) {
+        final name = _listPlaceholder.firstMatch(only)?.group(1);
+        final list = lists[name];
+        if (list != null && list.isNotEmpty) return [...list];
+      }
+      return [for (final v in value) _fillLists(v, lists)];
+    }
+    if (value is Map) {
+      return {for (final e in value.entries) e.key: _fillLists(e.value, lists)};
+    }
+    return value;
   }
 
   /// Replaces [placeholder] at the start of [key]'s value with [value], or

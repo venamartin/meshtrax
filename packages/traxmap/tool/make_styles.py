@@ -28,12 +28,13 @@ TRAIL = ["all", ["==", ["get", "class"], "path"],
 # Parks (docs/park-maps.md): national parks, monuments, preserves and state
 # parks get a tint, an outline and their name; wilderness and national
 # forests a thin outline; other protected land (BLM, study areas, refuges)
-# nothing. The map build tags a park tint=desert from its land cover; the
-# rest are green. The Parks switch drops the "parks" group.
+# nothing. Desert parks are tan: their names come from the map hints
+# (MapHints, filled in as {list:desert-parks}); the rest are green. The
+# Parks switch drops the "parks" group.
 PARKS = ["match", ["get", "class"], ["national_park", "national_monument", "national_preserve", "state_park"],
          True, False]
 OUTLINED = ["match", ["get", "class"], ["wilderness_area", "national_forest"], True, False]
-DESERT = ["==", ["get", "tint"], "desert"]
+DESERT = ["match", ["get", "name"], ["{list:desert-parks}"], True, False]
 AREA, CENTER = ["==", ["geometry-type"], "Polygon"], ["==", ["geometry-type"], "Point"]
 PARK_GROUP = {"ovm:group": "parks"}
 
