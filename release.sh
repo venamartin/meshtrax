@@ -249,7 +249,52 @@ publish_stores() {
     if [ "$failed" -ne 0 ] && [ "$GITHUB_RELEASE" = true ]; then
         echo "       The GitHub release is done; retry only the failed store."
     fi
+    [ "$failed" -eq 0 ] && update_whatsnew
     return $failed
+}
+
+# Adds the store notes to docs/whatsnew.md as the newest section. Master only
+# changes through PRs, so this goes on its own branch with a PR to merge.
+update_whatsnew() {
+    local doc="docs/whatsnew.md"
+    if [ -z "$NOTES_FILE" ] || [ ! -f "$NOTES_FILE" ] || [ ! -f "$doc" ]; then
+        return 0
+    fi
+    if grep -q "^## $VERSION\$" "$doc"; then
+        echo "INFO: $doc already has v$VERSION."
+        return 0
+    fi
+
+    echo "PROMPT: Open a PR adding v$VERSION to $doc? (y/n)"
+    read -r ADD_WHATSNEW
+    [ "$ADD_WHATSNEW" = "y" ] || return 0
+
+    local branch="docs/whatsnew-v$VERSION"
+    local section="$DIST_DIR/whatsnew-v$VERSION.md"
+    {
+        echo "## $VERSION"
+        echo ""
+        grep -v '^[[:space:]]*#' "$NOTES_FILE" | tr -d '\r' \
+            | sed -e 's/^[[:space:]]*•[[:space:]]*//' -e 's/^[[:space:]]*[-*][[:space:]]*//' \
+                -e '/^[[:space:]]*$/d' -e 's/^/- /'
+        echo ""
+    } > "$section"
+
+    git checkout -b "$branch" || return 0
+    awk -v section="$section" '
+        !done && /^## / { while ((getline line < section) > 0) print line; done = 1 }
+        { print }
+        END { if (!done) { print ""; while ((getline line < section) > 0) print line } }
+    ' "$doc" > "$doc.tmp" && mv "$doc.tmp" "$doc"
+    git add "$doc"
+    git commit -m "docs: what's new in v$VERSION" \
+        && git push -u origin "$branch" \
+        && gh pr create --base master --title "docs: what's new in v$VERSION" \
+            --body "Store notes for v$VERSION added to $doc."
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Could not open the whatsnew PR. Finish it from branch $branch."
+    fi
+    git checkout master
 }
 
 # 2. Safety Checks: Uncommitted Changes
