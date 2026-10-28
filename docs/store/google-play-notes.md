@@ -49,6 +49,11 @@ Package: `com.vena.meshtrax`. Upload tool: `tool/play_upload.py` (run with `uv`)
    is never attached to GitHub.
 4. Play upload happens **last**, only after the GitHub release goes live. If
    the GitHub draft is rejected, nothing is sent to Play.
+5. When every store accepted it, the script offers to add the notes to
+   `docs/whatsnew.md` as the newest section. On `y` it commits that on a
+   `docs/whatsnew-v<version>` branch, pushes it, opens a PR and returns to
+   master. Merge the PR like any other. A retry skips this step when the
+   version is already in the file.
 
 If the Play upload fails after GitHub went live, fix the cause and run
 `./release.sh --play`. Nothing reaches Play until the final commit succeeds,
