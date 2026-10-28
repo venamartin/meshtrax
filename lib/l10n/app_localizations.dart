@@ -1180,6 +1180,18 @@ abstract class AppLocalizations {
   /// **'LOS elevation data: Open-Meteo (CC BY 4.0)'**
   String get settings_aboutOpenMeteoAttribution;
 
+  /// No description provided for @settings_reportBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a bug'**
+  String get settings_reportBug;
+
+  /// No description provided for @settings_reportBugSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens a bug report on GitHub'**
+  String get settings_reportBugSubtitle;
+
   /// No description provided for @settings_infoName.
   ///
   /// In en, this message translates to:

@@ -805,6 +805,8 @@
   "settings_clientRepeatSubtitle": "Позвольте этому устройству повторять пакеты данных для других устройств.",
   "settings_clientRepeat": "Повторение \"вне сети\"",
   "settings_aboutOpenMeteoAttribution": "Данные о высоте LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Сообщить об ошибке",
+  "settings_reportBugSubtitle": "Открывает отчёт об ошибке на GitHub",
   "appSettings_unitsTitle": "Единицы",
   "appSettings_unitsMetric": "Метрическая (м/км)",
   "appSettings_unitsImperial": "Имперская (ft / mi)",

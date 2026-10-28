@@ -1457,6 +1457,8 @@
   "settings_clientRepeatFreqWarning": "Per la comunicazione fuori rete, è necessario utilizzare frequenze di 433, 869 o 918 MHz.",
   "settings_clientRepeatSubtitle": "Permetti a questo dispositivo di ripetere i pacchetti di rete per gli altri.",
   "settings_aboutOpenMeteoAttribution": "Dati di elevazione LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Segnala un bug",
+  "settings_reportBugSubtitle": "Apre una segnalazione di bug su GitHub",
   "appSettings_unitsTitle": "Unità",
   "appSettings_unitsMetric": "Metrico (m/km)",
   "appSettings_unitsImperial": "Imperiale (ft / mi)",

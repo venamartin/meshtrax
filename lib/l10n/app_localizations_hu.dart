@@ -599,6 +599,12 @@ class AppLocalizationsHu extends AppLocalizations {
       'LOS magassági adatok: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Hiba bejelentése';
+
+  @override
+  String get settings_reportBugSubtitle => 'Hibajelentést nyit a GitHubon';
+
+  @override
   String get settings_infoName => 'Név';
 
   @override

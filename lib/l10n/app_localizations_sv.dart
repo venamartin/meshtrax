@@ -588,6 +588,12 @@ class AppLocalizationsSv extends AppLocalizations {
       'LOS-höjddata: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Rapportera ett fel';
+
+  @override
+  String get settings_reportBugSubtitle => 'Öppnar en felrapport på GitHub';
+
+  @override
   String get settings_infoName => 'Namn';
 
   @override

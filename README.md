@@ -117,6 +117,14 @@ flutter run -d linux
 
 ---
 
+## Reporting bugs and suggesting features
+
+- **Found a bug?** [Open a bug report](https://github.com/venamartin/meshtrax/issues/new?template=bug_report.yml). In the app: Settings → Report a bug, under About.
+- **Have an idea?** [Suggest a feature](https://github.com/venamartin/meshtrax/issues/new?template=feature_request.yml).
+- **Want to send a fix?** Read [CONTRIBUTING.md](CONTRIBUTING.md) first, and open an issue to talk it over before you start a pull request.
+
+---
+
 ## Privacy & Terms
 
 - [Privacy Policy](docs/privacy.md)

@@ -209,6 +209,8 @@
   "settings_aboutLegalese": "2026-os MeshCore nyílt forráskódú projekt",
   "settings_aboutDescription": "Egy nyílt forráskódú Flutter kliens a MeshCore LoRa hálózati eszközök számára.",
   "settings_aboutOpenMeteoAttribution": "LOS magassági adatok: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Hiba bejelentése",
+  "settings_reportBugSubtitle": "Hibajelentést nyit a GitHubon",
   "settings_infoName": "Név",
   "settings_infoId": "Az azonosító",
   "settings_infoStatus": "Állapot",

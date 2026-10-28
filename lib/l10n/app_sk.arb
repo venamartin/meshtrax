@@ -1457,6 +1457,8 @@
   "settings_clientRepeatFreqWarning": "Použitie off-grid systému vyžaduje frekvencie 433, 869 alebo 918 MHz.",
   "settings_clientRepeatSubtitle": "Umožnite, aby toto zariadenie opakovávalo siete pre ostatných.",
   "settings_aboutOpenMeteoAttribution": "Údaje o nadmorskej výške LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Nahlásiť chybu",
+  "settings_reportBugSubtitle": "Otvorí hlásenie chyby na GitHube",
   "appSettings_unitsTitle": "Jednotky",
   "appSettings_unitsMetric": "Metrické (m / km)",
   "appSettings_unitsImperial": "Imperiálne (ft / mi)",
