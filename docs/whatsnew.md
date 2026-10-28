@@ -1,5 +1,9 @@
 # What's new in MeshTrax
 
+## 1.8.1
+
+- Fixes a problem where messages could disappear after updating to 1.8.0 if the app was closed during its first start. Your messages were never deleted: this update brings them back automatically.
+
 ## 1.8.0
 
 - Offline maps: download areas, with hill shading, trails and charts.
