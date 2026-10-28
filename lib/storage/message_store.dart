@@ -205,16 +205,19 @@ class MessageStore {
     }
   }
 
-  /// Load-transform-upsert of a single row.
+  /// Load-transform-upsert of a single row, in one transaction so an update
+  /// racing it (an ACK against a retry) is kept rather than overwritten.
   Future<bool> updateMessage(
     String contactKeyHex,
     String messageId,
     Message Function(Message) transform,
-  ) async {
-    final existing = await findByMessageId(contactKeyHex, messageId);
-    if (existing == null) return false;
-    await upsertMessage(contactKeyHex, transform(existing));
-    return true;
+  ) {
+    return _db.transaction(() async {
+      final existing = await findByMessageId(contactKeyHex, messageId);
+      if (existing == null) return false;
+      await upsertMessage(contactKeyHex, transform(existing));
+      return true;
+    });
   }
 
   /// Rewrites one row's payload in place, so its id, arrival stamp and
@@ -254,25 +257,27 @@ class MessageStore {
     Message Function(Message) transform,
   ) async {
     if (publicKeyHex.isEmpty) return (false, null);
-    final row =
-        await (_db.select(_db.contactMessageRows)
-              ..where(
-                (r) =>
-                    r.nodeScope.equals(publicKeyHex) &
-                    r.messageId.equals(messageId),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    if (row == null) return (false, null);
-    try {
-      final msg = _messageFromJson(
-        jsonDecode(row.payload) as Map<String, dynamic>,
-      );
-      await upsertMessage(row.contactKey, transform(msg));
-      return (true, row.contactKey);
-    } catch (_) {
-      return (false, null);
-    }
+    return _db.transaction(() async {
+      final row =
+          await (_db.select(_db.contactMessageRows)
+                ..where(
+                  (r) =>
+                      r.nodeScope.equals(publicKeyHex) &
+                      r.messageId.equals(messageId),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (row == null) return (false, null);
+      try {
+        final msg = _messageFromJson(
+          jsonDecode(row.payload) as Map<String, dynamic>,
+        );
+        await upsertMessage(row.contactKey, transform(msg));
+        return (true, row.contactKey);
+      } catch (_) {
+        return (false, null);
+      }
+    });
   }
 
   /// Fallback ACK bookkeeping when no id is known: flips the NEWEST
