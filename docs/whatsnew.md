@@ -1,9 +1,5 @@
 # What's new in MeshTrax
 
-Newest release first. Each entry is the "What's new" text published to
-Google Play and the Microsoft Store for that version. `./release.sh` adds a
-new section after a store release (see `docs/store/google-play-notes.md`).
-
 ## 1.8.0
 
 - Offline maps: download areas, with hill shading, trails and charts.
