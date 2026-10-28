@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest something new, or a change to how MeshTrax works.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search the
+        [existing issues](https://github.com/venamartin/meshtrax/issues?q=is%3Aissue) first.
+        If you want to build it yourself, say so here and wait for an answer
+        before you start a pull request.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: The problem or need, in your own words.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could MeshTrax help?
+      description: Your idea for how it could work. Screenshots or sketches welcome.
+  - type: textarea
+    id: other-apps
+    attributes:
+      label: Anything else?
+      description: Other MeshCore apps or firmware this touches, or workarounds you use now.

@@ -209,6 +209,8 @@
   "settings_aboutLegalese": "2026年のMeshCoreオープンソースプロジェクト",
   "settings_aboutDescription": "MeshCore LoRaメッシュネットワークデバイス用の、オープンソースのFlutterクライアント。",
   "settings_aboutOpenMeteoAttribution": "LOS 標高データ：Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "不具合を報告",
+  "settings_reportBugSubtitle": "GitHub で不具合報告を開きます",
   "settings_infoName": "名前",
   "settings_infoId": "ID",
   "settings_infoStatus": "ステータス",

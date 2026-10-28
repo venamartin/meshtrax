@@ -1488,6 +1488,8 @@
   "settings_clientRepeatFreqWarning": "Die Kommunikation ohne Stromversorgung erfordert Frequenzen von 433, 869 oder 918 MHz.",
   "settings_clientRepeatSubtitle": "Ermöglichen Sie diesem Gerät, Mesh-Pakete für andere zu wiederholen.",
   "settings_aboutOpenMeteoAttribution": "LOS-Höhendaten: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Fehler melden",
+  "settings_reportBugSubtitle": "Öffnet einen Fehlerbericht auf GitHub",
   "appSettings_unitsTitle": "Einheiten",
   "appSettings_unitsMetric": "Metrisch (m/km)",
   "appSettings_unitsImperial": "Imperial (ft/mi)",

@@ -601,6 +601,12 @@ class AppLocalizationsBg extends AppLocalizations {
       'Данни за надморска височина на LOS: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Съобщете за грешка';
+
+  @override
+  String get settings_reportBugSubtitle => 'Отваря доклад за грешка в GitHub';
+
+  @override
   String get settings_infoName => 'Име';
 
   @override

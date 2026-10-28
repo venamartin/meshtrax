@@ -564,6 +564,12 @@ class AppLocalizationsZh extends AppLocalizations {
       'LOS 高程数据:Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => '报告问题';
+
+  @override
+  String get settings_reportBugSubtitle => '在 GitHub 上打开问题报告';
+
+  @override
   String get settings_infoName => '名称';
 
   @override

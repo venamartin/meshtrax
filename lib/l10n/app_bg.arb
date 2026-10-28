@@ -1457,6 +1457,8 @@
   "settings_clientRepeatFreqWarning": "За повторение извън мрежата са необходими честоти от 433, 869 или 918 MHz.",
   "settings_clientRepeat": "Без електричество – повторение",
   "settings_aboutOpenMeteoAttribution": "Данни за надморска височина на LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Съобщете за грешка",
+  "settings_reportBugSubtitle": "Отваря доклад за грешка в GitHub",
   "appSettings_unitsTitle": "единици",
   "appSettings_unitsMetric": "Метрика (m / km)",
   "appSettings_unitsImperial": "Имперска (ft / mi)",

@@ -1457,6 +1457,8 @@
   "settings_clientRepeatSubtitle": "Omogočite temu naprave, da ponavlja paketne sporočila za druge.",
   "settings_clientRepeat": "Neovadno ponavljanje",
   "settings_aboutOpenMeteoAttribution": "Podatki o višini LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Prijavi napako",
+  "settings_reportBugSubtitle": "Odpre prijavo napake na GitHubu",
   "appSettings_unitsTitle": "Enote",
   "appSettings_unitsMetric": "Metrična (m/km)",
   "appSettings_unitsImperial": "Imperialno (ft / mi)",

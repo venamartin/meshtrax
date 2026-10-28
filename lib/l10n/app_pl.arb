@@ -1495,6 +1495,8 @@
   "settings_clientRepeat": "Powtórzenie: Niezależne od sieci",
   "settings_clientRepeatFreqWarning": "Powtórka poza siecią wymaga częstotliwości 433, 869 lub 918 MHz.",
   "settings_aboutOpenMeteoAttribution": "Dane wysokościowe LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Zgłoś błąd",
+  "settings_reportBugSubtitle": "Otwiera zgłoszenie błędu na GitHubie",
   "appSettings_unitsTitle": "Jednostki",
   "appSettings_unitsMetric": "Metryczne (m / km)",
   "appSettings_unitsImperial": "Imperialne (ft / mi)",

@@ -1462,6 +1462,8 @@
   "settings_clientRepeatSubtitle": "允许此设备重复发送网状数据包给其他设备",
   "settings_clientRepeatFreqWarning": "离网重复通信需要使用 433、869 或 918 兆赫兹的频率。",
   "settings_aboutOpenMeteoAttribution": "LOS 高程数据:Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "报告问题",
+  "settings_reportBugSubtitle": "在 GitHub 上打开问题报告",
   "appSettings_unitsTitle": "单位",
   "appSettings_unitsMetric": "公制（米/公里）",
   "appSettings_unitsImperial": "英制 (ft / mi)",

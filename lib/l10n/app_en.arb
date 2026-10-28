@@ -252,6 +252,8 @@
   "settings_aboutLegalese": "© 2026 MeshTrax Contributors",
   "settings_aboutDescription": "An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.",
   "settings_aboutOpenMeteoAttribution": "LOS elevation data: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Report a bug",
+  "settings_reportBugSubtitle": "Opens a bug report on GitHub",
   "settings_infoName": "Name",
   "settings_infoId": "ID",
   "settings_infoStatus": "Status",

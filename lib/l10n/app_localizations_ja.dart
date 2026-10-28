@@ -571,6 +571,12 @@ class AppLocalizationsJa extends AppLocalizations {
       'LOS 標高データ：Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => '不具合を報告';
+
+  @override
+  String get settings_reportBugSubtitle => 'GitHub で不具合報告を開きます';
+
+  @override
   String get settings_infoName => '名前';
 
   @override

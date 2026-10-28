@@ -590,6 +590,12 @@ class AppLocalizationsSl extends AppLocalizations {
       'Podatki o višini LOS: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Prijavi napako';
+
+  @override
+  String get settings_reportBugSubtitle => 'Odpre prijavo napake na GitHubu';
+
+  @override
   String get settings_infoName => 'Ime';
 
   @override

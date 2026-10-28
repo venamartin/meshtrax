@@ -597,6 +597,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Данные о высоте LOS: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Сообщить об ошибке';
+
+  @override
+  String get settings_reportBugSubtitle =>
+      'Открывает отчёт об ошибке на GitHub';
+
+  @override
   String get settings_infoName => 'Имя';
 
   @override

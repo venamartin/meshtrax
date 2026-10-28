@@ -1485,6 +1485,8 @@
   "settings_clientRepeat": "Repetir sin conexión",
   "settings_clientRepeatSubtitle": "Permita que este dispositivo repita los paquetes de red para otros usuarios.",
   "settings_aboutOpenMeteoAttribution": "Datos de elevación LOS: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Informar de un error",
+  "settings_reportBugSubtitle": "Abre un informe de error en GitHub",
   "appSettings_unitsTitle": "Unidades",
   "appSettings_unitsMetric": "Métrico (m/km)",
   "appSettings_unitsImperial": "Imperial (pies/millas)",

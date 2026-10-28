@@ -209,6 +209,8 @@
   "settings_aboutLegalese": "2026년 MeshCore 오픈 소스 프로젝트",
   "settings_aboutDescription": "MeshCore LoRa 메시 네트워크 장치를 위한 오픈 소스 Flutter 클라이언트.",
   "settings_aboutOpenMeteoAttribution": "LOS 고도 데이터: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "버그 신고",
+  "settings_reportBugSubtitle": "GitHub에서 버그 신고를 엽니다",
   "settings_infoName": "이름",
   "settings_infoId": "ID",
   "settings_infoStatus": "상태",

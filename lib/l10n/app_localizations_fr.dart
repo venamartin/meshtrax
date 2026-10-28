@@ -602,6 +602,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Données d\'élévation LOS : Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Signaler un bug';
+
+  @override
+  String get settings_reportBugSubtitle => 'Ouvre un rapport de bug sur GitHub';
+
+  @override
   String get settings_infoName => 'Nom';
 
   @override

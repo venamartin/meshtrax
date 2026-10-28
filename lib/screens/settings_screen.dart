@@ -9,6 +9,7 @@ import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
@@ -583,15 +584,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAboutCard(BuildContext context) {
     final l10n = context.l10n;
     return Card(
-      child: ListTile(
-        leading: const Icon(Icons.info_outline),
-        title: Text(l10n.settings_about),
-        subtitle: Text(
-          l10n.settings_aboutVersion(
-            _appVersion.isEmpty ? l10n.common_loading : _appVersion,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(l10n.settings_about),
+            subtitle: Text(
+              l10n.settings_aboutVersion(
+                _appVersion.isEmpty ? l10n.common_loading : _appVersion,
+              ),
+            ),
+            onTap: () => _showAbout(context),
           ),
-        ),
-        onTap: () => _showAbout(context),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: Text(l10n.settings_reportBug),
+            subtitle: Text(l10n.settings_reportBugSubtitle),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => launchUrl(
+              Uri.parse(
+                'https://github.com/venamartin/meshtrax/issues/new?template=bug_report.yml',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+        ],
       ),
     );
   }

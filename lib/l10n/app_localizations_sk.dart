@@ -593,6 +593,12 @@ class AppLocalizationsSk extends AppLocalizations {
       'Údaje o nadmorskej výške LOS: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Nahlásiť chybu';
+
+  @override
+  String get settings_reportBugSubtitle => 'Otvorí hlásenie chyby na GitHube';
+
+  @override
   String get settings_infoName => 'Meno';
 
   @override

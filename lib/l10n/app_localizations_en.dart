@@ -586,6 +586,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'LOS elevation data: Open-Meteo (CC BY 4.0)';
 
   @override
+  String get settings_reportBug => 'Report a bug';
+
+  @override
+  String get settings_reportBugSubtitle => 'Opens a bug report on GitHub';
+
+  @override
   String get settings_infoName => 'Name';
 
   @override
