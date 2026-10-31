@@ -15,6 +15,7 @@ class PathGraphConfig {
     this.snrFullQualityDb = 8,
     this.snrZeroQualityDb = -18,
     this.pThreshold = 0.40,
+    this.failureHalfLifeHours = 24,
     this.maxHops = 32,
     this.egressHalfLifeMinutes = 45,
     this.egressProvenDecayFactor = 4,
@@ -128,6 +129,15 @@ class PathGraphConfig {
 
   /// Minimum calibrated p for an edge direction to count as usable.
   final double pThreshold;
+
+  /// Failed attempts fade with this half-life; deliveries and traces never
+  /// do (owner, 2026-10-31). A failure cannot say which hop broke, so it is
+  /// a suspicion on every link of the route, not a fact about any of them:
+  /// the contact was off, or my first hop did not hear me. Held for good,
+  /// two failures on a link with no delivery put it below [pThreshold]
+  /// whatever its traffic (0.5 × n₀ / (2 + n₀) < 0.40 for every n₀), and
+  /// a field graph had 242 of its busiest links shut out that way.
+  final double failureHalfLifeHours;
 
   /// Path budget: 64 wire bytes ÷ 2-byte hops.
   final int maxHops;
@@ -311,6 +321,7 @@ class PathGraphConfig {
         snrFullQualityDb: snrFullQualityDb,
         snrZeroQualityDb: snrZeroQualityDb,
         pThreshold: pThreshold ?? this.pThreshold,
+        failureHalfLifeHours: failureHalfLifeHours,
         maxHops: maxHops ?? this.maxHops,
         egressHalfLifeMinutes: egressHalfLifeMinutes,
         egressProvenDecayFactor: egressProvenDecayFactor,
@@ -386,16 +397,22 @@ class Estimator {
     return config.n0Min + (config.n0Max - config.n0Min) * scale;
   }
 
+  /// Failures still held against this direction right now.
+  double decayedFailures(EdgeState e, int nowMillis) =>
+      e.failuresAt(nowMillis, config.failureHalfLifeHours);
+
   /// Calibrated delivery probability: local attempts override the prior.
+  /// Deliveries count for good, failures only while recent.
   double calibratedP(EdgeState e, int nowMillis) {
     final n0 = priorConfidence(e, nowMillis);
-    return (e.s + priorQuality(e) * n0) / (e.n + n0);
+    return (e.s + priorQuality(e) * n0) /
+        (e.s + decayedFailures(e, nowMillis) + n0);
   }
 
-  /// Any evidence at all? (Nodes minted by a single sighting shouldn't
-  /// route on the bare passive default.)
+  /// Any evidence the link exists: a sighting, a delivery or a trace. A
+  /// failed attempt alone is not one.
   bool hasEvidence(EdgeState e) =>
-      e.n > 0 || e.obsCount > 0 || e.measuredSnr != null;
+      e.s > 0 || e.obsCount > 0 || e.measuredSnr != null;
 
   /// Usable in this direction.
   bool usable(EdgeState e, int nowMillis) =>

@@ -251,7 +251,9 @@ class PathGraph {
         _db = PathGraphDatabase(executor),
         _now = now ?? DateTime.now,
         _estimator = Estimator(config) {
-    _store = GraphStore(_db, hashWidthBytes: hashWidthBytes)
+    _store = GraphStore(_db,
+        hashWidthBytes: hashWidthBytes,
+        failureHalfLifeHours: config.failureHalfLifeHours)
       ..onLinkSeen = _onLinkSeen;
     _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
     _places = PlaceStore(_db);
@@ -666,7 +668,7 @@ class PathGraph {
       _fileLink(hops[i], hops[i + 1], arrival, messageId, vouched: vouched);
     }
     if (hopCount == 1 && known(hops[0])) {
-      _store.nodeFor(hops[0], NodeSource.observed).lastHeard = arrival;
+      _store.heard(hops[0], NodeSource.observed, arrival);
     }
 
     // Contact ingress: path[0] of traffic they originated.
@@ -1083,13 +1085,22 @@ class PathGraph {
         continue;
       }
       if (!success && anyGuessed) continue;
-      _store.nodeFor(from, NodeSource.observed).lastHeard = arrival;
-      _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
       final edge = _store.edges.putIfAbsent((from, to),
           () => EdgeState(source: 'observed', firstObserved: arrival));
-      if (success) edge.s++;
       edge.n++;
-      edge.lastObserved = arrival;
+      if (success) {
+        // The packet travelled every hop: a sighting as well as a proof.
+        edge.s++;
+        edge.lastObserved = arrival;
+        _store.heard(from, NodeSource.observed, arrival);
+        _store.heard(to, NodeSource.observed, arrival);
+      } else {
+        // Nothing was seen; a suspicion that fades
+        // (PathGraphConfig.failureHalfLifeHours).
+        edge.addFailure(arrival, config.failureHalfLifeHours);
+        _store.nodeFor(from, NodeSource.observed);
+        _store.nodeFor(to, NodeSource.observed);
+      }
       _store.markEdgeDirty(from, to);
     }
     if (success) {
@@ -1151,7 +1162,7 @@ class PathGraph {
       edge.n++;
       edge.lastObserved = arrival;
       _store.markEdgeDirty(from, to);
-      _store.nodeFor(to, NodeSource.observed).lastHeard = arrival;
+      _store.heard(to, NodeSource.observed, arrival);
     }
     _scheduleFlush();
   }
@@ -1189,7 +1200,7 @@ class PathGraph {
       lat: real ? lat : null,
       lon: real ? lon : null,
     );
-    _store.nodeFor(hash, NodeSource.advert).lastHeard = _arrivalMillis;
+    _store.heard(hash, NodeSource.advert, _arrivalMillis);
     _scheduleFlush();
   }
 
@@ -1872,8 +1883,7 @@ class PathGraph {
 
     for (final entry in _store.edges.entries) {
       final e = entry.value;
-      final local = e.obsCount > 0 || e.n > 0 || e.measuredSnr != null;
-      if (!local) continue;
+      if (!_estimator.hasEvidence(e)) continue;
       final (from, to) = entry.key;
       referenced
         ..add(from)
@@ -1985,6 +1995,8 @@ class PathGraph {
             'source': e.value.source,
             's': e.value.s,
             'n': e.value.n,
+            'fail_weight': e.value.failWeight,
+            if (e.value.lastFailed != null) 'last_failed': e.value.lastFailed,
             'traffic_weight': e.value.trafficWeight,
             'obs_count': e.value.obsCount,
             if (e.value.lastObserved != null)
@@ -2081,12 +2093,23 @@ class PathGraph {
       }
       for (final raw in (document['edges'] as List?) ?? const []) {
         final e = raw as Map;
+        final s = (e['s'] as num?)?.toInt() ?? 0;
+        final n = (e['n'] as num?)?.toInt() ?? 0;
+        // A checkpoint from before failures faded: the v13 migration's
+        // rule, its failures start fading from the last sighting.
+        final legacy = !e.containsKey('fail_weight');
         edges[(e['from'] as String, e['to'] as String)] =
             EdgeState(
                 source: e['source'] as String? ?? 'observed',
                 firstObserved: (e['first_observed'] as num?)?.toInt())
-              ..s = (e['s'] as num?)?.toInt() ?? 0
-              ..n = (e['n'] as num?)?.toInt() ?? 0
+              ..s = s
+              ..n = n
+              ..failWeight = legacy
+                  ? (n - s).toDouble()
+                  : (e['fail_weight'] as num).toDouble()
+              ..lastFailed = legacy && n > s
+                  ? (e['last_observed'] as num?)?.toInt()
+                  : (e['last_failed'] as num?)?.toInt()
               ..trafficWeight = (e['traffic_weight'] as num?)?.toDouble() ?? 0
               ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
               ..lastObserved = (e['last_observed'] as num?)?.toInt()
