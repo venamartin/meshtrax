@@ -20,7 +20,7 @@ class _Connector extends MeshCoreConnector {
   @override
   int get pathHashByteWidth => 2;
   @override
-  int? get currentFreqHz => 910525000;
+  int? get currentFreqHz => 910525;
   @override
   int? get currentBwHz => 62500;
   @override

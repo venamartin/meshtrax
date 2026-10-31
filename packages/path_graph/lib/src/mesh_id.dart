@@ -5,23 +5,24 @@
 /// so are channel keys (radios on the same frequency share repeaters).
 class MeshId {
   const MeshId({
-    required this.freqHz,
+    required this.freqKHz,
     required this.bwHz,
     required this.sf,
     required this.cr,
   });
 
-  final int freqHz;
+  /// In kHz, as the radio reports it.
+  final int freqKHz;
   final int bwHz;
   final int sf;
   final int cr;
 
-  /// Stable file-name-safe key: `m910525000_62500_8_8`.
-  String get key => 'm${freqHz}_${bwHz}_${sf}_$cr';
+  /// Stable file-name-safe key: `m910525_62500_8_8`.
+  String get key => 'm${freqKHz}_${bwHz}_${sf}_$cr';
 
   /// `910.525 MHz · 62.5 kHz · SF8 · CR8`.
   String get label {
-    final mhz = (freqHz / 1000000).toStringAsFixed(3);
+    final mhz = (freqKHz / 1000).toStringAsFixed(3);
     final khz = bwHz % 1000 == 0
         ? '${bwHz ~/ 1000}'
         : (bwHz / 1000).toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
@@ -30,7 +31,7 @@ class MeshId {
 
   Map<String, dynamic> toJson() => {
         'key': key,
-        'freq_hz': freqHz,
+        'freq_hz': freqKHz,
         'bw_hz': bwHz,
         'sf': sf,
         'cr': cr,
@@ -42,7 +43,7 @@ class MeshId {
     final f = raw['freq_hz'], b = raw['bw_hz'], s = raw['sf'], c = raw['cr'];
     if (f is! num || b is! num || s is! num || c is! num) return null;
     return MeshId(
-        freqHz: f.toInt(), bwHz: b.toInt(), sf: s.toInt(), cr: c.toInt());
+        freqKHz: f.toInt(), bwHz: b.toInt(), sf: s.toInt(), cr: c.toInt());
   }
 
   @override

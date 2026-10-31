@@ -19,7 +19,7 @@ class _Connector extends MeshCoreConnector {
   @override
   int get pathHashByteWidth => 2;
   @override
-  int? get currentFreqHz => 910525000;
+  int? get currentFreqHz => 910525;
   @override
   int? get currentBwHz => 62500;
   @override
@@ -28,7 +28,7 @@ class _Connector extends MeshCoreConnector {
   int? get currentCr => 5;
 }
 
-const _preset = 'm910525000_62500_7_5';
+const _preset = 'm910525_62500_7_5';
 
 /// A repeater key: [n] picks it, [area] keeps Monterey's and Washington's
 /// apart, and its first two bytes are the repeater's code.

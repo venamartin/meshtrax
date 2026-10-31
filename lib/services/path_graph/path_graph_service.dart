@@ -141,7 +141,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   static MeshId? meshOf(MeshCoreConnector c) {
     final f = c.currentFreqHz, b = c.currentBwHz, sf = c.currentSf, cr = c.currentCr;
     if (f == null || b == null || sf == null || cr == null) return null;
-    return MeshId(freqHz: f, bwHz: b, sf: sf, cr: cr);
+    return MeshId(freqKHz: f, bwHz: b, sf: sf, cr: cr);
   }
 
   static String databaseNameFor(MeshId? mesh) =>
