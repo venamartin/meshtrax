@@ -26,6 +26,7 @@ import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../services/app_settings_service.dart';
 import '../services/message_retry_service.dart';
+import '../services/notification_service.dart';
 import '../services/path_graph/path_graph_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/server_login_service.dart';
@@ -105,7 +106,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with RouteAware {
   final _textController = MentionTextEditingController();
   final _textFieldFocusNode = FocusNode();
   final ItemScrollController _itemScrollController = ItemScrollController();
@@ -143,11 +144,21 @@ class _ChatScreenState extends State<ChatScreen> {
   /// that kept the NEW MESSAGES divider from arming on entry paths that
   /// don't pass an unread count (room login flow, open-chat-with-author).
   int _unreadAtOpen = 0;
+
+  /// This screen is the connector's active contact: on top, not covered by
+  /// another page. A chat under another page isn't being read.
+  bool _viewing = false;
+  late final AppLifecycleListener _lifecycleListener;
   int _initialScrollIndex = 0;
 
   /// Whether the newest message is on screen. Not state: the list reports
   /// it on every frame of a scroll, and only the jump-down button shows it.
   final _atBottom = ValueNotifier(true);
+
+  /// The list is anchored on a row above the newest: it opened there, or a
+  /// jump went there. The newest row then grows down past the screen edge,
+  /// not up, until the list is anchored on it.
+  bool _anchoredAboveNewest = false;
   DateTime? _lastTextSendAt;
   int _previousMessageCount = 0;
   String? _previousNewestId;
@@ -227,13 +238,22 @@ class _ChatScreenState extends State<ChatScreen> {
   /// A row grew or shrank (a GIF loaded, the text was zoomed). The list
   /// reports where its rows are only on a scroll or as a new list, and the
   /// jump-down button and following new messages go by that report. Once
-  /// sizes settle, a list with no report since is built anew.
+  /// sizes settle, a list with no report since is built anew, and a reader
+  /// at the bottom of a list anchored above the newest row is brought back
+  /// to it.
   bool _onRowResized(SizeChangedLayoutNotification _) {
     final reports = _positionReports;
     _resizeTimer?.cancel();
     _resizeTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted && _positionReports == reports) {
+      if (!mounted) return;
+      if (_positionReports == reports) {
         setState(() => _listKey = null);
+      }
+      if (_anchoredAboveNewest &&
+          _atBottom.value &&
+          _itemScrollController.isAttached) {
+        _anchoredAboveNewest = false;
+        _itemScrollController.jumpTo(index: 0, alignment: 0.0);
       }
     });
     return false;
@@ -261,6 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (idx != -1) {
                 _initialScrollIndex = idx;
+                _anchoredAboveNewest = true;
                 _atBottom.value = false;
               }
             }
@@ -292,9 +313,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _unreadAtOpen = widget.unreadCount ??
         connector.getUnreadCountForContactKey(widget.contact.publicKeyHex);
     _subscribeMessages(connector);
+    _lifecycleListener = AppLifecycleListener(onResume: _onAppResumed);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _viewing = true;
       connector.setActiveContact(widget.contact.publicKeyHex);
       _connector = connector;
     });
@@ -377,6 +400,66 @@ class _ChatScreenState extends State<ChatScreen> {
     final password = await storage.getRepeaterPassword(keyHex);
     if (password == null) return;
     connector.recordRoomLogin(keyHex, password, true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      NotificationService.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() => _stopViewing();
+
+  @override
+  void didPop() => _stopViewing();
+
+  // The page on top still has to clear itself, and may be going with this
+  // one (popUntil), so this waits for the pops to finish.
+  @override
+  void didPopNext() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      _viewing = true;
+      _catchUp();
+    });
+  }
+
+  void _onAppResumed() {
+    if (_viewing) _catchUp();
+  }
+
+  void _stopViewing() {
+    if (!_viewing) return;
+    _viewing = false;
+    _connector?.setActiveContact(null);
+  }
+
+  /// Back on screen: marks the first message missed, then reads the chat.
+  /// Going active zeroes the unread count, so it comes last.
+  void _catchUp() {
+    final connector = context.read<MeshCoreConnector>();
+    final settingsService = context.read<AppSettingsService>();
+    final key = widget.contact.publicKeyHex;
+    final messages = _visibleMessages(settingsService.isContactBlocked(key));
+    final anchor = _findOldestUnreadAnchor(
+      messages,
+      connector.getUnreadCountForContactKey(key),
+    );
+    if (anchor != null) {
+      setState(() => _firstUnreadMessage = anchor);
+      if (settingsService.settings.jumpToOldestUnread) {
+        _atBottom.value = false;
+        final index = messages.reversed.toList().indexOf(anchor);
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted && index != -1) _scrollToIndex(index);
+        });
+      }
+    }
+    connector.setActiveContact(key);
   }
 
   Message? _findOldestUnreadAnchor(List<Message> messages, int unreadCount) {
@@ -507,6 +590,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _scrollToIndex(int index) {
     if (!_itemScrollController.isAttached) return;
+    _anchoredAboveNewest = true;
     _itemScrollController.scrollTo(
       index: index,
       duration: const Duration(milliseconds: 300),
@@ -655,7 +739,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _resizeTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _atBottom.dispose();
-    _connector?.setActiveContact(null);
+    _lifecycleListener.dispose();
+    NotificationService.routeObserver.unsubscribe(this);
+    _stopViewing();
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
     _textController.removeListener(_keepDraft);
@@ -1066,23 +1152,28 @@ class _ChatScreenState extends State<ChatScreen> {
     // Auto-scroll to bottom if user is already at bottom
     final currentMessageCount = messages.length;
     final newest = messages.isEmpty ? null : messages.last;
+    // A row arrived below the old newest. The row count can't tell: a full
+    // watched window drops its oldest row for each new one. An old newest
+    // that is gone was removed, and what shows now is not new.
+    final newRow = newest != null &&
+        newest.messageId != _previousNewestId &&
+        messages.any((m) => m.messageId == _previousNewestId);
     // A NEW newest row of ours: a room's held-back posts file in above our
     // post, and must not pull a reader who scrolled up back down.
-    final justSent = newest != null &&
-        newest.isOutgoing &&
-        newest.messageId != _previousNewestId;
-    if (currentMessageCount > _previousMessageCount) {
-      // Auto-scroll if: the user is already at the bottom, OR they just sent
-      // the newest message (so their own send always scrolls into view).
-      if ((_atBottom.value || justSent) && _itemScrollController.isAttached) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_itemScrollController.isAttached) return;
-          _itemScrollController.jumpTo(
-            index: 0,
-            alignment: 0.0,
-          );
-        });
-      }
+    final justSent = newRow && newest.isOutgoing;
+    final grew = currentMessageCount > _previousMessageCount;
+    // Auto-scroll if: the user is already at the bottom, OR they just sent
+    // the newest message (so their own send always scrolls into view).
+    if (((_atBottom.value && (newRow || grew)) || justSent) &&
+        _itemScrollController.isAttached) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_itemScrollController.isAttached) return;
+        _anchoredAboveNewest = false;
+        _itemScrollController.jumpTo(
+          index: 0,
+          alignment: 0.0,
+        );
+      });
     }
     _previousMessageCount = currentMessageCount;
     _previousNewestId = newest?.messageId;

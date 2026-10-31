@@ -113,6 +113,28 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('phone: the download button clears the navigation buttons',
+      (tester) async {
+    tester.view.padding = const FakeViewPadding(bottom: 48);
+    await open(tester, size: const Size(400, 500));
+    await tester.tap(find.textContaining('North America'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('United States'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Rhode Island'));
+    await tester.pumpAndSettle();
+
+    final button = find.byType(FilledButton);
+    await tester.dragUntilVisible(
+      button,
+      find.byType(ListView).first,
+      const Offset(0, -200),
+    );
+    await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(button).bottom, lessThanOrEqualTo(500 - 48));
+  });
+
   testWidgets('phone: browse to Rhode Island and download it', (tester) async {
     await open(tester, size: const Size(400, 900));
 

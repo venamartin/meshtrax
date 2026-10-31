@@ -201,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (connector.currentFreqHz != null)
                     _buildInfoRow(
                       'Frequency',
-                      '${(connector.currentFreqHz! / 1000).toStringAsFixed(2)} MHz',
+                      '${(connector.currentFreqHz! / 1000).toStringAsFixed(3)} MHz',
                     ),
                   if (connector.currentBwHz != null)
                     _buildInfoRow(

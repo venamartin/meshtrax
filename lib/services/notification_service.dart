@@ -20,6 +20,11 @@ class NotificationService {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
+  /// Tells the chat screens when a page covers them or comes off them. Wired
+  /// onto the app's [MaterialApp]; dialogs and sheets aren't pages.
+  static final RouteObserver<PageRoute<dynamic>> routeObserver =
+      RouteObserver<PageRoute<dynamic>>();
+
   /// Set by the app to handle a tapped notification's payload (navigation).
   void Function(String payload)? onNotificationTap;
 
