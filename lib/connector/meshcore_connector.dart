@@ -763,7 +763,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _telemetryModeLoc = 0;
   int _telemetryModeEnv = 0;
   int _advertLocPolicy = 0;
-  int _multiAcks = 1; // Default to enabled (1 ACK)
+  int _multiAcks = 1; // Extra ACKs: 1 = 2 ACKs sent. Replaced by the radio's value.
 
   static const int _defaultMaxContacts = 32;
   static const int _defaultMaxChannels = 8;
