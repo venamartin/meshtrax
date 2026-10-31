@@ -270,4 +270,28 @@ void main() {
 
     expect((await store.loadMessages(contactA)).map((m) => m.text), ['keep']);
   });
+
+  test('concurrent updates to one row both land', () async {
+    await store.upsertMessage(
+      contactA,
+      msg('race', id: 'r1', outgoing: true)
+          .copyWith(status: MessageStatus.pending),
+    );
+
+    await Future.wait([
+      store.updateAnyByMessageId(
+        'r1',
+        (m) => m.copyWith(status: MessageStatus.delivered),
+      ),
+      store.updateMessage(
+        contactA,
+        'r1',
+        (m) => m.copyWith(retryCount: m.retryCount + 1),
+      ),
+    ]);
+
+    final loaded = (await store.loadMessages(contactA)).single;
+    expect(loaded.status, MessageStatus.delivered);
+    expect(loaded.retryCount, 1);
+  });
 }

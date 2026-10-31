@@ -295,25 +295,27 @@ class ChannelMessageStore {
     ChannelMessage Function(ChannelMessage) transform,
   ) async {
     if (publicKeyHex.isEmpty) return (false, null);
-    final row =
-        await (_db.select(_db.channelMessageRows)
-              ..where(
-                (r) =>
-                    r.nodeScope.equals(publicKeyHex) &
-                    r.messageId.equals(messageId),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    if (row == null) return (false, null);
-    try {
-      final msg = _messageFromJson(
-        jsonDecode(row.payload) as Map<String, dynamic>,
-      );
-      await upsertMessage(row.channelIdKey, transform(msg));
-      return (true, row.channelIdKey);
-    } catch (_) {
-      return (false, null);
-    }
+    return _db.transaction(() async {
+      final row =
+          await (_db.select(_db.channelMessageRows)
+                ..where(
+                  (r) =>
+                      r.nodeScope.equals(publicKeyHex) &
+                      r.messageId.equals(messageId),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (row == null) return (false, null);
+      try {
+        final msg = _messageFromJson(
+          jsonDecode(row.payload) as Map<String, dynamic>,
+        );
+        await upsertMessage(row.channelIdKey, transform(msg));
+        return (true, row.channelIdKey);
+      } catch (_) {
+        return (false, null);
+      }
+    });
   }
 
   /// Fails own sends still `pending` from before [cutoff]: their attempt
@@ -356,16 +358,20 @@ class ChannelMessageStore {
   }
 
   /// Load-transform-upsert of a single row; returns false when the row
-  /// does not exist. The only mutation primitive live paths may use.
+  /// does not exist. The only mutation primitive live paths may use. One
+  /// transaction, so an update racing it (the radio's OK against the send
+  /// path's wire stamp) is kept rather than overwritten.
   Future<bool> updateMessage(
     String idKey,
     String messageId,
     ChannelMessage Function(ChannelMessage) transform,
-  ) async {
-    final existing = await findByMessageId(idKey, messageId);
-    if (existing == null) return false;
-    await upsertMessage(idKey, transform(existing));
-    return true;
+  ) {
+    return _db.transaction(() async {
+      final existing = await findByMessageId(idKey, messageId);
+      if (existing == null) return false;
+      await upsertMessage(idKey, transform(existing));
+      return true;
+    });
   }
 
   /// Rewrites one row's payload in place, so its id, arrival stamp and
