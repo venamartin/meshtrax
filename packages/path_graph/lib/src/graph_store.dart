@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart';
 
 import 'db/database.dart';
@@ -46,9 +48,33 @@ class NodeState {
 class EdgeState {
   EdgeState({required this.source, this.firstObserved});
 
-  /// Attempt-counted evidence.
+  /// Attempt-counted evidence: deliveries, and attempts over all time.
   int s = 0;
   int n = 0;
+
+  /// Failed attempts still held against the link, fading at read from
+  /// [lastFailed] (arrival millis). A failure cannot say which hop broke,
+  /// so it is a suspicion on every link of the route, never a fact.
+  double failWeight = 0;
+  int? lastFailed;
+
+  /// Failures still held against the link at [nowMillis]: [failWeight]
+  /// halves every [halfLifeHours] since [lastFailed].
+  double failuresAt(int nowMillis, double halfLifeHours) {
+    final last = lastFailed;
+    if (last == null || failWeight == 0) return 0;
+    final hours = (nowMillis - last) / (1000 * 60 * 60);
+    if (hours <= 0) return failWeight;
+    return failWeight * math.pow(0.5, hours / halfLifeHours);
+  }
+
+  /// One more failure at [arrival]. The weight held so far is faded to
+  /// now first; adding to it as stored would re-date every old failure
+  /// to now (review 2026-10-31: a link failing once a week never faded).
+  void addFailure(int arrival, double halfLifeHours) {
+    failWeight = failuresAt(arrival, halfLifeHours) + 1;
+    lastFailed = arrival;
+  }
 
   /// Passive-sighting accumulation (decay applied at read).
   double trafficWeight = 0;
@@ -67,10 +93,13 @@ class EdgeState {
 /// In-memory working set over the Drift durability layer. All hot
 /// operations run here; dirty rows flush in one transaction.
 class GraphStore {
-  GraphStore(this._db, {this.hashWidthBytes = 2});
+  GraphStore(this._db, {this.hashWidthBytes = 2, this.failureHalfLifeHours = 24});
 
   final PathGraphDatabase _db;
   final int hashWidthBytes;
+
+  /// [PathGraphConfig.failureHalfLifeHours], for merging failure weights.
+  final double failureHalfLifeHours;
   int get _hexWidth => hashWidthBytes * 2;
 
   final Map<String, NodeState> nodes = {};
@@ -99,6 +128,14 @@ class GraphStore {
     });
   }
 
+  /// [hash] was heard at [arrival]: minted if new, and saved either way.
+  /// A time that only moved in memory read as weeks old after a restart
+  /// and the node cap evicted repeaters in daily use (field 2026-10-22).
+  void heard(String hash, NodeSource source, int arrival) {
+    nodeFor(hash, source).lastHeard = arrival;
+    _dirtyNodes.add(hash);
+  }
+
   /// Applies one directed observation from→to. Returns false when the
   /// (messageId, edge) pair was already counted for this message.
   /// [heardBefore]: a link held back until heard again was first heard
@@ -115,8 +152,8 @@ class GraphStore {
       }
     }
 
-    nodeFor(from, NodeSource.observed).lastHeard = arrivalMillis;
-    nodeFor(to, NodeSource.observed).lastHeard = arrivalMillis;
+    heard(from, NodeSource.observed, arrivalMillis);
+    heard(to, NodeSource.observed, arrivalMillis);
 
     var created = false;
     final edge = edges.putIfAbsent((from, to), () {
@@ -247,6 +284,13 @@ class GraphStore {
           ..trafficWeight += ghost.trafficWeight
           ..obsCount += ghost.obsCount
           ..measuredSnr ??= ghost.measuredSnr;
+        // Both failure weights faded to the newer clock before they add.
+        final failedAt = _newer(target.lastFailed, ghost.lastFailed);
+        if (failedAt != null) {
+          target.failWeight = target.failuresAt(failedAt, failureHalfLifeHours) +
+              ghost.failuresAt(failedAt, failureHalfLifeHours);
+          target.lastFailed = failedAt;
+        }
         if ((ghost.lastObserved ?? 0) > (target.lastObserved ?? 0)) {
           target.lastObserved = ghost.lastObserved;
         }
@@ -284,6 +328,8 @@ class GraphStore {
           EdgeState(source: row.source, firstObserved: row.firstObserved)
         ..s = row.s
         ..n = row.n
+        ..failWeight = row.failWeight
+        ..lastFailed = row.lastFailed
         ..trafficWeight = row.trafficWeight
         ..lastObserved = row.lastObserved
         ..obsCount = row.obsCount
@@ -351,6 +397,8 @@ class GraphStore {
             toHash: key.$2,
             s: Value(e.s),
             n: Value(e.n),
+            failWeight: Value(e.failWeight),
+            lastFailed: Value(e.lastFailed),
             trafficWeight: Value(e.trafficWeight),
             lastObserved: Value(e.lastObserved),
             obsCount: Value(e.obsCount),

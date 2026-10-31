@@ -53,6 +53,8 @@ void main() {
     final edge = restored.snapshot().edges[('A277', '1312')]!;
     expect(edge.s, before.edges[('A277', '1312')]!.s);
     expect(edge.n, before.edges[('A277', '1312')]!.n);
+    expect(edge.failWeight, before.edges[('A277', '1312')]!.failWeight);
+    expect(edge.lastFailed, before.edges[('A277', '1312')]!.lastFailed);
     expect(edge.measuredSnr, 6.5);
     expect(edge.obsCount, before.edges[('A277', '1312')]!.obsCount);
 
@@ -163,12 +165,20 @@ void main() {
             (r) => r['owner'] == selfPk && r['repeater'] == 'A277'))['weight']
         as num;
     (doc['nodes'] as List).add({'hash': 'A27782', 'source': 'observed'});
+    final bucketEdge = (doc['edges'] as List).cast<Map>().singleWhere(
+        (e) => e['from'] == 'A277' && e['to'] == '1312');
+    final day = 24 * 3600 * 1000;
+    bucketEdge['fail_weight'] = 1.0;
+    bucketEdge['last_failed'] = 20 * day;
+    // Six failures from ten days before the bucket's: nearly gone.
     (doc['edges'] as List).add({
       'from': 'A27782',
       'to': '1312',
       'source': 'observed',
       's': 1,
-      'n': 2,
+      'n': 7,
+      'fail_weight': 6.0,
+      'last_failed': 10 * day,
       'traffic_weight': 3.0,
       'obs_count': 3,
     });
@@ -192,6 +202,9 @@ void main() {
     final merged = snap.edges[('A277', '1312')]!;
     expect(merged.n, greaterThanOrEqualTo(2), reason: 'ghost counters folded');
     expect(merged.measuredSnr, 6.5, reason: 'bucket row keeps its own SNR');
+    expect(merged.lastFailed, 20 * day);
+    expect(merged.failWeight, closeTo(1 + 6 / 1024, 1e-9),
+        reason: 'the ghost\'s failures faded to the newer clock before adding');
     g.setRadioIdentity(selfPk, 2);
     final egress = g.egressCandidates();
     expect(egress.map((c) => c.repeaterHash),
@@ -264,6 +277,33 @@ void main() {
     await old.init();
     await old.loadSession(doc);
     expect(old.egressCandidates().first.failedSinceProof, 0);
+    await old.dispose();
+  });
+
+  test('failures ride the session; an old checkpoint fades them from the '
+      'last sighting', () async {
+    final source = await populated();
+    final path = Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]);
+    source.reportSendResult(path, false);
+    source.reportSendResult(path, false);
+    final live = source.snapshot().edges[('A277', '1312')]!;
+    expect(live.failWeight, 2);
+    expect(live.n - live.s, 2);
+    final doc = source.saveSession();
+    await source.dispose();
+
+    for (final row in doc['edges'] as List) {
+      (row as Map)
+        ..remove('fail_weight')
+        ..remove('last_failed');
+    }
+    final old = PathGraph(NativeDatabase.memory(),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+    await old.init();
+    await old.loadSession(doc);
+    final edge = old.snapshot().edges[('A277', '1312')]!;
+    expect(edge.failWeight, 2);
+    expect(edge.lastFailed, live.lastObserved);
     await old.dispose();
   });
 

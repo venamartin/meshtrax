@@ -1375,6 +1375,22 @@ lists**, which are genuinely perishable because *people* move even
 though repeaters don't. That asymmetry is the whole point of the
 design's "movement invalidates exactly one hop" observation.
 
+**Failures fade (owner, 2026-10-31).** The paragraph above pictured
+links we delivered on. A failed send cannot say which hop broke, so a
+failure is a suspicion spread over every link of the route, not a fact
+about any of them — the contact was off, or my first hop did not hear
+me. Once the imported prior went (2026-09-23) nearly every link sat at
+q₀ = 0.5, and two failures on a link with no delivery put it below the
+0.40 threshold for good whatever its traffic (0.5·n₀/(2+n₀) < 0.40 for
+every n₀); a field graph had 242 of its busiest links shut out that way
+(10-23 export: 1000→A277 heard 3,942 times, 2 delivered / 19 tried).
+So: a **delivery is a fact and stays; a failure fades**, half-life
+`failureHalfLifeHours` (24 h), `p = (s + q₀·n₀)/(s + f(t) + n₀)`. Only a
+link delivered on or traced is protected from the age sweep below; one
+that only ever failed is hearsay. A failed attempt is no longer a
+sighting either: it leaves `lastObserved` and the nodes' `lastHeard`
+alone.
+
 * **Automatic — a retention policy setting**, default on. Simplest
   shape that covers the real needs: *"forget unused data older than
   N days"* (default ~30, with an Off option for people who want a

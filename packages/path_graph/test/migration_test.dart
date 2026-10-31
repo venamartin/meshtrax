@@ -379,6 +379,49 @@ void main() {
     file.parent.deleteSync(recursive: true);
   });
 
+  // 2026-10-31: failures held for good had shut 242 busy links out of
+  // routing; from v13 they fade, the old ones from the link's last sighting.
+  test('v12 to v13: recorded failures start fading from the last sighting',
+      () async {
+    const seen = 1792600000000;
+    final file = await atVersion(12, (db) async {
+      await db.customStatement(
+          'INSERT INTO graph_edges (from_hash, to_hash, s, n, last_observed, '
+          "obs_count, source) VALUES ('1000', 'A277', 2, 19, $seen, 3942, "
+          "'observed'), ('BEEF', 'A277', 1, 1, $seen, 5, 'observed')");
+    });
+
+    final graph = PathGraph(NativeDatabase(file),
+        now: () => DateTime.fromMillisecondsSinceEpoch(seen),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+    await graph.init();
+    final burned = graph.snapshot().edges[('1000', 'A277')]!;
+    expect(burned.failWeight, 17);
+    expect(burned.lastFailed, seen);
+    expect(graph.estimator.usable(burned, seen), isFalse);
+    expect(graph.estimator.usable(burned, seen + 4 * 24 * 3600 * 1000), isTrue,
+        reason: '17 failures fade below a busy link\'s limit in ~3.2 days');
+    final clean = graph.snapshot().edges[('BEEF', 'A277')]!;
+    expect(clean.failWeight, 0);
+    expect(clean.lastFailed, isNull);
+    await graph.dispose();
+
+    // An older build stamped v12 back; the seed must not reset a clock
+    // that is already fading.
+    final again = PathGraphDatabase(NativeDatabase(file));
+    await again.customStatement(
+        'UPDATE graph_edges SET fail_weight = 1.5, last_failed = ${seen - 1000}');
+    await again.customStatement('PRAGMA user_version = 12');
+    await again.close();
+    final reopened = PathGraph(NativeDatabase(file),
+        config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+    await reopened.init();
+    final kept = reopened.snapshot().edges[('1000', 'A277')]!;
+    expect((kept.failWeight, kept.lastFailed), (1.5, seen - 1000));
+    await reopened.dispose();
+    file.parent.deleteSync(recursive: true);
+  });
+
   // 2026-10-23: the first detector tagged hilltops, and a half-set position
   // (Caribou Palace, 37.70, 0) read as a 10,000 km move.
   test('v9 to v10: tags from the old rules and half positions are cleared',
