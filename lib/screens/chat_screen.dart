@@ -26,6 +26,7 @@ import '../models/message.dart';
 import '../models/path_selection.dart';
 import '../services/app_settings_service.dart';
 import '../services/message_retry_service.dart';
+import '../services/notification_service.dart';
 import '../services/path_graph/path_graph_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/server_login_service.dart';
@@ -105,7 +106,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with RouteAware {
   final _textController = MentionTextEditingController();
   final _textFieldFocusNode = FocusNode();
   final ItemScrollController _itemScrollController = ItemScrollController();
@@ -143,6 +144,11 @@ class _ChatScreenState extends State<ChatScreen> {
   /// that kept the NEW MESSAGES divider from arming on entry paths that
   /// don't pass an unread count (room login flow, open-chat-with-author).
   int _unreadAtOpen = 0;
+
+  /// This screen is the connector's active contact: on top, not covered by
+  /// another page. A chat under another page isn't being read.
+  bool _viewing = false;
+  late final AppLifecycleListener _lifecycleListener;
   int _initialScrollIndex = 0;
 
   /// Whether the newest message is on screen. Not state: the list reports
@@ -307,9 +313,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _unreadAtOpen = widget.unreadCount ??
         connector.getUnreadCountForContactKey(widget.contact.publicKeyHex);
     _subscribeMessages(connector);
+    _lifecycleListener = AppLifecycleListener(onResume: _onAppResumed);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _viewing = true;
       connector.setActiveContact(widget.contact.publicKeyHex);
       _connector = connector;
     });
@@ -392,6 +400,66 @@ class _ChatScreenState extends State<ChatScreen> {
     final password = await storage.getRepeaterPassword(keyHex);
     if (password == null) return;
     connector.recordRoomLogin(keyHex, password, true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      NotificationService.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() => _stopViewing();
+
+  @override
+  void didPop() => _stopViewing();
+
+  // The page on top still has to clear itself, and may be going with this
+  // one (popUntil), so this waits for the pops to finish.
+  @override
+  void didPopNext() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      _viewing = true;
+      _catchUp();
+    });
+  }
+
+  void _onAppResumed() {
+    if (_viewing) _catchUp();
+  }
+
+  void _stopViewing() {
+    if (!_viewing) return;
+    _viewing = false;
+    _connector?.setActiveContact(null);
+  }
+
+  /// Back on screen: marks the first message missed, then reads the chat.
+  /// Going active zeroes the unread count, so it comes last.
+  void _catchUp() {
+    final connector = context.read<MeshCoreConnector>();
+    final settingsService = context.read<AppSettingsService>();
+    final key = widget.contact.publicKeyHex;
+    final messages = _visibleMessages(settingsService.isContactBlocked(key));
+    final anchor = _findOldestUnreadAnchor(
+      messages,
+      connector.getUnreadCountForContactKey(key),
+    );
+    if (anchor != null) {
+      setState(() => _firstUnreadMessage = anchor);
+      if (settingsService.settings.jumpToOldestUnread) {
+        _atBottom.value = false;
+        final index = messages.reversed.toList().indexOf(anchor);
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted && index != -1) _scrollToIndex(index);
+        });
+      }
+    }
+    connector.setActiveContact(key);
   }
 
   Message? _findOldestUnreadAnchor(List<Message> messages, int unreadCount) {
@@ -671,7 +739,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _resizeTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _atBottom.dispose();
-    _connector?.setActiveContact(null);
+    _lifecycleListener.dispose();
+    NotificationService.routeObserver.unsubscribe(this);
+    _stopViewing();
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
     _textController.removeListener(_keepDraft);

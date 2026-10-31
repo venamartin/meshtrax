@@ -25,6 +25,7 @@ import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
+import '../services/notification_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
@@ -71,7 +72,7 @@ class ChannelChatScreen extends StatefulWidget {
   State<ChannelChatScreen> createState() => _ChannelChatScreenState();
 }
 
-class _ChannelChatScreenState extends State<ChannelChatScreen> {
+class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   final MentionTextEditingController _textController = MentionTextEditingController();
   final FocusNode _textFieldFocusNode = FocusNode();
   final ItemScrollController _itemScrollController = ItemScrollController();
@@ -89,6 +90,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
   ChannelMessage? _replyingToMessage;
 
   MeshCoreConnector? _connector;
+
+  /// Unread count captured synchronously at screen open: the first database
+  /// emission can land after the chat has already been marked read.
+  int _unreadAtOpen = 0;
+
+  /// This screen is the connector's active channel: on top, not covered by
+  /// another page. A chat under another page isn't being read.
+  bool _viewing = false;
+  late final AppLifecycleListener _lifecycleListener;
 
   // DM-from-channel advert watch: armed by the no-match dialog, disarmed on
   // hit, timeout, or screen dispose. Names only — a channel message carries
@@ -240,8 +250,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
           _didInitialAnchor = true;
           _previousMessageCount = messages.length;
           final settings = context.read<AppSettingsService>().settings;
-          final unread = widget.unreadCount ??
-              connector.getUnreadCountForChannelIndex(widget.channel.index);
+          final unread = _unreadAtOpen;
           final mentionTarget = widget.scrollToMessageId;
           final mentionIdx = mentionTarget == null
               ? -1
@@ -252,10 +261,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
             _initialScrollIndex = mentionIdx;
             _anchoredAboveNewest = true;
             _atBottom.value = false;
-          } else if (settings.jumpToOldestUnread && unread > 0) {
+          } else if (unread > 0) {
+            // The NEW MESSAGES divider always marks the oldest unread; the
+            // setting only decides whether the list opens scrolled to it.
             _firstUnreadMessage =
                 _findOldestUnreadChannelAnchor(messages, unread);
-            if (_firstUnreadMessage != null) {
+            if (settings.jumpToOldestUnread && _firstUnreadMessage != null) {
               final msgIdx =
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (msgIdx != -1) {
@@ -290,13 +301,74 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _textController.addListener(_mentionsListener);
 
     final connector = context.read<MeshCoreConnector>();
+    _unreadAtOpen = widget.unreadCount ??
+        connector.getUnreadCountForChannelIndex(widget.channel.index);
     _subscribeMessages(connector);
+    _lifecycleListener = AppLifecycleListener(onResume: _onAppResumed);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _viewing = true;
       connector.setActiveChannel(widget.channel.index);
       _connector = connector;
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      NotificationService.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() => _stopViewing();
+
+  @override
+  void didPop() => _stopViewing();
+
+  // The page on top still has to clear itself, and may be going with this
+  // one (popUntil), so this waits for the pops to finish.
+  @override
+  void didPopNext() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      _viewing = true;
+      _catchUp();
+    });
+  }
+
+  void _onAppResumed() {
+    if (_viewing) _catchUp();
+  }
+
+  void _stopViewing() {
+    if (!_viewing) return;
+    _viewing = false;
+    _connector?.setActiveChannel(null);
+  }
+
+  /// Back on screen: marks the first message missed, then reads the chat.
+  /// Going active zeroes the unread count, so it comes last.
+  void _catchUp() {
+    final connector = context.read<MeshCoreConnector>();
+    final settingsService = context.read<AppSettingsService>();
+    final anchor = _findOldestUnreadChannelAnchor(
+      _visibleMessages(settingsService),
+      connector.getUnreadCountForChannelIndex(widget.channel.index),
+    );
+    if (anchor != null) {
+      setState(() => _firstUnreadMessage = anchor);
+      if (settingsService.settings.jumpToOldestUnread) {
+        _atBottom.value = false;
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scrollToMessage(anchor.messageId);
+        });
+      }
+    }
+    connector.setActiveChannel(widget.channel.index);
   }
 
   ChannelMessage? _findOldestUnreadChannelAnchor(
@@ -842,7 +914,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> {
     _resizeTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _atBottom.dispose();
-    _connector?.setActiveChannel(null);
+    _lifecycleListener.dispose();
+    NotificationService.routeObserver.unsubscribe(this);
+    _stopViewing();
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
     _textController.removeListener(_keepDraft);

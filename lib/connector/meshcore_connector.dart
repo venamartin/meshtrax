@@ -839,6 +839,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, _RepeaterAckContext> _pendingRepeaterAcks = {};
   String? _activeContactKey;
   int? _activeChannelIndex;
+
+  /// The chats on screen, as the chat screens report them.
+  String? get activeContactKey => _activeContactKey;
+  int? get activeChannelIndex => _activeChannelIndex;
+
+  /// Backgrounded, from paused or hidden until fully resumed. An open chat
+  /// isn't being read meanwhile. Inactive alone doesn't count: the
+  /// notification shade doesn't take the chat off the screen.
+  bool _appAway = false;
   List<int> _channelOrder = [];
 
   int _storageUsedKb = -1;
@@ -3553,7 +3562,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// shows once something is written. Both are fixed up here.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _appAway = true;
+    }
     if (state != AppLifecycleState.resumed) return;
+    _appAway = false;
     if (_activeTransport == MeshCoreTransportType.tcp &&
         _state == MeshCoreConnectionState.connected) {
       unawaited(_probeTcpAfterResume());
@@ -8552,7 +8566,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
     if (!isNew) return false;
     // Viewing this conversation: the read watermark rides along.
-    if (_activeContactKey == pubKeyHex) {
+    if (!_appAway && _activeContactKey == pubKeyHex) {
       unawaited(_messageStore.markRead(pubKeyHex));
     }
     // A stored MeshCore One reaction is a parked orphan (its target wasn't
@@ -9767,7 +9781,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     // Viewing this channel: the read watermark rides along so the message
     // never accrues as unread (parity with the old active-channel rule).
-    if (_activeChannelIndex != null &&
+    if (!_appAway &&
+        _activeChannelIndex != null &&
         _findChannelByIndex(_activeChannelIndex!)?.idKey == idKey) {
       unawaited(_channelMessageStore.markRead(idKey));
     }

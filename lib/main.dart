@@ -278,6 +278,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     } else if (payload.startsWith('channel:')) {
       final index = int.tryParse(payload.substring('channel:'.length));
       if (index == null) return;
+      // Already on screen, and catching up on what it missed.
+      if (connector.activeChannelIndex == index) return;
       Channel? channel;
       for (final c in connector.channels) {
         if (c.index == index) {
@@ -290,6 +292,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel!)),
       );
     } else {
+      if (connector.activeContactKey == payload) return;
       Contact? contact;
       for (final c in connector.contacts) {
         if (c.publicKeyHex == payload) {
@@ -332,6 +335,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         builder: (context, settingsService, child) {
           return MaterialApp(
             navigatorKey: NotificationService.navigatorKey,
+            navigatorObservers: [NotificationService.routeObserver],
             title: 'MeshTrax',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
