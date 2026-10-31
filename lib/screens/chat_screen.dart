@@ -148,6 +148,11 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Whether the newest message is on screen. Not state: the list reports
   /// it on every frame of a scroll, and only the jump-down button shows it.
   final _atBottom = ValueNotifier(true);
+
+  /// The list is anchored on a row above the newest: it opened there, or a
+  /// jump went there. The newest row then grows down past the screen edge,
+  /// not up, until the list is anchored on it.
+  bool _anchoredAboveNewest = false;
   DateTime? _lastTextSendAt;
   int _previousMessageCount = 0;
   String? _previousNewestId;
@@ -227,13 +232,22 @@ class _ChatScreenState extends State<ChatScreen> {
   /// A row grew or shrank (a GIF loaded, the text was zoomed). The list
   /// reports where its rows are only on a scroll or as a new list, and the
   /// jump-down button and following new messages go by that report. Once
-  /// sizes settle, a list with no report since is built anew.
+  /// sizes settle, a list with no report since is built anew, and a reader
+  /// at the bottom of a list anchored above the newest row is brought back
+  /// to it.
   bool _onRowResized(SizeChangedLayoutNotification _) {
     final reports = _positionReports;
     _resizeTimer?.cancel();
     _resizeTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted && _positionReports == reports) {
+      if (!mounted) return;
+      if (_positionReports == reports) {
         setState(() => _listKey = null);
+      }
+      if (_anchoredAboveNewest &&
+          _atBottom.value &&
+          _itemScrollController.isAttached) {
+        _anchoredAboveNewest = false;
+        _itemScrollController.jumpTo(index: 0, alignment: 0.0);
       }
     });
     return false;
@@ -261,6 +275,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   messages.reversed.toList().indexOf(_firstUnreadMessage!);
               if (idx != -1) {
                 _initialScrollIndex = idx;
+                _anchoredAboveNewest = true;
                 _atBottom.value = false;
               }
             }
@@ -507,6 +522,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _scrollToIndex(int index) {
     if (!_itemScrollController.isAttached) return;
+    _anchoredAboveNewest = true;
     _itemScrollController.scrollTo(
       index: index,
       duration: const Duration(milliseconds: 300),
@@ -1066,23 +1082,28 @@ class _ChatScreenState extends State<ChatScreen> {
     // Auto-scroll to bottom if user is already at bottom
     final currentMessageCount = messages.length;
     final newest = messages.isEmpty ? null : messages.last;
+    // A row arrived below the old newest. The row count can't tell: a full
+    // watched window drops its oldest row for each new one. An old newest
+    // that is gone was removed, and what shows now is not new.
+    final newRow = newest != null &&
+        newest.messageId != _previousNewestId &&
+        messages.any((m) => m.messageId == _previousNewestId);
     // A NEW newest row of ours: a room's held-back posts file in above our
     // post, and must not pull a reader who scrolled up back down.
-    final justSent = newest != null &&
-        newest.isOutgoing &&
-        newest.messageId != _previousNewestId;
-    if (currentMessageCount > _previousMessageCount) {
-      // Auto-scroll if: the user is already at the bottom, OR they just sent
-      // the newest message (so their own send always scrolls into view).
-      if ((_atBottom.value || justSent) && _itemScrollController.isAttached) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_itemScrollController.isAttached) return;
-          _itemScrollController.jumpTo(
-            index: 0,
-            alignment: 0.0,
-          );
-        });
-      }
+    final justSent = newRow && newest.isOutgoing;
+    final grew = currentMessageCount > _previousMessageCount;
+    // Auto-scroll if: the user is already at the bottom, OR they just sent
+    // the newest message (so their own send always scrolls into view).
+    if (((_atBottom.value && (newRow || grew)) || justSent) &&
+        _itemScrollController.isAttached) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_itemScrollController.isAttached) return;
+        _anchoredAboveNewest = false;
+        _itemScrollController.jumpTo(
+          index: 0,
+          alignment: 0.0,
+        );
+      });
     }
     _previousMessageCount = currentMessageCount;
     _previousNewestId = newest?.messageId;
