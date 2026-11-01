@@ -1426,6 +1426,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       searchChannelMessages(Channel channel, String query) =>
           _channelMessageStore.searchChannelMessages(channel.idKey, query);
 
+  /// The stored row [reply] quotes, and how far it sits from the newest row.
+  Future<({ChannelMessage message, int fromNewest})?> findChannelReplyTarget(
+    Channel channel,
+    ChannelMessage reply,
+  ) =>
+      _channelMessageStore.findReplyTarget(channel.idKey, reply);
+
   /// Watched unread counts per channel identity (chats-screen badges).
   Stream<Map<String, int>> watchChannelUnreadCounts() =>
       _channelMessageStore.watchUnreadCounts();

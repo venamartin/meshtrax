@@ -128,6 +128,13 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   final Map<String, int> _replyTargetCache = {};
   Object? _replyTargetCacheKey;
 
+  // A reply whose original is not loaded yet, waiting for an older page.
+  String? _pendingReplyId;
+  // The original a tapped quote jumped to, tinted for a moment: when it is
+  // already on screen the list barely moves.
+  String? _flashedMessageId;
+  Timer? _flashTimer;
+
   bool get _isRoom => widget.contact.type == advTypeRoom;
 
   /// Last persisted ACL permissions byte for this room — a restart hint
@@ -265,6 +272,11 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         .watchConversation(widget.contact, limit: _watchLimit)
         .listen((messages) {
       if (!mounted) return;
+      if (_pendingReplyId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _retryPendingReply();
+        });
+      }
       setState(() {
         _messages = messages;
         if (!_didInitialAnchor) {
@@ -588,6 +600,53 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         .startsWith(pubKeyToHex(key).toLowerCase());
   }
 
+  void _openReplyTarget(int index, String messageId) {
+    _flashTimer?.cancel();
+    setState(() => _flashedMessageId = messageId);
+    _flashTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _flashedMessageId = null);
+    });
+    _scrollToIndex(index);
+  }
+
+  /// A quote whose original is not among the loaded posts: pages back until
+  /// it is, and says so once the history runs out.
+  void _findOlderReplyTarget(String replyId) {
+    if (_messages.length < _watchLimit) {
+      _pendingReplyId = null;
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.chat_originalMessageNotFound),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+    _pendingReplyId = replyId;
+    // A grown list at the bottom would otherwise snap back to the newest row.
+    _atBottom.value = false;
+    _loadOlderMessages();
+  }
+
+  void _retryPendingReply() {
+    final replyId = _pendingReplyId;
+    if (replyId == null) return;
+    final connector = context.read<MeshCoreConnector>();
+    final reversed = _messages.reversed.toList();
+    final index = reversed.indexWhere((m) => m.messageId == replyId);
+    final reply = index == -1 ? null : MessageFacts.of(reversed[index].text).reply;
+    if (reply == null) {
+      _pendingReplyId = null;
+      return;
+    }
+    final target = _findReplyTargetIndex(reversed, index, reply, connector);
+    if (target == -1) {
+      _findOlderReplyTarget(replyId);
+      return;
+    }
+    _pendingReplyId = null;
+    _openReplyTarget(target, reversed[target].messageId);
+  }
+
   void _scrollToIndex(int index) {
     if (!_itemScrollController.isAttached) return;
     _anchoredAboveNewest = true;
@@ -737,6 +796,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     _messagesSub?.cancel();
     _clockTimer?.cancel();
     _resizeTimer?.cancel();
+    _flashTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _atBottom.dispose();
     _lifecycleListener.dispose();
@@ -1260,8 +1320,11 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 replyTargetIsSelf:
                     replyTarget != null && _isOwnPost(replyTarget, connector),
                 onReplyTap: replyTarget == null
-                    ? null
-                    : () => _scrollToIndex(replyTargetIndex),
+                    ? () => _findOlderReplyTarget(message.messageId)
+                    : () => _openReplyTarget(
+                          replyTargetIndex,
+                          replyTarget.messageId,
+                        ),
                 viaLabel: viaLabel,
                 isAnnouncement: isAnnouncement,
                 textScale: textScale,
@@ -1306,6 +1369,19 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
               }
 
               Widget currentWidget = bubble;
+
+              if (message.messageId == _flashedMessageId) {
+                currentWidget = Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: currentWidget,
+                );
+              }
 
               if (_firstUnreadMessage != null && 
                   message.timestamp == _firstUnreadMessage!.timestamp && 
@@ -2789,7 +2865,6 @@ class _MessageBubble extends StatelessWidget {
                             colorScheme,
                             renderGifs,
                           ),
-                          const SizedBox(height: 4),
                         ],
                         if (structured != null)
                           StructuredMessageCard(
@@ -3280,9 +3355,15 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
+    // Always takes its own tap, or it would fall through to the bubble's path
+    // screen. The width floor keeps a short quote big enough for a thumb.
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onReplyTap,
-      child: Container(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Container(
+        constraints: const BoxConstraints(minWidth: 160),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: warmLight
@@ -3313,6 +3394,7 @@ class _MessageBubble extends StatelessWidget {
             ],
           ],
         ),
+      ),
       ),
     );
   }
