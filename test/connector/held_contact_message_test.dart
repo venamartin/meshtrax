@@ -256,6 +256,32 @@ void main() {
     expect((await stored(_sender)).single.text, 'hello');
   });
 
+  test('an unrelated record on its way does not keep the message', () async {
+    c.handleFrameForTest(_contact(_sender, 'Ann'));
+    c.handleFrameForTest([pushCodeContactDeleted, ..._sender]);
+
+    await c.getContacts();
+    c.handleFrameForTest(_start);
+    c.handleFrameForTest([pushCodeAdvert, ..._other]);
+    c.handleFrameForTest(_dm(_sender, 'hello'));
+    c.handleFrameForTest(_end);
+
+    expect((await stored(_sender)).single.text, 'hello');
+  });
+
+  test('a disconnect files what it can before clearing', () async {
+    c.handleFrameForTest(_contact(_sender, 'Ann'));
+    c.handleFrameForTest([pushCodeContactDeleted, ..._sender]);
+    await c.getContacts();
+    c.handleFrameForTest(_start);
+    c.handleFrameForTest(_dm(_sender, 'hello'));
+    await pumpEventQueue(times: 50);
+
+    await c.disconnect();
+
+    expect((await stored(_sender)).single.text, 'hello');
+  });
+
   test('holds only so many', () async {
     await c.getContacts();
     c.handleFrameForTest(_start);

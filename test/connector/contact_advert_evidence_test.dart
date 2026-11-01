@@ -530,6 +530,36 @@ void main() {
     });
   });
 
+  group('wasDroppedByRadio', () {
+    Contact asSaved() => Contact(
+          publicKey: _key,
+          name: 'NODE',
+          type: advTypeChat,
+          pathLength: -1,
+          path: Uint8List(0),
+          pathHashSize: 1,
+          lastSeen: DateTime.now(),
+        );
+
+    test('not while the list is empty, with no row to go by', () {
+      expect(c.contacts, isEmpty);
+      expect(c.wasDroppedByRadio(asSaved()), isFalse);
+    });
+
+    test('not for a saved contact', () async {
+      autoAdd();
+      await fullDownload(_record());
+      expect(c.wasDroppedByRadio(saved()!), isFalse);
+    });
+
+    test('once the radio overwrote it', () async {
+      autoAdd();
+      await fullDownload(_record());
+      c.handleFrameForTest([pushCodeContactDeleted, ..._key]);
+      expect(c.wasDroppedByRadio(asSaved()), isTrue);
+    });
+  });
+
   test('a stored row of a saved contact does not list it twice on connect',
       () async {
     c.handleFrameForTest(_selfInfo());

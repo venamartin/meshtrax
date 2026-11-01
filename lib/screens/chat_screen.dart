@@ -131,6 +131,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   // A reply whose original is not loaded yet, waiting for an older page.
   String? _pendingReplyId;
   bool _olderPageInFlight = false;
+  bool _addingContactBack = false;
   // The original a tapped quote jumped to, tinted for a moment: when it is
   // already on screen the list barely moves.
   String? _flashedMessageId;
@@ -2154,19 +2155,20 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     final contact = _resolveContact(connector);
     // Opened from a notification, after the radio overwrote this contact: the
     // radio can only send to one it holds.
-    if (!connector.contacts.any(
-          (c) => c.publicKeyHex == contact.publicKeyHex,
-        ) &&
-        !await connector.importDiscoveredContact(contact)) {
-      if (mounted) {
+    if (connector.wasDroppedByRadio(contact)) {
+      if (_addingContactBack) return;
+      _addingContactBack = true;
+      final added = await connector.importDiscoveredContact(contact);
+      _addingContactBack = false;
+      if (!mounted) return;
+      if (!added) {
         showDismissibleSnackBar(
           context,
           content: Text(context.l10n.contacts_contactImportFailed),
         );
+        return;
       }
-      return;
     }
-    if (!mounted) return;
     final maxBytes = _isRoom ? maxRoomMessageBytes() : maxContactMessageBytes();
 
     bool fits(String candidate) {
@@ -2204,7 +2206,8 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       return;
     }
 
-    _textController.clear();
+    // Adding a contact back takes a moment; keep what was typed meanwhile.
+    if (_textController.text.trim() == text) _textController.clear();
     if (_replyingToMessage != null) _cancelReply();
     _textFieldFocusNode.requestFocus();
     connector.sendMessage(contact, sendText);

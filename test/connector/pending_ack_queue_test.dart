@@ -21,9 +21,10 @@ class _Connector extends MeshCoreConnector {
 
   @override
   Future<void> writeToTransport(Uint8List data) async {
+    final fails = writeFails;
     final hold = gate;
     if (hold != null) await hold.future;
-    if (writeFails) throw Exception('link down');
+    if (fails) throw Exception('link down');
     written.add(data[0]);
   }
 }
@@ -69,22 +70,14 @@ void main() {
 
   test('a failed write takes its own entry, not a later one', () async {
     c.gate = Completer<void>();
-    final first = channelSend('a');
-    final second = channelSend('b');
     c.writeFails = true;
-    c.gate!.complete();
-    await expectLater(first, throwsException);
-    await expectLater(second, throwsException);
-    expect(c.pendingGenericAckIdsForTest, isEmpty);
-
-    c.writeFails = false;
-    c.gate = Completer<void>();
-    final kept = channelSend('kept');
     final failing = channelSend('failing');
+    c.writeFails = false;
+    final kept = channelSend('kept');
     c.gate!.complete();
+    await expectLater(failing, throwsException);
     await kept;
-    await failing;
-    expect(c.pendingGenericAckIdsForTest, ['kept', 'failing']);
+    expect(c.pendingGenericAckIdsForTest, ['kept']);
   });
 
   group('a share with no reply yet', () {

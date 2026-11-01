@@ -3775,12 +3775,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _txCharacteristic = null;
     _deviceDisplayName = null;
     _deviceId = null;
+    _giveUpOnAllHeldMessages();
     _flushContactPersist();
     _contacts.clear();
     _unconfirmedContactKeys = null;
-    _heldContactMessages
-      ..forEach(_dropHeldContactMessage)
-      ..clear();
     _absentSenders.clear();
     _fetchAfterDownload.clear();
     _sharedCopyKeys.clear();
@@ -5259,6 +5257,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
     return readded;
   }
+
+  /// The radio overwrote this contact, as far as this connection knows: it has
+  /// an unsaved row and no saved entry. Not being in [contacts] alone proves
+  /// nothing: the list is empty for a moment on every reconnect, and rows load
+  /// only after it, so during that moment this is false.
+  bool wasDroppedByRadio(Contact contact) =>
+      !_contacts.any((c) => c.publicKeyHex == contact.publicKeyHex) &&
+      _discoveredContacts.any(
+        (c) => c.publicKeyHex == contact.publicKeyHex && !c.isActive,
+      );
 
   /// [lastAdvertEpochSeconds] is the advert time the radio records (default:
   /// the heard advert's own, else 0); it drops any later advert that is not
@@ -7598,19 +7606,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// the sender, so ask once more for everything before giving up.
   void _settleHeldContactMessages({required bool wholeList}) {
     _replayHeldContactMessages();
-    if (_heldContactMessages.isEmpty) return;
     // A record on its way may be the sender's; its frame replays them.
-    if (_fetchAfterDownload.isNotEmpty) return;
+    final waiting = _heldContactMessages
+        .where(
+          (f) => _fetchAfterDownload.keys.any(
+            (k) => k.startsWith(_senderPrefixHex(f)),
+          ),
+        )
+        .toList();
+    if (_heldContactMessages.length == waiting.length) return;
     if (!wholeList) {
       unawaited(_fetchWholeContactList());
       return;
     }
     final frames = List.of(_heldContactMessages);
-    _heldContactMessages.clear();
-    for (final frame in frames) {
+    _heldContactMessages
+      ..clear()
+      ..addAll(waiting);
+    for (final frame in frames.where((f) => !waiting.contains(f))) {
       _absentSenders.add(_senderPrefixHex(frame));
       _giveUpOnHeldMessage(frame);
     }
+  }
+
+  void _giveUpOnAllHeldMessages() {
+    final frames = List.of(_heldContactMessages);
+    _heldContactMessages.clear();
+    frames.forEach(_giveUpOnHeldMessage);
   }
 
   /// The radio queued this and then lost the sender, say by overwriting it.
@@ -10686,6 +10708,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
+    _giveUpOnAllHeldMessages();
     _flushContactPersist();
     // See disconnect(): END_OF_CONTACTS never arrives on a dropped link, so the
     // sync banner has to be cleared here or it sticks at its last count.
@@ -10697,9 +10720,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactFullResyncPending = false;
     _fullContactSyncAfterStream = false;
     _unconfirmedContactKeys = null;
-    _heldContactMessages
-      ..forEach(_dropHeldContactMessage)
-      ..clear();
     _absentSenders.clear();
     _fetchAfterDownload.clear();
     _sharedCopyKeys.clear();
