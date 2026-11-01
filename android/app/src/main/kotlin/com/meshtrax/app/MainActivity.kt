@@ -56,7 +56,7 @@ class MainActivity : FlutterActivity() {
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                     .putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
             )
-        } catch (_: ActivityNotFoundException) {
+        } catch (e: ActivityNotFoundException) {
             startActivity(appDetails)
         }
     }
