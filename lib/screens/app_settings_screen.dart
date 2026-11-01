@@ -55,7 +55,11 @@ class AppSettingsScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         _buildNotificationsCard(context, settingsService),
                         const SizedBox(height: 16),
-                        _buildMessagingCard(context, settingsService),
+                        _buildMessagingCard(
+                          context,
+                          settingsService,
+                          connector,
+                        ),
                         const SizedBox(height: 16),
                         _buildContactsCard(context, settingsService),
                         const SizedBox(height: 16),
@@ -509,6 +513,7 @@ class AppSettingsScreen extends StatelessWidget {
   Widget _buildMessagingCard(
     BuildContext context,
     AppSettingsService settingsService,
+    MeshCoreConnector connector,
   ) {
     return Card(
       child: Column(
@@ -563,6 +568,25 @@ class AppSettingsScreen extends StatelessWidget {
             subtitle: Text(context.l10n.appSettings_jumpToOldestUnreadSubtitle),
             value: settingsService.settings.jumpToOldestUnread,
             onChanged: settingsService.setJumpToOldestUnread,
+          ),
+          const Divider(height: 1),
+          SwitchListTile(
+            secondary: const Icon(Icons.done_all),
+            title: Text(context.l10n.settings_multiAck),
+            subtitle: Text(context.l10n.settings_multiAckSubtitle),
+            value: connector.multiAcks != 0,
+            onChanged: connector.isConnected
+                ? (value) async {
+                    await connector.setTelemetryModeBase(
+                      connector.telemetryModeBase,
+                      connector.telemetryModeLoc,
+                      connector.telemetryModeEnv,
+                      connector.advertLocationPolicy,
+                      value ? 1 : 0,
+                    );
+                    await connector.refreshDeviceInfo();
+                  }
+                : null,
           ),
           const Divider(height: 1),
           ListTile(

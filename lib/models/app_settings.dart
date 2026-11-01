@@ -76,7 +76,7 @@ class AppSettings {
   final bool autoFavoriteOnChat;
   final bool autoConnectLastDevice;
 
-  /// Bench toggle for the contact download (Debug card). Off = every connect
+  /// Ask the radio only for contacts that changed. Off = every connect
   /// downloads the whole list.
   final bool incrementalContactSync;
 
@@ -119,7 +119,7 @@ class AppSettings {
     this.mapKeyPrefixEnabled = false,
     this.mapKeyPrefix = '',
     this.mapShowMarkers = true,
-    this.mapShowGuessedLocations = true,
+    this.mapShowGuessedLocations = false,
     this.enableMessageTracing = true,
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
@@ -133,12 +133,12 @@ class AppSettings {
     this.notifyOnNewChannelMessage = true,
     this.notifyOnMention = true,
     this.notifyOnNewAdvert = false,
-    this.maxMessageRetries = 3,
+    this.maxMessageRetries = 4,
     this.maxChannelMessageRetries = 1,
     this.themeMode = 'dark',
     this.languageOverride,
     this.appDebugLogEnabled = false,
-    this.pathGraphEnabled = false,
+    this.pathGraphEnabled = true,
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
@@ -150,7 +150,7 @@ class AppSettings {
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
     this.autoConnectLastDevice = true,
-    this.incrementalContactSync = false,
+    this.incrementalContactSync = true,
     this.senderNameColors = true,
     this.showTextFormatting = true,
     this.dmIdentityWarningDismissed = false,
@@ -238,7 +238,7 @@ class AppSettings {
       mapKeyPrefix: json['map_key_prefix'] as String? ?? '',
       mapShowMarkers: json['map_show_markers'] as bool? ?? true,
       mapShowGuessedLocations:
-          json['map_show_guessed_locations'] as bool? ?? true,
+          json['map_show_guessed_locations'] as bool? ?? false,
       enableMessageTracing: json['enable_message_tracing'] as bool? ?? false,
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
       mapType: json['map_type'] as String? ?? 'osm',
@@ -253,13 +253,13 @@ class AppSettings {
           json['notify_on_new_channel_message'] as bool? ?? true,
       notifyOnMention: json['notify_on_mention'] as bool? ?? true,
       notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
-      maxMessageRetries: json['max_message_retries'] as int? ?? 3,
+      maxMessageRetries: json['max_message_retries'] as int? ?? 4,
       maxChannelMessageRetries:
           json['max_channel_message_retries'] as int? ?? 1,
       themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
-      pathGraphEnabled: json['path_graph_enabled'] as bool? ?? false,
+      pathGraphEnabled: json['path_graph_enabled'] as bool? ?? true,
       batteryChemistryByDeviceId:
           (json['battery_chemistry_by_device_id'] as Map?)?.map(
             (key, value) => MapEntry(key.toString(), value.toString()),
@@ -288,8 +288,7 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
-      incrementalContactSync:
-          json['incremental_contact_sync'] as bool? ?? false,
+      incrementalContactSync: json['incremental_contact_sync'] as bool? ?? true,
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
       showTextFormatting: json['show_text_formatting'] as bool? ?? true,
       dmIdentityWarningDismissed:

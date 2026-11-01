@@ -367,6 +367,47 @@ class AppLocalizationsSv extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Hälsokontroll';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Kontrollera inställningarna för appen och radion';
+
+  @override
+  String get healthCheck_running => 'Kontrollerar inställningarna…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Ingen radio är ansluten, så radions inställningar kontrollerades inte.';
+
+  @override
+  String get healthCheck_allClear => 'Allt ser bra ut.';
+
+  @override
+  String get healthCheck_problems => 'Problem';
+
+  @override
+  String get healthCheck_suggestions => 'Förslag';
+
+  @override
+  String get healthCheck_tips => 'Tips';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Godkända kontroller: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Kontrollera igen';
+
+  @override
+  String get healthCheck_fix => 'Åtgärda';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Ändringen gick inte igenom. Kontrollera anslutningen till radion och försök igen.';
+
+  @override
   String get settings_title => 'Inställningar';
 
   @override
@@ -493,6 +534,10 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Flera bekräftelser';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Skicka en andra bekräftelse för varje direktmeddelande du tar emot, så att avsändaren lättare hör den.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetri-läge uppdaterat';
@@ -3900,7 +3945,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get pathfinderHelp_ok => 'Okej';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentell)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

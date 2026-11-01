@@ -16,9 +16,12 @@ import '../services/battery_sleep_service.dart';
 ///   notes     - for us, never shown; what needs doing beyond on/off
 ///   check     - returns true when the finding applies
 ///   fix       - what the Fix button does; null = report only.
-///               HealthFix.apply runs [apply] after a confirm dialog.
+///               HealthFix.apply runs [apply] after a confirm dialog, which
+///               shows [fixDescription].
 ///               HealthFix.ask needs a value from the user, so the screen
-///               opens the matching settings dialog instead.
+///               opens [dialog] instead.
+///   details   - optional extra lines shown under the why
+///   canFix    - optional; false hides the Fix button for this finding
 
 // ---------------------------------------------------------------------------
 // Plumbing
@@ -34,6 +37,9 @@ enum HealthFix {
   /// Needs a value from the user; the screen opens the matching dialog.
   ask,
 }
+
+/// The existing screens a [HealthFix.ask] rule can send the user to.
+enum HealthDialog { name, radioSettings, location, batterySettings }
 
 class HealthContext {
   final MeshCoreConnector connector;
@@ -59,6 +65,14 @@ class HealthRule {
   final HealthFix? fix;
   final Future<void> Function(HealthContext ctx)? apply;
 
+  /// What Fix will do, shown in the confirm dialog.
+  final String fixDescription;
+
+  /// Where a [HealthFix.ask] rule sends the user.
+  final HealthDialog? dialog;
+  final List<String> Function(HealthContext ctx)? details;
+  final bool Function(HealthContext ctx)? canFix;
+
   const HealthRule({
     required this.id,
     required this.enabled,
@@ -70,10 +84,53 @@ class HealthRule {
     required this.check,
     this.fix,
     this.apply,
+    this.fixDescription = '',
+    this.dialog,
+    this.details,
+    this.canFix,
   });
 }
 
 // Shared helpers for the radio rules.
+
+/// True when the radio still has a name the firmware gave it: the first 4
+/// bytes of its public key as hex, its MAC address as hex (some BLE builds,
+/// and the app can't read the MAC, so 12 hex characters counts), or a name
+/// fixed in the build.
+bool _hasDefaultName(MeshCoreConnector c) {
+  final name = c.selfName?.trim() ?? '';
+  if (name.isEmpty || name == 'NONAME' || name == 'ME25LS01 Chat') return true;
+  final key = c.selfPublicKeyHex;
+  if (key.length >= 8 &&
+      name.toLowerCase() == key.substring(0, 8).toLowerCase()) {
+    return true;
+  }
+  return RegExp(r'^[0-9a-fA-F]{12}$').hasMatch(name);
+}
+
+/// The settings a radio ships with. They are also the app's EU/UK (Narrow)
+/// preset, so only the user can say whether they are right.
+bool _onFactoryRadioSettings(MeshCoreConnector c) =>
+    c.currentFreqHz == 869618 &&
+    c.currentBwHz == 62500 &&
+    c.currentSf == 8 &&
+    c.currentCr == 5;
+
+/// Compares the version text, because the version code can't tell these
+/// apart: 1.16.0, 1.17.0 and 1.17.1 all report code 13.
+bool _firmwareOlderThan(MeshCoreConnector c, List<int> wanted) {
+  final match = RegExp(r'(\d+)\.(\d+)\.(\d+)')
+      .firstMatch(c.firmwareVersion ?? '');
+  if (match == null) {
+    final code = c.firmwareVerCode;
+    return code != null && code < 13;
+  }
+  for (var i = 0; i < wanted.length; i++) {
+    final part = int.parse(match.group(i + 1)!);
+    if (part != wanted[i]) return part < wanted[i];
+  }
+  return false;
+}
 
 bool _onAnyPreset(MeshCoreConnector c) {
   final freq = c.currentFreqHz;
@@ -134,34 +191,49 @@ final List<HealthRule> healthRules = [
     id: 'radio_name',
     enabled: true,
     severity: HealthSeverity.problem,
-    title: 'Radio still has no name',
+    title: 'Radio still has its default name',
     why:
-        'It is still called NONAME, so nobody on the mesh can tell who '
-        'you are.',
+        'Your radio is still using its default name, a string of letters and '
+        "numbers, so people can't tell who you are.",
     needsRadio: true,
-    check: (ctx) async {
-      final name = ctx.connector.selfName?.trim() ?? '';
-      return name.isEmpty || name == 'NONAME';
-    },
+    check: (ctx) async => _hasDefaultName(ctx.connector),
     fix: HealthFix.ask,
-    notes: 'Opens the node name dialog.',
+    dialog: HealthDialog.name,
+    notes:
+        'Opens the node name dialog. Other builds may set their own fixed '
+        'names; add them to _hasDefaultName as we find them.',
   ),
   HealthRule(
     id: 'radio_frequency',
     enabled: true,
     severity: HealthSeverity.problem,
-    title: 'Radio is not on a known preset',
+    title: 'Radio is not on a regional preset',
     why:
-        'The frequency, bandwidth, spreading factor and coding rate do not '
-        'match any regional preset. You may be alone on the air while your '
-        'local mesh uses another setting.',
+        "The radio's settings do not match any regional preset in the app. If "
+        'your local mesh uses a preset, you may not hear it or be heard by it.',
     needsRadio: true,
     check: (ctx) async => !_onAnyPreset(ctx.connector),
     fix: HealthFix.ask,
+    dialog: HealthDialog.radioSettings,
     notes:
         'Opens the radio settings dialog so the user picks a preset. '
-        'Decide: flag anything off-preset (current), or only the firmware '
-        'build default (869.618 in the stock ini).',
+        'The factory settings match a preset, so radio_factory_settings '
+        'covers those.',
+  ),
+  HealthRule(
+    id: 'radio_factory_settings',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'Radio is still on its factory frequency',
+    why:
+        'This is only right in the EU or UK, where it matches the Narrow '
+        "preset. Anywhere else, choose your region's preset so you can hear "
+        'your local mesh and be heard by it.',
+    needsRadio: true,
+    check: (ctx) async => _onFactoryRadioSettings(ctx.connector),
+    fix: HealthFix.ask,
+    dialog: HealthDialog.radioSettings,
+    notes: 'Opens the radio settings dialog so the user picks a preset.',
   ),
   HealthRule(
     id: 'radio_tx_power',
@@ -177,6 +249,7 @@ final List<HealthRule> healthRules = [
           c.currentTxPower! < c.maxTxPower!;
     },
     fix: HealthFix.apply,
+    fixDescription: "Set transmit power to the radio's maximum.",
     apply: (ctx) => ctx.connector.sendFrame(
       buildSetRadioTxPowerFrame(ctx.connector.maxTxPower!),
     ),
@@ -193,6 +266,7 @@ final List<HealthRule> healthRules = [
     needsRadio: true,
     check: (ctx) async => !ctx.connector.hasSelfPosition,
     fix: HealthFix.ask,
+    dialog: HealthDialog.location,
     notes:
         'Opens the location dialog. If the radio has GPS, the fix could '
         'turn GPS on instead.',
@@ -206,6 +280,7 @@ final List<HealthRule> healthRules = [
     needsRadio: true,
     check: (ctx) async => ctx.connector.hasGps && !ctx.connector.gpsOn,
     fix: HealthFix.apply,
+    fixDescription: 'Turn GPS on.',
     apply: (ctx) => ctx.connector.setGps(true),
     notes: 'Only runs when the radio reports a GPS.',
   ),
@@ -218,6 +293,7 @@ final List<HealthRule> healthRules = [
     needsRadio: true,
     check: (ctx) async => ctx.connector.advertLocationPolicy == 0,
     fix: HealthFix.apply,
+    fixDescription: 'Share your position in adverts.',
     apply: (ctx) => _setOtherParams(ctx, advertLocationPolicy: 1),
     notes: '0 = none, 1 = share. Privacy choice; maybe leave disabled.',
   ),
@@ -235,57 +311,77 @@ final List<HealthRule> healthRules = [
   ),
   HealthRule(
     id: 'radio_auto_add_users',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.suggestion,
     title: 'Auto-add users is off',
-    why: '',
+    why:
+        'People you hear are not saved to your radio, and it can only read '
+        'direct messages from saved contacts. Someone new cannot reach you '
+        'until you add them.',
     needsRadio: true,
     check: (ctx) async => ctx.connector.autoAddUsers == false,
     fix: HealthFix.apply,
+    fixDescription: 'Turn on auto-add for users.',
     apply: (ctx) => _setAutoAdd(ctx, users: true),
   ),
   HealthRule(
     id: 'radio_auto_add_repeaters',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.suggestion,
-    title: 'Auto-add repeaters is off',
-    why: '',
+    title: 'Auto-add repeaters is on',
+    why:
+        "Every repeater you hear takes a place in the radio's limited contact "
+        'list, leaving less room for people. The app still lists the ones it '
+        'hears, so you can add one when you need it.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.autoAddRepeaters == false,
+    check: (ctx) async => ctx.connector.autoAddRepeaters == true,
     fix: HealthFix.apply,
-    apply: (ctx) => _setAutoAdd(ctx, repeaters: true),
+    fixDescription: 'Turn off auto-add for repeaters.',
+    apply: (ctx) => _setAutoAdd(ctx, repeaters: false),
   ),
   HealthRule(
     id: 'radio_auto_add_rooms',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.suggestion,
-    title: 'Auto-add room servers is off',
-    why: '',
+    title: 'Auto-add room servers is on',
+    why:
+        "Every room server you hear takes a place in the radio's limited "
+        'contact list, leaving less room for people. The app still lists the '
+        'ones it hears, so you can add the ones you use.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.autoAddRoomServers == false,
+    check: (ctx) async => ctx.connector.autoAddRoomServers == true,
     fix: HealthFix.apply,
-    apply: (ctx) => _setAutoAdd(ctx, rooms: true),
+    fixDescription: 'Turn off auto-add for room servers.',
+    apply: (ctx) => _setAutoAdd(ctx, rooms: false),
   ),
   HealthRule(
     id: 'radio_auto_add_sensors',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.suggestion,
-    title: 'Auto-add sensors is off',
-    why: '',
+    title: 'Auto-add sensors is on',
+    why:
+        "Every sensor you hear takes a place in the radio's limited contact "
+        'list, leaving less room for people. The app still lists the ones it '
+        'hears, so you can add the ones you use.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.autoAddSensors == false,
+    check: (ctx) async => ctx.connector.autoAddSensors == true,
     fix: HealthFix.apply,
-    apply: (ctx) => _setAutoAdd(ctx, sensors: true),
+    fixDescription: 'Turn off auto-add for sensors.',
+    apply: (ctx) => _setAutoAdd(ctx, sensors: false),
   ),
   HealthRule(
     id: 'radio_auto_add_overwrite_oldest',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.suggestion,
     title: 'Overwrite oldest contact is off',
-    why: '',
+    why:
+        'When the contact list is full, new contacts are not saved. This '
+        'setting makes room by replacing the oldest contact that is not a '
+        'favorite.',
     needsRadio: true,
     check: (ctx) async => ctx.connector.autoAddOverwriteOldest == false,
     fix: HealthFix.apply,
+    fixDescription: 'Turn on overwrite oldest contact.',
     apply: (ctx) => _setAutoAdd(ctx, overwriteOldest: true),
   ),
   HealthRule(
@@ -302,19 +398,23 @@ final List<HealthRule> healthRules = [
   ),
   HealthRule(
     id: 'radio_multi_acks',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.suggestion,
-    title: 'Multi-ACKs',
-    why: '',
+    title: 'Radio sends only one ACK for direct messages',
+    why:
+        'If the only ACK is lost, the sender thinks the message failed even '
+        'though you received it. A second ACK gives the sender another chance '
+        'to hear it, for one more short transmission.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.multiAcks != 1,
+    check: (ctx) async => ctx.connector.multiAcks == 0,
     fix: HealthFix.apply,
+    fixDescription: 'Send 2 ACKs for each direct message.',
     apply: (ctx) => _setOtherParams(ctx, multiAcks: 1),
     notes: 'Extra ACKs: 0 = 1 ACK, 1 = 2 ACKs. Interacts with Pathfinder.',
   ),
   HealthRule(
     id: 'radio_client_repeat',
-    enabled: true,
+    enabled: false,
     severity: HealthSeverity.suggestion,
     title: "This radio is repeating other people's traffic",
     why:
@@ -323,35 +423,46 @@ final List<HealthRule> healthRules = [
     needsRadio: true,
     check: (ctx) async => ctx.connector.clientRepeat == true,
     fix: HealthFix.ask,
+    dialog: HealthDialog.radioSettings,
     notes:
         'Turning it off goes through the radio settings dialog, which '
         'knows the off-grid presets.',
   ),
   HealthRule(
     id: 'radio_path_hash_width',
-    enabled: false,
-    severity: HealthSeverity.tip,
-    title: 'Path hash width',
-    why: '',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'Radio uses 1-byte repeater codes',
+    why:
+        'Pathfinder cannot learn from 1-byte codes because too many repeaters '
+        'share the same one, so it will not work properly. Switch to 2-byte '
+        'codes. Repeaters on firmware older than 1.14 do not forward them.',
     needsRadio: true,
-    check: (ctx) async => false,
+    check: (ctx) async =>
+        ctx.connector.pathHashByteWidth == 1 &&
+        (ctx.connector.firmwareVerCode ?? 0) >= 10,
+    fix: HealthFix.apply,
+    fixDescription: 'Switch this radio to 2-byte repeater codes.',
+    apply: (ctx) async {
+      await ctx.connector.setPathHashMode(1);
+      await ctx.connector.refreshDeviceInfo();
+    },
     notes:
         'Width is bytes per hop (1 = 1-byte, 2 = 2-byte). setPathHashMode takes '
-        'width - 1 (0 = 1-byte, 1 = 2-byte). Depends on what the local mesh uses; '
-        'probably leave disabled.',
+        'width - 1 (0 = 1-byte, 1 = 2-byte). Firmware below code 10 has no '
+        'setting for this.',
   ),
   HealthRule(
     id: 'radio_firmware',
     enabled: true,
     severity: HealthSeverity.suggestion,
-    title: 'Radio firmware is out of date',
+    title: 'Radio firmware is older than 1.17.1',
     why: 'Newer firmware fixes bugs and adds features this app can use.',
     needsRadio: true,
-    check: (ctx) async {
-      final code = ctx.connector.firmwareVerCode;
-      return code != null && code < 14;
-    },
-    notes: 'Report only. Raise the 14 when we need a newer one.',
+    check: (ctx) async => _firmwareOlderThan(ctx.connector, [1, 17, 1]),
+    notes:
+        'Report only. Change the version here and in the title when we need a '
+        'newer one.',
   ),
   HealthRule(
     id: 'radio_clock',
@@ -359,8 +470,8 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.problem,
     title: 'Radio clock is wrong',
     why:
-        "Messages carry the radio's time. When it is off, they sort "
-        "wrongly on other people's screens.",
+        "Messages carry the radio's time. When it is wrong, they can show the "
+        'wrong time or appear out of order for other people.',
     needsRadio: true,
     check: (ctx) async {
       final c = ctx.connector;
@@ -370,10 +481,14 @@ final List<HealthRule> healthRules = [
           skew.abs() > MeshCoreConnector.deviceClockTolerance;
     },
     fix: HealthFix.apply,
+    fixDescription: "Set the radio's clock from this phone.",
     apply: (ctx) => ctx.connector.syncTime(),
-    notes:
-        'When deviceClockStuckAhead, the firmware refuses to wind back; '
-        'the screen should say so instead of offering Fix.',
+    canFix: (ctx) => !ctx.connector.deviceClockStuckAhead,
+    details: (ctx) => [
+      if (ctx.connector.deviceClockStuckAhead)
+        "The radio's clock is ahead of this phone. The firmware will not wind "
+            'a clock back, so the app cannot fix this.',
+    ],
   ),
   HealthRule(
     id: 'radio_contacts_full',
@@ -381,15 +496,17 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.suggestion,
     title: 'Contact table is nearly full',
     why:
-        "When the radio's contact list is full it stops adding new "
-        'people and repeaters it hears.',
+        "When the radio's contact list is full, it cannot add anyone new "
+        'unless it overwrites the oldest contact that is not a favorite.',
     needsRadio: true,
     check: (ctx) async {
       final c = ctx.connector;
-      if (c.maxContacts == 0) return false;
-      return c.allContactsUnfiltered.length * 100 >= c.maxContacts * 90;
+      if (c.autoAddOverwriteOldest != false || c.maxContacts == 0) return false;
+      return c.contacts.length * 100 >= c.maxContacts * 90;
     },
-    notes: 'Fix could offer the purge of old discovered contacts.',
+    notes:
+        'Only when overwrite oldest is off: with it on, a full list is normal. '
+        'Fix could offer the purge of old discovered contacts.',
   ),
   HealthRule(
     id: 'radio_storage_full',
@@ -426,20 +543,19 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.suggestion,
     title: 'Channel slots need attention',
     why:
-        'Two slots share a key, or a keyed slot has no name. Twins share '
-        'one history and confuse delivery.',
+        'Two slots share a key, a keyed slot has no name, or two channels look '
+        'the same on the air. The details are listed below.',
     needsRadio: true,
     check: (ctx) async => ctx.connector.channelHealthWarnings.isNotEmpty,
-    notes:
-        'The screen lists connector.channelHealthWarnings under the '
-        'finding. Fix could offer to delete the extra slot.',
+    details: (ctx) => ctx.connector.channelHealthWarnings,
+    notes: 'Fix could offer to delete the extra slot.',
   ),
   HealthRule(
     id: 'radio_second_app',
     enabled: true,
     severity: HealthSeverity.problem,
     title: 'Another app seems to be using this radio',
-    why: 'Two apps on one radio each miss some of its messages.',
+    why: 'Messages and settings can get mixed up. Close the other app.',
     needsRadio: true,
     check: (ctx) async => ctx.connector.secondAppSuspected,
   ),
@@ -453,6 +569,7 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => !ctx.app.mapDownloadsWifiOnly,
     fix: HealthFix.apply,
+    fixDescription: 'Download maps on Wi-Fi only.',
     apply: (ctx) => ctx.settingsService.setMapDownloadsWifiOnly(true),
   ),
   HealthRule(
@@ -463,6 +580,7 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => ctx.app.mapTheme != 'light',
     fix: HealthFix.apply,
+    fixDescription: 'Use the light map theme.',
     apply: (ctx) => ctx.settingsService.setMapTheme('light'),
     notes: 'light reads better outdoors (owner, 2026-10-20).',
   ),
@@ -480,6 +598,7 @@ final List<HealthRule> healthRules = [
     why: 'You will not hear about new messages unless the app is open.',
     check: (ctx) async => !ctx.app.notificationsEnabled,
     fix: HealthFix.apply,
+    fixDescription: 'Turn notifications on.',
     apply: (ctx) => ctx.settingsService.setNotificationsEnabled(true),
     notes:
         'OS-level permission is a separate check; the notification '
@@ -493,6 +612,7 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => !ctx.app.notifyOnNewMessage,
     fix: HealthFix.apply,
+    fixDescription: 'Turn on direct message notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewMessage(true),
   ),
   HealthRule(
@@ -503,6 +623,7 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => !ctx.app.notifyOnNewChannelMessage,
     fix: HealthFix.apply,
+    fixDescription: 'Turn on channel message notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewChannelMessage(true),
   ),
   HealthRule(
@@ -513,6 +634,7 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => !ctx.app.notifyOnMention,
     fix: HealthFix.apply,
+    fixDescription: 'Turn on mention notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnMention(true),
   ),
   HealthRule(
@@ -523,6 +645,7 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => ctx.app.notifyOnNewAdvert,
     fix: HealthFix.apply,
+    fixDescription: 'Turn off advert notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewAdvert(false),
     notes: 'Default off; on is noisy in a busy mesh.',
   ),
@@ -536,17 +659,25 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => !ctx.app.enableMessageTracing,
     fix: HealthFix.apply,
+    fixDescription: 'Turn message tracing on.',
     apply: (ctx) => ctx.settingsService.setEnableMessageTracing(true),
   ),
   HealthRule(
     id: 'app_dm_retries',
-    enabled: false,
-    severity: HealthSeverity.tip,
-    title: 'Direct message retries',
-    why: '',
-    check: (ctx) async => ctx.app.maxMessageRetries != 3,
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'Direct messages get too few tries',
+    why:
+        'With fewer than 4 tries, a direct message gets one try on a route '
+        'before the app floods the whole mesh. With 4 or 5, it gets another '
+        'try on a route first, so more messages arrive without flooding.',
+    check: (ctx) async => ctx.app.maxMessageRetries < 4,
     fix: HealthFix.apply,
-    apply: (ctx) => ctx.settingsService.setMaxMessageRetries(3),
+    fixDescription: 'Set direct message tries to 4.',
+    apply: (ctx) => ctx.settingsService.setMaxMessageRetries(4),
+    notes:
+        '4 and 5 both pass. Attempts at each setting: path_selection.dart, '
+        'planAttempts (the last 2 are floods from 3 tries up).',
   ),
   HealthRule(
     id: 'app_channel_retries',
@@ -556,10 +687,63 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => ctx.app.maxChannelMessageRetries != 1,
     fix: HealthFix.apply,
+    fixDescription: 'Set channel message retries to 1.',
     apply: (ctx) => ctx.settingsService.setMaxChannelMessageRetries(1),
   ),
-  // jumpToOldestUnread, autoFavoriteOnChat, senderNameColors,
-  // showTextFormatting: taste, not health. Add a rule if one matters.
+  HealthRule(
+    id: 'app_auto_favorite',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'New chats are not set as favorites',
+    why:
+        'When the contact list is full, the radio can overwrite a contact that '
+        'is not a favorite. Marking people as favorites when you start a chat '
+        'keeps them on the radio.',
+    check: (ctx) async => !ctx.app.autoFavoriteOnChat,
+    fix: HealthFix.apply,
+    fixDescription: 'Set new chats as favorites automatically.',
+    apply: (ctx) => ctx.settingsService.setAutoFavoriteOnChat(true),
+  ),
+  HealthRule(
+    id: 'app_jump_to_oldest_unread',
+    enabled: false,
+    severity: HealthSeverity.tip,
+    title: 'Chats open at the latest message',
+    why:
+        'A chat with unread messages opens at the newest one, so you can miss '
+        'the ones before it. Jump to oldest unread starts you at the first one '
+        'you have not read.',
+    check: (ctx) async => !ctx.app.jumpToOldestUnread,
+    fix: HealthFix.apply,
+    fixDescription: 'Turn on jump to oldest unread.',
+    apply: (ctx) => ctx.settingsService.setJumpToOldestUnread(true),
+  ),
+  HealthRule(
+    id: 'app_sender_name_colors',
+    enabled: false,
+    severity: HealthSeverity.tip,
+    title: 'Channel senders all share one name color',
+    why:
+        'Giving each sender their own color makes it easier to see who said '
+        'what in a busy channel.',
+    check: (ctx) async => !ctx.app.senderNameColors,
+    fix: HealthFix.apply,
+    fixDescription: 'Turn on colorful sender names.',
+    apply: (ctx) => ctx.settingsService.setSenderNameColors(true),
+  ),
+  HealthRule(
+    id: 'app_text_formatting',
+    enabled: false,
+    severity: HealthSeverity.tip,
+    title: 'Text formatting is off',
+    why:
+        'Messages show the raw characters, such as **bold**, instead of the '
+        'formatting they stand for.',
+    check: (ctx) async => !ctx.app.showTextFormatting,
+    fix: HealthFix.apply,
+    fixDescription: 'Turn text formatting on.',
+    apply: (ctx) => ctx.settingsService.setShowTextFormatting(true),
+  ),
 
   // --------------------------------------------------- App: connection -----
   HealthRule(
@@ -570,31 +754,45 @@ final List<HealthRule> healthRules = [
     why: '',
     check: (ctx) async => !ctx.app.autoConnectLastDevice,
     fix: HealthFix.apply,
+    fixDescription: 'Turn on auto-connect to the last radio.',
     apply: (ctx) => ctx.settingsService.setAutoConnectLastDevice(true),
   ),
   HealthRule(
     id: 'app_incremental_sync',
-    enabled: false,
+    enabled: true,
     severity: HealthSeverity.tip,
-    title: 'Incremental contact sync',
-    why: '',
-    check: (ctx) async => ctx.app.incrementalContactSync,
+    title: 'Contacts download in full on every connect',
+    why:
+        'Each time the app connects it downloads your whole contact list, which '
+        'can take 25 seconds with a few hundred contacts. Incremental sync asks '
+        'only for what changed, so reconnecting is much faster.',
+    check: (ctx) async => !ctx.app.incrementalContactSync,
     fix: HealthFix.apply,
-    apply: (ctx) => ctx.settingsService.setIncrementalContactSync(false),
-    notes: 'Bench toggle in the Debug card.',
+    fixDescription: 'Turn on incremental contact sync.',
+    apply: (ctx) => ctx.settingsService.setIncrementalContactSync(true),
+    notes:
+        'On by default for new installs (owner, 2026-10-31). Existing users '
+        'keep their saved value, so this tip reaches the ones who have it off.',
   ),
 
   // --------------------------------------------------- App: Pathfinder -----
   HealthRule(
     id: 'app_pathfinder',
-    enabled: false,
-    severity: HealthSeverity.tip,
+    enabled: true,
+    severity: HealthSeverity.suggestion,
     title: 'Pathfinder is off',
-    why: '',
+    why:
+        'Your radio remembers one route to each contact and floods the whole '
+        'mesh when that route fails. Pathfinder learns routes from everything '
+        'the radio hears, tries its best ones first, and floods only as a last '
+        'resort. It needs some hours of listening before it helps.',
     check: (ctx) async => !ctx.app.pathGraphEnabled,
     fix: HealthFix.apply,
+    fixDescription: 'Turn Pathfinder on.',
     apply: (ctx) => ctx.settingsService.setPathGraphEnabled(true),
-    notes: 'Off by default by owner decision. Tip at most, never a problem.',
+    notes:
+        'On by default for new installs (owner, 2026-10-31). Existing users '
+        'keep their saved value, so this reaches the ones who have it off.',
   ),
 
   // ------------------------------------------------------ App: general -----
@@ -604,10 +802,11 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.suggestion,
     title: 'App debug log is on',
     why:
-        'The debug log costs storage and battery. Turn it off unless you '
-        'are chasing a problem.',
+        'The debug log keeps up to 20,000 lines in memory. Turn it off unless '
+        'you are chasing a problem.',
     check: (ctx) async => ctx.app.appDebugLogEnabled,
     fix: HealthFix.apply,
+    fixDescription: 'Turn the debug log off.',
     apply: (ctx) => ctx.settingsService.setAppDebugLogEnabled(false),
   ),
   HealthRule(
@@ -616,13 +815,13 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.problem,
     title: 'Your phone may put MeshTrax to sleep',
     why:
-        'This phone restricts background apps, so messages can stop '
-        'arriving when the screen is off.',
+        'This phone can stop apps in the background to save battery, which '
+        'cuts off your radio. Messages can stop arriving when the screen is '
+        'off.',
     check: (ctx) async => BatterySleepService.shouldWarn(),
     fix: HealthFix.ask,
-    notes:
-        'Fix opens the system battery settings '
-        '(BatterySleepService.openSettings). Android only.',
+    dialog: HealthDialog.batterySettings,
+    notes: 'Android only.',
   ),
   // theme, languageOverride, unitSystem, battery chemistry: taste or
   // per-device; no rule.

@@ -369,6 +369,47 @@ class AppLocalizationsHu extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Állapotfelmérés';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Az alkalmazás és a rádió beállításainak ellenőrzése';
+
+  @override
+  String get healthCheck_running => 'Beállítások ellenőrzése…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nincs csatlakoztatott rádió, ezért a beállításait nem ellenőriztük.';
+
+  @override
+  String get healthCheck_allClear => 'Minden rendben van.';
+
+  @override
+  String get healthCheck_problems => 'Problémák';
+
+  @override
+  String get healthCheck_suggestions => 'Javaslatok';
+
+  @override
+  String get healthCheck_tips => 'Tippek';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Sikeres ellenőrzések: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Újraellenőrzés';
+
+  @override
+  String get healthCheck_fix => 'Javítás';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'A módosítás nem sikerült. Ellenőrizd a rádiókapcsolatot, és próbáld újra.';
+
+  @override
   String get settings_title => 'Beállítások';
 
   @override
@@ -501,6 +542,10 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Többszörös visszaigazolások';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Minden kapott közvetlen üzenetre második visszaigazolást küld, így a feladó nagyobb eséllyel hallja azt.';
 
   @override
   String get settings_telemetryModeUpdated => 'A telemetriamód frissítve';
@@ -3955,7 +4000,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get pathfinderHelp_ok => 'Rendben';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (kísérleti)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

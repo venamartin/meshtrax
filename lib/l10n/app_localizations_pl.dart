@@ -373,6 +373,46 @@ class AppLocalizationsPl extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Kontrola stanu';
+
+  @override
+  String get healthCheck_subtitle => 'Sprawdź ustawienia aplikacji i radia';
+
+  @override
+  String get healthCheck_running => 'Sprawdzanie ustawień…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nie połączono radia, więc jego ustawienia nie zostały sprawdzone.';
+
+  @override
+  String get healthCheck_allClear => 'Wszystko wygląda dobrze.';
+
+  @override
+  String get healthCheck_problems => 'Problemy';
+
+  @override
+  String get healthCheck_suggestions => 'Sugestie';
+
+  @override
+  String get healthCheck_tips => 'Wskazówki';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Zaliczone testy: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Sprawdź ponownie';
+
+  @override
+  String get healthCheck_fix => 'Napraw';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Zmiana nie została zastosowana. Sprawdź połączenie z radiem i spróbuj ponownie.';
+
+  @override
   String get settings_title => 'Ustawienia';
 
   @override
@@ -504,6 +544,10 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Wielokrotne potwierdzenia odbioru';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Wysyłaj drugie potwierdzenie każdej otrzymanej wiadomości bezpośredniej, aby nadawca miał większą szansę je usłyszeć.';
 
   @override
   String get settings_telemetryModeUpdated =>
@@ -3953,7 +3997,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (eksperymentalny)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

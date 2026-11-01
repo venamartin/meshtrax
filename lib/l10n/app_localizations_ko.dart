@@ -357,6 +357,45 @@ class AppLocalizationsKo extends AppLocalizations {
   String get device_meshcore => '메쉬코어';
 
   @override
+  String get healthCheck_title => '상태 점검';
+
+  @override
+  String get healthCheck_subtitle => '앱과 무전기 설정을 확인합니다';
+
+  @override
+  String get healthCheck_running => '설정을 확인하는 중…';
+
+  @override
+  String get healthCheck_noRadio => '연결된 무전기가 없어 무전기 설정은 확인하지 않았습니다.';
+
+  @override
+  String get healthCheck_allClear => '모두 양호합니다.';
+
+  @override
+  String get healthCheck_problems => '문제';
+
+  @override
+  String get healthCheck_suggestions => '제안';
+
+  @override
+  String get healthCheck_tips => '팁';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '통과한 점검: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => '다시 점검';
+
+  @override
+  String get healthCheck_fix => '수정';
+
+  @override
+  String get healthCheck_fixFailed =>
+      '변경 사항이 적용되지 않았습니다. 무전기 연결을 확인하고 다시 시도하세요.';
+
+  @override
   String get settings_title => '설정';
 
   @override
@@ -478,6 +517,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_multiAck => '다중 ACK';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      '받은 다이렉트 메시지마다 두 번째 ACK를 보내 발신자가 받을 가능성을 높입니다.';
 
   @override
   String get settings_telemetryModeUpdated => '텔레메트리 모드 업데이트 완료';
@@ -3761,7 +3804,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pathfinderHelp_ok => '알겠습니다';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (실험적)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

@@ -164,6 +164,25 @@
   "scanner_enableBluetooth": "Enable Bluetooth",
   "device_quickSwitch": "Quick switch",
   "device_meshcore": "MeshCore",
+  "healthCheck_title": "Health check",
+  "healthCheck_subtitle": "Check your app and radio settings",
+  "healthCheck_running": "Checking your settings…",
+  "healthCheck_noRadio": "No radio is connected, so the radio's settings were not checked.",
+  "healthCheck_allClear": "Everything looks good.",
+  "healthCheck_problems": "Problems",
+  "healthCheck_suggestions": "Suggestions",
+  "healthCheck_tips": "Tips",
+  "healthCheck_passed": "Checks passed: {count}",
+  "@healthCheck_passed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "healthCheck_runAgain": "Check again",
+  "healthCheck_fix": "Fix",
+  "healthCheck_fixFailed": "That change did not go through. Check the radio connection and try again.",
   "settings_title": "Settings",
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",
@@ -204,6 +223,7 @@
   "settings_advertLocation": "Advert Location",
   "settings_advertLocationSubtitle": "Include location in advert.",
   "settings_multiAck": "Multi-ACKs",
+  "settings_multiAckSubtitle": "Send a second ACK for each direct message you receive, so the sender is more likely to hear it.",
   "settings_telemetryModeUpdated": "Telemetry mode updated",
   "settings_actions": "Actions",
   "settings_sendAdvertisement": "Send Advertisement",
@@ -2233,7 +2253,7 @@
   "pathfinderHelp_off": "Turn Pathfinder off and the radio routes exactly as it did before.",
   "pathfinderHelp_dontShowAgain": "Don't show this again",
   "pathfinderHelp_ok": "OK",
-  "settings_pathGraph": "Pathfinder (experimental)",
+  "settings_pathGraph": "Pathfinder",
   "settings_pathGraphSubtitle": "Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.",
   "map_routeAndTrace": "Route & trace",
   "map_pathfinderTrace": "Trace there and back",

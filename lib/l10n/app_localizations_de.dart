@@ -372,6 +372,46 @@ class AppLocalizationsDe extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Gesundheitscheck';
+
+  @override
+  String get healthCheck_subtitle => 'App- und Funkgeräte-Einstellungen prüfen';
+
+  @override
+  String get healthCheck_running => 'Einstellungen werden geprüft…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Kein Funkgerät verbunden, daher wurden seine Einstellungen nicht geprüft.';
+
+  @override
+  String get healthCheck_allClear => 'Alles sieht gut aus.';
+
+  @override
+  String get healthCheck_problems => 'Probleme';
+
+  @override
+  String get healthCheck_suggestions => 'Vorschläge';
+
+  @override
+  String get healthCheck_tips => 'Tipps';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Bestandene Prüfungen: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Erneut prüfen';
+
+  @override
+  String get healthCheck_fix => 'Beheben';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Die Änderung wurde nicht übernommen. Prüfe die Verbindung zum Funkgerät und versuche es erneut.';
+
+  @override
   String get settings_title => 'Einstellungen';
 
   @override
@@ -500,6 +540,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Mehrere Bestätigungen';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Für jede empfangene Direktnachricht eine zweite Bestätigung senden, damit der Absender sie eher hört.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetriemodus aktualisiert';
@@ -3951,7 +3995,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentell)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

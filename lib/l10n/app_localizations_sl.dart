@@ -367,6 +367,46 @@ class AppLocalizationsSl extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Pregled stanja';
+
+  @override
+  String get healthCheck_subtitle => 'Preverite nastavitve aplikacije in radia';
+
+  @override
+  String get healthCheck_running => 'Preverjanje nastavitev…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Noben radio ni povezan, zato njegove nastavitve niso bile preverjene.';
+
+  @override
+  String get healthCheck_allClear => 'Vse je videti v redu.';
+
+  @override
+  String get healthCheck_problems => 'Težave';
+
+  @override
+  String get healthCheck_suggestions => 'Predlogi';
+
+  @override
+  String get healthCheck_tips => 'Nasveti';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Uspešna preverjanja: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Preveri znova';
+
+  @override
+  String get healthCheck_fix => 'Popravi';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Sprememba ni bila uveljavljena. Preverite povezavo z radiem in poskusite znova.';
+
+  @override
   String get settings_title => 'Nastavitve';
 
   @override
@@ -494,6 +534,10 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Več potrdil';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Za vsako prejeto neposredno sporočilo pošlje drugo potrdilo, da ga pošiljatelj laže sliši.';
 
   @override
   String get settings_telemetryModeUpdated => 'Način telemetrije posodobljen';
@@ -3927,7 +3971,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get pathfinderHelp_ok => 'V redu';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (preizkusno)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

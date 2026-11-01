@@ -355,6 +355,44 @@ class AppLocalizationsZh extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => '健康检查';
+
+  @override
+  String get healthCheck_subtitle => '检查应用和电台设置';
+
+  @override
+  String get healthCheck_running => '正在检查设置…';
+
+  @override
+  String get healthCheck_noRadio => '未连接电台，因此未检查电台设置。';
+
+  @override
+  String get healthCheck_allClear => '一切正常。';
+
+  @override
+  String get healthCheck_problems => '问题';
+
+  @override
+  String get healthCheck_suggestions => '建议';
+
+  @override
+  String get healthCheck_tips => '提示';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '通过的检查：$count';
+  }
+
+  @override
+  String get healthCheck_runAgain => '再次检查';
+
+  @override
+  String get healthCheck_fix => '修复';
+
+  @override
+  String get healthCheck_fixFailed => '更改未生效。请检查电台连接后重试。';
+
+  @override
   String get settings_title => '设置';
 
   @override
@@ -473,6 +511,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings_multiAck => '多重ACK';
+
+  @override
+  String get settings_multiAckSubtitle => '每收到一条私信就发送第二个 ACK，让发送方更有可能收到。';
 
   @override
   String get settings_telemetryModeUpdated => '遥测模式已更新';
@@ -3670,7 +3711,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathfinderHelp_ok => '确定';
 
   @override
-  String get settings_pathGraph => 'Pathfinder（实验性）';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

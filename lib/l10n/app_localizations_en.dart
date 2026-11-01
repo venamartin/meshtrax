@@ -365,6 +365,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Health check';
+
+  @override
+  String get healthCheck_subtitle => 'Check your app and radio settings';
+
+  @override
+  String get healthCheck_running => 'Checking your settings…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'No radio is connected, so the radio\'s settings were not checked.';
+
+  @override
+  String get healthCheck_allClear => 'Everything looks good.';
+
+  @override
+  String get healthCheck_problems => 'Problems';
+
+  @override
+  String get healthCheck_suggestions => 'Suggestions';
+
+  @override
+  String get healthCheck_tips => 'Tips';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Checks passed: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Check again';
+
+  @override
+  String get healthCheck_fix => 'Fix';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'That change did not go through. Check the radio connection and try again.';
+
+  @override
   String get settings_title => 'Settings';
 
   @override
@@ -491,6 +531,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Multi-ACKs';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Send a second ACK for each direct message you receive, so the sender is more likely to hear it.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetry mode updated';
@@ -3869,7 +3913,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

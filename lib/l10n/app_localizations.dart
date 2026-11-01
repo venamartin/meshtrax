@@ -778,6 +778,78 @@ abstract class AppLocalizations {
   /// **'MeshCore'**
   String get device_meshcore;
 
+  /// No description provided for @healthCheck_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check'**
+  String get healthCheck_title;
+
+  /// No description provided for @healthCheck_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your app and radio settings'**
+  String get healthCheck_subtitle;
+
+  /// No description provided for @healthCheck_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your settings…'**
+  String get healthCheck_running;
+
+  /// No description provided for @healthCheck_noRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is connected, so the radio\'s settings were not checked.'**
+  String get healthCheck_noRadio;
+
+  /// No description provided for @healthCheck_allClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything looks good.'**
+  String get healthCheck_allClear;
+
+  /// No description provided for @healthCheck_problems.
+  ///
+  /// In en, this message translates to:
+  /// **'Problems'**
+  String get healthCheck_problems;
+
+  /// No description provided for @healthCheck_suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get healthCheck_suggestions;
+
+  /// No description provided for @healthCheck_tips.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get healthCheck_tips;
+
+  /// No description provided for @healthCheck_passed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks passed: {count}'**
+  String healthCheck_passed(int count);
+
+  /// No description provided for @healthCheck_runAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get healthCheck_runAgain;
+
+  /// No description provided for @healthCheck_fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix'**
+  String get healthCheck_fix;
+
+  /// No description provided for @healthCheck_fixFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That change did not go through. Check the radio connection and try again.'**
+  String get healthCheck_fixFailed;
+
   /// No description provided for @settings_title.
   ///
   /// In en, this message translates to:
@@ -1017,6 +1089,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multi-ACKs'**
   String get settings_multiAck;
+
+  /// No description provided for @settings_multiAckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a second ACK for each direct message you receive, so the sender is more likely to hear it.'**
+  String get settings_multiAckSubtitle;
 
   /// No description provided for @settings_telemetryModeUpdated.
   ///
@@ -6777,7 +6855,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_pathGraph.
   ///
   /// In en, this message translates to:
-  /// **'Pathfinder (experimental)'**
+  /// **'Pathfinder'**
   String get settings_pathGraph;
 
   /// No description provided for @settings_pathGraphSubtitle.

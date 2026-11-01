@@ -6609,15 +6609,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _checkManualAddContacts() async {
-    // If manual add contacts is enabled, set auto add config and other params.
-    // and disable it after
+    // A radio still in factory mode auto-adds everything it hears. Move it to
+    // the values the health check recommends (lib/health/health_rules.dart);
+    // keep the two in step, or a new user is flagged for our own defaults.
     if (_manualAddContacts) {
+      _autoAddUsers = true;
+      _autoAddRepeaters = false;
+      _autoAddRoomServers = false;
+      _autoAddSensors = false;
+      _overwriteOldest = true;
+      _multiAcks = 1;
       await sendFrame(
         buildSetAutoAddConfigFrame(
-          autoAddChat: true,
-          autoAddRepeater: true,
-          autoAddRoomServer: true,
-          autoAddSensor: true,
+          autoAddChat: _autoAddUsers,
+          autoAddRepeater: _autoAddRepeaters,
+          autoAddRoomServer: _autoAddRoomServers,
+          autoAddSensor: _autoAddSensors,
           overwriteOldest: _overwriteOldest,
         ),
       );
@@ -6630,6 +6637,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _multiAcks,
         ),
       );
+      if ((_firmwareVerCode ?? 0) >= 10) {
+        _pathHashByteWidth = 2;
+        await setPathHashMode(1);
+      }
       _manualAddContacts = false;
       _manualAddRaw = 1;
     }

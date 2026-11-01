@@ -369,6 +369,47 @@ class AppLocalizationsBg extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Проверка на състоянието';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Проверка на настройките на приложението и радиото';
+
+  @override
+  String get healthCheck_running => 'Проверка на настройките…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Няма свързано радио, затова настройките му не бяха проверени.';
+
+  @override
+  String get healthCheck_allClear => 'Всичко изглежда наред.';
+
+  @override
+  String get healthCheck_problems => 'Проблеми';
+
+  @override
+  String get healthCheck_suggestions => 'Предложения';
+
+  @override
+  String get healthCheck_tips => 'Съвети';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Успешни проверки: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Провери отново';
+
+  @override
+  String get healthCheck_fix => 'Поправи';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Промяната не беше приложена. Проверете връзката с радиото и опитайте отново.';
+
+  @override
   String get settings_title => 'Настройки';
 
   @override
@@ -502,6 +543,10 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Множество потвърждения';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Изпраща второ потвърждение за всяко получено лично съобщение, за да може подателят по-вероятно да го чуе.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим на телеметрията е обновен';
@@ -3935,7 +3980,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get pathfinderHelp_ok => 'Добре';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (експериментално)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

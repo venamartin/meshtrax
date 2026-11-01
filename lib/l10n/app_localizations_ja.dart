@@ -358,6 +358,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get device_meshcore => 'メッシュコア';
 
   @override
+  String get healthCheck_title => 'ヘルスチェック';
+
+  @override
+  String get healthCheck_subtitle => 'アプリと無線機の設定を確認します';
+
+  @override
+  String get healthCheck_running => '設定を確認しています…';
+
+  @override
+  String get healthCheck_noRadio => '無線機が接続されていないため、無線機の設定は確認していません。';
+
+  @override
+  String get healthCheck_allClear => '問題はありません。';
+
+  @override
+  String get healthCheck_problems => '問題';
+
+  @override
+  String get healthCheck_suggestions => '提案';
+
+  @override
+  String get healthCheck_tips => 'ヒント';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '合格したチェック: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'もう一度確認';
+
+  @override
+  String get healthCheck_fix => '修正';
+
+  @override
+  String get healthCheck_fixFailed => '変更を適用できませんでした。無線機との接続を確認して、もう一度お試しください。';
+
+  @override
   String get settings_title => '設定';
 
   @override
@@ -478,6 +516,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_multiAck => '複数のACK（応答）';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      '受信したダイレクトメッセージごとに2回目のACKを送信し、送信者に届きやすくします。';
 
   @override
   String get settings_telemetryModeUpdated => 'テレメトリモードが更新されました';
@@ -3761,7 +3803,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pathfinderHelp_ok => '了解';
 
   @override
-  String get settings_pathGraph => 'Pathfinder（試験的）';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

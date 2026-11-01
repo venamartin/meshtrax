@@ -370,6 +370,47 @@ class AppLocalizationsSk extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Kontrola stavu';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Skontrolovať nastavenia aplikácie a rádia';
+
+  @override
+  String get healthCheck_running => 'Kontrolujú sa nastavenia…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nie je pripojené žiadne rádio, preto sa jeho nastavenia nekontrolovali.';
+
+  @override
+  String get healthCheck_allClear => 'Všetko vyzerá v poriadku.';
+
+  @override
+  String get healthCheck_problems => 'Problémy';
+
+  @override
+  String get healthCheck_suggestions => 'Návrhy';
+
+  @override
+  String get healthCheck_tips => 'Tipy';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Úspešné kontroly: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Skontrolovať znova';
+
+  @override
+  String get healthCheck_fix => 'Opraviť';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Zmena sa neuplatnila. Skontrolujte pripojenie k rádiu a skúste to znova.';
+
+  @override
   String get settings_title => 'Nastavenia';
 
   @override
@@ -495,6 +536,10 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Viaceré ACK';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Pre každú prijatú priamu správu pošle druhé potvrdenie, aby ho odosielateľ skôr počul.';
 
   @override
   String get settings_telemetryModeUpdated =>
@@ -3928,7 +3973,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentálne)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

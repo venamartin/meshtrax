@@ -371,6 +371,46 @@ class AppLocalizationsRu extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Проверка состояния';
+
+  @override
+  String get healthCheck_subtitle => 'Проверить настройки приложения и радио';
+
+  @override
+  String get healthCheck_running => 'Проверка настроек…';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Радио не подключено, поэтому его настройки не проверялись.';
+
+  @override
+  String get healthCheck_allClear => 'Всё в порядке.';
+
+  @override
+  String get healthCheck_problems => 'Проблемы';
+
+  @override
+  String get healthCheck_suggestions => 'Рекомендации';
+
+  @override
+  String get healthCheck_tips => 'Советы';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Пройдено проверок: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Проверить снова';
+
+  @override
+  String get healthCheck_fix => 'Исправить';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Изменение не применилось. Проверьте подключение к радио и повторите попытку.';
+
+  @override
   String get settings_title => 'Настройки';
 
   @override
@@ -500,6 +540,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Несколько подтверждений';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Отправлять второе подтверждение на каждое полученное личное сообщение, чтобы отправитель с большей вероятностью его услышал.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим телеметрии обновлен';
@@ -3947,7 +3991,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (экспериментально)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
