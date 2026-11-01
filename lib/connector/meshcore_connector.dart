@@ -726,6 +726,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // The list a full download is replacing, by key: the radio's frames carry
   // no inbound advert path, and can carry no coordinates.
   Map<String, Contact> _contactsAcrossRefresh = {};
+  // The last advert heard, if a neighbour shared it. The radio logs a packet
+  // and then handles it, so what it pushes next is about this same copy.
+  ({String key, int secs})? _lastSharedAdvert;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -4094,7 +4097,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// Fills in a contact frame from the radio. The frame's own coordinates win:
   /// a saved contact's discovered row stops updating, so it can be far out of
   /// date. Frames carry no inbound path, so that comes from the live list, or
-  /// from the row after a restart, as the saved list does not store one.
+  /// from the row when the live copy has none.
   Contact getFromDiscovered(Contact contact) {
     final key = contact.publicKeyHex;
     final row = _discoveredContacts.firstWhere(
@@ -4961,6 +4964,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+    _contactsAcrossRefresh.remove(contact.publicKeyHex);
     _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _localDiscoveredTimes.remove(contact.publicKeyHex);
     _knownContactKeys.remove(contact.publicKeyHex);
@@ -4983,6 +4987,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoveredContacts.removeWhere(
         (c) => toRemove.any((r) => r.publicKeyHex == c.publicKeyHex));
     for (final contact in toRemove) {
+      _contactsAcrossRefresh.remove(contact.publicKeyHex);
       _localDiscoveredTimes.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
@@ -5077,7 +5082,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: contact.name,
         lat: contact.latitude,
         lon: contact.longitude,
-        lastModified: contact.lastSeen,
+        // Added now, however long ago it was heard: the radio keeps this as
+        // lastmod, and a full table evicts the oldest.
+        lastModified: DateTime.now(),
         lastAdvertEpochSeconds:
             lastAdvertEpochSeconds ?? contact.lastAdvertSecs ?? 0,
       ),
@@ -6113,7 +6120,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // it in the contact list within a moment of the advert.
         final pubKey = frame.sublist(1, 33);
         final pubKeyHex = pubKeyToHex(pubKey);
-        _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        if (_lastSharedAdvert?.key != pubKeyHex) {
+          _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        }
         final known =
             _contacts.any((c) => c.publicKeyHex == pubKeyHex) ||
             _discoveredContacts.any((c) => c.publicKeyHex == pubKeyHex);
@@ -6747,6 +6756,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           tag: 'Connector',
         );
         removeContact(contactTmp);
+        return;
+      }
+      // The shared copy, as the radio passes it on with its clock as lastmod.
+      if (!isContact &&
+          _lastSharedAdvert?.key == contactTmp.publicKeyHex &&
+          _lastSharedAdvert?.secs == contactTmp.lastAdvertSecs) {
         return;
       }
       final contact = getFromDiscovered(contactTmp);
@@ -11112,6 +11127,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // about how the contact reaches us or when it last spoke, so it only
     // introduces a contact we have never heard of.
     final shared = routeType == _routeTransportDirect && path.isEmpty;
+    _lastSharedAdvert = shared ? (key: contactKeyHex, secs: timestamp) : null;
     if (shared &&
         (!isNewContact ||
             _discoveredContacts.any((c) => c.publicKeyHex == contactKeyHex))) {
@@ -11125,7 +11141,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ? (time: claimedTime, corrected: false)
         : _parseAdvertTimestamp(timestamp);
 
-    if (!_isLoadingContacts) {
+    if (!_isLoadingContacts && !shared) {
       _localDiscoveredTimes[contactKeyHex] = DateTime.now();
     }
 
@@ -11420,6 +11436,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       await sendFrame(buildRemoveContactFrame(contact.publicKey));
       await Future.delayed(const Duration(milliseconds: 50));
       _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+      _contactsAcrossRefresh.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
 

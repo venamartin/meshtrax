@@ -272,7 +272,7 @@ class _MapScreenState extends State<MapScreen> {
         );
         final guessStaleBefore = now.subtract(GuessedLocationHelper.staleAfter);
         final cacheKey =
-            '${GuessedLocationHelper.cacheKey(targets: filteredByKeyPrefix, located: allContactsWithLocation, maxRangeKm: maxRangeKm, staleBefore: guessStaleBefore)}|${settings.mapShowGuessedLocations}';
+            '${GuessedLocationHelper.cacheKey(targets: filteredByKeyPrefix, located: allContactsWithLocation, maxRangeKm: maxRangeKm, staleBefore: guessStaleBefore, routeWrittenByApp: connector.wroteContactPath)}|${settings.mapShowGuessedLocations}';
         if (cacheKey != _guessedLocationsCacheKey) {
           _guessedLocationsCacheKey = cacheKey;
           _cachedGuessedLocations = settings.mapShowGuessedLocations
@@ -281,6 +281,7 @@ class _MapScreenState extends State<MapScreen> {
                   located: allContactsWithLocation,
                   maxRangeKm: maxRangeKm,
                   staleBefore: guessStaleBefore,
+                  routeWrittenByApp: connector.wroteContactPath,
                 )
               : [];
         }
@@ -1166,7 +1167,15 @@ class _MapScreenState extends State<MapScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.pop(dialogContext);
-                      _routeAndTrace(context, contact, contact);
+                      _routeAndTrace(
+                        context,
+                        contact,
+                        contact,
+                        guesses: {
+                          if (guessedPosition != null)
+                            contact.publicKeyHex: guessedPosition,
+                        },
+                      );
                     },
                   ),
               ],
@@ -1891,8 +1900,9 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _routeAndTrace(
     BuildContext context,
     Contact a,
-    Contact b,
-  ) async {
+    Contact b, {
+    required Map<String, LatLng> guesses,
+  }) async {
     final connector = context.read<MeshCoreConnector>();
     final graph = context.read<PathGraphService>().graph;
     final l10n = context.l10n;
@@ -1938,7 +1948,7 @@ class _MapScreenState extends State<MapScreen> {
           path: roundTrip,
           pathHashByteWidth: width,
           pathContacts: connector.allContacts,
-          guessedPositions: _pathTraceGuesses,
+          guessedPositions: guesses,
         ),
       ),
     );
@@ -2004,7 +2014,10 @@ class _MapScreenState extends State<MapScreen> {
   void _removePath(BuildContext context) {
     setState(() {
       final stride = context.read<MeshCoreConnector>().pathHashByteWidth;
-      _pathTraceContacts.removeLast();
+      final removed = _pathTraceContacts.removeLast().publicKeyHex;
+      if (!_pathTraceContacts.any((c) => c.publicKeyHex == removed)) {
+        _pathTraceGuesses.remove(removed);
+      }
       final trimmed = PathHelper.dropLastHop(_pathTrace, stride: stride);
       _pathTrace
         ..clear()
@@ -2196,6 +2209,7 @@ class _MapScreenState extends State<MapScreen> {
                         context,
                         _pathTraceContacts[_pathTraceContacts.length - 2],
                         _pathTraceContacts.last,
+                        guesses: _pathTraceGuesses,
                       ),
                       tooltip: l10n.map_routeAndTrace,
                       icon: Icon(

@@ -9,6 +9,8 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Connector extends MeshCoreConnector {
+  final sent = <Uint8List>[];
+
   @override
   bool get isConnected => true;
 
@@ -17,7 +19,9 @@ class _Connector extends MeshCoreConnector {
     Uint8List data, {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
-  }) async {}
+  }) async {
+    sent.add(data);
+  }
 }
 
 const _routeTransportFlood = 0x00;
@@ -54,6 +58,8 @@ Uint8List _record({
   int type = advTypeChat,
   double? lat,
   double? lon,
+  int advertSecs = 1,
+  int lastmod = 0,
 }) {
   final position = ByteData(8);
   if (lat != null) {
@@ -69,8 +75,17 @@ Uint8List _record({
         ..addByte(0xFF)
         ..add(Uint8List(maxPathSize))
         ..add(name)
-        ..add(const [1, 0, 0, 0])
-        ..add(position.buffer.asUint8List()))
+        ..add(
+          (ByteData(
+            4,
+          )..setUint32(0, advertSecs, Endian.little)).buffer.asUint8List(),
+        )
+        ..add(position.buffer.asUint8List())
+        ..add(
+          (ByteData(
+            4,
+          )..setUint32(0, lastmod, Endian.little)).buffer.asUint8List(),
+        ))
       .toBytes();
 }
 
@@ -397,6 +412,34 @@ void main() {
       expect(c.directRepeaters, isEmpty);
     });
 
+    test('telling listeners about a contact it introduced', () {
+      autoAdd();
+      var notified = 0;
+      c.addListener(() => notified++);
+
+      c.handleFrameForTest(
+        _heard(
+          route: _routeTransportDirect,
+          timestamp: _secondsAgo(const Duration(days: 1)),
+        ),
+      );
+
+      expect(notified, greaterThan(0));
+    });
+
+    test('a path on the frame means it was relayed, not shared', () {
+      autoAdd();
+      c.handleFrameForTest(
+        _heard(
+          route: _routeTransportDirect,
+          path: const [0xAA],
+          timestamp: _secondsAgo(const Duration(hours: 1)),
+        ),
+      );
+
+      expect(row()!.inboundHopCount, 1);
+    });
+
     test('a transport flood is a real hearing', () {
       autoAdd();
       c.handleFrameForTest(
@@ -408,6 +451,214 @@ void main() {
 
       expect(row()!.inboundHopCount, 0);
     });
+  });
+
+  // The radio logs a packet, then handles it: for a key not in its table it
+  // pushes the copy's own position and advert time, with its clock as lastmod.
+  group('the radio frame that follows a share', () {
+    final now = _secondsAgo(Duration.zero);
+    Uint8List followUp(int advertSecs, {double? lat, double? lon}) => _record(
+      code: pushCodeNewAdvert,
+      advertSecs: advertSecs,
+      lastmod: now,
+      lat: lat,
+      lon: lon,
+    );
+
+    test('changes nothing about an unsaved contact already heard', () {
+      autoAdd();
+      c.handleFrameForTest(
+        _heard(
+          route: _routeFlood,
+          path: const [0xAA],
+          timestamp: _secondsAgo(const Duration(hours: 1)),
+          lat: 37.0,
+          lon: -122.0,
+        ),
+      );
+      final before = row()!;
+      final old = _secondsAgo(const Duration(days: 30));
+
+      c.handleFrameForTest(
+        _heard(
+          route: _routeTransportDirect,
+          timestamp: old,
+          lat: 10.0,
+          lon: 10.0,
+        ),
+      );
+      c.handleFrameForTest(followUp(old, lat: 10.0, lon: 10.0));
+
+      expect(row()!.lastSeen, before.lastSeen);
+      expect(row()!.latitude, 37.0);
+      expect(row()!.longitude, -122.0);
+      expect(row()!.inboundPath, [0xAA]);
+    });
+
+    test('leaves a contact it introduced at its own old time', () {
+      autoAdd();
+      final old = _secondsAgo(const Duration(days: 30));
+
+      c.handleFrameForTest(
+        _heard(route: _routeTransportDirect, timestamp: old),
+      );
+      c.handleFrameForTest(followUp(old));
+
+      expect(row()!.lastSeen.millisecondsSinceEpoch ~/ 1000, old);
+      expect(row()!.inboundHopCount, isNull);
+    });
+
+    test('a real hearing of the same advert is not mistaken for it', () {
+      autoAdd();
+      final at = _secondsAgo(const Duration(hours: 1));
+      c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: at));
+
+      c.handleFrameForTest(
+        _heard(route: _routeFlood, path: const [0xAA], timestamp: at),
+      );
+      c.handleFrameForTest(followUp(at));
+
+      expect(row()!.lastSeen.millisecondsSinceEpoch ~/ 1000, now);
+    });
+
+    test('a different advert from the same contact is not mistaken for it', () {
+      autoAdd();
+      final old = _secondsAgo(const Duration(days: 30));
+      c.handleFrameForTest(
+        _heard(route: _routeTransportDirect, timestamp: old),
+      );
+
+      c.handleFrameForTest(followUp(old + 1));
+
+      expect(row()!.lastSeen.millisecondsSinceEpoch ~/ 1000, now);
+    });
+  });
+
+  group('the local discovered time', () {
+    Uint8List pushAdvert() => Uint8List.fromList([pushCodeAdvert, ..._key]);
+
+    test('a share of an unknown contact does not set it', () {
+      autoAdd();
+      c.handleFrameForTest(
+        _heard(
+          route: _routeTransportDirect,
+          timestamp: _secondsAgo(const Duration(days: 30)),
+        ),
+      );
+      expect(c.getLocalDiscoveredTime(_hex), isNull);
+    });
+
+    test('the key-only push after a share does not set it', () async {
+      autoAdd();
+      await fullDownload(_record());
+      c.handleFrameForTest(
+        _heard(
+          route: _routeTransportDirect,
+          timestamp: _secondsAgo(const Duration(days: 30)),
+        ),
+      );
+      c.handleFrameForTest(pushAdvert());
+      expect(c.getLocalDiscoveredTime(_hex), isNull);
+    });
+
+    test('a real hearing sets it, and so does the push after one', () async {
+      autoAdd();
+      await fullDownload(_record());
+      c.handleFrameForTest(pushAdvert());
+      expect(c.getLocalDiscoveredTime(_hex), isNotNull);
+
+      await c.removeContact(saved()!);
+      c.handleFrameForTest(
+        _heard(
+          route: _routeFlood,
+          timestamp: _secondsAgo(const Duration(minutes: 1)),
+        ),
+      );
+      expect(c.getLocalDiscoveredTime(_hex), isNotNull);
+    });
+  });
+
+  group('a contact deleted during a full download', () {
+    final deletes = <String, Future<void> Function()>{
+      'removeContact': () => c.removeContact(saved()!),
+      'purgeContacts': () => c.purgeContacts(includesFavorites: true),
+      'removeRepeaters': () => c.removeRepeaters(),
+    };
+    for (final MapEntry(key: name, value: delete) in deletes.entries) {
+      test('by $name leaves nothing to bring back', () async {
+        autoAdd();
+        c.handleFrameForTest(
+          _heard(
+            route: _routeFlood,
+            path: const [0xAA, 0xBB],
+            timestamp: _secondsAgo(const Duration(days: 3)),
+            type: advTypeRepeater,
+            lat: 37.0,
+            lon: -122.0,
+          ),
+        );
+        final record = _record(type: advTypeRepeater, lat: 37.0, lon: -122.0);
+        await fullDownload(record);
+
+        await c.getContacts();
+        c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+        c.handleFrameForTest(record);
+        await delete();
+        c.handleFrameForTest(
+          _heard(
+            route: _routeFlood,
+            path: const [0xCC],
+            timestamp: _secondsAgo(const Duration(minutes: 1)),
+            type: advTypeRepeater,
+          ),
+        );
+        c.handleFrameForTest(
+          _record(code: pushCodeNewAdvert, type: advTypeRepeater),
+        );
+
+        expect(row()!.inboundPath, [0xCC]);
+        expect(row()!.latitude, isNull);
+      });
+    }
+  });
+
+  test(
+    'a route the app wrote stays marked once the choice is cleared',
+    () async {
+      autoAdd();
+      await fullDownload(_record());
+      await c.setPathOverride(
+        saved()!,
+        pathLen: 1,
+        pathBytes: Uint8List.fromList(const [0xA1]),
+      );
+      expect(c.wroteContactPath(saved()!), isTrue);
+
+      await c.setPathOverride(saved()!, pathLen: null);
+
+      expect(saved()!.pathOverride, isNull);
+      expect(saved()!.path, [0xA1]);
+      expect(c.wroteContactPath(saved()!), isTrue);
+    },
+  );
+
+  test('adding a contact heard long ago dates it now on the radio', () async {
+    autoAdd();
+    c.handleFrameForTest(
+      _heard(
+        route: _routeFlood,
+        timestamp: _secondsAgo(const Duration(days: 30)),
+      ),
+    );
+
+    await c.importDiscoveredContact(row()!);
+
+    final write = c.sent.lastWhere((f) => f[0] == cmdAddUpdateContact);
+    final lastmod = ByteData.sublistView(
+      write,
+      write.length - 4,
+    ).getUint32(0, Endian.little);
+    expect(lastmod, closeTo(_secondsAgo(Duration.zero), 5));
   });
 
   test('a zero-hop advert sent to us is a real hearing', () async {

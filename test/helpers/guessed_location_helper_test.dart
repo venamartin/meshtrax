@@ -495,6 +495,20 @@ void main() {
       expect(_compute([heardDirect], located), isEmpty);
     });
 
+    test('a route the app wrote anchors nothing, whatever the choice now', () {
+      final route = _target(route: [0xA1]);
+      expect(
+        GuessedLocationHelper.compute(
+          targets: [route],
+          located: located,
+          maxRangeKm: 785.7,
+          staleBefore: _staleBefore,
+          routeWrittenByApp: (_) => true,
+        ),
+        isEmpty,
+      );
+    });
+
     test('with no advert yet a learned route anchors', () {
       expect(_compute([_target(route: [0xA1])], located), hasLength(1));
     });
@@ -546,6 +560,17 @@ void main() {
 
   group('cacheKey', () {
     final base = _target(inbound: [0xA1, 0x10]);
+
+    test('changes when the app writes the route', () {
+      String keyWith(bool written) => GuessedLocationHelper.cacheKey(
+        targets: [base],
+        located: const [],
+        maxRangeKm: 785.7,
+        staleBefore: _staleBefore,
+        routeWrittenByApp: (_) => written,
+      );
+      expect(keyWith(false), isNot(keyWith(true)));
+    });
 
     test('changes when the route override changes', () {
       expect(_keyFor(base), isNot(_keyFor(base.copyWith(pathOverride: 2))));

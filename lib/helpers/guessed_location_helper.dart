@@ -105,11 +105,12 @@ class GuessedLocationHelper {
     required List<Contact> located,
     required double? maxRangeKm,
     required DateTime staleBefore,
+    bool Function(Contact) routeWrittenByApp = _never,
   }) {
     final targetKeys = targets
         .map(
           (c) =>
-              '${c.publicKeyHex}:${c.pathIdList}:${c.pathOverride}:${c.inboundHopCount}:${_inboundFirstHopHex(c)}:${c.lastSeen.isBefore(staleBefore)}',
+              '${c.publicKeyHex}:${c.pathIdList}:${c.pathOverride}:${routeWrittenByApp(c)}:${c.inboundHopCount}:${_inboundFirstHopHex(c)}:${c.lastSeen.isBefore(staleBefore)}',
         )
         .join(',');
     final locatedKeys = located
@@ -124,12 +125,20 @@ class GuessedLocationHelper {
   static String _inboundFirstHopHex(Contact c) =>
       PathHelper.firstHopHex(c.inboundPath, stride: _inboundWidth(c)) ?? '';
 
+  static bool _never(Contact _) => false;
+
   /// A route says where the contact is only if the radio learned it and the
   /// contact has not since been heard with no repeater in between. A route the
-  /// user typed proves nothing. An always-flood choice (-1) leaves the radio's
-  /// learned route in place, so that one still counts.
-  static bool _routeIsEvidence(Contact c) =>
-      c.inboundHopCount != 0 && (c.pathOverride ?? -1) < 0;
+  /// user typed or the app wrote proves nothing, even once the choice is
+  /// cleared, as the radio keeps the bytes. The app's mark on a written route
+  /// lasts until restart; a typed one with its choice still set always shows.
+  static bool _routeIsEvidence(
+    Contact c,
+    bool Function(Contact) routeWrittenByApp,
+  ) =>
+      c.inboundHopCount != 0 &&
+      (c.pathOverride ?? -1) < 0 &&
+      !routeWrittenByApp(c);
 
   /// [guesses] with each contact swapped for its copy in [targets]: a cached
   /// guess keeps its position, but names, flags and saved state must be live.
@@ -161,6 +170,7 @@ class GuessedLocationHelper {
     required List<Contact> located,
     required double? maxRangeKm,
     required DateTime staleBefore,
+    bool Function(Contact) routeWrittenByApp = _never,
   }) {
     // Index known-location repeaters by their hash prefix per stride.
     // null value = two repeaters share the same hash prefix (ambiguous collision).
@@ -209,7 +219,7 @@ class GuessedLocationHelper {
         contact.inboundPath,
         stride: inboundWidth,
       );
-      final routeHops = _routeIsEvidence(contact)
+      final routeHops = _routeIsEvidence(contact, routeWrittenByApp)
           ? PathHelper.getHops(contact.path, stride: contact.pathHashSize)
           : const <Uint8List>[];
       for (final (hop, width) in [

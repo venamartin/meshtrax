@@ -86,6 +86,11 @@ class _FakeConnector extends MeshCoreConnector {
 class _RadioConnector extends _FakeConnector {
   _RadioConnector({required super.nodes});
 
+  final written = <String>{};
+  @override
+  bool wroteContactPath(Contact contact) =>
+      written.contains(contact.publicKeyHex);
+
   @override
   int? get currentFreqHz => 910525;
   @override
@@ -335,11 +340,29 @@ void main() {
     testWidgets('are off in the overlaps view, and off the legend', (
       tester,
     ) async {
-      await pumpMap(tester, _RadioConnector(nodes: [anchor, chat]));
+      // Sharing a first byte, so the filter alone would keep them in this view.
+      Contact sharing(int fill) => Contact(
+        publicKey: Uint8List.fromList([0x20, ...List.filled(31, fill)]),
+        name: 'S$fill',
+        type: advTypeRepeater,
+        pathLength: -1,
+        path: Uint8List(0),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+        inboundPath: Uint8List.fromList(const [0x01]),
+        inboundHopCount: 1,
+        inboundPathHashSize: 1,
+      );
+      final first = sharing(0x21);
+      final second = sharing(0x22);
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, first, second]));
+      expect(ids(tester), containsAll([guessId(first), guessId(second)]));
+
       await settingsOf(tester).setMapShowOverlaps(true);
       await tester.pump();
 
-      expect(ids(tester), isNot(contains(guessId(chat))));
+      expect(ids(tester), isNot(contains(guessId(first))));
+      expect(ids(tester), isNot(contains(guessId(second))));
       expect(legendGuesses(tester), 0);
     });
 
@@ -408,6 +431,51 @@ void main() {
       final position = trace.guessedPositions[repeater.publicKeyHex]!;
       expect(position.latitude, marker.position.latitude);
       expect(position.longitude, marker.position.longitude);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a route the app wrote is no anchor, as soon as it is written', (
+      tester,
+    ) async {
+      final routed = Contact(
+        publicKey: Uint8List.fromList(List.filled(32, 0x13)),
+        name: 'Routed',
+        type: advTypeChat,
+        pathLength: 1,
+        path: Uint8List.fromList(const [0x01]),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+      );
+      final connector = _RadioConnector(nodes: [anchor, routed]);
+      await pumpMap(tester, connector);
+      expect(ids(tester), contains(guessId(routed)));
+
+      connector.written.add(routed.publicKeyHex);
+      connector.replaceNode(1, routed);
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(ids(tester), isNot(contains(guessId(routed))));
+    });
+
+    testWidgets('undoing a guessed hop drops its estimate', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+
+      overlay<MapMarker>(tester, guessId(repeater)).onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.guessedPositions, isEmpty);
       await tester.pumpWidget(const SizedBox());
     });
 
