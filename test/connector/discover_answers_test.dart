@@ -116,14 +116,24 @@ void main() {
     },
   );
 
-  test('with auto-add off, an answer does not look the repeater up', () async {
+  test('an answer never looks the repeater up', () async {
     await c.sendRepeaterDiscovery();
     c.handleFrameForTest(_answer(_key(0x10), c.pendingDiscoverTag!));
     expect(c.sent, isNot(contains(cmdGetContactByKey)));
 
     c.handleFrameForTest([respCodeAutoAddConfig, autoAddRepeaterFlag, 0]);
     c.handleFrameForTest(_answer(_key(0x40), c.pendingDiscoverTag!));
-    expect(c.sent, contains(cmdGetContactByKey));
+    expect(c.sent, isNot(contains(cmdGetContactByKey)));
+  });
+
+  test('with auto-add on, an answer lists a heard row, not a saved one',
+      () async {
+    await c.sendRepeaterDiscovery();
+    c.handleFrameForTest([respCodeAutoAddConfig, autoAddRepeaterFlag, 0]);
+    c.handleFrameForTest(_answer(_key(0x40), c.pendingDiscoverTag!));
+
+    expect(c.contacts, isEmpty);
+    expect(c.discoveredContacts.single.isActive, isFalse);
   });
 
   test('an advert heard during the scan is not an answer', () async {

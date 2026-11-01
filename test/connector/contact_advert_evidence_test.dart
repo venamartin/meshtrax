@@ -389,23 +389,176 @@ void main() {
       expect(listed().length, 1);
     });
 
-    test('auto-add on: saved and listed once', () {
+    test('auto-add on: the radio refused it, so it stays unsaved', () {
       autoAdd(chat: true);
       c.handleFrameForTest(_record(code: pushCodeNewAdvert));
 
-      expect(saved(), isNotNull);
-      expect(row()!.isActive, isTrue);
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
       expect(listed().length, 1);
     });
 
-    test('for a contact already saved: listed once', () async {
+    test('for a contact the list has: the radio no longer holds it', () async {
       autoAdd();
       await fullDownload(_record());
       c.handleFrameForTest(_record(code: pushCodeNewAdvert));
 
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
+      expect(listed().length, 1);
+    });
+  });
+
+  group('a new node with auto-add on', () {
+    Uint8List heard() => _heard(
+          route: _routeFlood,
+          path: const [0xAA],
+          timestamp: _secondsAgo(const Duration(minutes: 1)),
+        );
+    bool asked() => c.sent.any((f) => f[0] == cmdGetContactByKey);
+
+    setUp(() => autoAdd(chat: true));
+
+    test('is only a heard row until the radio decides', () {
+      c.handleFrameForTest(heard());
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
+      expect(listed().length, 1);
+    });
+
+    test('that the radio refuses stays a heard row, and is not looked up', () {
+      c.handleFrameForTest(heard());
+      c.handleFrameForTest(_record(code: pushCodeNewAdvert));
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
+      expect(asked(), isFalse);
+    });
+
+    test('that the radio saves is fetched and keeps its advert path', () {
+      c.handleFrameForTest(heard());
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      expect(asked(), isTrue);
+
+      c.handleFrameForTest(_record(lastmod: _secondsAgo(Duration.zero)));
+      expect(saved()!.inboundPath, [0xAA]);
       expect(row()!.isActive, isTrue);
       expect(listed().length, 1);
     });
+
+    test('first met through a share is dated by its advert', () {
+      final node = _secondsAgo(const Duration(days: 2));
+      c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: node));
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      c.handleFrameForTest(
+        _record(advertSecs: node, lastmod: _secondsAgo(Duration.zero)),
+      );
+      expect(saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000, node);
+    });
+
+    test('saved during a download is fetched when it ends', () async {
+      c.handleFrameForTest(heard());
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      expect(asked(), isFalse, reason: 'the radio refuses a second stream');
+
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(asked(), isTrue);
+    });
+
+    test('saved during a download and streamed anyway is not fetched', () async {
+      c.handleFrameForTest(heard());
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      c.handleFrameForTest(_record());
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(asked(), isFalse);
+    });
+  });
+
+  group('the lastmod on a contact', () {
+    final heardAt = _secondsAgo(const Duration(hours: 5));
+
+    int sentLastmod() {
+      final write = c.sent.lastWhere((f) => f[0] == cmdAddUpdateContact);
+      return ByteData.sublistView(
+        write,
+        write.length - 4,
+      ).getUint32(0, Endian.little);
+    }
+
+    int seen() => saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000;
+
+    setUp(() async {
+      autoAdd();
+      await fullDownload(_record(lastmod: heardAt));
+      expect(seen(), heardAt);
+    });
+
+    test('a route write dates the contact now on the radio', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      expect(sentLastmod(), closeTo(_secondsAgo(Duration.zero), 5));
+    });
+
+    test('the next sync does not read that write as hearing it', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+
+      await fullDownload(_record(lastmod: sentLastmod()));
+
+      expect(seen(), heardAt);
+      expect(saved()!.appLastmodSecs, sentLastmod());
+    });
+
+    test('a later lastmod is the radio hearing it', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      final later = sentLastmod() + 60;
+
+      await fullDownload(_record(lastmod: later));
+
+      expect(saved()!.radioLastmodSecs, later);
+      expect(
+        saved()!.lastSeen.isAfter(
+          DateTime.fromMillisecondsSinceEpoch(heardAt * 1000),
+        ),
+        isTrue,
+      );
+    });
+
+    group('after the radio accepts a shared copy', () {
+      final radioNow = _secondsAgo(Duration.zero);
+      final advert = _secondsAgo(const Duration(hours: 2));
+
+      void radioTakesShare() {
+        c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: advert));
+        c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      }
+
+      test('the record is fetched', () {
+        c.sent.clear();
+        radioTakesShare();
+        expect(c.sent.map((f) => f[0]), contains(cmdGetContactByKey));
+      });
+
+      test('it does not look just heard, then or at the next sync', () async {
+        radioTakesShare();
+        c.handleFrameForTest(_record(advertSecs: advert, lastmod: radioNow));
+        expect(seen(), heardAt);
+        expect(saved()!.lastAdvertSecs, advert);
+
+        await fullDownload(_record(advertSecs: advert, lastmod: radioNow));
+        expect(seen(), heardAt);
+      });
+
+      test('a real advert afterwards counts as usual', () {
+        radioTakesShare();
+        c.handleFrameForTest(_record(advertSecs: advert, lastmod: radioNow));
+        final at = _secondsAgo(const Duration(minutes: 1));
+        c.handleFrameForTest(_heard(route: _routeFlood, timestamp: at));
+        expect(seen(), at);
+      });
+    });
+
   });
 
   group('a contact shared by a neighbour', () {

@@ -34,6 +34,12 @@ class Contact {
   // The radio's last_advert_timestamp, in seconds. A contact write must send
   // it back unchanged: the firmware drops any advert not newer than it.
   final int? lastAdvertSecs;
+  // The lastmod in the frame this came from, unfolded. Not stored.
+  final int? radioLastmodSecs;
+  // The lastmod this app last caused on the radio, by a write or by the radio
+  // accepting a shared copy. A frame carrying exactly this says nothing about
+  // when the contact was last heard.
+  final int? appLastmodSecs;
   final Uint8List? rawPacket;
 
   Contact({
@@ -58,6 +64,8 @@ class Contact {
     this.wasPulled = false,
     this.clockCorrected = false,
     this.lastAdvertSecs,
+    this.radioLastmodSecs,
+    this.appLastmodSecs,
     this.rawPacket,
   }) : inboundPath = inboundPath ?? Uint8List(0),
        lastMessageAt = lastMessageAt ?? lastSeen;
@@ -138,6 +146,8 @@ class Contact {
     int? pathHashSize,
     bool? clockCorrected,
     int? lastAdvertSecs,
+    int? radioLastmodSecs,
+    int? appLastmodSecs,
     Uint8List? rawPacket,
   }) {
     return Contact(
@@ -167,6 +177,8 @@ class Contact {
       isActive: isActive ?? this.isActive,
       clockCorrected: clockCorrected ?? this.clockCorrected,
       lastAdvertSecs: lastAdvertSecs ?? this.lastAdvertSecs,
+      radioLastmodSecs: radioLastmodSecs ?? this.radioLastmodSecs,
+      appLastmodSecs: appLastmodSecs ?? this.appLastmodSecs,
       rawPacket: rawPacket ?? this.rawPacket,
     );
   }
@@ -274,6 +286,7 @@ class Contact {
         lastSeen: parsedLastSeen,
         isActive: true,
         lastAdvertSecs: lastAdvertTimestamp,
+        radioLastmodSecs: lastMod,
         rawPacket: null,
       );
     } catch (e) {

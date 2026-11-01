@@ -356,9 +356,8 @@ void main() {
     'one overwritten with no app connected is listed after a full sync',
     () async {
       final radio = await syncedRadio();
-      radio.handleFrameForTest(
-        _contact(_friendKey, 'Friend')..[0] = pushCodeNewAdvert,
-      );
+      radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+      radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
       expect(radio.discoveredContacts.single.isActive, isTrue);
 
       // The radio no longer has them, and no push ever said so.
@@ -509,10 +508,8 @@ void main() {
 
   test('so can one with a row from an earlier advert', () async {
     final radio = await syncedRadio();
+    radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
     radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
-    radio.handleFrameForTest(
-      _contact(_friendKey, 'Friend')..[0] = pushCodeNewAdvert,
-    );
     expect(radio.discoveredContacts.single.isActive, isTrue);
     expect(radio.allContacts, hasLength(1));
 

@@ -722,6 +722,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _fullContactSyncAfterStream = false;
   // During a full download, the saved contacts the radio has not re-sent yet.
   Set<String>? _unconfirmedContactKeys;
+  // Adverts the radio saved during a download, to fetch when it ends.
+  final Map<String, Uint8List> _fetchAfterDownload = {};
+  // Contacts whose next frame carries a lastmod from accepting a shared copy.
+  final Set<String> _sharedCopyKeys = {};
   // The last advert heard, if a neighbour shared it. The radio logs a packet
   // and then handles it, so what it pushes next is about this same copy.
   ({String key, int secs})? _lastSharedAdvert;
@@ -3755,6 +3759,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _flushContactPersist();
     _contacts.clear();
     _unconfirmedContactKeys = null;
+    _fetchAfterDownload.clear();
+    _sharedCopyKeys.clear();
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
@@ -4444,7 +4450,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             name: live.name,
             lat: live.latitude,
             lon: live.longitude,
-            lastModified: live.lastSeen,
+            lastModified: _stampRadioWrite(live.publicKeyHex),
             lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
           ),
         );
@@ -4474,6 +4480,20 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         unawaited(_persistContacts());
       }
     });
+  }
+
+  /// The lastmod for a contact write. The radio evicts the lowest lastmod from a
+  /// full table, so a write sends the time now, or a contact in use could look
+  /// oldest. Remembered so the next sync does not read it as hearing the contact.
+  DateTime _stampRadioWrite(String keyHex) {
+    final now = DateTime.now();
+    final index = _contacts.indexWhere((c) => c.publicKeyHex == keyHex);
+    if (index >= 0) {
+      _contacts[index] = _contacts[index].copyWith(
+        appLastmodSecs: now.millisecondsSinceEpoch ~/ 1000,
+      );
+    }
+    return now;
   }
 
   /// Runs [body] with no other route write in between. Re-entrant: a route
@@ -4591,7 +4611,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: latestContact.name,
         lat: latestContact.latitude,
         lon: latestContact.longitude,
-        lastModified: latestContact.lastSeen,
+        lastModified: _stampRadioWrite(latestContact.publicKeyHex),
         lastAdvertEpochSeconds: latestContact.lastAdvertSecs ?? 0,
       ),
     );
@@ -5166,7 +5186,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: live.name,
         lat: live.latitude,
         lon: live.longitude,
-        lastModified: live.lastSeen,
+        lastModified: _stampRadioWrite(live.publicKeyHex),
         lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
       ),
     );
@@ -6253,18 +6273,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // it in the contact list within a moment of the advert.
         final pubKey = frame.sublist(1, 33);
         final pubKeyHex = pubKeyToHex(pubKey);
-        if (_lastSharedAdvert?.key != pubKeyHex) {
+        // The radio took a neighbour's shared copy. That is no hearing, but its
+        // record changed, advert time included, and route writes send that back.
+        final sharedCopy = _lastSharedAdvert?.key == pubKeyHex;
+        if (sharedCopy) {
+          _sharedCopyKeys.add(pubKeyHex);
+          _lastSharedAdvert = null;
+        } else {
           _localDiscoveredTimes[pubKeyHex] = DateTime.now();
         }
         // Only the saved list counts: a discovered row is no record of what the
-        // radio holds, and a running download will bring this contact anyway.
+        // radio holds. A running download may be past this contact's slot.
         final known = _contacts.any((c) => c.publicKeyHex == pubKeyHex);
-        if (!known && !_isLoadingContacts) {
-          appLogger.info(
-            'Advert from unknown contact $pubKeyHex — fetching record',
-            tag: 'Connector',
-          );
-          unawaited(getContactByKey(pubKey));
+        if (!known || sharedCopy) {
+          if (_isLoadingContacts) {
+            _fetchAfterDownload[pubKeyHex] = pubKey;
+          } else {
+            appLogger.info(
+              'Advert from unknown contact $pubKeyHex — fetching record',
+              tag: 'Connector',
+            );
+            unawaited(getContactByKey(pubKey));
+          }
         }
         notifyListeners();
         break;
@@ -6328,6 +6358,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
         _isLoadingContacts = false;
         _preserveContactsOnRefresh = false;
+        for (final pubKey in _fetchAfterDownload.values) {
+          unawaited(getContactByKey(pubKey));
+        }
+        _fetchAfterDownload.clear();
         if (_fullContactSyncAfterStream) {
           _fullContactSyncAfterStream = false;
           unawaited(getContacts());
@@ -6462,7 +6496,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// back. Its messages stay for when it is.
   void _handleContactDeleted(Uint8List frame) {
     if (frame.length < 1 + pubKeySize) return;
-    final key = pubKeyToHex(frame.sublist(1, 1 + pubKeySize));
+    _moveSavedToDiscovered(pubKeyToHex(frame.sublist(1, 1 + pubKeySize)));
+    notifyListeners();
+    unawaited(_persistContacts());
+  }
+
+  void _moveSavedToDiscovered(String key) {
     final removed = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
     final row = _discoveredContacts
         .where((c) => c.publicKeyHex == key)
@@ -6475,8 +6514,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (listed != null) {
       _handleDiscovery(listed, row?.rawPacket ?? Uint8List(0), noNotify: true);
     }
-    notifyListeners();
-    unawaited(_persistContacts());
+    if (removed != null) unawaited(_persistContacts());
   }
 
   void _handleErrorFrame(Uint8List frame) {
@@ -6982,19 +7020,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
       final contact = getFromDiscovered(contactTmp);
       if (!isContact) {
-        // Active means saved: allContacts leaves an active row out.
-        _handleDiscovery(
-          contact,
-          frame,
-          noNotify: true,
-          addActive:
-              _contacts.any((c) => c.publicKeyHex == contact.publicKeyHex) ||
-              _autoAdds(contact.type),
-        );
+        // The radio says it did not save this node (firmware onDiscoveredContact:
+        // a node it holds gets key-only ADVERT). If the list says otherwise, the
+        // radio overwrote it while no app was connected.
+        _moveSavedToDiscovered(contact.publicKeyHex);
+        _handleDiscovery(contact, contact.rawPacket ?? frame, noNotify: true);
+        notifyListeners();
+        return;
       }
+      _fetchAfterDownload.remove(contact.publicKeyHex);
+      final sharedCopy = _sharedCopyKeys.remove(contact.publicKeyHex);
+      final heardRow = _discoveredContacts
+          .where((c) => c.publicKeyHex == contact.publicKeyHex)
+          .firstOrNull;
 
-      if (contact.type == advTypeRepeater) {
-      }
       // Check if this is a new contact
       final isNewContact = !_knownContactKeys.contains(contact.publicKeyHex);
       final existingIndex = _contacts.indexWhere(
@@ -7008,9 +7047,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             ? existing.lastMessageAt
             : contact.lastMessageAt;
 
+        // A lastmod this app caused says nothing about hearing the contact.
+        final notHeard = sharedCopy ||
+            (contact.radioLastmodSecs != null &&
+                contact.radioLastmodSecs == existing.appLastmodSecs);
+
         // Preserve user-selected path settings and previously known GPS when
         // refreshed frames omit coordinates (lat/lon encoded as 0,0).
         _contacts[existingIndex] = contact.copyWith(
+          lastSeen: notHeard ? existing.lastSeen : null,
+          appLastmodSecs:
+              sharedCopy ? contact.radioLastmodSecs : existing.appLastmodSecs,
           lastMessageAt: mergedLastMessageAt,
           pathOverride: existing.pathOverride, // Preserve user's path choice
           pathOverrideBytes: existing.pathOverrideBytes,
@@ -7022,24 +7069,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           clockCorrected: existing.clockCorrected,
         );
       } else {
-        if (_autoAdds(contact.type) || isContact) {
-          _contacts.add(contact);
-          appLogger.info(
-            'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
-            tag: 'Connector',
-          );
-        } else {
-          appLogger.info(
-            "Discovered contact ${contact.name} (type ${contact.typeLabel}) not added due to auto-add settings",
-            tag: 'Connector',
-          );
-          return;
-        }
+        _contacts.add(
+          sharedCopy
+              ? contact.copyWith(
+                  lastSeen: heardRow?.lastSeen,
+                  appLastmodSecs: contact.radioLastmodSecs,
+                )
+              : contact,
+        );
+        appLogger.info(
+          'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
+          tag: 'Connector',
+        );
       }
       _knownContactKeys.add(contact.publicKeyHex);
       // Fetched on its own, a saved contact's row goes active here, or
       // allContacts lists it twice. A download does them all at its end.
-      if (isContact && !_isLoadingContacts) {
+      if (!_isLoadingContacts) {
         final row = _discoveredContacts.indexWhere(
           (c) => c.publicKeyHex == contact.publicKeyHex,
         );
@@ -7053,8 +7099,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       notifyListeners();
 
-      // Show notification for new contact (advertisement)
-      if (isNewContact && _appSettingsService != null) {
+      // Show notification for new contact (advertisement). Its heard row
+      // already gave one if it has a row.
+      if (isNewContact && heardRow == null && _appSettingsService != null) {
         final settings = _appSettingsService!.settings;
         if (settings.notificationsEnabled && settings.notifyOnNewAdvert) {
           _notificationService.showAdvertNotification(
@@ -7070,12 +7117,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     }
   }
-
-  bool _autoAdds(int type) =>
-      (_autoAddUsers && type == advTypeChat) ||
-      (_autoAddRepeaters && type == advTypeRepeater) ||
-      (_autoAddRoomServers && type == advTypeRoom) ||
-      (_autoAddSensors && type == advTypeSensor);
 
   void _handleContactAdvert(Contact contact) {
     if (listEquals(contact.publicKey, _selfPublicKey)) {
@@ -8101,16 +8142,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           )..markAnswered(uplink, _discoverScan));
         }
 
-        if (pubKey != null && hex != null) {
-          final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex);
-          // With auto-add off the radio did not save it, and the ERR it answers
-          // with reaches whoever is waiting on another command, such as a trace.
-          if (!alreadyKnown && _autoAddRepeaters) {
-            appLogger.info('Discovered repeater is unknown to app contacts. Querying companion database for $hex...');
-            unawaited(sendFrame(buildGetContactByKeyFrame(pubKey)));
-          }
-        }
-
         if (hasFullPubKey && (_autoAddRepeaters == true)) {
           final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex!);
           if (!alreadyKnown && !_discoveredContacts.any((c) => c.publicKeyHex == hex!)) {
@@ -8125,14 +8156,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               path: Uint8List(0),
               pathHashSize: _pathHashByteWidth,
               lastSeen: DateTime.now(),
-              isActive: true, // Set to true since we are adding it as an active contact
             );
             
-            // Route through standard contact handling so it appears in the UI and routing tables
-            _handleContactAdvert(newContact);
-            _handleDiscovery(newContact, Uint8List(0), noNotify: true, addActive: true);
+            // A heard row only: a Discover answer changes nothing on the radio
+            // (firmware onControlDataRecv), so it did not save this repeater.
+            _handleDiscovery(newContact, Uint8List(0), noNotify: true);
             
-            appLogger.info('Automatically added newly discovered repeater: ${newContact.name} (${newContact.publicKeyHex})');
           }
         }
 
@@ -10480,6 +10509,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactFullResyncPending = false;
     _fullContactSyncAfterStream = false;
     _unconfirmedContactKeys = null;
+    _fetchAfterDownload.clear();
+    _sharedCopyKeys.clear();
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -11393,17 +11424,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
       );
-      if (_autoAdds(type)) {
-        _handleContactAdvert(newContact);
-        _handleDiscovery(
-          newContact,
-          rawPacket,
-          noNotify: true,
-          addActive: true,
-        );
-      } else {
-        _handleDiscovery(newContact, rawPacket);
-      }
+      // The radio logs a packet before it decides, so this can only be a heard
+      // row. A node it saves comes back as key-only ADVERT, fetched from there;
+      // one it refuses comes back as NEW_ADVERT.
+      _handleDiscovery(newContact, rawPacket);
       if (shared) {
         notifyListeners();
       } else {
@@ -11565,7 +11589,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Contact contact,
     Uint8List rawPacket, {
     bool noNotify = false,
-    bool addActive = false,
   }) {
     final existingIndex = _discoveredContacts.indexWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
@@ -11589,7 +11612,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         longitude: contact.longitude,
         lastSeen: contact.lastSeen,
         flags: strippedFlags,
-        isActive: addActive,
+        isActive: false,
       );
       _discoveredContacts[existingIndex] = updated;
       notifyListeners();
@@ -11613,7 +11636,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,
       lastMessageAt: contact.lastMessageAt,
-      isActive: addActive,
+      isActive: false,
       flags: strippedFlags,
     );
     _discoveredContacts.add(disContact);
