@@ -535,6 +535,21 @@ void main() {
       expect(result.highConfidence, isTrue);
     });
 
+    test('keeps a low-confidence guess low', () {
+      final low = GuessedLocation(
+        contact: _target(),
+        position: const LatLng(1, 2),
+        highConfidence: false,
+      );
+      expect(
+        GuessedLocationHelper.withCurrentContacts(
+          [low],
+          [_target()],
+        ).single.highConfidence,
+        isFalse,
+      );
+    });
+
     test('prefers the first copy, the saved contact over its row', () {
       final saved = _target().copyWith(name: 'Saved');
       final row = _target().copyWith(name: 'Row', isActive: false);

@@ -457,6 +457,52 @@ void main() {
       expect(ids(tester), isNot(contains(guessId(routed))));
     });
 
+    testWidgets('a return trace carries the estimate too', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      overlay<MapMarker>(tester, guessId(repeater)).onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.replay));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.guessedPositions, contains(repeater.publicKeyHex));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a new trace starts with no old estimates', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      overlay<MapMarker>(tester, guessId(repeater)).onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      Navigator.of(tester.element(find.byType(PathTraceMapScreen))).pop();
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.guessedPositions, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('undoing a guessed hop drops its estimate', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
       await tester.tap(find.byIcon(Icons.radar));
@@ -481,6 +527,11 @@ void main() {
 
     testWidgets('frame the map only when nothing else can', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, chat]));
+      // A map with content opens on it, not on where it was last left.
+      tester
+          .element(find.byType(AppMap))
+          .read<UiViewStateService>()
+          .setMapCamera(const MapCamera(center: LatLng(10, 10), zoom: 5));
       // Anchors count whatever the filter; a key prefix leaves only the guess.
       final settings = settingsOf(tester);
       await settings.setMapKeyPrefixEnabled(true);

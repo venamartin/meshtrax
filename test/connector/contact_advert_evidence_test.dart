@@ -5,6 +5,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/storage/app_database.dart';
+import 'package:meshtrax/storage/contact_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -270,6 +271,72 @@ void main() {
     });
   });
 
+  test('a saved copy with no path takes the whole path from the row', () async {
+    c.handleFrameForTest(_selfInfo());
+    await pumpEventQueue(times: 200);
+    c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+    c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+    autoAdd();
+    c.handleFrameForTest(
+      _heard(
+        route: _routeFlood,
+        path: const [0xAA, 0xBB],
+        timestamp: _secondsAgo(const Duration(hours: 1)),
+      ),
+    );
+    final store = ContactStore()
+      ..setPublicKeyHex = pubKeyToHex(
+        Uint8List.fromList(List.filled(32, 0x77)),
+      );
+    await store.saveContacts([
+      Contact(
+        publicKey: _key,
+        name: 'NODE',
+        type: advTypeChat,
+        pathLength: -1,
+        path: Uint8List(0),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+      ),
+    ]);
+    await c.loadContactCache();
+    expect(saved()!.inboundHopCount, isNull);
+
+    await c.refreshContacts();
+    c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+    c.handleFrameForTest(_record());
+    c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+
+    expect(saved()!.inboundPath, [0xAA, 0xBB]);
+    expect(saved()!.inboundHopCount, 2);
+  });
+
+  test(
+    'a finished download forgets a contact the radio no longer has',
+    () async {
+      await savedWithFrozenRow();
+      c.handleFrameForTest(
+        _heard(
+          route: _routeFlood,
+          path: const [0xCC],
+          timestamp: _secondsAgo(const Duration(minutes: 5)),
+        ),
+      );
+
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(saved(), isNull);
+
+      await c.refreshContacts();
+      c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+      c.handleFrameForTest(_record());
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+
+      expect(saved()!.inboundPath, [0xAA, 0xBB]);
+    },
+  );
+
   test('a partial sync keeps the latest advert path', () async {
     await savedWithFrozenRow();
     c.handleFrameForTest(
@@ -361,6 +428,30 @@ void main() {
       expect(after.lastSeen, before.lastSeen);
       expect(after.latitude, before.latitude);
       expect(c.directRepeaters.length, nearbyBefore);
+    });
+
+    test('changes nothing about a saved contact that has no row', () async {
+      autoAdd();
+      await fullDownload(_record());
+      expect(row(), isNull);
+      c.handleFrameForTest(
+        _heard(
+          route: _routeFlood,
+          path: const [0xCC],
+          timestamp: _secondsAgo(const Duration(minutes: 5)),
+        ),
+      );
+      final before = saved()!;
+
+      c.handleFrameForTest(
+        _heard(
+          route: _routeTransportDirect,
+          timestamp: _secondsAgo(const Duration(days: 30)),
+        ),
+      );
+
+      expect(saved()!.inboundPath, [0xCC]);
+      expect(saved()!.lastSeen, before.lastSeen);
     });
 
     test('changes nothing about an unsaved contact already heard', () {
@@ -509,6 +600,18 @@ void main() {
       expect(row()!.inboundHopCount, isNull);
     });
 
+    test('the radio\'s own contact record is not mistaken for it', () async {
+      autoAdd();
+      final old = _secondsAgo(const Duration(days: 30));
+      c.handleFrameForTest(
+        _heard(route: _routeTransportDirect, timestamp: old),
+      );
+
+      await fullDownload(_record(advertSecs: old));
+
+      expect(saved(), isNotNull);
+    });
+
     test('a real hearing of the same advert is not mistaken for it', () {
       autoAdd();
       final at = _secondsAgo(const Duration(hours: 1));
@@ -645,12 +748,9 @@ void main() {
 
   test('adding a contact heard long ago dates it now on the radio', () async {
     autoAdd();
-    c.handleFrameForTest(
-      _heard(
-        route: _routeFlood,
-        timestamp: _secondsAgo(const Duration(days: 30)),
-      ),
-    );
+    final old = _secondsAgo(const Duration(days: 30));
+    c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: old));
+    expect(row()!.lastSeen.millisecondsSinceEpoch ~/ 1000, old);
 
     await c.importDiscoveredContact(row()!);
 

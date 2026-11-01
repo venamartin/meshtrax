@@ -111,7 +111,20 @@ void main() {
       pathHashSize: 1,
       lastSeen: DateTime.now(),
     );
-    final connector = _TraceConnector([located, guessed]);
+    // Its route ends at the guessed hop, so peer averaging has a position to
+    // offer; the tapped estimate must win.
+    final peer = Contact(
+      publicKey: Uint8List.fromList(List.filled(32, 0x33)),
+      name: 'Peer',
+      type: advTypeChat,
+      pathLength: 1,
+      path: Uint8List.fromList(const [0x22]),
+      pathHashSize: 1,
+      latitude: 10,
+      longitude: 10,
+      lastSeen: DateTime.now(),
+    );
+    final connector = _TraceConnector([located, guessed, peer]);
     await tester.pumpWidget(
       MultiProvider(
         providers: [
