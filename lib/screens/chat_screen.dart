@@ -130,6 +130,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
 
   // A reply whose original is not loaded yet, waiting for an older page.
   String? _pendingReplyId;
+  bool _olderPageInFlight = false;
   // The original a tapped quote jumped to, tinted for a moment: when it is
   // already on screen the list barely moves.
   String? _flashedMessageId;
@@ -272,6 +273,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         .watchConversation(widget.contact, limit: _watchLimit)
         .listen((messages) {
       if (!mounted) return;
+      _olderPageInFlight = false;
       if (_pendingReplyId != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _retryPendingReply();
@@ -612,6 +614,11 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   /// A quote whose original is not among the loaded posts: pages back until
   /// it is, and says so once the history runs out.
   void _findOlderReplyTarget(String replyId) {
+    // A page on its way: its arrival retries.
+    if (_olderPageInFlight) {
+      _pendingReplyId = replyId;
+      return;
+    }
     if (_messages.length < _watchLimit) {
       _pendingReplyId = null;
       showDismissibleSnackBar(
@@ -622,8 +629,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       return;
     }
     _pendingReplyId = replyId;
-    // A grown list at the bottom would otherwise snap back to the newest row.
-    _atBottom.value = false;
     _loadOlderMessages();
   }
 
@@ -631,7 +636,12 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     final replyId = _pendingReplyId;
     if (replyId == null) return;
     final connector = context.read<MeshCoreConnector>();
-    final reversed = _messages.reversed.toList();
+    // The list's own rows, or the index would be off by any hidden ones.
+    final reversed = _visibleMessages(
+      context.read<AppSettingsService>().isContactBlocked(
+            widget.contact.publicKeyHex,
+          ),
+    ).reversed.toList();
     final index = reversed.indexWhere((m) => m.messageId == replyId);
     final reply = index == -1 ? null : MessageFacts.of(reversed[index].text).reply;
     if (reply == null) {
@@ -788,6 +798,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   void _loadOlderMessages() {
     if (_messages.length < _watchLimit) return;
     _watchLimit += 200;
+    _olderPageInFlight = true;
     _subscribeMessages(context.read<MeshCoreConnector>());
   }
 
@@ -1188,6 +1199,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       _isRoom ? connector.contactsStamp : null,
       connector.selfName,
       _firstUnreadMessage,
+      _flashedMessageId,
       _shortLinkRevision,
       _clockTick,
       DateUtils.dateOnly(DateTime.now()),
@@ -1224,7 +1236,9 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     final grew = currentMessageCount > _previousMessageCount;
     // Auto-scroll if: the user is already at the bottom, OR they just sent
     // the newest message (so their own send always scrolls into view).
-    if (((_atBottom.value && (newRow || grew)) || justSent) &&
+    // A page loaded to find a quote's original is not a new row to follow.
+    if (_pendingReplyId == null &&
+        ((_atBottom.value && (newRow || grew)) || justSent) &&
         _itemScrollController.isAttached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_itemScrollController.isAttached) return;
@@ -1320,7 +1334,12 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 replyTargetIsSelf:
                     replyTarget != null && _isOwnPost(replyTarget, connector),
                 onReplyTap: replyTarget == null
-                    ? () => _findOlderReplyTarget(message.messageId)
+                    ? () {
+                        // Already looking: a page's arrival retries.
+                        if (_pendingReplyId == null) {
+                          _findOlderReplyTarget(message.messageId);
+                        }
+                      }
                     : () => _openReplyTarget(
                           replyTargetIndex,
                           replyTarget.messageId,
@@ -2133,6 +2152,21 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     _lastTextSendAt = now;
 
     final contact = _resolveContact(connector);
+    // Opened from a notification, after the radio overwrote this contact: the
+    // radio can only send to one it holds.
+    if (!connector.contacts.any(
+          (c) => c.publicKeyHex == contact.publicKeyHex,
+        ) &&
+        !await connector.importDiscoveredContact(contact)) {
+      if (mounted) {
+        showDismissibleSnackBar(
+          context,
+          content: Text(context.l10n.contacts_contactImportFailed),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
     final maxBytes = _isRoom ? maxRoomMessageBytes() : maxContactMessageBytes();
 
     bool fits(String candidate) {

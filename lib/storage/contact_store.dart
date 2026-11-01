@@ -75,9 +75,11 @@ class ContactStore {
       return;
     }
     final sw = Stopwatch()..start();
+    // The scope can change while this waits for the database.
+    final scope = publicKeyHex;
     await _db.transaction(() async {
       await (_db.delete(_db.contactRows)
-            ..where((r) => r.nodeScope.equals(publicKeyHex)))
+            ..where((r) => r.nodeScope.equals(scope)))
           .go();
       await _db.batch((b) {
         b.insertAll(
@@ -85,7 +87,7 @@ class ContactStore {
           [
             for (final contact in contacts)
               ContactRowsCompanion.insert(
-                nodeScope: publicKeyHex,
+                nodeScope: scope,
                 publicKeyHex: contact.publicKeyHex,
                 payload: jsonEncode(_toJson(contact)),
               ),

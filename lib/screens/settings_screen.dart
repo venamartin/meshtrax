@@ -2230,6 +2230,14 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
         ),
       );
       await widget.connector.sendFrame(buildSetRadioTxPowerFrame(txPower));
+      widget.connector.noteRadioSettingsSaved(
+        freqKhz: freqHz,
+        bwHz: bwHz,
+        sf: sf,
+        cr: cr,
+        txPower: txPower,
+        clientRepeat: knownRepeat ? _clientRepeat : null,
+      );
       unawaited(widget.connector.refreshRadioSettings());
       final rememberedSnapshot = _clientRepeat
           ? _lastNonRepeatSnapshot

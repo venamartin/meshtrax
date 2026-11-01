@@ -227,6 +227,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   List<({ChannelMessage message, int fromNewest})> _searchMatches = const [];
   int _searchPos = -1;
   String? _pendingJumpId;
+  // The grown list a jump waited for: not a new row to follow.
+  bool _jumpArriving = false;
 
   // The original a tapped quote jumped to, tinted for a moment: when it is
   // already on screen the list barely moves.
@@ -245,6 +247,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       if (pendingJump != null &&
           messages.any((m) => m.messageId == pendingJump)) {
         _pendingJumpId = null;
+        _jumpArriving = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _scrollToMessage(pendingJump);
         });
@@ -1028,8 +1031,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     final needed = ((fromNewest + 51) ~/ 200 + 1) * 200;
     if (needed > _watchLimit) _watchLimit = needed;
     _pendingJumpId = messageId;
-    // A grown list at the bottom would otherwise snap back to the newest row.
-    _atBottom.value = false;
     _subscribeMessages(context.read<MeshCoreConnector>());
   }
 
@@ -1329,9 +1330,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     MeshCoreConnector connector,
   ) {
     _catchUpClock();
-    final focusedMatchId = _searchActive && _searchPos >= 0
-        ? _searchMatches[_searchPos].message.messageId
-        : _flashedMessageId;
+    final focusedMatchId = _flashedMessageId ??
+        (_searchActive && _searchPos >= 0
+            ? _searchMatches[_searchPos].message.messageId
+            : null);
     final key = (
       messages,
       connector.selfName,
@@ -1372,7 +1374,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     final grew = currentMessageCount > _previousMessageCount;
     // Auto-scroll if: the user is already at the bottom, OR they just
     // sent the newest message.
-    if (((_atBottom.value && (newRow || grew)) || justSent) &&
+    final jumping = _pendingJumpId != null || _jumpArriving;
+    _jumpArriving = false;
+    if (!jumping &&
+        ((_atBottom.value && (newRow || grew)) || justSent) &&
         _itemScrollController.isAttached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_itemScrollController.isAttached) return;

@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // then lost for good, with no message and no notification.
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
+  bool failGetContacts = false;
   List<int> get commands => [for (final f in sent) f[0]];
 
   @override
@@ -26,6 +27,7 @@ class _Connector extends MeshCoreConnector {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
   }) async {
+    if (failGetContacts && data[0] == cmdGetContacts) throw Exception('down');
     sent.add(data);
   }
 }
@@ -120,6 +122,11 @@ void main() {
       () async {
     c.handleFrameForTest(_dm(_sender, 'hello'));
     expect(c.commands, contains(cmdGetContacts));
+    expect(
+      c.sent.lastWhere((f) => f[0] == cmdGetContacts).length,
+      1,
+      reason: 'with a since, a sender with an older lastmod would not come',
+    );
     expect(await stored(_sender), isEmpty);
 
     c.handleFrameForTest(_start);
@@ -127,20 +134,6 @@ void main() {
     c.handleFrameForTest(_end);
 
     expect((await stored(_sender)).single.text, 'hello');
-  });
-
-  test('is stored when the contact frame lands on its own', () async {
-    c.handleFrameForTest(_dm(_sender, 'hello'));
-    c.handleFrameForTest(_start);
-    c.handleFrameForTest(_end);
-    c.sent.clear();
-
-    c.handleFrameForTest(_dm(_sender, 'again'));
-    c.handleFrameForTest(_contact(_sender, 'Ann'));
-    // Loading: it waits for the end of the download.
-    c.handleFrameForTest(_end);
-
-    expect((await stored(_sender)).single.text, 'again');
   });
 
   test('during a download waits for its end and asks for nothing', () async {
@@ -207,6 +200,62 @@ void main() {
     expect(c.commands, isNot(contains(cmdGetContacts)));
   });
 
+  group('a sender the radio no longer holds', () {
+    Future<void> lostOnce() async {
+      c.handleFrameForTest(_dm(_sender, 'first'));
+      c.handleFrameForTest(_start);
+      c.handleFrameForTest(_end);
+      c.sent.clear();
+    }
+
+    test('costs one download, not one per queued message', () async {
+      await lostOnce();
+      c.handleFrameForTest(_dm(_sender, 'second'));
+      expect(c.commands, isNot(contains(cmdGetContacts)));
+    });
+
+    test('with no heard row is logged and gone', () async {
+      await lostOnce();
+      expect(await stored(_sender), isEmpty);
+    });
+
+    test('with a heard row is filed under it', () async {
+      c.handleFrameForTest(_contact(_sender, 'Ann'));
+      c.handleFrameForTest([pushCodeContactDeleted, ..._sender]);
+      expect(c.contacts, isEmpty);
+      c.sent.clear();
+
+      c.handleFrameForTest(_dm(_sender, 'first'));
+      c.handleFrameForTest(_start);
+      c.handleFrameForTest(_end);
+      c.handleFrameForTest(_dm(_sender, 'second'));
+
+      expect(
+        (await stored(_sender)).map((m) => m.text),
+        ['first', 'second'],
+      );
+    });
+
+    test('comes back if the radio saves it again', () async {
+      await lostOnce();
+      c.handleFrameForTest(_contact(_sender, 'Ann'));
+      c.handleFrameForTest(_dm(_sender, 'back'));
+      expect((await stored(_sender)).single.text, 'back');
+    });
+  });
+
+  test('a record still on its way keeps the message for it', () async {
+    await c.getContacts();
+    c.handleFrameForTest(_start);
+    c.handleFrameForTest([pushCodeAdvert, ..._sender]);
+    c.handleFrameForTest(_dm(_sender, 'hello'));
+    c.handleFrameForTest(_end);
+    expect(c.commands, contains(cmdGetContactByKey));
+
+    c.handleFrameForTest(_contact(_sender, 'Ann'));
+    expect((await stored(_sender)).single.text, 'hello');
+  });
+
   test('holds only so many', () async {
     await c.getContacts();
     c.handleFrameForTest(_start);
@@ -240,6 +289,13 @@ void main() {
       c.handleFrameForTest(_contact(_other, 'Bob'));
       c.handleFrameForTest(_dm(_other, 'hi'));
       expect(c.commands, [cmdSyncNextMessage]);
+    });
+
+    test('a failed fetch restarts it', () async {
+      c.failGetContacts = true;
+      c.handleFrameForTest(_dm(_sender, 'hello'));
+      await pumpEventQueue(times: 50);
+      expect(c.commands, contains(cmdSyncNextMessage));
     });
 
     test('an unknown sender pauses it until the list is in', () async {

@@ -37,7 +37,7 @@ class Contact {
   // The lastmod in the frame this came from, unfolded. Not stored.
   final int? radioLastmodSecs;
   // The lastmod this app last caused on the radio, by a write or by the radio
-  // accepting a shared copy. A frame carrying exactly this says nothing about
+  // accepting a shared copy. A frame carrying this or older says nothing about
   // when the contact was last heard.
   final int? appLastmodSecs;
   final Uint8List? rawPacket;

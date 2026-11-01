@@ -453,6 +453,7 @@ void main() {
         _record(advertSecs: node, lastmod: _secondsAgo(Duration.zero)),
       );
       expect(saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000, node);
+      expect(saved()!.lastMessageAt.millisecondsSinceEpoch ~/ 1000, node);
     });
 
     test('saved during a download is fetched when it ends', () async {
@@ -466,6 +467,13 @@ void main() {
       expect(asked(), isTrue);
     });
 
+    test('a saved node adding a row later is announced once by its row', () {
+      c.handleFrameForTest(heard());
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      c.handleFrameForTest(_record());
+      expect(listed().length, 1);
+    });
+
     test('saved during a download and streamed anyway is not fetched', () async {
       c.handleFrameForTest(heard());
       await c.getContacts();
@@ -475,6 +483,72 @@ void main() {
       c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
       expect(asked(), isFalse);
     });
+  });
+
+  group('during a full download', () {
+    Future<void> downloading() async {
+      autoAdd();
+      await fullDownload(_record());
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.sent.clear();
+    }
+
+    test('one overwritten and added back stays listed', () async {
+      await downloading();
+      c.handleFrameForTest([pushCodeContactDeleted, ..._key]);
+      expect(saved(), isNull);
+
+      final added = c.importDiscoveredContact(row()!);
+      await pumpEventQueue();
+      c.handleFrameForTest([respCodeOk]);
+      expect(await added, isTrue);
+
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(saved(), isNotNull);
+    });
+
+    test('one still on trial that the radio just re-saved is fetched', () async {
+      await downloading();
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      expect(c.sent, isEmpty);
+
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+
+      expect(c.sent.map((f) => f[0]), contains(cmdGetContactByKey));
+      expect(saved(), isNotNull, reason: 'its record is on the way');
+    });
+
+    test('the trial starts with the stream, not the request', () async {
+      autoAdd();
+      await fullDownload(_record());
+      await c.getContacts();
+      // A cache landing between the two is what the radio then checks.
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(saved(), isNull);
+    });
+  });
+
+  test('a stored row of a saved contact does not list it twice on connect',
+      () async {
+    c.handleFrameForTest(_selfInfo());
+    await pumpEventQueue(times: 200);
+    c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+    c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+    await savedWithFrozenRow();
+    await pumpEventQueue(times: 200);
+
+    final next = _Connector();
+    next.handleFrameForTest(_selfInfo());
+    await pumpEventQueue(times: 400);
+
+    expect(next.isLoadingContacts, isTrue);
+    expect(next.allContacts.where((x) => x.publicKeyHex == _hex), hasLength(1));
+    expect(
+      next.discoveredContacts.where((x) => x.publicKeyHex == _hex).single.isActive,
+      isTrue,
+    );
   });
 
   group('the lastmod on a contact', () {
@@ -510,6 +584,37 @@ void main() {
       expect(saved()!.appLastmodSecs, sentLastmod());
     });
 
+    test('a restart still knows the write was not a hearing', () async {
+      c.handleFrameForTest(_selfInfo());
+      await pumpEventQueue(times: 200);
+      c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+      c.handleFrameForTest(_record(lastmod: heardAt));
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await pumpEventQueue(times: 200);
+      final stamp = sentLastmod();
+
+      await c.loadContactCache();
+      expect(saved()!.appLastmodSecs, stamp);
+    });
+
+    test('the write does not move the time last heard from either', () async {
+      final before = saved()!.lastMessageAt;
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+
+      await fullDownload(_record(lastmod: sentLastmod()));
+
+      expect(saved()!.lastMessageAt, before);
+    });
+
+    test('a frame sent before the write is not a hearing either', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+
+      c.handleFrameForTest(_record(lastmod: sentLastmod() - 3600));
+
+      expect(seen(), heardAt);
+    });
+
     test('a later lastmod is the radio hearing it', () async {
       await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
       final later = sentLastmod() + 60;
@@ -542,8 +647,10 @@ void main() {
 
       test('it does not look just heard, then or at the next sync', () async {
         radioTakesShare();
+        final before = saved()!.lastMessageAt;
         c.handleFrameForTest(_record(advertSecs: advert, lastmod: radioNow));
         expect(seen(), heardAt);
+        expect(saved()!.lastMessageAt, before);
         expect(saved()!.lastAdvertSecs, advert);
 
         await fullDownload(_record(advertSecs: advert, lastmod: radioNow));

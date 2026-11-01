@@ -34,6 +34,7 @@ class _Radio extends MeshCoreConnector {
   final dms = StreamController<List<Message>>.broadcast();
   final limits = <int>[];
   ({ChannelMessage message, int fromNewest})? target;
+  List<({ChannelMessage message, int fromNewest})> searchHits = const [];
   List<Message> room = const [];
   List<ChannelMessage> channelRows = const [];
 
@@ -47,7 +48,10 @@ class _Radio extends MeshCoreConnector {
   }) {
     limits.add(limit);
     if (limits.length > 1) {
-      return Stream.value(channelRows);
+      // Comes from the database's isolate, after the next frame.
+      return Stream.fromFuture(
+        Future.delayed(const Duration(milliseconds: 50), () => channelRows),
+      );
     }
     return posts.stream;
   }
@@ -56,8 +60,19 @@ class _Radio extends MeshCoreConnector {
   Stream<List<Message>> watchConversation(Contact contact, {int limit = 200}) {
     limits.add(limit);
     final start = room.length > limit ? room.length - limit : 0;
-    return Stream.value(room.sublist(start));
+    final rows = room.sublist(start);
+    if (limits.length == 1) return Stream.value(rows);
+    return Stream.fromFuture(
+      Future.delayed(const Duration(milliseconds: 50), () => rows),
+    );
   }
+
+  @override
+  Future<List<({ChannelMessage message, int fromNewest})>> searchChannelMessages(
+    Channel channel,
+    String query,
+  ) async =>
+      searchHits;
 
   @override
   Future<({ChannelMessage message, int fromNewest})?> findChannelReplyTarget(
@@ -175,6 +190,16 @@ void main() {
         ),
       );
 
+  // The room's tint wraps a whole row, so it is found from the widget itself.
+  Finder roomTint() => find.byWidgetPredicate(
+        (w) =>
+            w is Container &&
+            w.decoration is BoxDecoration &&
+            (w.decoration as BoxDecoration).borderRadius ==
+                BorderRadius.circular(12) &&
+            ((w.decoration as BoxDecoration).color?.a ?? 0) == 0.12,
+      );
+
   group('a channel quote', () {
     testWidgets('jumps to a linked original far up the list and tints it',
         (tester) async {
@@ -222,13 +247,12 @@ void main() {
     testWidgets('takes a tap in its gap and in its empty width', (tester) async {
       await openChannel(tester, [
         _post(0, text: 'a long reply that runs wider than the quote above it'),
-        _post(1, quotedSender: 'Bob', quoted: 'x'),
+        _post(1, quotedSender: 'B', quoted: 'x'),
       ]);
-      final header = tester.getRect(find.text('Reply to Bob'));
-      final box = tester.getSize(
+      final box = tester.getRect(
         find
             .ancestor(
-              of: find.text('Reply to Bob'),
+              of: find.text('Reply to B'),
               matching: find.byType(Container),
             )
             .first,
@@ -236,8 +260,8 @@ void main() {
       expect(box.width, greaterThanOrEqualTo(160));
 
       for (final spot in [
-        Offset(header.left + 150, header.center.dy),
-        Offset(header.left, header.bottom + 30),
+        Offset(box.right - 2, box.center.dy),
+        Offset(box.left + 4, box.bottom + 4),
       ]) {
         await tester.tapAt(spot);
         await tapLands(tester);
@@ -248,6 +272,37 @@ void main() {
         ).clearSnackBars();
         await tester.pumpAndSettle();
       }
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('tints the original even with a search match showing',
+        (tester) async {
+      final posts = [
+        for (var i = 0; i < 3; i++) _post(i),
+        _post(3, replyTo: 'p0', quotedSender: 'Ann', quoted: 'post 0'),
+      ];
+      final radio = await openChannel(tester, posts);
+      radio.target = (message: posts.first, fromNewest: 3);
+      radio.searchHits = [(message: posts[1], fromNewest: 2)];
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pump();
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(TextField),
+        ),
+        'post 1',
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(tint('post 1'), findsWidgets);
+
+      await tester.tap(find.text('Reply to Ann'));
+      await tapLands(tester);
+      await tester.pumpAndSettle();
+
+      expect(tint('post 1'), findsNothing);
+      await tester.pump(const Duration(seconds: 3));
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -327,6 +382,71 @@ void main() {
       expect(radio.limits, [200, 400]);
       expect(notFound, findsNothing);
       expect(find.text('room post 1'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('pages back more than once without snapping to the newest',
+        (tester) async {
+      final posts = [
+        _roomPost(0, text: 'way back when'),
+        for (var i = 1; i <= 450; i++) _roomPost(i),
+        _roomPost(451, text: '@[$authorHex]\n>way back w..\nmy answer'),
+      ];
+      final radio = await openRoom(tester, posts);
+
+      await tester.tap(find.text('Reply to $authorHex'));
+      await tapLands(tester);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+
+      expect(radio.limits, [200, 400, 600]);
+      expect(find.text('room post 1'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a second tap while a page loads does not call it missing',
+        (tester) async {
+      final posts = [
+        _roomPost(0, text: 'way back when'),
+        for (var i = 1; i <= 200; i++) _roomPost(i),
+        _roomPost(201, text: '@[$authorHex]\n>way back w..\nmy answer'),
+      ];
+      await openRoom(tester, posts);
+      final quote = tester.getCenter(find.text('Reply to $authorHex'));
+
+      await tester.tapAt(quote);
+      // The tap lands, and its page takes 50 ms. Tap again before that.
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.tapAt(quote);
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(notFound, findsNothing);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(notFound, findsNothing);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('tints an original that is already on screen, then fades',
+        (tester) async {
+      await openRoom(tester, [
+        _roomPost(0, text: 'way back when'),
+        _roomPost(1, text: '@[$authorHex]\n>way back w..\nmy answer'),
+      ]);
+      expect(roomTint(), findsNothing);
+
+      await tester.tap(find.text('Reply to $authorHex'));
+      await tapLands(tester);
+      await tester.pumpAndSettle();
+      expect(roomTint(), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(roomTint(), findsNothing);
       await tester.pumpWidget(const SizedBox());
     });
   });
@@ -366,7 +486,7 @@ void main() {
     test('no link matches sender and snippet, nearest before the reply', () async {
       await put(_post(0, text: 'hello world, the older one'));
       await put(_post(1, text: 'Hello  World, the right one'));
-      await put(_post(2, sender: 'Bob', text: 'hello world, wrong sender'));
+      await put(_post(2, sender: 'Bob', text: 'hello world Ann, wrong sender'));
       final reply = _post(3, sender: 'Cy', quotedSender: 'Ann', quoted: 'hello worl');
       await put(reply);
       await put(_post(4, text: 'hello world, after the reply'));

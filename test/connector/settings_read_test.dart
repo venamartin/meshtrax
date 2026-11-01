@@ -303,6 +303,24 @@ void main() {
       expect(radio.selfPositionIsLive, isFalse);
     });
 
+    test('saved radio values show before the read answers', () async {
+      final radio = await syncedRadio();
+
+      radio.noteRadioSettingsSaved(
+        freqKhz: 920000,
+        bwHz: 250000,
+        sf: 9,
+        cr: 6,
+        txPower: 15,
+      );
+      await radio.setPathHashMode(1);
+
+      expect(radio.currentFreqHz, 920000);
+      expect(radio.currentSf, 9);
+      expect(radio.currentTxPower, 15);
+      expect(radio.pathHashByteWidth, 2);
+    });
+
     test('a saved name and position show before the read answers', () async {
       final radio = await syncedRadio();
 

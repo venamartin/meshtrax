@@ -134,6 +134,7 @@ void main() {
 
     expect(c.contacts, isEmpty);
     expect(c.discoveredContacts.single.isActive, isFalse);
+    expect(c.sent, isNot(contains(cmdGetContactByKey)));
   });
 
   test('an advert heard during the scan is not an answer', () async {

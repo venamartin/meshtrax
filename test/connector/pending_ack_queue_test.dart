@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,11 +8,12 @@ import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Replies come in order, so each OK pops the oldest entry. A share that got no
-// reply left its entry behind, and the next channel send's OK was used up by
-// it: that message sat on the clock for 30 s, then went on the air again.
+// Replies come in order, so each OK or ERR pops the oldest entry. A share that
+// got no reply left its entry behind, and the next channel send's OK was used
+// up by it: that message sat on the clock for 30 s, then went on the air again.
 class _Connector extends MeshCoreConnector {
   bool writeFails = false;
+  Completer<void>? gate;
   final written = <int>[];
 
   @override
@@ -19,6 +21,8 @@ class _Connector extends MeshCoreConnector {
 
   @override
   Future<void> writeToTransport(Uint8List data) async {
+    final hold = gate;
+    if (hold != null) await hold.future;
     if (writeFails) throw Exception('link down');
     written.add(data[0]);
   }
@@ -26,92 +30,103 @@ class _Connector extends MeshCoreConnector {
 
 final _key = Uint8List.fromList(List.generate(32, (i) => 0x20 + i));
 final _ok = [respCodeOk];
+final _err = [respCodeErr, 1];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _Connector c;
+  final window = MeshCoreConnector.givenUpAckWindow;
+
+  Future<void> channelSend(String id) => c.sendFrame(
+        Uint8List.fromList([cmdSendChannelTxtMsg]),
+        channelSendQueueId: id,
+        expectsGenericAck: true,
+      );
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();
+    MeshCoreConnector.givenUpAckWindow = window;
     c = _Connector();
   });
+
+  tearDown(() => MeshCoreConnector.givenUpAckWindow = window);
 
   test('a write that throws leaves no entry', () async {
     c.writeFails = true;
     expect(await c.shareContactZeroHop(_key), isFalse);
-    expect(c.pendingGenericAckCountForTest, 0);
+    expect(c.pendingGenericAckIdsForTest, isEmpty);
   });
 
   test('sendFrame still reports the failed write', () async {
     c.writeFails = true;
-    await expectLater(
-      c.sendFrame(Uint8List.fromList([cmdShareContact]), expectsGenericAck: true),
-      throwsException,
-    );
-    expect(c.pendingGenericAckCountForTest, 0);
+    await expectLater(channelSend('a'), throwsException);
+    expect(c.pendingGenericAckIdsForTest, isEmpty);
   });
 
-  test('a share with no reply leaves no entry', () async {
-    expect(await c.shareContactZeroHop(_key), isFalse);
-    expect(c.written, [cmdShareContact]);
-    expect(c.pendingGenericAckCountForTest, 0);
+  test('a failed write takes its own entry, not a later one', () async {
+    c.gate = Completer<void>();
+    final first = channelSend('a');
+    final second = channelSend('b');
+    c.writeFails = true;
+    c.gate!.complete();
+    await expectLater(first, throwsException);
+    await expectLater(second, throwsException);
+    expect(c.pendingGenericAckIdsForTest, isEmpty);
+
+    c.writeFails = false;
+    c.gate = Completer<void>();
+    final kept = channelSend('kept');
+    final failing = channelSend('failing');
+    c.gate!.complete();
+    await kept;
+    await failing;
+    expect(c.pendingGenericAckIdsForTest, ['kept', 'failing']);
   });
 
-  test('the next command keeps its own OK after a share with no reply',
-      () async {
-    await c.shareContactZeroHop(_key);
+  group('a share with no reply yet', () {
+    setUp(() async {
+      expect(await c.shareContactZeroHop(_key), isFalse);
+      expect(c.written, [cmdShareContact]);
+      await channelSend('msg');
+    });
 
-    await c.sendFrame(
-      Uint8List.fromList([cmdSendChannelTxtMsg]),
-      expectsGenericAck: true,
-    );
-    expect(c.pendingGenericAckCountForTest, 1);
-    c.handleFrameForTest(_ok);
-    expect(c.pendingGenericAckCountForTest, 0);
-  });
+    test('a late OK is its own, and the send keeps its OK', () {
+      c.handleFrameForTest(_ok);
+      expect(c.pendingGenericAckIdsForTest, ['msg']);
+      c.handleFrameForTest(_ok);
+      expect(c.pendingGenericAckIdsForTest, isEmpty);
+    });
 
-  test('a late OK then the real one take one entry, and nothing breaks',
-      () async {
-    await c.shareContactZeroHop(_key);
-    await c.sendFrame(
-      Uint8List.fromList([cmdSendChannelTxtMsg]),
-      expectsGenericAck: true,
-    );
+    test('a late ERR is its own and fails nothing else', () {
+      c.handleFrameForTest(_err);
+      expect(c.pendingGenericAckIdsForTest, ['msg']);
+    });
 
-    c.handleFrameForTest(_ok); // the share's, arriving late
-    expect(c.pendingGenericAckCountForTest, 0);
-    c.handleFrameForTest(_ok); // the send's own
-    expect(c.pendingGenericAckCountForTest, 0);
+    test('once given up for good, the send keeps its own OK', () {
+      MeshCoreConnector.givenUpAckWindow = Duration.zero;
+      c.handleFrameForTest(_ok);
+      expect(c.pendingGenericAckIdsForTest, isEmpty);
+    });
   });
 
   test('a reply in time pops the entry as before', () async {
     final share = c.shareContactZeroHop(_key);
     await pumpEventQueue();
-    expect(c.pendingGenericAckCountForTest, 1);
+    expect(c.pendingGenericAckIdsForTest, hasLength(1));
     c.handleFrameForTest(_ok);
     expect(await share, isTrue);
-    expect(c.pendingGenericAckCountForTest, 0);
+    expect(c.pendingGenericAckIdsForTest, isEmpty);
   });
 
-  test('a failed write takes its own entry, not an earlier one', () async {
-    await c.sendFrame(
-      Uint8List.fromList([cmdSendChannelTxtMsg]),
-      channelSendQueueId: 'a',
-      expectsGenericAck: true,
-    );
-    c.writeFails = true;
-    await expectLater(
-      c.sendFrame(
-        Uint8List.fromList([cmdSendChannelTxtMsg]),
-        channelSendQueueId: 'b',
-        expectsGenericAck: true,
-      ),
-      throwsException,
-    );
-    expect(c.pendingGenericAckCountForTest, 1);
+  test('an entry nobody gave up on is never dropped as lost', () async {
+    MeshCoreConnector.givenUpAckWindow = Duration.zero;
+    await channelSend('a');
+    await channelSend('b');
+    c.handleFrameForTest(_ok);
+    expect(c.pendingGenericAckIdsForTest, ['b']);
   });
 }

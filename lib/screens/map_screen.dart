@@ -1187,10 +1187,18 @@ class _MapScreenState extends State<MapScreen> {
           if (contact.type ==
               advTypeChat) // Only show chat button for chat nodes
             TextButton(
-              onPressed: () {
-                if (!contact.isActive) {
-                  connector.importDiscoveredContact(contact);
+              onPressed: () async {
+                if (!contact.isActive &&
+                    !await connector.importDiscoveredContact(contact)) {
+                  if (context.mounted) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text(context.l10n.contacts_contactImportFailed),
+                    );
+                  }
+                  return;
                 }
+                if (!dialogContext.mounted || !context.mounted) return;
                 Navigator.pop(dialogContext);
                 Navigator.push(
                   context,
@@ -1211,10 +1219,18 @@ class _MapScreenState extends State<MapScreen> {
             ),
           if (contact.type == advTypeRoom)
             TextButton(
-              onPressed: () {
-                if (!contact.isActive) {
-                  connector.importDiscoveredContact(contact);
+              onPressed: () async {
+                if (!contact.isActive &&
+                    !await connector.importDiscoveredContact(contact)) {
+                  if (context.mounted) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text(context.l10n.contacts_contactImportFailed),
+                    );
+                  }
+                  return;
                 }
+                if (!dialogContext.mounted || !context.mounted) return;
                 Navigator.pop(dialogContext);
                 _showRoomLogin(context, contact);
               },
