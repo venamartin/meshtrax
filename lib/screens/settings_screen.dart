@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -846,7 +847,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await connector.setNodeName(controller.text);
-              await connector.refreshDeviceInfo();
+              unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;
               showDismissibleSnackBar(
                 context,
@@ -973,7 +974,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
 
                 await connector.setNodeLocation(lat: lat, lon: lon);
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
@@ -1082,7 +1083,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(context);
                 await connector.setPathHashMode(currentMode);
                 await Future.delayed(const Duration(milliseconds: 200));
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
@@ -1843,7 +1844,7 @@ void showPrivacySettings(BuildContext context, MeshCoreConnector connector) {
                 advertLocPolicy ? 1 : 0,
                 connector.multiAcks,
               );
-              await connector.refreshDeviceInfo();
+              unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;
               showDismissibleSnackBar(
                 context,
@@ -2229,7 +2230,7 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
         ),
       );
       await widget.connector.sendFrame(buildSetRadioTxPowerFrame(txPower));
-      await widget.connector.refreshDeviceInfo();
+      unawaited(widget.connector.refreshRadioSettings());
       final rememberedSnapshot = _clientRepeat
           ? _lastNonRepeatSnapshot
           : _currentSnapshot();

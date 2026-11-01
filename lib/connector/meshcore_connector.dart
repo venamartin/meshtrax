@@ -4153,6 +4153,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return answered;
   }
 
+  /// After a settings save, shows what the radio now holds. Not awaited by
+  /// the screens: it waits for a running sync, up to a minute and a half.
+  Future<void> refreshRadioSettings() async {
+    if (!await readRadioSettings()) return;
+    await _askRadio(buildGetCustomVarsFrame(), respCodeCustomVars);
+  }
+
   Future<void> refreshDeviceInfo() async {
     if (!isConnected) return;
     if (PlatformInfo.isWeb &&
@@ -5547,6 +5554,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> setNodeName(String name) async {
     if (!isConnected) return;
     await sendFrame(buildSetAdvertNameFrame(name));
+    _selfName = name;
+    notifyListeners();
   }
 
   Future<void> setNodeLocation({
@@ -5555,6 +5564,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) async {
     if (!isConnected) return;
     await sendFrame(buildSetAdvertLatLonFrame(lat, lon));
+    _selfLatitude = lat;
+    _selfLongitude = lon;
+    _selfPositionLive = false;
+    notifyListeners();
   }
 
   /// Asks a radio with its GPS on for its position, answered in

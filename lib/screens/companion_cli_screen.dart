@@ -106,7 +106,7 @@ class _CompanionCliScreenState extends State<CompanionCliScreen> {
       // radio sends no push for it.
       if (command.startsWith('set ') &&
           (kind == CliReplyKind.ok || kind == CliReplyKind.value)) {
-        unawaited(connector.refreshDeviceInfo());
+        unawaited(connector.refreshRadioSettings());
       }
       return reply;
     } on TimeoutException {

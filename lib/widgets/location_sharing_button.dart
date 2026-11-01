@@ -222,6 +222,6 @@ class _LocationSharingDialog extends StatelessWidget {
       advert ?? connector.advertLocationPolicy,
       connector.multiAcks,
     );
-    await connector.refreshDeviceInfo();
+    unawaited(connector.refreshRadioSettings());
   }
 }

@@ -1384,7 +1384,7 @@ class _MapScreenState extends State<MapScreen> {
                   lat: position.latitude,
                   lon: position.longitude,
                 );
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!mounted) return;
                 showDismissibleSnackBar(
                   messenger.context,

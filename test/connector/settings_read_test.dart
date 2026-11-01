@@ -263,6 +263,57 @@ void main() {
     });
   });
 
+  group('after a settings save', () {
+    test('reads the settings and custom vars, and downloads nothing', () async {
+      final radio = await syncedRadio();
+      radio.answers[cmdGetCustomVar] = [respCodeCustomVars];
+
+      await radio.refreshRadioSettings();
+      await _settle();
+
+      expect(radio.commands, contains(cmdAppStart));
+      expect(radio.commands, contains(cmdGetCustomVar));
+      expect(radio.commands, isNot(contains(cmdGetContacts)));
+      expect(radio.isLoadingContacts, isFalse);
+      expect(radio.contacts, hasLength(1));
+    });
+
+    test('waits for a running download rather than stopping it', () async {
+      final radio = radioStillDownloading();
+      await _settle();
+      radio.handleFrameForTest(_contactsStart(1));
+      radio.sent.clear();
+
+      unawaited(radio.refreshRadioSettings());
+      await _settle();
+
+      expect(radio.commands, isNot(contains(cmdAppStart)));
+      expect(radio.isLoadingContacts, isTrue);
+      radio.handleFrameForTest(_endOfContacts());
+    });
+
+    test('a saved position is no longer the live one', () async {
+      final radio = await syncedRadio();
+      radio.markSelfPositionLiveForTest();
+
+      await radio.setNodeLocation(lat: 40, lon: 2);
+      await radio.refreshRadioSettings();
+      await _settle();
+
+      expect(radio.selfPositionIsLive, isFalse);
+    });
+
+    test('a saved name and position show before the read answers', () async {
+      final radio = await syncedRadio();
+
+      await radio.setNodeName('New');
+      await radio.setNodeLocation(lat: 40, lon: 2);
+
+      expect(radio.selfName, 'New');
+      expect(radio.selfLatitude, 40);
+    });
+  });
+
   group('a contact stream the radio stopped', () {
     test('a SELF_INFO after CONTACTS_START asks for the list again', () async {
       final radio = radioStillDownloading();
