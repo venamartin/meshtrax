@@ -723,6 +723,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Route overrides of the list a full download is replacing, by key; each
   // is put back on its contact as the radio's frame for it arrives.
   Map<String, Contact> _overridesAcrossRefresh = {};
+  // The list a full download is replacing, by key: the radio's frames carry
+  // no inbound advert path, and can carry no coordinates.
+  Map<String, Contact> _contactsAcrossRefresh = {};
+  // The last advert heard, if a neighbour shared it. The radio logs a packet
+  // and then handles it, so what it pushes next is about this same copy.
+  ({String key, int secs})? _lastSharedAdvert;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -3704,6 +3710,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _deviceId = null;
     _contacts.clear();
     _overridesAcrossRefresh = {};
+    _contactsAcrossRefresh = {};
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
@@ -4087,18 +4094,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
+  /// Fills in a contact frame from the radio. The frame's own coordinates win:
+  /// a saved contact's discovered row stops updating, so it can be far out of
+  /// date. Frames carry no inbound path, so that comes from the live list, or
+  /// from the row when the live copy has none.
   Contact getFromDiscovered(Contact contact) {
-    final tmp = _discoveredContacts.firstWhere(
-      (c) => c.publicKeyHex == contact.publicKeyHex,
+    final key = contact.publicKeyHex;
+    final row = _discoveredContacts.firstWhere(
+      (c) => c.publicKeyHex == key,
       orElse: () => contact,
     );
+    final live = _contacts.where((c) => c.publicKeyHex == key).firstOrNull ??
+        _contactsAcrossRefresh[key];
+    final inbound = live?.inboundHopCount != null ? live! : row;
     return contact.copyWith(
-      rawPacket: tmp.rawPacket,
-      latitude: tmp.latitude,
-      longitude: tmp.longitude,
-      inboundPath: tmp.inboundPath,
-      inboundHopCount: tmp.inboundHopCount,
-      inboundPathHashSize: tmp.inboundPathHashSize,
+      rawPacket: row.rawPacket,
+      latitude: contact.latitude ?? live?.latitude ?? row.latitude,
+      longitude: contact.longitude ?? live?.longitude ?? row.longitude,
+      inboundPath: inbound.inboundPath,
+      inboundHopCount: inbound.inboundHopCount,
+      inboundPathHashSize: inbound.inboundPathHashSize,
     );
   }
 
@@ -4142,6 +4157,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         for (final c in _contacts)
           if (c.pathOverride != null) c.publicKeyHex: c,
       };
+      _contactsAcrossRefresh = {
+        for (final c in _contacts) c.publicKeyHex: c,
+      };
       replaced = List.of(_contacts);
       _contacts.clear();
       notifyListeners();
@@ -4160,6 +4178,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           ..clear()
           ..addAll(replaced);
         _overridesAcrossRefresh = {};
+        _contactsAcrossRefresh = {};
       }
       _isLoadingContacts = false;
       _preserveContactsOnRefresh = false;
@@ -4945,6 +4964,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+    _contactsAcrossRefresh.remove(contact.publicKeyHex);
     _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _localDiscoveredTimes.remove(contact.publicKeyHex);
     _knownContactKeys.remove(contact.publicKeyHex);
@@ -4967,6 +4987,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoveredContacts.removeWhere(
         (c) => toRemove.any((r) => r.publicKeyHex == c.publicKeyHex));
     for (final contact in toRemove) {
+      _contactsAcrossRefresh.remove(contact.publicKeyHex);
       _localDiscoveredTimes.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
@@ -5061,7 +5082,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: contact.name,
         lat: contact.latitude,
         lon: contact.longitude,
-        lastModified: contact.lastSeen,
+        // Added now, however long ago it was heard: the radio keeps this as
+        // lastmod, and a full table evicts the oldest.
+        lastModified: DateTime.now(),
         lastAdvertEpochSeconds:
             lastAdvertEpochSeconds ?? contact.lastAdvertSecs ?? 0,
       ),
@@ -6097,7 +6120,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // it in the contact list within a moment of the advert.
         final pubKey = frame.sublist(1, 33);
         final pubKeyHex = pubKeyToHex(pubKey);
-        _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        if (_lastSharedAdvert?.key != pubKeyHex) {
+          _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        }
         final known =
             _contacts.any((c) => c.publicKeyHex == pubKeyHex) ||
             _discoveredContacts.any((c) => c.publicKeyHex == pubKeyHex);
@@ -6123,6 +6148,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         debugPrint('Got END_OF_CONTACTS');
         // Whatever the radio did not re-send no longer exists there.
         _overridesAcrossRefresh = {};
+        _contactsAcrossRefresh = {};
         final syncElapsedMs = _contactSyncStopwatch?.elapsedMilliseconds;
         _contactSyncStopwatch = null;
         final syncSince = _contactSyncSince;
@@ -6339,7 +6365,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // [45] = advert_loc_policy
     // [46] = telemetry modes
     // [47] = manual_add_contacts
-    // [48-51] = freq (uint32 LE, in Hz)
+    // [48-51] = freq (uint32 LE, in kHz)
     // [52-55] = bw (uint32 LE, in Hz)
     // [56] = sf
     // [57] = cr
@@ -6732,9 +6758,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         removeContact(contactTmp);
         return;
       }
+      // The shared copy, as the radio passes it on with its clock as lastmod.
+      if (!isContact &&
+          _lastSharedAdvert?.key == contactTmp.publicKeyHex &&
+          _lastSharedAdvert?.secs == contactTmp.lastAdvertSecs) {
+        return;
+      }
       final contact = getFromDiscovered(contactTmp);
       if (!isContact) {
-        _handleDiscovery(contact, frame, noNotify: true, addActive: true);
+        // Active means saved: allContacts leaves an active row out.
+        _handleDiscovery(
+          contact,
+          frame,
+          noNotify: true,
+          addActive:
+              _contacts.any((c) => c.publicKeyHex == contact.publicKeyHex) ||
+              _autoAdds(contact.type),
+        );
       }
 
       if (contact.type == advTypeRepeater) {
@@ -6764,17 +6804,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device DB rows can be legitimately old, so skew is only assessed
           // on live adverts; carry the last assessment through syncs.
           clockCorrected: existing.clockCorrected,
-          // Device frames carry no inbound advert path.
-          inboundPath: existing.inboundPath,
-          inboundHopCount: existing.inboundHopCount,
-          inboundPathHashSize: existing.inboundPathHashSize,
         ));
       } else {
-        if ((_autoAddUsers && contact.type == advTypeChat) ||
-            (_autoAddRepeaters && contact.type == advTypeRepeater) ||
-            (_autoAddRoomServers && contact.type == advTypeRoom) ||
-            (_autoAddSensors && contact.type == advTypeSensor) ||
-            isContact) {
+        if (_autoAdds(contact.type) || isContact) {
           _contacts.add(_restoreKeptOverride(contact));
           appLogger.info(
             'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
@@ -6810,6 +6842,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     }
   }
+
+  bool _autoAdds(int type) =>
+      (_autoAddUsers && type == advTypeChat) ||
+      (_autoAddRepeaters && type == advTypeRepeater) ||
+      (_autoAddRoomServers && type == advTypeRoom) ||
+      (_autoAddSensors && type == advTypeSensor);
 
   void _handleContactAdvert(Contact contact) {
     if (listEquals(contact.publicKey, _selfPublicKey)) {
@@ -10212,6 +10250,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactFullResyncPending = false;
     _fullContactSyncAfterStream = false;
     _overridesAcrossRefresh = {};
+    _contactsAcrossRefresh = {};
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -11083,11 +11122,26 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contactKeyHex);
 
+    // A neighbour passing on a stored advert (firmware shareContactZeroHop:
+    // zero hop with transport codes). The copy can be old, and it says nothing
+    // about how the contact reaches us or when it last spoke, so it only
+    // introduces a contact we have never heard of.
+    final shared = routeType == _routeTransportDirect && path.isEmpty;
+    _lastSharedAdvert = shared ? (key: contactKeyHex, secs: timestamp) : null;
+    if (shared &&
+        (!isNewContact ||
+            _discoveredContacts.any((c) => c.publicKeyHex == contactKeyHex))) {
+      return;
+    }
+
     final hopCount = PathHelper.pathLenHops(pathLenRaw);
     final hashSize = PathHelper.pathLenWidth(pathLenRaw);
-    final advertTime = _parseAdvertTimestamp(timestamp);
+    final claimedTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    final advertTime = shared && claimedTime.isBefore(DateTime.now())
+        ? (time: claimedTime, corrected: false)
+        : _parseAdvertTimestamp(timestamp);
 
-    if (!_isLoadingContacts) {
+    if (!_isLoadingContacts && !shared) {
       _localDiscoveredTimes[contactKeyHex] = DateTime.now();
     }
 
@@ -11101,17 +11155,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathHashSize: hashSize,
         path: Uint8List(0),
         inboundPath: path,
-        inboundHopCount: hopCount,
-        inboundPathHashSize: hashSize,
+        inboundHopCount: shared ? null : hopCount,
+        inboundPathHashSize: shared ? null : hashSize,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
       );
-      if ((_autoAddUsers && type == advTypeChat) ||
-          (_autoAddRepeaters && type == advTypeRepeater) ||
-          (_autoAddRoomServers && type == advTypeRoom) ||
-          (_autoAddSensors && type == advTypeSensor)) {
+      if (_autoAdds(type)) {
         _handleContactAdvert(newContact);
         _handleDiscovery(
           newContact,
@@ -11122,7 +11173,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       } else {
         _handleDiscovery(newContact, rawPacket);
       }
-      _updateDirectRepeater(newContact, snr, path, pathLenRaw);
+      if (shared) {
+        notifyListeners();
+      } else {
+        _updateDirectRepeater(newContact, snr, path, pathLenRaw);
+      }
       return;
     }
 
@@ -11381,6 +11436,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       await sendFrame(buildRemoveContactFrame(contact.publicKey));
       await Future.delayed(const Duration(milliseconds: 50));
       _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
+      _contactsAcrossRefresh.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
 
