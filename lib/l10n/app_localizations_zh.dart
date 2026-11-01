@@ -355,6 +355,84 @@ class AppLocalizationsZh extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => '健康检查';
+
+  @override
+  String get healthCheck_subtitle => '检查应用和电台设置';
+
+  @override
+  String get healthCheck_running => '正在检查设置…';
+
+  @override
+  String get healthCheck_waitingForSync => '电台仍在同步。同步完成后将开始检查。';
+
+  @override
+  String get healthCheck_noRadio => '未连接电台，因此未检查电台设置。';
+
+  @override
+  String get healthCheck_partial => '部分电台设置无法读取，因此这些结果可能不是最新的。请稍后再检查一次。';
+
+  @override
+  String get healthCheck_allClear => '一切正常。';
+
+  @override
+  String get healthCheck_problems => '问题';
+
+  @override
+  String get healthCheck_suggestions => '建议';
+
+  @override
+  String get healthCheck_tips => '提示';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '通过的检查：$count';
+  }
+
+  @override
+  String get healthCheck_runAgain => '再次检查';
+
+  @override
+  String get healthCheck_fix => '修复';
+
+  @override
+  String get healthCheck_fixFailed => '更改未生效。请检查电台连接后重试。';
+
+  @override
+  String get healthCheck_openFailed => '无法打开该设置页面。请在设备设置中更改。';
+
+  @override
+  String get healthCheck_hide => '不再显示';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '显示已隐藏的项目：$count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return '全部修复（$count）';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '要进行这些更改吗？';
+
+  @override
+  String get healthCheck_promptTitle => '要运行健康检查吗？';
+
+  @override
+  String get healthCheck_promptBody => '查看应用和电台设置中可以改进的地方，包括减少通知的方法。';
+
+  @override
+  String get healthCheck_promptBodyDesktop => '查看应用和电台设置中可以改进的地方。';
+
+  @override
+  String get healthCheck_promptRun => '运行检查';
+
+  @override
+  String get healthCheck_promptLater => '以后再说';
+
+  @override
   String get settings_title => '设置';
 
   @override
@@ -473,6 +551,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings_multiAck => '多重ACK';
+
+  @override
+  String get settings_multiAckSubtitle => '当私信通过路由到达时发送第二个 ACK，让发送方更有可能收到。';
 
   @override
   String get settings_telemetryModeUpdated => '遥测模式已更新';
@@ -3141,6 +3222,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '通过广播分享联系人';
 
   @override
+  String get contacts_shareByAdvertFailed => '电台无法分享此联系人。它需要先收到该联系人的广播。';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '零跳广播已发送';
 
   @override
@@ -3513,6 +3597,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routing_noRoute => '暂无 — 下一条消息会泛洪发送并学习路径';
 
   @override
+  String get routing_noRoutePathfinder => '暂无';
+
+  @override
   String get routing_auto => '自动';
 
   @override
@@ -3538,6 +3625,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routing_forgetDone => '路径已重置。下一条消息会泛洪发送并学习新路径。';
+
+  @override
+  String get routing_forgetDonePathfinder => '路径已重置。';
 
   @override
   String get routing_pathfinder => 'Pathfinder 掌握的信息';
@@ -3650,7 +3740,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '学习需要时间。全新的地图一无所知，所以起初您的消息会和以前完全一样地发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
+      '学习需要时间。全新的地图一无所知，所以在学到路由之前，您的消息起初会以泛洪方式发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3670,7 +3760,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathfinderHelp_ok => '确定';
 
   @override
-  String get settings_pathGraph => 'Pathfinder（实验性）';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

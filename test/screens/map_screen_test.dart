@@ -155,6 +155,8 @@ void main() {
   });
   tearDown(() => tmp.delete(recursive: true));
 
+  var guessedLocationsOn = false;
+
   Future<void> pumpMap(
     WidgetTester tester,
     MeshCoreConnector connector, {
@@ -167,7 +169,11 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<MeshCoreConnector>.value(value: connector),
-          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider(
+            create: (_) =>
+                AppSettingsService()
+                  ..setMapShowGuessedLocations(guessedLocationsOn),
+          ),
           ChangeNotifierProvider(create: (_) => UiViewStateService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           Provider<MapTileCacheService>.value(value: BlankTileCache()),
@@ -279,6 +285,9 @@ void main() {
   });
 
   group('guessed pins', () {
+    setUp(() => guessedLocationsOn = true);
+    tearDown(() => guessedLocationsOn = false);
+
     final anchor = _node('Anchor', advTypeRepeater, 0x01, 37.3, -122.0);
     Contact heardVia(int seed, int type) => Contact(
       publicKey: Uint8List.fromList(List.filled(32, seed)),

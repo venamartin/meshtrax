@@ -23,6 +23,8 @@ import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
+import '../widgets/health_check_prompt.dart';
+import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/gps_status_button.dart';
@@ -141,8 +143,20 @@ class _ChatsScreenState extends State<ChatsScreen>
         }
       };
       _connector.addListener(_connectorListener);
-      if (mounted) unawaited(showBatterySleepWarningIfNeeded(context));
+      if (mounted) unawaited(_showStartupPrompts());
     });
+  }
+
+  Future<void> _showStartupPrompts() async {
+    await showBatterySleepWarningIfNeeded(context);
+    if (mounted) await showHealthCheckPromptIfNeeded(context);
+    // New installs never flip Pathfinder's switch, the only other place this
+    // explains that it can transmit a Discover by itself and what it stores.
+    if (mounted &&
+        (ModalRoute.of(context)?.isCurrent ?? false) &&
+        context.read<AppSettingsService>().settings.pathGraphEnabled) {
+      await PathfinderHelpDialog.showOnce(context);
+    }
   }
 
   @override
@@ -566,12 +580,19 @@ class _ChatsScreenState extends State<ChatsScreen>
               ListTile(
                 leading: const Icon(Icons.connect_without_contact),
                 title: Text(context.l10n.contacts_ShareContactZeroHop),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(sheetContext);
-                  connector.shareContactZeroHop(contact.publicKey);
+                  final shared = await connector.shareContactZeroHop(
+                    contact.publicKey,
+                  );
+                  if (!context.mounted) return;
                   showDismissibleSnackBar(
                     context,
-                    content: Text(context.l10n.settings_advertisementSent),
+                    content: Text(
+                      shared
+                          ? context.l10n.settings_advertisementSent
+                          : context.l10n.contacts_shareByAdvertFailed,
+                    ),
                   );
                 },
               ),

@@ -778,6 +778,150 @@ abstract class AppLocalizations {
   /// **'MeshCore'**
   String get device_meshcore;
 
+  /// No description provided for @healthCheck_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check'**
+  String get healthCheck_title;
+
+  /// No description provided for @healthCheck_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your app and radio settings'**
+  String get healthCheck_subtitle;
+
+  /// No description provided for @healthCheck_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your settings…'**
+  String get healthCheck_running;
+
+  /// No description provided for @healthCheck_waitingForSync.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is still syncing. The check will start when it finishes.'**
+  String get healthCheck_waitingForSync;
+
+  /// No description provided for @healthCheck_noRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is connected, so the radio\'s settings were not checked.'**
+  String get healthCheck_noRadio;
+
+  /// No description provided for @healthCheck_partial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some radio settings could not be read, so these results may be out of date. Check again in a moment.'**
+  String get healthCheck_partial;
+
+  /// No description provided for @healthCheck_allClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything looks good.'**
+  String get healthCheck_allClear;
+
+  /// No description provided for @healthCheck_problems.
+  ///
+  /// In en, this message translates to:
+  /// **'Problems'**
+  String get healthCheck_problems;
+
+  /// No description provided for @healthCheck_suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get healthCheck_suggestions;
+
+  /// No description provided for @healthCheck_tips.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get healthCheck_tips;
+
+  /// No description provided for @healthCheck_passed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks passed: {count}'**
+  String healthCheck_passed(int count);
+
+  /// No description provided for @healthCheck_runAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get healthCheck_runAgain;
+
+  /// No description provided for @healthCheck_fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix'**
+  String get healthCheck_fix;
+
+  /// No description provided for @healthCheck_fixFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That change did not go through. Check the radio connection and try again.'**
+  String get healthCheck_fixFailed;
+
+  /// No description provided for @healthCheck_openFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open that settings page. Change it in your device\'s settings.'**
+  String get healthCheck_openFailed;
+
+  /// No description provided for @healthCheck_hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show again'**
+  String get healthCheck_hide;
+
+  /// No description provided for @healthCheck_showHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Show hidden findings: {count}'**
+  String healthCheck_showHidden(int count);
+
+  /// No description provided for @healthCheck_fixAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix all ({count})'**
+  String healthCheck_fixAll(int count);
+
+  /// No description provided for @healthCheck_fixAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make these changes?'**
+  String get healthCheck_fixAllConfirm;
+
+  /// No description provided for @healthCheck_promptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run a health check?'**
+  String get healthCheck_promptTitle;
+
+  /// No description provided for @healthCheck_promptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See what could work better in your app and radio settings, including ways to get fewer notifications.'**
+  String get healthCheck_promptBody;
+
+  /// No description provided for @healthCheck_promptBodyDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'See what could work better in your app and radio settings.'**
+  String get healthCheck_promptBodyDesktop;
+
+  /// No description provided for @healthCheck_promptRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run check'**
+  String get healthCheck_promptRun;
+
+  /// No description provided for @healthCheck_promptLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get healthCheck_promptLater;
+
   /// No description provided for @settings_title.
   ///
   /// In en, this message translates to:
@@ -1017,6 +1161,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multi-ACKs'**
   String get settings_multiAck;
+
+  /// No description provided for @settings_multiAckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it.'**
+  String get settings_multiAckSubtitle;
 
   /// No description provided for @settings_telemetryModeUpdated.
   ///
@@ -5862,6 +6012,12 @@ abstract class AppLocalizations {
   /// **'Share contact by advert'**
   String get contacts_ShareContactZeroHop;
 
+  /// No description provided for @contacts_shareByAdvertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio could not share this contact. It has to hear the contact\'s advert first.'**
+  String get contacts_shareByAdvertFailed;
+
   /// No description provided for @contacts_zeroHopContactAdvertSent.
   ///
   /// In en, this message translates to:
@@ -6546,6 +6702,12 @@ abstract class AppLocalizations {
   /// **'none yet — the next message floods and learns one'**
   String get routing_noRoute;
 
+  /// No description provided for @routing_noRoutePathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'none stored'**
+  String get routing_noRoutePathfinder;
+
   /// No description provided for @routing_auto.
   ///
   /// In en, this message translates to:
@@ -6599,6 +6761,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Path reset. The next message floods and learns a fresh one.'**
   String get routing_forgetDone;
+
+  /// No description provided for @routing_forgetDonePathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Path reset.'**
+  String get routing_forgetDonePathfinder;
 
   /// No description provided for @routing_pathfinder.
   ///
@@ -6741,7 +6909,7 @@ abstract class AppLocalizations {
   /// No description provided for @pathfinderHelp_learning.
   ///
   /// In en, this message translates to:
-  /// **'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
+  /// **'It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
   String get pathfinderHelp_learning;
 
   /// No description provided for @pathfinderHelp_guessed.
@@ -6777,7 +6945,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_pathGraph.
   ///
   /// In en, this message translates to:
-  /// **'Pathfinder (experimental)'**
+  /// **'Pathfinder'**
   String get settings_pathGraph;
 
   /// No description provided for @settings_pathGraphSubtitle.

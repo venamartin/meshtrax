@@ -195,8 +195,8 @@ void main() {
   });
 
   group('AppSettings — maxMessageRetries', () {
-    test('defaults to 3', () {
-      expect(AppSettings().maxMessageRetries, equals(3));
+    test('defaults to 4', () {
+      expect(AppSettings().maxMessageRetries, equals(4));
     });
 
     test('round-trips through JSON', () {
@@ -205,14 +205,59 @@ void main() {
       expect(AppSettings.fromJson(json).maxMessageRetries, equals(5));
     });
 
-    test('fromJson without the key uses the default', () {
+    test('saved settings without the key keep the old value', () {
       expect(AppSettings.fromJson({}).maxMessageRetries, equals(3));
     });
   });
 
+  group('AppSettings — health check state', () {
+    test('nothing is hidden and the prompt is unseen by default', () {
+      for (final settings in [AppSettings(), AppSettings.fromJson({})]) {
+        expect(settings.dismissedHealthRules, isEmpty);
+        expect(settings.healthCheckPromptSeen, isFalse);
+      }
+    });
+
+    test('round-trips through JSON', () {
+      final json = AppSettings()
+          .copyWith(
+            dismissedHealthRules: {'radio_name'},
+            healthCheckPromptSeen: true,
+          )
+          .toJson();
+      final back = AppSettings.fromJson(json);
+      expect(back.dismissedHealthRules, {'radio_name'});
+      expect(back.healthCheckPromptSeen, isTrue);
+    });
+  });
+
+  group('AppSettings — defaults chosen with the health check', () {
+    test('Pathfinder is on and guessed locations are off', () {
+      final settings = AppSettings();
+      expect(settings.pathGraphEnabled, isTrue);
+      expect(settings.mapShowGuessedLocations, isFalse);
+    });
+
+    test('saved settings without the key keep the old value', () {
+      final saved = AppSettings.fromJson({});
+      expect(saved.pathGraphEnabled, isFalse);
+      expect(saved.mapShowGuessedLocations, isTrue);
+      expect(saved.mutedChannels, isEmpty);
+    });
+
+    test('a saved choice wins over the default', () {
+      final saved = AppSettings.fromJson({
+        'path_graph_enabled': false,
+        'map_show_guessed_locations': true,
+      });
+      expect(saved.pathGraphEnabled, isFalse);
+      expect(saved.mapShowGuessedLocations, isTrue);
+    });
+  });
+
   group('AppSettings — incrementalContactSync', () {
-    test('defaults to off', () {
-      expect(AppSettings().incrementalContactSync, isFalse);
+    test('defaults to on', () {
+      expect(AppSettings().incrementalContactSync, isTrue);
       expect(AppSettings.fromJson({}).incrementalContactSync, isFalse);
     });
 

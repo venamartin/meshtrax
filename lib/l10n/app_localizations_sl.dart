@@ -367,6 +367,91 @@ class AppLocalizationsSl extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Pregled stanja';
+
+  @override
+  String get healthCheck_subtitle => 'Preverite nastavitve aplikacije in radia';
+
+  @override
+  String get healthCheck_running => 'Preverjanje nastavitev…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Radio se še sinhronizira. Preverjanje se bo začelo, ko bo končano.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Noben radio ni povezan, zato njegove nastavitve niso bile preverjene.';
+
+  @override
+  String get healthCheck_partial =>
+      'Nekaterih nastavitev radia ni bilo mogoče prebrati, zato ti rezultati morda niso ažurni. Čez trenutek preverite znova.';
+
+  @override
+  String get healthCheck_allClear => 'Vse je videti v redu.';
+
+  @override
+  String get healthCheck_problems => 'Težave';
+
+  @override
+  String get healthCheck_suggestions => 'Predlogi';
+
+  @override
+  String get healthCheck_tips => 'Nasveti';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Uspešna preverjanja: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Preveri znova';
+
+  @override
+  String get healthCheck_fix => 'Popravi';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Sprememba ni bila uveljavljena. Preverite povezavo z radiem in poskusite znova.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Te strani z nastavitvami ni bilo mogoče odpreti. Spremenite to v nastavitvah naprave.';
+
+  @override
+  String get healthCheck_hide => 'Ne prikaži več';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Prikaži skrite rezultate: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Popravi vse ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Želite izvesti te spremembe?';
+
+  @override
+  String get healthCheck_promptTitle => 'Želite zagnati pregled stanja?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Oglejte si, kaj bi lahko bolje delovalo v nastavitvah aplikacije in radia, tudi kako prejemati manj obvestil.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Oglejte si, kaj bi lahko bolje delovalo v nastavitvah aplikacije in radia.';
+
+  @override
+  String get healthCheck_promptRun => 'Zaženi pregled';
+
+  @override
+  String get healthCheck_promptLater => 'Ne zdaj';
+
+  @override
   String get settings_title => 'Nastavitve';
 
   @override
@@ -494,6 +579,10 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Več potrdil';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Pošlje drugo potrdilo, ko zasebno sporočilo do vas pride po poti, da ga pošiljatelj laže sliši.';
 
   @override
   String get settings_telemetryModeUpdated => 'Način telemetrije posodobljen';
@@ -3314,6 +3403,10 @@ class AppLocalizationsSl extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Deliti kontakt prek oglasa';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Radio ni mogel deliti tega kontakta. Najprej mora slišati njegov oglas.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Poslano po oglasu.';
 
   @override
@@ -3749,6 +3842,9 @@ class AppLocalizationsSl extends AppLocalizations {
       'še nobene — naslednje sporočilo gre poplavno in se jo nauči';
 
   @override
+  String get routing_noRoutePathfinder => 'še nobene';
+
+  @override
   String get routing_auto => 'Samodejno';
 
   @override
@@ -3777,6 +3873,9 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Pot ponastavljena. Naslednje sporočilo gre poplavno in se nauči novo.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Pot ponastavljena.';
 
   @override
   String get routing_pathfinder => 'Kaj ve Pathfinder';
@@ -3906,7 +4005,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Potrebuje čas. Nov zemljevid še ne ve ničesar, zato vaša sporočila sprva odhajajo natanko tako kot prej. Po nekaj urah poslušanja na enem mestu začne ponujati poti in se z vsako dostavo ali neuspehom nauči več. Prvi dan od njega ne pričakujte veliko, po vsakem premiku na novo mesto pa spet manj.';
+      'Potrebuje čas. Nov zemljevid še ne ve ničesar, zato vaša sporočila sprva odhajajo poplavno, dokler se ne nauči poti. Po nekaj urah poslušanja na enem mestu začne ponujati poti in se z vsako dostavo ali neuspehom nauči več. Prvi dan od njega ne pričakujte veliko, po vsakem premiku na novo mesto pa spet manj.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3927,7 +4026,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get pathfinderHelp_ok => 'V redu';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (preizkusno)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

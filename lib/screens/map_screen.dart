@@ -1204,9 +1204,6 @@ class _MapScreenState extends State<MapScreen> {
           if (contact.type == advTypeRepeater)
             TextButton(
               onPressed: () {
-                if (!contact.isActive) {
-                  connector.importDiscoveredContact(contact);
-                }
                 Navigator.pop(dialogContext);
                 _showRepeaterLogin(context, contact);
               },

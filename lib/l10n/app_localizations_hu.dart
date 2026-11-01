@@ -369,6 +369,92 @@ class AppLocalizationsHu extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Állapotfelmérés';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Az alkalmazás és a rádió beállításainak ellenőrzése';
+
+  @override
+  String get healthCheck_running => 'Beállítások ellenőrzése…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'A rádió még szinkronizál. Az ellenőrzés akkor indul, amikor végzett.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nincs csatlakoztatott rádió, ezért a beállításait nem ellenőriztük.';
+
+  @override
+  String get healthCheck_partial =>
+      'A rádió néhány beállítását nem sikerült kiolvasni, ezért ezek az eredmények elavultak lehetnek. Ellenőrizze újra egy kis idő múlva.';
+
+  @override
+  String get healthCheck_allClear => 'Minden rendben van.';
+
+  @override
+  String get healthCheck_problems => 'Problémák';
+
+  @override
+  String get healthCheck_suggestions => 'Javaslatok';
+
+  @override
+  String get healthCheck_tips => 'Tippek';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Sikeres ellenőrzések: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Újraellenőrzés';
+
+  @override
+  String get healthCheck_fix => 'Javítás';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'A módosítás nem sikerült. Ellenőrizze a rádiókapcsolatot, és próbálja újra.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Ezt a beállítási oldalt nem sikerült megnyitni. Módosítsa az eszköz beállításaiban.';
+
+  @override
+  String get healthCheck_hide => 'Ne jelenjen meg többé';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Rejtett találatok megjelenítése: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Összes javítása ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Elvégzi ezeket a módosításokat?';
+
+  @override
+  String get healthCheck_promptTitle => 'Futtat állapotfelmérést?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Nézze meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban, például hogyan kaphat kevesebb értesítést.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Nézze meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban.';
+
+  @override
+  String get healthCheck_promptRun => 'Felmérés indítása';
+
+  @override
+  String get healthCheck_promptLater => 'Most nem';
+
+  @override
   String get settings_title => 'Beállítások';
 
   @override
@@ -501,6 +587,10 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Többszörös visszaigazolások';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Második visszaigazolást küld, ha egy közvetlen üzenet útvonalon érkezik meg, így a feladó nagyobb eséllyel hallja azt.';
 
   @override
   String get settings_telemetryModeUpdated => 'A telemetriamód frissítve';
@@ -3354,6 +3444,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ossza meg a kapcsolatot hirdetés segítségével';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'A rádió nem tudta megosztani ezt a kapcsolatot. Előbb hallania kell a hirdetését.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Kapcsolatot a hirdetésen keresztül.';
 
@@ -3790,6 +3884,9 @@ class AppLocalizationsHu extends AppLocalizations {
       'még nincs — a következő üzenet elárasztással megy, és tanul egyet';
 
   @override
+  String get routing_noRoutePathfinder => 'még nincs';
+
+  @override
   String get routing_auto => 'Automatikus';
 
   @override
@@ -3818,6 +3915,9 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Útvonal törölve. A következő üzenet elárasztással megy, és újat tanul.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Útvonal törölve.';
 
   @override
   String get routing_pathfinder => 'Amit a Pathfinder tud';
@@ -3934,7 +4034,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei pontosan úgy mennek ki, mint korábban. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
+      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei az egész hálózatra mennek ki, amíg meg nem tanul egy útvonalat. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3955,7 +4055,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get pathfinderHelp_ok => 'Rendben';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (kísérleti)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

@@ -373,6 +373,92 @@ class AppLocalizationsFr extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Bilan de santé';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Vérifier les paramètres de l\'application et de la radio';
+
+  @override
+  String get healthCheck_running => 'Vérification des paramètres…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'La radio est encore en cours de synchronisation. La vérification commencera une fois celle-ci terminée.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Aucune radio n\'est connectée : ses paramètres n\'ont pas été vérifiés.';
+
+  @override
+  String get healthCheck_partial =>
+      'Certains paramètres de la radio n\'ont pas pu être lus : ces résultats ne sont peut-être pas à jour. Réessayez dans un instant.';
+
+  @override
+  String get healthCheck_allClear => 'Tout semble correct.';
+
+  @override
+  String get healthCheck_problems => 'Problèmes';
+
+  @override
+  String get healthCheck_suggestions => 'Suggestions';
+
+  @override
+  String get healthCheck_tips => 'Conseils';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Vérifications réussies : $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Vérifier à nouveau';
+
+  @override
+  String get healthCheck_fix => 'Corriger';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'La modification n\'a pas abouti. Vérifiez la connexion à la radio et réessayez.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Impossible d\'ouvrir cette page de paramètres. Modifiez cela dans les paramètres de votre appareil.';
+
+  @override
+  String get healthCheck_hide => 'Ne plus afficher';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Afficher les éléments masqués : $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Tout corriger ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Effectuer ces modifications ?';
+
+  @override
+  String get healthCheck_promptTitle => 'Lancer un bilan de santé ?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Voyez ce qui pourrait mieux fonctionner dans les paramètres de l\'application et de la radio, notamment pour recevoir moins de notifications.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Voyez ce qui pourrait mieux fonctionner dans les paramètres de l\'application et de la radio.';
+
+  @override
+  String get healthCheck_promptRun => 'Lancer le bilan';
+
+  @override
+  String get healthCheck_promptLater => 'Plus tard';
+
+  @override
   String get settings_title => 'Paramètres';
 
   @override
@@ -503,6 +589,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Plusieurs accusés de réception';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Envoie un second accusé de réception lorsqu\'un message privé vous parvient par un itinéraire, afin que l\'expéditeur ait plus de chances de l\'entendre.';
 
   @override
   String get settings_telemetryModeUpdated =>
@@ -3358,6 +3448,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Partager un contact par annonce';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'La radio n\'a pas pu partager ce contact. Elle doit d\'abord entendre son annonce.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Envoyer un contact par annonce.';
 
@@ -3797,6 +3891,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'aucun pour l\'instant — le prochain message part vers tout le réseau et en apprend un';
 
   @override
+  String get routing_noRoutePathfinder => 'aucun pour l\'instant';
+
+  @override
   String get routing_auto => 'Automatique';
 
   @override
@@ -3826,6 +3923,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Chemin réinitialisé. Le prochain message part vers tout le réseau et en apprend un nouveau.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Chemin réinitialisé.';
 
   @override
   String get routing_pathfinder => 'Ce que sait Pathfinder';
@@ -3947,7 +4047,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Il lui faut du temps. Une carte toute neuve ne sait rien : au début, vos messages partent donc exactement comme avant. Après quelques heures d\'écoute au même endroit, il commence à proposer des itinéraires, et chaque remise ou échec lui en apprend davantage. N\'en attendez pas grand-chose le premier jour, ni à chaque fois que vous changez d\'endroit.';
+      'Il lui faut du temps. Une carte toute neuve ne sait rien : au début, vos messages sont donc envoyés à tout le réseau, jusqu\'à ce qu\'il apprenne un itinéraire. Après quelques heures d\'écoute au même endroit, il commence à proposer des itinéraires, et chaque remise ou échec lui en apprend davantage. N\'en attendez pas grand-chose le premier jour, ni à chaque fois que vous changez d\'endroit.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3968,7 +4068,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (expérimental)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

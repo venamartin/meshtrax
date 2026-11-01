@@ -126,10 +126,11 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   MeshSuggestion? _suggestion;
 
   /// Repeaters heard before the check looks, and how many of them must be
-  /// new to an established graph, of at least [meshCheckMinNodes] nodes.
+  /// new to the open graph. A new graph is only offered to an established one,
+  /// of at least [meshCheckMinNodes] nodes.
   static const meshCheckSample = 6;
   static const meshCheckUnknownShare = 0.75;
-  static const meshCheckMinNodes = 20;
+  static const meshCheckMinNodes = 100;
 
   /// How long "keep this one" quiets the check for that graph.
   static const meshCheckQuiet = Duration(days: 7);
@@ -358,7 +359,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     final heard = _heardKeys.length;
     final unknown = _heardKeys.values.where((k) => !k).length;
     if (unknown < heard * meshCheckUnknownShare ||
-        graph.nodeCount < meshCheckMinNodes ||
         GraphBook.isQuiet(entry, DateTime.now())) {
       return;
     }
@@ -374,6 +374,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (best * 2 < heard) other = null;
+    // A young graph has only heard part of its own mesh, so it does not ask for
+    // a new one. A saved graph that knows these repeaters is still the way back.
+    if (other == null && graph.nodeCount < meshCheckMinNodes) return;
     _suggestion = MeshSuggestion(
         current: entry, heard: heard, unknown: unknown, other: other);
     appLogger.info(
@@ -984,11 +987,27 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   static const _narrowNoticeDismissedKey =
       'pathfinder_narrow_notice_dismissed';
 
+  /// False when this radio's repeater codes are too short for the graph, so
+  /// Pathfinder cannot route at all and the firmware's route is used instead.
+  bool get radioCanRoute {
+    final graph = _graph, connector = _connector;
+    return graph == null ||
+        connector == null ||
+        connector.pathHashByteWidth >= graph.hashWidthBytes;
+  }
+
   /// Whether to tell the user, once, that [contactPubkeyHex]'s radio sends
   /// short repeater codes so Pathfinder cannot learn routes to them.
   bool showNarrowNotice(String contactPubkeyHex) {
     final key = contactPubkeyHex.toLowerCase();
     if (!isRunning || !_narrowSenders.contains(key)) return false;
+    // A radio that is narrower itself is the reason, whatever they send.
+    final graph = _graph, connector = _connector;
+    if (graph != null &&
+        connector != null &&
+        connector.pathHashByteWidth < graph.hashWidthBytes) {
+      return false;
+    }
     final dismissed =
         PrefsManager.instance.getStringList(_narrowNoticeDismissedKey) ??
             const [];

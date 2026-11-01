@@ -1,5 +1,9 @@
 package com.meshtrax.app
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
@@ -27,9 +31,34 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "manufacturer" -> result.success(Build.MANUFACTURER.lowercase())
                     "isBackgroundRestricted" -> result.success(isBackgroundRestricted())
+                    "openNotificationSettings" -> {
+                        openNotificationSettings()
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    // The notification settings page takes this extra from API 26. Older
+    // Android, or a device without the page, gets the app's own settings page.
+    private fun openNotificationSettings() {
+        val appDetails = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null),
+        )
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            startActivity(appDetails)
+            return
+        }
+        try {
+            startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+            )
+        } catch (e: ActivityNotFoundException) {
+            startActivity(appDetails)
+        }
     }
 
     // When a keyboard animation ends, Flutter re-sends the insets saved during

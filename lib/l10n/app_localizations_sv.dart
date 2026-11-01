@@ -367,6 +367,92 @@ class AppLocalizationsSv extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Hälsokontroll';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Kontrollera inställningarna för appen och radion';
+
+  @override
+  String get healthCheck_running => 'Kontrollerar inställningarna…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Radion synkroniserar fortfarande. Kontrollen startar när den är klar.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Ingen radio är ansluten, så radions inställningar kontrollerades inte.';
+
+  @override
+  String get healthCheck_partial =>
+      'Vissa av radions inställningar kunde inte läsas, så resultaten kanske inte är aktuella. Kontrollera igen om en stund.';
+
+  @override
+  String get healthCheck_allClear => 'Allt ser bra ut.';
+
+  @override
+  String get healthCheck_problems => 'Problem';
+
+  @override
+  String get healthCheck_suggestions => 'Förslag';
+
+  @override
+  String get healthCheck_tips => 'Tips';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Godkända kontroller: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Kontrollera igen';
+
+  @override
+  String get healthCheck_fix => 'Åtgärda';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Ändringen gick inte igenom. Kontrollera anslutningen till radion och försök igen.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Det gick inte att öppna den inställningssidan. Ändra det i enhetens inställningar.';
+
+  @override
+  String get healthCheck_hide => 'Visa inte igen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Visa dolda resultat: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Åtgärda alla ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Göra dessa ändringar?';
+
+  @override
+  String get healthCheck_promptTitle => 'Köra en hälsokontroll?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Se vad som kan fungera bättre i appens och radions inställningar, bland annat för att få färre notiser.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Se vad som kan fungera bättre i appens och radions inställningar.';
+
+  @override
+  String get healthCheck_promptRun => 'Kör kontroll';
+
+  @override
+  String get healthCheck_promptLater => 'Inte nu';
+
+  @override
   String get settings_title => 'Inställningar';
 
   @override
@@ -493,6 +579,10 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Flera bekräftelser';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Skicka en andra bekräftelse när ett direktmeddelande når dig via en rutt, så att avsändaren lättare hör den.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetri-läge uppdaterat';
@@ -3305,6 +3395,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Dela kontakt via annons';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Radion kunde inte dela den här kontakten. Den måste först höra dess annons.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Skickat kontakt via annons.';
 
   @override
@@ -3735,6 +3829,9 @@ class AppLocalizationsSv extends AppLocalizations {
       'ingen än — nästa meddelande skickas som översvämning och lär sig en';
 
   @override
+  String get routing_noRoutePathfinder => 'ingen än';
+
+  @override
   String get routing_auto => 'Automatisk';
 
   @override
@@ -3763,6 +3860,9 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Sökvägen återställd. Nästa meddelande skickas som översvämning och lär sig en ny.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Sökvägen återställd.';
 
   @override
   String get routing_pathfinder => 'Vad Pathfinder vet';
@@ -3879,7 +3979,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden precis som förut. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
+      'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden med översvämning tills den har lärt sig en rutt. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3900,7 +4000,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get pathfinderHelp_ok => 'Okej';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentell)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

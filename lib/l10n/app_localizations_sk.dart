@@ -370,6 +370,92 @@ class AppLocalizationsSk extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Kontrola stavu';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Skontrolovať nastavenia aplikácie a rádia';
+
+  @override
+  String get healthCheck_running => 'Kontrolujú sa nastavenia…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Rádio sa ešte synchronizuje. Kontrola sa začne, keď sa to dokončí.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nie je pripojené žiadne rádio, preto sa jeho nastavenia nekontrolovali.';
+
+  @override
+  String get healthCheck_partial =>
+      'Niektoré nastavenia rádia sa nepodarilo načítať, preto tieto výsledky nemusia byť aktuálne. O chvíľu to skontrolujte znova.';
+
+  @override
+  String get healthCheck_allClear => 'Všetko vyzerá v poriadku.';
+
+  @override
+  String get healthCheck_problems => 'Problémy';
+
+  @override
+  String get healthCheck_suggestions => 'Návrhy';
+
+  @override
+  String get healthCheck_tips => 'Tipy';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Úspešné kontroly: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Skontrolovať znova';
+
+  @override
+  String get healthCheck_fix => 'Opraviť';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Zmena sa neuplatnila. Skontrolujte pripojenie k rádiu a skúste to znova.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Túto stránku nastavení sa nepodarilo otvoriť. Zmeňte to v nastaveniach zariadenia.';
+
+  @override
+  String get healthCheck_hide => 'Už nezobrazovať';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Zobraziť skryté výsledky: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Opraviť všetko ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Vykonať tieto zmeny?';
+
+  @override
+  String get healthCheck_promptTitle => 'Spustiť kontrolu stavu?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia, aj ako dostávať menej upozornení.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia.';
+
+  @override
+  String get healthCheck_promptRun => 'Spustiť kontrolu';
+
+  @override
+  String get healthCheck_promptLater => 'Teraz nie';
+
+  @override
   String get settings_title => 'Nastavenia';
 
   @override
@@ -495,6 +581,10 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Viaceré ACK';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul.';
 
   @override
   String get settings_telemetryModeUpdated =>
@@ -3319,6 +3409,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Zdieľať kontakt cez inzerát';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Rádio nemohlo zdieľať tento kontakt. Najprv musí počuť jeho inzerát.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Poslal kontakt cez inzerát.';
 
   @override
@@ -3751,6 +3845,9 @@ class AppLocalizationsSk extends AppLocalizations {
       'zatiaľ žiadna — ďalšia správa pôjde záplavou a nejakú sa naučí';
 
   @override
+  String get routing_noRoutePathfinder => 'zatiaľ žiadna';
+
+  @override
   String get routing_auto => 'Automaticky';
 
   @override
@@ -3779,6 +3876,9 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Cesta resetovaná. Ďalšia správa pôjde záplavou a naučí sa novú.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Cesta resetovaná.';
 
   @override
   String get routing_pathfinder => 'Čo vie Pathfinder';
@@ -3907,7 +4007,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú presne tak ako predtým. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
+      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú záplavou, kým sa nenaučí trasu. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3928,7 +4028,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentálne)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>

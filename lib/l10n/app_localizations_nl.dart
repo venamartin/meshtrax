@@ -369,6 +369,92 @@ class AppLocalizationsNl extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Statuscontrole';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Controleer de instellingen van de app en de radio';
+
+  @override
+  String get healthCheck_running => 'Instellingen controleren…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'De radio is nog aan het synchroniseren. De controle begint zodra dat klaar is.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Er is geen radio verbonden, dus de radio-instellingen zijn niet gecontroleerd.';
+
+  @override
+  String get healthCheck_partial =>
+      'Sommige radio-instellingen konden niet worden gelezen, dus deze resultaten zijn mogelijk niet actueel. Controleer het zo opnieuw.';
+
+  @override
+  String get healthCheck_allClear => 'Alles ziet er goed uit.';
+
+  @override
+  String get healthCheck_problems => 'Problemen';
+
+  @override
+  String get healthCheck_suggestions => 'Suggesties';
+
+  @override
+  String get healthCheck_tips => 'Tips';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Geslaagde controles: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Opnieuw controleren';
+
+  @override
+  String get healthCheck_fix => 'Oplossen';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'De wijziging is niet doorgevoerd. Controleer de verbinding met de radio en probeer het opnieuw.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Die instellingenpagina kon niet worden geopend. Wijzig het in de instellingen van je apparaat.';
+
+  @override
+  String get healthCheck_hide => 'Niet meer tonen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Verborgen bevindingen tonen: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Alles oplossen ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Deze wijzigingen doorvoeren?';
+
+  @override
+  String get healthCheck_promptTitle => 'Statuscontrole uitvoeren?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Bekijk wat beter kan in de instellingen van de app en de radio, ook om minder meldingen te krijgen.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Bekijk wat beter kan in de instellingen van de app en de radio.';
+
+  @override
+  String get healthCheck_promptRun => 'Controle starten';
+
+  @override
+  String get healthCheck_promptLater => 'Niet nu';
+
+  @override
   String get settings_title => 'Instellingen';
 
   @override
@@ -498,6 +584,10 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_multiAck => 'Meerdere bevestigingen';
+
+  @override
+  String get settings_multiAckSubtitle =>
+      'Stuur een tweede bevestiging wanneer een direct bericht je via een route bereikt, zodat de afzender die eerder hoort.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetrie-modus bijgewerkt';
@@ -3329,6 +3419,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Contact delen via advertentie';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'De radio kon dit contact niet delen. Hij moet eerst de advertentie ervan horen.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Contact verzonden via advertentie';
 
@@ -3760,6 +3854,9 @@ class AppLocalizationsNl extends AppLocalizations {
       'nog geen — het volgende bericht gaat als flood en leert er een';
 
   @override
+  String get routing_noRoutePathfinder => 'nog geen';
+
+  @override
   String get routing_auto => 'Automatisch';
 
   @override
@@ -3788,6 +3885,9 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Pad gereset. Het volgende bericht gaat als flood en leert een nieuw pad.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Pad gereset.';
 
   @override
   String get routing_pathfinder => 'Wat Pathfinder weet';
@@ -3903,7 +4003,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Het kost tijd. Een nieuwe kaart is nog leeg, dus in het begin worden je berichten precies zoals voorheen verstuurd. Na een paar uur luisteren op één plek begint Pathfinder routes aan te bieden, en elk bericht dat aankomt of mislukt, maakt de kaart beter. Verwacht er de eerste dag weinig van, en telkens als je op een nieuwe plek bent, eerst weer minder.';
+      'Het kost tijd. Een nieuwe kaart is nog leeg, dus in het begin gaan je berichten via flood, totdat Pathfinder een route heeft geleerd. Na een paar uur luisteren op één plek begint Pathfinder routes aan te bieden, en elk bericht dat aankomt of mislukt, maakt de kaart beter. Verwacht er de eerste dag weinig van, en telkens als je op een nieuwe plek bent, eerst weer minder.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3924,7 +4024,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimenteel)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
