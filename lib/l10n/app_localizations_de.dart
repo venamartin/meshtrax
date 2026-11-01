@@ -3875,6 +3875,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'noch keiner — die nächste Nachricht wird geflutet und lernt einen';
 
   @override
+  String get routing_noRoutePathfinder => 'noch keiner';
+
+  @override
   String get routing_auto => 'Automatisch';
 
   @override
@@ -3903,6 +3906,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Pfad zurückgesetzt. Die nächste Nachricht wird geflutet und lernt einen neuen.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Pfad zurückgesetzt.';
 
   @override
   String get routing_pathfinder => 'Was Pathfinder weiß';

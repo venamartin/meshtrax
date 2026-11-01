@@ -128,6 +128,27 @@ void main() {
     await service.stop();
   });
 
+  test('a young graph is not offered a new one', () async {
+    final service = PathGraphService();
+    await service.start(_Connector(), openDatabase: open);
+    establish(service, 'aaaa', count: PathGraphService.meshCheckMinNodes - 1);
+    hear(service, 'bbbb');
+    expect(service.meshSuggestion, isNull);
+    await service.stop();
+  });
+
+  test('a young graph is still shown the way back', () async {
+    final service = PathGraphService();
+    await service.start(_Connector(), openDatabase: open);
+    establish(service, 'aaaa'); // Monterey Bay
+    await service.createGraph('Washington'); // saves Monterey's keys
+    establish(service, 'bbbb', count: 30);
+
+    hear(service, 'aaaa'); // back home
+    expect(service.meshSuggestion!.other!.isDefault, isTrue);
+    await service.stop();
+  });
+
   test('a fresh graph never asks', () async {
     final service = PathGraphService();
     await service.start(_Connector(), openDatabase: open);

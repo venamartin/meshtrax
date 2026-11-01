@@ -3841,6 +3841,9 @@ class AppLocalizationsSk extends AppLocalizations {
       'zatiaľ žiadna — ďalšia správa pôjde záplavou a nejakú sa naučí';
 
   @override
+  String get routing_noRoutePathfinder => 'zatiaľ žiadna';
+
+  @override
   String get routing_auto => 'Automaticky';
 
   @override
@@ -3869,6 +3872,9 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Cesta resetovaná. Ďalšia správa pôjde záplavou a naučí sa novú.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Cesta resetovaná.';
 
   @override
   String get routing_pathfinder => 'Čo vie Pathfinder';

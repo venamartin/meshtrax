@@ -6696,6 +6696,12 @@ abstract class AppLocalizations {
   /// **'none yet — the next message floods and learns one'**
   String get routing_noRoute;
 
+  /// No description provided for @routing_noRoutePathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'none stored'**
+  String get routing_noRoutePathfinder;
+
   /// No description provided for @routing_auto.
   ///
   /// In en, this message translates to:
@@ -6749,6 +6755,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Path reset. The next message floods and learns a fresh one.'**
   String get routing_forgetDone;
+
+  /// No description provided for @routing_forgetDonePathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Path reset.'**
+  String get routing_forgetDonePathfinder;
 
   /// No description provided for @routing_pathfinder.
   ///

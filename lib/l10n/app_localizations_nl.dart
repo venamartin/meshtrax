@@ -3850,6 +3850,9 @@ class AppLocalizationsNl extends AppLocalizations {
       'nog geen — het volgende bericht gaat als flood en leert er een';
 
   @override
+  String get routing_noRoutePathfinder => 'nog geen';
+
+  @override
   String get routing_auto => 'Automatisch';
 
   @override
@@ -3878,6 +3881,9 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Pad gereset. Het volgende bericht gaat als flood en leert een nieuw pad.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Pad gereset.';
 
   @override
   String get routing_pathfinder => 'Wat Pathfinder weet';

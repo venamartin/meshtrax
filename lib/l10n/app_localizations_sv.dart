@@ -3825,6 +3825,9 @@ class AppLocalizationsSv extends AppLocalizations {
       'ingen än — nästa meddelande skickas som översvämning och lär sig en';
 
   @override
+  String get routing_noRoutePathfinder => 'ingen än';
+
+  @override
   String get routing_auto => 'Automatisk';
 
   @override
@@ -3853,6 +3856,9 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Sökvägen återställd. Nästa meddelande skickas som översvämning och lär sig en ny.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Sökvägen återställd.';
 
   @override
   String get routing_pathfinder => 'Vad Pathfinder vet';

@@ -3873,6 +3873,9 @@ class AppLocalizationsUk extends AppLocalizations {
       'поки немає — наступне повідомлення піде на всю мережу й знайде його';
 
   @override
+  String get routing_noRoutePathfinder => 'поки немає';
+
+  @override
   String get routing_auto => 'Автоматично';
 
   @override
@@ -3901,6 +3904,9 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Шлях скинуто. Наступне повідомлення піде на всю мережу й знайде новий.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Шлях скинуто.';
 
   @override
   String get routing_pathfinder => 'Що знає Pathfinder';

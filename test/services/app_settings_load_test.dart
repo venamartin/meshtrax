@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshtrax/models/app_settings.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -23,6 +24,8 @@ void main() {
     expect(s.maxMessageRetries, 3);
     expect(s.mapShowGuessedLocations, isTrue);
     expect(s.mutedChannels, isEmpty);
+    expect(s.enableMessageTracing, isTrue);
+    expect(s.jumpToOldestUnread, isTrue);
   }
 
   test('a new install gets the new defaults and keeps them', () async {
@@ -54,12 +57,36 @@ void main() {
     });
   }
 
-  test('saved settings missing a key keep the old value', () async {
+  test('an older install differs from a new one only by the new defaults', () {
+    final older = AppSettings.olderInstall().toJson();
+    final fresh = AppSettings().toJson();
+    expect(older.keys, fresh.keys);
+    final differs = {
+      for (final key in fresh.keys)
+        if (jsonEncode(older[key]) != jsonEncode(fresh[key])) key,
+    };
+    expect(differs, {
+      'map_show_guessed_locations',
+      'max_message_retries',
+      'path_graph_enabled',
+      'muted_channels',
+      'incremental_contact_sync',
+    });
+  });
+
+  test('saved settings missing a key keep that key\'s old fallback', () async {
     final service = await load({
       'app_settings': jsonEncode({'theme_mode': 'dark'}),
     });
     await service.loadSettings();
-    expectOldValues(service);
+    final s = service.settings;
+    expect(s.pathGraphEnabled, isFalse);
+    expect(s.incrementalContactSync, isFalse);
+    expect(s.maxMessageRetries, 3);
+    expect(s.mapShowGuessedLocations, isTrue);
+    expect(s.mutedChannels, isEmpty);
+    expect(s.enableMessageTracing, isFalse, reason: 'it ran on the fallback');
+    expect(s.jumpToOldestUnread, isFalse);
   });
 
   test('unreadable saved settings keep the old values', () async {

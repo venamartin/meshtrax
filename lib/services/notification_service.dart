@@ -211,11 +211,16 @@ class NotificationService {
 
   /// Asks the device to allow notifications. One that was refused before won't
   /// ask again and answers at once, so this opens its settings instead. A
-  /// slower no is the user's own answer to the prompt, so it stops there.
+  /// slower no is the user's own answer to the prompt, so it stops there. With
+  /// the permission granted, a blocked category or alerts turned off can still
+  /// keep [notificationsAllowed] false, and only the settings page changes that.
   Future<void> askToAllow() async {
     final asked = Stopwatch()..start();
-    if (await requestPermissions()) return;
-    if (asked.elapsed > const Duration(seconds: 1)) return;
+    if (await requestPermissions()) {
+      if (await notificationsAllowed() != false) return;
+    } else if (asked.elapsed > const Duration(seconds: 1)) {
+      return;
+    }
     if (Platform.isAndroid) {
       await const MethodChannel(
         'meshtrax/system',

@@ -3887,6 +3887,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'aucun pour l\'instant — le prochain message part vers tout le réseau et en apprend un';
 
   @override
+  String get routing_noRoutePathfinder => 'aucun pour l\'instant';
+
+  @override
   String get routing_auto => 'Automatique';
 
   @override
@@ -3916,6 +3919,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Chemin réinitialisé. Le prochain message part vers tout le réseau et en apprend un nouveau.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Chemin réinitialisé.';
 
   @override
   String get routing_pathfinder => 'Ce que sait Pathfinder';

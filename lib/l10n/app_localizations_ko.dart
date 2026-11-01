@@ -3688,6 +3688,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get routing_noRoute => '아직 없음 — 다음 메시지가 플러드로 전송되며 경로를 학습합니다';
 
   @override
+  String get routing_noRoutePathfinder => '아직 없음';
+
+  @override
   String get routing_auto => '자동';
 
   @override
@@ -3714,6 +3717,9 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       '경로를 초기화했습니다. 다음 메시지가 플러드로 전송되며 새 경로를 학습합니다.';
+
+  @override
+  String get routing_forgetDonePathfinder => '경로를 초기화했습니다.';
 
   @override
   String get routing_pathfinder => 'Pathfinder가 아는 정보';

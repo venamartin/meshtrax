@@ -3687,6 +3687,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get routing_noRoute => 'まだありません — 次のメッセージはフラッドで送られ、経路を学習します';
 
   @override
+  String get routing_noRoutePathfinder => 'まだありません';
+
+  @override
   String get routing_auto => '自動';
 
   @override
@@ -3712,6 +3715,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get routing_forgetDone => '経路をリセットしました。次のメッセージはフラッドで送られ、新しい経路を学習します。';
+
+  @override
+  String get routing_forgetDonePathfinder => '経路をリセットしました。';
 
   @override
   String get routing_pathfinder => 'Pathfinderが知っていること';

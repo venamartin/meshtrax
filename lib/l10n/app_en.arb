@@ -2149,6 +2149,7 @@
     }
   },
   "routing_noRoute": "none yet — the next message floods and learns one",
+  "routing_noRoutePathfinder": "none stored",
   "routing_auto": "Automatic",
   "routing_autoSubtitle": "Use the radio's stored path. Recommended.",
   "routing_pathfinderOn": "Pathfinder on: tries learned routes first",
@@ -2158,6 +2159,7 @@
   "routing_customSubtitle": "Choose the repeaters yourself",
   "routing_forget": "Reset path",
   "routing_forgetDone": "Path reset. The next message floods and learns a fresh one.",
+  "routing_forgetDonePathfinder": "Path reset.",
   "routing_pathfinder": "What Pathfinder knows",
   "routing_pathfinderSubtitle": "Repeaters that hear you and them, and learned routes there and back",
   "path_direct": "Direct — no repeaters",

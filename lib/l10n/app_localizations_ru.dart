@@ -3866,6 +3866,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'пока нет — следующее сообщение уйдёт рассылкой и найдёт его';
 
   @override
+  String get routing_noRoutePathfinder => 'пока нет';
+
+  @override
   String get routing_auto => 'Автоматически';
 
   @override
@@ -3894,6 +3897,9 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Маршрут сброшен. Следующее сообщение уйдёт рассылкой и найдёт новый.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Маршрут сброшен.';
 
   @override
   String get routing_pathfinder => 'Что знает Pathfinder';

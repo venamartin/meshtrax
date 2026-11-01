@@ -745,8 +745,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _awaitingSelfInfo = false;
   // CONTACTS_START has arrived for the contact pass in progress.
   bool _contactStreamStarted = false;
-  // The next SELF_INFO answers readRadioSettings, not a handshake.
-  bool _settingsReadPending = false;
+  // SELF_INFOs still owed to readRadioSettings. A late one is still a read.
+  int _unansweredSettingsReads = 0;
   bool _hasReceivedDeviceInfo = false;
   bool _pendingInitialChannelSync = false;
   bool _pendingInitialContactsSync = false;
@@ -1192,6 +1192,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   @visibleForTesting
   void markInitialSyncCompleteForTest() => _initialSyncComplete = true;
+
+  @visibleForTesting
+  void markSelfPositionLiveForTest() => _selfPositionLive = true;
 
   @visibleForTesting
   Future<void> probeWifiForTest() => _probeWifi();
@@ -3310,6 +3313,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _pendingChannelSyncAfterQueueSync = false;
     _initialSyncComplete = false;
     _channelHealthWarnings.clear();
+    _unansweredSettingsReads = 0;
     _pathHashByteWidth = 1;
   }
 
@@ -3784,6 +3788,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _awaitingSelfInfo = false;
     _initialSyncComplete = false;
     _channelHealthWarnings.clear();
+    _unansweredSettingsReads = 0;
     _hasReceivedDeviceInfo = false;
     _pendingInitialChannelSync = false;
     _pendingInitialContactsSync = false;
@@ -4104,7 +4109,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       respCodeDeviceInfo,
       timeout: replyTimeout,
     );
-    _settingsReadPending = true;
+    _unansweredSettingsReads++;
     answered =
         await _askRadio(
           buildAppStartFrame(),
@@ -4112,7 +4117,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           timeout: replyTimeout,
         ) &&
         answered;
-    _settingsReadPending = false;
     answered = await waitForRadio(timeout: replyTimeout) && answered;
     if (firmwareSupports(
       RadioSetting.autoAdd,
@@ -5687,7 +5691,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     int advert,
     int multiAcks,
   ) async {
-    if (!isConnected) return;
+    // Before SELF_INFO the other values in this frame, and the manual-add byte,
+    // are only defaults.
+    if (!isConnected || _selfPublicKey == null) return;
     _telemetryModeBase = base.clamp(teleModeDeny, teleModeAllowAll).toInt();
     _telemetryModeLoc = location.clamp(teleModeDeny, teleModeAllowAll).toInt();
     _telemetryModeEnv = env.clamp(teleModeDeny, teleModeAllowAll).toInt();
@@ -6434,13 +6440,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// The radio overwrote this contact to make room for a new one. It is gone
-  /// from the radio, so it goes from the list. Its messages stay, for if the
-  /// contact is added again.
+  /// from the radio, so it moves to the discovered list, where it can be added
+  /// back. Its messages stay for when it is.
   void _handleContactDeleted(Uint8List frame) {
     if (frame.length < 1 + pubKeySize) return;
     final key = pubKeyToHex(frame.sublist(1, 1 + pubKeySize));
+    final removed = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
     _knownContactKeys.remove(key);
     _contacts.removeWhere((c) => c.publicKeyHex == key);
+    final row = _discoveredContacts.indexWhere((c) => c.publicKeyHex == key);
+    if (row >= 0) {
+      final inactive = _discoveredContacts[row].copyWith(isActive: false);
+      _discoveredContacts[row] = inactive;
+      unawaited(_discoveryContactStore.upsertContacts([inactive]));
+    } else if (removed != null) {
+      _handleDiscovery(removed, Uint8List(0), noNotify: true);
+    }
     notifyListeners();
     unawaited(_persistContacts());
   }
@@ -6506,6 +6521,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // [57] = cr
     // [58+] = node_name
     final wasAwaitingSelfInfo = _awaitingSelfInfo;
+    final wasPositionLive = _selfPositionLive;
     final reader = BufferReader(frame);
     try {
       reader.skipBytes(2);
@@ -6571,12 +6587,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // here would clear the list, and a DM from a sender not yet back in it is
     // dropped for good.
     final settingsOnly =
-        _settingsReadPending &&
+        _unansweredSettingsReads > 0 &&
         !wasAwaitingSelfInfo &&
         !streamStopped &&
         _lastLoadedNodeKey == selfPublicKeyHex;
-    _settingsReadPending = false;
+    if (_unansweredSettingsReads > 0) _unansweredSettingsReads--;
     if (settingsOnly) {
+      // The radio has not restarted, so a position that was live still is.
+      _selfPositionLive = wasPositionLive;
       notifyListeners();
       return;
     }
@@ -6936,17 +6954,29 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         return;
       }
       final contact = getFromDiscovered(contactTmp);
+      final autoAdded =
+          (_autoAddUsers && contact.type == advTypeChat) ||
+          (_autoAddRepeaters && contact.type == advTypeRepeater) ||
+          (_autoAddRoomServers && contact.type == advTypeRoom) ||
+          (_autoAddSensors && contact.type == advTypeSensor);
+      final existingIndex = _contacts.indexWhere(
+        (c) => c.publicKeyHex == contact.publicKeyHex,
+      );
       if (!isContact) {
-        _handleDiscovery(contact, frame, noNotify: true, addActive: true);
+        // Active means saved: allContacts shows the saved copy and hides this
+        // row. A node that is only heard must stay listed, so it can be added.
+        _handleDiscovery(
+          contact,
+          frame,
+          noNotify: true,
+          addActive: existingIndex >= 0 || autoAdded,
+        );
       }
 
       if (contact.type == advTypeRepeater) {
       }
       // Check if this is a new contact
       final isNewContact = !_knownContactKeys.contains(contact.publicKeyHex);
-      final existingIndex = _contacts.indexWhere(
-        (c) => c.publicKeyHex == contact.publicKeyHex,
-      );
 
       if (existingIndex >= 0) {
         final existing = _contacts[existingIndex];
@@ -6973,11 +7003,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           inboundPathHashSize: existing.inboundPathHashSize,
         ));
       } else {
-        if ((_autoAddUsers && contact.type == advTypeChat) ||
-            (_autoAddRepeaters && contact.type == advTypeRepeater) ||
-            (_autoAddRoomServers && contact.type == advTypeRoom) ||
-            (_autoAddSensors && contact.type == advTypeSensor) ||
-            isContact) {
+        if (autoAdded || isContact) {
           _contacts.add(_restoreKeptOverride(contact));
           appLogger.info(
             'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
@@ -8043,7 +8069,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
         if (pubKey != null && hex != null) {
           final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex);
-          if (!alreadyKnown) {
+          // With auto-add off the radio did not save it, and the ERR it answers
+          // with reaches whoever is waiting on another command, such as a trace.
+          if (!alreadyKnown && _autoAddRepeaters) {
             appLogger.info('Discovered repeater is unknown to app contacts. Querying companion database for $hex...');
             unawaited(sendFrame(buildGetContactByKeyFrame(pubKey)));
           }
@@ -10387,6 +10415,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // banner sticks on "Reading device info" until the next attempt.
     _initialSyncComplete = false;
     _channelHealthWarnings.clear();
+    _unansweredSettingsReads = 0;
     _resetSecondApp();
     _requestSentClaims.clear();
     _awaitingSelfInfo = false;

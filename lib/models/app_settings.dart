@@ -177,6 +177,18 @@ class AppSettings {
        blockedContactKeys = blockedContactKeys ?? {},
        blockedSenderNames = blockedSenderNames ?? {};
 
+  /// What an install from before these defaults ran on if its user never
+  /// changed a setting, so nothing was saved. Not [fromJson] with no keys: a
+  /// file saved long ago without a key really ran on that key's fallback, and
+  /// for two settings the fallback differs from the old constructor.
+  factory AppSettings.olderInstall() => AppSettings(
+    mapShowGuessedLocations: true,
+    maxMessageRetries: 3,
+    pathGraphEnabled: false,
+    incrementalContactSync: false,
+    mutedChannels: {},
+  );
+
   Map<String, dynamic> toJson() {
     return {
       'map_show_repeaters': mapShowRepeaters,

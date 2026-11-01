@@ -3838,6 +3838,9 @@ class AppLocalizationsSl extends AppLocalizations {
       'še nobene — naslednje sporočilo gre poplavno in se jo nauči';
 
   @override
+  String get routing_noRoutePathfinder => 'še nobene';
+
+  @override
   String get routing_auto => 'Samodejno';
 
   @override
@@ -3866,6 +3869,9 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Pot ponastavljena. Naslednje sporočilo gre poplavno in se nauči novo.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Pot ponastavljena.';
 
   @override
   String get routing_pathfinder => 'Kaj ve Pathfinder';

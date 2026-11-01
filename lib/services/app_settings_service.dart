@@ -39,7 +39,7 @@ class AppSettingsService extends ChangeNotifier {
         notifyListeners();
       } catch (e) {
         // If parsing fails, keep what an older install was running on.
-        _settings = AppSettings.fromJson(const {});
+        _settings = AppSettings.olderInstall();
       }
       return;
     }
@@ -51,7 +51,7 @@ class AppSettingsService extends ChangeNotifier {
     final olderInstall =
         TermsGate.isAccepted || prefs.containsKey('last_ble_device_id');
     await updateSettings(
-      olderInstall ? AppSettings.fromJson(const {}) : AppSettings(),
+      olderInstall ? AppSettings.olderInstall() : AppSettings(),
     );
   }
 

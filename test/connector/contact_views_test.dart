@@ -71,6 +71,21 @@ void main() {
         ['Alpha', 'Bravo', 'Charlie']);
   });
 
+  test('a node heard but not saved stays listed, so it can be added', () {
+    heard(_key(0x70), 'Charlie');
+    expect(c.contacts, isEmpty);
+    expect(c.allContacts.map((x) => x.name), ['Charlie']);
+
+    heard(_key(0x70), 'Charlie');
+    expect(c.allContacts.map((x) => x.name), ['Charlie']);
+  });
+
+  test('a saved contact is listed once when heard again', () {
+    saved(_key(0x10), 'Alpha');
+    heard(_key(0x10), 'Alpha');
+    expect(c.allContacts.map((x) => x.name), ['Alpha']);
+  });
+
   test('a room author is found by the first four key bytes', () {
     final alpha = _key(0x10);
     // Same four leading bytes, a different radio, heard first.

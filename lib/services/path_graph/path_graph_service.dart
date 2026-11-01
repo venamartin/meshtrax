@@ -126,7 +126,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   MeshSuggestion? _suggestion;
 
   /// Repeaters heard before the check looks, and how many of them must be
-  /// new to an established graph, of at least [meshCheckMinNodes] nodes.
+  /// new to the open graph. A new graph is only offered to an established one,
+  /// of at least [meshCheckMinNodes] nodes.
   static const meshCheckSample = 6;
   static const meshCheckUnknownShare = 0.75;
   static const meshCheckMinNodes = 100;
@@ -358,7 +359,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     final heard = _heardKeys.length;
     final unknown = _heardKeys.values.where((k) => !k).length;
     if (unknown < heard * meshCheckUnknownShare ||
-        graph.nodeCount < meshCheckMinNodes ||
         GraphBook.isQuiet(entry, DateTime.now())) {
       return;
     }
@@ -374,6 +374,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (best * 2 < heard) other = null;
+    // A young graph has only heard part of its own mesh, so it does not ask for
+    // a new one. A saved graph that knows these repeaters is still the way back.
+    if (other == null && graph.nodeCount < meshCheckMinNodes) return;
     _suggestion = MeshSuggestion(
         current: entry, heard: heard, unknown: unknown, other: other);
     appLogger.info(

@@ -3794,6 +3794,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'none yet — the next message floods and learns one';
 
   @override
+  String get routing_noRoutePathfinder => 'none stored';
+
+  @override
   String get routing_auto => 'Automatic';
 
   @override
@@ -3822,6 +3825,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Path reset. The next message floods and learns a fresh one.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Path reset.';
 
   @override
   String get routing_pathfinder => 'What Pathfinder knows';

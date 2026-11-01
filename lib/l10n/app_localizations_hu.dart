@@ -3880,6 +3880,9 @@ class AppLocalizationsHu extends AppLocalizations {
       'még nincs — a következő üzenet elárasztással megy, és tanul egyet';
 
   @override
+  String get routing_noRoutePathfinder => 'még nincs';
+
+  @override
   String get routing_auto => 'Automatikus';
 
   @override
@@ -3908,6 +3911,9 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Útvonal törölve. A következő üzenet elárasztással megy, és újat tanul.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Útvonal törölve.';
 
   @override
   String get routing_pathfinder => 'Amit a Pathfinder tud';

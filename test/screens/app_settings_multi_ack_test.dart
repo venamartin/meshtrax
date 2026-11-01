@@ -83,6 +83,18 @@ void main() {
 
   Finder multiAckSwitch() => find.widgetWithText(SwitchListTile, 'Multi-ACKs');
 
+  Uint8List selfInfo() {
+    final w = BytesBuilder();
+    w.add([respCodeSelfInfo, advTypeChat, 20, 22]);
+    w.add(Uint8List(32)..fillRange(0, 32, 0x11));
+    w.add(Uint8List(8));
+    w.add([1, 0, 0, 1]);
+    w.add(Uint8List(8));
+    w.add([7, 5]);
+    w.add('GWQ'.codeUnits);
+    return w.toBytes();
+  }
+
   Uint8List deviceInfo({String version = 'v1.18.0', int code = 14}) {
     final frame = Uint8List(82);
     frame[0] = respCodeDeviceInfo;
@@ -94,7 +106,9 @@ void main() {
   testWidgets('the switch sits in Messaging and writes to the radio', (
     tester,
   ) async {
-    final radio = _Radio(true)..handleFrameForTest(deviceInfo());
+    final radio = _Radio(true)
+      ..handleFrameForTest(deviceInfo())
+      ..handleFrameForTest(selfInfo());
     await pump(tester, radio);
 
     final messaging = find.text('Messaging');

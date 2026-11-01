@@ -3594,6 +3594,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routing_noRoute => '暂无 — 下一条消息会泛洪发送并学习路径';
 
   @override
+  String get routing_noRoutePathfinder => '暂无';
+
+  @override
   String get routing_auto => '自动';
 
   @override
@@ -3619,6 +3622,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routing_forgetDone => '路径已重置。下一条消息会泛洪发送并学习新路径。';
+
+  @override
+  String get routing_forgetDonePathfinder => '路径已重置。';
 
   @override
   String get routing_pathfinder => 'Pathfinder 掌握的信息';

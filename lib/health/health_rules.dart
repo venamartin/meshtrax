@@ -347,7 +347,8 @@ final List<HealthRule> healthRules = [
     why:
         'When the contact list is full, new contacts are not saved. This '
         'setting makes room by replacing the oldest contact that is not a '
-        'favorite.',
+        'favorite. A replaced contact leaves your chats until you add it back, '
+        'and its messages are kept.',
     needsRadio: true,
     check: (ctx) async =>
         _radioHasAutoAdd(ctx.connector) &&
@@ -451,8 +452,7 @@ final List<HealthRule> healthRules = [
     details: (ctx) => [
       if (ctx.connector.deviceClockStuckAhead)
         "The radio's clock is ahead of this device. The firmware will not wind "
-            'a clock back, so the app cannot fix this. Restarting the radio '
-            'may help on boards with no battery-backed clock.',
+            'a clock back, so the app cannot fix this.',
     ],
     notes:
         'Messages from this app carry the phone time, not the radio time. A '
@@ -667,7 +667,6 @@ final List<HealthRule> healthRules = [
         'Everyone on the mesh can post in Public, so it can notify you often. '
         'Mute it, and leave mention notifications on: you will still know when '
         'someone is talking to you or about you.',
-    needsRadio: true,
     check: (ctx) async =>
         ctx.canShowNotifications && _publicChannelNotifies(ctx),
     fix: HealthFix.apply,
@@ -698,8 +697,9 @@ final List<HealthRule> healthRules = [
     title: 'Direct messages get too few tries',
     why:
         'With fewer than 4 tries, a direct message gets one try on a route '
-        'before the app floods the whole mesh. With 4 or 5, a known route gets '
-        'another try first, so more messages can arrive without flooding.',
+        'before the app floods the whole mesh. With 4 or 5, it can get a second '
+        'try on a route first, if the app has one to try, so more messages can '
+        'arrive without flooding. If not, the extra try floods.',
     check: (ctx) async => ctx.app.maxMessageRetries < 4,
     fix: HealthFix.apply,
     fixDescription: 'Set direct message tries to 4.',

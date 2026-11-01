@@ -191,6 +191,51 @@ void main() {
       expect(radio.sent, isEmpty);
     });
 
+    test('a reply later than the wait still starts no download', () async {
+      final radio = await syncedRadio();
+      radio.answers.remove(cmdAppStart);
+      await radio.readRadioSettings(
+        replyTimeout: const Duration(milliseconds: 10),
+      );
+      radio.sent.clear();
+
+      radio.handleFrameForTest(_selfInfo(multiAcks: 1));
+      await _settle();
+
+      expect(radio.multiAcks, 1);
+      expect(radio.commands, isNot(contains(cmdGetContacts)));
+      expect(radio.contacts, hasLength(1));
+    });
+
+    test('two reads at once start no download', () async {
+      final radio = await syncedRadio();
+      await Future.wait([radio.readRadioSettings(), radio.readRadioSettings()]);
+      await _settle();
+
+      expect(radio.commands, isNot(contains(cmdGetContacts)));
+      expect(radio.contacts, hasLength(1));
+    });
+
+    test('the next SELF_INFO after the reads is a normal one again', () async {
+      final radio = await syncedRadio();
+      await radio.readRadioSettings();
+      radio.sent.clear();
+
+      radio.handleFrameForTest(_selfInfo());
+      await _settle();
+      expect(radio.commands, contains(cmdGetContacts));
+    });
+
+    test('a live GPS position stays live', () async {
+      final radio = await syncedRadio();
+      radio.markSelfPositionLiveForTest();
+      await radio.readRadioSettings();
+      expect(radio.selfPositionIsLive, isTrue);
+
+      radio.handleFrameForTest(_selfInfo());
+      expect(radio.selfPositionIsLive, isFalse, reason: 'a handshake may not');
+    });
+
     test('a clock far ahead is reported, and Check again sees it go', () async {
       final radio = await syncedRadio();
       final ahead = DateTime.now().add(const Duration(hours: 1));
@@ -245,12 +290,33 @@ void main() {
     });
   });
 
-  test('a contact the radio overwrote leaves the list', () async {
+  test('a contact the radio overwrote can be added back', () async {
     final radio = await syncedRadio();
     expect(radio.contacts, hasLength(1));
 
     radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
     expect(radio.contacts, isEmpty);
+    expect(radio.allContacts.map((c) => c.name), ['Friend']);
+  });
+
+  test('so can one with a row from an earlier advert', () async {
+    final radio = await syncedRadio();
+    radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
+    radio.handleFrameForTest(
+      _contact(_friendKey, 'Friend')..[0] = pushCodeNewAdvert,
+    );
+    expect(radio.discoveredContacts.single.isActive, isTrue);
+    expect(radio.allContacts, hasLength(1));
+
+    radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+    expect(radio.contacts, isEmpty);
+    expect(radio.allContacts.map((c) => c.name), ['Friend']);
+  });
+
+  test('nothing is written before the radio has been read', () async {
+    final radio = _Radio()..initialize(retryService: MessageRetryService());
+    await radio.setTelemetryModeBase(0, 0, 0, 0, 1);
+    expect(radio.sent, isEmpty);
   });
 
   group('the Multi-ACK write', () {
