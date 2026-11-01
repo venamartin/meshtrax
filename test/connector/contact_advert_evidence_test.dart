@@ -412,7 +412,7 @@ void main() {
       expect(c.directRepeaters, isEmpty);
     });
 
-    test('telling listeners about a contact it introduced', () {
+    test('telling listeners about a contact it introduced', () async {
       autoAdd();
       var notified = 0;
       c.addListener(() => notified++);
@@ -424,6 +424,7 @@ void main() {
         ),
       );
 
+      await Future<void>.delayed(const Duration(milliseconds: 300));
       expect(notified, greaterThan(0));
     });
 

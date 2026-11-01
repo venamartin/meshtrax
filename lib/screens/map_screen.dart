@@ -1171,10 +1171,7 @@ class _MapScreenState extends State<MapScreen> {
                         context,
                         contact,
                         contact,
-                        guesses: {
-                          if (guessedPosition != null)
-                            contact.publicKeyHex: guessedPosition,
-                        },
+                        guesses: {contact.publicKeyHex: ?guessedPosition},
                       );
                     },
                   ),
