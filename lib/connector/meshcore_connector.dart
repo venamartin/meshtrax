@@ -6580,7 +6580,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _moveSavedToDiscovered(String key) {
-    _unconfirmedContactKeys?.remove(key);
     final removed = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
     final row = _discoveredContacts
         .where((c) => c.publicKeyHex == key)
