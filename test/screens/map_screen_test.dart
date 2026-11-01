@@ -205,7 +205,7 @@ void main() {
     expect(find.byType(QuickSwitchBar), findsOneWidget);
   });
 
-  testWidgets('guesses use the radio\'s range: 912 km apart is a guess, 4,100 km is not', (
+  testWidgets('guesses use the radio\'s range: 912 km apart is a guess, 1,750 km is not', (
     tester,
   ) async {
     Contact target(int seed, int routeHop) => Contact(
@@ -230,7 +230,7 @@ void main() {
           _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
           _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
           _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
-          _node('New York', advTypeRepeater, 0x04, 40.7, -74.0),
+          _node('Rapid City', advTypeRepeater, 0x04, 44.1, -103.2),
           near,
           across,
           tooFar,

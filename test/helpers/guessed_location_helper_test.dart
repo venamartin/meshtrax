@@ -288,6 +288,19 @@ void main() {
         );
       });
 
+      test('the route keeps its width beside an advert path of another', () {
+        final guesses = _compute(
+          [
+            _target(inbound: [0x55], route: [0xA1, 0xB2], routeWidth: 2),
+          ],
+          [a1b2, a1cc],
+        );
+        expect(
+          distance(guesses.single.position, const LatLng(37.3, -122.0)),
+          closeTo(330, 2),
+        );
+      });
+
       test('an advert path of unknown width takes the route width', () {
         final guesses = _compute(
           [
@@ -458,6 +471,13 @@ void main() {
 
     test('changes when the first hop changes at the same length', () {
       expect(_keyFor(base), isNot(_keyFor(_target(inbound: [0xB2, 0x10]))));
+    });
+
+    test('changes when the hop count changes behind the same first hop', () {
+      expect(
+        _keyFor(base),
+        isNot(_keyFor(_target(inbound: [0xA1, 0x10, 0x20]))),
+      );
     });
 
     test('changes when a contact crosses the 24 hour line', () {
