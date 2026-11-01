@@ -36,8 +36,8 @@ class _Radio extends MeshCoreConnector {
     final key = data.length >= 33 ? pubKeyToHex(data.sublist(1, 33)) : '';
     void reply(List<int> frame) =>
         scheduleMicrotask(() => handleFrameForTest(frame));
-    if (data[0] == cmdAddUpdateContact) {
-      table[key] = data.sublist(1);
+    if (data[0] == cmdAddUpdateContact || data[0] == cmdRemoveContact) {
+      if (data[0] == cmdAddUpdateContact) table[key] = data.sublist(1);
       reply([respCodeOk]);
     } else if (data[0] == cmdGetContactByKey) {
       final saved = table[key];
@@ -151,6 +151,21 @@ void main() {
     await tester.longPress(find.text('Hilltop'));
     await settle(tester);
     expect(find.text('Share contact by advert'), findsNothing);
+  });
+
+  testWidgets('deleting one during a download still asks the radio', (
+    tester,
+  ) async {
+    await radio.getContacts();
+    await open(tester);
+    await tester.longPress(find.text('Hilltop'));
+    await settle(tester);
+    await tester.tap(find.text('Delete Contact').first);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await settle(tester);
+
+    expect(radio.sent, contains(cmdRemoveContact));
   });
 
   testWidgets('deleting one sends nothing to the radio', (tester) async {

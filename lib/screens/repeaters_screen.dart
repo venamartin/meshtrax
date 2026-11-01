@@ -332,7 +332,10 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              if (contact.isActive) connector.removeContact(contact);
+              // During a download a saved repeater's row can look only heard.
+              if (contact.isActive || connector.isLoadingContacts) {
+                connector.removeContact(contact);
+              }
               connector.removeDiscoveredContact(contact);
             },
             child: Text(
