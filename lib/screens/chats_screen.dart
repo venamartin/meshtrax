@@ -580,12 +580,19 @@ class _ChatsScreenState extends State<ChatsScreen>
               ListTile(
                 leading: const Icon(Icons.connect_without_contact),
                 title: Text(context.l10n.contacts_ShareContactZeroHop),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(sheetContext);
-                  connector.shareContactZeroHop(contact.publicKey);
+                  final shared = await connector.shareContactZeroHop(
+                    contact.publicKey,
+                  );
+                  if (!context.mounted) return;
                   showDismissibleSnackBar(
                     context,
-                    content: Text(context.l10n.settings_advertisementSent),
+                    content: Text(
+                      shared
+                          ? context.l10n.settings_advertisementSent
+                          : context.l10n.contacts_shareByAdvertFailed,
+                    ),
                   );
                 },
               ),

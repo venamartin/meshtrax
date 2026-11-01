@@ -1442,6 +1442,7 @@
   "contacts_contactAdvertCopyFailed": "Kopiëren van advertentie naar Clipboard is mislukt.",
   "contacts_ShareContact": "Contact naar Klembord kopiëren",
   "contacts_ShareContactZeroHop": "Contact delen via advertentie",
+  "contacts_shareByAdvertFailed": "De radio kon dit contact niet delen. Hij moet eerst de advertentie ervan horen.",
   "contacts_zeroHopContactAdvertFailed": "Mislukt om contact te verzenden",
   "notification_activityTitle": "MeshCore Activiteit",
   "notification_messagesCount": "{count} {count, plural, =1{bericht} other{berichten}}",

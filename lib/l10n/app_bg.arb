@@ -1439,6 +1439,7 @@
   "contacts_copyAdvertToClipboard": "Копирай обявата в клипборда",
   "contacts_ShareContact": "Копирай контакт в клипборда",
   "contacts_ShareContactZeroHop": "Сподели контакт чрез обява",
+  "contacts_shareByAdvertFailed": "Радиото не можа да сподели този контакт. Първо трябва да чуе обявата му.",
   "contacts_contactAdvertCopied": "Рекламата е копирана в клипборда.",
   "contacts_zeroHopContactAdvertFailed": "Неуспешно изпращане на контакт.",
   "contacts_zeroHopContactAdvertSent": "Изпратен контакт по обява.",

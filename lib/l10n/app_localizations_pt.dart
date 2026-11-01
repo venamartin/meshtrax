@@ -3435,6 +3435,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Compartilhar contato por anúncio';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'O rádio não conseguiu compartilhar este contato. Primeiro ele precisa ouvir o anúncio dele.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Enviou contato por anúncio.';
 
   @override

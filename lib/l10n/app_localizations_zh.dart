@@ -3222,6 +3222,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '通过广播分享联系人';
 
   @override
+  String get contacts_shareByAdvertFailed => '电台无法分享此联系人。它需要先收到该联系人的广播。';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '零跳广播已发送';
 
   @override

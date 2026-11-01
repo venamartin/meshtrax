@@ -3403,6 +3403,10 @@ class AppLocalizationsSl extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Deliti kontakt prek oglasa';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Radio ni mogel deliti tega kontakta. Najprej mora slišati njegov oglas.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Poslano po oglasu.';
 
   @override

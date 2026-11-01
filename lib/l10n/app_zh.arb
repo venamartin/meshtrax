@@ -1444,6 +1444,7 @@
   "contacts_addContactFromClipboard": "从剪贴板添加联系人",
   "contacts_ShareContact": "复制联系人信息到剪贴板",
   "contacts_ShareContactZeroHop": "通过广播分享联系人",
+  "contacts_shareByAdvertFailed": "电台无法分享此联系人。它需要先收到该联系人的广播。",
   "contacts_zeroHopContactAdvertSent": "零跳广播已发送",
   "contacts_zeroHopContactAdvertFailed": "发送联系人广播失败。",
   "contacts_contactAdvertCopied": "广播已复制到剪贴板。",

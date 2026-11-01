@@ -1439,6 +1439,7 @@
   "contacts_addContactFromClipboard": "Ajouter un contact depuis le presse-papiers",
   "contacts_ShareContact": "Copier le contact dans le presse-papiers",
   "contacts_ShareContactZeroHop": "Partager un contact par annonce",
+  "contacts_shareByAdvertFailed": "La radio n'a pas pu partager ce contact. Elle doit d'abord entendre son annonce.",
   "contacts_contactAdvertCopied": "Annonce copiée dans le presse-papiers.",
   "contacts_contactAdvertCopyFailed": "La copie de l'annonce vers le presse-papiers a échoué.",
   "contacts_zeroHopContactAdvertSent": "Envoyer un contact par annonce.",

@@ -3430,6 +3430,10 @@ class AppLocalizationsBg extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Сподели контакт чрез обява';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Радиото не можа да сподели този контакт. Първо трябва да чуе обявата му.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Изпратен контакт по обява.';
 
   @override

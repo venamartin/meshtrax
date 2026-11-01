@@ -3377,6 +3377,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Share contact by advert';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'The radio could not share this contact. It has to hear the contact\'s advert first.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Sent contact by advert.';
 
   @override

@@ -3433,6 +3433,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Поділитися контактом за оголошенням';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Радіо не змогло поділитися цим контактом. Спочатку воно має почути його оголошення.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Відправлено контакт за оголошенням';
 

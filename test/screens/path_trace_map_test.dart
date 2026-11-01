@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxmap/traxmap.dart';
@@ -93,6 +94,81 @@ void main() {
     );
   });
   tearDown(() => tmp.delete(recursive: true));
+
+  testWidgets('a guessed hop shows as an estimate at its guessed position', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final located = _repeater('Hilltop', 0x11, 41.80, -71.40);
+    final guessed = Contact(
+      publicKey: Uint8List.fromList(List.filled(32, 0x22)),
+      name: 'College Hill',
+      type: advTypeRepeater,
+      pathLength: -1,
+      path: Uint8List(0),
+      pathHashSize: 1,
+      lastSeen: DateTime.now(),
+    );
+    // Its route ends at the guessed hop, so peer averaging has a position to
+    // offer; the tapped estimate must win.
+    final peer = Contact(
+      publicKey: Uint8List.fromList(List.filled(32, 0x33)),
+      name: 'Peer',
+      type: advTypeChat,
+      pathLength: 1,
+      path: Uint8List.fromList(const [0x22]),
+      pathHashSize: 1,
+      latitude: 10,
+      longitude: 10,
+      lastSeen: DateTime.now(),
+    );
+    final connector = _TraceConnector([located, guessed, peer]);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MeshCoreConnector>.value(value: connector),
+          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider<MapPacksService>.value(value: maps),
+          Provider<MapTileCacheService>.value(value: BlankTileCache()),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: PathTraceMapScreen(
+            title: 'Trace',
+            path: Uint8List.fromList([0x11, 0x22]),
+            pathHashByteWidth: 1,
+            pathContacts: [located, guessed],
+            guessedPositions: {
+              guessed.publicKeyHex: const ll.LatLng(41.83, -71.40),
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    connector.frames.add(
+      Uint8List.fromList([
+        pushCodeTraceData, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+        0x11, 0x22, 40, 36, 32,
+      ]),
+    );
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    final hop = tester
+        .widget<AppMap>(find.byType(AppMap))
+        .overlays
+        .whereType<MapMarker>()
+        .firstWhere((o) => o.id == 'hop:1:22');
+    expect(hop.position, const LatLng(41.83, -71.40));
+    expect(((hop.child as Container).child as Text).data, '~22');
+
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('a trace without the radio position: no crash; hops, line, '
       'and the hop list below the map', (tester) async {

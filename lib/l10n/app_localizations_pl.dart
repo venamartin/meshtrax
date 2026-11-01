@@ -3435,6 +3435,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Udostępnij kontakt przez rozgłoszenie';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Radio nie mogło udostępnić tego kontaktu. Najpierw musi usłyszeć jego rozgłoszenie.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Wysłano kontakt przez rozgłoszenie.';
 

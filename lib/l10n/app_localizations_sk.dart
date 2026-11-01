@@ -3409,6 +3409,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Zdieľať kontakt cez inzerát';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Rádio nemohlo zdieľať tento kontakt. Najprv musí počuť jeho inzerát.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Poslal kontakt cez inzerát.';
 
   @override

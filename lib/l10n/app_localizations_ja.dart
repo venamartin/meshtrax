@@ -3288,6 +3288,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '広告を通じて連絡先を共有する';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      '無線機はこの連絡先を共有できませんでした。先にこの連絡先の広告を受信する必要があります。';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '広告を通じて連絡先を得た。';
 
   @override

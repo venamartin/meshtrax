@@ -37,9 +37,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   }
 
   void _manageRepeater(BuildContext context, MeshCoreConnector connector, Contact contact) {
-    if (!contact.isActive) {
-      connector.importDiscoveredContact(contact);
-    }
     showDialog(
       context: context,
       builder: (context) => RepeaterLoginDialog(
@@ -61,10 +58,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   }
 
   void _showRepeaterOptions(BuildContext context, MeshCoreConnector connector, Contact contact) {
-    if (!contact.isActive) {
-      connector.importDiscoveredContact(contact);
-    }
-
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -165,12 +158,19 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
             ListTile(
               leading: const Icon(Icons.connect_without_contact),
               title: Text(context.l10n.contacts_ShareContactZeroHop),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(sheetContext);
-                  connector.shareContactZeroHop(contact.publicKey);
+                final shared = await connector.shareContactZeroHop(
+                  contact.publicKey,
+                );
+                if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
-                  content: Text(context.l10n.settings_advertisementSent),
+                  content: Text(
+                    shared
+                        ? context.l10n.settings_advertisementSent
+                        : context.l10n.contacts_shareByAdvertFailed,
+                  ),
                 );
               },
             ),

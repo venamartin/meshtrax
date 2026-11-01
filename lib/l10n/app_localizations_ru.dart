@@ -3428,6 +3428,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Поделиться контактом по объявлению';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Радио не смогло поделиться этим контактом. Сначала оно должно услышать его объявление.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Отправлено сообщение по объявлению.';
 

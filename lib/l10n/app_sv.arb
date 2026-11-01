@@ -1443,6 +1443,7 @@
   "contacts_ShareContact": "Kopiera kontakt till Urklipp",
   "contacts_zeroHopContactAdvertFailed": "Misslyckades med att skicka kontakt.",
   "contacts_ShareContactZeroHop": "Dela kontakt via annons",
+  "contacts_shareByAdvertFailed": "Radion kunde inte dela den här kontakten. Den måste först höra dess annons.",
   "notification_activityTitle": "MeshCore Aktivitet",
   "notification_messagesCount": "{count} {count, plural, =1{meddelande} other{meddelanden}}",
   "notification_channelMessagesCount": "{count} {count, plural, =1{kanalmeddelande} other{kanalmeddelanden}}",

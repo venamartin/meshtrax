@@ -3419,6 +3419,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Contact delen via advertentie';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'De radio kon dit contact niet delen. Hij moet eerst de advertentie ervan horen.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Contact verzonden via advertentie';
 

@@ -299,6 +299,61 @@ void main() {
     expect(radio.allContacts.map((c) => c.name), ['Friend']);
   });
 
+  test(
+    'one overwritten with no app connected is listed after a full sync',
+    () async {
+      final radio = await syncedRadio();
+      radio.handleFrameForTest(
+        _contact(_friendKey, 'Friend')..[0] = pushCodeNewAdvert,
+      );
+      expect(radio.discoveredContacts.single.isActive, isTrue);
+
+      // The radio no longer has them, and no push ever said so.
+      await radio.getContacts();
+      radio.handleFrameForTest(_contactsStart(0));
+      radio.handleFrameForTest(_endOfContacts());
+      await _settle();
+
+      expect(radio.contacts, isEmpty);
+      expect(radio.allContacts.map((c) => c.name), ['Friend']);
+    },
+  );
+
+  test(
+    'an advert the radio saved is fetched, even with a discovered row',
+    () async {
+      final radio = await syncedRadio();
+      radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+      radio.sent.clear();
+
+      radio.handleFrameForTest([pushCodeAdvert, ..._friendKey]);
+      await _settle();
+      expect(radio.commands, contains(cmdGetContactByKey));
+    },
+  );
+
+  test('a download under way brings that contact without a lookup', () async {
+    final radio = await syncedRadio();
+    radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+    await radio.getContacts();
+    radio.sent.clear();
+
+    radio.handleFrameForTest([pushCodeAdvert, ..._friendKey]);
+    await _settle();
+    expect(radio.commands, isNot(contains(cmdGetContactByKey)));
+  });
+
+  test('an overwritten contact is listed with its current details', () async {
+    final radio = await syncedRadio();
+    radio.handleFrameForTest(
+      _contact(_friendKey, 'Old name')..[0] = pushCodeNewAdvert,
+    );
+    radio.handleFrameForTest(_contact(_friendKey, 'New name'));
+
+    radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+    expect(radio.allContacts.map((c) => c.name), ['New name']);
+  });
+
   test('so can one with a row from an earlier advert', () async {
     final radio = await syncedRadio();
     radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
@@ -311,6 +366,20 @@ void main() {
     radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
     expect(radio.contacts, isEmpty);
     expect(radio.allContacts.map((c) => c.name), ['Friend']);
+  });
+
+  group('sharing a contact by advert', () {
+    test('reports that the radio sent it', () async {
+      final radio = await syncedRadio();
+      radio.answers[cmdShareContact] = [respCodeOk];
+      expect(await radio.shareContactZeroHop(_friendKey), isTrue);
+    });
+
+    test('reports that the radio refused', () async {
+      final radio = await syncedRadio();
+      radio.answers[cmdShareContact] = [respCodeErr, 3];
+      expect(await radio.shareContactZeroHop(_friendKey), isFalse);
+    });
   });
 
   test('nothing is written before the radio has been read', () async {

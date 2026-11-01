@@ -1442,6 +1442,7 @@
   "contacts_floodAdvert": "Anúncio de Inundação",
   "contacts_contactAdvertCopyFailed": "Cópia do anúncio para a Área de Transferência falhou.",
   "contacts_ShareContactZeroHop": "Compartilhar contato por anúncio",
+  "contacts_shareByAdvertFailed": "O rádio não conseguiu compartilhar este contato. Primeiro ele precisa ouvir o anúncio dele.",
   "contacts_zeroHopContactAdvertFailed": "Falha ao enviar contato.",
   "notification_activityTitle": "Atividade MeshCore",
   "notification_messagesCount": "{count} {count, plural, =1{mensagem} other{mensagens}}",

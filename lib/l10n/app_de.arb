@@ -1440,6 +1440,7 @@
   "contacts_floodAdvert": "Flut-Ankündigung",
   "contacts_addContactFromClipboard": "Kontakt aus Zwischenablage hinzufügen",
   "contacts_ShareContactZeroHop": "Kontakt über Anzeige teilen",
+  "contacts_shareByAdvertFailed": "Das Funkgerät konnte diesen Kontakt nicht teilen. Es muss zuerst seine Anzeige empfangen.",
   "contacts_copyAdvertToClipboard": "Ankündigung in die Zwischenablage kopieren",
   "contacts_ShareContact": "Kontakt in die Zwischenablage kopieren",
   "contacts_zeroHopContactAdvertFailed": "Kontakt konnte nicht gesendet werden.",

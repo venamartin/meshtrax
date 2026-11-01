@@ -1442,6 +1442,7 @@
   "contacts_contactAdvertCopyFailed": "Kopírovanie inzerátu do schránky zlyhalo.",
   "contacts_zeroHopContactAdvertFailed": "Zlyhalo odoslanie kontaktu.",
   "contacts_ShareContactZeroHop": "Zdieľať kontakt cez inzerát",
+  "contacts_shareByAdvertFailed": "Rádio nemohlo zdieľať tento kontakt. Najprv musí počuť jeho inzerát.",
   "contacts_ShareContact": "Kopírovať kontakt do schránky",
   "notification_activityTitle": "Aktivita MeshCore",
   "notification_messagesCount": "{count} {count, plural, =1{správa} few{správy} other{správ}}",

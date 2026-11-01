@@ -3438,6 +3438,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Kontakt über Anzeige teilen';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Das Funkgerät konnte diesen Kontakt nicht teilen. Es muss zuerst seine Anzeige empfangen.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Kontakt über Anzeige gesendet';
 

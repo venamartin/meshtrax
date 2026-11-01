@@ -3444,6 +3444,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ossza meg a kapcsolatot hirdetés segítségével';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'A rádió nem tudta megosztani ezt a kapcsolatot. Előbb hallania kell a hirdetését.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Kapcsolatot a hirdetésen keresztül.';
 

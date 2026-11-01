@@ -1443,6 +1443,7 @@
   "contacts_zeroHopContactAdvertSent": "Відправлено контакт за оголошенням",
   "contacts_addContactFromClipboard": "Додати контакт з буфера обміну",
   "contacts_ShareContactZeroHop": "Поділитися контактом за оголошенням",
+  "contacts_shareByAdvertFailed": "Радіо не змогло поділитися цим контактом. Спочатку воно має почути його оголошення.",
   "notification_activityTitle": "Активність MeshCore",
   "notification_messagesCount": "{count} {count, plural, =1{повідомлення} few{повідомлення} many{повідомлень} other{повідомлень}}",
   "notification_channelMessagesCount": "{count} {count, plural, =1{повідомлення каналу} few{повідомлення каналу} many{повідомлень каналу} other{повідомлень каналу}}",

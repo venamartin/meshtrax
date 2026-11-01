@@ -3437,6 +3437,10 @@ class AppLocalizationsIt extends AppLocalizations {
       'Condividi contatto tramite annuncio';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'La radio non ha potuto condividere questo contatto. Prima deve sentire il suo annuncio.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Inviato contatto tramite annuncio.';
 

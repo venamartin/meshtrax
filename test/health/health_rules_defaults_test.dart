@@ -7,6 +7,7 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/health/health_rules.dart';
 import 'package:meshtrax/models/app_settings.dart';
 import 'package:meshtrax/models/channel.dart';
+import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
@@ -19,9 +20,13 @@ class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
   List<Channel> channelList = const [];
   Duration? clockSkew;
+  List<Contact>? contactList;
 
   @override
   Duration? get deviceClockSkew => clockSkew;
+
+  @override
+  List<Contact> get contacts => contactList ?? super.contacts;
 
   @override
   List<Channel> get channels => channelList;
@@ -218,12 +223,28 @@ void main() {
   test('a full contact list only matters with overwrite off', () async {
     final rule = healthRules.firstWhere((r) => r.id == 'radio_contacts_full');
     c.handleFrameForTest(_selfInfo(manualAdd: 1));
+    c.contactList = [
+      for (var i = 0; i < c.maxContacts; i++)
+        Contact(
+          publicKey: Uint8List(32)..fillRange(0, 32, i),
+          name: 'Contact $i',
+          type: advTypeChat,
+          pathLength: -1,
+          path: Uint8List(0),
+          pathHashSize: 1,
+          lastSeen: DateTime(2026, 10, 31),
+        ),
+    ];
+
+    c.handleFrameForTest([respCodeAutoAddConfig, 0, 0]);
+    expect(await rule.check(ctx), isTrue, reason: 'overwrite off');
+
     c.handleFrameForTest([
       respCodeAutoAddConfig,
       autoAddOverwriteOldestFlag,
       0,
     ]);
-    expect(await rule.check(ctx), isFalse);
+    expect(await rule.check(ctx), isFalse, reason: 'overwrite on');
   });
 
   test('the factory settings are flagged, a regional preset is not', () async {

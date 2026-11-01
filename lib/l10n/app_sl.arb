@@ -1442,6 +1442,7 @@
   "contacts_contactAdvertCopied": "Oglas je bil kopiran v odložišče.",
   "contacts_contactAdvertCopyFailed": "Kopiranje oglasa v odložišče je spodletelo.",
   "contacts_ShareContactZeroHop": "Deliti kontakt prek oglasa",
+  "contacts_shareByAdvertFailed": "Radio ni mogel deliti tega kontakta. Najprej mora slišati njegov oglas.",
   "contacts_ShareContact": "Kopiraj stik v Odložišče",
   "notification_activityTitle": "Aktivnost MeshCore",
   "notification_messagesCount": "{count} {count, plural, =1{sporočilo} =2{sporočili} few{sporočila} other{sporočil}}",

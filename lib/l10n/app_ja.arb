@@ -1719,6 +1719,7 @@
   "contacts_addContactFromClipboard": "クリップボードから連絡先を追加する",
   "contacts_ShareContact": "連絡先をクリップボードにコピー",
   "contacts_ShareContactZeroHop": "広告を通じて連絡先を共有する",
+  "contacts_shareByAdvertFailed": "無線機はこの連絡先を共有できませんでした。先にこの連絡先の広告を受信する必要があります。",
   "contacts_zeroHopContactAdvertSent": "広告を通じて連絡先を得た。",
   "contacts_zeroHopContactAdvertFailed": "連絡を送信できませんでした。",
   "contacts_contactAdvertCopied": "広告がクリップボードにコピーされました。",

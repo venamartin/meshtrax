@@ -815,7 +815,8 @@ final List<HealthRule> healthRules = [
         'Your radio remembers one route to each contact and floods the whole '
         'mesh when that route fails. Pathfinder learns routes from everything '
         'the radio hears, tries its best ones first, and floods only as a last '
-        'resort. It needs some hours of listening before it helps.',
+        'resort. It needs some hours of listening before it helps, and until it '
+        'has learned a route, messages to that contact flood.',
     check: (ctx) async => !ctx.app.pathGraphEnabled,
     fix: HealthFix.apply,
     fixDescription: 'Turn Pathfinder on.',

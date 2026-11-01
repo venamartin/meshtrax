@@ -1937,6 +1937,7 @@
   "contacts_addContactFromClipboard": "Add Contact from Clipboard",
   "contacts_ShareContact": "Copy contact to Clipboard",
   "contacts_ShareContactZeroHop": "Share contact by advert",
+  "contacts_shareByAdvertFailed": "The radio could not share this contact. It has to hear the contact's advert first.",
   "contacts_zeroHopContactAdvertSent": "Sent contact by advert.",
   "contacts_zeroHopContactAdvertFailed": "Failed to send contact.",
   "contacts_contactAdvertCopied": "Advert copied to Clipboard.",

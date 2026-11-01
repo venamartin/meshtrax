@@ -3289,6 +3289,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '광고를 통해 연락처 공유';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      '무전기가 이 연락처를 공유하지 못했습니다. 먼저 이 연락처의 광고를 수신해야 합니다.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '광고를 통해 연락처를 받았습니다.';
 
   @override

@@ -790,6 +790,7 @@
   "contacts_contactAdvertCopyFailed": "Копирование рекламы в буфер обмена не удалось.",
   "contacts_addContactFromClipboard": "Добавить контакт из буфера обмена",
   "contacts_ShareContactZeroHop": "Поделиться контактом по объявлению",
+  "contacts_shareByAdvertFailed": "Радио не смогло поделиться этим контактом. Сначала оно должно услышать его объявление.",
   "contacts_zeroHopContactAdvertSent": "Отправлено сообщение по объявлению.",
   "notification_activityTitle": "Активность MeshCore",
   "notification_messagesCount": "{count} {count, plural, =1{сообщение} few{сообщения} many{сообщений} other{сообщений}}",

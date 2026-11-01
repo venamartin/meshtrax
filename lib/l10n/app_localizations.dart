@@ -6012,6 +6012,12 @@ abstract class AppLocalizations {
   /// **'Share contact by advert'**
   String get contacts_ShareContactZeroHop;
 
+  /// No description provided for @contacts_shareByAdvertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio could not share this contact. It has to hear the contact\'s advert first.'**
+  String get contacts_shareByAdvertFailed;
+
   /// No description provided for @contacts_zeroHopContactAdvertSent.
   ///
   /// In en, this message translates to:

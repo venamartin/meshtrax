@@ -1451,6 +1451,7 @@
   "contacts_contactAdvertCopied": "Rozgłoszenie skopiowano do schowka.",
   "contacts_contactAdvertCopyFailed": "Kopiowanie rozgłoszenia do schowka nie powiodło się.",
   "contacts_ShareContactZeroHop": "Udostępnij kontakt przez rozgłoszenie",
+  "contacts_shareByAdvertFailed": "Radio nie mogło udostępnić tego kontaktu. Najpierw musi usłyszeć jego rozgłoszenie.",
   "contacts_ShareContact": "Kopiuj kontakt do schowka",
   "contacts_zeroHopContactAdvertFailed": "Nie udało się wysłać kontaktu.",
   "notification_activityTitle": "Aktywność MeshCore",

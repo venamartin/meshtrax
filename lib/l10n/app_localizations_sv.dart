@@ -3395,6 +3395,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Dela kontakt via annons';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Radion kunde inte dela den här kontakten. Den måste först höra dess annons.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Skickat kontakt via annons.';
 
   @override

@@ -3448,6 +3448,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Partager un contact par annonce';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'La radio n\'a pas pu partager ce contact. Elle doit d\'abord entendre son annonce.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Envoyer un contact par annonce.';
 

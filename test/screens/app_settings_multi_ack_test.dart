@@ -145,13 +145,11 @@ void main() {
     tester,
   ) async {
     final radio = _Radio(true)
-      ..handleFrameForTest(deviceInfo(version: 'v1.7.3', code: 7));
+      ..handleFrameForTest(deviceInfo(version: 'v1.7.3', code: 7))
+      ..handleFrameForTest(selfInfo());
     await pump(tester, radio);
 
-    radio.sent.clear();
-    await tester.tap(multiAckSwitch());
-    await tester.pump();
-    expect(radio.sent, isEmpty);
+    expect(tester.widget<SwitchListTile>(multiAckSwitch()).onChanged, isNull);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(minutes: 2));
@@ -161,9 +159,6 @@ void main() {
     final radio = _Radio(false);
     await pump(tester, radio);
 
-    await tester.tap(multiAckSwitch());
-    await tester.pump();
-
-    expect(radio.sent, isEmpty);
+    expect(tester.widget<SwitchListTile>(multiAckSwitch()).onChanged, isNull);
   });
 }

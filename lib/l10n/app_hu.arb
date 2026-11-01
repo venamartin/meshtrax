@@ -1719,6 +1719,7 @@
   "contacts_addContactFromClipboard": "Adjon hozzá egy kapcsolatot a kiválasztott listából",
   "contacts_ShareContact": "Másolja a kapcsolatot a kiválasztóba",
   "contacts_ShareContactZeroHop": "Ossza meg a kapcsolatot hirdetés segítségével",
+  "contacts_shareByAdvertFailed": "A rádió nem tudta megosztani ezt a kapcsolatot. Előbb hallania kell a hirdetését.",
   "contacts_zeroHopContactAdvertSent": "Kapcsolatot a hirdetésen keresztül.",
   "contacts_zeroHopContactAdvertFailed": "Nem sikerült a kapcsolatot elküldeni.",
   "contacts_contactAdvertCopied": "A hirdetés másolva a vágólapra.",
