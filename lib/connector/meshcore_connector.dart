@@ -729,6 +729,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // The last advert heard, if a neighbour shared it. The radio logs a packet
   // and then handles it, so what it pushes next is about this same copy.
   ({String key, int secs})? _lastSharedAdvert;
+  Timer? _contactPersistTimer;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -3755,6 +3756,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _txCharacteristic = null;
     _deviceDisplayName = null;
     _deviceId = null;
+    _flushContactPersist();
     _contacts.clear();
     _overridesAcrossRefresh = {};
     _contactsAcrossRefresh = {};
@@ -7165,6 +7167,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
+  /// A busy mesh brings many adverts a minute, and each save rewrites the whole
+  /// contact table.
+  void _persistContactsSoon() {
+    _contactPersistTimer ??= Timer(const Duration(seconds: 10), () {
+      _contactPersistTimer = null;
+      unawaited(_persistContacts());
+    });
+  }
+
+  void _flushContactPersist() {
+    if (_contactPersistTimer == null) return;
+    _contactPersistTimer!.cancel();
+    _contactPersistTimer = null;
+    unawaited(_persistContacts());
+  }
+
   Future<void> _persistContacts() async {
     // A full download rebuilds the list from empty; writing the partial list
     // would replace the cache with a truncated one if the link dropped
@@ -7909,7 +7927,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // carried). Node type is the flags byte after key, time, signature.
       if (packet.payloadType == payloadTypeADVERT &&
           packet.payload.length > 100 &&
-          (packet.payload[100] & 0x0F) == advTypeRepeater) {
+          (packet.payload[100] & 0x0F) == advTypeRepeater &&
+          !_isSharedAdvertRoute(packet.routeType, packet.pathBytes.length)) {
         _retryService?.noteRepeaterHeard();
       }
       // Message liveness, any hash width (the raw copy of my own flooded
@@ -10498,6 +10517,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
+    _flushContactPersist();
     // See disconnect(): END_OF_CONTACTS never arrives on a dropped link, so the
     // sync banner has to be cleared here or it sticks at its last count.
     _isLoadingContacts = false;
@@ -10675,6 +10695,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   @override
   void dispose() {
     if (_lifecycleObserved) WidgetsBinding.instance.removeObserver(this);
+    _contactPersistTimer?.cancel();
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     _usbFrameSubscription?.cancel();
@@ -11365,9 +11386,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    // A neighbour passing on a stored advert (firmware shareContactZeroHop:
+    // zero hop with transport codes). The copy can be old, and it says nothing
+    // about how the contact reaches us or when it last spoke, so it only
+    // introduces a contact we have never heard of.
+    final shared = _isSharedAdvertRoute(routeType, path.length);
+    _lastSharedAdvert = shared ? (key: contactKeyHex, secs: timestamp) : null;
+
     // Update our own location if the companion sends its advert, but ignore it as a contact
     if (listEquals(publicKey, _selfPublicKey)) {
-      if (hasLocation && hasValidLocation(latitude, longitude)) {
+      if (!shared && hasLocation && hasValidLocation(latitude, longitude)) {
         if (_selfLatitude != latitude || _selfLongitude != longitude) {
           _selfLatitude = latitude;
           _selfLongitude = longitude;
@@ -11380,12 +11408,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contactKeyHex);
 
-    // A neighbour passing on a stored advert (firmware shareContactZeroHop:
-    // zero hop with transport codes). The copy can be old, and it says nothing
-    // about how the contact reaches us or when it last spoke, so it only
-    // introduces a contact we have never heard of.
-    final shared = routeType == _routeTransportDirect && path.isEmpty;
-    _lastSharedAdvert = shared ? (key: contactKeyHex, secs: timestamp) : null;
     if (shared &&
         (!isNewContact ||
             _discoveredContacts.any((c) => c.publicKeyHex == contactKeyHex))) {
@@ -11467,8 +11489,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
+      _persistContactsSoon();
     }
   }
+
+  static bool _isSharedAdvertRoute(int routeType, int pathBytes) =>
+      routeType == _routeTransportDirect && pathBytes == 0;
 
   void _updateDirectRepeater(
     Contact contact,

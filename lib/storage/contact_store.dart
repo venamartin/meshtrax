@@ -119,6 +119,7 @@ class ContactStore {
       'lastSeen': contact.lastSeen.millisecondsSinceEpoch,
       'lastMessageAt': contact.lastMessageAt.millisecondsSinceEpoch,
       'isActive': contact.isActive,
+      'lastAdvertSecs': contact.lastAdvertSecs,
       'rawPacket': contact.rawPacket != null
           ? base64Encode(contact.rawPacket!)
           : null,
@@ -157,6 +158,7 @@ class ContactStore {
         lastMessageMs ?? lastSeenMs,
       ),
       isActive: json['isActive'] as bool? ?? true,
+      lastAdvertSecs: json['lastAdvertSecs'] as int?,
       rawPacket: json['rawPacket'] != null
           ? Uint8List.fromList(base64Decode(json['rawPacket'] as String))
           : null,

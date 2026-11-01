@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -760,6 +761,74 @@ void main() {
       write.length - 4,
     ).getUint32(0, Endian.little);
     expect(lastmod, closeTo(_secondsAgo(Duration.zero), 5));
+  });
+
+  group('a shared copy of my own advert', () {
+    Uint8List selfAdvert({required int route, required double lat}) {
+      final frame = _heard(
+        route: route,
+        timestamp: _secondsAgo(const Duration(days: 30)),
+        lat: lat,
+        lon: 2,
+      );
+      final keyAt = frame.length - 4 - 8 - 1 - 64 - 4 - 32;
+      frame.fillRange(keyAt, keyAt + 32, 0x77);
+      return frame;
+    }
+
+    setUp(() => c.handleFrameForTest(_selfInfo()));
+
+    test('leaves my position alone', () {
+      c.handleFrameForTest(selfAdvert(route: _routeTransportDirect, lat: 40));
+      expect(c.selfLatitude, 0);
+    });
+
+    test('while a real copy still updates it', () {
+      c.handleFrameForTest(selfAdvert(route: _routeFlood, lat: 40));
+      expect(c.selfLatitude, 40);
+    });
+  });
+
+  group('an advert on a saved contact', () {
+    Future<Contact?> cached() async {
+      final store = ContactStore()
+        ..setPublicKeyHex = pubKeyToHex(
+          Uint8List.fromList(List.filled(32, 0x77)),
+        );
+      final rows = await store.loadContacts();
+      return rows.where((x) => x.publicKeyHex == _hex).firstOrNull;
+    }
+
+    setUp(() async {
+      c.handleFrameForTest(_selfInfo());
+      await pumpEventQueue(times: 200);
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      await savedWithFrozenRow();
+      await pumpEventQueue(times: 200);
+    });
+
+    test('reaches the cache within ten seconds', () {
+      fakeAsync((clock) {
+        c.handleFrameForTest(
+          _heard(
+            route: _routeFlood,
+            path: const [0xCC],
+            timestamp: _secondsAgo(const Duration(minutes: 5)),
+          ),
+        );
+        clock.elapse(const Duration(seconds: 11));
+      });
+      return pumpEventQueue(times: 200).then((_) async {
+        expect((await cached())!.inboundPath, [0xCC]);
+      });
+    });
+
+    test('keeps the advert time the radio needs for a route write', () async {
+      await fullDownload(_record(advertSecs: 1234));
+      await pumpEventQueue(times: 200);
+      expect((await cached())!.lastAdvertSecs, 1234);
+    });
   });
 
   test('a zero-hop advert sent to us is a real hearing', () async {
