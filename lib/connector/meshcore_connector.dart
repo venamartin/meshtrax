@@ -722,6 +722,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _fullContactSyncAfterStream = false;
   // During a full download, the saved contacts the radio has not re-sent yet.
   Set<String>? _unconfirmedContactKeys;
+  // DMs from a sender not in the list yet; the radio has no other copy.
+  final List<Uint8List> _heldContactMessages = [];
+  static const _heldContactMessageCap = 32;
   // Adverts the radio saved during a download, to fetch when it ends.
   final Map<String, Uint8List> _fetchAfterDownload = {};
   // Contacts whose next frame carries a lastmod from accepting a shared copy.
@@ -1203,6 +1206,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   @visibleForTesting
   void markSelfPositionLiveForTest() => _selfPositionLive = true;
+
+  @visibleForTesting
+  void markChannelsVerifiedForTest() => _channelsVerified = true;
 
   @visibleForTesting
   Future<void> probeWifiForTest() => _probeWifi();
@@ -3759,6 +3765,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _flushContactPersist();
     _contacts.clear();
     _unconfirmedContactKeys = null;
+    _heldContactMessages
+      ..forEach(_dropHeldContactMessage)
+      ..clear();
     _fetchAfterDownload.clear();
     _sharedCopyKeys.clear();
     _discoveredContacts.clear();
@@ -3895,6 +3904,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
     _recordOutgoing(data);
 
+    try {
+      await writeToTransport(data);
+    } catch (_) {
+      if (expectsGenericAck) _forgetPendingAck(data[0], channelSendQueueId);
+      rethrow;
+    }
+  }
+
+  @visibleForTesting
+  Future<void> writeToTransport(Uint8List data) async {
     if (_activeTransport == MeshCoreTransportType.usb) {
       await _usbManager.write(data);
       // Brief pause so the device firmware can process each frame before the
@@ -3940,6 +3959,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await sendFrame(data, expectsGenericAck: expectsGenericAck);
       return await completer.future.timeout(timeout);
+    } on TimeoutException {
+      // Left queued, this entry would use up the OK of the next command: a
+      // channel send would then wait out its timer and go on the air twice. A
+      // late OK now marks that send early, which is the smaller harm.
+      if (expectsGenericAck) _forgetPendingAck(data[0], null);
+      return false;
     } catch (_) {
       return false;
     } finally {
@@ -6358,6 +6383,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
         _isLoadingContacts = false;
         _preserveContactsOnRefresh = false;
+        _settleHeldContactMessages(wholeList: syncSince == 0);
         for (final pubKey in _fetchAfterDownload.values) {
           unawaited(getContactByKey(pubKey));
         }
@@ -7114,6 +7140,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       if (!_isLoadingContacts) {
         unawaited(_persistContacts());
+        _replayHeldContactMessages();
       }
     }
   }
@@ -7297,37 +7324,26 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         .any((hop) => _matchesPrefix(publicKey, hop));
   }
 
-  void _handleIncomingMessage(Uint8List frame) async {
+  void _handleIncomingMessage(Uint8List frame, {bool replay = false}) {
     if (_selfPublicKey == null) return;
+
+    // A replayed frame was already counted when it first came off the queue.
+    void nextQueued() {
+      if (!replay) _handleQueuedMessageReceived();
+    }
 
     final layout = parseContactMsgLayout(frame);
     if (layout != null && layout.txtType == txtTypeCliCommand) {
       _reportBlockedCliCommand(layout.senderPrefix, layout.text);
-      _handleQueuedMessageReceived();
+      nextQueued();
       return;
     }
 
     var message = _parseContactMessage(frame);
 
-    // If message parsing failed due to unknown contact, refresh contacts and retry
-    if (message == null && !_isLoadingContacts) {
-      final senderPrefix = _extractSenderPrefix(frame);
-      if (senderPrefix != null) {
-        final hasContact = _contacts.any(
-          (c) => _matchesPrefix(c.publicKey, senderPrefix),
-        );
-        if (!hasContact) {
-          debugPrint(
-            'Received message from unknown contact, refreshing contacts...',
-          );
-          await refreshContactsSinceLastmod();
-          // Retry parsing after refresh
-          message = _parseContactMessage(frame);
-          if (message != null) {
-            debugPrint('Successfully parsed message after contact refresh');
-          }
-        }
-      }
+    if (message == null && !_senderIsListed(frame)) {
+      _holdContactMessage(frame);
+      return;
     }
 
     if (message != null) {
@@ -7360,7 +7376,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
           );
         }
-        _handleQueuedMessageReceived();
+        nextQueued();
         return;
       }
 
@@ -7444,10 +7460,81 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
       }());
       notifyListeners();
-      _handleQueuedMessageReceived();
+      nextQueued();
     } else if (_isSyncingQueuedMessages) {
-      _handleQueuedMessageReceived();
+      nextQueued();
     }
+  }
+
+  bool _senderIsListed(Uint8List frame) {
+    final prefix = _extractSenderPrefix(frame);
+    return prefix == null ||
+        _contacts.any((c) => _matchesPrefix(c.publicKey, prefix));
+  }
+
+  /// The radio has already taken this message off its queue, and it only
+  /// decrypts for a contact it holds, so the sender's record is there to fetch.
+  /// The queue drain waits behind the download, then carries on.
+  void _holdContactMessage(Uint8List frame) {
+    if (_heldContactMessages.length >= _heldContactMessageCap) {
+      _dropHeldContactMessage(_heldContactMessages.removeAt(0));
+    }
+    _heldContactMessages.add(frame);
+    if (_isSyncingQueuedMessages) {
+      _queueSyncTimeout?.cancel();
+      _queuedMessageSyncInFlight = false;
+      _isSyncingQueuedMessages = false;
+      _pendingQueueSync = true;
+      notifyListeners();
+    }
+    if (!_isLoadingContacts) unawaited(_fetchWholeContactList());
+  }
+
+  /// With `since` a sender whose lastmod is older would not come back.
+  Future<void> _fetchWholeContactList() async {
+    try {
+      await refreshContacts();
+    } catch (e) {
+      _appDebugLogService?.warn(
+        'Contact fetch for a held message failed: $e',
+        tag: 'Connector',
+      );
+    }
+  }
+
+  void _replayHeldContactMessages() {
+    if (_heldContactMessages.isEmpty) return;
+    final frames = List.of(_heldContactMessages);
+    _heldContactMessages.clear();
+    for (final frame in frames) {
+      if (_senderIsListed(frame)) {
+        _handleIncomingMessage(frame, replay: true);
+      } else {
+        _heldContactMessages.add(frame);
+      }
+    }
+  }
+
+  /// At the end of a download. [wholeList] false: a `since` pass can leave out
+  /// the sender, so ask once more for everything before giving up.
+  void _settleHeldContactMessages({required bool wholeList}) {
+    _replayHeldContactMessages();
+    if (_heldContactMessages.isEmpty) return;
+    if (!wholeList) {
+      unawaited(_fetchWholeContactList());
+      return;
+    }
+    _heldContactMessages.forEach(_dropHeldContactMessage);
+    _heldContactMessages.clear();
+  }
+
+  void _dropHeldContactMessage(Uint8List frame) {
+    final prefix = _extractSenderPrefix(frame);
+    _appDebugLogService?.warn(
+      'Dropped a message from a sender the radio did not send: '
+      '${prefix == null ? '?' : pubKeyToHex(prefix)}',
+      tag: 'Connector',
+    );
   }
 
   /// Firmware 1.18 queues a CLI command a contact tried to run on our radio
@@ -10509,6 +10596,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactFullResyncPending = false;
     _fullContactSyncAfterStream = false;
     _unconfirmedContactKeys = null;
+    _heldContactMessages
+      ..forEach(_dropHeldContactMessage)
+      ..clear();
     _fetchAfterDownload.clear();
     _sharedCopyKeys.clear();
     // The slot map is untrusted from ANY disconnect (this is the
@@ -10557,6 +10647,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       ),
     );
   }
+
+  void _forgetPendingAck(int commandCode, String? channelSendQueueId) {
+    final index = _pendingGenericAckQueue.lastIndexWhere(
+      (a) =>
+          a.commandCode == commandCode &&
+          a.channelSendQueueId == channelSendQueueId,
+    );
+    if (index >= 0) _pendingGenericAckQueue.removeAt(index);
+  }
+
+  @visibleForTesting
+  int get pendingGenericAckCountForTest => _pendingGenericAckQueue.length;
 
   String _nextReactionSendQueueId() {
     _reactionSendQueueSequence++;
