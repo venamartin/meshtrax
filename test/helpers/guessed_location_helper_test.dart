@@ -458,8 +458,98 @@ void main() {
     });
   });
 
+  group('what a route proves', () {
+    final located = [_repeater(0xA1, 37.3, -122.0)];
+
+    test('a typed route anchors nothing', () {
+      final typed = _target(route: [0xA1]).copyWith(
+        pathOverride: 1,
+        pathOverrideBytes: Uint8List.fromList([0xA1]),
+      );
+      expect(_compute([typed], located), isEmpty);
+    });
+
+    test('forced direct anchors nothing', () {
+      final direct = _target(route: [0xA1]).copyWith(pathOverride: 0);
+      expect(_compute([direct], located), isEmpty);
+    });
+
+    test("always-flood keeps the radio's learned route as an anchor", () {
+      final flood = _target(route: [0xA1]).copyWith(pathOverride: -1);
+      expect(_compute([flood], located), hasLength(1));
+    });
+
+    test('a typed route leaves a real advert path anchoring', () {
+      final typed = _target(inbound: [0xA1], route: [0xB2]).copyWith(
+        pathOverride: 1,
+        pathOverrideBytes: Uint8List.fromList([0xB2]),
+      );
+      final guesses = _compute([
+        typed,
+      ], [...located, _repeater(0xB2, 37.5, -122.2)]);
+      expect(guesses.single.highConfidence, isFalse);
+    });
+
+    test('after a zero-hop advert an old route anchors nothing', () {
+      final heardDirect = _target(route: [0xA1]).copyWith(inboundHopCount: 0);
+      expect(_compute([heardDirect], located), isEmpty);
+    });
+
+    test('with no advert yet a learned route anchors', () {
+      expect(_compute([_target(route: [0xA1])], located), hasLength(1));
+    });
+  });
+
+  group('withCurrentContacts', () {
+    GuessedLocation guessFor(Contact c) => GuessedLocation(
+      contact: c,
+      position: const LatLng(1, 2),
+      highConfidence: true,
+    );
+
+    test('swaps in the current copy and keeps the guess', () {
+      final old = _target();
+      final renamed = old.copyWith(name: 'New name');
+
+      final result = GuessedLocationHelper.withCurrentContacts(
+        [guessFor(old)],
+        [renamed],
+      ).single;
+
+      expect(result.contact.name, 'New name');
+      expect(result.position, const LatLng(1, 2));
+      expect(result.highConfidence, isTrue);
+    });
+
+    test('prefers the first copy, the saved contact over its row', () {
+      final saved = _target().copyWith(name: 'Saved');
+      final row = _target().copyWith(name: 'Row', isActive: false);
+
+      final result = GuessedLocationHelper.withCurrentContacts(
+        [guessFor(row)],
+        [saved, row],
+      ).single;
+
+      expect(result.contact.name, 'Saved');
+    });
+
+    test('keeps the cached copy if the contact has gone', () {
+      final old = _target();
+      expect(
+        GuessedLocationHelper.withCurrentContacts([guessFor(old)], const [])
+            .single
+            .contact,
+        same(old),
+      );
+    });
+  });
+
   group('cacheKey', () {
     final base = _target(inbound: [0xA1, 0x10]);
+
+    test('changes when the route override changes', () {
+      expect(_keyFor(base), isNot(_keyFor(base.copyWith(pathOverride: 2))));
+    });
 
     test('stays the same for the same inputs', () {
       expect(_keyFor(base), _keyFor(_target(inbound: [0xA1, 0x10])));

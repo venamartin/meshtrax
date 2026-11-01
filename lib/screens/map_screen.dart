@@ -95,6 +95,9 @@ class _MapScreenState extends State<MapScreen> {
   final List<int> _pathTrace = [];
   final List<Contact> _pathTraceContacts = [];
   final List<LatLng> _points = [];
+  // Estimates for tapped guessed pins, by public key: never put on a contact,
+  // where they would read as its real position.
+  final Map<String, LatLng> _pathTraceGuesses = {};
   List<GuessedLocation> _cachedGuessedLocations = [];
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
@@ -281,24 +284,34 @@ class _MapScreenState extends State<MapScreen> {
                 )
               : [];
         }
-        final guessedLocations = settings.mapShowGuessedLocations
-            ? _cachedGuessedLocations
-            : <GuessedLocation>[];
+        final guessedLocations = _drawnGuesses(
+          GuessedLocationHelper.withCurrentContacts(
+            _cachedGuessedLocations,
+            filteredByKeyPrefix,
+          ),
+          settings,
+          connector.pathHashByteWidth,
+        );
 
         // Calculate center and zoom of all nodes (flutter_map zooms; the map
         // takes MapLibre zooms, one lower).
         LatLng center = const LatLng(0, 0);
         double initialZoom = 10.0;
+        final hasRealPositions =
+            contactsWithLocation.isNotEmpty || sharedMarkers.isNotEmpty;
         final hasMapContent =
-            contactsWithLocation.isNotEmpty ||
-            sharedMarkers.isNotEmpty ||
+            hasRealPositions ||
+            guessedLocations.isNotEmpty ||
             highlightPosition != null;
-        if (contactsWithLocation.isNotEmpty || sharedMarkers.isNotEmpty) {
+        if (hasRealPositions || guessedLocations.isNotEmpty) {
           final allPoints = [
             ...contactsWithLocation.map(
               (c) => LatLng(c.latitude!, c.longitude!),
             ),
             ...sharedMarkers.map((m) => m.position),
+            // A guess can be tens of km out: it frames the map only when
+            // nothing else can.
+            if (!hasRealPositions) ...guessedLocations.map((g) => g.position),
           ];
           if (allPoints.length >= 3) {
             final latValues = allPoints.map((p) => p.latitude).toList();
@@ -551,8 +564,7 @@ class _MapScreenState extends State<MapScreen> {
                           size: 34,
                         ),
                       ),
-                    if (!settings.mapShowOverlaps)
-                      ..._buildGuessedMarkers(guessedLocations),
+                    ..._buildGuessedMarkers(guessedLocations),
                     ..._buildMarkers(
                       contactsWithLocation,
                       settings,
@@ -618,31 +630,55 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// The guesses the map draws: the same node layers as real positions, and
+  /// none in the overlaps view.
+  List<GuessedLocation> _drawnGuesses(
+    List<GuessedLocation> guesses,
+    AppSettings settings,
+    int stride,
+  ) {
+    if (settings.mapShowOverlaps) return const [];
+    final shown = _filterContactsBySettings(
+      [for (final guess in guesses) guess.contact],
+      settings,
+      stride,
+      noLocations: true,
+    ).map((c) => c.publicKeyHex).toSet();
+    return guesses
+        .where((guess) => shown.contains(guess.contact.publicKeyHex))
+        .toList();
+  }
+
   List<MapMarker> _buildGuessedMarkers(List<GuessedLocation> guessed) => [
     for (final guess in guessed)
-      if (guess.contact.type != advTypeChat || !_isBuildingPathTrace)
-        MapMarker(
-          id: 'guess:${guess.contact.publicKeyHex}',
-          position: guess.position.toOvm(),
-          size: const Size(35, 35),
-          label: guess.contact.name,
-          labelMinZoom: _labelMinZoom,
-          onTap: () => _isBuildingPathTrace
-              ? _addToPath(context, guess.contact, position: guess.position)
-              : _showNodeInfo(
-                  context,
-                  guess.contact,
-                  guessedPosition: guess.position,
-                ),
-          onLongPress: () {
-            if (_isBuildingPathTrace) _showNodeInfo(context, guess.contact);
-          },
-          child: _nodeDot(
-            _getNodeColor(guess.contact.type)
-                .withValues(alpha: guess.highConfidence ? 0.55 : 0.30),
-            Icons.not_listed_location,
-          ),
+      MapMarker(
+        id: 'guess:${guess.contact.publicKeyHex}',
+        position: guess.position.toOvm(),
+        size: const Size(35, 35),
+        label: guess.contact.name,
+        labelMinZoom: _labelMinZoom,
+        onTap: () => _isBuildingPathTrace
+            ? _addToPath(context, guess.contact, position: guess.position)
+            : _showNodeInfo(
+                context,
+                guess.contact,
+                guessedPosition: guess.position,
+              ),
+        onLongPress: () {
+          if (_isBuildingPathTrace) {
+            _showNodeInfo(
+              context,
+              guess.contact,
+              guessedPosition: guess.position,
+            );
+          }
+        },
+        child: _nodeDot(
+          _getNodeColor(guess.contact.type)
+              .withValues(alpha: guess.highConfidence ? 0.55 : 0.30),
+          Icons.not_listed_location,
         ),
+      ),
   ];
 
   List<Contact> _filterContactsBySettings(
@@ -1840,12 +1876,8 @@ class _MapScreenState extends State<MapScreen> {
       _pathTrace.addAll(
         PathHelper.pubKeyPrefix(contact.publicKey, stride: stride),
       );
-      _pathTraceContacts.add(
-        contact.copyWith(
-          latitude: position?.latitude ?? contact.latitude,
-          longitude: position?.longitude ?? contact.longitude,
-        ),
-      ); // Add contact to path trace contacts
+      _pathTraceContacts.add(contact); // Add contact to path trace contacts
+      if (position != null) _pathTraceGuesses[contact.publicKeyHex] = position;
       _points.add(position ?? LatLng(contact.latitude!, contact.longitude!));
     });
   }
@@ -1906,6 +1938,7 @@ class _MapScreenState extends State<MapScreen> {
           path: roundTrip,
           pathHashByteWidth: width,
           pathContacts: connector.allContacts,
+          guessedPositions: _pathTraceGuesses,
         ),
       ),
     );
@@ -1924,6 +1957,7 @@ class _MapScreenState extends State<MapScreen> {
       _isBuildingPathTrace = true;
       _pathTrace.clear();
       _pathTraceContacts.clear();
+      _pathTraceGuesses.clear();
       _points
         ..clear()
         ..addAll([?position]);
@@ -1958,6 +1992,7 @@ class _MapScreenState extends State<MapScreen> {
           path: result,
           pathHashByteWidth: hashW,
           pathContacts: connector.allContacts,
+          guessedPositions: _pathTraceGuesses,
         ),
       ),
     );
@@ -2116,6 +2151,7 @@ class _MapScreenState extends State<MapScreen> {
                               path: Uint8List.fromList(_pathTrace),
                               pathHashByteWidth: hashW,
                               pathContacts: _pathTraceContacts,
+                              guessedPositions: _pathTraceGuesses,
                             ),
                           ),
                         );
@@ -2142,6 +2178,7 @@ class _MapScreenState extends State<MapScreen> {
                               flipPathAround: true,
                               pathHashByteWidth: hashW,
                               pathContacts: _pathTraceContacts,
+                              guessedPositions: _pathTraceGuesses,
                             ),
                           ),
                         );

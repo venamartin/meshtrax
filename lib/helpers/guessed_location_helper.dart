@@ -96,7 +96,8 @@ class GuessedLocationHelper {
   static double _wrapLongitude(double lon) => ((lon + 540) % 360) - 180;
 
   /// Changes whenever [compute] could give a different position or confidence.
-  /// A cached guess can still hold an older copy of its contact.
+  /// A cached guess can still hold an older copy of its contact; see
+  /// [withCurrentContacts].
   /// The stale check goes in as a yes/no so an advert alone does not force a
   /// recompute, but crossing [staleBefore] does.
   static String cacheKey({
@@ -108,7 +109,7 @@ class GuessedLocationHelper {
     final targetKeys = targets
         .map(
           (c) =>
-              '${c.publicKeyHex}:${c.pathIdList}:${c.inboundHopCount}:${_inboundFirstHopHex(c)}:${c.lastSeen.isBefore(staleBefore)}',
+              '${c.publicKeyHex}:${c.pathIdList}:${c.pathOverride}:${c.inboundHopCount}:${_inboundFirstHopHex(c)}:${c.lastSeen.isBefore(staleBefore)}',
         )
         .join(',');
     final locatedKeys = located
@@ -122,6 +123,35 @@ class GuessedLocationHelper {
 
   static String _inboundFirstHopHex(Contact c) =>
       PathHelper.firstHopHex(c.inboundPath, stride: _inboundWidth(c)) ?? '';
+
+  /// A route says where the contact is only if the radio learned it and the
+  /// contact has not since been heard with no repeater in between. A route the
+  /// user typed proves nothing. An always-flood choice (-1) leaves the radio's
+  /// learned route in place, so that one still counts.
+  static bool _routeIsEvidence(Contact c) =>
+      c.inboundHopCount != 0 && (c.pathOverride ?? -1) < 0;
+
+  /// [guesses] with each contact swapped for its copy in [targets]: a cached
+  /// guess keeps its position, but names, flags and saved state must be live.
+  /// The saved contact comes first in the list, ahead of its discovered row.
+  static List<GuessedLocation> withCurrentContacts(
+    List<GuessedLocation> guesses,
+    List<Contact> targets,
+  ) {
+    if (guesses.isEmpty) return guesses;
+    final current = <String, Contact>{};
+    for (final c in targets) {
+      current.putIfAbsent(c.publicKeyHex, () => c);
+    }
+    return [
+      for (final guess in guesses)
+        GuessedLocation(
+          contact: current[guess.contact.publicKeyHex] ?? guess.contact,
+          position: guess.position,
+          highConfidence: guess.highConfidence,
+        ),
+    ];
+  }
 
   /// Guesses for each of [targets] that has no location, anchored on the
   /// repeaters in [located]. Both lists can name a contact twice: until the
@@ -179,10 +209,9 @@ class GuessedLocationHelper {
         contact.inboundPath,
         stride: inboundWidth,
       );
-      final routeHops = PathHelper.getHops(
-        contact.path,
-        stride: contact.pathHashSize,
-      );
+      final routeHops = _routeIsEvidence(contact)
+          ? PathHelper.getHops(contact.path, stride: contact.pathHashSize)
+          : const <Uint8List>[];
       for (final (hop, width) in [
         if (inboundHops.isNotEmpty) (inboundHops.first, inboundWidth),
         if (routeHops.isNotEmpty) (routeHops.last, contact.pathHashSize),
