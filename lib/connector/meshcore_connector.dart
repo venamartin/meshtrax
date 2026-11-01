@@ -7224,7 +7224,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   Future<void> _persistContacts() async {
-    await _contactStore.saveContacts(_contacts);
+    // A copy: the store reads it after an await, and a disconnect can empty the
+    // list right after this call.
+    await _contactStore.saveContacts(List.of(_contacts));
   }
 
   // Discovered contacts have no radio backstop, so the store is append-only

@@ -977,6 +977,19 @@ void main() {
       });
     });
 
+    test('a disconnect saves it, and does not empty the cache', () async {
+      c.handleFrameForTest(
+        _heard(
+          route: _routeFlood,
+          path: const [0xCC],
+          timestamp: _secondsAgo(const Duration(minutes: 5)),
+        ),
+      );
+      await c.disconnect();
+      await pumpEventQueue(times: 200);
+      expect((await cached())!.inboundPath, [0xCC]);
+    });
+
     test('keeps the advert time the radio needs for a route write', () async {
       await fullDownload(_record(advertSecs: 1234));
       await pumpEventQueue(times: 200);

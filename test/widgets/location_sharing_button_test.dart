@@ -59,7 +59,7 @@ class _Radio extends MeshCoreConnector {
   }
 
   @override
-  Future<void> refreshDeviceInfo() async {}
+  Future<void> refreshRadioSettings() async {}
 }
 
 Contact _contact(String name, int seed, {int flags = 0}) => Contact(
