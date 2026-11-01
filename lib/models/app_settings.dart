@@ -1,3 +1,5 @@
+import 'channel.dart';
+
 enum UnitSystem { metric, imperial }
 
 extension UnitSystemValue on UnitSystem {
@@ -100,6 +102,12 @@ class AppSettings {
   /// first draws charts; set when the user checks "don't show again".
   final bool chartsNoticeDismissed;
 
+  /// The one-time "Run a health check?" prompt has been shown.
+  final bool healthCheckPromptSeen;
+
+  /// Health check rule ids the user chose not to see again.
+  final Set<String> dismissedHealthRules;
+
   /// Public-key hexes of blocked direct-message contacts.
   final Set<String> blockedContactKeys;
 
@@ -156,12 +164,15 @@ class AppSettings {
     this.dmIdentityWarningDismissed = false,
     this.batterySleepWarningDismissed = false,
     this.chartsNoticeDismissed = false,
+    this.healthCheckPromptSeen = false,
+    Set<String>? dismissedHealthRules,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
     this.recentReactions = const [],
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
-       mutedChannels = mutedChannels ?? {},
+       mutedChannels = mutedChannels ?? {Channel.publicChannelPsk},
+       dismissedHealthRules = dismissedHealthRules ?? {},
        mutedContacts = mutedContacts ?? {},
        blockedContactKeys = blockedContactKeys ?? {},
        blockedSenderNames = blockedSenderNames ?? {};
@@ -213,6 +224,8 @@ class AppSettings {
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
       'charts_notice_dismissed': chartsNoticeDismissed,
+      'health_check_prompt_seen': healthCheckPromptSeen,
+      'dismissed_health_rules': dismissedHealthRules.toList(),
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
       'recent_reactions': recentReactions,
@@ -275,7 +288,7 @@ class AppSettings {
           ((json['muted_channels'] as List?)
               ?.map((e) => e.toString())
               .toSet()) ??
-          {},
+          {Channel.publicChannelPsk},
       mutedContacts:
           ((json['muted_contacts'] as List?)
               ?.map((e) => e.toString())
@@ -296,6 +309,13 @@ class AppSettings {
       batterySleepWarningDismissed:
           json['battery_sleep_warning_dismissed'] as bool? ?? false,
       chartsNoticeDismissed: json['charts_notice_dismissed'] as bool? ?? false,
+      healthCheckPromptSeen:
+          json['health_check_prompt_seen'] as bool? ?? false,
+      dismissedHealthRules:
+          ((json['dismissed_health_rules'] as List?)
+              ?.map((e) => e.toString())
+              .toSet()) ??
+          {},
       blockedContactKeys:
           ((json['blocked_contact_keys'] as List?)
               ?.map((e) => e.toString())
@@ -358,6 +378,8 @@ class AppSettings {
     bool? dmIdentityWarningDismissed,
     bool? batterySleepWarningDismissed,
     bool? chartsNoticeDismissed,
+    bool? healthCheckPromptSeen,
+    Set<String>? dismissedHealthRules,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
     List<String>? recentReactions,
@@ -421,6 +443,9 @@ class AppSettings {
           batterySleepWarningDismissed ?? this.batterySleepWarningDismissed,
       chartsNoticeDismissed:
           chartsNoticeDismissed ?? this.chartsNoticeDismissed,
+      healthCheckPromptSeen:
+          healthCheckPromptSeen ?? this.healthCheckPromptSeen,
+      dismissedHealthRules: dismissedHealthRules ?? this.dismissedHealthRules,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
       recentReactions: recentReactions ?? this.recentReactions,

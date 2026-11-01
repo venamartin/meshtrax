@@ -1,9 +1,11 @@
 import '../connector/meshcore_connector.dart';
-import '../connector/meshcore_protocol.dart';
 import '../models/app_settings.dart';
+import '../models/channel.dart';
+import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
+import '../services/notification_service.dart';
 
 /// The health check's rule list. Edit this file to change what the check
 /// looks for.
@@ -21,6 +23,7 @@ import '../services/battery_sleep_service.dart';
 ///               HealthFix.ask needs a value from the user, so the screen
 ///               opens [dialog] instead.
 ///   details   - optional extra lines shown under the why
+///   linkLabel, linkUrl - optional button that opens a web page
 ///   canFix    - optional; false hides the Fix button for this finding
 
 // ---------------------------------------------------------------------------
@@ -39,13 +42,27 @@ enum HealthFix {
 }
 
 /// The existing screens a [HealthFix.ask] rule can send the user to.
-enum HealthDialog { name, radioSettings, location, batterySettings }
+enum HealthDialog {
+  name,
+  radioSettings,
+  location,
+  batterySettings,
+  notificationSettings,
+}
 
 class HealthContext {
   final MeshCoreConnector connector;
   final AppSettingsService settingsService;
 
-  HealthContext(this.connector, this.settingsService);
+  /// False when the phone blocks notifications; null when it can't be known.
+  final Future<bool?> Function() notificationsAllowed;
+
+  HealthContext(
+    this.connector,
+    this.settingsService, {
+    Future<bool?> Function()? notificationsAllowed,
+  }) : notificationsAllowed =
+           notificationsAllowed ?? NotificationService().notificationsAllowed;
 
   AppSettings get app => settingsService.settings;
   bool get radioConnected => connector.isConnected;
@@ -71,6 +88,8 @@ class HealthRule {
   /// Where a [HealthFix.ask] rule sends the user.
   final HealthDialog? dialog;
   final List<String> Function(HealthContext ctx)? details;
+  final String? linkLabel;
+  final String? linkUrl;
   final bool Function(HealthContext ctx)? canFix;
 
   const HealthRule({
@@ -87,6 +106,8 @@ class HealthRule {
     this.fixDescription = '',
     this.dialog,
     this.details,
+    this.linkLabel,
+    this.linkUrl,
     this.canFix,
   });
 }
@@ -132,6 +153,22 @@ bool _firmwareOlderThan(MeshCoreConnector c, List<int> wanted) {
   return false;
 }
 
+/// True when the radio has the Public channel and its messages would notify.
+/// Muted follows the notification code: older versions saved mutes by name.
+bool _publicChannelNotifies(HealthContext ctx) {
+  final settings = ctx.settingsService;
+  if (!ctx.app.notificationsEnabled || !ctx.app.notifyOnNewChannelMessage) {
+    return false;
+  }
+  for (final channel in ctx.connector.channels) {
+    if (!channel.isPublicChannel) continue;
+    return !settings.isChannelMuted(channel.idKey) &&
+        !settings.isChannelMuted(channel.name) &&
+        !settings.isChannelMuted(channel.displayName);
+  }
+  return false;
+}
+
 bool _onAnyPreset(MeshCoreConnector c) {
   final freq = c.currentFreqHz;
   if (freq == null) return true; // unknown yet; don't flag
@@ -144,42 +181,28 @@ bool _onAnyPreset(MeshCoreConnector c) {
   );
 }
 
-Future<void> _setAutoAdd(
-  HealthContext ctx, {
-  bool? users,
-  bool? repeaters,
-  bool? rooms,
-  bool? sensors,
-  bool? overwriteOldest,
-}) async {
-  final c = ctx.connector;
-  await c.sendFrame(
-    buildSetAutoAddConfigFrame(
-      autoAddChat: users ?? c.autoAddUsers ?? true,
-      autoAddRepeater: repeaters ?? c.autoAddRepeaters ?? true,
-      autoAddRoomServer: rooms ?? c.autoAddRoomServers ?? true,
-      autoAddSensor: sensors ?? c.autoAddSensors ?? true,
-      overwriteOldest: overwriteOldest ?? c.autoAddOverwriteOldest ?? true,
-      maxHops: c.autoAddMaxHops,
-    ),
-  );
-  await c.sendFrame(buildGetAutoAddFlagsFrame());
-}
-
-Future<void> _setOtherParams(
-  HealthContext ctx, {
-  int? advertLocationPolicy,
-  int? multiAcks,
-}) {
+Future<void> _setMultiAcks(HealthContext ctx, int multiAcks) {
   final c = ctx.connector;
   return c.setTelemetryModeBase(
     c.telemetryModeBase,
     c.telemetryModeLoc,
     c.telemetryModeEnv,
-    advertLocationPolicy ?? c.advertLocationPolicy,
-    multiAcks ?? c.multiAcks,
+    c.advertLocationPolicy,
+    multiAcks,
   );
 }
+
+bool _radioHasAutoAdd(MeshCoreConnector c) => firmwareSupports(
+  RadioSetting.autoAdd,
+  c.firmwareVerCode,
+  c.firmwareVersion,
+);
+
+bool _radioHasMultiAcks(MeshCoreConnector c) => firmwareSupports(
+  RadioSetting.multiAcks,
+  c.firmwareVerCode,
+  c.firmwareVersion,
+);
 
 // ---------------------------------------------------------------------------
 // The rules
@@ -206,7 +229,7 @@ final List<HealthRule> healthRules = [
   HealthRule(
     id: 'radio_frequency',
     enabled: true,
-    severity: HealthSeverity.problem,
+    severity: HealthSeverity.suggestion,
     title: 'Radio is not on a regional preset',
     why:
         "The radio's settings do not match any regional preset in the app. If "
@@ -236,28 +259,6 @@ final List<HealthRule> healthRules = [
     notes: 'Opens the radio settings dialog so the user picks a preset.',
   ),
   HealthRule(
-    id: 'radio_tx_power',
-    enabled: false,
-    severity: HealthSeverity.suggestion,
-    title: "Transmit power is below the radio's maximum",
-    why: '',
-    needsRadio: true,
-    check: (ctx) async {
-      final c = ctx.connector;
-      return c.currentTxPower != null &&
-          c.maxTxPower != null &&
-          c.currentTxPower! < c.maxTxPower!;
-    },
-    fix: HealthFix.apply,
-    fixDescription: "Set transmit power to the radio's maximum.",
-    apply: (ctx) => ctx.connector.sendFrame(
-      buildSetRadioTxPowerFrame(ctx.connector.maxTxPower!),
-    ),
-    notes:
-        'Below max can be deliberate (legal limit, battery). Decide '
-        'whether to flag at all.',
-  ),
-  HealthRule(
     id: 'radio_position',
     enabled: false,
     severity: HealthSeverity.suggestion,
@@ -285,31 +286,6 @@ final List<HealthRule> healthRules = [
     notes: 'Only runs when the radio reports a GPS.',
   ),
   HealthRule(
-    id: 'radio_advert_location',
-    enabled: false,
-    severity: HealthSeverity.tip,
-    title: 'Adverts do not share your position',
-    why: '',
-    needsRadio: true,
-    check: (ctx) async => ctx.connector.advertLocationPolicy == 0,
-    fix: HealthFix.apply,
-    fixDescription: 'Share your position in adverts.',
-    apply: (ctx) => _setOtherParams(ctx, advertLocationPolicy: 1),
-    notes: '0 = none, 1 = share. Privacy choice; maybe leave disabled.',
-  ),
-  HealthRule(
-    id: 'radio_telemetry',
-    enabled: false,
-    severity: HealthSeverity.tip,
-    title: 'Telemetry sharing',
-    why: '',
-    needsRadio: true,
-    check: (ctx) async => false,
-    notes:
-        'telemetryModeBase / Loc / Env, each deny..allow all. Write the '
-        'check once we know what we recommend.',
-  ),
-  HealthRule(
     id: 'radio_auto_add_users',
     enabled: true,
     severity: HealthSeverity.suggestion,
@@ -319,10 +295,11 @@ final List<HealthRule> healthRules = [
         'direct messages from saved contacts. Someone new cannot reach you '
         'until you add them.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.autoAddUsers == false,
+    check: (ctx) async =>
+        _radioHasAutoAdd(ctx.connector) && ctx.connector.autoAddUsers == false,
     fix: HealthFix.apply,
     fixDescription: 'Turn on auto-add for users.',
-    apply: (ctx) => _setAutoAdd(ctx, users: true),
+    apply: (ctx) => ctx.connector.setAutoAddConfig(users: true),
   ),
   HealthRule(
     id: 'radio_auto_add_repeaters',
@@ -337,7 +314,7 @@ final List<HealthRule> healthRules = [
     check: (ctx) async => ctx.connector.autoAddRepeaters == true,
     fix: HealthFix.apply,
     fixDescription: 'Turn off auto-add for repeaters.',
-    apply: (ctx) => _setAutoAdd(ctx, repeaters: false),
+    apply: (ctx) => ctx.connector.setAutoAddConfig(repeaters: false),
   ),
   HealthRule(
     id: 'radio_auto_add_rooms',
@@ -352,7 +329,7 @@ final List<HealthRule> healthRules = [
     check: (ctx) async => ctx.connector.autoAddRoomServers == true,
     fix: HealthFix.apply,
     fixDescription: 'Turn off auto-add for room servers.',
-    apply: (ctx) => _setAutoAdd(ctx, rooms: false),
+    apply: (ctx) => ctx.connector.setAutoAddConfig(rooms: false),
   ),
   HealthRule(
     id: 'radio_auto_add_sensors',
@@ -367,7 +344,7 @@ final List<HealthRule> healthRules = [
     check: (ctx) async => ctx.connector.autoAddSensors == true,
     fix: HealthFix.apply,
     fixDescription: 'Turn off auto-add for sensors.',
-    apply: (ctx) => _setAutoAdd(ctx, sensors: false),
+    apply: (ctx) => ctx.connector.setAutoAddConfig(sensors: false),
   ),
   HealthRule(
     id: 'radio_auto_add_overwrite_oldest',
@@ -379,22 +356,12 @@ final List<HealthRule> healthRules = [
         'setting makes room by replacing the oldest contact that is not a '
         'favorite.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.autoAddOverwriteOldest == false,
+    check: (ctx) async =>
+        _radioHasAutoAdd(ctx.connector) &&
+        ctx.connector.autoAddOverwriteOldest == false,
     fix: HealthFix.apply,
     fixDescription: 'Turn on overwrite oldest contact.',
-    apply: (ctx) => _setAutoAdd(ctx, overwriteOldest: true),
-  ),
-  HealthRule(
-    id: 'radio_auto_add_max_hops',
-    enabled: false,
-    severity: HealthSeverity.tip,
-    title: 'Auto-add max hops',
-    why: '',
-    needsRadio: true,
-    check: (ctx) async => false,
-    notes:
-        'autoAddMaxHops (firmware v10+). Write the check once we know '
-        'what we recommend.',
+    apply: (ctx) => ctx.connector.setAutoAddConfig(overwriteOldest: true),
   ),
   HealthRule(
     id: 'radio_multi_acks',
@@ -406,10 +373,11 @@ final List<HealthRule> healthRules = [
         'though you received it. A second ACK gives the sender another chance '
         'to hear it, for one more short transmission.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.multiAcks == 0,
+    check: (ctx) async =>
+        _radioHasMultiAcks(ctx.connector) && ctx.connector.multiAcks == 0,
     fix: HealthFix.apply,
     fixDescription: 'Send 2 ACKs for each direct message.',
-    apply: (ctx) => _setOtherParams(ctx, multiAcks: 1),
+    apply: (ctx) => _setMultiAcks(ctx, 1),
     notes: 'Extra ACKs: 0 = 1 ACK, 1 = 2 ACKs. Interacts with Pathfinder.',
   ),
   HealthRule(
@@ -443,10 +411,7 @@ final List<HealthRule> healthRules = [
         (ctx.connector.firmwareVerCode ?? 0) >= 10,
     fix: HealthFix.apply,
     fixDescription: 'Switch this radio to 2-byte repeater codes.',
-    apply: (ctx) async {
-      await ctx.connector.setPathHashMode(1);
-      await ctx.connector.refreshDeviceInfo();
-    },
+    apply: (ctx) => ctx.connector.setPathHashMode(1),
     notes:
         'Width is bytes per hop (1 = 1-byte, 2 = 2-byte). setPathHashMode takes '
         'width - 1 (0 = 1-byte, 1 = 2-byte). Firmware below code 10 has no '
@@ -460,6 +425,8 @@ final List<HealthRule> healthRules = [
     why: 'Newer firmware fixes bugs and adds features this app can use.',
     needsRadio: true,
     check: (ctx) async => _firmwareOlderThan(ctx.connector, [1, 17, 1]),
+    linkLabel: 'Open the firmware flasher',
+    linkUrl: 'https://flasher.meshcore.io',
     notes:
         'Report only. Change the version here and in the title when we need a '
         'newer one.',
@@ -605,49 +572,97 @@ final List<HealthRule> healthRules = [
         'service only exposes requestPermissions today.',
   ),
   HealthRule(
+    id: 'app_notifications_blocked',
+    enabled: true,
+    severity: HealthSeverity.problem,
+    title: 'Your phone is blocking notifications',
+    why:
+        'Notifications are on in MeshTrax, but your phone is not allowing them, '
+        'so none will appear.',
+    check: (ctx) async =>
+        ctx.app.notificationsEnabled &&
+        await ctx.notificationsAllowed() == false,
+    fix: HealthFix.ask,
+    dialog: HealthDialog.notificationSettings,
+    notes:
+        'Asks the phone; if it will not ask again, opens its settings. Unknown '
+        'on Windows and Linux, so those pass.',
+  ),
+  HealthRule(
     id: 'app_notify_dm',
-    enabled: false,
-    severity: HealthSeverity.tip,
+    enabled: true,
+    severity: HealthSeverity.suggestion,
     title: 'Direct message notifications are off',
-    why: '',
-    check: (ctx) async => !ctx.app.notifyOnNewMessage,
+    why:
+        'You will not know someone sent you a direct message unless the app is '
+        'open.',
+    check: (ctx) async =>
+        ctx.app.notificationsEnabled && !ctx.app.notifyOnNewMessage,
     fix: HealthFix.apply,
     fixDescription: 'Turn on direct message notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewMessage(true),
   ),
   HealthRule(
     id: 'app_notify_channel',
-    enabled: false,
-    severity: HealthSeverity.tip,
+    enabled: true,
+    severity: HealthSeverity.suggestion,
     title: 'Channel message notifications are off',
-    why: '',
-    check: (ctx) async => !ctx.app.notifyOnNewChannelMessage,
+    why:
+        'You will not know about new messages in your channels unless the app '
+        'is open. If a channel is too busy, mute that channel instead.',
+    check: (ctx) async =>
+        ctx.app.notificationsEnabled && !ctx.app.notifyOnNewChannelMessage,
     fix: HealthFix.apply,
     fixDescription: 'Turn on channel message notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewChannelMessage(true),
   ),
   HealthRule(
     id: 'app_notify_mention',
-    enabled: false,
-    severity: HealthSeverity.tip,
+    enabled: true,
+    severity: HealthSeverity.suggestion,
     title: 'Mention notifications are off',
-    why: '',
-    check: (ctx) async => !ctx.app.notifyOnMention,
+    why:
+        'You will not know when someone mentions you or replies to you. With '
+        'these on, you hear about it even in channels you have muted.',
+    check: (ctx) async =>
+        ctx.app.notificationsEnabled && !ctx.app.notifyOnMention,
     fix: HealthFix.apply,
     fixDescription: 'Turn on mention notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnMention(true),
   ),
   HealthRule(
     id: 'app_notify_advert',
-    enabled: false,
-    severity: HealthSeverity.tip,
+    enabled: true,
+    severity: HealthSeverity.suggestion,
     title: 'Advert notifications are on',
-    why: '',
-    check: (ctx) async => ctx.app.notifyOnNewAdvert,
+    why:
+        'You get a notification each time a new radio or repeater is heard, '
+        'which adds up quickly on a busy mesh.',
+    check: (ctx) async =>
+        ctx.app.notificationsEnabled && ctx.app.notifyOnNewAdvert,
     fix: HealthFix.apply,
     fixDescription: 'Turn off advert notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewAdvert(false),
     notes: 'Default off; on is noisy in a busy mesh.',
+  ),
+  HealthRule(
+    id: 'app_notify_public_channel',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'The Public channel sends you notifications',
+    why:
+        'Everyone on the mesh can post in Public, so it can notify you often. '
+        'Mute it, and leave mention notifications on: you will still know when '
+        'someone is talking to you or about you.',
+    needsRadio: true,
+    check: (ctx) async => _publicChannelNotifies(ctx),
+    fix: HealthFix.apply,
+    fixDescription: 'Mute the Public channel.',
+    apply: (ctx) => ctx.settingsService.muteChannel(Channel.publicChannelPsk),
+    notes:
+        'Muted by default for new installs (owner rule: defaults match the '
+        'rules). The other notification rules stay quiet with the master '
+        'switch off, because app_notifications_off already covers that.',
   ),
 
   // ---------------------------------------------------- App: messaging -----

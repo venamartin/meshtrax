@@ -1,5 +1,7 @@
 package com.meshtrax.app
 
+import android.content.Intent
+import android.provider.Settings
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
@@ -27,6 +29,13 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "manufacturer" -> result.success(Build.MANUFACTURER.lowercase())
                     "isBackgroundRestricted" -> result.success(isBackgroundRestricted())
+                    "openNotificationSettings" -> {
+                        startActivity(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+                        )
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }

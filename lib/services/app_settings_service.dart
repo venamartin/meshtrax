@@ -264,6 +264,22 @@ class AppSettingsService extends ChangeNotifier {
     );
   }
 
+  Future<void> setHealthCheckPromptSeen() async {
+    await updateSettings(_settings.copyWith(healthCheckPromptSeen: true));
+  }
+
+  Future<void> dismissHealthRule(String id) async {
+    await updateSettings(
+      _settings.copyWith(
+        dismissedHealthRules: {..._settings.dismissedHealthRules, id},
+      ),
+    );
+  }
+
+  Future<void> restoreHealthRules() async {
+    await updateSettings(_settings.copyWith(dismissedHealthRules: {}));
+  }
+
   Future<void> setChartsNoticeDismissed(bool value) async {
     await updateSettings(_settings.copyWith(chartsNoticeDismissed: value));
   }

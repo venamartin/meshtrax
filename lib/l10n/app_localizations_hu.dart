@@ -410,6 +410,35 @@ class AppLocalizationsHu extends AppLocalizations {
       'A módosítás nem sikerült. Ellenőrizd a rádiókapcsolatot, és próbáld újra.';
 
   @override
+  String get healthCheck_hide => 'Ne jelenjen meg többé';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Rejtett találatok megjelenítése: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Összes javítása ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Elvégzed ezeket a módosításokat?';
+
+  @override
+  String get healthCheck_promptTitle => 'Futtatsz állapotfelmérést?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Nézd meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban, például hogyan kaphatsz kevesebb értesítést.';
+
+  @override
+  String get healthCheck_promptRun => 'Felmérés indítása';
+
+  @override
+  String get healthCheck_promptLater => 'Most nem';
+
+  @override
   String get settings_title => 'Beállítások';
 
   @override

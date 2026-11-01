@@ -405,6 +405,35 @@ class AppLocalizationsEn extends AppLocalizations {
       'That change did not go through. Check the radio connection and try again.';
 
   @override
+  String get healthCheck_hide => 'Don\'t show again';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Show hidden findings: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Fix all ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Make these changes?';
+
+  @override
+  String get healthCheck_promptTitle => 'Run a health check?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'See what could work better in your app and radio settings, including ways to get fewer notifications.';
+
+  @override
+  String get healthCheck_promptRun => 'Run check';
+
+  @override
+  String get healthCheck_promptLater => 'Not now';
+
+  @override
   String get settings_title => 'Settings';
 
   @override

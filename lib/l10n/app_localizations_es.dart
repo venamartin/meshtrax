@@ -412,6 +412,35 @@ class AppLocalizationsEs extends AppLocalizations {
       'El cambio no se aplicó. Comprueba la conexión con la radio e inténtalo de nuevo.';
 
   @override
+  String get healthCheck_hide => 'No volver a mostrar';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Mostrar avisos ocultos: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Corregir todo ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '¿Hacer estos cambios?';
+
+  @override
+  String get healthCheck_promptTitle => '¿Hacer una revisión de estado?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Mira qué podría funcionar mejor en los ajustes de la app y de la radio, incluidas formas de recibir menos notificaciones.';
+
+  @override
+  String get healthCheck_promptRun => 'Revisar';
+
+  @override
+  String get healthCheck_promptLater => 'Ahora no';
+
+  @override
   String get settings_title => 'Configuración';
 
   @override

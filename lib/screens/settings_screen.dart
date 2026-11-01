@@ -21,6 +21,7 @@ import '../models/radio_settings.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
+import '../services/notification_service.dart';
 import '../storage/app_database.dart';
 import '../utils/app_logger.dart';
 import '../widgets/app_bar.dart';
@@ -49,7 +50,10 @@ int _toDeviceCodingRate(int uiCr, int? deviceCr) {
 }
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  /// Goes straight on to the health check once the screen is up.
+  final bool openHealthCheck;
+
+  const SettingsScreen({super.key, this.openHealthCheck = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -64,6 +68,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadVersionInfo();
+    if (widget.openHealthCheck) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openHealthCheck(context);
+      });
+    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -312,15 +321,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(l10n.healthCheck_title),
         subtitle: Text(l10n.healthCheck_subtitle),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  HealthCheckScreen(openDialog: _openHealthDialog),
-            ),
-          );
-        },
+        onTap: () => _openHealthCheck(context),
+      ),
+    );
+  }
+
+  void _openHealthCheck(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HealthCheckScreen(openDialog: _openHealthDialog),
       ),
     );
   }
@@ -332,6 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       HealthDialog.radioSettings => _showRadioSettings(context, connector),
       HealthDialog.location => _editLocation(context, connector),
       HealthDialog.batterySettings => BatterySleepService.openSettings(),
+      HealthDialog.notificationSettings => NotificationService().askToAllow(),
     };
   }
 

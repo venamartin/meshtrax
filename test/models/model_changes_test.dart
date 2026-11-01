@@ -210,6 +210,27 @@ void main() {
     });
   });
 
+  group('AppSettings — health check state', () {
+    test('nothing is hidden and the prompt is unseen by default', () {
+      for (final settings in [AppSettings(), AppSettings.fromJson({})]) {
+        expect(settings.dismissedHealthRules, isEmpty);
+        expect(settings.healthCheckPromptSeen, isFalse);
+      }
+    });
+
+    test('round-trips through JSON', () {
+      final json = AppSettings()
+          .copyWith(
+            dismissedHealthRules: {'radio_name'},
+            healthCheckPromptSeen: true,
+          )
+          .toJson();
+      final back = AppSettings.fromJson(json);
+      expect(back.dismissedHealthRules, {'radio_name'});
+      expect(back.healthCheckPromptSeen, isTrue);
+    });
+  });
+
   group('AppSettings — defaults chosen with the health check', () {
     test('Pathfinder is on and guessed locations are off', () {
       for (final settings in [AppSettings(), AppSettings.fromJson({})]) {

@@ -21,7 +21,9 @@ class _Radio extends MeshCoreConnector {
   bool get isConnected => connected;
 
   @override
-  Future<void> refreshDeviceInfo() async {}
+  Future<void> refreshDeviceInfoAndWait({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {}
 
   @override
   Future<void> sendFrame(
@@ -92,7 +94,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: HealthCheckScreen(
             rules: rules,
-            radioReplyWait: Duration.zero,
             openDialog: (context, dialog) async => opened.add(dialog),
           ),
         ),
@@ -109,7 +110,7 @@ void main() {
       _rule('ok', HealthSeverity.problem, finding: false),
       _rule('sug', HealthSeverity.suggestion),
       _rule('bad', HealthSeverity.problem),
-    ]);
+    ], size: const Size(360, 2000));
 
     double y(String text) => tester.getTopLeft(find.text(text)).dy;
     expect(y('Problems'), lessThan(y('title bad')));
@@ -260,10 +261,148 @@ void main() {
           dialog: rule.dialog,
           fixDescription: rule.fixDescription,
           apply: rule.apply,
+          linkLabel: rule.linkLabel,
+          linkUrl: rule.linkUrl,
         ),
-    ]);
+    ], size: const Size(360, 12000));
     expect(tester.takeException(), isNull);
+    expect(
+      find.text(healthRules.firstWhere((r) => r.enabled).title),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Checks passed'), findsOneWidget);
     expect(find.text('Problems'), findsOneWidget);
+  });
+
+  testWidgets('a hidden finding stays hidden until shown again', (
+    tester,
+  ) async {
+    await pump(tester, [_rule('a', HealthSeverity.suggestion)]);
+
+    await tester.tap(find.text("Don't show again"));
+    await tester.pumpAndSettle();
+    expect(find.text('title a'), findsNothing);
+    expect(settings.settings.dismissedHealthRules, {'a'});
+    expect(find.text('Everything looks good.'), findsOneWidget);
+    expect(find.text('Checks passed: 0'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+    expect(find.text('title a'), findsNothing);
+
+    await tester.tap(find.text('Show hidden findings: 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('title a'), findsOneWidget);
+    expect(settings.settings.dismissedHealthRules, isEmpty);
+  });
+
+  testWidgets('a hidden rule that no longer applies is not counted as hidden', (
+    tester,
+  ) async {
+    await settings.dismissHealthRule('a');
+    await pump(tester, [_rule('a', HealthSeverity.tip, finding: false)]);
+    expect(find.textContaining('Show hidden'), findsNothing);
+    expect(find.text('Checks passed: 1'), findsOneWidget);
+  });
+
+  testWidgets('Fix all lists the changes once and applies only those', (
+    tester,
+  ) async {
+    final applied = <String>[];
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.suggestion,
+        fix: HealthFix.apply,
+        apply: (_) async => applied.add('a'),
+      ),
+      _rule(
+        'b',
+        HealthSeverity.tip,
+        fix: HealthFix.apply,
+        apply: (_) async => applied.add('b'),
+      ),
+      _rule(
+        'typed',
+        HealthSeverity.problem,
+        fix: HealthFix.ask,
+        dialog: HealthDialog.name,
+      ),
+      _rule(
+        'blocked',
+        HealthSeverity.problem,
+        fix: HealthFix.apply,
+        apply: (_) async => applied.add('blocked'),
+        canFix: false,
+      ),
+    ]);
+
+    await tester.tap(find.text('Fix all (2)'));
+    await tester.pumpAndSettle();
+    expect(find.text('does a'), findsOneWidget);
+    expect(find.text('does b'), findsOneWidget);
+    expect(find.text('does typed'), findsNothing);
+    expect(applied, isEmpty);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Fix all (2)'));
+    await tester.pumpAndSettle();
+    expect(applied, ['a', 'b']);
+    expect(opened, isEmpty);
+  });
+
+  testWidgets('Fix all keeps going when one change fails', (tester) async {
+    final applied = <String>[];
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.suggestion,
+        fix: HealthFix.apply,
+        apply: (_) async => throw Exception('dropped'),
+      ),
+      _rule(
+        'b',
+        HealthSeverity.suggestion,
+        fix: HealthFix.apply,
+        apply: (_) async => applied.add('b'),
+      ),
+    ]);
+
+    await tester.tap(find.text('Fix all (2)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Fix all (2)'));
+    await tester.pumpAndSettle();
+
+    expect(applied, ['b']);
+    expect(find.textContaining('did not go through'), findsOneWidget);
+  });
+
+  testWidgets('one fixable finding offers no Fix all', (tester) async {
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.suggestion,
+        fix: HealthFix.apply,
+        apply: (_) async {},
+      ),
+    ]);
+    expect(find.textContaining('Fix all'), findsNothing);
+  });
+
+  testWidgets('a rule with a link shows its button', (tester) async {
+    await pump(tester, [
+      HealthRule(
+        id: 'a',
+        enabled: true,
+        severity: HealthSeverity.suggestion,
+        title: 'title a',
+        why: 'why a',
+        check: (_) async => true,
+        linkLabel: 'Open the page',
+        linkUrl: 'https://example.com',
+      ),
+    ]);
+    expect(find.text('Open the page'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Fix'), findsNothing);
   });
 
   test('a rule that throws is skipped, the others still run', () async {

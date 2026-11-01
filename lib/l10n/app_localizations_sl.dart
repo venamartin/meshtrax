@@ -407,6 +407,35 @@ class AppLocalizationsSl extends AppLocalizations {
       'Sprememba ni bila uveljavljena. Preverite povezavo z radiem in poskusite znova.';
 
   @override
+  String get healthCheck_hide => 'Ne prikaži več';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Prikaži skrite rezultate: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Popravi vse ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Želite izvesti te spremembe?';
+
+  @override
+  String get healthCheck_promptTitle => 'Želite zagnati pregled stanja?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Oglejte si, kaj bi lahko bolje delovalo v nastavitvah aplikacije in radia, tudi kako prejemati manj obvestil.';
+
+  @override
+  String get healthCheck_promptRun => 'Zaženi pregled';
+
+  @override
+  String get healthCheck_promptLater => 'Ne zdaj';
+
+  @override
   String get settings_title => 'Nastavitve';
 
   @override

@@ -408,6 +408,35 @@ class AppLocalizationsSv extends AppLocalizations {
       'Ändringen gick inte igenom. Kontrollera anslutningen till radion och försök igen.';
 
   @override
+  String get healthCheck_hide => 'Visa inte igen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Visa dolda resultat: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Åtgärda alla ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Göra dessa ändringar?';
+
+  @override
+  String get healthCheck_promptTitle => 'Köra en hälsokontroll?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Se vad som kan fungera bättre i appens och radions inställningar, bland annat för att få färre aviseringar.';
+
+  @override
+  String get healthCheck_promptRun => 'Kör kontroll';
+
+  @override
+  String get healthCheck_promptLater => 'Inte nu';
+
+  @override
   String get settings_title => 'Inställningar';
 
   @override

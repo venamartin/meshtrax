@@ -411,6 +411,35 @@ class AppLocalizationsRu extends AppLocalizations {
       'Изменение не применилось. Проверьте подключение к радио и повторите попытку.';
 
   @override
+  String get healthCheck_hide => 'Больше не показывать';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Показать скрытые результаты: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Исправить всё ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Внести эти изменения?';
+
+  @override
+  String get healthCheck_promptTitle => 'Запустить проверку состояния?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Узнайте, что можно улучшить в настройках приложения и радио, в том числе как получать меньше уведомлений.';
+
+  @override
+  String get healthCheck_promptRun => 'Запустить';
+
+  @override
+  String get healthCheck_promptLater => 'Не сейчас';
+
+  @override
   String get settings_title => 'Настройки';
 
   @override

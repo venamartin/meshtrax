@@ -183,6 +183,28 @@
   "healthCheck_runAgain": "Check again",
   "healthCheck_fix": "Fix",
   "healthCheck_fixFailed": "That change did not go through. Check the radio connection and try again.",
+  "healthCheck_hide": "Don't show again",
+  "healthCheck_showHidden": "Show hidden findings: {count}",
+  "@healthCheck_showHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "healthCheck_fixAll": "Fix all ({count})",
+  "@healthCheck_fixAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "healthCheck_fixAllConfirm": "Make these changes?",
+  "healthCheck_promptTitle": "Run a health check?",
+  "healthCheck_promptBody": "See what could work better in your app and radio settings, including ways to get fewer notifications.",
+  "healthCheck_promptRun": "Run check",
+  "healthCheck_promptLater": "Not now",
   "settings_title": "Settings",
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",

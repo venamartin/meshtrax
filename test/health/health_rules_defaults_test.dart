@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/health/health_rules.dart';
+import 'package:meshtrax/models/app_settings.dart';
+import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
@@ -15,6 +17,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 // one of these fails, change the default and the rule together.
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
+  List<Channel> channelList = const [];
+
+  @override
+  List<Channel> get channels => channelList;
 
   @override
   bool get isConnected => true;
@@ -30,10 +36,10 @@ class _Connector extends MeshCoreConnector {
 }
 
 /// A 1-byte radio: byte 81 is the path hash mode.
-Uint8List _deviceInfo({String version = 'v1.18.0'}) {
+Uint8List _deviceInfo({String version = 'v1.18.0', int code = 14}) {
   final frame = Uint8List(82);
   frame[0] = respCodeDeviceInfo;
-  frame[1] = 14;
+  frame[1] = code;
   frame.setRange(60, 60 + version.length, version.codeUnits);
   return frame;
 }
@@ -170,6 +176,165 @@ void main() {
       await ctx.settingsService.setMaxMessageRetries(retries);
       expect(await rule.check(ctx), flagged, reason: '$retries tries');
     }
+  });
+
+  group('notifications', () {
+    late _Connector withPublic;
+    late HealthContext publicCtx;
+    final rule = healthRules.firstWhere(
+      (r) => r.id == 'app_notify_public_channel',
+    );
+
+    setUp(() {
+      withPublic = _Connector()
+        ..channelList = [Channel.fromHex(0, '', Channel.publicChannelPsk)];
+      publicCtx = HealthContext(withPublic, ctx.settingsService);
+    });
+
+    test('defaults are on, advert off, Public muted', () async {
+      final s = ctx.app;
+      expect(s.notificationsEnabled, isTrue);
+      expect(s.notifyOnNewMessage, isTrue);
+      expect(s.notifyOnNewChannelMessage, isTrue);
+      expect(s.notifyOnMention, isTrue);
+      expect(s.notifyOnNewAdvert, isFalse);
+      expect(await rule.check(publicCtx), isFalse);
+    });
+
+    test('Public flags only while it would notify, and Fix mutes it', () async {
+      final service = ctx.settingsService;
+      await service.unmuteChannel(Channel.publicChannelPsk);
+      expect(await rule.check(publicCtx), isTrue);
+
+      await service.setNotifyOnNewChannelMessage(false);
+      expect(await rule.check(publicCtx), isFalse);
+      await service.setNotifyOnNewChannelMessage(true);
+
+      await service.setNotificationsEnabled(false);
+      expect(await rule.check(publicCtx), isFalse);
+      await service.setNotificationsEnabled(true);
+
+      await rule.apply!(publicCtx);
+      expect(service.isChannelMuted(Channel.publicChannelPsk), isTrue);
+      expect(await rule.check(publicCtx), isFalse);
+    });
+
+    test(
+      'a saved unmute stays unmuted and a radio without Public passes',
+      () async {
+        final saved = AppSettings.fromJson({'muted_channels': <String>[]});
+        expect(saved.mutedChannels, isEmpty);
+
+        await ctx.settingsService.unmuteChannel(Channel.publicChannelPsk);
+        withPublic.channelList = [Channel.fromHex(0, 'Friends', 'ab' * 16)];
+        expect(await rule.check(publicCtx), isFalse);
+      },
+    );
+
+    test('with the master switch off, only that rule speaks', () async {
+      final service = ctx.settingsService;
+      await service.setNotificationsEnabled(false);
+      await service.setNotifyOnNewMessage(false);
+      await service.setNotifyOnMention(false);
+      await service.setNotifyOnNewAdvert(true);
+      expect((await findings((r) => r.id.startsWith('app_notif'))), [
+        'app_notifications_off',
+      ]);
+    });
+  });
+
+  group('phone notification permission', () {
+    final rule = healthRules.firstWhere(
+      (r) => r.id == 'app_notifications_blocked',
+    );
+
+    HealthContext withPhone(bool? allowed) => HealthContext(
+      c,
+      ctx.settingsService,
+      notificationsAllowed: () async => allowed,
+    );
+
+    test('flags only a phone that blocks them', () async {
+      expect(await rule.check(withPhone(false)), isTrue);
+      expect(await rule.check(withPhone(true)), isFalse);
+      expect(await rule.check(withPhone(null)), isFalse, reason: 'unknown');
+    });
+
+    test('stays quiet with notifications off in the app', () async {
+      await ctx.settingsService.setNotificationsEnabled(false);
+      expect(await rule.check(withPhone(false)), isFalse);
+    });
+  });
+
+  group('firmware without a feature', () {
+    test('old firmware is not told a missing feature is off', () async {
+      c.handleFrameForTest(_deviceInfo(version: 'v1.7.0', code: 6));
+      c.handleFrameForTest(_selfInfo(manualAdd: 1));
+      expect(
+        await findings(
+          (r) =>
+              r.id.startsWith('radio_auto_add') ||
+              r.id == 'radio_multi_acks' ||
+              r.id == 'radio_path_hash_width',
+        ),
+        isEmpty,
+      );
+    });
+  });
+
+  test('several auto-add fixes in a row keep each other', () async {
+    c.handleFrameForTest(_deviceInfo());
+    c.handleFrameForTest(_selfInfo(manualAdd: 1));
+    c.handleFrameForTest([
+      respCodeAutoAddConfig,
+      autoAddChatFlag |
+          autoAddRepeaterFlag |
+          autoAddRoomServerFlag |
+          autoAddSensorFlag,
+      3,
+    ]);
+    await _settle();
+    c.sent.clear();
+
+    for (final id in [
+      'radio_auto_add_repeaters',
+      'radio_auto_add_rooms',
+      'radio_auto_add_sensors',
+      'radio_auto_add_overwrite_oldest',
+    ]) {
+      await healthRules.firstWhere((r) => r.id == id).apply!(ctx);
+    }
+
+    final last = c.sent.lastWhere((f) => f[0] == cmdSetAutoAddConfig);
+    expect(last[1], autoAddChatFlag | autoAddOverwriteOldestFlag);
+    expect(last[2], 3, reason: 'max hops are kept');
+  });
+
+  group('waiting for the radio', () {
+    test('finishes as soon as the replies are in', () async {
+      c.handleFrameForTest(_deviceInfo());
+      var done = false;
+      final wait = c.refreshDeviceInfoAndWait().then((_) => done = true);
+      await _settle();
+      expect(done, isFalse);
+
+      c.handleFrameForTest(_deviceInfo());
+      c.handleFrameForTest(_selfInfo(manualAdd: 1));
+      c.handleFrameForTest([respCodeBattAndStorage, 0, 0]);
+      await _settle();
+      expect(done, isFalse, reason: 'the auto-add reply is still out');
+
+      c.handleFrameForTest([respCodeAutoAddConfig, 0, 0]);
+      await wait;
+      expect(done, isTrue);
+    });
+
+    test('gives up when a reply never comes', () async {
+      c.handleFrameForTest(_deviceInfo());
+      await c.refreshDeviceInfoAndWait(
+        timeout: const Duration(milliseconds: 10),
+      );
+    });
   });
 
   test('a radio already set up is left alone', () async {

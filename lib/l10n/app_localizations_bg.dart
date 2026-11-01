@@ -410,6 +410,36 @@ class AppLocalizationsBg extends AppLocalizations {
       'Промяната не беше приложена. Проверете връзката с радиото и опитайте отново.';
 
   @override
+  String get healthCheck_hide => 'Да не се показва повече';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Показване на скритите резултати: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Поправи всички ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Да се направят ли тези промени?';
+
+  @override
+  String get healthCheck_promptTitle =>
+      'Да се изпълни ли проверка на състоянието?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Вижте какво може да работи по-добре в настройките на приложението и радиото, включително как да получавате по-малко известия.';
+
+  @override
+  String get healthCheck_promptRun => 'Изпълни проверка';
+
+  @override
+  String get healthCheck_promptLater => 'Не сега';
+
+  @override
   String get settings_title => 'Настройки';
 
   @override

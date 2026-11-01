@@ -412,6 +412,35 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Änderung wurde nicht übernommen. Prüfe die Verbindung zum Funkgerät und versuche es erneut.';
 
   @override
+  String get healthCheck_hide => 'Nicht mehr anzeigen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Ausgeblendete Hinweise anzeigen: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Alle beheben ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Diese Änderungen vornehmen?';
+
+  @override
+  String get healthCheck_promptTitle => 'Gesundheitscheck starten?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Sieh nach, was in den App- und Funkgeräte-Einstellungen besser laufen könnte, auch für weniger Benachrichtigungen.';
+
+  @override
+  String get healthCheck_promptRun => 'Prüfung starten';
+
+  @override
+  String get healthCheck_promptLater => 'Nicht jetzt';
+
+  @override
   String get settings_title => 'Einstellungen';
 
   @override

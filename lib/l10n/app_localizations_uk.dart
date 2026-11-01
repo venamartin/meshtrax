@@ -409,6 +409,35 @@ class AppLocalizationsUk extends AppLocalizations {
       'Зміну не застосовано. Перевірте підключення до радіо та спробуйте ще раз.';
 
   @override
+  String get healthCheck_hide => 'Більше не показувати';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Показати приховані результати: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Виправити все ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Внести ці зміни?';
+
+  @override
+  String get healthCheck_promptTitle => 'Запустити перевірку стану?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Дізнайтеся, що можна покращити в налаштуваннях застосунку та радіо, зокрема як отримувати менше сповіщень.';
+
+  @override
+  String get healthCheck_promptRun => 'Запустити';
+
+  @override
+  String get healthCheck_promptLater => 'Не зараз';
+
+  @override
   String get settings_title => 'Налаштування';
 
   @override

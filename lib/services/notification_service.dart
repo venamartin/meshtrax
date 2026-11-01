@@ -1,6 +1,9 @@
 import 'dart:io' show Platform;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import 'package:url_launcher/url_launcher.dart';
 
 import '../helpers/gif_helper.dart';
 import '../helpers/markdown_helper.dart';
@@ -164,6 +167,50 @@ class NotificationService {
     }
 
     return true;
+  }
+
+  /// False when the phone blocks this app's notifications; null where that
+  /// can't be known.
+  Future<bool?> notificationsAllowed() async {
+    if (Platform.isWindows || Platform.isLinux) return null;
+    await _ensureInitialized();
+    if (Platform.isAndroid) {
+      return _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.areNotificationsEnabled();
+    }
+    if (Platform.isIOS) {
+      final options = await _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.checkPermissions();
+      return options?.isEnabled;
+    }
+    if (Platform.isMacOS) {
+      final options = await _notifications
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >()
+          ?.checkPermissions();
+      return options?.isEnabled;
+    }
+    return null;
+  }
+
+  /// Asks the phone to allow notifications. A phone that was refused before
+  /// won't ask again, so this opens its settings instead.
+  Future<void> askToAllow() async {
+    if (await requestPermissions()) return;
+    if (Platform.isAndroid) {
+      await const MethodChannel(
+        'meshtrax/system',
+      ).invokeMethod<void>('openNotificationSettings');
+    } else if (Platform.isIOS) {
+      await launchUrl(Uri.parse('app-settings:'));
+    }
   }
 
   /// Format special message types for human-readable notifications.

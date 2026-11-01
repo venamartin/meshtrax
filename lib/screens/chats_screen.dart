@@ -23,6 +23,7 @@ import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
+import '../widgets/health_check_prompt.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/gps_status_button.dart';
@@ -141,8 +142,13 @@ class _ChatsScreenState extends State<ChatsScreen>
         }
       };
       _connector.addListener(_connectorListener);
-      if (mounted) unawaited(showBatterySleepWarningIfNeeded(context));
+      if (mounted) unawaited(_showStartupPrompts());
     });
+  }
+
+  Future<void> _showStartupPrompts() async {
+    await showBatterySleepWarningIfNeeded(context);
+    if (mounted) await showHealthCheckPromptIfNeeded(context);
   }
 
   @override

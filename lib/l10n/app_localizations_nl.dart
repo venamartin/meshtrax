@@ -410,6 +410,35 @@ class AppLocalizationsNl extends AppLocalizations {
       'De wijziging is niet doorgevoerd. Controleer de verbinding met de radio en probeer het opnieuw.';
 
   @override
+  String get healthCheck_hide => 'Niet meer tonen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Verborgen meldingen tonen: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Alles oplossen ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Deze wijzigingen doorvoeren?';
+
+  @override
+  String get healthCheck_promptTitle => 'Statuscontrole uitvoeren?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Bekijk wat beter kan in de instellingen van de app en de radio, ook om minder meldingen te krijgen.';
+
+  @override
+  String get healthCheck_promptRun => 'Controle starten';
+
+  @override
+  String get healthCheck_promptLater => 'Niet nu';
+
+  @override
   String get settings_title => 'Instellingen';
 
   @override

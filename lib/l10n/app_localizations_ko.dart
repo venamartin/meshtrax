@@ -396,6 +396,35 @@ class AppLocalizationsKo extends AppLocalizations {
       '변경 사항이 적용되지 않았습니다. 무전기 연결을 확인하고 다시 시도하세요.';
 
   @override
+  String get healthCheck_hide => '다시 표시 안 함';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '숨긴 항목 표시: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return '모두 수정 ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '이 변경 사항을 적용할까요?';
+
+  @override
+  String get healthCheck_promptTitle => '상태 점검을 실행할까요?';
+
+  @override
+  String get healthCheck_promptBody =>
+      '앱과 무전기 설정에서 개선할 수 있는 점을 확인하세요. 알림을 줄이는 방법도 포함됩니다.';
+
+  @override
+  String get healthCheck_promptRun => '점검 실행';
+
+  @override
+  String get healthCheck_promptLater => '나중에';
+
+  @override
   String get settings_title => '설정';
 
   @override

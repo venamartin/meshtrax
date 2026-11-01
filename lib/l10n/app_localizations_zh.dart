@@ -393,6 +393,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get healthCheck_fixFailed => '更改未生效。请检查电台连接后重试。';
 
   @override
+  String get healthCheck_hide => '不再显示';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '显示已隐藏的项目：$count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return '全部修复（$count）';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '要进行这些更改吗？';
+
+  @override
+  String get healthCheck_promptTitle => '要运行健康检查吗？';
+
+  @override
+  String get healthCheck_promptBody => '查看应用和电台设置中可以改进的地方，包括减少通知的方法。';
+
+  @override
+  String get healthCheck_promptRun => '运行检查';
+
+  @override
+  String get healthCheck_promptLater => '以后再说';
+
+  @override
   String get settings_title => '设置';
 
   @override

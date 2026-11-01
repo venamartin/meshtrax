@@ -414,6 +414,35 @@ class AppLocalizationsFr extends AppLocalizations {
       'La modification n\'a pas abouti. Vérifiez la connexion à la radio et réessayez.';
 
   @override
+  String get healthCheck_hide => 'Ne plus afficher';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Afficher les éléments masqués : $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Tout corriger ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Effectuer ces modifications ?';
+
+  @override
+  String get healthCheck_promptTitle => 'Lancer un bilan de santé ?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Voyez ce qui pourrait mieux fonctionner dans les réglages de l\'application et de la radio, notamment pour recevoir moins de notifications.';
+
+  @override
+  String get healthCheck_promptRun => 'Lancer le bilan';
+
+  @override
+  String get healthCheck_promptLater => 'Plus tard';
+
+  @override
   String get settings_title => 'Paramètres';
 
   @override

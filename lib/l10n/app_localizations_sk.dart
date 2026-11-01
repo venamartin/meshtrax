@@ -411,6 +411,35 @@ class AppLocalizationsSk extends AppLocalizations {
       'Zmena sa neuplatnila. Skontrolujte pripojenie k rádiu a skúste to znova.';
 
   @override
+  String get healthCheck_hide => 'Už nezobrazovať';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Zobraziť skryté výsledky: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Opraviť všetko ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Vykonať tieto zmeny?';
+
+  @override
+  String get healthCheck_promptTitle => 'Spustiť kontrolu stavu?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia, aj ako dostávať menej upozornení.';
+
+  @override
+  String get healthCheck_promptRun => 'Spustiť kontrolu';
+
+  @override
+  String get healthCheck_promptLater => 'Teraz nie';
+
+  @override
   String get settings_title => 'Nastavenia';
 
   @override

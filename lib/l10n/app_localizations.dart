@@ -850,6 +850,54 @@ abstract class AppLocalizations {
   /// **'That change did not go through. Check the radio connection and try again.'**
   String get healthCheck_fixFailed;
 
+  /// No description provided for @healthCheck_hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show again'**
+  String get healthCheck_hide;
+
+  /// No description provided for @healthCheck_showHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Show hidden findings: {count}'**
+  String healthCheck_showHidden(int count);
+
+  /// No description provided for @healthCheck_fixAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix all ({count})'**
+  String healthCheck_fixAll(int count);
+
+  /// No description provided for @healthCheck_fixAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make these changes?'**
+  String get healthCheck_fixAllConfirm;
+
+  /// No description provided for @healthCheck_promptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run a health check?'**
+  String get healthCheck_promptTitle;
+
+  /// No description provided for @healthCheck_promptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See what could work better in your app and radio settings, including ways to get fewer notifications.'**
+  String get healthCheck_promptBody;
+
+  /// No description provided for @healthCheck_promptRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run check'**
+  String get healthCheck_promptRun;
+
+  /// No description provided for @healthCheck_promptLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get healthCheck_promptLater;
+
   /// No description provided for @settings_title.
   ///
   /// In en, this message translates to:

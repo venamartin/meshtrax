@@ -396,6 +396,35 @@ class AppLocalizationsJa extends AppLocalizations {
   String get healthCheck_fixFailed => '変更を適用できませんでした。無線機との接続を確認して、もう一度お試しください。';
 
   @override
+  String get healthCheck_hide => '今後表示しない';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '非表示の項目を表示: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'すべて修正 ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'これらの変更を行いますか？';
+
+  @override
+  String get healthCheck_promptTitle => 'ヘルスチェックを実行しますか？';
+
+  @override
+  String get healthCheck_promptBody =>
+      'アプリと無線機の設定で改善できる点を確認できます。通知を減らす方法も含まれます。';
+
+  @override
+  String get healthCheck_promptRun => 'チェックを実行';
+
+  @override
+  String get healthCheck_promptLater => '後で';
+
+  @override
   String get settings_title => '設定';
 
   @override

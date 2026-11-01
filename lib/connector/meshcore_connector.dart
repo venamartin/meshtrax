@@ -4003,6 +4003,37 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await sendFrame(buildSetPathHashModeFrame(mode.clamp(0, 2)));
   }
 
+  /// [refreshDeviceInfo], then waits for the replies that carry the settings,
+  /// so a caller judges fresh values. Gives up after [timeout] and leaves the
+  /// last known values in place.
+  Future<void> refreshDeviceInfoAndWait({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final waiting = {
+      respCodeDeviceInfo,
+      respCodeSelfInfo,
+      respCodeBattAndStorage,
+      if (firmwareSupports(
+        RadioSetting.autoAdd,
+        _firmwareVerCode,
+        _firmwareVersion,
+      ))
+        respCodeAutoAddConfig,
+    };
+    final replies = Completer<void>();
+    final subscription = receivedFrames.listen((frame) {
+      if (frame.isEmpty) return;
+      waiting.remove(frame[0]);
+      if (waiting.isEmpty && !replies.isCompleted) replies.complete();
+    });
+    try {
+      await refreshDeviceInfo();
+      await replies.future.timeout(timeout, onTimeout: () {});
+    } finally {
+      await subscription.cancel();
+    }
+  }
+
   Future<void> refreshDeviceInfo() async {
     if (!isConnected) return;
     if (PlatformInfo.isWeb &&
@@ -11453,6 +11484,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
+    notifyListeners();
+  }
+
+  /// Changes the named auto-add settings and keeps the rest. The new values
+  /// are held at once, so a second change right after this one keeps the
+  /// first instead of reading it back before the radio has replied.
+  Future<void> setAutoAddConfig({
+    bool? users,
+    bool? repeaters,
+    bool? rooms,
+    bool? sensors,
+    bool? overwriteOldest,
+  }) async {
+    _autoAddUsers = users ?? _autoAddUsers;
+    _autoAddRepeaters = repeaters ?? _autoAddRepeaters;
+    _autoAddRoomServers = rooms ?? _autoAddRoomServers;
+    _autoAddSensors = sensors ?? _autoAddSensors;
+    _overwriteOldest = overwriteOldest ?? _overwriteOldest;
+    await sendFrame(
+      buildSetAutoAddConfigFrame(
+        autoAddChat: _autoAddUsers,
+        autoAddRepeater: _autoAddRepeaters,
+        autoAddRoomServer: _autoAddRoomServers,
+        autoAddSensor: _autoAddSensors,
+        overwriteOldest: _overwriteOldest,
+        maxHops: _autoAddMaxHops,
+      ),
+    );
+    await sendFrame(buildGetAutoAddFlagsFrame());
     notifyListeners();
   }
 
