@@ -379,8 +379,16 @@ class AppLocalizationsBg extends AppLocalizations {
   String get healthCheck_running => 'Проверка на настройките…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'Радиото все още се синхронизира. Проверката ще започне, когато приключи.';
+
+  @override
   String get healthCheck_noRadio =>
       'Няма свързано радио, затова настройките му не бяха проверени.';
+
+  @override
+  String get healthCheck_partial =>
+      'Някои настройки на радиото не можаха да бъдат прочетени, затова резултатите може да не са актуални. Проверете отново след малко.';
 
   @override
   String get healthCheck_allClear => 'Всичко изглежда наред.';
@@ -410,6 +418,10 @@ class AppLocalizationsBg extends AppLocalizations {
       'Промяната не беше приложена. Проверете връзката с радиото и опитайте отново.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Тази страница с настройки не можа да се отвори. Променете това от настройките на устройството.';
+
+  @override
   String get healthCheck_hide => 'Да не се показва повече';
 
   @override
@@ -432,6 +444,10 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       'Вижте какво може да работи по-добре в настройките на приложението и радиото, включително как да получавате по-малко известия.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Вижте какво може да работи по-добре в настройките на приложението и радиото.';
 
   @override
   String get healthCheck_promptRun => 'Изпълни проверка';
@@ -576,7 +592,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Изпраща второ потвърждение за всяко получено лично съобщение, за да може подателят по-вероятно да го чуе.';
+      'Изпраща второ потвърждение, когато лично съобщение стигне до вас по маршрут, за да може подателят по-вероятно да го чуе.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим на телеметрията е обновен';
@@ -3989,7 +4005,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Нужно му е време. Новата карта още не знае нищо, затова в началото съобщенията ви тръгват точно както преди. След няколко часа слушане на едно място започва да предлага маршрути и научава повече от всяка доставка или неуспех. Не очаквайте много от него през първия ден, нито всеки път, когато отидете на ново място.';
+      'Нужно му е време. Новата карта още не знае нищо, затова в началото съобщенията ви се изпращат до цялата мрежа, докато не научи маршрут. След няколко часа слушане на едно място започва да предлага маршрути и научава повече от всяка доставка или неуспех. Не очаквайте много от него през първия ден, нито всеки път, когато отидете на ново място.';
 
   @override
   String get pathfinderHelp_guessed =>

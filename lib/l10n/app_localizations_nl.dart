@@ -379,8 +379,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get healthCheck_running => 'Instellingen controleren…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'De radio is nog aan het synchroniseren. De controle begint zodra dat klaar is.';
+
+  @override
   String get healthCheck_noRadio =>
       'Er is geen radio verbonden, dus de radio-instellingen zijn niet gecontroleerd.';
+
+  @override
+  String get healthCheck_partial =>
+      'Sommige radio-instellingen konden niet worden gelezen, dus deze resultaten zijn mogelijk niet actueel. Controleer het zo opnieuw.';
 
   @override
   String get healthCheck_allClear => 'Alles ziet er goed uit.';
@@ -410,11 +418,15 @@ class AppLocalizationsNl extends AppLocalizations {
       'De wijziging is niet doorgevoerd. Controleer de verbinding met de radio en probeer het opnieuw.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Die instellingenpagina kon niet worden geopend. Wijzig het in de instellingen van je apparaat.';
+
+  @override
   String get healthCheck_hide => 'Niet meer tonen';
 
   @override
   String healthCheck_showHidden(int count) {
-    return 'Verborgen meldingen tonen: $count';
+    return 'Verborgen bevindingen tonen: $count';
   }
 
   @override
@@ -431,6 +443,10 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       'Bekijk wat beter kan in de instellingen van de app en de radio, ook om minder meldingen te krijgen.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Bekijk wat beter kan in de instellingen van de app en de radio.';
 
   @override
   String get healthCheck_promptRun => 'Controle starten';
@@ -571,7 +587,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Stuur voor elk ontvangen direct bericht een tweede bevestiging, zodat de afzender die eerder hoort.';
+      'Stuur een tweede bevestiging wanneer een direct bericht je via een route bereikt, zodat de afzender die eerder hoort.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetrie-modus bijgewerkt';
@@ -3977,7 +3993,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Het kost tijd. Een nieuwe kaart is nog leeg, dus in het begin worden je berichten precies zoals voorheen verstuurd. Na een paar uur luisteren op één plek begint Pathfinder routes aan te bieden, en elk bericht dat aankomt of mislukt, maakt de kaart beter. Verwacht er de eerste dag weinig van, en telkens als je op een nieuwe plek bent, eerst weer minder.';
+      'Het kost tijd. Een nieuwe kaart is nog leeg, dus in het begin gaan je berichten via flood, totdat Pathfinder een route heeft geleerd. Na een paar uur luisteren op één plek begint Pathfinder routes aan te bieden, en elk bericht dat aankomt of mislukt, maakt de kaart beter. Verwacht er de eerste dag weinig van, en telkens als je op een nieuwe plek bent, eerst weer minder.';
 
   @override
   String get pathfinderHelp_guessed =>

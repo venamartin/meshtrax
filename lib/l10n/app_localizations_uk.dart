@@ -372,14 +372,22 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get healthCheck_subtitle =>
-      'Перевірити налаштування застосунку та радіо';
+      'Перевірити налаштування програми та радіо';
 
   @override
   String get healthCheck_running => 'Перевірка налаштувань…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'Радіо ще синхронізується. Перевірка почнеться, коли синхронізація завершиться.';
+
+  @override
   String get healthCheck_noRadio =>
       'Радіо не підключено, тому його налаштування не перевірялися.';
+
+  @override
+  String get healthCheck_partial =>
+      'Не вдалося прочитати деякі налаштування радіо, тому результати можуть бути неактуальними. Перевірте ще раз трохи згодом.';
 
   @override
   String get healthCheck_allClear => 'Усе добре.';
@@ -409,6 +417,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Зміну не застосовано. Перевірте підключення до радіо та спробуйте ще раз.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Не вдалося відкрити цю сторінку налаштувань. Змініть це в налаштуваннях пристрою.';
+
+  @override
   String get healthCheck_hide => 'Більше не показувати';
 
   @override
@@ -429,7 +441,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get healthCheck_promptBody =>
-      'Дізнайтеся, що можна покращити в налаштуваннях застосунку та радіо, зокрема як отримувати менше сповіщень.';
+      'Дізнайтеся, що можна покращити в налаштуваннях програми та радіо, зокрема як отримувати менше сповіщень.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Дізнайтеся, що можна покращити в налаштуваннях програми та радіо.';
 
   @override
   String get healthCheck_promptRun => 'Запустити';
@@ -568,7 +584,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Надсилати друге підтвердження на кожне отримане особисте повідомлення, щоб відправник імовірніше його почув.';
+      'Надсилати друге підтвердження, коли особисте повідомлення надходить до вас маршрутом, щоб відправник імовірніше його почув.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим телеметрії оновлено';
@@ -4006,7 +4022,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Йому потрібен час. Нова карта ще нічого не знає, тож спочатку ваші повідомлення надсилаються точно так само, як раніше. Після кількох годин прослуховування в одному місці він починає пропонувати маршрути, а кожна доставка чи невдача вчить його чогось нового. У перший день не чекайте від нього багато, а в кожному новому місці — знову менше.';
+      'Йому потрібен час. Нова карта ще нічого не знає, тож спочатку ваші повідомлення надсилаються на всю мережу, доки він не вивчить маршрут. Після кількох годин прослуховування в одному місці він починає пропонувати маршрути, а кожна доставка чи невдача вчить його чогось нового. У перший день не чекайте від нього багато, а в кожному новому місці — знову менше.';
 
   @override
   String get pathfinderHelp_guessed =>

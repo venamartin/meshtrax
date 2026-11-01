@@ -53,7 +53,11 @@ void main() {
   });
 
   /// Gives the open graph [count] repeaters of [area], as adverts would.
-  void establish(PathGraphService service, String area, {int count = 25}) {
+  void establish(
+    PathGraphService service,
+    String area, {
+    int count = PathGraphService.meshCheckMinNodes + 5,
+  }) {
     for (var i = 0; i < count; i++) {
       final key = _key(area, i);
       service.graph!.ingestNode(key.substring(0, 4), pubkey: key);

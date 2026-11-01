@@ -26,9 +26,6 @@ class _Radio extends MeshCoreConnector {
   bool get isConnected => connected;
 
   @override
-  Future<void> refreshDeviceInfo() async {}
-
-  @override
   Future<void> sendFrame(
     Uint8List data, {
     String? channelSendQueueId,
@@ -86,10 +83,18 @@ void main() {
 
   Finder multiAckSwitch() => find.widgetWithText(SwitchListTile, 'Multi-ACKs');
 
+  Uint8List deviceInfo({String version = 'v1.18.0', int code = 14}) {
+    final frame = Uint8List(82);
+    frame[0] = respCodeDeviceInfo;
+    frame[1] = code;
+    frame.setRange(60, 60 + version.length, version.codeUnits);
+    return frame;
+  }
+
   testWidgets('the switch sits in Messaging and writes to the radio', (
     tester,
   ) async {
-    final radio = _Radio(true);
+    final radio = _Radio(true)..handleFrameForTest(deviceInfo());
     await pump(tester, radio);
 
     final messaging = find.text('Messaging');
@@ -112,6 +117,27 @@ void main() {
     final frame = radio.sent.firstWhere((f) => f[0] == cmdSetOtherParams);
     expect(frame[4], 0, reason: 'turned off: 1 ACK');
     expect(radio.multiAcks, 0);
+    expect(
+      radio.sent.where((f) => f[0] == cmdAppStart),
+      isEmpty,
+      reason: 'CMD_APP_START would stop a contact download',
+    );
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(minutes: 2));
+  });
+
+  testWidgets('the switch is disabled on firmware that ignores it', (
+    tester,
+  ) async {
+    final radio = _Radio(true)
+      ..handleFrameForTest(deviceInfo(version: 'v1.7.3', code: 7));
+    await pump(tester, radio);
+
+    radio.sent.clear();
+    await tester.tap(multiAckSwitch());
+    await tester.pump();
+    expect(radio.sent, isEmpty);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(minutes: 2));

@@ -380,8 +380,16 @@ class AppLocalizationsSk extends AppLocalizations {
   String get healthCheck_running => 'Kontrolujú sa nastavenia…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'Rádio sa ešte synchronizuje. Kontrola sa začne, keď sa to dokončí.';
+
+  @override
   String get healthCheck_noRadio =>
       'Nie je pripojené žiadne rádio, preto sa jeho nastavenia nekontrolovali.';
+
+  @override
+  String get healthCheck_partial =>
+      'Niektoré nastavenia rádia sa nepodarilo načítať, preto tieto výsledky nemusia byť aktuálne. O chvíľu to skontrolujte znova.';
 
   @override
   String get healthCheck_allClear => 'Všetko vyzerá v poriadku.';
@@ -411,6 +419,10 @@ class AppLocalizationsSk extends AppLocalizations {
       'Zmena sa neuplatnila. Skontrolujte pripojenie k rádiu a skúste to znova.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Túto stránku nastavení sa nepodarilo otvoriť. Zmeňte to v nastaveniach zariadenia.';
+
+  @override
   String get healthCheck_hide => 'Už nezobrazovať';
 
   @override
@@ -432,6 +444,10 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia, aj ako dostávať menej upozornení.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia.';
 
   @override
   String get healthCheck_promptRun => 'Spustiť kontrolu';
@@ -568,7 +584,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Pre každú prijatú priamu správu pošle druhé potvrdenie, aby ho odosielateľ skôr počul.';
+      'Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul.';
 
   @override
   String get settings_telemetryModeUpdated =>
@@ -3981,7 +3997,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú presne tak ako predtým. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
+      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú záplavou, kým sa nenaučí trasu. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
 
   @override
   String get pathfinderHelp_guessed =>

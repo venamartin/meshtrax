@@ -169,17 +169,26 @@ class NotificationService {
     return true;
   }
 
-  /// False when the phone blocks this app's notifications; null where that
-  /// can't be known.
+  /// False when the device blocks this app's messages, in whole or in part;
+  /// null where that can't be known.
   Future<bool?> notificationsAllowed() async {
     if (Platform.isWindows || Platform.isLinux) return null;
     await _ensureInitialized();
     if (Platform.isAndroid) {
-      return _notifications
+      final android = _notifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.areNotificationsEnabled();
+          >();
+      final allowed = await android?.areNotificationsEnabled();
+      if (allowed != true) return allowed;
+      // Android can also block one category; mentions share the channel one.
+      // A category does not exist until its first notification.
+      final categories = await android?.getNotificationChannels() ?? const [];
+      return !categories.any(
+        (c) =>
+            (c.id == 'meshtrax_messages' || c.id == 'meshtrax_channels') &&
+            c.importance == Importance.none,
+      );
     }
     if (Platform.isIOS) {
       final options = await _notifications
@@ -187,7 +196,7 @@ class NotificationService {
             IOSFlutterLocalNotificationsPlugin
           >()
           ?.checkPermissions();
-      return options?.isEnabled;
+      return options == null ? null : options.isEnabled && options.isAlertEnabled;
     }
     if (Platform.isMacOS) {
       final options = await _notifications
@@ -195,21 +204,30 @@ class NotificationService {
             MacOSFlutterLocalNotificationsPlugin
           >()
           ?.checkPermissions();
-      return options?.isEnabled;
+      return options == null ? null : options.isEnabled && options.isAlertEnabled;
     }
     return null;
   }
 
-  /// Asks the phone to allow notifications. A phone that was refused before
-  /// won't ask again, so this opens its settings instead.
+  /// Asks the device to allow notifications. One that was refused before won't
+  /// ask again and answers at once, so this opens its settings instead. A
+  /// slower no is the user's own answer to the prompt, so it stops there.
   Future<void> askToAllow() async {
+    final asked = Stopwatch()..start();
     if (await requestPermissions()) return;
+    if (asked.elapsed > const Duration(seconds: 1)) return;
     if (Platform.isAndroid) {
       await const MethodChannel(
         'meshtrax/system',
       ).invokeMethod<void>('openNotificationSettings');
     } else if (Platform.isIOS) {
       await launchUrl(Uri.parse('app-settings:'));
+    } else if (Platform.isMacOS) {
+      await launchUrl(
+        Uri.parse(
+          'x-apple.systempreferences:com.apple.preference.notifications',
+        ),
+      );
     }
   }
 

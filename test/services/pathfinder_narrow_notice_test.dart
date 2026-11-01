@@ -13,6 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 // learned by Pathfinder (it drops such paths). The chat says so once.
 
 class _Connector extends MeshCoreConnector {
+  _Connector({this.width = 2});
+  final int width;
+
   @override
   bool get isConnected => true;
 
@@ -26,7 +29,7 @@ class _Connector extends MeshCoreConnector {
   String get selfPublicKeyHex => 'ab' * 32;
 
   @override
-  int get pathHashByteWidth => 2;
+  int get pathHashByteWidth => width;
 
   @override
   Future<void> sendFrame(
@@ -68,6 +71,17 @@ void main() {
     await service.stop();
     expect(service.showNarrowNotice(bob), isFalse,
         reason: 'only while Pathfinder runs');
+  });
+
+  test('a 1-byte radio is not told the other person is the reason', () async {
+    final c = _Connector(width: 1);
+    final service = PathGraphService();
+    await service.start(c, database: NativeDatabase.memory());
+
+    c.onContactMessageHeard!(bob, 0x02, null); // 2 hops, 1-byte
+    expect(service.showNarrowNotice(bob), isFalse);
+    expect(service.radioCanRoute, isFalse);
+    await service.stop();
   });
 
   test('dismissed once, never shown again for that contact', () async {

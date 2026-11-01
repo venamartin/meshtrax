@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -14,16 +15,34 @@ import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 
 class _Radio extends MeshCoreConnector {
-  _Radio(this.connected);
+  _Radio(this.connected, {this.answers = true});
   bool connected;
+  final bool answers;
+  int reads = 0;
+  int waits = 0;
 
   @override
   bool get isConnected => connected;
 
   @override
-  Future<void> refreshDeviceInfoAndWait({
-    Duration timeout = const Duration(seconds: 5),
-  }) async {}
+  bool get isSynced => true;
+
+  @override
+  Future<bool> readRadioSettings({
+    Duration syncTimeout = const Duration(seconds: 90),
+    Duration replyTimeout = const Duration(seconds: 3),
+  }) async {
+    reads++;
+    return answers;
+  }
+
+  @override
+  Future<bool> waitForRadio({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    waits++;
+    return answers;
+  }
 
   @override
   Future<void> sendFrame(
@@ -62,6 +81,7 @@ HealthRule _rule(
 void main() {
   late AppSettingsService settings;
   late List<HealthDialog> opened;
+  late _Radio radio;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -75,17 +95,18 @@ void main() {
     WidgetTester tester,
     List<HealthRule> rules, {
     bool connected = true,
+    bool answers = true,
     Size size = const Size(360, 640),
+    Future<void> Function(BuildContext, HealthDialog)? openDialog,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    radio = _Radio(connected, answers: answers);
     await tester.pumpWidget(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider<MeshCoreConnector>.value(
-            value: _Radio(connected),
-          ),
+          ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
           ChangeNotifierProvider.value(value: settings),
         ],
         child: MaterialApp(
@@ -94,7 +115,8 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: HealthCheckScreen(
             rules: rules,
-            openDialog: (context, dialog) async => opened.add(dialog),
+            openDialog:
+                openDialog ?? (context, dialog) async => opened.add(dialog),
           ),
         ),
       ),
@@ -403,6 +425,168 @@ void main() {
     ]);
     expect(find.text('Open the page'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Fix'), findsNothing);
+  });
+
+  testWidgets('a radio that did not answer says so, and claims no all-clear', (
+    tester,
+  ) async {
+    await pump(tester, [
+      _rule('a', HealthSeverity.suggestion, finding: false, needsRadio: true),
+    ], answers: false);
+    expect(find.textContaining('could not be read'), findsOneWidget);
+    expect(find.text('Everything looks good.'), findsNothing);
+  });
+
+  testWidgets('an app setting needs no radio traffic to check again', (
+    tester,
+  ) async {
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.suggestion,
+        fix: HealthFix.apply,
+        apply: (_) async {},
+      ),
+    ]);
+    expect(radio.reads, 1);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Fix'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Fix'));
+    await tester.pumpAndSettle();
+    expect(radio.reads, 1);
+    expect(radio.waits, 0);
+  });
+
+  testWidgets('radio fixes wait for each other, then read the radio again', (
+    tester,
+  ) async {
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.suggestion,
+        needsRadio: true,
+        fix: HealthFix.apply,
+        apply: (_) async {},
+      ),
+      _rule(
+        'b',
+        HealthSeverity.suggestion,
+        needsRadio: true,
+        fix: HealthFix.apply,
+        apply: (_) async {},
+      ),
+    ]);
+
+    await tester.tap(find.text('Fix all (2)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Fix all (2)'));
+    await tester.pumpAndSettle();
+    expect(radio.waits, 2);
+    expect(radio.reads, 2);
+  });
+
+  testWidgets('a radio that stops answering makes the Fix a failure', (
+    tester,
+  ) async {
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.suggestion,
+        needsRadio: true,
+        fix: HealthFix.apply,
+        apply: (_) async {},
+      ),
+    ], answers: false);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Fix'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Fix'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('did not go through'), findsOneWidget);
+  });
+
+  testWidgets('coming back from the device settings checks again', (
+    tester,
+  ) async {
+    var blocked = true;
+    await pump(tester, [
+      HealthRule(
+        id: 'a',
+        enabled: true,
+        severity: HealthSeverity.problem,
+        title: 'title a',
+        why: 'why a',
+        check: (_) async => blocked,
+      ),
+    ]);
+    expect(find.text('title a'), findsOneWidget);
+
+    blocked = false;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.text('title a'), findsNothing);
+    expect(radio.reads, 1, reason: 'no radio traffic for this');
+  });
+
+  testWidgets('connecting a radio runs the check again', (tester) async {
+    await pump(tester, [
+      _rule('a', HealthSeverity.suggestion, needsRadio: true),
+    ], connected: false);
+    expect(find.textContaining('No radio is connected'), findsOneWidget);
+    expect(find.text('title a'), findsNothing);
+
+    radio.connected = true;
+    radio.notifyListeners();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No radio is connected'), findsNothing);
+    expect(find.text('title a'), findsOneWidget);
+    expect(radio.reads, 1);
+  });
+
+  testWidgets('a settings page that will not open says so', (tester) async {
+    await pump(tester, [
+      _rule(
+        'a',
+        HealthSeverity.problem,
+        fix: HealthFix.ask,
+        dialog: HealthDialog.notificationSettings,
+      ),
+    ], openDialog: (context, dialog) async => throw Exception('no such page'));
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Fix'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Could not open'), findsOneWidget);
+    expect(find.text('title a'), findsOneWidget);
+  });
+
+  testWidgets('a second tap waits for the first Fix', (tester) async {
+    final done = Completer<void>();
+    var opens = 0;
+    await pump(
+      tester,
+      [
+        _rule(
+          'a',
+          HealthSeverity.problem,
+          fix: HealthFix.ask,
+          dialog: HealthDialog.batterySettings,
+        ),
+      ],
+      openDialog: (context, dialog) {
+        opens++;
+        return done.future;
+      },
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Fix'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Fix'));
+    await tester.pump();
+    expect(opens, 1);
+
+    done.complete();
+    await tester.pumpAndSettle();
   });
 
   test('a rule that throws is skipped, the others still run', () async {

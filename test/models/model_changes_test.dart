@@ -205,8 +205,8 @@ void main() {
       expect(AppSettings.fromJson(json).maxMessageRetries, equals(5));
     });
 
-    test('fromJson without the key uses the default', () {
-      expect(AppSettings.fromJson({}).maxMessageRetries, equals(4));
+    test('saved settings without the key keep the old value', () {
+      expect(AppSettings.fromJson({}).maxMessageRetries, equals(3));
     });
   });
 
@@ -233,10 +233,16 @@ void main() {
 
   group('AppSettings — defaults chosen with the health check', () {
     test('Pathfinder is on and guessed locations are off', () {
-      for (final settings in [AppSettings(), AppSettings.fromJson({})]) {
-        expect(settings.pathGraphEnabled, isTrue);
-        expect(settings.mapShowGuessedLocations, isFalse);
-      }
+      final settings = AppSettings();
+      expect(settings.pathGraphEnabled, isTrue);
+      expect(settings.mapShowGuessedLocations, isFalse);
+    });
+
+    test('saved settings without the key keep the old value', () {
+      final saved = AppSettings.fromJson({});
+      expect(saved.pathGraphEnabled, isFalse);
+      expect(saved.mapShowGuessedLocations, isTrue);
+      expect(saved.mutedChannels, isEmpty);
     });
 
     test('a saved choice wins over the default', () {
@@ -252,7 +258,7 @@ void main() {
   group('AppSettings — incrementalContactSync', () {
     test('defaults to on', () {
       expect(AppSettings().incrementalContactSync, isTrue);
-      expect(AppSettings.fromJson({}).incrementalContactSync, isTrue);
+      expect(AppSettings.fromJson({}).incrementalContactSync, isFalse);
     });
 
     test('round-trips through JSON', () {

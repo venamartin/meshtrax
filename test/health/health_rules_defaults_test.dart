@@ -18,6 +18,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
   List<Channel> channelList = const [];
+  Duration? clockSkew;
+
+  @override
+  Duration? get deviceClockSkew => clockSkew;
 
   @override
   List<Channel> get channels => channelList;
@@ -44,7 +48,12 @@ Uint8List _deviceInfo({String version = 'v1.18.0', int code = 14}) {
   return frame;
 }
 
-Uint8List _selfInfo({required int manualAdd, int freq = 910525, int sf = 7}) {
+Uint8List _selfInfo({
+  required int manualAdd,
+  int freq = 910525,
+  int sf = 7,
+  String name = 'GWQ',
+}) {
   final w = BytesBuilder();
   w.add([respCodeSelfInfo, advTypeChat, 20, 22]);
   w.add(Uint8List(32)..fillRange(0, 32, 0x11));
@@ -58,7 +67,7 @@ Uint8List _selfInfo({required int manualAdd, int freq = 910525, int sf = 7}) {
         .asUint8List(),
   );
   w.add([sf, 5]);
-  w.add(utf8.encode('GWQ'));
+  w.add(utf8.encode(name));
   return w.toBytes();
 }
 
@@ -96,7 +105,7 @@ void main() {
     AppDatabase.useInMemoryForTesting();
     c = _Connector();
     c.initialize(retryService: MessageRetryService());
-    ctx = HealthContext(c, AppSettingsService());
+    ctx = HealthContext(c, AppSettingsService(), canShowNotifications: true);
   });
 
   test('default app settings raise no finding', () async {
@@ -105,7 +114,7 @@ void main() {
 
   test('a factory radio is moved to the recommended values', () async {
     c.handleFrameForTest(_deviceInfo());
-    c.handleFrameForTest(_selfInfo(manualAdd: 0));
+    c.handleFrameForTest(_selfInfo(manualAdd: 0, name: '11111111'));
     c.sent.clear();
     c.handleFrameForTest([respCodeAutoAddConfig, 0, 0]);
     await _settle();
@@ -125,6 +134,68 @@ void main() {
       ),
       isEmpty,
     );
+  });
+
+  test('a used radio keeps what it does, for the check to offer', () async {
+    c.handleFrameForTest(_deviceInfo());
+    c.handleFrameForTest(_selfInfo(manualAdd: 0));
+    c.sent.clear();
+    c.handleFrameForTest([respCodeAutoAddConfig, 0, 0]);
+    await _settle();
+
+    expect(
+      sentFrame(cmdSetAutoAddConfig)![1],
+      autoAddChatFlag |
+          autoAddRepeaterFlag |
+          autoAddRoomServerFlag |
+          autoAddSensorFlag,
+    );
+    final other = sentFrame(cmdSetOtherParams)!;
+    expect(other[1], 1, reason: 'filters by the flags from now on');
+    expect(other[4], 0, reason: 'its ACKs are left alone');
+    expect(sentFrame(cmdSetPathHashMode), isNull, reason: 'its codes too');
+
+    expect(
+      await findings(
+        (r) =>
+            r.id == 'radio_auto_add_repeaters' ||
+            r.id == 'radio_multi_acks' ||
+            r.id == 'radio_path_hash_width',
+      ),
+      ['radio_auto_add_repeaters', 'radio_multi_acks', 'radio_path_hash_width'],
+    );
+  });
+
+  group('radio name', () {
+    final rule = healthRules.firstWhere((r) => r.id == 'radio_name');
+
+    test('a name not read yet is not called a default', () async {
+      expect(await rule.check(ctx), isFalse);
+    });
+
+    test('a key prefix is a default, a chosen name is not', () async {
+      c.handleFrameForTest(_selfInfo(manualAdd: 1, name: '11111111'));
+      expect(await rule.check(ctx), isTrue);
+      c.handleFrameForTest(_selfInfo(manualAdd: 1));
+      expect(await rule.check(ctx), isFalse);
+    });
+  });
+
+  group('radio clock', () {
+    final rule = healthRules.firstWhere((r) => r.id == 'radio_clock');
+
+    for (final (skew, flagged) in [
+      (null, false),
+      (const Duration(seconds: 6), false),
+      (const Duration(minutes: 4), false),
+      (const Duration(minutes: 6), true),
+      (const Duration(minutes: -6), true),
+    ]) {
+      test('$skew ${flagged ? 'is' : 'is not'} flagged', () async {
+        c.clockSkew = skew;
+        expect(await rule.check(ctx), flagged);
+      });
+    }
   });
 
   group('firmware rule', () {
@@ -188,7 +259,11 @@ void main() {
     setUp(() {
       withPublic = _Connector()
         ..channelList = [Channel.fromHex(0, '', Channel.publicChannelPsk)];
-      publicCtx = HealthContext(withPublic, ctx.settingsService);
+      publicCtx = HealthContext(
+        withPublic,
+        ctx.settingsService,
+        canShowNotifications: true,
+      );
     });
 
     test('defaults are on, advert off, Public muted', () async {
@@ -241,6 +316,33 @@ void main() {
         'app_notifications_off',
       ]);
     });
+
+    test('a computer that never shows them hears none of this', () async {
+      final service = ctx.settingsService;
+      await service.unmuteChannel(Channel.publicChannelPsk);
+      await service.setNotifyOnNewMessage(false);
+      await service.setNotifyOnMention(false);
+      await service.setNotifyOnNewChannelMessage(false);
+      await service.setNotifyOnNewAdvert(true);
+      final desktop = HealthContext(
+        withPublic,
+        service,
+        canShowNotifications: false,
+        notificationsAllowed: () async => null,
+      );
+      for (final rule in healthRules.where(
+        (r) => r.id.startsWith('app_notif'),
+      )) {
+        expect(await rule.check(desktop), isFalse, reason: rule.id);
+      }
+
+      await service.setNotificationsEnabled(false);
+      for (final rule in healthRules.where(
+        (r) => r.id.startsWith('app_notif'),
+      )) {
+        expect(await rule.check(desktop), isFalse, reason: rule.id);
+      }
+    });
   });
 
   group('phone notification permission', () {
@@ -252,6 +354,7 @@ void main() {
       c,
       ctx.settingsService,
       notificationsAllowed: () async => allowed,
+      canShowNotifications: true,
     );
 
     test('flags only a phone that blocks them', () async {
@@ -308,33 +411,11 @@ void main() {
     final last = c.sent.lastWhere((f) => f[0] == cmdSetAutoAddConfig);
     expect(last[1], autoAddChatFlag | autoAddOverwriteOldestFlag);
     expect(last[2], 3, reason: 'max hops are kept');
-  });
-
-  group('waiting for the radio', () {
-    test('finishes as soon as the replies are in', () async {
-      c.handleFrameForTest(_deviceInfo());
-      var done = false;
-      final wait = c.refreshDeviceInfoAndWait().then((_) => done = true);
-      await _settle();
-      expect(done, isFalse);
-
-      c.handleFrameForTest(_deviceInfo());
-      c.handleFrameForTest(_selfInfo(manualAdd: 1));
-      c.handleFrameForTest([respCodeBattAndStorage, 0, 0]);
-      await _settle();
-      expect(done, isFalse, reason: 'the auto-add reply is still out');
-
-      c.handleFrameForTest([respCodeAutoAddConfig, 0, 0]);
-      await wait;
-      expect(done, isTrue);
-    });
-
-    test('gives up when a reply never comes', () async {
-      c.handleFrameForTest(_deviceInfo());
-      await c.refreshDeviceInfoAndWait(
-        timeout: const Duration(milliseconds: 10),
-      );
-    });
+    expect(
+      sentFrame(cmdGetAutoAddConfig),
+      isNull,
+      reason: 'a reply could land between two changes and undo the first',
+    );
   });
 
   test('a radio already set up is left alone', () async {

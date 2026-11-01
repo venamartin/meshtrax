@@ -376,8 +376,16 @@ class AppLocalizationsSl extends AppLocalizations {
   String get healthCheck_running => 'Preverjanje nastavitev…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'Radio se še sinhronizira. Preverjanje se bo začelo, ko bo končano.';
+
+  @override
   String get healthCheck_noRadio =>
       'Noben radio ni povezan, zato njegove nastavitve niso bile preverjene.';
+
+  @override
+  String get healthCheck_partial =>
+      'Nekaterih nastavitev radia ni bilo mogoče prebrati, zato ti rezultati morda niso ažurni. Čez trenutek preverite znova.';
 
   @override
   String get healthCheck_allClear => 'Vse je videti v redu.';
@@ -407,6 +415,10 @@ class AppLocalizationsSl extends AppLocalizations {
       'Sprememba ni bila uveljavljena. Preverite povezavo z radiem in poskusite znova.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Te strani z nastavitvami ni bilo mogoče odpreti. Spremenite to v nastavitvah naprave.';
+
+  @override
   String get healthCheck_hide => 'Ne prikaži več';
 
   @override
@@ -428,6 +440,10 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       'Oglejte si, kaj bi lahko bolje delovalo v nastavitvah aplikacije in radia, tudi kako prejemati manj obvestil.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Oglejte si, kaj bi lahko bolje delovalo v nastavitvah aplikacije in radia.';
 
   @override
   String get healthCheck_promptRun => 'Zaženi pregled';
@@ -566,7 +582,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Za vsako prejeto neposredno sporočilo pošlje drugo potrdilo, da ga pošiljatelj laže sliši.';
+      'Pošlje drugo potrdilo, ko zasebno sporočilo do vas pride po poti, da ga pošiljatelj laže sliši.';
 
   @override
   String get settings_telemetryModeUpdated => 'Način telemetrije posodobljen';
@@ -3979,7 +3995,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Potrebuje čas. Nov zemljevid še ne ve ničesar, zato vaša sporočila sprva odhajajo natanko tako kot prej. Po nekaj urah poslušanja na enem mestu začne ponujati poti in se z vsako dostavo ali neuspehom nauči več. Prvi dan od njega ne pričakujte veliko, po vsakem premiku na novo mesto pa spet manj.';
+      'Potrebuje čas. Nov zemljevid še ne ve ničesar, zato vaša sporočila sprva odhajajo poplavno, dokler se ne nauči poti. Po nekaj urah poslušanja na enem mestu začne ponujati poti in se z vsako dostavo ali neuspehom nauči več. Prvi dan od njega ne pričakujte veliko, po vsakem premiku na novo mesto pa spet manj.';
 
   @override
   String get pathfinderHelp_guessed =>

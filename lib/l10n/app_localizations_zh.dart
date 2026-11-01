@@ -364,7 +364,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get healthCheck_running => '正在检查设置…';
 
   @override
+  String get healthCheck_waitingForSync => '电台仍在同步。同步完成后将开始检查。';
+
+  @override
   String get healthCheck_noRadio => '未连接电台，因此未检查电台设置。';
+
+  @override
+  String get healthCheck_partial => '部分电台设置无法读取，因此这些结果可能不是最新的。请稍后再检查一次。';
 
   @override
   String get healthCheck_allClear => '一切正常。';
@@ -393,6 +399,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get healthCheck_fixFailed => '更改未生效。请检查电台连接后重试。';
 
   @override
+  String get healthCheck_openFailed => '无法打开该设置页面。请在设备设置中更改。';
+
+  @override
   String get healthCheck_hide => '不再显示';
 
   @override
@@ -413,6 +422,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get healthCheck_promptBody => '查看应用和电台设置中可以改进的地方，包括减少通知的方法。';
+
+  @override
+  String get healthCheck_promptBodyDesktop => '查看应用和电台设置中可以改进的地方。';
 
   @override
   String get healthCheck_promptRun => '运行检查';
@@ -541,7 +553,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_multiAck => '多重ACK';
 
   @override
-  String get settings_multiAckSubtitle => '每收到一条私信就发送第二个 ACK，让发送方更有可能收到。';
+  String get settings_multiAckSubtitle => '当私信通过路由到达时发送第二个 ACK，让发送方更有可能收到。';
 
   @override
   String get settings_telemetryModeUpdated => '遥测模式已更新';
@@ -3719,7 +3731,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '学习需要时间。全新的地图一无所知，所以起初您的消息会和以前完全一样地发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
+      '学习需要时间。全新的地图一无所知，所以在学到路由之前，您的消息起初会以泛洪方式发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
 
   @override
   String get pathfinderHelp_guessed =>

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
+import '../models/device_backup.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
 import '../services/chat_text_scale_service.dart';
@@ -575,7 +576,13 @@ class AppSettingsScreen extends StatelessWidget {
             title: Text(context.l10n.settings_multiAck),
             subtitle: Text(context.l10n.settings_multiAckSubtitle),
             value: connector.multiAcks != 0,
-            onChanged: connector.isConnected
+            onChanged:
+                connector.isConnected &&
+                    firmwareSupports(
+                      RadioSetting.multiAcks,
+                      connector.firmwareVerCode,
+                      connector.firmwareVersion,
+                    )
                 ? (value) async {
                     await connector.setTelemetryModeBase(
                       connector.telemetryModeBase,
@@ -584,7 +591,6 @@ class AppSettingsScreen extends StatelessWidget {
                       connector.advertLocationPolicy,
                       value ? 1 : 0,
                     );
-                    await connector.refreshDeviceInfo();
                   }
                 : null,
           ),

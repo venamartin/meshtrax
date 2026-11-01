@@ -24,42 +24,73 @@ class HealthCheckScreen extends StatefulWidget {
   State<HealthCheckScreen> createState() => _HealthCheckScreenState();
 }
 
-class _HealthCheckScreenState extends State<HealthCheckScreen> {
+class _HealthCheckScreenState extends State<HealthCheckScreen>
+    with WidgetsBindingObserver {
+  late final MeshCoreConnector _connector;
+  late bool _wasConnected;
   HealthReport? _report;
   bool _running = false;
+  bool _fixing = false;
 
-  HealthContext get _ctx => HealthContext(
-    context.read<MeshCoreConnector>(),
-    context.read<AppSettingsService>(),
-  );
+  /// False when the radio was still busy or did not answer, so its results
+  /// may be out of date.
+  bool _radioRead = true;
+
+  HealthContext get _ctx =>
+      HealthContext(_connector, context.read<AppSettingsService>());
 
   @override
   void initState() {
     super.initState();
+    _connector = context.read<MeshCoreConnector>();
+    _wasConnected = _connector.isConnected;
+    _connector.addListener(_onConnectorChanged);
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _run());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _connector.removeListener(_onConnectorChanged);
+    super.dispose();
+  }
+
+  void _onConnectorChanged() {
+    if (_connector.isConnected == _wasConnected) return;
+    _wasConnected = _connector.isConnected;
+    _run();
+  }
+
+  /// The user may have just changed something in the device's settings.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_running && _report != null) {
+      _judge();
+    }
   }
 
   /// Asks the radio for its current values, then judges them.
   Future<void> _run() async {
     if (_running || !mounted) return;
     setState(() => _running = true);
-    final ctx = _ctx;
-    if (ctx.radioConnected) {
-      try {
-        await ctx.connector.refreshDeviceInfoAndWait();
-      } catch (_) {
-        // The radio dropped; the report below says it was not checked.
-      }
-    }
+    final radioRead =
+        !_connector.isConnected || await _connector.readRadioSettings();
     if (!mounted) return;
+    _radioRead = radioRead;
     await _judge();
     if (mounted) setState(() => _running = false);
   }
 
   Future<void> _judge() async {
+    if (!mounted) return;
     final report = await runHealthCheck(_ctx, rules: widget.rules);
     if (mounted) setState(() => _report = report);
   }
+
+  /// A change to an app setting needs no radio traffic.
+  Future<void> _recheck(List<HealthRule> rules) =>
+      rules.any((rule) => rule.needsRadio) ? _run() : _judge();
 
   /// Findings Fix can change straight away, with nothing to type.
   List<HealthRule> _autoFixable(
@@ -106,6 +137,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
     for (final rule in rules) {
       try {
         await rule.apply!(ctx);
+        if (rule.needsRadio && !await _connector.waitForRadio()) failed = true;
       } catch (_) {
         failed = true;
       }
@@ -116,13 +148,34 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
         content: Text(l10n.healthCheck_fixFailed),
       );
     }
-    await _run();
+    await _recheck(rules);
   }
 
-  Future<void> _fix(HealthRule rule) async {
+  /// A second tap does nothing while a Fix is still under way.
+  Future<void> _once(Future<void> Function() fix) async {
+    if (_fixing) return;
+    _fixing = true;
+    try {
+      await fix();
+    } finally {
+      _fixing = false;
+    }
+  }
+
+  Future<void> _fix(HealthRule rule) => _once(() async {
     if (rule.fix == HealthFix.ask) {
-      await widget.openDialog(context, rule.dialog!);
-      await _run();
+      final l10n = context.l10n;
+      try {
+        await widget.openDialog(context, rule.dialog!);
+      } catch (_) {
+        if (mounted) {
+          showDismissibleSnackBar(
+            context,
+            content: Text(l10n.healthCheck_openFailed),
+          );
+        }
+      }
+      await _recheck([rule]);
       return;
     }
     final confirmed = await _confirm(
@@ -131,9 +184,9 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
       context.l10n.healthCheck_fix,
     );
     if (confirmed) await _apply([rule]);
-  }
+  });
 
-  Future<void> _fixAll(List<HealthRule> rules) async {
+  Future<void> _fixAll(List<HealthRule> rules) => _once(() async {
     final l10n = context.l10n;
     final confirmed = await _confirm(
       l10n.healthCheck_fixAllConfirm,
@@ -151,7 +204,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
       l10n.healthCheck_fixAll(rules.length),
     );
     if (confirmed) await _apply(rules);
-  }
+  });
 
   Future<void> _hide(HealthRule rule) async {
     await context.read<AppSettingsService>().dismissHealthRule(rule.id);
@@ -195,14 +248,30 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
   }
 
   Widget _buildRunning(BuildContext context) {
+    final l10n = context.l10n;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(context.l10n.healthCheck_running),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(l10n.healthCheck_running, textAlign: TextAlign.center),
+            Consumer<MeshCoreConnector>(
+              builder: (context, connector, _) =>
+                  connector.isConnected && !connector.isSynced
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        l10n.healthCheck_waitingForSync,
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -232,7 +301,16 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
           ),
           const SizedBox(height: 8),
         ],
-        if (report.findings.isEmpty)
+        if (!_radioRead && connector.isConnected) ...[
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.sync_problem),
+              title: Text(l10n.healthCheck_partial),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (report.findings.isEmpty && (_radioRead || !connector.isConnected))
           Card(
             child: ListTile(
               leading: const Icon(Icons.check_circle_outline),

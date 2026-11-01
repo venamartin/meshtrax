@@ -367,7 +367,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get healthCheck_running => '設定を確認しています…';
 
   @override
+  String get healthCheck_waitingForSync => '無線機はまだ同期中です。同期が終わると確認を開始します。';
+
+  @override
   String get healthCheck_noRadio => '無線機が接続されていないため、無線機の設定は確認していません。';
+
+  @override
+  String get healthCheck_partial =>
+      '無線機の設定の一部を読み取れなかったため、この結果は最新ではない可能性があります。少し待ってからもう一度確認してください。';
 
   @override
   String get healthCheck_allClear => '問題はありません。';
@@ -396,6 +403,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get healthCheck_fixFailed => '変更を適用できませんでした。無線機との接続を確認して、もう一度お試しください。';
 
   @override
+  String get healthCheck_openFailed => 'その設定画面を開けませんでした。デバイスの設定から変更してください。';
+
+  @override
   String get healthCheck_hide => '今後表示しない';
 
   @override
@@ -417,6 +427,9 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       'アプリと無線機の設定で改善できる点を確認できます。通知を減らす方法も含まれます。';
+
+  @override
+  String get healthCheck_promptBodyDesktop => 'アプリと無線機の設定で改善できる点を確認できます。';
 
   @override
   String get healthCheck_promptRun => 'チェックを実行';
@@ -548,7 +561,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      '受信したダイレクトメッセージごとに2回目のACKを送信し、送信者に届きやすくします。';
+      'ダイレクトメッセージがルート経由で届いたときに2回目のACKを送信し、送信者に届きやすくします。';
 
   @override
   String get settings_telemetryModeUpdated => 'テレメトリモードが更新されました';
@@ -3812,7 +3825,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '学習には時間がかかります。まっさらな地図は何も知らないので、最初のうちはメッセージがこれまでとまったく同じように送られます。1か所で数時間聞き続けるとルートを提案し始め、届いても届かなくても、そのたびにさらに学習します。初日はあまり期待しないでください。新しい場所に移るたびに、しばらくはまた効果が下がります。';
+      '学習には時間がかかります。まっさらな地図は何も知らないので、ルートを学習するまで、最初のうちはメッセージがフラッドで送られます。1か所で数時間聞き続けるとルートを提案し始め、届いても届かなくても、そのたびにさらに学習します。初日はあまり期待しないでください。新しい場所に移るたびに、しばらくはまた効果が下がります。';
 
   @override
   String get pathfinderHelp_guessed =>

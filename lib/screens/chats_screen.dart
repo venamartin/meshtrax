@@ -24,6 +24,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/health_check_prompt.dart';
+import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/gps_status_button.dart';
@@ -149,6 +150,13 @@ class _ChatsScreenState extends State<ChatsScreen>
   Future<void> _showStartupPrompts() async {
     await showBatterySleepWarningIfNeeded(context);
     if (mounted) await showHealthCheckPromptIfNeeded(context);
+    // New installs never flip Pathfinder's switch, the only other place this
+    // explains that it can transmit a Discover by itself and what it stores.
+    if (mounted &&
+        (ModalRoute.of(context)?.isCurrent ?? false) &&
+        context.read<AppSettingsService>().settings.pathGraphEnabled) {
+      await PathfinderHelpDialog.showOnce(context);
+    }
   }
 
   @override

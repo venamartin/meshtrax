@@ -6,6 +6,7 @@ import '../models/radio_settings.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
 import '../services/notification_service.dart';
+import '../utils/platform_info.dart';
 
 /// The health check's rule list. Edit this file to change what the check
 /// looks for.
@@ -57,12 +58,19 @@ class HealthContext {
   /// False when the phone blocks notifications; null when it can't be known.
   final Future<bool?> Function() notificationsAllowed;
 
+  /// False on Windows and Linux, where the app never shows a notification.
+  final bool canShowNotifications;
+
   HealthContext(
     this.connector,
     this.settingsService, {
     Future<bool?> Function()? notificationsAllowed,
+    bool? canShowNotifications,
   }) : notificationsAllowed =
-           notificationsAllowed ?? NotificationService().notificationsAllowed;
+           notificationsAllowed ?? NotificationService().notificationsAllowed,
+       canShowNotifications =
+           canShowNotifications ??
+           !(PlatformInfo.isWindows || PlatformInfo.isLinux);
 
   AppSettings get app => settingsService.settings;
   bool get radioConnected => connector.isConnected;
@@ -114,23 +122,8 @@ class HealthRule {
 
 // Shared helpers for the radio rules.
 
-/// True when the radio still has a name the firmware gave it: the first 4
-/// bytes of its public key as hex, its MAC address as hex (some BLE builds,
-/// and the app can't read the MAC, so 12 hex characters counts), or a name
-/// fixed in the build.
-bool _hasDefaultName(MeshCoreConnector c) {
-  final name = c.selfName?.trim() ?? '';
-  if (name.isEmpty || name == 'NONAME' || name == 'ME25LS01 Chat') return true;
-  final key = c.selfPublicKeyHex;
-  if (key.length >= 8 &&
-      name.toLowerCase() == key.substring(0, 8).toLowerCase()) {
-    return true;
-  }
-  return RegExp(r'^[0-9a-fA-F]{12}$').hasMatch(name);
-}
-
-/// The settings a radio ships with. They are also the app's EU/UK (Narrow)
-/// preset, so only the user can say whether they are right.
+/// The settings a radio ships with. They are also the app's EU/UK (Narrow) and
+/// Switzerland presets, so only the user can say whether they are right.
 bool _onFactoryRadioSettings(MeshCoreConnector c) =>
     c.currentFreqHz == 869618 &&
     c.currentBwHz == 62500 &&
@@ -219,12 +212,12 @@ final List<HealthRule> healthRules = [
         'Your radio is still using its default name, a string of letters and '
         "numbers, so people can't tell who you are.",
     needsRadio: true,
-    check: (ctx) async => _hasDefaultName(ctx.connector),
+    check: (ctx) async => ctx.connector.hasFactoryName,
     fix: HealthFix.ask,
     dialog: HealthDialog.name,
     notes:
         'Opens the node name dialog. Other builds may set their own fixed '
-        'names; add them to _hasDefaultName as we find them.',
+        'names; add them to MeshCoreConnector.hasFactoryName as we find them.',
   ),
   HealthRule(
     id: 'radio_frequency',
@@ -249,9 +242,9 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.suggestion,
     title: 'Radio is still on its factory frequency',
     why:
-        'This is only right in the EU or UK, where it matches the Narrow '
-        "preset. Anywhere else, choose your region's preset so you can hear "
-        'your local mesh and be heard by it.',
+        "Outside the EU, the UK and Switzerland, choose your region's preset so "
+        'you can hear your local mesh and be heard by it. If this already '
+        "matches your local mesh, tap Don't show again.",
     needsRadio: true,
     check: (ctx) async => _onFactoryRadioSettings(ctx.connector),
     fix: HealthFix.ask,
@@ -376,9 +369,13 @@ final List<HealthRule> healthRules = [
     check: (ctx) async =>
         _radioHasMultiAcks(ctx.connector) && ctx.connector.multiAcks == 0,
     fix: HealthFix.apply,
-    fixDescription: 'Send 2 ACKs for each direct message.',
+    fixDescription:
+        'Send a second ACK when a direct message arrives on a route.',
     apply: (ctx) => _setMultiAcks(ctx, 1),
-    notes: 'Extra ACKs: 0 = 1 ACK, 1 = 2 ACKs. Interacts with Pathfinder.',
+    notes:
+        'Extra ACKs: 0 = 1 ACK, 1 = 2 ACKs. Interacts with Pathfinder. A message '
+        'that arrives by flood gets one reply whatever this says '
+        '(BaseChatMesh.cpp).',
   ),
   HealthRule(
     id: 'radio_client_repeat',
@@ -422,7 +419,9 @@ final List<HealthRule> healthRules = [
     enabled: true,
     severity: HealthSeverity.suggestion,
     title: 'Radio firmware is older than 1.17.1',
-    why: 'Newer firmware fixes bugs and adds features this app can use.',
+    why:
+        'Newer firmware fixes bugs and adds features this app can use. Updating '
+        'needs a computer with Chrome or Edge.',
     needsRadio: true,
     check: (ctx) async => _firmwareOlderThan(ctx.connector, [1, 17, 1]),
     linkLabel: 'Open the firmware flasher',
@@ -434,28 +433,31 @@ final List<HealthRule> healthRules = [
   HealthRule(
     id: 'radio_clock',
     enabled: true,
-    severity: HealthSeverity.problem,
-    title: 'Radio clock is wrong',
+    severity: HealthSeverity.suggestion,
+    title: 'Radio clock is far off',
     why:
-        "Messages carry the radio's time. When it is wrong, they can show the "
-        'wrong time or appear out of order for other people.',
+        'The radio puts its own time on its adverts and on when it last heard '
+        'each contact. When the clock is far off, other radios can show the '
+        'wrong time for you and may ignore your adverts.',
     needsRadio: true,
     check: (ctx) async {
-      final c = ctx.connector;
-      if (c.deviceClockStuckAhead) return true;
-      final skew = c.deviceClockSkew;
-      return skew != null &&
-          skew.abs() > MeshCoreConnector.deviceClockTolerance;
+      final skew = ctx.connector.deviceClockSkew;
+      return skew != null && skew.abs() > const Duration(minutes: 5);
     },
     fix: HealthFix.apply,
-    fixDescription: "Set the radio's clock from this phone.",
+    fixDescription: "Set the radio's clock from this device.",
     apply: (ctx) => ctx.connector.syncTime(),
     canFix: (ctx) => !ctx.connector.deviceClockStuckAhead,
     details: (ctx) => [
       if (ctx.connector.deviceClockStuckAhead)
-        "The radio's clock is ahead of this phone. The firmware will not wind "
-            'a clock back, so the app cannot fix this.',
+        "The radio's clock is ahead of this device. The firmware will not wind "
+            'a clock back, so the app cannot fix this. Restarting the radio '
+            'may help on boards with no battery-backed clock.',
     ],
+    notes:
+        'Messages from this app carry the phone time, not the radio time. A '
+        'clock a few seconds fast is normal and cannot be wound back, so small '
+        'differences are not flagged.',
   ),
   HealthRule(
     id: 'radio_contacts_full',
@@ -522,7 +524,9 @@ final List<HealthRule> healthRules = [
     enabled: true,
     severity: HealthSeverity.problem,
     title: 'Another app seems to be using this radio',
-    why: 'Messages and settings can get mixed up. Close the other app.',
+    why:
+        'Messages and settings can get mixed up. Close the other app. This '
+        'warning stays until you reconnect.',
     needsRadio: true,
     check: (ctx) async => ctx.connector.secondAppSuspected,
   ),
@@ -563,30 +567,31 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.suggestion,
     title: 'Notifications are off',
     why: 'You will not hear about new messages unless the app is open.',
-    check: (ctx) async => !ctx.app.notificationsEnabled,
+    check: (ctx) async =>
+        ctx.canShowNotifications && !ctx.app.notificationsEnabled,
     fix: HealthFix.apply,
     fixDescription: 'Turn notifications on.',
     apply: (ctx) => ctx.settingsService.setNotificationsEnabled(true),
-    notes:
-        'OS-level permission is a separate check; the notification '
-        'service only exposes requestPermissions today.',
+    notes: 'OS-level permission is app_notifications_blocked.',
   ),
   HealthRule(
     id: 'app_notifications_blocked',
     enabled: true,
     severity: HealthSeverity.problem,
-    title: 'Your phone is blocking notifications',
+    title: 'This device is blocking notifications',
     why:
-        'Notifications are on in MeshTrax, but your phone is not allowing them, '
-        'so none will appear.',
+        'Notifications are on in MeshTrax, but this device is not allowing all '
+        'of them, so some or all will not appear.',
     check: (ctx) async =>
         ctx.app.notificationsEnabled &&
         await ctx.notificationsAllowed() == false,
     fix: HealthFix.ask,
     dialog: HealthDialog.notificationSettings,
     notes:
-        'Asks the phone; if it will not ask again, opens its settings. Unknown '
-        'on Windows and Linux, so those pass.',
+        'Asks the device; if it will not ask again, opens its settings. Also '
+        'covers a blocked message or channel category on Android and alerts '
+        'turned off on iOS and macOS. Unknown on Windows and Linux, so those '
+        'pass.',
   ),
   HealthRule(
     id: 'app_notify_dm',
@@ -597,7 +602,9 @@ final List<HealthRule> healthRules = [
         'You will not know someone sent you a direct message unless the app is '
         'open.',
     check: (ctx) async =>
-        ctx.app.notificationsEnabled && !ctx.app.notifyOnNewMessage,
+        ctx.canShowNotifications &&
+        ctx.app.notificationsEnabled &&
+        !ctx.app.notifyOnNewMessage,
     fix: HealthFix.apply,
     fixDescription: 'Turn on direct message notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewMessage(true),
@@ -611,7 +618,9 @@ final List<HealthRule> healthRules = [
         'You will not know about new messages in your channels unless the app '
         'is open. If a channel is too busy, mute that channel instead.',
     check: (ctx) async =>
-        ctx.app.notificationsEnabled && !ctx.app.notifyOnNewChannelMessage,
+        ctx.canShowNotifications &&
+        ctx.app.notificationsEnabled &&
+        !ctx.app.notifyOnNewChannelMessage,
     fix: HealthFix.apply,
     fixDescription: 'Turn on channel message notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewChannelMessage(true),
@@ -625,7 +634,9 @@ final List<HealthRule> healthRules = [
         'You will not know when someone mentions you or replies to you. With '
         'these on, you hear about it even in channels you have muted.',
     check: (ctx) async =>
-        ctx.app.notificationsEnabled && !ctx.app.notifyOnMention,
+        ctx.canShowNotifications &&
+        ctx.app.notificationsEnabled &&
+        !ctx.app.notifyOnMention,
     fix: HealthFix.apply,
     fixDescription: 'Turn on mention notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnMention(true),
@@ -639,7 +650,9 @@ final List<HealthRule> healthRules = [
         'You get a notification each time a new radio or repeater is heard, '
         'which adds up quickly on a busy mesh.',
     check: (ctx) async =>
-        ctx.app.notificationsEnabled && ctx.app.notifyOnNewAdvert,
+        ctx.canShowNotifications &&
+        ctx.app.notificationsEnabled &&
+        ctx.app.notifyOnNewAdvert,
     fix: HealthFix.apply,
     fixDescription: 'Turn off advert notifications.',
     apply: (ctx) => ctx.settingsService.setNotifyOnNewAdvert(false),
@@ -655,7 +668,8 @@ final List<HealthRule> healthRules = [
         'Mute it, and leave mention notifications on: you will still know when '
         'someone is talking to you or about you.',
     needsRadio: true,
-    check: (ctx) async => _publicChannelNotifies(ctx),
+    check: (ctx) async =>
+        ctx.canShowNotifications && _publicChannelNotifies(ctx),
     fix: HealthFix.apply,
     fixDescription: 'Mute the Public channel.',
     apply: (ctx) => ctx.settingsService.muteChannel(Channel.publicChannelPsk),
@@ -684,15 +698,16 @@ final List<HealthRule> healthRules = [
     title: 'Direct messages get too few tries',
     why:
         'With fewer than 4 tries, a direct message gets one try on a route '
-        'before the app floods the whole mesh. With 4 or 5, it gets another '
-        'try on a route first, so more messages arrive without flooding.',
+        'before the app floods the whole mesh. With 4 or 5, a known route gets '
+        'another try first, so more messages can arrive without flooding.',
     check: (ctx) async => ctx.app.maxMessageRetries < 4,
     fix: HealthFix.apply,
     fixDescription: 'Set direct message tries to 4.',
     apply: (ctx) => ctx.settingsService.setMaxMessageRetries(4),
     notes:
         '4 and 5 both pass. Attempts at each setting: path_selection.dart, '
-        'planAttempts (the last 2 are floods from 3 tries up).',
+        'planAttempts (the last 2 are floods from 3 tries up, and with '
+        'Pathfinder on a route slot it cannot fill floods too).',
   ),
   HealthRule(
     id: 'app_channel_retries',

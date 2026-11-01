@@ -375,14 +375,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get healthCheck_subtitle =>
-      'Comprueba los ajustes de la app y de la radio';
+      'Comprueba la configuración de la app y de la radio';
 
   @override
-  String get healthCheck_running => 'Comprobando los ajustes…';
+  String get healthCheck_running => 'Comprobando la configuración…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'La radio aún se está sincronizando. La comprobación empezará cuando termine.';
 
   @override
   String get healthCheck_noRadio =>
-      'No hay ninguna radio conectada, así que no se comprobaron sus ajustes.';
+      'No hay ninguna radio conectada, así que no se comprobó su configuración.';
+
+  @override
+  String get healthCheck_partial =>
+      'No se pudo leer parte de la configuración de la radio, así que estos resultados pueden estar desactualizados. Vuelve a comprobarlo en un momento.';
 
   @override
   String get healthCheck_allClear => 'Todo parece correcto.';
@@ -412,6 +420,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'El cambio no se aplicó. Comprueba la conexión con la radio e inténtalo de nuevo.';
 
   @override
+  String get healthCheck_openFailed =>
+      'No se pudo abrir esa página de configuración. Cámbialo en la configuración de tu dispositivo.';
+
+  @override
   String get healthCheck_hide => 'No volver a mostrar';
 
   @override
@@ -432,7 +444,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get healthCheck_promptBody =>
-      'Mira qué podría funcionar mejor en los ajustes de la app y de la radio, incluidas formas de recibir menos notificaciones.';
+      'Mira qué podría funcionar mejor en la configuración de la app y de la radio, incluidas formas de recibir menos notificaciones.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Mira qué podría funcionar mejor en la configuración de la app y de la radio.';
 
   @override
   String get healthCheck_promptRun => 'Revisar';
@@ -573,7 +589,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Envía una segunda confirmación por cada mensaje directo que recibes, para que el remitente tenga más probabilidades de oírla.';
+      'Envía una segunda confirmación cuando un mensaje directo te llega por una ruta, para que el remitente tenga más probabilidades de oírla.';
 
   @override
   String get settings_telemetryModeUpdated => 'Modo de telemetría actualizado';
@@ -4002,7 +4018,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Necesita tiempo. Un mapa recién creado no sabe nada, así que al principio tus mensajes salen exactamente igual que antes. Tras unas horas escuchando en un mismo lugar empieza a ofrecer rutas, y cada entrega o fallo le enseña algo más. El primer día no esperes mucho de él, y cada vez que te muevas a un sitio nuevo volverá a rendir menos.';
+      'Necesita tiempo. Un mapa recién creado no sabe nada, así que al principio tus mensajes usan la inundación hasta que aprende una ruta. Tras unas horas escuchando en un mismo lugar empieza a ofrecer rutas, y cada entrega o fallo le enseña algo más. El primer día no esperes mucho de él, y cada vez que te muevas a un sitio nuevo volverá a rendir menos.';
 
   @override
   String get pathfinderHelp_guessed =>

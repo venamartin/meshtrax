@@ -743,6 +743,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _pollingInterval = 30;
   bool _batteryRequested = false;
   bool _awaitingSelfInfo = false;
+  // CONTACTS_START has arrived for the contact pass in progress.
+  bool _contactStreamStarted = false;
+  // The next SELF_INFO answers readRadioSettings, not a handshake.
+  bool _settingsReadPending = false;
   bool _hasReceivedDeviceInfo = false;
   bool _pendingInitialChannelSync = false;
   bool _pendingInitialContactsSync = false;
@@ -999,6 +1003,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get channelsVerified => _channelsVerified;
   bool get isConnected => _state == MeshCoreConnectionState.connected;
   bool get isLoadingContacts => _isLoadingContacts;
+
+  /// True once this connection's first sync has finished and the radio is not
+  /// streaming anything.
+  bool get isSynced =>
+      _initialSyncComplete &&
+      !_awaitingSelfInfo &&
+      !_isLoadingContacts &&
+      !_isLoadingChannels &&
+      !_isSyncingChannels &&
+      !_isSyncingQueuedMessages;
+
   bool get isLoadingChannels => _isLoadingChannels;
   Stream<Uint8List> get receivedFrames => _receivedFramesController.stream;
   Stream<int> get errorStream => _errorStreamController.stream;
@@ -1029,6 +1044,25 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return _selfHex;
   }
   String? get selfName => _selfName;
+
+  /// True when the radio still has a name its firmware gave it: the first 4
+  /// bytes of its public key as hex, its MAC address as hex (some BLE builds,
+  /// and the app can't read the MAC, so 12 hex characters counts), or a name
+  /// fixed in the build. False while the name is not known yet.
+  bool get hasFactoryName {
+    final name = _selfName?.trim();
+    if (name == null) return false;
+    if (name.isEmpty || name == 'NONAME' || name == 'ME25LS01 Chat') {
+      return true;
+    }
+    final key = selfPublicKeyHex;
+    if (key.length >= 8 &&
+        name.toLowerCase() == key.substring(0, 8).toLowerCase()) {
+      return true;
+    }
+    return RegExp(r'^[0-9a-fA-F]{12}$').hasMatch(name);
+  }
+
   double? get selfLatitude => _selfLatitude;
   double? get selfLongitude => _selfLongitude;
   List<DirectRepeater> get directRepeaters => _directRepeaters;
@@ -3275,6 +3309,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _pendingDeferredChannelSyncAfterContacts = false;
     _pendingChannelSyncAfterQueueSync = false;
     _initialSyncComplete = false;
+    _channelHealthWarnings.clear();
     _pathHashByteWidth = 1;
   }
 
@@ -3748,6 +3783,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _batteryRequested = false;
     _awaitingSelfInfo = false;
     _initialSyncComplete = false;
+    _channelHealthWarnings.clear();
     _hasReceivedDeviceInfo = false;
     _pendingInitialChannelSync = false;
     _pendingInitialContactsSync = false;
@@ -4003,35 +4039,101 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await sendFrame(buildSetPathHashModeFrame(mode.clamp(0, 2)));
   }
 
-  /// [refreshDeviceInfo], then waits for the replies that carry the settings,
-  /// so a caller judges fresh values. Gives up after [timeout] and leaves the
-  /// last known values in place.
-  Future<void> refreshDeviceInfoAndWait({
-    Duration timeout = const Duration(seconds: 5),
+  /// Waits for this connection's sync to finish. False if the radio drops, or
+  /// is still busy after [timeout].
+  Future<bool> waitUntilSynced({
+    Duration timeout = const Duration(seconds: 90),
   }) async {
-    final waiting = {
-      respCodeDeviceInfo,
-      respCodeSelfInfo,
-      respCodeBattAndStorage,
-      if (firmwareSupports(
-        RadioSetting.autoAdd,
-        _firmwareVerCode,
-        _firmwareVersion,
-      ))
-        respCodeAutoAddConfig,
-    };
-    final replies = Completer<void>();
-    final subscription = receivedFrames.listen((frame) {
-      if (frame.isEmpty) return;
-      waiting.remove(frame[0]);
-      if (waiting.isEmpty && !replies.isCompleted) replies.complete();
+    const step = Duration(milliseconds: 250);
+    for (var waited = Duration.zero; isConnected && !isSynced; waited += step) {
+      if (waited >= timeout) return false;
+      await Future<void>.delayed(step);
+    }
+    return isConnected;
+  }
+
+  Future<bool> _askRadio(
+    Uint8List frame,
+    int replyCode, {
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    if (!isConnected) return false;
+    final replied = Completer<bool>();
+    final subscription = receivedFrames.listen((reply) {
+      if (reply.isNotEmpty && reply[0] == replyCode && !replied.isCompleted) {
+        replied.complete(true);
+      }
     });
     try {
-      await refreshDeviceInfo();
-      await replies.future.timeout(timeout, onTimeout: () {});
+      await sendFrame(frame);
+      return await replied.future.timeout(timeout, onTimeout: () => false);
+    } catch (_) {
+      return false;
     } finally {
       await subscription.cancel();
     }
+  }
+
+  /// Waits until the radio has handled everything sent so far. It handles
+  /// frames in order, and a settings write finishes its flash save first. An
+  /// ESP32 BLE radio holds only four frames and silently drops the rest, so
+  /// settings writes in a row need this between them.
+  Future<bool> waitForRadio({Duration timeout = const Duration(seconds: 3)}) =>
+      _askRadio(
+        buildGetBattAndStorageFrame(),
+        respCodeBattAndStorage,
+        timeout: timeout,
+      );
+
+  /// Reads the radio's current settings and leaves everything else alone: no
+  /// contact download, and no change to the contact or channel lists.
+  ///
+  /// Waits for the sync first, because CMD_APP_START stops a running contact
+  /// stream (companion_radio MyMesh.cpp). Asks for one thing at a time, for the
+  /// same reason as [waitForRadio].
+  ///
+  /// False when the radio was still busy or did not answer. The last known
+  /// values then stay in place.
+  Future<bool> readRadioSettings({
+    Duration syncTimeout = const Duration(seconds: 90),
+    Duration replyTimeout = const Duration(seconds: 3),
+  }) async {
+    if (!await waitUntilSynced(timeout: syncTimeout)) return false;
+    var answered = await _askRadio(
+      buildDeviceQueryFrame(),
+      respCodeDeviceInfo,
+      timeout: replyTimeout,
+    );
+    _settingsReadPending = true;
+    answered =
+        await _askRadio(
+          buildAppStartFrame(),
+          respCodeSelfInfo,
+          timeout: replyTimeout,
+        ) &&
+        answered;
+    _settingsReadPending = false;
+    answered = await waitForRadio(timeout: replyTimeout) && answered;
+    if (firmwareSupports(
+      RadioSetting.autoAdd,
+      _firmwareVerCode,
+      _firmwareVersion,
+    )) {
+      answered =
+          await _askRadio(
+            buildGetAutoAddFlagsFrame(),
+            respCodeAutoAddConfig,
+            timeout: replyTimeout,
+          ) &&
+          answered;
+    }
+    final skew = await _readDeviceClockSkew(timeout: replyTimeout);
+    if (skew == null) return false;
+    _lastDeviceClockSkew = skew;
+    _deviceClockStuckAhead =
+        decideDeviceClockAction(skew) == DeviceClockAction.stuckAhead;
+    notifyListeners();
+    return answered;
   }
 
   Future<void> refreshDeviceInfo() async {
@@ -4164,6 +4266,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     _isLoadingContacts = true;
+    _contactStreamStarted = false;
     _preserveContactsOnRefresh = preserveExisting;
     List<Contact>? replaced;
     if (!preserveExisting) {
@@ -4351,6 +4454,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           pathHashSize: width,
         );
         notifyListeners();
+        unawaited(_persistContacts());
       }
     });
   }
@@ -5596,6 +5700,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             _telemetryModeBase,
         _advertLocPolicy,
         _multiAcks,
+        // Firmware without per-type auto-add has only this on/off switch, so
+        // it keeps what it has.
+        manualAdd:
+            firmwareSupports(
+              RadioSetting.autoAdd,
+              _firmwareVerCode,
+              _firmwareVersion,
+            )
+            ? 0x01
+            : _manualAddRaw,
       ),
     );
     notifyListeners();
@@ -6099,6 +6213,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case respCodeContactsStart:
         debugPrint('Got CONTACTS_START');
+        _contactStreamStarted = true;
         if (!_preserveContactsOnRefresh) {
           _contacts.clear();
         }
@@ -6310,9 +6425,24 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeErr:
         _handleErrorFrame(frame);
         break;
+      case pushCodeContactDeleted:
+        _handleContactDeleted(frame);
+        break;
       default:
         debugPrint('Unknown frame code: $code');
     }
+  }
+
+  /// The radio overwrote this contact to make room for a new one. It is gone
+  /// from the radio, so it goes from the list. Its messages stay, for if the
+  /// contact is added again.
+  void _handleContactDeleted(Uint8List frame) {
+    if (frame.length < 1 + pubKeySize) return;
+    final key = pubKeyToHex(frame.sublist(1, 1 + pubKeySize));
+    _knownContactKeys.remove(key);
+    _contacts.removeWhere((c) => c.publicKeyHex == key);
+    notifyListeners();
+    unawaited(_persistContacts());
   }
 
   void _handleErrorFrame(Uint8List frame) {
@@ -6424,6 +6554,31 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _deviceDisplayName = selfName;
       _lastDeviceDisplayName = selfName;
       unawaited(_persistLastBleDevice());
+    }
+
+    // CMD_APP_START stops the radio's contact stream, and END_OF_CONTACTS only
+    // comes from that stream. Replies arrive in order, so a SELF_INFO after
+    // CONTACTS_START means the stream is over. Left set, the flag stops the
+    // download below from asking again and parks the message queue behind it
+    // for the rest of the connection.
+    final streamStopped = _isLoadingContacts && _contactStreamStarted;
+    if (streamStopped) {
+      _isLoadingContacts = false;
+      _preserveContactsOnRefresh = false;
+      _contactSyncStopwatch = null;
+    }
+    // readRadioSettings only wants the values above. A contact download from
+    // here would clear the list, and a DM from a sender not yet back in it is
+    // dropped for good.
+    final settingsOnly =
+        _settingsReadPending &&
+        !wasAwaitingSelfInfo &&
+        !streamStopped &&
+        _lastLoadedNodeKey == selfPublicKeyHex;
+    _settingsReadPending = false;
+    if (settingsOnly) {
+      notifyListeners();
+      return;
     }
 
     //set all the stores' public key so they can load the correct data
@@ -6640,16 +6795,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _checkManualAddContacts() async {
-    // A radio still in factory mode auto-adds everything it hears. Move it to
-    // the values the health check recommends (lib/health/health_rules.dart);
-    // keep the two in step, or a new user is flagged for our own defaults.
+    // This bit clear means the radio auto-adds everything it hears. That is the
+    // factory state, but also any radio whose owner never chose otherwise in
+    // another app. Only a radio nobody has named is moved to the values the
+    // health check recommends (lib/health/health_rules.dart); keep the two in
+    // step, or a new user is flagged for our own defaults. A used radio keeps
+    // what it does today, and the check offers the rest with a confirm.
     if (_manualAddContacts) {
+      final fresh = hasFactoryName;
       _autoAddUsers = true;
-      _autoAddRepeaters = false;
-      _autoAddRoomServers = false;
-      _autoAddSensors = false;
-      _overwriteOldest = true;
-      _multiAcks = 1;
+      _autoAddRepeaters = !fresh;
+      _autoAddRoomServers = !fresh;
+      _autoAddSensors = !fresh;
+      if (fresh) {
+        _overwriteOldest = true;
+        _multiAcks = 1;
+      }
       await sendFrame(
         buildSetAutoAddConfigFrame(
           autoAddChat: _autoAddUsers,
@@ -6668,7 +6829,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _multiAcks,
         ),
       );
-      if ((_firmwareVerCode ?? 0) >= 10) {
+      if (fresh && (_firmwareVerCode ?? 0) >= 10) {
         _pathHashByteWidth = 2;
         await setPathHashMode(1);
       }
@@ -10225,6 +10386,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // A drop mid-handshake must also clear the device-info wait, or the
     // banner sticks on "Reading device info" until the next attempt.
     _initialSyncComplete = false;
+    _channelHealthWarnings.clear();
     _resetSecondApp();
     _requestSentClaims.clear();
     _awaitingSelfInfo = false;
@@ -11488,8 +11650,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   /// Changes the named auto-add settings and keeps the rest. The new values
-  /// are held at once, so a second change right after this one keeps the
-  /// first instead of reading it back before the radio has replied.
+  /// are held at once, so a second change right after this one keeps the first.
+  /// Nothing is read back here: a reply to an earlier read could land between
+  /// two changes and bring the old values back.
   Future<void> setAutoAddConfig({
     bool? users,
     bool? repeaters,
@@ -11512,7 +11675,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         maxHops: _autoAddMaxHops,
       ),
     );
-    await sendFrame(buildGetAutoAddFlagsFrame());
     notifyListeners();
   }
 

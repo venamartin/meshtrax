@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -13,16 +14,26 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/health_check_prompt.dart';
 
 class _Radio extends MeshCoreConnector {
-  _Radio(this.connected);
+  _Radio(this.connected, this.synced);
   final bool connected;
+  final Future<bool>? synced;
 
   @override
   bool get isConnected => connected;
 
   @override
-  Future<void> refreshDeviceInfoAndWait({
-    Duration timeout = const Duration(seconds: 5),
-  }) async {}
+  bool get isSynced => true;
+
+  @override
+  Future<bool> waitUntilSynced({
+    Duration timeout = const Duration(seconds: 90),
+  }) async => await synced ?? connected;
+
+  @override
+  Future<bool> readRadioSettings({
+    Duration syncTimeout = const Duration(seconds: 90),
+    Duration replyTimeout = const Duration(seconds: 3),
+  }) async => true;
 
   @override
   Future<void> sendFrame(
@@ -49,7 +60,11 @@ void main() {
     settings = AppSettingsService();
   });
 
-  Future<void> show(WidgetTester tester, {bool connected = true}) async {
+  Future<void> show(
+    WidgetTester tester, {
+    bool connected = true,
+    Future<bool>? synced,
+  }) async {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -57,7 +72,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<MeshCoreConnector>.value(
-            value: _Radio(connected),
+            value: _Radio(connected, synced),
           ),
           ChangeNotifierProvider.value(value: settings),
         ],
@@ -83,6 +98,7 @@ void main() {
   testWidgets('asks once, and Not now does not ask again', (tester) async {
     await show(tester);
     expect(find.text('Run a health check?'), findsOneWidget);
+    expect(settings.settings.healthCheckPromptSeen, isFalse);
 
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
@@ -93,8 +109,57 @@ void main() {
     expect(find.text('Run a health check?'), findsNothing);
   });
 
+  testWidgets('a stray tap outside does not use up the question', (
+    tester,
+  ) async {
+    await show(tester);
+    await tester.tapAt(const Offset(4, 4));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Run a health check?'), findsOneWidget);
+    expect(settings.settings.healthCheckPromptSeen, isFalse);
+  });
+
   testWidgets('waits until a radio is connected', (tester) async {
     await show(tester, connected: false);
+    expect(find.text('Run a health check?'), findsNothing);
+    expect(settings.settings.healthCheckPromptSeen, isFalse);
+  });
+
+  testWidgets('waits for the radio to finish syncing', (tester) async {
+    final synced = Completer<bool>();
+    await show(tester, synced: synced.future);
+    expect(find.text('Run a health check?'), findsNothing);
+
+    synced.complete(true);
+    await tester.pumpAndSettle();
+    expect(find.text('Run a health check?'), findsOneWidget);
+  });
+
+  testWidgets('a radio that never finishes syncing asks on a later launch', (
+    tester,
+  ) async {
+    await show(tester, synced: Future.value(false));
+    expect(find.text('Run a health check?'), findsNothing);
+    expect(settings.settings.healthCheckPromptSeen, isFalse);
+  });
+
+  testWidgets('leaves another screen alone and asks on a later launch', (
+    tester,
+  ) async {
+    final synced = Completer<bool>();
+    await show(tester, synced: synced.future);
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    unawaited(
+      navigator.push(
+        MaterialPageRoute<void>(builder: (_) => const Text('a chat')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    synced.complete(true);
+    await tester.pumpAndSettle();
     expect(find.text('Run a health check?'), findsNothing);
     expect(settings.settings.healthCheckPromptSeen, isFalse);
   });
@@ -104,6 +169,7 @@ void main() {
     await tester.tap(find.text('Run check'));
     await tester.pumpAndSettle();
 
+    expect(settings.settings.healthCheckPromptSeen, isTrue);
     expect(find.text('Health check'), findsOneWidget);
     expect(find.textContaining('Checks passed'), findsOneWidget);
 

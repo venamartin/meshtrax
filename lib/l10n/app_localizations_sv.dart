@@ -377,8 +377,16 @@ class AppLocalizationsSv extends AppLocalizations {
   String get healthCheck_running => 'Kontrollerar inställningarna…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'Radion synkroniserar fortfarande. Kontrollen startar när den är klar.';
+
+  @override
   String get healthCheck_noRadio =>
       'Ingen radio är ansluten, så radions inställningar kontrollerades inte.';
+
+  @override
+  String get healthCheck_partial =>
+      'Vissa av radions inställningar kunde inte läsas, så resultaten kanske inte är aktuella. Kontrollera igen om en stund.';
 
   @override
   String get healthCheck_allClear => 'Allt ser bra ut.';
@@ -408,6 +416,10 @@ class AppLocalizationsSv extends AppLocalizations {
       'Ändringen gick inte igenom. Kontrollera anslutningen till radion och försök igen.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Det gick inte att öppna den inställningssidan. Ändra det i enhetens inställningar.';
+
+  @override
   String get healthCheck_hide => 'Visa inte igen';
 
   @override
@@ -428,7 +440,11 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get healthCheck_promptBody =>
-      'Se vad som kan fungera bättre i appens och radions inställningar, bland annat för att få färre aviseringar.';
+      'Se vad som kan fungera bättre i appens och radions inställningar, bland annat för att få färre notiser.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Se vad som kan fungera bättre i appens och radions inställningar.';
 
   @override
   String get healthCheck_promptRun => 'Kör kontroll';
@@ -566,7 +582,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Skicka en andra bekräftelse för varje direktmeddelande du tar emot, så att avsändaren lättare hör den.';
+      'Skicka en andra bekräftelse när ett direktmeddelande når dig via en rutt, så att avsändaren lättare hör den.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetri-läge uppdaterat';
@@ -3953,7 +3969,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden precis som förut. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
+      'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden med översvämning tills den har lärt sig en rutt. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
 
   @override
   String get pathfinderHelp_guessed =>

@@ -796,11 +796,23 @@ abstract class AppLocalizations {
   /// **'Checking your settings…'**
   String get healthCheck_running;
 
+  /// No description provided for @healthCheck_waitingForSync.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is still syncing. The check will start when it finishes.'**
+  String get healthCheck_waitingForSync;
+
   /// No description provided for @healthCheck_noRadio.
   ///
   /// In en, this message translates to:
   /// **'No radio is connected, so the radio\'s settings were not checked.'**
   String get healthCheck_noRadio;
+
+  /// No description provided for @healthCheck_partial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some radio settings could not be read, so these results may be out of date. Check again in a moment.'**
+  String get healthCheck_partial;
 
   /// No description provided for @healthCheck_allClear.
   ///
@@ -850,6 +862,12 @@ abstract class AppLocalizations {
   /// **'That change did not go through. Check the radio connection and try again.'**
   String get healthCheck_fixFailed;
 
+  /// No description provided for @healthCheck_openFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open that settings page. Change it in your device\'s settings.'**
+  String get healthCheck_openFailed;
+
   /// No description provided for @healthCheck_hide.
   ///
   /// In en, this message translates to:
@@ -885,6 +903,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See what could work better in your app and radio settings, including ways to get fewer notifications.'**
   String get healthCheck_promptBody;
+
+  /// No description provided for @healthCheck_promptBodyDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'See what could work better in your app and radio settings.'**
+  String get healthCheck_promptBodyDesktop;
 
   /// No description provided for @healthCheck_promptRun.
   ///
@@ -1141,7 +1165,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_multiAckSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Send a second ACK for each direct message you receive, so the sender is more likely to hear it.'**
+  /// **'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it.'**
   String get settings_multiAckSubtitle;
 
   /// No description provided for @settings_telemetryModeUpdated.
@@ -6867,7 +6891,7 @@ abstract class AppLocalizations {
   /// No description provided for @pathfinderHelp_learning.
   ///
   /// In en, this message translates to:
-  /// **'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
+  /// **'It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
   String get pathfinderHelp_learning;
 
   /// No description provided for @pathfinderHelp_guessed.

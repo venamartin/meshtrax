@@ -379,8 +379,16 @@ class AppLocalizationsHu extends AppLocalizations {
   String get healthCheck_running => 'Beállítások ellenőrzése…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'A rádió még szinkronizál. Az ellenőrzés akkor indul, amikor végzett.';
+
+  @override
   String get healthCheck_noRadio =>
       'Nincs csatlakoztatott rádió, ezért a beállításait nem ellenőriztük.';
+
+  @override
+  String get healthCheck_partial =>
+      'A rádió néhány beállítását nem sikerült kiolvasni, ezért ezek az eredmények elavultak lehetnek. Ellenőrizze újra egy kis idő múlva.';
 
   @override
   String get healthCheck_allClear => 'Minden rendben van.';
@@ -407,7 +415,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get healthCheck_fixFailed =>
-      'A módosítás nem sikerült. Ellenőrizd a rádiókapcsolatot, és próbáld újra.';
+      'A módosítás nem sikerült. Ellenőrizze a rádiókapcsolatot, és próbálja újra.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Ezt a beállítási oldalt nem sikerült megnyitni. Módosítsa az eszköz beállításaiban.';
 
   @override
   String get healthCheck_hide => 'Ne jelenjen meg többé';
@@ -423,14 +435,18 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get healthCheck_fixAllConfirm => 'Elvégzed ezeket a módosításokat?';
+  String get healthCheck_fixAllConfirm => 'Elvégzi ezeket a módosításokat?';
 
   @override
-  String get healthCheck_promptTitle => 'Futtatsz állapotfelmérést?';
+  String get healthCheck_promptTitle => 'Futtat állapotfelmérést?';
 
   @override
   String get healthCheck_promptBody =>
-      'Nézd meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban, például hogyan kaphatsz kevesebb értesítést.';
+      'Nézze meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban, például hogyan kaphat kevesebb értesítést.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Nézze meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban.';
 
   @override
   String get healthCheck_promptRun => 'Felmérés indítása';
@@ -574,7 +590,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Minden kapott közvetlen üzenetre második visszaigazolást küld, így a feladó nagyobb eséllyel hallja azt.';
+      'Második visszaigazolást küld, ha egy közvetlen üzenet útvonalon érkezik meg, így a feladó nagyobb eséllyel hallja azt.';
 
   @override
   String get settings_telemetryModeUpdated => 'A telemetriamód frissítve';
@@ -4008,7 +4024,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei pontosan úgy mennek ki, mint korábban. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
+      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei az egész hálózatra mennek ki, amíg meg nem tanul egy útvonalat. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
 
   @override
   String get pathfinderHelp_guessed =>

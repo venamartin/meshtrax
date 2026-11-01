@@ -374,8 +374,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get healthCheck_running => 'Checking your settings…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'The radio is still syncing. The check will start when it finishes.';
+
+  @override
   String get healthCheck_noRadio =>
       'No radio is connected, so the radio\'s settings were not checked.';
+
+  @override
+  String get healthCheck_partial =>
+      'Some radio settings could not be read, so these results may be out of date. Check again in a moment.';
 
   @override
   String get healthCheck_allClear => 'Everything looks good.';
@@ -405,6 +413,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'That change did not go through. Check the radio connection and try again.';
 
   @override
+  String get healthCheck_openFailed =>
+      'Could not open that settings page. Change it in your device\'s settings.';
+
+  @override
   String get healthCheck_hide => 'Don\'t show again';
 
   @override
@@ -426,6 +438,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       'See what could work better in your app and radio settings, including ways to get fewer notifications.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'See what could work better in your app and radio settings.';
 
   @override
   String get healthCheck_promptRun => 'Run check';
@@ -563,7 +579,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Send a second ACK for each direct message you receive, so the sender is more likely to hear it.';
+      'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetry mode updated';
@@ -3921,7 +3937,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
+      'It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.';
 
   @override
   String get pathfinderHelp_guessed =>

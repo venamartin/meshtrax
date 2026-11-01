@@ -366,7 +366,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get healthCheck_running => '설정을 확인하는 중…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      '무전기가 아직 동기화 중입니다. 동기화가 끝나면 점검을 시작합니다.';
+
+  @override
   String get healthCheck_noRadio => '연결된 무전기가 없어 무전기 설정은 확인하지 않았습니다.';
+
+  @override
+  String get healthCheck_partial =>
+      '일부 무전기 설정을 읽지 못해 이 결과가 최신이 아닐 수 있습니다. 잠시 후 다시 확인하세요.';
 
   @override
   String get healthCheck_allClear => '모두 양호합니다.';
@@ -396,6 +404,9 @@ class AppLocalizationsKo extends AppLocalizations {
       '변경 사항이 적용되지 않았습니다. 무전기 연결을 확인하고 다시 시도하세요.';
 
   @override
+  String get healthCheck_openFailed => '해당 설정 화면을 열지 못했습니다. 기기 설정에서 변경하세요.';
+
+  @override
   String get healthCheck_hide => '다시 표시 안 함';
 
   @override
@@ -417,6 +428,9 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get healthCheck_promptBody =>
       '앱과 무전기 설정에서 개선할 수 있는 점을 확인하세요. 알림을 줄이는 방법도 포함됩니다.';
+
+  @override
+  String get healthCheck_promptBodyDesktop => '앱과 무전기 설정에서 개선할 수 있는 점을 확인하세요.';
 
   @override
   String get healthCheck_promptRun => '점검 실행';
@@ -549,7 +563,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      '받은 다이렉트 메시지마다 두 번째 ACK를 보내 발신자가 받을 가능성을 높입니다.';
+      '다이렉트 메시지가 경로를 통해 도착하면 두 번째 ACK를 보내 발신자가 받을 가능성을 높입니다.';
 
   @override
   String get settings_telemetryModeUpdated => '텔레메트리 모드 업데이트 완료';
@@ -3813,7 +3827,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '학습에는 시간이 걸립니다. 새 지도는 아무것도 모르기 때문에 처음에는 메시지가 예전과 똑같이 전송됩니다. 한곳에서 몇 시간 동안 들은 뒤부터 경로를 제안하기 시작하며, 전달에 성공하든 실패하든 그때마다 더 많이 배웁니다. 첫날에는 큰 기대를 하지 마세요. 새로운 곳으로 이동할 때마다 한동안은 다시 효과가 떨어집니다.';
+      '학습에는 시간이 걸립니다. 새 지도는 아무것도 모르기 때문에 경로를 배울 때까지 처음에는 메시지가 플러드로 전송됩니다. 한곳에서 몇 시간 동안 들은 뒤부터 경로를 제안하기 시작하며, 전달에 성공하든 실패하든 그때마다 더 많이 배웁니다. 첫날에는 큰 기대를 하지 마세요. 새로운 곳으로 이동할 때마다 한동안은 다시 효과가 떨어집니다.';
 
   @override
   String get pathfinderHelp_guessed =>

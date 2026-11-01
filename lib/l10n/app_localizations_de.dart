@@ -381,8 +381,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get healthCheck_running => 'Einstellungen werden geprüft…';
 
   @override
+  String get healthCheck_waitingForSync =>
+      'Das Funkgerät synchronisiert noch. Die Prüfung beginnt, sobald es fertig ist.';
+
+  @override
   String get healthCheck_noRadio =>
       'Kein Funkgerät verbunden, daher wurden seine Einstellungen nicht geprüft.';
+
+  @override
+  String get healthCheck_partial =>
+      'Einige Funkgeräte-Einstellungen konnten nicht gelesen werden, daher sind diese Ergebnisse möglicherweise nicht aktuell. Prüfen Sie es gleich noch einmal.';
 
   @override
   String get healthCheck_allClear => 'Alles sieht gut aus.';
@@ -409,7 +417,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get healthCheck_fixFailed =>
-      'Die Änderung wurde nicht übernommen. Prüfe die Verbindung zum Funkgerät und versuche es erneut.';
+      'Die Änderung wurde nicht übernommen. Prüfen Sie die Verbindung zum Funkgerät und versuchen Sie es erneut.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Diese Einstellungsseite konnte nicht geöffnet werden. Ändern Sie es in den Einstellungen Ihres Geräts.';
 
   @override
   String get healthCheck_hide => 'Nicht mehr anzeigen';
@@ -432,7 +444,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get healthCheck_promptBody =>
-      'Sieh nach, was in den App- und Funkgeräte-Einstellungen besser laufen könnte, auch für weniger Benachrichtigungen.';
+      'Sehen Sie nach, was in den App- und Funkgeräte-Einstellungen besser laufen könnte, auch für weniger Benachrichtigungen.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Sehen Sie nach, was in den App- und Funkgeräte-Einstellungen besser laufen könnte.';
 
   @override
   String get healthCheck_promptRun => 'Prüfung starten';
@@ -572,7 +588,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Für jede empfangene Direktnachricht eine zweite Bestätigung senden, damit der Absender sie eher hört.';
+      'Eine zweite Bestätigung senden, wenn eine Direktnachricht Sie über eine Route erreicht, damit der Absender sie eher hört.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetriemodus aktualisiert';
@@ -4003,7 +4019,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Pathfinder braucht Zeit. Eine neue Karte ist leer, deshalb werden Ihre Nachrichten anfangs genau wie bisher gesendet. Nach einigen Stunden Zuhören an einem Ort beginnt Pathfinder, Routen anzubieten, und jede Zustellung und jeder Fehlschlag bringt ihm mehr bei. Erwarten Sie am ersten Tag nicht viel davon, und nach jedem Ortswechsel zunächst wieder weniger.';
+      'Pathfinder braucht Zeit. Eine neue Karte ist leer, deshalb fluten Ihre Nachrichten anfangs das Netz, bis Pathfinder eine Route gelernt hat. Nach einigen Stunden Zuhören an einem Ort beginnt Pathfinder, Routen anzubieten, und jede Zustellung und jeder Fehlschlag bringt ihm mehr bei. Erwarten Sie am ersten Tag nicht viel davon, und nach jedem Ortswechsel zunächst wieder weniger.';
 
   @override
   String get pathfinderHelp_guessed =>

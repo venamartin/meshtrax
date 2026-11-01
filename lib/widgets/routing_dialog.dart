@@ -11,6 +11,7 @@ import '../helpers/path_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../screens/path_graph_screen.dart';
 import '../services/app_settings_service.dart';
+import '../services/path_graph/path_graph_service.dart';
 import 'path_selection_dialog.dart';
 
 enum RoutingMode { auto, flood, custom }
@@ -23,7 +24,8 @@ RoutingMode routingModeOf(Contact contact) {
 }
 
 bool _pathfinderOn(BuildContext context) =>
-    context.watch<AppSettingsService?>()?.settings.pathGraphEnabled ?? false;
+    (context.watch<AppSettingsService?>()?.settings.pathGraphEnabled ?? false) &&
+    context.select<PathGraphService?, bool>((s) => s?.radioCanRoute ?? true);
 
 /// The one path icon: opens routing everywhere and shows the [contact]'s
 /// mode — Automatic (amber while Pathfinder chooses the route), always
@@ -290,9 +292,7 @@ class _RoutingDialog extends StatelessWidget {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(l10n.routing_autoSubtitle),
-                            if (pathfinderOn) ...[
-                              const SizedBox(height: 4),
+                            if (pathfinderOn)
                               Row(
                                 children: [
                                   Icon(RoutingIcon.icon, size: 16, color: amber),
@@ -304,8 +304,9 @@ class _RoutingDialog extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ],
+                              )
+                            else
+                              Text(l10n.routing_autoSubtitle),
                           ],
                         ),
                       ),

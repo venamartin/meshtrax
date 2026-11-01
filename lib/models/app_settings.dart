@@ -251,7 +251,7 @@ class AppSettings {
       mapKeyPrefix: json['map_key_prefix'] as String? ?? '',
       mapShowMarkers: json['map_show_markers'] as bool? ?? true,
       mapShowGuessedLocations:
-          json['map_show_guessed_locations'] as bool? ?? false,
+          json['map_show_guessed_locations'] as bool? ?? true,
       enableMessageTracing: json['enable_message_tracing'] as bool? ?? false,
       mapDownloadsWifiOnly: json['map_downloads_wifi_only'] as bool? ?? true,
       mapType: json['map_type'] as String? ?? 'osm',
@@ -266,13 +266,13 @@ class AppSettings {
           json['notify_on_new_channel_message'] as bool? ?? true,
       notifyOnMention: json['notify_on_mention'] as bool? ?? true,
       notifyOnNewAdvert: json['notify_on_new_advert'] as bool? ?? false,
-      maxMessageRetries: json['max_message_retries'] as int? ?? 4,
+      maxMessageRetries: json['max_message_retries'] as int? ?? 3,
       maxChannelMessageRetries:
           json['max_channel_message_retries'] as int? ?? 1,
       themeMode: json['theme_mode'] as String? ?? 'dark',
       languageOverride: json['language_override'] as String?,
       appDebugLogEnabled: json['app_debug_log_enabled'] as bool? ?? false,
-      pathGraphEnabled: json['path_graph_enabled'] as bool? ?? true,
+      pathGraphEnabled: json['path_graph_enabled'] as bool? ?? false,
       batteryChemistryByDeviceId:
           (json['battery_chemistry_by_device_id'] as Map?)?.map(
             (key, value) => MapEntry(key.toString(), value.toString()),
@@ -288,7 +288,7 @@ class AppSettings {
           ((json['muted_channels'] as List?)
               ?.map((e) => e.toString())
               .toSet()) ??
-          {Channel.publicChannelPsk},
+          {},
       mutedContacts:
           ((json['muted_contacts'] as List?)
               ?.map((e) => e.toString())
@@ -301,7 +301,7 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
-      incrementalContactSync: json['incremental_contact_sync'] as bool? ?? true,
+      incrementalContactSync: json['incremental_contact_sync'] as bool? ?? false,
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
       showTextFormatting: json['show_text_formatting'] as bool? ?? true,
       dmIdentityWarningDismissed:

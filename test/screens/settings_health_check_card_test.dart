@@ -18,9 +18,13 @@ class _Radio extends MeshCoreConnector {
   bool get isConnected => true;
 
   @override
-  Future<void> refreshDeviceInfoAndWait({
-    Duration timeout = const Duration(seconds: 5),
-  }) => Future<void>.delayed(const Duration(seconds: 1));
+  bool get isSynced => true;
+
+  @override
+  Future<bool> readRadioSettings({
+    Duration syncTimeout = const Duration(seconds: 90),
+    Duration replyTimeout = const Duration(seconds: 3),
+  }) => Future<bool>.delayed(const Duration(seconds: 1), () => true);
 
   @override
   Future<void> sendFrame(

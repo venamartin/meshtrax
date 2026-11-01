@@ -4,8 +4,8 @@ import '../l10n/l10n.dart';
 import '../storage/prefs_manager.dart';
 
 /// What Pathfinder is, how it works, and that it needs time to learn
-/// before it does much. Shown once when Pathfinder is switched on, and
-/// from the info button on its screen any time after.
+/// before it does much. Shown once when Pathfinder is switched on or found
+/// on, and from the info button on its screen any time after.
 class PathfinderHelpDialog extends StatefulWidget {
   const PathfinderHelpDialog({super.key, this.offerDontShowAgain = true});
 
@@ -32,6 +32,14 @@ class PathfinderHelpDialog extends StatefulWidget {
   static Future<void> showIfNotSeen(BuildContext context) async {
     if (seen) return;
     await show(context);
+  }
+
+  /// Shows the help once to someone who never flipped Pathfinder's switch,
+  /// because it was already on.
+  static Future<void> showOnce(BuildContext context) async {
+    if (seen) return;
+    await PrefsManager.instance.setBool(prefKey, true);
+    if (context.mounted) await show(context, offerDontShowAgain: false);
   }
 
   @override
