@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:meshtrax/helpers/guessed_location_helper.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:path_graph/path_graph.dart'
@@ -94,7 +95,7 @@ class _MapScreenState extends State<MapScreen> {
   final List<int> _pathTrace = [];
   final List<Contact> _pathTraceContacts = [];
   final List<LatLng> _points = [];
-  List<_GuessedLocation> _cachedGuessedLocations = [];
+  List<GuessedLocation> _cachedGuessedLocations = [];
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
@@ -174,15 +175,6 @@ class _MapScreenState extends State<MapScreen> {
       _removedMarkerIds = ids;
       _removedMarkersLoaded = true;
     });
-  }
-
-  bool _checkLocationPlausibility(double lat, double lon) {
-    const double epsilon = 1e-6;
-    return (lat.abs() > epsilon || lon.abs() > epsilon) &&
-        lat >= -90.0 &&
-        lat <= 90.0 &&
-        lon >= -180.0 &&
-        lon <= 180.0;
   }
 
   double _standardDeviation(List<double> values) {
@@ -269,34 +261,29 @@ class _MapScreenState extends State<MapScreen> {
             .toList();
 
         // Compute guessed locations with caching
-        final maxRangeKm = _estimateLoRaRangeKm(connector);
-        final filteredKeys = filteredByKeyPrefix
-            .map(
-              (c) =>
-                  '${c.publicKeyHex}:${c.pathIdList}:${c.inboundHopCount}:${c.inboundPath.length}',
-            )
-            .join(',');
-        final anchorKeys = allContactsWithLocation
-            .map(
-              (c) =>
-                  '${c.publicKeyHex}:${c.latitude}:${c.longitude}:${c.path.isNotEmpty ? c.pathIdList.split(',').last : ""}',
-            )
-            .join(',');
+        final maxRangeKm = GuessedLocationHelper.estimateRangeKm(
+          freqKHz: connector.currentFreqHz,
+          bwHz: connector.currentBwHz,
+          sf: connector.currentSf,
+          txPowerDbm: connector.currentTxPower,
+        );
+        final guessStaleBefore = now.subtract(GuessedLocationHelper.staleAfter);
         final cacheKey =
-            '$filteredKeys|$anchorKeys|${connector.currentSf}:${connector.currentBwHz}:${connector.currentTxPower}:${settings.mapShowGuessedLocations}';
+            '${GuessedLocationHelper.cacheKey(targets: filteredByKeyPrefix, located: allContactsWithLocation, maxRangeKm: maxRangeKm, staleBefore: guessStaleBefore)}|${settings.mapShowGuessedLocations}';
         if (cacheKey != _guessedLocationsCacheKey) {
           _guessedLocationsCacheKey = cacheKey;
           _cachedGuessedLocations = settings.mapShowGuessedLocations
-              ? _computeGuessedLocations(
-                  filteredByKeyPrefix,
-                  allContactsWithLocation,
-                  maxRangeKm,
+              ? GuessedLocationHelper.compute(
+                  targets: filteredByKeyPrefix,
+                  located: allContactsWithLocation,
+                  maxRangeKm: maxRangeKm,
+                  staleBefore: guessStaleBefore,
                 )
               : [];
         }
         final guessedLocations = settings.mapShowGuessedLocations
             ? _cachedGuessedLocations
-            : <_GuessedLocation>[];
+            : <GuessedLocation>[];
 
         // Calculate center and zoom of all nodes (flutter_map zooms; the map
         // takes MapLibre zooms, one lower).
@@ -631,219 +618,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  List<_GuessedLocation> _computeGuessedLocations(
-    List<Contact> allContacts,
-    List<Contact> withLocation,
-    double? maxRangeKm,
-  ) {
-    // Index known-location repeaters by their hash prefix per stride.
-    // null value = two repeaters share the same hash prefix (ambiguous collision).
-    final repeatersByStride = <int, Map<String, Contact?>>{};
-
-    Map<String, Contact?> getRepeaterMapForStride(int stride) {
-      if (repeatersByStride.containsKey(stride)) {
-        return repeatersByStride[stride]!;
-      }
-      final map = <String, Contact?>{};
-      for (final c in withLocation) {
-        if (c.type == advTypeRepeater) {
-          final prefix = c.hashPrefixWithStride(stride);
-          if (map.containsKey(prefix)) {
-            map[prefix] = null; // collision: can't disambiguate
-          } else {
-            map[prefix] = c;
-          }
-        }
-      }
-      repeatersByStride[stride] = map;
-      return map;
-    }
-
-    final result = <_GuessedLocation>[];
-
-    for (final contact in allContacts) {
-      if (contact.hasLocation) continue;
-      if (contact.lastSeen.isBefore(
-        DateTime.now().subtract(const Duration(hours: 24)),
-      )) {
-        continue; // skip stale contacts
-      }
-
-      final anchorSet = <LatLng>{};
-
-      // Anchor on the repeater nearest the contact: the first hop of its
-      // inbound advert path, or the last hop of the firmware's route to it.
-      // Hops nearer our side would anchor against our own network.
-      // The two paths carry their own widths: the advert's path is at the
-      // contact's flood width, the route at the width it was learned at.
-      final inboundWidth = contact.inboundPathHashSize ?? contact.pathHashSize;
-      final lastHopBytes = <String>{};
-      final inboundHops = PathHelper.getHops(
-        contact.inboundPath,
-        stride: inboundWidth,
-      );
-      final routeHops = PathHelper.getHops(
-        contact.path,
-        stride: contact.pathHashSize,
-      );
-      for (final (hop, width) in [
-        if (inboundHops.isNotEmpty) (inboundHops.first, inboundWidth),
-        if (routeHops.isNotEmpty) (routeHops.last, contact.pathHashSize),
-      ]) {
-        final prefix = PathHelper.hopHex(hop);
-        lastHopBytes.add(prefix);
-        final r = getRepeaterMapForStride(width)[prefix];
-        if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
-      }
-
-      // Filter anchors that are geometrically inconsistent with radio range.
-      // Two anchors more than 2 * maxRange apart cannot both be in direct radio
-      // range of the same node, so isolated outliers are removed.
-      final anchors = maxRangeKm != null && anchorSet.length > 1
-          ? _filterConsistentAnchors(anchorSet.toList(), maxRangeKm)
-          : anchorSet.toList();
-
-      if (anchors.isEmpty) continue;
-
-      final LatLng position;
-      if (anchors.length == 1) {
-        // Spread single-anchor guesses around the anchor so they remain visible.
-        position = _offsetGuessedPosition(
-          anchors[0],
-          contact,
-          radiusMeters: 330,
-        );
-        if (!_checkLocationPlausibility(
-          position.latitude,
-          position.longitude,
-        )) {
-          continue; // discard implausible guesses near (0, 0)
-        }
-      } else {
-        double lat = 0, lon = 0, weight = 1.0;
-        int counted = 0;
-        for (final a in anchors) {
-          if (counted == 0) {
-            lat = a.latitude;
-            lon = a.longitude;
-          } else {
-            lat += a.latitude * weight;
-            lon += a.longitude * weight;
-          }
-          // weight subsequent anchors less to create a bias towards the first (if more than 2)
-          weight = weight / 2;
-          counted++;
-        }
-        position = _offsetGuessedPosition(
-          LatLng(lat / anchors.length, lon / anchors.length),
-          contact,
-          radiusMeters: anchors.length >= 3 ? 80 : 120,
-        );
-        if (!_checkLocationPlausibility(
-          position.latitude,
-          position.longitude,
-        )) {
-          continue; // discard implausible guesses near (0, 0
-        }
-      }
-      result.add(
-        _GuessedLocation(
-          contact: contact,
-          position: position,
-          highConfidence: anchors.length >= 2,
-        ),
-      );
-    }
-
-    return result;
-  }
-
-  LatLng _offsetGuessedPosition(
-    LatLng anchor,
-    Contact contact, {
-    required double radiusMeters,
-  }) {
-    final seed = _guessSeed(contact.publicKey);
-    final angle = ((seed & 0xFFFF) / 0x10000) * 2 * pi;
-    final latOffsetDeg = (radiusMeters / 111320.0) * cos(angle);
-    final lonScale = max(cos(anchor.latitude * pi / 180.0).abs(), 0.2);
-    final lonOffsetDeg = (radiusMeters / (111320.0 * lonScale)) * sin(angle);
-    return LatLng(
-      anchor.latitude + latOffsetDeg,
-      anchor.longitude + lonOffsetDeg,
-    );
-  }
-
-  int _guessSeed(Uint8List publicKey) {
-    var seed = 0x811C9DC5;
-    for (final byte in publicKey) {
-      seed ^= byte;
-      seed = (seed * 0x01000193) & 0x7FFFFFFF;
-    }
-    return seed;
-  }
-
-  /// Estimates the free-space maximum LoRa range in km from the connected
-  /// device's current radio parameters.  Returns null if parameters are unknown.
-  double? _estimateLoRaRangeKm(MeshCoreConnector connector) {
-    final freqHz = connector.currentFreqHz;
-    final bwHz = connector.currentBwHz;
-    final sf = connector.currentSf;
-    final txPower = connector.currentTxPower;
-    if (freqHz == null || bwHz == null || sf == null || txPower == null) {
-      return null;
-    }
-    // LoRa receiver sensitivity = thermal noise + NF + required demod SNR
-    const noiseFigureDb = 6.0;
-    final thermalNoiseDbm = -174.0 + 10 * log(bwHz.toDouble()) / ln10;
-    final sensitivityDbm =
-        thermalNoiseDbm + noiseFigureDb + _sfToRequiredSnrDb(sf);
-    // FSPL at max range equals link budget:
-    //   FSPL = 20*log10(d_m) + 20*log10(f_hz) - 147.55
-    final linkBudgetDb = txPower.toDouble() - sensitivityDbm;
-    final exponent =
-        (linkBudgetDb + 147.55 - 20 * log(freqHz.toDouble()) / ln10) / 20;
-    return pow(10, exponent) / 1000;
-  }
-
-  double _sfToRequiredSnrDb(int sf) {
-    switch (sf) {
-      case 5:
-        return -2.5;
-      case 6:
-        return -5.0;
-      case 7:
-        return -7.5;
-      case 8:
-        return -10.0;
-      case 9:
-        return -12.5;
-      case 10:
-        return -15.0;
-      case 11:
-        return -17.5;
-      case 12:
-        return -20.0;
-      default:
-        return -10.0;
-    }
-  }
-
-  /// Removes anchors that have no neighbour within 2 * maxRangeKm.
-  /// A node cannot be simultaneously in radio range of two points farther apart
-  /// than twice the expected maximum range.
-  List<LatLng> _filterConsistentAnchors(
-    List<LatLng> anchors,
-    double maxRangeKm,
-  ) {
-    const distance = Distance();
-    final maxDistM = maxRangeKm * 2000;
-    return anchors
-        .where((a) => anchors.any((b) => b != a && distance(a, b) <= maxDistM))
-        .toList();
-  }
-
-  List<MapMarker> _buildGuessedMarkers(List<_GuessedLocation> guessed) => [
+  List<MapMarker> _buildGuessedMarkers(List<GuessedLocation> guessed) => [
     for (final guess in guessed)
       if (guess.contact.type != advTypeChat || !_isBuildingPathTrace)
         MapMarker(
@@ -2436,18 +2211,6 @@ class _GpsDot extends StatelessWidget {
       boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
     ),
   );
-}
-
-class _GuessedLocation {
-  final Contact contact;
-  final LatLng position;
-  final bool highConfidence;
-
-  _GuessedLocation({
-    required this.contact,
-    required this.position,
-    required this.highConfidence,
-  });
 }
 
 class _MarkerPayload {
