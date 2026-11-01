@@ -17,35 +17,42 @@ final _staleBefore = _now.subtract(GuessedLocationHelper.staleAfter);
 Uint8List _key(int first, [int fill = 0x11]) =>
     Uint8List.fromList([first, ...List.filled(31, fill)]);
 
-Contact _repeater(int code, double lat, double lon, {int fill = 0x11}) =>
-    Contact(
-      publicKey: _key(code, fill),
-      name: 'R${code.toRadixString(16)}',
-      type: advTypeRepeater,
-      pathLength: -1,
-      path: Uint8List(0),
-      pathHashSize: 1,
-      latitude: lat,
-      longitude: lon,
-      lastSeen: _now,
-    );
+Contact _repeater(
+  int code,
+  double lat,
+  double lon, {
+  int fill = 0x11,
+  int type = advTypeRepeater,
+}) => Contact(
+  publicKey: _key(code, fill),
+  name: 'R${code.toRadixString(16)}',
+  type: type,
+  pathLength: -1,
+  path: Uint8List(0),
+  pathHashSize: 1,
+  latitude: lat,
+  longitude: lon,
+  lastSeen: _now,
+);
 
 Contact _target({
   List<int> inbound = const [],
   List<int> route = const [],
   DateTime? lastSeen,
   int keyByte = 0xC0,
+  int routeWidth = 1,
+  int? inboundWidth = 1,
 }) => Contact(
   publicKey: _key(keyByte, 0x22),
   name: 'Target',
   type: advTypeChat,
   pathLength: route.isEmpty ? -1 : route.length,
   path: Uint8List.fromList(route),
-  pathHashSize: 1,
+  pathHashSize: routeWidth,
   lastSeen: lastSeen ?? _now,
   inboundPath: Uint8List.fromList(inbound),
   inboundHopCount: inbound.isEmpty ? null : inbound.length,
-  inboundPathHashSize: inbound.isEmpty ? null : 1,
+  inboundPathHashSize: inbound.isEmpty ? null : inboundWidth,
 );
 
 List<GuessedLocation> _compute(
@@ -152,6 +159,14 @@ void main() {
       expect(m.latitude, closeTo(-16.85, 1e-9));
       expect(m.longitude.abs(), closeTo(180.0, 1e-9));
     });
+
+    test('stays in range when the halfway point is past the meridian', () {
+      final m = GuessedLocationHelper.midpoint(
+        const LatLng(-17.0, 179.5),
+        const LatLng(-16.7, -178.5),
+      );
+      expect(m.longitude, closeTo(-179.5, 1e-9));
+    });
   });
 
   group('withinRange', () {
@@ -234,9 +249,78 @@ void main() {
         [
           _target(inbound: [0xA1, 0xEE], route: [0xEE, 0xB2]),
         ],
-        [near, alsoNear],
+        [near, alsoNear, _repeater(0xEE, 40.7, -74.0)],
       );
       expect(guesses.single.highConfidence, isTrue);
+      expect(
+        distance(guesses.single.position, const LatLng(37.4, -122.1)),
+        closeTo(120, 2),
+      );
+    });
+
+    group('hash widths', () {
+      final a1b2 = _repeater(0xA1, 37.3, -122.0, fill: 0xB2);
+      final a1cc = _repeater(0xA1, 40.0, -100.0, fill: 0xCC);
+
+      test('the advert path resolves at its own width', () {
+        final guesses = _compute(
+          [
+            _target(inbound: [0xA1, 0xB2], inboundWidth: 2),
+          ],
+          [a1b2, a1cc],
+        );
+        expect(
+          distance(guesses.single.position, const LatLng(37.3, -122.0)),
+          closeTo(330, 2),
+        );
+      });
+
+      test('the route resolves at its own width', () {
+        final guesses = _compute(
+          [
+            _target(route: [0xA1, 0xB2], routeWidth: 2),
+          ],
+          [a1b2, a1cc],
+        );
+        expect(
+          distance(guesses.single.position, const LatLng(37.3, -122.0)),
+          closeTo(330, 2),
+        );
+      });
+
+      test('an advert path of unknown width takes the route width', () {
+        final guesses = _compute(
+          [
+            _target(inbound: [0xA1, 0xB2], inboundWidth: null, routeWidth: 2),
+          ],
+          [a1b2, a1cc],
+        );
+        expect(guesses, hasLength(1));
+      });
+    });
+
+    group('at the 180 degree meridian', () {
+      test('two anchors across it give a guess on the map', () {
+        final guesses = _compute(
+          [
+            _target(inbound: [0xA1], route: [0xB2]),
+          ],
+          [_repeater(0xA1, -17.0, 179.5), _repeater(0xB2, -16.7, -178.5)],
+          maxRangeKm: 785.7,
+        );
+        expect(guesses.single.highConfidence, isTrue);
+        expect(guesses.single.position.longitude, closeTo(-179.5, 0.01));
+      });
+
+      test('the display offset can carry a guess across it', () {
+        final guesses = _compute(
+          [
+            _target(inbound: [0xA1]),
+          ],
+          [_repeater(0xA1, -17.0, 179.9999)],
+        );
+        expect(guesses.single.position.longitude, lessThan(-179.99));
+      });
     });
 
     test('two anchors too far apart give no guess', () {
@@ -290,6 +374,60 @@ void main() {
       final target = _target(inbound: [0xA1]);
       expect(_compute([target, target], [near]), hasLength(1));
     });
+
+    test('a first copy that gives no guess does not block a later copy', () {
+      final stale = _target(
+        inbound: [0xA1],
+        lastSeen: _staleBefore.subtract(const Duration(minutes: 1)),
+      );
+      expect(
+        _compute(
+          [
+            stale,
+            _target(inbound: [0xA1]),
+          ],
+          [near],
+        ),
+        hasLength(1),
+      );
+      expect(
+        _compute(
+          [
+            _target(),
+            _target(inbound: [0xA1]),
+          ],
+          [near],
+        ),
+        hasLength(1),
+      );
+    });
+
+    test(
+      'a contact with a real position gets no guess from its other copy',
+      () {
+        final located = Contact(
+          publicKey: _key(0xC0, 0x22),
+          name: 'Target',
+          type: advTypeChat,
+          pathLength: -1,
+          path: Uint8List(0),
+          pathHashSize: 1,
+          latitude: 37.0,
+          longitude: -121.0,
+          lastSeen: _now,
+        );
+        expect(
+          _compute(
+            [
+              located,
+              _target(inbound: [0xA1]),
+            ],
+            [near],
+          ),
+          isEmpty,
+        );
+      },
+    );
 
     test('a contact not heard for 24 hours gets no guess', () {
       expect(
@@ -348,10 +486,41 @@ void main() {
       );
     });
 
+    test('changes when the same advert bytes are read at another width', () {
+      expect(
+        _keyFor(_target(inbound: [0xA1, 0xB2])),
+        isNot(_keyFor(_target(inbound: [0xA1, 0xB2], inboundWidth: 2))),
+      );
+    });
+
+    test('changes when the route changes', () {
+      expect(
+        _keyFor(_target(route: [0xA1])),
+        isNot(_keyFor(_target(route: [0xB2]))),
+      );
+    });
+
     test('changes when a located repeater moves', () {
+      final at = _repeater(0xA1, 37.3, -122.0);
+      expect(
+        _keyFor(base, located: [at]),
+        isNot(_keyFor(base, located: [_repeater(0xA1, 37.4, -122.0)])),
+      );
+      expect(
+        _keyFor(base, located: [at]),
+        isNot(_keyFor(base, located: [_repeater(0xA1, 37.3, -122.1)])),
+      );
+    });
+
+    test('changes when a located contact changes type', () {
       expect(
         _keyFor(base, located: [_repeater(0xA1, 37.3, -122.0)]),
-        isNot(_keyFor(base, located: [_repeater(0xA1, 37.4, -122.0)])),
+        isNot(
+          _keyFor(
+            base,
+            located: [_repeater(0xA1, 37.3, -122.0, type: advTypeRoom)],
+          ),
+        ),
       );
     });
   });

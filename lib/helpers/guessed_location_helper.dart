@@ -95,7 +95,8 @@ class GuessedLocationHelper {
 
   static double _wrapLongitude(double lon) => ((lon + 540) % 360) - 180;
 
-  /// Changes whenever [compute] could give a different result.
+  /// Changes whenever [compute] could give a different position or confidence.
+  /// A cached guess can still hold an older copy of its contact.
   /// The stale check goes in as a yes/no so an advert alone does not force a
   /// recompute, but crossing [staleBefore] does.
   static String cacheKey({
@@ -107,7 +108,7 @@ class GuessedLocationHelper {
     final targetKeys = targets
         .map(
           (c) =>
-              '${c.publicKeyHex}:${c.pathIdList}:${_inboundFirstHopHex(c)}:${c.lastSeen.isBefore(staleBefore)}',
+              '${c.publicKeyHex}:${c.pathIdList}:${c.inboundHopCount}:${_inboundFirstHopHex(c)}:${c.lastSeen.isBefore(staleBefore)}',
         )
         .join(',');
     final locatedKeys = located
@@ -155,11 +156,15 @@ class GuessedLocationHelper {
     }
 
     final result = <GuessedLocation>[];
-    final seen = <String>{};
+    // Contacts settled by an earlier copy: it has a real position or a guess.
+    final settled = <String>{};
 
     for (final contact in targets) {
-      if (!seen.add(contact.publicKeyHex)) continue;
-      if (contact.hasLocation) continue;
+      if (settled.contains(contact.publicKeyHex)) continue;
+      if (contact.hasLocation) {
+        settled.add(contact.publicKeyHex);
+        continue;
+      }
       if (contact.lastSeen.isBefore(staleBefore)) continue;
 
       final anchorSet = <LatLng>{};
@@ -213,6 +218,7 @@ class GuessedLocationHelper {
       }
       if (!_isPlausible(position)) continue; // near (0, 0)
 
+      settled.add(contact.publicKeyHex);
       result.add(
         GuessedLocation(
           contact: contact,

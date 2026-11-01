@@ -74,6 +74,20 @@ class _FakeConnector extends MeshCoreConnector {
   watchChannelLatest() => const Stream.empty();
 }
 
+// The values a real radio reports: frequency in kHz despite the getter's name.
+class _RadioConnector extends _FakeConnector {
+  _RadioConnector({required super.nodes});
+
+  @override
+  int? get currentFreqHz => 910525;
+  @override
+  int? get currentBwHz => 62500;
+  @override
+  int? get currentSf => 7;
+  @override
+  int? get currentTxPower => 22;
+}
+
 class _NoDownloads implements PackDownloader {
   @override
   Stream<PackDownload> get updates => const Stream.empty();
@@ -189,6 +203,57 @@ void main() {
     expect(self.label, 'You');
     expect(self.interactive, isFalse);
     expect(find.byType(QuickSwitchBar), findsOneWidget);
+  });
+
+  testWidgets('guesses use the radio\'s range: 912 km apart is a guess, 4,100 km is not', (
+    tester,
+  ) async {
+    Contact target(int seed, int routeHop) => Contact(
+      publicKey: Uint8List.fromList(List.filled(32, seed)),
+      name: 'T$seed',
+      type: advTypeChat,
+      pathLength: 1,
+      path: Uint8List.fromList([routeHop]),
+      pathHashSize: 1,
+      lastSeen: DateTime.now(),
+      inboundPath: Uint8List.fromList(const [0x01]),
+      inboundHopCount: 1,
+      inboundPathHashSize: 1,
+    );
+    final near = target(0x10, 0x02);
+    final across = target(0x11, 0x03);
+    final tooFar = target(0x12, 0x04);
+    await pumpMap(
+      tester,
+      _RadioConnector(
+        nodes: [
+          _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
+          _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
+          _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
+          _node('New York', advTypeRepeater, 0x04, 40.7, -74.0),
+          near,
+          across,
+          tooFar,
+        ],
+      ),
+    );
+    await tester
+        .element(find.byType(AppMap))
+        .read<AppSettingsService>()
+        .setMapShowGuessedLocations(true);
+    await tester.pump();
+
+    final guess = overlay<MapMarker>(tester, 'guess:${near.publicKeyHex}');
+    expect(guess.position.latitude, closeTo(37.4, 0.01));
+    expect(guess.position.longitude, closeTo(-122.1, 0.01));
+    expect(
+      overlays(tester).map((o) => o.id),
+      contains('guess:${across.publicKeyHex}'),
+    );
+    expect(
+      overlays(tester).map((o) => o.id),
+      isNot(contains('guess:${tooFar.publicKeyHex}')),
+    );
   });
 
   testWidgets('a POI link: back button, labelled pin, no quick-switch bar', (
