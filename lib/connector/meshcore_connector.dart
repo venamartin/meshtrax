@@ -753,6 +753,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _contactStreamStarted = false;
   // SELF_INFOs still owed to readRadioSettings. A late one is still a read.
   int _unansweredSettingsReads = 0;
+  bool _shareReplyPending = false;
   bool _hasReceivedDeviceInfo = false;
   bool _pendingInitialChannelSync = false;
   bool _pendingInitialContactsSync = false;
@@ -3913,6 +3914,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<bool> _sendAndWaitForAck(
     Uint8List data, {
     Duration timeout = const Duration(seconds: 2),
+    bool expectsGenericAck = false,
   }) async {
     if (!isConnected) return false;
     final completer = Completer<bool>();
@@ -3926,7 +3928,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     });
 
     try {
-      await sendFrame(data);
+      await sendFrame(data, expectsGenericAck: expectsGenericAck);
       return await completer.future.timeout(timeout);
     } catch (_) {
       return false;
@@ -6479,7 +6481,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleContactDeleted(Uint8List frame) {
     if (frame.length < 1 + pubKeySize) return;
     final key = pubKeyToHex(frame.sublist(1, 1 + pubKeySize));
-    final removed = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
+    final removed =
+        _contacts.where((c) => c.publicKeyHex == key).firstOrNull ??
+        _contactsAcrossRefresh[key];
     final row = _discoveredContacts
         .where((c) => c.publicKeyHex == key)
         .firstOrNull;
@@ -6503,7 +6507,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       tag: 'Protocol',
     );
     _errorStreamController.add(errCode);
-    if (errCode == errCodeTableFull && contactTableFull) {
+    if (errCode == errCodeTableFull && contactTableFull && !_shareReplyPending) {
       _contactTableFullController.add(null);
     }
 
@@ -7052,6 +7056,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
       }
       _knownContactKeys.add(contact.publicKeyHex);
+      // Fetched on its own, a saved contact's row goes active here, or
+      // allContacts lists it twice. A download does them all at its end.
+      if (isContact && !_isLoadingContacts) {
+        final row = _discoveredContacts.indexWhere(
+          (c) => c.publicKeyHex == contact.publicKeyHex,
+        );
+        if (row >= 0 && !_discoveredContacts[row].isActive) {
+          _discoveredContacts[row] = _discoveredContacts[row].copyWith(
+            isActive: true,
+          );
+        }
+      }
       _loadMessagesForContact(contact.publicKeyHex);
 
       notifyListeners();
@@ -11695,10 +11711,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
 
   /// False when nothing went out. The radio keeps a contact's advert only if
-  /// it has heard one since saving the contact, and refuses without it.
+  /// it has heard one since saving the contact, and refuses without it. It
+  /// refuses with ERR_CODE_TABLE_FULL, which here says nothing about table space.
   Future<bool> shareContactZeroHop(Uint8List contactPubKey) async {
     if (!isConnected) return false;
-    return _sendAndWaitForAck(buildZeroHopContact(contactPubKey));
+    _shareReplyPending = true;
+    try {
+      return await _sendAndWaitForAck(
+        buildZeroHopContact(contactPubKey),
+        expectsGenericAck: true,
+      );
+    } finally {
+      _shareReplyPending = false;
+    }
   }
 
   /// Deletes the chat's history on this device, or with [olderThan] only

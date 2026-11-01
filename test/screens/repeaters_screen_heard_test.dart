@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -19,10 +20,12 @@ import 'package:meshtrax/widgets/repeater_login_dialog.dart';
 // a person to make room for a login the user then cancels.
 class _Radio extends MeshCoreConnector {
   final sent = <int>[];
+  final table = <String, Uint8List>{};
 
   @override
   bool get isConnected => true;
 
+  /// Answers as companion_radio MyMesh.cpp does for these two commands.
   @override
   Future<void> sendFrame(
     Uint8List data, {
@@ -30,6 +33,16 @@ class _Radio extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async {
     sent.add(data[0]);
+    final key = data.length >= 33 ? pubKeyToHex(data.sublist(1, 33)) : '';
+    void reply(List<int> frame) =>
+        scheduleMicrotask(() => handleFrameForTest(frame));
+    if (data[0] == cmdAddUpdateContact) {
+      table[key] = data.sublist(1);
+      reply([respCodeOk]);
+    } else if (data[0] == cmdGetContactByKey) {
+      final saved = table[key];
+      reply(saved == null ? [respCodeErr, 2] : [respCodeContact, ...saved]);
+    }
   }
 }
 
@@ -115,5 +128,41 @@ void main() {
     await settle(tester);
     expect(find.text('Ping'), findsOneWidget);
     expectNotSaved();
+  });
+
+  testWidgets('making one a favorite saves it, and it is listed once', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.longPress(find.text('Hilltop'));
+    await settle(tester);
+    await tester.tap(find.text('Add to favorites'));
+    await settle(tester);
+    await settle(tester);
+    await settle(tester);
+
+    expect(radio.contacts.single.isFavorite, isTrue);
+    expect(radio.allContacts, hasLength(1));
+    expect(find.text('Hilltop'), findsOneWidget);
+  });
+
+  testWidgets('one only heard offers no share by advert', (tester) async {
+    await open(tester);
+    await tester.longPress(find.text('Hilltop'));
+    await settle(tester);
+    expect(find.text('Share contact by advert'), findsNothing);
+  });
+
+  testWidgets('deleting one sends nothing to the radio', (tester) async {
+    await open(tester);
+    await tester.longPress(find.text('Hilltop'));
+    await settle(tester);
+    await tester.tap(find.text('Delete Contact').first);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await settle(tester);
+
+    expect(radio.sent, isNot(contains(cmdRemoveContact)));
+    expect(radio.allContacts, isEmpty);
   });
 }

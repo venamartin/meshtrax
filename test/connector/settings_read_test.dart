@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // firmware does, so they see what a radio that never replies cannot show.
 class _Radio extends MeshCoreConnector {
   final sent = <Uint8List>[];
+  final tracked = <int>[];
   Map<int, List<int>> answers = {};
 
   List<int> get commands => [for (final f in sent) f[0]];
@@ -29,6 +30,7 @@ class _Radio extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async {
     sent.add(data);
+    if (expectsGenericAck) tracked.add(data[0]);
     final answer = answers[data[0]];
     if (answer != null) scheduleMicrotask(() => handleFrameForTest(answer));
   }
@@ -343,6 +345,26 @@ void main() {
     expect(radio.commands, isNot(contains(cmdGetContactByKey)));
   });
 
+  test('a contact fetched on its own is listed once', () async {
+    final radio = await syncedRadio();
+    radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+    expect(radio.allContacts, hasLength(1), reason: 'its row is inactive');
+
+    radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
+    expect(radio.contacts, hasLength(1));
+    expect(radio.allContacts, hasLength(1));
+  });
+
+  test('a contact overwritten during a download is still listed', () async {
+    final radio = await syncedRadio();
+    expect(radio.discoveredContacts, isEmpty);
+    await radio.getContacts();
+    expect(radio.contacts, isEmpty, reason: 'the download cleared the list');
+
+    radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+    expect(radio.allContacts.map((c) => c.name), ['Friend']);
+  });
+
   test('an overwritten contact is listed with its current details', () async {
     final radio = await syncedRadio();
     radio.handleFrameForTest(
@@ -377,8 +399,32 @@ void main() {
 
     test('reports that the radio refused', () async {
       final radio = await syncedRadio();
-      radio.answers[cmdShareContact] = [respCodeErr, 3];
+      radio.answers[cmdShareContact] = [respCodeErr, errCodeTableFull];
       expect(await radio.shareContactZeroHop(_friendKey), isFalse);
+    });
+
+    test('claims its reply, so a channel send keeps its own', () async {
+      final radio = await syncedRadio();
+      radio.answers[cmdShareContact] = [respCodeOk];
+      await radio.shareContactZeroHop(_friendKey);
+      expect(radio.tracked, [cmdShareContact]);
+    });
+
+    test('a refusal does not say the contact table is full', () async {
+      final radio = await syncedRadio();
+      radio.handleFrameForTest(_deviceInfo()..[2] = 1); // room for 2 contacts
+      final fullEvents = <void>[];
+      final subscription = radio.contactTableFullEvents.listen(fullEvents.add);
+      addTearDown(subscription.cancel);
+
+      radio.answers[cmdShareContact] = [respCodeErr, errCodeTableFull];
+      await radio.shareContactZeroHop(_friendKey);
+      await _settle();
+      expect(fullEvents, isEmpty);
+
+      radio.handleFrameForTest([respCodeErr, errCodeTableFull]);
+      await _settle();
+      expect(fullEvents, hasLength(1), reason: 'any other command still does');
     });
   });
 
