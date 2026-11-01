@@ -359,10 +359,90 @@ void main() {
     final radio = await syncedRadio();
     expect(radio.discoveredContacts, isEmpty);
     await radio.getContacts();
-    expect(radio.contacts, isEmpty, reason: 'the download cleared the list');
+    expect(radio.contacts, hasLength(1), reason: 'the list stays in place');
 
     radio.handleFrameForTest([pushCodeContactDeleted, ..._friendKey]);
+    expect(radio.contacts, isEmpty);
     expect(radio.allContacts.map((c) => c.name), ['Friend']);
+  });
+
+  group('a full download', () {
+    final otherKey = Uint8List.fromList(List.generate(32, (i) => 0x90 + i));
+    final lateKey = Uint8List.fromList(List.generate(32, (i) => 0xB0 + i));
+    List<String> names(MeshCoreConnector r) =>
+        r.contacts.map((c) => c.name).toList();
+
+    test('keeps the list until the radio says what is gone', () async {
+      final radio = await syncedRadio();
+      radio.handleFrameForTest(_contact(otherKey, 'Other'));
+      expect(names(radio), ['Friend', 'Other']);
+
+      await radio.getContacts();
+      expect(names(radio), ['Friend', 'Other']);
+      radio.handleFrameForTest(_contactsStart(1));
+      expect(names(radio), ['Friend', 'Other']);
+      radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
+      expect(names(radio), ['Friend', 'Other']);
+
+      radio.handleFrameForTest(_endOfContacts());
+      expect(names(radio), ['Friend']);
+      expect(radio.knownContactKeys, hasLength(1));
+    });
+
+    test('keeps a contact added after it began', () async {
+      final radio = await syncedRadio();
+      await radio.getContacts();
+      radio.handleFrameForTest(_contactsStart(1));
+      radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
+      radio.handleFrameForTest(_contact(lateKey, 'Late'));
+      radio.handleFrameForTest(_endOfContacts());
+      expect(names(radio), ['Friend', 'Late']);
+    });
+
+    test('that stops removes nothing', () async {
+      final radio = await syncedRadio();
+      radio.handleFrameForTest(_contact(otherKey, 'Other'));
+      await pumpEventQueue(times: 100);
+      await radio.getContacts();
+      radio.handleFrameForTest(_contactsStart(2));
+      radio.handleFrameForTest(_contact(_friendKey, 'Friend'));
+
+      radio.handleFrameForTest(_selfInfo());
+      expect(names(radio), ['Friend', 'Other']);
+      await _settle();
+      expect(names(radio), containsAll(['Friend', 'Other']));
+
+      // The next download starts its own count.
+      radio.handleFrameForTest(_contactsStart(1));
+      radio.handleFrameForTest(_contact(otherKey, 'Other'));
+      radio.handleFrameForTest(_endOfContacts());
+      expect(names(radio), ['Other']);
+    });
+
+    test('that stops keeps a route choice made during it', () async {
+      final radio = await syncedRadio();
+      await radio.getContacts();
+      radio.handleFrameForTest(_contactsStart(1));
+      await radio.setPathOverride(radio.contacts.single, pathLen: -1);
+
+      radio.handleFrameForTest(_selfInfo());
+      await _settle();
+
+      expect(radio.contacts.single.pathOverride, -1);
+    });
+
+    test('that stops keeps a route choice cleared during it', () async {
+      final radio = await syncedRadio();
+      await radio.setPathOverride(radio.contacts.single, pathLen: -1);
+      await radio.getContacts();
+      radio.handleFrameForTest(_contactsStart(1));
+      await radio.setPathOverride(radio.contacts.single, pathLen: null);
+
+      radio.handleFrameForTest(_selfInfo());
+      await _settle();
+
+      expect(radio.contacts.single.pathOverride, isNull);
+    });
   });
 
   test('an overwritten contact is listed with its current details', () async {

@@ -720,12 +720,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _contactFullResyncPending = false;
   // A full contact download asked for while a partial one was streaming.
   bool _fullContactSyncAfterStream = false;
-  // Route overrides of the list a full download is replacing, by key; each
-  // is put back on its contact as the radio's frame for it arrives.
-  Map<String, Contact> _overridesAcrossRefresh = {};
-  // The list a full download is replacing, by key: the radio's frames carry
-  // no inbound advert path, and can carry no coordinates.
-  Map<String, Contact> _contactsAcrossRefresh = {};
+  // During a full download, the saved contacts the radio has not re-sent yet.
+  Set<String>? _unconfirmedContactKeys;
   // The last advert heard, if a neighbour shared it. The radio logs a packet
   // and then handles it, so what it pushes next is about this same copy.
   ({String key, int secs})? _lastSharedAdvert;
@@ -3758,8 +3754,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _deviceId = null;
     _flushContactPersist();
     _contacts.clear();
-    _overridesAcrossRefresh = {};
-    _contactsAcrossRefresh = {};
+    _unconfirmedContactKeys = null;
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
@@ -4252,8 +4247,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (c) => c.publicKeyHex == key,
       orElse: () => contact,
     );
-    final live = _contacts.where((c) => c.publicKeyHex == key).firstOrNull ??
-        _contactsAcrossRefresh[key];
+    final live = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
     final inbound = live?.inboundHopCount != null ? live! : row;
     return contact.copyWith(
       rawPacket: row.rawPacket,
@@ -4285,9 +4279,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (!isConnected) return;
     // The radio streams one contact list at a time and refuses a second
     // request mid-stream (ERR_CODE_BAD_STATE) while the first keeps coming.
-    // Clearing here would cut that list short and drop the route choices
-    // stashed for it. A full download already streaming covers this call;
-    // during a partial one, a full request runs when it ends.
+    // A full download already streaming covers this call; during a partial
+    // one, a full request runs when it ends.
     if (_isLoadingContacts) {
       if (!preserveExisting && _preserveContactsOnRefresh) {
         _fullContactSyncAfterStream = true;
@@ -4298,37 +4291,20 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _isLoadingContacts = true;
     _contactStreamStarted = false;
     _preserveContactsOnRefresh = preserveExisting;
-    List<Contact>? replaced;
-    if (!preserveExisting) {
-      // The radio knows nothing of the user's route choices; a full download
-      // rebuilds the list from its frames, so carry them across by key.
-      _overridesAcrossRefresh = {
-        for (final c in _contacts)
-          if (c.pathOverride != null) c.publicKeyHex: c,
-      };
-      _contactsAcrossRefresh = {
-        for (final c in _contacts) c.publicKeyHex: c,
-      };
-      replaced = List.of(_contacts);
-      _contacts.clear();
-      notifyListeners();
-    }
+    // The list stays on screen while the radio re-sends it; END_OF_CONTACTS
+    // removes what the radio did not. A contact added meanwhile is not on trial.
+    _unconfirmedContactKeys = preserveExisting
+        ? null
+        : {for (final c in _contacts) c.publicKeyHex};
 
     _contactSyncSince = since ?? 0;
     _contactSyncStopwatch = Stopwatch()..start();
     try {
       await sendFrame(buildGetContactsFrame(since: since));
     } catch (_) {
-      // Nothing is coming: put the list back and leave the sync state as
-      // END_OF_CONTACTS would, or the next cache write stores an empty list
-      // and persistence and the sync banner stay stuck for the session.
-      if (replaced != null) {
-        _contacts
-          ..clear()
-          ..addAll(replaced);
-        _overridesAcrossRefresh = {};
-        _contactsAcrossRefresh = {};
-      }
+      // Nothing is coming: leave the sync state as END_OF_CONTACTS would, or
+      // the sync banner stays stuck for the session.
+      _unconfirmedContactKeys = null;
       _isLoadingContacts = false;
       _preserveContactsOnRefresh = false;
       _contactSyncStopwatch = null;
@@ -4688,28 +4664,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       clearPathOverride: pathLen == null, // Clear if pathLen is null
     );
 
-    final fullDownloadInFlight =
-        _isLoadingContacts && !_preserveContactsOnRefresh;
-    if (fullDownloadInFlight) {
-      // The list is being rebuilt from the radio's frames; the choice must
-      // be waiting for this contact's frame, in place of any older one.
-      if (pathLen == null) {
-        _overridesAcrossRefresh.remove(contact.publicKeyHex);
-      } else {
-        _overridesAcrossRefresh[contact.publicKeyHex] = updated;
-      }
-    }
     if (index == -1) {
-      if (!fullDownloadInFlight) {
-        appLogger.warn(
-          'setPathOverride: Contact not found in list: ${contact.name}',
-          tag: 'Connector',
-        );
-        return;
-      }
-    } else {
-      _contacts[index] = updated;
+      appLogger.warn(
+        'setPathOverride: Contact not found in list: ${contact.name}',
+        tag: 'Connector',
+      );
+      return;
     }
+    _contacts[index] = updated;
 
     appLogger.info(
       'Override for ${contact.name}: ${updated.pathOverride}, '
@@ -5114,7 +5076,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
-    _contactsAcrossRefresh.remove(contact.publicKeyHex);
     _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _localDiscoveredTimes.remove(contact.publicKeyHex);
     _knownContactKeys.remove(contact.publicKeyHex);
@@ -5137,7 +5098,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _discoveredContacts.removeWhere(
         (c) => toRemove.any((r) => r.publicKeyHex == c.publicKeyHex));
     for (final contact in toRemove) {
-      _contactsAcrossRefresh.remove(contact.publicKeyHex);
       _localDiscoveredTimes.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
@@ -6254,9 +6214,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeContactsStart:
         debugPrint('Got CONTACTS_START');
         _contactStreamStarted = true;
-        if (!_preserveContactsOnRefresh) {
-          _contacts.clear();
-        }
         if (frame.length >= 5) {
           final reader = BufferReader(frame);
           reader.skipBytes(1);
@@ -6310,8 +6267,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeEndOfContacts:
         debugPrint('Got END_OF_CONTACTS');
         // Whatever the radio did not re-send no longer exists there.
-        _overridesAcrossRefresh = {};
-        _contactsAcrossRefresh = {};
+        final unconfirmed = _unconfirmedContactKeys;
+        _unconfirmedContactKeys = null;
+        if (unconfirmed != null && unconfirmed.isNotEmpty) {
+          _contacts.removeWhere((c) => unconfirmed.contains(c.publicKeyHex));
+        }
         final syncElapsedMs = _contactSyncStopwatch?.elapsedMilliseconds;
         _contactSyncStopwatch = null;
         final syncSince = _contactSyncSince;
@@ -6345,7 +6305,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             tag: 'Connector',
           );
         }
-        // A full download rebuilt the list. A contact the radio overwrote while
+        // A full download checked the list. A contact the radio overwrote while
         // no app was connected is gone, and no push ever said so. Still counted
         // as known, its row would stay hidden and its next advert ignored.
         if (!_preserveContactsOnRefresh) {
@@ -6490,15 +6450,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleContactDeleted(Uint8List frame) {
     if (frame.length < 1 + pubKeySize) return;
     final key = pubKeyToHex(frame.sublist(1, 1 + pubKeySize));
-    final removed =
-        _contacts.where((c) => c.publicKeyHex == key).firstOrNull ??
-        _contactsAcrossRefresh[key];
+    final removed = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
     final row = _discoveredContacts
         .where((c) => c.publicKeyHex == key)
         .firstOrNull;
     _knownContactKeys.remove(key);
     _contacts.removeWhere((c) => c.publicKeyHex == key);
-    _contactsAcrossRefresh.remove(key);
     // The saved copy has the current name, position and permissions; a row is
     // only a snapshot from when the contact was first heard.
     final listed = removed ?? row;
@@ -6628,6 +6585,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // for the rest of the connection.
     final streamStopped = _isLoadingContacts && _contactStreamStarted;
     if (streamStopped) {
+      _unconfirmedContactKeys = null;
       _isLoadingContacts = false;
       _preserveContactsOnRefresh = false;
       _contactSyncStopwatch = null;
@@ -6993,6 +6951,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (contactTmp != null) {
       if (isContact) {
         _loadedContactsCount++;
+        _unconfirmedContactKeys?.remove(contactTmp.publicKeyHex);
       }
       if (listEquals(contactTmp.publicKey, _selfPublicKey)) {
         appLogger.info(
@@ -7038,7 +6997,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
         // Preserve user-selected path settings and previously known GPS when
         // refreshed frames omit coordinates (lat/lon encoded as 0,0).
-        _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
+        _contacts[existingIndex] = contact.copyWith(
           lastMessageAt: mergedLastMessageAt,
           pathOverride: existing.pathOverride, // Preserve user's path choice
           pathOverrideBytes: existing.pathOverrideBytes,
@@ -7048,10 +7007,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device DB rows can be legitimately old, so skew is only assessed
           // on live adverts; carry the last assessment through syncs.
           clockCorrected: existing.clockCorrected,
-        ));
+        );
       } else {
         if (_autoAdds(contact.type) || isContact) {
-          _contacts.add(_restoreKeptOverride(contact));
+          _contacts.add(contact);
           appLogger.info(
             'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
             tag: 'Connector',
@@ -7126,7 +7085,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           : contact.lastMessageAt;
 
       // CRITICAL: Preserve user's path override when contact is refreshed from device
-      _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
+      _contacts[existingIndex] = contact.copyWith(
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
@@ -7137,9 +7096,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
         inboundPathHashSize:
             contact.inboundPathHashSize ?? existing.inboundPathHashSize,
-      ));
+      );
     } else {
-      _contacts.add(_restoreKeptOverride(contact));
+      _contacts.add(contact);
       appLogger.info(
         'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
         tag: 'Connector',
@@ -7184,27 +7143,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   Future<void> _persistContacts() async {
-    // A full download rebuilds the list from empty; writing the partial list
-    // would replace the cache with a truncated one if the link dropped
-    // mid-way. END_OF_CONTACTS persists the complete list.
-    if (_isLoadingContacts && !_preserveContactsOnRefresh) return;
     await _contactStore.saveContacts(_contacts);
-  }
-
-  /// Puts a route override stashed by a full download back on the contact
-  /// the radio just re-sent, unless it already has one. Both the contact
-  /// frame and a live advert can be the first to add a contact mid-download.
-  Contact _restoreKeptOverride(Contact c) {
-    // Look up, never pop: a live advert can add the contact before
-    // CONTACTS_START clears the list again, and the contact's own frame
-    // still needs the entry. END_OF_CONTACTS empties the stash.
-    final kept = _overridesAcrossRefresh[c.publicKeyHex];
-    if (kept == null || c.pathOverride != null) return c;
-    return c.copyWith(
-      pathOverride: kept.pathOverride,
-      pathOverrideBytes: kept.pathOverrideBytes,
-      pathOverrideHashSize: kept.pathOverrideHashSize,
-    );
   }
 
   // Discovered contacts have no radio backstop, so the store is append-only
@@ -10527,8 +10466,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
     _fullContactSyncAfterStream = false;
-    _overridesAcrossRefresh = {};
-    _contactsAcrossRefresh = {};
+    _unconfirmedContactKeys = null;
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -11720,7 +11658,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       await sendFrame(buildRemoveContactFrame(contact.publicKey));
       await Future.delayed(const Duration(milliseconds: 50));
       _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
-      _contactsAcrossRefresh.remove(contact.publicKeyHex);
       _knownContactKeys.remove(contact.publicKeyHex);
 
 
