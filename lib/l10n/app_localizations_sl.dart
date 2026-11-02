@@ -3997,7 +3997,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Vaš radio si za vsak stik zapomni eno pot. Ko ta pot odpove, pošlje sporočilo poplavno v celotno omrežje. Pathfinder posluša vse, kar radio sliši: oglašanje ponoviteljev, klepet na kanalih, sporočila drugih ljudi. Iz tega sestavlja zemljevid: kateri ponovitelji slišijo drug drugega, kateri slišijo vas in kateri slišijo posamezne vaše stike.';
+      'Vaš radio si za vsak stik zapomni eno pot. Ko sporočilo po tej poti ne prispe, ga MeshTrax namesto tega pošlje poplavno v celotno omrežje. Pathfinder posluša vse, kar radio sliši: oglašanje ponoviteljev, klepet na kanalih, sporočila drugih ljudi. Iz tega sestavlja zemljevid: kateri ponovitelji slišijo drug drugega, kateri slišijo vas in kateri slišijo posamezne vaše stike.';
 
   @override
   String get pathfinderHelp_how =>

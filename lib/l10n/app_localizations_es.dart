@@ -4020,7 +4020,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Tu radio recuerda una ruta hacia cada contacto y, cuando esa ruta falla, envía el mensaje por inundación a toda la red mesh. Pathfinder escucha todo lo que oye la radio: anuncios de repetidores, conversaciones en los canales, mensajes de otras personas. Con todo eso construye un mapa de qué repetidores se oyen entre sí, cuáles te oyen a ti y cuáles oyen a cada uno de tus contactos.';
+      'Tu radio recuerda una ruta hacia cada contacto. Cuando un mensaje por esa ruta falla, MeshTrax lo envía por inundación a toda la red mesh. Pathfinder escucha todo lo que oye la radio: anuncios de repetidores, conversaciones en los canales, mensajes de otras personas. Con todo eso construye un mapa de qué repetidores se oyen entre sí, cuáles te oyen a ti y cuáles oyen a cada uno de tus contactos.';
 
   @override
   String get pathfinderHelp_how =>
