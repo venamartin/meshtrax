@@ -18,8 +18,10 @@ import '../screens/channel_chat_screen.dart';
 import '../screens/chat_screen.dart';
 import '../services/app_settings_service.dart';
 import '../utils/calendar_export.dart';
+import 'drawing_canvas.dart';
 import 'message_text.dart';
 import 'mini_map.dart';
+import 'structured_message_dialogs.dart';
 
 /// Colours of one card kind. Each kind has one accent per brightness; every
 /// other colour is the accent's hue at a fixed saturation and lightness, so
@@ -84,6 +86,7 @@ class StructuredPalette {
         ShareMessage(kind: ShareKind.repeater) =>
           (const Color(0xFFFFB74D), const Color(0xFFEF6C00)),
         ShareMessage() => (const Color(0xFF81C784), const Color(0xFF2E7D32)),
+        SvgMessage() => (const Color(0xFF7BE08A), const Color(0xFF2E7D32)),
       };
 
   static StructuredPalette forAccents(
@@ -205,6 +208,7 @@ class StructuredMessageCard extends StatelessWidget {
             ShareKind.repeater => Icons.cell_tower,
             ShareKind.sensor => Icons.sensors,
           },
+        SvgMessage() => Icons.draw,
       };
 
   /// Cards need room for a map and a row of buttons, more than a text
@@ -263,7 +267,63 @@ class StructuredMessageCard extends StatelessWidget {
       EventMessage m => _event(context, p, m),
       NoticeMessage m => _notice(context, p, m),
       ShareMessage m => _share(context, p, m),
+      SvgMessage m => _drawing(context, p, m),
     };
+  }
+
+  Widget _drawing(BuildContext context, StructuredPalette p, SvgMessage m) {
+    final look = context.select<AppSettingsService, DrawingLook?>(
+      (s) => s.settings.showDrawings ? DrawingLook.of(s.settings) : null,
+    );
+    if (look == null) {
+      return Text(
+        m.toWire(),
+        style: drawingCodeStyle.copyWith(color: p.body, fontSize: 13 * textScale),
+      );
+    }
+    final caption = m.drawing.caption;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            return Stack(
+              children: [
+                DrawingCanvas(
+                  drawing: m.drawing,
+                  look: look,
+                  size: Size(width, math.min(width, 240)),
+                ),
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () =>
+                          StructuredMessageDialogs.drawingViewer(context, m),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        if (caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: MessageText(
+              text: caption,
+              style: TextStyle(
+                color: p.body,
+                fontSize: 14 * textScale,
+                height: 1.3,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _notice(BuildContext context, StructuredPalette p, NoticeMessage m) {

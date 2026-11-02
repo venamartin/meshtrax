@@ -502,14 +502,16 @@ abstract final class SvgWriter {
             SvgSegment.line((x: x0, y: y1)),
           ], close: true));
         case SvgEllipse(:final center, :final rx, :final ry):
-          final c = round(grid(center));
+          // Started from its rightmost point, which never rounds past 99 as
+          // a rounded center plus a rounded radius can.
+          final start = round(grid((x: center.x + rx, y: center.y)));
           final gx = math.max(1.0, (rx * scale).roundToDouble());
           final gy = math.max(1.0, (ry * scale).roundToDouble());
           points += 1;
           // One arc ending just short of its start; `z` closes the gap and
           // puts the position back on whole numbers.
-          out.add(SvgSubpath((x: c.x + gx, y: c.y), [
-            SvgSegment.arc((x: c.x + gx, y: c.y - 0.1), gx, gy),
+          out.add(SvgSubpath(start, [
+            SvgSegment.arc((x: start.x, y: start.y - 0.1), gx, gy),
           ], close: true));
         case SvgArrow(:final a, :final b):
           final p = round(grid(a)), q = round(grid(b));

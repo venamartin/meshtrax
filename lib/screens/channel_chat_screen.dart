@@ -52,6 +52,7 @@ import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
 import 'chat_screen.dart';
+import 'drawing_compose_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
   final Channel channel;
@@ -2194,7 +2195,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _insertComposerText(wire);
   }
 
-  Widget _buildAttachTray(MeshCoreConnector connector) {
+  /// [maxBytes]: what the message box has left, after any reply's quote.
+  Widget _buildAttachTray(MeshCoreConnector connector, int maxBytes) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return ComposerAttachTray(
@@ -2236,6 +2238,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           icon: Icons.campaign,
           label: l10n.tray_notice,
           onTap: () => _runTile(() => StructuredMessageDialogs.notice(context)),
+        ),
+        AttachTile(
+          icon: Icons.draw,
+          label: l10n.tray_drawing,
+          onTap: () => _runTile(
+            () => DrawingComposeScreen.open(context, maxBytes: maxBytes),
+          ),
         ),
       ],
     );
@@ -2691,7 +2700,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           child: _trayOpen
-              ? _buildAttachTray(connector)
+              ? _buildAttachTray(connector, maxBytes)
               : const SizedBox(width: double.infinity),
         ),
       ],

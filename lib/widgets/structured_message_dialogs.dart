@@ -1,13 +1,20 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../helpers/maps_link.dart';
+import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
 import '../screens/map_screen.dart';
+import '../services/app_settings_service.dart';
 import '../services/short_link_resolver.dart';
+import 'drawing_canvas.dart';
 
 /// The dialogs behind the composer tray tiles. Each returns the wire text to
 /// insert into the composer, or null when cancelled.
@@ -117,6 +124,94 @@ class StructuredMessageDialogs {
       context: context,
       builder: (_) =>
           _NoticeDialog(requireExpiry: requireExpiry, initial: initial),
+    );
+  }
+
+  /// A drawing from a message, larger, with its code to read and copy.
+  static Future<void> drawingViewer(BuildContext context, SvgMessage message) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => _DrawingViewer(message: message),
+    );
+  }
+}
+
+class _DrawingViewer extends StatelessWidget {
+  final SvgMessage message;
+
+  const _DrawingViewer({required this.message});
+
+  /// The drawing as an SVG file that opens in a browser looking as it does
+  /// here: lines, not the black fill SVG gives a bare path.
+  static String svgFile(SvgMessage message, Color pen) {
+    var minX = double.infinity, minY = double.infinity;
+    var maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+    for (final line in message.drawing.polylines() ?? const []) {
+      for (final p in line) {
+        minX = math.min(minX, p.x);
+        maxX = math.max(maxX, p.x);
+        minY = math.min(minY, p.y);
+        maxY = math.max(maxY, p.y);
+      }
+    }
+    String n(double v) {
+      final r = (v * 10).round() / 10;
+      return r == r.roundToDouble() ? r.round().toString() : r.toString();
+    }
+
+    final viewBox = '${n(minX - 3)} ${n(minY - 3)} '
+        '${n(maxX - minX + 6)} ${n(maxY - minY + 6)}';
+    final hex = (pen.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0');
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="$viewBox">'
+        '<path d="${message.drawing.pathData}" fill="none" stroke="#$hex" '
+        'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+        '</svg>';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final look = context.select<AppSettingsService, DrawingLook>(
+      (s) => DrawingLook.of(s.settings),
+    );
+    // An explicit size: an AlertDialog asks its content for an intrinsic
+    // width, which a LayoutBuilder can't answer.
+    final width = math.min(MediaQuery.sizeOf(context).width - 80, 480.0);
+    final caption = message.drawing.caption;
+    return _trayDialog(
+      context,
+      icon: Icons.draw,
+      title: l10n.tray_drawing,
+      children: [
+        DrawingCanvas(
+          drawing: message.drawing,
+          look: look,
+          size: Size(width, width * 0.75),
+        ),
+        if (caption.isNotEmpty) ...[_gap, Text(caption)],
+        _gap,
+        SelectableText(
+          message.drawing.pathData,
+          style: drawingCodeStyle.copyWith(fontSize: 13),
+        ),
+      ],
+      actions: [
+        TextButton(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: svgFile(message, look.pen)));
+            showDismissibleSnackBar(
+              context,
+              content: Text(l10n.common_copiedToClipboard),
+            );
+            Navigator.pop(context);
+          },
+          child: Text(l10n.drawing_copySvg),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.common_close),
+        ),
+      ],
     );
   }
 }

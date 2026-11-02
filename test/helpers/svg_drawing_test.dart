@@ -164,6 +164,12 @@ void main() {
       expect(read(d), isNotNull);
     });
 
+    test('a circle on its own stays on the grid', () {
+      // Its center and radius are both 49.5 there, and each rounds up.
+      final fit = SvgWriter.fit([SvgEllipse(p(200, 150), 60, 60)], budget: 148);
+      expect(fit.wire, 'SVG:M99 50a50 50 0 1 1 0-.1z');
+    });
+
     List<SvgItem> randomItems(Random random) {
       SvgPoint any() => (x: random.nextDouble() * 400, y: random.nextDouble() * 300);
       return [

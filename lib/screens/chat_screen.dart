@@ -57,6 +57,7 @@ import '../widgets/pinned_messages_bar.dart';
 import '../widgets/room_announcement_dialog.dart';
 import '../widgets/structured_message_card.dart';
 import '../widgets/structured_message_dialogs.dart';
+import 'drawing_compose_screen.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../l10n/l10n.dart';
 import '../helpers/report_helper.dart';
@@ -1864,7 +1865,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOut,
               child: _trayOpen
-                  ? _buildAttachTray(connector)
+                  ? _buildAttachTray(connector, maxBytes)
                   : const SizedBox(width: double.infinity),
             ),
           ],
@@ -1904,7 +1905,8 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     _insertComposerText(wire);
   }
 
-  Widget _buildAttachTray(MeshCoreConnector connector) {
+  /// [maxBytes]: what the message box has left, after any reply's quote.
+  Widget _buildAttachTray(MeshCoreConnector connector, int maxBytes) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final isAdmin = _isRoom && _roomRole(connector) == 3;
@@ -1962,6 +1964,19 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
               );
             },
           ),
+        AttachTile(
+          icon: Icons.draw,
+          label: l10n.tray_drawing,
+          onTap: () => _runTile(
+            () => DrawingComposeScreen.open(
+              context,
+              // A DM past this gets fewer send attempts.
+              maxBytes: maxBytes > maxTextBytesForLateAttempt
+                  ? maxTextBytesForLateAttempt
+                  : maxBytes,
+            ),
+          ),
+        ),
       ],
     );
   }

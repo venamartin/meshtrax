@@ -1,9 +1,87 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
+import 'package:meshtrax/models/channel_message.dart';
+import 'package:meshtrax/services/notification_service.dart';
 
 void main() {
   const graz = '47.070123, 15.440123';
+
+  group('SVG drawings', () {
+    const box = 'M10 10h80v80H10z';
+
+    test('read with no space after the colon', () {
+      final m = StructuredMessage.parse('SVG:$box');
+      expect(m, isA<SvgMessage>());
+      expect((m as SvgMessage).drawing.pathData, box);
+      expect(m.summary, 'Drawing');
+      expect(m.position, isNull);
+      expect(m.toWire(), 'SVG:$box');
+    });
+
+    test('any case, and spaces after the colon, read too', () {
+      for (final text in ['svg:$box', 'Svg: $box', 'SVG:\t$box']) {
+        expect(StructuredMessage.parse(text), isA<SvgMessage>(), reason: text);
+      }
+    });
+
+    test('a line break after the colon is not a drawing', () {
+      expect(StructuredMessage.parse('SVG:\n$box'), isNull);
+    });
+
+    test('a caption line comes along and goes back out', () {
+      final m = StructuredMessage.parse('SVG:$box\nOur camp') as SvgMessage;
+      expect(m.drawing.caption, 'Our camp');
+      expect(m.toWire(), 'SVG:$box\nOur camp');
+    });
+
+    test('reply and mention markup may come first', () {
+      for (final text in ['@[GWQ] SVG:$box', '@[GWQ]\n>Heading to..\nSVG:$box']) {
+        expect(StructuredMessage.parse(text), isA<SvgMessage>(), reason: text);
+      }
+    });
+
+    test('markup and other text under the keyword stay ordinary text', () {
+      for (final text in [
+        'SVG:<svg><path d="$box"/></svg>',
+        'SVG: is a vector format',
+        'SVG:',
+        'svg:hello',
+      ]) {
+        expect(StructuredMessage.parse(text), isNull, reason: text);
+        expect(SvgMessage.isDrawing(text), isFalse, reason: text);
+      }
+    });
+
+    test('keeps out of SMAZ compression, as cards do', () {
+      expect(StructuredMessage.hasPrefix('SVG:$box'), isTrue);
+    });
+
+    test('a channel frame gives the sender and a drawing', () {
+      final frame = Uint8List.fromList([
+        respCodeChannelMsgRecv, 0, 0, txtTypePlain, 1, 0, 0, 0,
+        ...utf8.encode('GWQ: SVG:$box'),
+      ]);
+      final message = ChannelMessage.fromFrame(frame)!;
+      expect(message.senderName, 'GWQ');
+      expect(StructuredMessage.parse(message.text), isA<SvgMessage>());
+    });
+
+    test('the chat list says what it is', () {
+      expect(
+        NotificationService.formatNotificationText('SVG:$box'),
+        'Sent a drawing',
+      );
+      expect(
+        NotificationService.formatNotificationText('SVG: is a vector format'),
+        'SVG: is a vector format',
+      );
+    });
+  });
 
   group('Location', () {
     test('coordinates only', () {

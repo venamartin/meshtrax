@@ -5609,4 +5609,126 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chats_advertise => 'アドバート';
+
+  @override
+  String get tray_drawing => 'Drawing';
+
+  @override
+  String get drawing_tabDraw => 'Draw';
+
+  @override
+  String get drawing_tabPaste => 'Paste';
+
+  @override
+  String get drawing_toolPen => 'Pen';
+
+  @override
+  String get drawing_toolLine => 'Line';
+
+  @override
+  String get drawing_toolRect => 'Rectangle';
+
+  @override
+  String get drawing_toolCircle => 'Circle';
+
+  @override
+  String get drawing_toolEllipse => 'Ellipse';
+
+  @override
+  String get drawing_toolArrow => 'Arrow';
+
+  @override
+  String get drawing_undo => 'Undo';
+
+  @override
+  String get drawing_caption => 'Caption';
+
+  @override
+  String get drawing_captionHint => 'Optional, shown under the picture';
+
+  @override
+  String drawing_bytes(int used, int max) {
+    return '$used / $max bytes';
+  }
+
+  @override
+  String drawing_points(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count points',
+      one: '1 point',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get drawing_keptAll => 'Every point you drew is kept.';
+
+  @override
+  String drawing_simplified(String percent) {
+    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+  }
+
+  @override
+  String get drawing_tooDetailed =>
+      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+
+  @override
+  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+
+  @override
+  String get drawing_pasteHint =>
+      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+
+  @override
+  String get drawing_pasteUse => 'Use this SVG';
+
+  @override
+  String get drawing_pasteNote =>
+      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+
+  @override
+  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+
+  @override
+  String get drawing_pasteTooBig =>
+      'That is too big or too detailed to read. Paste a smaller SVG.';
+
+  @override
+  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+
+  @override
+  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+
+  @override
+  String get drawing_copySvg => 'Copy SVG';
+
+  @override
+  String get appSettings_drawings => 'Drawings';
+
+  @override
+  String get appSettings_drawingsSubtitle =>
+      'Pictures sent as SVG, and how they look here';
+
+  @override
+  String get drawingSettings_show => 'Show drawings';
+
+  @override
+  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+
+  @override
+  String get drawingSettings_penColor => 'Pen color';
+
+  @override
+  String get drawingSettings_colorCode => 'Color code';
+
+  @override
+  String get drawingSettings_lineWidth => 'Line width';
+
+  @override
+  String get drawingSettings_glow => 'Glow';
+
+  @override
+  String get drawingSettings_scanlines => 'Scanlines';
 }

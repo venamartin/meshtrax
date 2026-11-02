@@ -13,6 +13,7 @@ void main() {
     'notice': const NoticeMessage(lines: ['x']),
     'location': const LocationMessage(position: here),
     'sos': const SosMessage(position: here, text: 'x'),
+    'drawing': StructuredMessage.parse('SVG:M0 0 9 9')!,
     for (final kind in ShareKind.values)
       'share ${kind.name}': ShareMessage(
         kind: kind,
