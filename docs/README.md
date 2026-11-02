@@ -18,11 +18,11 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | Page | What it covers |
 |---|---|
 | [Message format](message-format.md) | How MeshTrax writes replies, reactions, GIFs and cards into a message, so other apps can read them |
-| [proposals/](proposals/) | Suggestions sent to the MeshCore firmware and other app projects |
+| [proposals/](proposals/) | Suggestions written for the MeshCore firmware and other app projects |
 
-## For contributors and AI coding sessions
+## For contributors
 
-[technical/](technical/) holds the detailed material: protocol references, design records, plans and finished investigations. Each file starts with a short note saying what it is and whether it's current.
+[technical/](technical/) holds the detailed material: protocol references, design records, plans and finished investigations. Each file starts with a short note saying what it is and whether it's current. They double as the working notes of the AI-assisted sessions that build MeshTrax, so they go into more detail than most readers need.
 
 | Page | What it covers |
 |---|---|

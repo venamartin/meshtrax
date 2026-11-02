@@ -1,8 +1,8 @@
 # MeshCore BLE Protocol Documentation
 
-> **What this is:** An older, shorter overview of how the app connects to its radio over Bluetooth and the commands it sends.
+> **What this is:** An older, more narrative walk through how the app connects to its radio over Bluetooth and the commands it sends.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** reference. [meshcore-protocol.md](meshcore-protocol.md) is the fuller one, checked against the firmware; where the two disagree, trust that one.
 >

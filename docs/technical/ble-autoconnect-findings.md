@@ -2,7 +2,7 @@
 
 > **What this is:** The August 2026 investigation of three Bluetooth auto-connect bugs: auto-connect couldn't be cancelled, disconnecting reconnected straight away, and a renamed radio sometimes showed its old name.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** finished record. All three were fixed. Line numbers refer to the code as it was then.
 >

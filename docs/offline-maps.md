@@ -11,8 +11,8 @@ You download maps one region at a time. Each region can have several kinds of **
 | Map | Streets, trails and places, from OpenStreetMap |
 | Contours | Elevation lines |
 | Hill shading | Hills and mountains, shaded under the map |
-| USGS topo map | Trails, streams and reserves (United States only) |
-| NOAA charts | Nautical charts for US coasts, picked by coast in the Charts tab |
+| USGS topo map | Trails, streams and reserves (United States only). USGS is the US Geological Survey; a topo map shows the shape of the land. |
+| NOAA charts | Nautical charts for US coasts, picked by coast in the Charts tab. NOAA is the US ocean and weather agency. |
 
 The app also includes a simple world map, so there is always something to see.
 
@@ -20,24 +20,24 @@ The app also includes a simple world map, so there is always something to see.
 
 1. Open the **Map** screen, tap the menu, and choose **Offline maps**.
 2. Pick a region in the **Maps** tab (or a coast in the **Charts** tab), tick the kinds you want, and tap **Download**.
-3. The size is shown before you start. For large downloads, use Wi-Fi and keep your device charging. You can pause and resume, and the download keeps going in the background.
+3. The size is shown before you start. For large downloads, use Wi-Fi and keep your device charging; **Download maps on Wi-Fi only** in App Settings makes downloads wait for Wi-Fi. You can pause and resume. The download keeps going in the background, and on Android a notification shows its progress.
 
 The **Downloaded** tab lists what's on your device, how much space it uses, and lets you delete a region to free space. You can download it again later.
 
 ## Updates
 
-While you have offline maps installed, MeshTrax checks for newer versions about once a day. Regions with an update show **Update available**, and **Update all** fetches them together. A downloaded map stays exactly as it is until you update it.
+When you open the app with offline maps installed and a day has passed since the last check, MeshTrax looks for newer versions. **Check for new maps** in Offline maps does it any time. Regions with an update show **Update available**, and **Update all** fetches them together. A downloaded map stays exactly as it is until you update it.
 
 ## Online or Offline
 
 The map has an **Online | Offline** switch:
 
 - **Offline** shows only what works without signal: your downloaded maps and the world map. Where you haven't downloaded a region, the map shows a card offering a download, and it won't zoom in further there.
-- **Online** fills in everything you haven't downloaded with online OpenStreetMap tiles. Downloaded areas are outlined in teal so you can tell them apart.
+- **Online** fills in everything you haven't downloaded with online OpenStreetMap tiles. It's the standard light street map: contours, hill shading and the dark map theme show only in Offline.
 
-Until you download a street or topo map, the map stays online.
+Downloaded areas are outlined in teal in both modes, and filled in Online so you can tell them from the online tiles. A setting in App Settings turns the outline off. Until you download a street or topo map, the map stays online.
 
-Online **map tiles** you've viewed are kept for a while so they load faster. You can clear them in the **Downloaded** tab of Offline maps.
+Online **map tiles** you've viewed are kept for up to a year so they load faster. You can clear them in the **Downloaded** tab of Offline maps.
 
 ## Charts are not for navigation
 

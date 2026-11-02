@@ -1,6 +1,6 @@
 # Proposal: an extra direct ACK after a flooded DM (opt-in, behind `multi_acks`)
 
-> **What this is:** A suggestion to the MeshCore firmware developers. When a private message arrives by flood, the receiving radio sends its delivery receipt (ACK) back by flood too, and that receipt is often lost. The idea: also send one receipt back along the route the radio already knows, so fewer messages are resent.
+> **What this is:** A suggestion to the MeshCore firmware developers. When a private message arrives by flood, the receiving radio sends its delivery receipt (ACK) back by flood too, and that receipt can be lost. The idea: also send one receipt back along the route the radio already knows, so fewer messages are resent.
 >
 > **Who it's for:** the MeshCore firmware developers.
 >

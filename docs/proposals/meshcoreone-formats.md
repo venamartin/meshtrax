@@ -4,7 +4,7 @@
 >
 > **Who it's for:** the meshcore-open developers.
 >
-> **Status:** request text, written September 2026.
+> **Status:** request text, written August 2026, updated September 2026.
 >
 > New to the terms? See the [glossary](../glossary.md).
 

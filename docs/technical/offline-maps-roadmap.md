@@ -2,7 +2,7 @@
 
 > **What this is:** The plan for moving MeshTrax from online maps to downloadable offline maps: the screens, the order of work and how each step is tested. Its Status section says what is done and what comes next.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** active plan.
 >

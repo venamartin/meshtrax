@@ -16,7 +16,7 @@ Words you will meet in MeshTrax and in these docs, in plain language.
 
 **Repeater**: A radio, usually on a roof or hill, that passes messages on. Repeaters are what let a message travel further than one radio can reach.
 
-**Room server**: A radio that stores posts for a group, like a small bulletin board. Members log in to read and post, and it keeps posts for people who were away.
+**Room server**: A radio that stores posts for a group, like a small bulletin board. Members log in to read and post, and it keeps recent posts for people who were away.
 
 **Node**: Any radio on the mesh: a companion radio, a repeater or a room server.
 
@@ -42,7 +42,7 @@ Words you will meet in MeshTrax and in these docs, in plain language.
 
 **Route (or path)**: A list of the repeaters a message should pass through, in order. A message sent on a route keeps only those repeaters busy, so it's quieter and often more reliable than a flood.
 
-**Repeater code (path hash)**: A route doesn't hold full repeater names. It holds a short code for each one: the first 1 or 2 bytes of the repeater's public key, written as letters and numbers such as `A3` or `A377`. Short codes keep messages small, but two repeaters can share one, especially 1-byte codes.
+**Repeater code (path hash)**: A route doesn't hold full repeater names. It holds a short code for each one: usually the first 1 or 2 bytes of the repeater's public key, written as letters and numbers such as `A3` or `A377`. Short codes keep messages small, but two repeaters can share one, especially 1-byte codes.
 
 **Discover**: A short "who can hear me?" call. Nearby repeaters answer, so the app learns which repeaters can hear you right where you are.
 
@@ -51,6 +51,8 @@ Words you will meet in MeshTrax and in these docs, in plain language.
 **Signal strength (RSSI, SNR)**: Two numbers that say how well a radio heard a message. RSSI is how loud the signal was; SNR (signal-to-noise ratio) is how clear it was above the background noise. Higher is better for both.
 
 **Pathfinder**: The MeshTrax feature that learns the mesh by listening and picks routes for your DMs. See [Pathfinder](pathfinder.md).
+
+**Graph**: Pathfinder's map of one mesh. If you use your radio in more than one area, you can keep a graph for each.
 
 ## Connecting the app
 

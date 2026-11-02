@@ -2,7 +2,7 @@
 
 > **What this is:** The full design record for Pathfinder, the feature that learns routes for private messages (plain explainer: [pathfinder.md](../pathfinder.md)). It holds the decisions, the rules for what counts as proof that a link works, and how each decision was reached.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** live. Pathfinder has shipped and this file is still updated as it changes; the status lines just below date from its early days.
 >

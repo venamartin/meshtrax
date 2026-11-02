@@ -2,7 +2,7 @@
 
 > **What this is:** Working notes for building offline maps: where the code, map data and map server live, the decisions made and the pitfalls found. Plain explainer: [offline-maps.md](../offline-maps.md).
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** working notes, updated as the work goes on.
 >

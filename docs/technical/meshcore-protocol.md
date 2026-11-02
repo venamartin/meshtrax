@@ -2,7 +2,7 @@
 
 > **What this is:** The byte-by-byte reference for how MeshCore radios talk: the packets radios send each other over the air, and the frames (messages) the app exchanges with its own radio over Bluetooth, USB or Wi-Fi. It is checked against the MeshCore firmware source.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** live reference, kept up to date.
 >

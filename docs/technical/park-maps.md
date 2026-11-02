@@ -2,7 +2,7 @@
 
 > **What this is:** A plan for showing national park maps (boundaries, trails, ranger stations and so on) on top of the offline map.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** plan. Nothing is built yet.
 >

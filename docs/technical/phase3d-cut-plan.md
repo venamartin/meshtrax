@@ -2,7 +2,7 @@
 
 > **What this is:** The July 2026 plan that made the message database the only place messages are kept. Before it, the app also held messages in lists in memory, which made messages vanish or show in the wrong order.
 >
-> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+> **Who it's for:** developers working on MeshTrax.
 >
 > **Status:** finished record. Code comments still point to its sections to explain why a few settings stay outside the database.
 >
