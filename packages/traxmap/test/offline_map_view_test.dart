@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:traxmap/src/renderer/flutter_map_renderer.dart';
 import 'package:traxmap/traxmap.dart';
 
 import 'support/fake_pmtiles.dart';
@@ -70,6 +71,68 @@ void main() {
     expect(state!.packsInUse.map((p) => p.id), ['r-charts']);
     // The package draws no chrome of its own.
     expect(find.text('NOT FOR NAVIGATION'), findsNothing);
+  });
+
+  testWidgets('the base map fills the gaps unless its source opts out', (
+    tester,
+  ) async {
+    final registry = StyleRegistry(
+      _MemoryStyles({
+        'streets': {
+          'version': 8,
+          'metadata': {
+            'ovm:requires': ['osm'],
+          },
+          'sources': {
+            'osm': {'type': 'vector', 'url': 'pmtiles://{pack:osm}'},
+            'world': {'type': 'vector', 'url': 'pmtiles://{pack:world}'},
+          },
+          'layers': const [],
+        },
+        'charts': {
+          'version': 8,
+          'metadata': {
+            'ovm:requires': ['charts'],
+          },
+          'sources': {
+            'charts': {'type': 'vector', 'url': 'pmtiles://{pack:charts}'},
+            'world': {
+              'type': 'vector',
+              'url': 'pmtiles://{pack:world}',
+              'ovm:mask': false,
+            },
+          },
+          'layers': const [],
+        },
+      }),
+    );
+    final packs = [
+      _pack('r-osm', 'osm', '© OpenStreetMap contributors'),
+      _pack('r-charts', 'charts', 'NOAA Office of Coast Survey'),
+      _pack('world', 'world', 'Made with Natural Earth'),
+    ];
+    Future<FlutterMapRenderer> renderer(String styleId) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OfflineMapView(
+            key: ValueKey(styleId),
+            styleId: styleId,
+            packs: packs,
+            initialCamera: camera,
+            styleRegistry: registry,
+          ),
+        ),
+      );
+      await tester.pump();
+      return tester.widget(find.byType(FlutterMapRenderer));
+    }
+
+    final streets = await renderer('streets');
+    expect(streets.coverageSources, {'osm'});
+    expect(streets.fillSources, {'world'});
+    final charts = await renderer('charts');
+    expect(charts.coverageSources, {'charts'});
+    expect(charts.fillSources, isEmpty);
   });
 
   test('camera project/unproject round-trips', () {

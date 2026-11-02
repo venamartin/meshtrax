@@ -141,6 +141,11 @@ class _OfflineMapViewState extends State<OfflineMapView> {
   /// Style sources that count for [OfflineMapView.onCoverageChanged].
   Set<String> _coverageSources = const {};
 
+  /// Style sources drawn only where [_coverageSources] have no tile: the
+  /// bundled base map, unless the style marks its source `"ovm:mask": false`
+  /// (e.g. under charts, which cover what they draw).
+  Set<String> _fillSources = const {};
+
   /// Kept so the camera survives the renderer being remounted.
   MapCamera? _lastCamera;
 
@@ -198,13 +203,24 @@ class _OfflineMapViewState extends State<OfflineMapView> {
               info.requiredKinds.contains(pack.kind))
             context.pmtilesUrl(pack),
       };
+      final worldUrls = {
+        for (final pack in packsByKind[PackKind.world] ?? const <Pack>[])
+          context.pmtilesUrl(pack),
+      };
+      final sources = (style['sources'] as Map?) ?? const {};
       setState(() {
         _style = style;
         _styleError = null;
         _coverageSources = {
-          for (final MapEntry(:key, :value)
-              in ((style['sources'] as Map?) ?? const {}).entries)
+          for (final MapEntry(:key, :value) in sources.entries)
             if (value is Map && sourceUrls(value).any(requiredUrls.contains))
+              key as String,
+        };
+        _fillSources = {
+          for (final MapEntry(:key, :value) in sources.entries)
+            if (value is Map &&
+                value['ovm:mask'] != false &&
+                sourceUrls(value).any(worldUrls.contains))
               key as String,
         };
       });
@@ -245,6 +261,7 @@ class _OfflineMapViewState extends State<OfflineMapView> {
       extraLayers: widget.extraLayers,
       baseLayers: widget.baseLayers,
       coverageSources: _coverageSources,
+      fillSources: _fillSources,
       onCoverageChanged: widget.onCoverageChanged,
       onTileCoverage: widget.onTileCoverage,
       onCameraChanged: _onCamera,

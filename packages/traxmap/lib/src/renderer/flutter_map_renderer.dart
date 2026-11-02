@@ -15,6 +15,7 @@ import '../view/map_controller.dart';
 import '../view/overlays.dart';
 import '../packs/attribution.dart';
 import 'composite_pmtiles_provider.dart';
+import 'gap_fill_provider.dart';
 import 'sprite_sheets.dart';
 
 /// Renders a resolved style with flutter_map + flutter_map_vector_tiles.
@@ -44,6 +45,10 @@ class FlutterMapRenderer extends StatefulWidget {
 
   /// Style sources whose tiles count as "the map is covered here".
   final Set<String> coverageSources;
+
+  /// Style sources drawn only where [coverageSources] have no tile (see
+  /// [GapFillProvider]).
+  final Set<String> fillSources;
 
   /// Reports, once the camera settles, whether [coverageSources] have a tile
   /// at the view centre. Called only when the answer changes.
@@ -78,6 +83,7 @@ class FlutterMapRenderer extends StatefulWidget {
     this.extraLayers = const [],
     this.baseLayers = const [],
     this.coverageSources = const {},
+    this.fillSources = const {},
     this.onCoverageChanged,
     this.onTileCoverage,
     this.controller,
@@ -115,6 +121,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   bool _ready = false;
 
   vt.TileProviders? _providers;
+  var _loads = 0;
   var _local = <String, CompositePmTilesProvider>{};
   Widget? _vectorLayer; // kept so parent rebuilds don't rebuild it
   Object? _error;
@@ -136,9 +143,11 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   @override
   void didUpdateWidget(FlutterMapRenderer old) {
     super.didUpdateWidget(old);
-    if (!identical(old.style, widget.style)) _load();
-    if (!setEquals(old.coverageSources, widget.coverageSources)) {
-      _updateCoverage();
+    // The fill sources' providers are built around the coverage sources.
+    if (!identical(old.style, widget.style) ||
+        !setEquals(old.fillSources, widget.fillSources) ||
+        !setEquals(old.coverageSources, widget.coverageSources)) {
+      _load();
     }
     if (!identical(old.overlays, widget.overlays)) {
       _overlays = _Overlays.from(widget.overlays);
@@ -150,6 +159,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   }
 
   Future<void> _load() async {
+    final load = ++_loads;
     final style = widget.style;
     final providers = <String, CompositePmTilesProvider>{};
     try {
@@ -167,16 +177,26 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
         ];
         providers[key] = await CompositePmTilesProvider.open(files);
       }
+      final masks = [
+        for (final source in widget.coverageSources)
+          if (!widget.fillSources.contains(source)) ?providers[source],
+      ];
+      final served = <String, vt.VectorTileProvider>{
+        for (final MapEntry(:key, :value) in providers.entries)
+          key: widget.fillSources.contains(key)
+              ? GapFillProvider(value, masks: masks)
+              : value,
+      };
       final theme = vt.ThemeReader(
         logger: kDebugMode ? const vt.Logger.console() : const vt.Logger.noop(),
       ).read(style, id: FlutterMapRenderer.themeIdOf(style));
       final sprites = await loadSpriteSheet(style['sprite']);
-      if (!mounted || !identical(style, widget.style)) {
-        vt.TileProviders(providers).dispose();
+      if (!mounted || load != _loads) {
+        vt.TileProviders(served).dispose();
         return;
       }
       _providers?.dispose();
-      final tileProviders = vt.TileProviders(providers);
+      final tileProviders = vt.TileProviders(served);
       setState(() {
         _providers = tileProviders;
         _local = providers;
