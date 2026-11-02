@@ -30,6 +30,20 @@ Every delivery and every failure teaches it more. A failure counts against that 
 
 When it isn't sure which repeaters can hear you where you are, Pathfinder sends one short **Discover** call. It does this only after a send has failed, and at most once every 10 minutes.
 
+## Delivery receipts
+
+When your DM arrives, the other radio sends back a short receipt, the **ACK**, and MeshTrax marks your message delivered. The way home for that receipt is chosen by the *receiving* radio, not by you. If your message came in on a route, the radio answers along the route it has stored for you, or floods the receipt if it has none. It does this a fifth of a second after the message arrives, before any app on that side has seen it. A message that arrived by flood is answered by flood, whatever is stored.
+
+So a stale stored route loses receipts: your message got there, but you never learn that, and you resend for nothing. Nothing you do on your side can steer the receipt. What Pathfinder can do is make sure *your* radio answers well, for the people who write to you.
+
+**Keeping your radio's stored routes good.** For every contact you've chatted with in the last week, and every favourite, Pathfinder keeps the route stored on your radio set to its best proven route to that contact. It does this quietly in the background, so when their message reaches you, your receipt leaves on a route Pathfinder trusts. When Pathfinder knows no route to someone, it clears the stored one, so your receipt floods rather than follow a route nobody has proven. A route the mesh itself has just handed your radio, in a path reply after a flooded message, leads for 10 minutes before Pathfinder's own choice takes over.
+
+**Stepping down.** If the same message reaches you a second time, the sender didn't get your receipt. Pathfinder takes the hint and moves your stored route one step down its list for that contact, and after a few repeats clears it, so the last receipts flood. A repeat is never held against the route, though: the sender's timer may simply have been short.
+
+**Staying out of the way.** A contact's stored route is rewritten at most once every 10 minutes, except that a route Pathfinder has stopped listing is replaced at once. A contact is left alone while a message of yours to them is still being tried, and for 6 minutes after one of yours failed every attempt. A guessed route is stored only as the first choice, with one guessed hop at most. And if you picked a route for a contact yourself in the routing dialog, Pathfinder never touches it.
+
+Two things this doesn't change. Pathfinder never uses the stored route for its own sends; those always go on its list and then flood. And the radio's option to send each receipt twice (Multi-ACKs) works the same with or without Pathfinder.
+
 ## What you see
 
 - An **amber path icon** on a message means it went out on a Pathfinder route.
@@ -54,4 +68,4 @@ Pathfinder's map stays on your phone. With a radio that has GPS turned on, it al
 
 ## For developers
 
-The design, the decisions behind it and the rules for what counts as proof are in [technical/path-graph-design.md](technical/path-graph-design.md).
+The design, the decisions behind it and the rules for what counts as proof are in [technical/path-graph-design.md](technical/path-graph-design.md). The receipt steering is [radio_route_keeper.dart](../lib/services/path_graph/radio_route_keeper.dart); its opening comment is the spec.
