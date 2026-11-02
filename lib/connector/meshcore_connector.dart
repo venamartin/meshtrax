@@ -6378,7 +6378,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             _fetchAfterDownload[pubKeyHex] = pubKey;
           } else {
             appLogger.info(
-              'Advert from unknown contact $pubKeyHex — fetching record',
+              sharedCopy
+                  ? 'Radio took a shared copy of $pubKeyHex — fetching record'
+                  : 'Advert from unknown contact $pubKeyHex — fetching record',
               tag: 'Connector',
             );
             unawaited(getContactByKey(pubKey));
